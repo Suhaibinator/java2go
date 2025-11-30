@@ -148,14 +148,18 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "constructor_body", "block":
 		body := &ast.BlockStmt{}
 		for _, line := range nodeutil.NamedChildrenOf(node) {
-			if line.Type() == "comment" {
+			if line.Type() == "comment" || line.Type() == "line_comment" || line.Type() == "block_comment" {
 				continue
 			}
 			if stmt := TryParseStmt(line, source, ctx); stmt != nil {
 				body.List = append(body.List, stmt)
 			} else {
 				// Try statements are ignored, so they return a list of statements
-				body.List = append(body.List, ParseNode(line, source, ctx).([]ast.Stmt)...)
+				res := ParseNode(line, source, ctx)
+				if res == nil {
+					continue
+				}
+				body.List = append(body.List, res.([]ast.Stmt)...)
 			}
 		}
 		return body

@@ -142,6 +142,43 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// Methods with a selector are called as X.Sel(Args)
 		// Otherwise, they are called as Fun(Args)
 		if node.ChildByFieldName("object") != nil {
+			obj := node.ChildByFieldName("object")
+
+			// Check for Enum static methods
+			if obj.Type() == "identifier" {
+				name := obj.Content(source)
+				var isEnum bool
+				var className string
+
+				if cls := ctx.currentFile.FindClass(name); cls != nil && cls.IsEnum {
+					isEnum = true
+					className = cls.Name
+				} else {
+					if pkg := symbol.GlobalScope.FindPackage(ctx.currentFile.Package); pkg != nil {
+						if clsScope := pkg.FindClass(name); clsScope != nil && clsScope.Class.IsEnum {
+							isEnum = true
+							className = clsScope.Class.Name
+						}
+					}
+				}
+
+				if isEnum {
+					methodName := node.ChildByFieldName("name").Content(source)
+					if methodName == "values" {
+						return &ast.CallExpr{
+							Fun:  &ast.Ident{Name: className + "Values"},
+							Args: ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr),
+						}
+					}
+					if methodName == "valueOf" {
+						return &ast.CallExpr{
+							Fun:  &ast.Ident{Name: className + "ValueOf"},
+							Args: ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr),
+						}
+					}
+				}
+			}
+
 			return &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X:   ParseExpr(node.ChildByFieldName("object"), source, ctx),
@@ -268,6 +305,34 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "field_access":
 		// X.Sel
 		obj := node.ChildByFieldName("object")
+
+		// Check if we are accessing an enum constant
+		if obj.Type() == "identifier" {
+			name := obj.Content(source)
+			var isEnum bool
+			var className string
+
+			// Check local
+			if cls := ctx.currentFile.FindClass(name); cls != nil && cls.IsEnum {
+				isEnum = true
+				className = cls.Name
+			} else {
+				// Check package
+				if pkg := symbol.GlobalScope.FindPackage(ctx.currentFile.Package); pkg != nil {
+					if clsScope := pkg.FindClass(name); clsScope != nil && clsScope.Class.IsEnum {
+						isEnum = true
+						className = clsScope.Class.Name
+					}
+				}
+			}
+
+			if isEnum {
+				fieldName := node.ChildByFieldName("field").Content(source)
+				// Assuming public (enum constants are public)
+				finalName := symbol.HandleExportStatus(true, fieldName)
+				return &ast.Ident{Name: className + finalName}
+			}
+		}
 
 		if obj.Type() == "this" {
 			def := ctx.currentClass.FindField().ByOriginalName(node.ChildByFieldName("field").Content(source))
