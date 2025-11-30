@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 
@@ -90,7 +91,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
 
 		return declarations
-	case "class_body": // The body of the currently parsed class
+	case "class_body", "enum_body_declarations": // The body of the currently parsed class or enum
 		decls := []ast.Decl{}
 
 		// To switch to parsing the subclasses of a class, since we assume that
@@ -101,7 +102,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		for _, child := range nodeutil.NamedChildrenOf(node) {
 			switch child.Type() {
 			// Skip fields and comments
-			case "field_declaration", "comment":
+			case "field_declaration", "comment", "line_comment", "block_comment":
 			case "constructor_declaration", "method_declaration", "static_initializer":
 				d := ParseDecl(child, source, ctx)
 				// If the declaration is bad, skip it
@@ -142,12 +143,254 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	case "enum_declaration":
 		// An enum is treated as both a struct, and a list of values that define
 		// the states that the enum can be in
+		// We parse it by creating a struct, then creating global variables for each constant
 
 		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
+		declarations := []ast.Decl{}
 
-		// TODO: Handle an enum correctly
-		//return ParseDecls(node.ChildByFieldName("body"), source, ctx)
-		return []ast.Decl{}
+		// Fields of the enum struct
+		fields := &ast.FieldList{}
+
+		// Add default fields (name, ordinal)
+		// name string
+		fields.List = append(fields.List, &ast.Field{
+			Names: []*ast.Ident{{Name: "name"}},
+			Type:  &ast.Ident{Name: "string"},
+		})
+		// ordinal int
+		fields.List = append(fields.List, &ast.Field{
+			Names: []*ast.Ident{{Name: "ordinal"}},
+			Type:  &ast.Ident{Name: "int"},
+		})
+
+		enumBody := node.ChildByFieldName("body")
+		var bodyDeclarations *sitter.Node
+
+		// Parse user defined fields first
+		for _, child := range nodeutil.NamedChildrenOf(enumBody) {
+			if child.Type() == "enum_body_declarations" {
+				bodyDeclarations = child
+				for _, subChild := range nodeutil.NamedChildrenOf(child) {
+					if subChild.Type() == "field_declaration" {
+						// Logic similar to class_declaration field parsing
+						// We can't reuse it easily because it's embedded in the big switch
+						// But for enums we can assume similar handling.
+
+						// Simplified field handling for Enums
+						fieldType := ParseExpr(subChild.ChildByFieldName("type"), source, ctx)
+						fieldName := subChild.ChildByFieldName("declarator").ChildByFieldName("name").Content(source)
+
+						// Use symbol table to find correct name (resolved)
+						fieldDef := ctx.currentClass.FindField().ByOriginalName(fieldName)[0]
+
+						fields.List = append(fields.List, &ast.Field{
+							Names: []*ast.Ident{{Name: fieldDef.Name}},
+							Type:  fieldType,
+						})
+					}
+				}
+			}
+		}
+
+		// Emit Struct
+		declarations = append(declarations, GenStruct(ctx.className, fields))
+
+		// Add String() method
+		declarations = append(declarations, &ast.FuncDecl{
+			Recv: &ast.FieldList{List: []*ast.Field{{
+				Names: []*ast.Ident{{Name: "c"}},
+				Type:  &ast.StarExpr{X: &ast.Ident{Name: ctx.className}},
+			}}},
+			Name: &ast.Ident{Name: "String"},
+			Type: &ast.FuncType{
+				Results: &ast.FieldList{List: []*ast.Field{{
+					Type: &ast.Ident{Name: "string"},
+				}}},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "c"}, Sel: &ast.Ident{Name: "name"}}}},
+				},
+			},
+		})
+
+		// Parse Constants
+		// var CompassValues []*Compass
+		valuesVarName := fmt.Sprintf("_%sValues", ctx.className)
+		valuesElements := []ast.Expr{}
+
+		ordinal := 0
+		for _, child := range nodeutil.NamedChildrenOf(enumBody) {
+			if child.Type() == "enum_constant" {
+				name := child.ChildByFieldName("name").Content(source)
+				globalName := fmt.Sprintf("%s%s", ctx.className, name)
+
+				// Find constructor
+				args := []ast.Expr{}
+				argTypes := []string{}
+
+				argumentsNode := child.ChildByFieldName("arguments")
+				if argumentsNode != nil {
+					// In tree-sitter, arguments might be wrapped in argument_list
+					if argumentsNode.Type() == "argument_list" {
+						for _, arg := range nodeutil.NamedChildrenOf(argumentsNode) {
+							args = append(args, ParseExpr(arg, source, ctx))
+							argTypes = append(argTypes, symbol.TypeOfLiteral(arg, source)) // Approx type
+						}
+					}
+				}
+
+				// Resolve constructor name
+				// Default to New + className
+				constructorName := fmt.Sprintf("New%s", ctx.className)
+
+				// Find correct constructor if possible
+				classOriginalName := ctx.currentClass.Class.OriginalName
+				comparison := func(d *symbol.Definition) bool {
+					// Constructor must match class name
+					if d.OriginalName != classOriginalName {
+						return false
+					}
+					// Match parameter count
+					if len(d.Parameters) != len(args) {
+						return false
+					}
+					return true
+				}
+				defs := ctx.currentClass.FindMethod().By(comparison)
+				if len(defs) > 0 {
+					constructorName = defs[0].Name
+				}
+
+				initFunc := &ast.FuncLit{
+					Type: &ast.FuncType{
+						Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}},
+					},
+					Body: &ast.BlockStmt{
+						List: []ast.Stmt{
+							&ast.AssignStmt{
+								Lhs: []ast.Expr{&ast.Ident{Name: "c"}},
+								Tok: token.DEFINE,
+								Rhs: []ast.Expr{&ast.CallExpr{
+									Fun:  &ast.Ident{Name: constructorName},
+									Args: args,
+								}},
+							},
+							&ast.AssignStmt{
+								Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "c"}, Sel: &ast.Ident{Name: "name"}}},
+								Tok: token.ASSIGN,
+								Rhs: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("\"%s\"", name)}},
+							},
+							&ast.AssignStmt{
+								Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "c"}, Sel: &ast.Ident{Name: "ordinal"}}},
+								Tok: token.ASSIGN,
+								Rhs: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", ordinal)}},
+							},
+							&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "c"}}},
+						},
+					},
+				}
+
+				declarations = append(declarations, &ast.GenDecl{
+					Tok: token.VAR,
+					Specs: []ast.Spec{
+						&ast.ValueSpec{
+							Names: []*ast.Ident{{Name: globalName}},
+							Values: []ast.Expr{
+								&ast.CallExpr{Fun: initFunc},
+							},
+						},
+					},
+				})
+
+				valuesElements = append(valuesElements, &ast.Ident{Name: globalName})
+				ordinal++
+			}
+		}
+
+		// Values list
+		declarations = append(declarations, &ast.GenDecl{
+			Tok: token.VAR,
+			Specs: []ast.Spec{
+				&ast.ValueSpec{
+					Names: []*ast.Ident{{Name: valuesVarName}},
+					Values: []ast.Expr{
+						&ast.CompositeLit{
+							Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}},
+							Elts: valuesElements,
+						},
+					},
+				},
+			},
+		})
+
+		// values() function
+		// func CompassValuesFunc() []*Compass { return CompassValues }
+		// Naming: "values" is a static method in Java. Compass.values().
+		// In Go: CompassValues(). (Since we can't have static method on struct).
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: fmt.Sprintf("%sValues", ctx.className)},
+			Type: &ast.FuncType{
+				Results: &ast.FieldList{List: []*ast.Field{{
+					Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}},
+				}}},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valuesVarName}}},
+				},
+			},
+		})
+
+		// valueOf(name string) function
+		// func CompassValueOf(name string) *Compass { ... }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: fmt.Sprintf("%sValueOf", ctx.className)},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{List: []*ast.Field{{
+					Names: []*ast.Ident{{Name: "name"}},
+					Type: &ast.Ident{Name: "string"},
+				}}},
+				Results: &ast.FieldList{List: []*ast.Field{{
+					Type: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}},
+				}}},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.RangeStmt{
+						Key: &ast.Ident{Name: "_"},
+						Value: &ast.Ident{Name: "v"},
+						Tok: token.DEFINE,
+						X: &ast.Ident{Name: valuesVarName},
+						Body: &ast.BlockStmt{
+							List: []ast.Stmt{
+								&ast.IfStmt{
+									Cond: &ast.BinaryExpr{
+										X: &ast.SelectorExpr{X: &ast.Ident{Name: "v"}, Sel: &ast.Ident{Name: "name"}},
+										Op: token.EQL,
+										Y: &ast.Ident{Name: "name"},
+									},
+									Body: &ast.BlockStmt{
+										List: []ast.Stmt{
+											&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "v"}}},
+										},
+									},
+								},
+							},
+						},
+					},
+					&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}, // Or panic? Java throws exception.
+				},
+			},
+		})
+
+		// Parse body declarations (methods etc)
+		if bodyDeclarations != nil {
+			declarations = append(declarations, ParseDecls(bodyDeclarations, source, ctx)...)
+		}
+
+		return declarations
+
 	case "type_parameters":
 		var declarations []ast.Decl
 
