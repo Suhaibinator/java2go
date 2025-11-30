@@ -168,7 +168,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// This is when a constructor calls another constructor with the use of
 		// something such as `this(args...)`
 		return &ast.ExprStmt{
-			&ast.CallExpr{
+			X: &ast.CallExpr{
 				Fun:  &ast.Ident{Name: "New" + ctx.className},
 				Args: ParseNode(node.NamedChild(1), source, ctx).([]ast.Expr),
 			},

@@ -43,8 +43,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						case "static":
 							staticField = true
 						case "marker_annotation", "annotation":
-							comments = append(comments, &ast.Comment{Text: "//" + modifier.Content(source)})
-							if _, in := excludedAnnotations[modifier.Content(source)]; in {
+							modContent := modifier.Content(source)
+							comments = append(comments, &ast.Comment{Text: "//" + modContent})
+							if excludedAnnotations[modContent] {
 								// Skip this field if there is an ignored annotation
 								continue
 							}

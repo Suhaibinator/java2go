@@ -187,10 +187,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		objectType := node.ChildByFieldName("type")
 
-		// A object can also be created with this format:
+		// TODO: Handle case where object is created with this format:
 		// parentClass.new NestedClass()
-		if !node.NamedChild(0).Equal(objectType) {
-		}
+		// (when node.NamedChild(0) != objectType)
 
 		// Get all the arguments, and look up their types
 		objectArguments := node.ChildByFieldName("arguments")
