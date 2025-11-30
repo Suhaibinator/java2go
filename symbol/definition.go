@@ -15,6 +15,8 @@ type Definition struct {
 	// This is used so that the definition handles its special naming and
 	// type rules correctly
 	Constructor bool
+	// If the definition is an enum
+	IsEnum bool
 	// If the object is a function, it has parameters
 	Parameters []*Definition
 	// Children of the declaration, if the declaration is a scope
