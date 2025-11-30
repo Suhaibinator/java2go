@@ -79,13 +79,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			declarations = append(declarations, globalVariables)
 		}
 
-		// Add any type paramters defined in the class
-		if node.ChildByFieldName("type_parameters") != nil {
-			declarations = append(declarations, ParseDecls(node.ChildByFieldName("type_parameters"), source, ctx)...)
-		}
-
-		// Add the struct for the class
-		declarations = append(declarations, GenStruct(ctx.className, fields))
+		// Add the struct for the class (with type parameters if present)
+		declarations = append(declarations, GenStructWithTypeParams(ctx.className, fields, ctx.currentClass.TypeParameters))
 
 		// Add all the declarations that appear in the class
 		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
@@ -235,18 +230,6 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
 
 		return declarations
-	case "type_parameters":
-		var declarations []ast.Decl
-
-		// A list of generic type parameters
-		for _, param := range nodeutil.NamedChildrenOf(node) {
-			switch param.Type() {
-			case "type_parameter":
-				declarations = append(declarations, GenTypeInterface(param.NamedChild(0).Content(source), []string{"any"}))
-			}
-		}
-
-		return declarations
 	}
 	panic("Unknown type to parse for decls: " + node.Type())
 }
@@ -292,26 +275,52 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 
 		body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
 
+		// Generate the struct type for `new` call - if generic, include type params
+		var structType ast.Expr = &ast.Ident{Name: ctx.className}
+		if len(ctx.currentClass.TypeParameters) > 0 {
+			// Create ClassName[T, U, ...] for generic structs
+			typeParamExprs := make([]ast.Expr, len(ctx.currentClass.TypeParameters))
+			for i, tp := range ctx.currentClass.TypeParameters {
+				typeParamExprs[i] = &ast.Ident{Name: tp}
+			}
+			if len(typeParamExprs) == 1 {
+				structType = &ast.IndexExpr{
+					X:     &ast.Ident{Name: ctx.className},
+					Index: typeParamExprs[0],
+				}
+			} else {
+				structType = &ast.IndexListExpr{
+					X:       &ast.Ident{Name: ctx.className},
+					Indices: typeParamExprs,
+				}
+			}
+		}
+
 		body.List = append([]ast.Stmt{
 			&ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: ShortName(ctx.className)}},
 				Tok: token.DEFINE,
-				Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{&ast.Ident{Name: ctx.className}}}},
+				Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
 			},
 		}, body.List...)
 
 		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: ShortName(ctx.className)}}})
 
-		return &ast.FuncDecl{
-			Name: &ast.Ident{Name: ctx.localScope.Name},
-			Type: &ast.FuncType{
-				Params: ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList),
-				Results: &ast.FieldList{List: []*ast.Field{&ast.Field{
-					Type: &ast.Ident{Name: ctx.localScope.Type},
-				}}},
-			},
-			Body: body,
+		// Build the return type - for generics, it should be *ClassName[T, U, ...]
+		var returnType ast.Expr
+		if len(ctx.currentClass.TypeParameters) > 0 {
+			returnType = &ast.StarExpr{X: structType}
+		} else {
+			returnType = &ast.Ident{Name: ctx.localScope.Type}
 		}
+
+		return GenFuncDeclWithTypeParams(
+			ctx.localScope.Name,
+			ctx.currentClass.TypeParameters,
+			ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList),
+			&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
+			body,
+		)
 	case "method_declaration":
 		var static bool
 
@@ -342,11 +351,30 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 
 		// If a function is non-static, it has a method receiver
 		if !static {
+			// Build the receiver type - for generics, it should be *ClassName[T, U, ...]
+			var receiverType ast.Expr = &ast.Ident{Name: ctx.className}
+			if len(ctx.currentClass.TypeParameters) > 0 {
+				typeParamExprs := make([]ast.Expr, len(ctx.currentClass.TypeParameters))
+				for i, tp := range ctx.currentClass.TypeParameters {
+					typeParamExprs[i] = &ast.Ident{Name: tp}
+				}
+				if len(typeParamExprs) == 1 {
+					receiverType = &ast.IndexExpr{
+						X:     &ast.Ident{Name: ctx.className},
+						Index: typeParamExprs[0],
+					}
+				} else {
+					receiverType = &ast.IndexListExpr{
+						X:       &ast.Ident{Name: ctx.className},
+						Indices: typeParamExprs,
+					}
+				}
+			}
 			receiver = &ast.FieldList{
 				List: []*ast.Field{
 					&ast.Field{
 						Names: []*ast.Ident{&ast.Ident{Name: ShortName(ctx.className)}},
-						Type:  &ast.StarExpr{X: &ast.Ident{Name: ctx.className}},
+						Type:  &ast.StarExpr{X: receiverType},
 					},
 				},
 			}

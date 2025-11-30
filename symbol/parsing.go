@@ -35,6 +35,10 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 }
 
 func parseClassScope(root *sitter.Node, source []byte) *ClassScope {
+	return parseClassScopeWithParentTypeParams(root, source, nil)
+}
+
+func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, parentTypeParams []string) *ClassScope {
 	var public bool
 	// Rename the type based on the public/static rules
 	if root.NamedChild(0).Type() == "modifiers" {
@@ -56,6 +60,19 @@ func parseClassScope(root *sitter.Node, source []byte) *ClassScope {
 			Name:         HandleExportStatus(public, className),
 		},
 		IsEnum: root.Type() == "enum_declaration",
+	}
+
+	// Inherit type parameters from parent class (for nested classes)
+	scope.TypeParameters = append(scope.TypeParameters, parentTypeParams...)
+
+	// Extract type parameters if present (e.g., class Foo<T, U>)
+	if typeParamsNode := root.ChildByFieldName("type_parameters"); typeParamsNode != nil {
+		for _, param := range nodeutil.NamedChildrenOf(typeParamsNode) {
+			if param.Type() == "type_parameter" {
+				// The first named child is the type identifier (e.g., "T")
+				scope.TypeParameters = append(scope.TypeParameters, param.NamedChild(0).Content(source))
+			}
+		}
 	}
 
 	// Parse the body of the class (or enum)
@@ -112,7 +129,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		// The converted name and type of the field
 		fieldName := fieldNameNode.Content(source)
-		fieldType := nodeToStr(astutil.ParseType(typeNode, source))
+		fieldType := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, scope.TypeParameters))
 
 		scope.Fields = append(scope.Fields, &Definition{
 			Name:         HandleExportStatus(public, fieldName),
@@ -141,7 +158,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		}
 
 		if node.Type() == "method_declaration" {
-			declaration.Type = nodeToStr(astutil.ParseType(node.ChildByFieldName("type"), source))
+			declaration.Type = nodeToStr(astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, scope.TypeParameters))
 			declaration.OriginalType = node.ChildByFieldName("type").Content(source)
 		} else {
 			// A constructor declaration returns the type being constructed
@@ -175,7 +192,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			declaration.Parameters = append(declaration.Parameters, &Definition{
 				Name:         paramName,
 				OriginalName: paramName,
-				Type:         nodeToStr(astutil.ParseType(paramType, source)),
+				Type:         nodeToStr(astutil.ParseTypeWithTypeParams(paramType, source, scope.TypeParameters)),
 				OriginalType: paramType.Content(source),
 			})
 		}
@@ -189,7 +206,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		scope.Methods = append(scope.Methods, declaration)
 	case "class_declaration", "interface_declaration", "enum_declaration":
-		other := parseClassScope(node, source)
+		other := parseClassScopeWithParentTypeParams(node, source, scope.TypeParameters)
 		// Any subclasses will be renamed to part of their parent class
 		other.Class.Rename(scope.Class.Name + other.Class.Name)
 		scope.Subclasses = append(scope.Subclasses, other)

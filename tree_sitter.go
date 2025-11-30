@@ -48,6 +48,9 @@ type Ctx struct {
 	// arrType[] varName = {item, item, item}, and no class name data is defined
 	// Can either be of type `*ast.Ident` or `*ast.StarExpr`
 	lastType ast.Expr
+
+	// Expected type from variable declaration, used for diamond operator inference
+	expectedType string
 }
 
 // Clone performs a shallow copy on a `Ctx`, returning a new Ctx with its pointers
@@ -59,6 +62,7 @@ func (c Ctx) Clone() Ctx {
 		currentClass: c.currentClass,
 		localScope:   c.localScope,
 		lastType:     c.lastType,
+		expectedType: c.expectedType,
 	}
 }
 
