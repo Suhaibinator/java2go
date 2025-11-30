@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"strings"
 
 	"github.com/NickyBoy89/java2go/astutil"
 	"github.com/NickyBoy89/java2go/nodeutil"
@@ -11,6 +12,56 @@ import (
 	log "github.com/sirupsen/logrus"
 	sitter "github.com/smacker/go-tree-sitter"
 )
+
+// extractTypeArgsFromString extracts type arguments from a string like "List<Integer>"
+// or nested generics like "Map<String, List<Integer>>".
+// Returns ["Integer"] or ["String", "List<Integer>"] respectively, or nil if no type arguments found.
+func extractTypeArgsFromString(typeStr string) []string {
+	start := strings.Index(typeStr, "<")
+	end := strings.LastIndex(typeStr, ">")
+	if start == -1 || end == -1 || end <= start {
+		return nil
+	}
+	argsStr := typeStr[start+1 : end]
+
+	// Split by commas, but only at the top level (not inside nested angle brackets)
+	var result []string
+	var current strings.Builder
+	depth := 0
+
+	for _, ch := range argsStr {
+		switch ch {
+		case '<':
+			depth++
+			current.WriteRune(ch)
+		case '>':
+			depth--
+			current.WriteRune(ch)
+		case ',':
+			if depth == 0 {
+				// Top-level comma - split here
+				trimmed := strings.TrimSpace(current.String())
+				if trimmed != "" {
+					result = append(result, trimmed)
+				}
+				current.Reset()
+			} else {
+				// Comma inside nested generics - keep it
+				current.WriteRune(ch)
+			}
+		default:
+			current.WriteRune(ch)
+		}
+	}
+
+	// Don't forget the last argument
+	trimmed := strings.TrimSpace(current.String())
+	if trimmed != "" {
+		result = append(result, trimmed)
+	}
+
+	return result
+}
 
 // ParseExpr parses an expression type
 func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
@@ -211,25 +262,88 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
+		// Extract base class name and type arguments
+		var className string
+		var typeArgs []string
+		isDiamond := false
+		if objectType.Type() == "generic_type" {
+			className = objectType.NamedChild(0).Content(source)
+			typeArgs = astutil.ExtractTypeArguments(objectType, source)
+			// Diamond operator: generic_type with no type arguments
+			isDiamond = len(typeArgs) == 0
+		} else {
+			className = objectType.Content(source)
+		}
+
 		var constructor *symbol.Definition
 		// Find the respective constructor, and call it
-		if objectType.Type() == "generic_type" {
-			constructor = ctx.currentClass.FindMethodByName(objectType.NamedChild(0).Content(source), argumentTypes)
-		} else {
-			constructor = ctx.currentClass.FindMethodByName(objectType.Content(source), argumentTypes)
+		constructor = ctx.currentClass.FindMethodByName(className, argumentTypes)
+
+		// Helper function to add type arguments to a function expression
+		addTypeArgs := func(funExpr ast.Expr, args []string) ast.Expr {
+			if len(args) == 0 {
+				return funExpr
+			}
+			typeArgExprs := make([]ast.Expr, len(args))
+			for i, ta := range args {
+				typeArgExprs[i] = &ast.Ident{Name: ta}
+			}
+			if len(typeArgExprs) == 1 {
+				return &ast.IndexExpr{
+					X:     funExpr,
+					Index: typeArgExprs[0],
+				}
+			}
+			return &ast.IndexListExpr{
+				X:       funExpr,
+				Indices: typeArgExprs,
+			}
+		}
+
+		// Determine effective type arguments:
+		// 1. If explicit type arguments provided, use them
+		// 2. If diamond operator, try to get from expectedType first
+		// 3. For inner class constructors, use current class type params
+		effectiveTypeArgs := typeArgs
+		if len(effectiveTypeArgs) == 0 {
+			// First, try to get type args from expectedType (for diamond operator)
+			if isDiamond && ctx.expectedType != "" {
+				effectiveTypeArgs = extractTypeArgsFromString(ctx.expectedType)
+			}
+
+			// If still no type args and we're in a generic class context,
+			// use the class type parameters (for inner class constructors like new Node())
+			if len(effectiveTypeArgs) == 0 && len(ctx.currentClass.TypeParameters) > 0 {
+				// Only use class type params for inner class constructors (not diamond)
+				// Diamond without expectedType should fall through
+				if !isDiamond && ctx.currentFile.FindClass(className) != nil {
+					effectiveTypeArgs = ctx.currentClass.TypeParameters
+				}
+				// For inner class constructors in generic methods, still use type params
+				if ctx.currentFile.FindClass(className) != nil {
+					for _, sub := range ctx.currentClass.Subclasses {
+						if sub.Class.OriginalName == className {
+							effectiveTypeArgs = ctx.currentClass.TypeParameters
+							break
+						}
+					}
+				}
+			}
 		}
 
 		if constructor != nil {
+			funExpr := addTypeArgs(&ast.Ident{Name: constructor.Name}, effectiveTypeArgs)
 			return &ast.CallExpr{
-				Fun:  &ast.Ident{Name: constructor.Name},
+				Fun:  funExpr,
 				Args: arguments,
 			}
 		}
 
 		// It is also possible that a constructor could be unresolved, so we handle
 		// this by calling the type of the type + "Construct" at the beginning
+		funExpr := addTypeArgs(&ast.Ident{Name: "Construct" + className}, effectiveTypeArgs)
 		return &ast.CallExpr{
-			Fun:  &ast.Ident{Name: "Construct" + objectType.Content(source)},
+			Fun:  funExpr,
 			Args: arguments,
 		}
 	case "array_creation_expression":

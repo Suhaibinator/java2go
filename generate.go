@@ -76,19 +76,69 @@ func ShortName(longName string) string {
 // GenStruct is a utility method for generating the ast representation of
 // a struct, given its name and fields
 func GenStruct(structName string, structFields *ast.FieldList) ast.Decl {
-	return &ast.GenDecl{
-		Tok: token.TYPE,
-		Specs: []ast.Spec{
-			&ast.TypeSpec{
-				Name: &ast.Ident{
-					Name: structName,
-				},
-				Type: &ast.StructType{
-					Fields: structFields,
-				},
-			},
+	return GenStructWithTypeParams(structName, structFields, nil)
+}
+
+// GenStructWithTypeParams generates a struct with optional type parameters.
+// typeParams is a list of type parameter names (e.g., ["T", "U"]).
+// For Go generics, type parameters default to "any" constraint.
+func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typeParams []string) ast.Decl {
+	typeSpec := &ast.TypeSpec{
+		Name: &ast.Ident{
+			Name: structName,
+		},
+		Type: &ast.StructType{
+			Fields: structFields,
 		},
 	}
+
+	// Add type parameters if present
+	if len(typeParams) > 0 {
+		typeParamFields := make([]*ast.Field, len(typeParams))
+		for i, tp := range typeParams {
+			typeParamFields[i] = &ast.Field{
+				Names: []*ast.Ident{{Name: tp}},
+				Type:  &ast.Ident{Name: "any"},
+			}
+		}
+		typeSpec.TypeParams = &ast.FieldList{
+			List: typeParamFields,
+		}
+	}
+
+	return &ast.GenDecl{
+		Tok:   token.TYPE,
+		Specs: []ast.Spec{typeSpec},
+	}
+}
+
+// GenFuncDeclWithTypeParams creates a function declaration with type parameters.
+// This is used for constructors and static methods of generic classes.
+func GenFuncDeclWithTypeParams(name string, typeParams []string, params, results *ast.FieldList, body *ast.BlockStmt) *ast.FuncDecl {
+	funcDecl := &ast.FuncDecl{
+		Name: &ast.Ident{Name: name},
+		Type: &ast.FuncType{
+			Params:  params,
+			Results: results,
+		},
+		Body: body,
+	}
+
+	// Add type parameters if present
+	if len(typeParams) > 0 {
+		typeParamFields := make([]*ast.Field, len(typeParams))
+		for i, tp := range typeParams {
+			typeParamFields[i] = &ast.Field{
+				Names: []*ast.Ident{{Name: tp}},
+				Type:  &ast.Ident{Name: "any"},
+			}
+		}
+		funcDecl.Type.TypeParams = &ast.FieldList{
+			List: typeParamFields,
+		}
+	}
+
+	return funcDecl
 }
 
 func genType(remaining []string) ast.Expr {

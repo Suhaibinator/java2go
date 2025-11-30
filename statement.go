@@ -49,6 +49,8 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 
 		ctx.lastType = variableType
+		// Set expected type for diamond operator inference
+		ctx.expectedType = node.ChildByFieldName("type").Content(source)
 
 		declaration := ParseStmt(variableDeclarator, source, ctx).(*ast.AssignStmt)
 
