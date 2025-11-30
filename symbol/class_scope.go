@@ -10,6 +10,10 @@ type ClassScope struct {
 	Fields []*Definition
 	// Methods and constructors
 	Methods []*Definition
+	// Whether this class is an enum
+	IsEnum bool
+	// Enum constant names (only populated if IsEnum is true)
+	EnumConstants []string
 }
 
 // FindMethod searches through the immediate class's methods find a specific method

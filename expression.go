@@ -142,9 +142,37 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// Methods with a selector are called as X.Sel(Args)
 		// Otherwise, they are called as Fun(Args)
 		if node.ChildByFieldName("object") != nil {
+			objectNode := node.ChildByFieldName("object")
+			methodName := node.ChildByFieldName("name").Content(source)
+
+			// Check if this is an enum values() call
+			// Transform EnumName.values() to EnumNameValues()
+			if objectNode.Type() == "identifier" && methodName == "values" {
+				enumName := objectNode.Content(source)
+				// Check if this identifier refers to an enum
+				if ctx.currentFile != nil && ctx.currentFile.BaseClass != nil {
+					// Check base class
+					if ctx.currentFile.BaseClass.Class.OriginalName == enumName && ctx.currentFile.BaseClass.IsEnum {
+						return &ast.CallExpr{
+							Fun:  &ast.Ident{Name: ctx.currentFile.BaseClass.Class.Name + "Values"},
+							Args: []ast.Expr{},
+						}
+					}
+					// Check subclasses
+					for _, subclass := range ctx.currentFile.BaseClass.Subclasses {
+						if subclass.Class.OriginalName == enumName && subclass.IsEnum {
+							return &ast.CallExpr{
+								Fun:  &ast.Ident{Name: subclass.Class.Name + "Values"},
+								Args: []ast.Expr{},
+							}
+						}
+					}
+				}
+			}
+
 			return &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
-					X:   ParseExpr(node.ChildByFieldName("object"), source, ctx),
+					X:   ParseExpr(objectNode, source, ctx),
 					Sel: ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident),
 				},
 				Args: ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr),
@@ -159,10 +187,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		objectType := node.ChildByFieldName("type")
 
-		// A object can also be created with this format:
+		// TODO: Handle case where object is created with this format:
 		// parentClass.new NestedClass()
-		if !node.NamedChild(0).Equal(objectType) {
-		}
+		// (when node.NamedChild(0) != objectType)
 
 		// Get all the arguments, and look up their types
 		objectArguments := node.ChildByFieldName("arguments")

@@ -151,14 +151,13 @@ func commaSeparatedString(list []string) string {
 
 func (d *Dotfile) WriteToFile() {
 	totalEdges := []Edge{}
-	d.WriteString("digraph {\n")
-	//d.WriteString("compound=true\n")
+	_, _ = d.WriteString("digraph {\n")
 
 	// First, write out all the subgraphs
 	for _, graph := range d.subgraphs {
 		sub, edges := graph.AsDot()
 		totalEdges = append(totalEdges, edges...)
-		d.WriteString(sub + "\n")
+		_, _ = d.WriteString(sub + "\n")
 	}
 
 	// Then, go through the nodes
@@ -178,5 +177,5 @@ func (d *Dotfile) WriteToFile() {
 		}
 		fmt.Fprintf(d, "\"%s\" -> {%s}\n", edge.From, commaSeparatedString(edge.To))
 	}
-	d.WriteString("}")
+	_, _ = d.WriteString("}")
 }

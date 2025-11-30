@@ -43,8 +43,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						case "static":
 							staticField = true
 						case "marker_annotation", "annotation":
-							comments = append(comments, &ast.Comment{Text: "//" + modifier.Content(source)})
-							if _, in := excludedAnnotations[modifier.Content(source)]; in {
+							modContent := modifier.Content(source)
+							comments = append(comments, &ast.Comment{Text: "//" + modContent})
+							if excludedAnnotations[modContent] {
 								// Skip this field if there is an ignored annotation
 								continue
 							}
@@ -90,7 +91,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
 
 		return declarations
-	case "class_body": // The body of the currently parsed class
+	case "class_body", "enum_body": // The body of the currently parsed class or enum
 		decls := []ast.Decl{}
 
 		// To switch to parsing the subclasses of a class, since we assume that
@@ -100,8 +101,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		for _, child := range nodeutil.NamedChildrenOf(node) {
 			switch child.Type() {
-			// Skip fields and comments
-			case "field_declaration", "comment":
+			// Skip fields, comments, and enum constants (already processed)
+			case "field_declaration", "comment", "enum_constant":
 			case "constructor_declaration", "method_declaration", "static_initializer":
 				d := ParseDecl(child, source, ctx)
 				// If the declaration is bad, skip it
@@ -109,7 +110,18 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				if !bad {
 					decls = append(decls, d)
 				}
-
+			case "enum_body_declarations":
+				// Process methods and constructors inside enum body declarations
+				for _, declChild := range nodeutil.NamedChildrenOf(child) {
+					switch declChild.Type() {
+					case "constructor_declaration", "method_declaration", "static_initializer":
+						d := ParseDecl(declChild, source, ctx)
+						_, bad := d.(*ast.BadDecl)
+						if !bad {
+							decls = append(decls, d)
+						}
+					}
+				}
 			// Subclasses
 			case "class_declaration", "interface_declaration", "enum_declaration":
 				newCtx := ctx.Clone()
@@ -140,14 +152,89 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		return ParseDecls(node.ChildByFieldName("body"), source, ctx)
 	case "enum_declaration":
-		// An enum is treated as both a struct, and a list of values that define
-		// the states that the enum can be in
+		// An enum is treated as a type alias (int) and a list of constants
+		// that define the possible values the enum can have
 
 		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
+		ctx.currentClass = ctx.currentFile.BaseClass
 
-		// TODO: Handle an enum correctly
-		//return ParseDecls(node.ChildByFieldName("body"), source, ctx)
-		return []ast.Decl{}
+		declarations := []ast.Decl{}
+
+		// Generate type declaration: type EnumName int
+		declarations = append(declarations, &ast.GenDecl{
+			Tok: token.TYPE,
+			Specs: []ast.Spec{
+				&ast.TypeSpec{
+					Name: &ast.Ident{Name: ctx.className},
+					Type: &ast.Ident{Name: "int"},
+				},
+			},
+		})
+
+		// Generate constants using iota
+		if len(ctx.currentClass.EnumConstants) > 0 {
+			constSpecs := []ast.Spec{}
+			for i, constName := range ctx.currentClass.EnumConstants {
+				spec := &ast.ValueSpec{
+					Names: []*ast.Ident{{Name: constName}},
+					Type:  &ast.Ident{Name: ctx.className},
+				}
+				if i == 0 {
+					spec.Values = []ast.Expr{&ast.Ident{Name: "iota"}}
+				}
+				constSpecs = append(constSpecs, spec)
+			}
+			declarations = append(declarations, &ast.GenDecl{
+				Tok:   token.CONST,
+				Specs: constSpecs,
+			})
+
+			// Generate a values variable: var _enumNameValues = []EnumName{CONST1, CONST2, ...}
+			valuesVarName := "_" + symbol.Lowercase(ctx.className) + "Values"
+			constExprs := []ast.Expr{}
+			for _, constName := range ctx.currentClass.EnumConstants {
+				constExprs = append(constExprs, &ast.Ident{Name: constName})
+			}
+			declarations = append(declarations, &ast.GenDecl{
+				Tok: token.VAR,
+				Specs: []ast.Spec{
+					&ast.ValueSpec{
+						Names: []*ast.Ident{{Name: valuesVarName}},
+						Values: []ast.Expr{
+							&ast.CompositeLit{
+								Type: &ast.ArrayType{Elt: &ast.Ident{Name: ctx.className}},
+								Elts: constExprs,
+							},
+						},
+					},
+				},
+			})
+
+			// Generate Values() function: func EnumNameValues() []EnumName { return _enumNameValues }
+			declarations = append(declarations, &ast.FuncDecl{
+				Name: &ast.Ident{Name: ctx.className + "Values"},
+				Type: &ast.FuncType{
+					Params: &ast.FieldList{},
+					Results: &ast.FieldList{
+						List: []*ast.Field{
+							{Type: &ast.ArrayType{Elt: &ast.Ident{Name: ctx.className}}},
+						},
+					},
+				},
+				Body: &ast.BlockStmt{
+					List: []ast.Stmt{
+						&ast.ReturnStmt{
+							Results: []ast.Expr{&ast.Ident{Name: valuesVarName}},
+						},
+					},
+				},
+			})
+		}
+
+		// Parse the enum body declarations (methods, constructors, etc.)
+		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
+
+		return declarations
 	case "type_parameters":
 		var declarations []ast.Decl
 
