@@ -55,127 +55,145 @@ func parseClassScope(root *sitter.Node, source []byte) *ClassScope {
 			OriginalName: className,
 			Name:         HandleExportStatus(public, className),
 		},
+		IsEnum: root.Type() == "enum_declaration",
 	}
 
-	// Parse the body of the class
+	// Parse the body of the class (or enum)
 
 	for _, node := range nodeutil.NamedChildrenOf(root.ChildByFieldName("body")) {
 
 		switch node.Type() {
-		case "field_declaration":
-			var public bool
-			// Rename the type based on the public/static rules
-			if node.NamedChild(0).Type() == "modifiers" {
-				for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
-					if modifier.Type() == "public" {
-						public = true
-					}
-				}
+		case "enum_constant":
+			// Parse enum constants
+			constName := node.ChildByFieldName("name").Content(source)
+			scope.EnumConstants = append(scope.EnumConstants, constName)
+		case "enum_body_declarations":
+			// Parse the methods and constructors inside the enum
+			for _, declNode := range nodeutil.NamedChildrenOf(node) {
+				parseClassMember(scope, declNode, source)
 			}
-
-			fieldNameNode := node.ChildByFieldName("declarator").ChildByFieldName("name")
-
-			nodeutil.AssertTypeIs(fieldNameNode, "identifier")
-
-			// TODO: Scoped type identifiers are in a format such as RemotePackage.ClassName
-			// To handle this, we remove the RemotePackage part, and depend on the later
-			// type resolution to figure things out
-
-			// The node that the field's type comes from
-			typeNode := node.ChildByFieldName("type")
-
-			// If the field is being assigned to a value
-			if typeNode.Type() == "scoped_type_identifier" {
-				typeNode = typeNode.NamedChild(int(typeNode.NamedChildCount()) - 1)
-			}
-
-			// The converted name and type of the field
-			fieldName := fieldNameNode.Content(source)
-			fieldType := nodeToStr(astutil.ParseType(typeNode, source))
-
-			scope.Fields = append(scope.Fields, &Definition{
-				Name:         HandleExportStatus(public, fieldName),
-				OriginalName: fieldName,
-				Type:         fieldType,
-				OriginalType: typeNode.Content(source),
-			})
-		case "method_declaration", "constructor_declaration":
-			var public bool
-			// Rename the type based on the public/static rules
-			if node.NamedChild(0).Type() == "modifiers" {
-				for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
-					if modifier.Type() == "public" {
-						public = true
-					}
-				}
-			}
-
-			nodeutil.AssertTypeIs(node.ChildByFieldName("name"), "identifier")
-
-			name := node.ChildByFieldName("name").Content(source)
-			declaration := &Definition{
-				Name:         HandleExportStatus(public, name),
-				OriginalName: name,
-				Parameters:   []*Definition{},
-			}
-
-			if node.Type() == "method_declaration" {
-				declaration.Type = nodeToStr(astutil.ParseType(node.ChildByFieldName("type"), source))
-				declaration.OriginalType = node.ChildByFieldName("type").Content(source)
-			} else {
-				// A constructor declaration returns the type being constructed
-
-				// Rename the constructor with "New" + name of type
-				declaration.Rename(HandleExportStatus(public, "New") + name)
-				declaration.Constructor = true
-
-				// There is no original type, and the constructor returns the name of
-				// the new type
-				declaration.Type = name
-			}
-
-			// Parse the parameters
-
-			for _, parameter := range nodeutil.NamedChildrenOf(node.ChildByFieldName("parameters")) {
-
-				var paramName string
-				var paramType *sitter.Node
-
-				// If this is a spread parameter, then it will be in the format:
-				// (type) (variable_declarator name: (name))
-				if parameter.Type() == "spread_parameter" {
-					paramName = parameter.NamedChild(1).ChildByFieldName("name").Content(source)
-					paramType = parameter.NamedChild(0)
-				} else {
-					paramName = parameter.ChildByFieldName("name").Content(source)
-					paramType = parameter.ChildByFieldName("type")
-				}
-
-				declaration.Parameters = append(declaration.Parameters, &Definition{
-					Name:         paramName,
-					OriginalName: paramName,
-					Type:         nodeToStr(astutil.ParseType(paramType, source)),
-					OriginalType: paramType.Content(source),
-				})
-			}
-
-			if node.ChildByFieldName("body") != nil {
-				methodScope := parseScope(node.ChildByFieldName("body"), source)
-				if !methodScope.IsEmpty() {
-					declaration.Children = append(declaration.Children, methodScope.Children...)
-				}
-			}
-
-			scope.Methods = append(scope.Methods, declaration)
-		case "class_declaration", "interface_declaration", "enum_declaration":
-			other := parseClassScope(node, source)
-			// Any subclasses will be renamed to part of their parent class
-			other.Class.Rename(scope.Class.Name + other.Class.Name)
-			scope.Subclasses = append(scope.Subclasses, other)
+		default:
+			parseClassMember(scope, node, source)
 		}
 	}
 
 	return scope
+}
+
+// parseClassMember parses a single class member (field, method, constructor, or nested class)
+func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
+	switch node.Type() {
+	case "field_declaration":
+		var public bool
+		// Rename the type based on the public/static rules
+		if node.NamedChild(0).Type() == "modifiers" {
+			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
+				if modifier.Type() == "public" {
+					public = true
+				}
+			}
+		}
+
+		fieldNameNode := node.ChildByFieldName("declarator").ChildByFieldName("name")
+
+		nodeutil.AssertTypeIs(fieldNameNode, "identifier")
+
+		// TODO: Scoped type identifiers are in a format such as RemotePackage.ClassName
+		// To handle this, we remove the RemotePackage part, and depend on the later
+		// type resolution to figure things out
+
+		// The node that the field's type comes from
+		typeNode := node.ChildByFieldName("type")
+
+		// If the field is being assigned to a value
+		if typeNode.Type() == "scoped_type_identifier" {
+			typeNode = typeNode.NamedChild(int(typeNode.NamedChildCount()) - 1)
+		}
+
+		// The converted name and type of the field
+		fieldName := fieldNameNode.Content(source)
+		fieldType := nodeToStr(astutil.ParseType(typeNode, source))
+
+		scope.Fields = append(scope.Fields, &Definition{
+			Name:         HandleExportStatus(public, fieldName),
+			OriginalName: fieldName,
+			Type:         fieldType,
+			OriginalType: typeNode.Content(source),
+		})
+	case "method_declaration", "constructor_declaration":
+		var public bool
+		// Rename the type based on the public/static rules
+		if node.NamedChild(0).Type() == "modifiers" {
+			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
+				if modifier.Type() == "public" {
+					public = true
+				}
+			}
+		}
+
+		nodeutil.AssertTypeIs(node.ChildByFieldName("name"), "identifier")
+
+		name := node.ChildByFieldName("name").Content(source)
+		declaration := &Definition{
+			Name:         HandleExportStatus(public, name),
+			OriginalName: name,
+			Parameters:   []*Definition{},
+		}
+
+		if node.Type() == "method_declaration" {
+			declaration.Type = nodeToStr(astutil.ParseType(node.ChildByFieldName("type"), source))
+			declaration.OriginalType = node.ChildByFieldName("type").Content(source)
+		} else {
+			// A constructor declaration returns the type being constructed
+
+			// Rename the constructor with "New" + name of type
+			declaration.Rename(HandleExportStatus(public, "New") + name)
+			declaration.Constructor = true
+
+			// There is no original type, and the constructor returns the name of
+			// the new type
+			declaration.Type = scope.Class.OriginalName
+		}
+
+		// Parse the parameters
+
+		for _, parameter := range nodeutil.NamedChildrenOf(node.ChildByFieldName("parameters")) {
+
+			var paramName string
+			var paramType *sitter.Node
+
+			// If this is a spread parameter, then it will be in the format:
+			// (type) (variable_declarator name: (name))
+			if parameter.Type() == "spread_parameter" {
+				paramName = parameter.NamedChild(1).ChildByFieldName("name").Content(source)
+				paramType = parameter.NamedChild(0)
+			} else {
+				paramName = parameter.ChildByFieldName("name").Content(source)
+				paramType = parameter.ChildByFieldName("type")
+			}
+
+			declaration.Parameters = append(declaration.Parameters, &Definition{
+				Name:         paramName,
+				OriginalName: paramName,
+				Type:         nodeToStr(astutil.ParseType(paramType, source)),
+				OriginalType: paramType.Content(source),
+			})
+		}
+
+		if node.ChildByFieldName("body") != nil {
+			methodScope := parseScope(node.ChildByFieldName("body"), source)
+			if !methodScope.IsEmpty() {
+				declaration.Children = append(declaration.Children, methodScope.Children...)
+			}
+		}
+
+		scope.Methods = append(scope.Methods, declaration)
+	case "class_declaration", "interface_declaration", "enum_declaration":
+		other := parseClassScope(node, source)
+		// Any subclasses will be renamed to part of their parent class
+		other.Class.Rename(scope.Class.Name + other.Class.Name)
+		scope.Subclasses = append(scope.Subclasses, other)
+	}
 }
 
 func parseScope(root *sitter.Node, source []byte) *Definition {

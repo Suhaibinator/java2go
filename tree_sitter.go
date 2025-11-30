@@ -85,7 +85,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			switch c.Type() {
 			case "package_declaration":
 				program.Name = &ast.Ident{Name: c.NamedChild(0).NamedChild(int(c.NamedChild(0).NamedChildCount()) - 1).Content(source)}
-			case "class_declaration", "interface_declaration":
+			case "class_declaration", "interface_declaration", "enum_declaration":
 				program.Decls = ParseDecls(c, source, ctx)
 			case "import_declaration":
 				program.Imports = append(program.Imports, ParseNode(c, source, ctx).(*ast.ImportSpec))
@@ -269,7 +269,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			})
 		}
 		return params
-	case "comment": // Ignore comments
+	case "comment", "line_comment", "block_comment": // Ignore comments
 		return nil
 	}
 	panic(fmt.Sprintf("Unknown node type: %v", node.Type()))

@@ -26,7 +26,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			"className": ctx.className,
 		}).Warn("Statement parse error")
 		return &ast.BadStmt{}
-	case "comment":
+	case "comment", "line_comment", "block_comment":
 		return &ast.BadStmt{}
 	case "local_variable_declaration":
 		variableType := astutil.ParseType(node.ChildByFieldName("type"), source)
@@ -148,7 +148,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "constructor_body", "block":
 		body := &ast.BlockStmt{}
 		for _, line := range nodeutil.NamedChildrenOf(node) {
-			if line.Type() == "comment" {
+			if line.Type() == "comment" || line.Type() == "line_comment" || line.Type() == "block_comment" {
 				continue
 			}
 			if stmt := TryParseStmt(line, source, ctx); stmt != nil {
