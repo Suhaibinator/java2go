@@ -325,30 +325,30 @@ public class TestSwitch {
 }
 
 func TestParseNode_ImportDeclaration(t *testing.T) {
-    src := `
+	src := `
 package com.example;
 import java.util.List;
 public class TestImport {}
 `
-    helper := setupParseHelper(t, src)
-    importNode := findNode(helper.File.Ast, "import_declaration")
-    if importNode == nil {
-        t.Fatal("Could not find import_declaration")
-    }
+	helper := setupParseHelper(t, src)
+	importNode := findNode(helper.File.Ast, "import_declaration")
+	if importNode == nil {
+		t.Fatal("Could not find import_declaration")
+	}
 
-    res := ParseNode(importNode, helper.File.Source, helper.Ctx)
-    importSpec, ok := res.(*ast.ImportSpec)
-    if !ok {
-        t.Fatalf("Expected *ast.ImportSpec, got %T", res)
-    }
+	res := ParseNode(importNode, helper.File.Source, helper.Ctx)
+	importSpec, ok := res.(*ast.ImportSpec)
+	if !ok {
+		t.Fatalf("Expected *ast.ImportSpec, got %T", res)
+	}
 
-    // ParseNode implementation: returns ImportSpec with Name set to the last identifier part?
-    // case "import_declaration": return &ast.ImportSpec{Name: ParseExpr(node.NamedChild(0), source, ctx).(*ast.Ident)}
-    // The named child 0 is the scoped_identifier (java.util.List).
-    // ParseExpr on scoped_identifier returns an *ast.SelectorExpr or *ast.Ident depending on implementation.
-    // Wait, let's check ParseExpr implementation or rely on what ParseNode returns.
+	// ParseNode implementation: returns ImportSpec with Name set to the last identifier part?
+	// case "import_declaration": return &ast.ImportSpec{Name: ParseExpr(node.NamedChild(0), source, ctx).(*ast.Ident)}
+	// The named child 0 is the scoped_identifier (java.util.List).
+	// ParseExpr on scoped_identifier returns an *ast.SelectorExpr or *ast.Ident depending on implementation.
+	// Wait, let's check ParseExpr implementation or rely on what ParseNode returns.
 
-    if importSpec.Name.Name != "java" {
-         t.Errorf("Expected import name 'java', got '%s'", importSpec.Name.Name)
-    }
+	if importSpec.Name.Name != "java" {
+		t.Errorf("Expected import name 'java', got '%s'", importSpec.Name.Name)
+	}
 }
