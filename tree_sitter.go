@@ -107,7 +107,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			}
 		}
 
-		fieldType := ParseExpr(node.ChildByFieldName("type"), source, ctx)
+		fieldType := astutil.ParseType(node.ChildByFieldName("type"), source)
 		fieldName := ParseExpr(node.ChildByFieldName("declarator").ChildByFieldName("name"), source, ctx).(*ast.Ident)
 		fieldName.Name = symbol.HandleExportStatus(public, fieldName.Name)
 
