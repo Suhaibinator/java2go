@@ -302,30 +302,23 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		// Determine effective type arguments:
 		// 1. If explicit type arguments provided, use them
-		// 2. If diamond operator, try to get from expectedType first
-		// 3. For inner class constructors, use current class type params
+		// 2. If diamond operator, try to infer from expectedType
+		// 3. For inner class constructors (non-diamond), use parent class type params
 		effectiveTypeArgs := typeArgs
 		if len(effectiveTypeArgs) == 0 {
-			// First, try to get type args from expectedType (for diamond operator)
+			// For diamond operator, try to infer from expectedType
 			if isDiamond && ctx.expectedType != "" {
 				effectiveTypeArgs = extractTypeArgsFromString(ctx.expectedType)
 			}
 
-			// If still no type args and we're in a generic class context,
-			// use the class type parameters (for inner class constructors like new Node())
-			if len(effectiveTypeArgs) == 0 && len(ctx.currentClass.TypeParameters) > 0 {
-				// Only use class type params for inner class constructors (not diamond)
-				// Diamond without expectedType should fall through
-				if !isDiamond && ctx.currentFile.FindClass(className) != nil {
-					effectiveTypeArgs = ctx.currentClass.TypeParameters
-				}
-				// For inner class constructors in generic methods, still use type params
-				if ctx.currentFile.FindClass(className) != nil {
-					for _, sub := range ctx.currentClass.Subclasses {
-						if sub.Class.OriginalName == className {
-							effectiveTypeArgs = ctx.currentClass.TypeParameters
-							break
-						}
+			// For inner class constructors (not diamond), use parent class type parameters
+			// This handles cases like `new Node(element)` inside a generic class
+			if len(effectiveTypeArgs) == 0 && !isDiamond && len(ctx.currentClass.TypeParameters) > 0 {
+				// Check if className is a nested class of the current class
+				for _, sub := range ctx.currentClass.Subclasses {
+					if sub.Class.OriginalName == className {
+						effectiveTypeArgs = ctx.currentClass.TypeParameters
+						break
 					}
 				}
 			}
