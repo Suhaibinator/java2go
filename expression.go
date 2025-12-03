@@ -15,7 +15,8 @@ import (
 
 // extractTypeArgsFromString extracts type arguments from a string like "List<Integer>"
 // or nested generics like "Map<String, List<Integer>>".
-// Returns ["Integer"] or ["String", "List<Integer>"] respectively, or nil if no type arguments found.
+// Returns ["Integer"] or ["String", "List<Integer>"] respectively, or nil if no type arguments found
+// or if the input has unbalanced angle brackets.
 func extractTypeArgsFromString(typeStr string) []string {
 	start := strings.Index(typeStr, "<")
 	end := strings.LastIndex(typeStr, ">")
@@ -36,6 +37,10 @@ func extractTypeArgsFromString(typeStr string) []string {
 			current.WriteRune(ch)
 		case '>':
 			depth--
+			if depth < 0 {
+				log.WithField("typeStr", typeStr).Warn("Unbalanced angle brackets in type string: too many '>'")
+				return nil
+			}
 			current.WriteRune(ch)
 		case ',':
 			if depth == 0 {
@@ -52,6 +57,12 @@ func extractTypeArgsFromString(typeStr string) []string {
 		default:
 			current.WriteRune(ch)
 		}
+	}
+
+	// Validate that all angle brackets were closed
+	if depth != 0 {
+		log.WithField("typeStr", typeStr).Warn("Unbalanced angle brackets in type string: unclosed '<'")
+		return nil
 	}
 
 	// Don't forget the last argument

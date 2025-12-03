@@ -60,7 +60,7 @@ func StrToToken(input string) token.Token {
 	if outToken, known := tokens[input]; known {
 		return outToken
 	}
-	panic(fmt.Errorf("Unknown token for [%v]", input))
+	panic(fmt.Errorf("unknown token for [%v]", input))
 }
 
 // ShortName returns the short-name representation of a class's name for use

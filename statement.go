@@ -15,7 +15,7 @@ func ParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	if stmt := TryParseStmt(node, source, ctx); stmt != nil {
 		return stmt
 	}
-	panic(fmt.Errorf("Unhandled stmt type: %v", node.Type()))
+	panic(fmt.Errorf("unhandled stmt type: %v", node.Type()))
 }
 
 func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
@@ -310,7 +310,7 @@ func ParseStmts(node *sitter.Node, source []byte, ctx Ctx) []ast.Stmt {
 	if stmts := TryParseStmts(node, source, ctx); stmts != nil {
 		return stmts
 	}
-	panic(fmt.Errorf("Unhandled stmts type: %v", node.Type()))
+	panic(fmt.Errorf("unhandled stmts type: %v", node.Type()))
 }
 
 func TryParseStmts(node *sitter.Node, source []byte, ctx Ctx) []ast.Stmt {
