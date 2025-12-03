@@ -158,6 +158,41 @@ public interface TestInterface {
 	}
 }
 
+func TestParseNode_MethodDeclaration_InterfaceGenericParam(t *testing.T) {
+	src := `
+package com.example;
+public interface Holder<T> {
+    void put(T value);
+}
+`
+	helper := setupParseHelper(t, src)
+	methodNode := findNode(helper.File.Ast, "method_declaration")
+	if methodNode == nil {
+		t.Fatal("Could not find method_declaration")
+	}
+
+	res := ParseNode(methodNode, helper.File.Source, helper.Ctx)
+	field, ok := res.(*ast.Field)
+	if !ok {
+		t.Fatalf("Expected *ast.Field, got %T", res)
+	}
+
+	funcType, ok := field.Type.(*ast.FuncType)
+	if !ok {
+		t.Fatalf("Expected FuncType, got %T", field.Type)
+	}
+	if len(funcType.Params.List) != 1 {
+		t.Fatalf("Expected 1 parameter, got %d", len(funcType.Params.List))
+	}
+	paramType, ok := funcType.Params.List[0].Type.(*ast.Ident)
+	if !ok {
+		t.Fatalf("Expected parameter type to be *ast.Ident, got %T", funcType.Params.List[0].Type)
+	}
+	if paramType.Name != "T" {
+		t.Errorf("Expected parameter type 'T', got '%s'", paramType.Name)
+	}
+}
+
 func TestParseNode_FieldDeclaration(t *testing.T) {
 	src := `
 package com.example;
@@ -221,6 +256,61 @@ public class TestField {
 	if len(valSpec.Names) != 1 || valSpec.Names[0].Name != "val" {
 		// Private field -> lowercase
 		t.Errorf("Expected field name 'val', got %v", valSpec.Names)
+	}
+}
+
+func TestParseNode_FieldDeclaration_GenericTypeParameter(t *testing.T) {
+	src := `
+package com.example;
+public class Box<T> {
+    public T value;
+    private T cached = null;
+}
+`
+	helper := setupParseHelper(t, src)
+
+	var fieldNodes []*sitter.Node
+	var collect func(*sitter.Node)
+	collect = func(n *sitter.Node) {
+		if n.Type() == "field_declaration" {
+			fieldNodes = append(fieldNodes, n)
+		}
+		for i := 0; i < int(n.ChildCount()); i++ {
+			collect(n.Child(i))
+		}
+	}
+	collect(helper.File.Ast)
+
+	if len(fieldNodes) < 2 {
+		t.Fatalf("Expected at least 2 field declarations, got %d", len(fieldNodes))
+	}
+
+	// Uninitialized generic field should keep the bare type parameter (not *T)
+	fieldRes := ParseNode(fieldNodes[0], helper.File.Source, helper.Ctx)
+	field, ok := fieldRes.(*ast.Field)
+	if !ok {
+		t.Fatalf("Expected *ast.Field, got %T", fieldRes)
+	}
+	fieldType, ok := field.Type.(*ast.Ident)
+	if !ok {
+		t.Fatalf("Expected field type to be *ast.Ident, got %T", field.Type)
+	}
+	if fieldType.Name != "T" {
+		t.Errorf("Expected field type 'T', got '%s'", fieldType.Name)
+	}
+
+	// Initialized generic field should also preserve the bare type parameter.
+	valueRes := ParseNode(fieldNodes[1], helper.File.Source, helper.Ctx)
+	valSpec, ok := valueRes.(*ast.ValueSpec)
+	if !ok {
+		t.Fatalf("Expected *ast.ValueSpec, got %T", valueRes)
+	}
+	valType, ok := valSpec.Type.(*ast.Ident)
+	if !ok {
+		t.Fatalf("Expected value spec type to be *ast.Ident, got %T", valSpec.Type)
+	}
+	if valType.Name != "T" {
+		t.Errorf("Expected value spec type 'T', got '%s'", valType.Name)
 	}
 }
 
@@ -467,4 +557,289 @@ public class Box<T> {
 			t.Errorf("Explicit type arguments should be preserved, got:\n%s", output)
 		}
 	})
+
+	// Test diamond operator with multiple type arguments inferred from expected type
+	t.Run("DiamondOperatorMultipleTypeArgs", func(t *testing.T) {
+		src := `
+package com.example;
+public class Pair<K, V> {
+    K key;
+    V value;
+
+    public Pair(K k, V v) {
+        this.key = k;
+        this.value = v;
+    }
+
+    public static Pair<String, Integer> create(String k, Integer v) {
+        Pair<String, Integer> pair = new Pair<>(k, v);
+        return pair;
+    }
+}
+`
+		helper := setupParseHelper(t, src)
+		node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+		file, ok := node.(*ast.File)
+		if !ok {
+			t.Fatalf("Expected *ast.File, got %T", node)
+		}
+
+		var buf bytes.Buffer
+		if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+			t.Fatalf("Failed to print AST: %v", err)
+		}
+		output := buf.String()
+
+		if !strings.Contains(output, "NewPair[String, Integer]") {
+			t.Errorf("Diamond operator should infer multiple type arguments (NewPair[String, Integer]), got:\n%s", output)
+		}
+	})
+}
+
+// TestGenericClass_ConstructorAndReceiver tests that generic class constructors
+// return *ClassName[T] and methods have receivers with type parameters.
+func TestGenericClass_ConstructorAndReceiver(t *testing.T) {
+	// Test with two type parameters to ensure multi-param generics work
+	src := `
+package com.example;
+public class Pair<K, V> {
+    K key;
+    V value;
+
+    public Pair(K k, V v) {
+        this.key = k;
+        this.value = v;
+    }
+
+    public K getKey() {
+        return this.key;
+    }
+
+    public V getValue() {
+        return this.value;
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+	file, ok := node.(*ast.File)
+	if !ok {
+		t.Fatalf("Expected *ast.File, got %T", node)
+	}
+
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+		t.Fatalf("Failed to print AST: %v", err)
+	}
+	output := buf.String()
+
+	// Constructor should return *Pair[K, V]
+	if !strings.Contains(output, "*Pair[K, V]") {
+		t.Errorf("Constructor should return *Pair[K, V], got:\n%s", output)
+	}
+
+	// Methods should have receiver (pr *Pair[K, V]) - ShortName("Pair") = "pr"
+	if !strings.Contains(output, "(pr *Pair[K, V])") {
+		t.Errorf("Methods should have receiver (pr *Pair[K, V]), got:\n%s", output)
+	}
+
+	// Struct should be defined with type parameters: type Pair[K any, V any] struct
+	if !strings.Contains(output, "Pair[K any, V any]") {
+		t.Errorf("Struct should have type parameters [K any, V any], got:\n%s", output)
+	}
+}
+
+// TestGenericClass_SingleTypeParam tests the simpler single type parameter case
+func TestGenericClass_SingleTypeParam(t *testing.T) {
+	src := `
+package com.example;
+public class Box<T> {
+    T value;
+
+    public Box(T v) {
+        this.value = v;
+    }
+
+    public T get() {
+        return this.value;
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+	file, ok := node.(*ast.File)
+	if !ok {
+		t.Fatalf("Expected *ast.File, got %T", node)
+	}
+
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+		t.Fatalf("Failed to print AST: %v", err)
+	}
+	output := buf.String()
+
+	// Constructor should return *Box[T]
+	if !strings.Contains(output, "*Box[T]") {
+		t.Errorf("Constructor should return *Box[T], got:\n%s", output)
+	}
+
+	// Methods should have receiver (bx *Box[T]) - ShortName("Box") = "bx"
+	if !strings.Contains(output, "(bx *Box[T])") {
+		t.Errorf("Methods should have receiver (bx *Box[T]), got:\n%s", output)
+	}
+
+	// Struct definition: type Box[T any] struct
+	if !strings.Contains(output, "Box[T any]") {
+		t.Errorf("Struct should have type parameter [T any], got:\n%s", output)
+	}
+}
+
+func TestStaticGenericMethod(t *testing.T) {
+	src := `
+package com.example;
+public class Utils {
+    public static <R> R identity(R value) {
+        return value;
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+	file, ok := node.(*ast.File)
+	if !ok {
+		t.Fatalf("Expected *ast.File, got %T", node)
+	}
+
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+		t.Fatalf("Failed to print AST: %v", err)
+	}
+	output := buf.String()
+
+	if !strings.Contains(output, "func Identity[R any]") {
+		t.Errorf("Static generic method should include type parameters, got:\n%s", output)
+	}
+	if !strings.Contains(output, "value R") {
+		t.Errorf("Parameter should remain type R, got:\n%s", output)
+	}
+	if !strings.Contains(output, ") R {") {
+		t.Errorf("Return type should be R, got:\n%s", output)
+	}
+}
+
+// TestInnerClass_ParentTypeParameterReuse tests that inner class constructors
+// inherit the parent class's type parameters (the third fallback path in expression.go)
+func TestInnerClass_ParentTypeParameterReuse(t *testing.T) {
+	src := `
+package com.example;
+public class LinkedList<E> {
+    E value;
+    Node head;
+
+    public LinkedList() {}
+
+    class Node {
+        E element;
+        Node next;
+
+        Node(E e) {
+            this.element = e;
+        }
+    }
+
+    public void addFirst(E e) {
+        Node newNode = new Node(e);
+        this.head = newNode;
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+	file, ok := node.(*ast.File)
+	if !ok {
+		t.Fatalf("Expected *ast.File, got %T", node)
+	}
+
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+		t.Fatalf("Failed to print AST: %v", err)
+	}
+	output := buf.String()
+
+	// The inner class constructor call should inherit parent type params
+	// new Node(e) inside a generic class should become ConstructNode[E](e)
+	if !strings.Contains(output, "ConstructNode[E]") {
+		t.Errorf("Inner class constructor should use parent type param [E], got:\n%s", output)
+	}
+}
+
+// TestVariadicParameter_WithTypeParameter tests that variadic parameters with
+// type parameters produce *ast.Ellipsis with the correct element type (not *ast.StarExpr)
+func TestVariadicParameter_WithTypeParameter(t *testing.T) {
+	src := `
+package com.example;
+public class Utils<T> {
+    public void process(T... values) {
+    }
+
+    public static <E> void collect(E... items) {
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+
+	// Find the process method parameters
+	methodDefs := helper.Ctx.currentClass.FindMethod().ByName("Process")
+	if len(methodDefs) == 0 {
+		t.Fatal("Could not find Process method")
+	}
+	helper.Ctx.localScope = methodDefs[0]
+
+	// Find spread_parameter node
+	var spreadNode *sitter.Node
+	var findSpread func(*sitter.Node)
+	findSpread = func(n *sitter.Node) {
+		if n.Type() == "spread_parameter" {
+			spreadNode = n
+			return
+		}
+		for i := 0; i < int(n.ChildCount()); i++ {
+			findSpread(n.Child(i))
+			if spreadNode != nil {
+				return
+			}
+		}
+	}
+	findSpread(helper.File.Ast)
+
+	if spreadNode == nil {
+		t.Fatal("Could not find spread_parameter node")
+	}
+
+	res := ParseNode(spreadNode, helper.File.Source, helper.Ctx)
+	field, ok := res.(*ast.Field)
+	if !ok {
+		t.Fatalf("Expected *ast.Field, got %T", res)
+	}
+
+	// Type should be *ast.Ellipsis, NOT *ast.StarExpr
+	ellipsis, ok := field.Type.(*ast.Ellipsis)
+	if !ok {
+		t.Fatalf("Expected variadic parameter to have *ast.Ellipsis type, got %T", field.Type)
+	}
+
+	// The element type should be T (an identifier), not *T (a StarExpr)
+	// Since T is a type parameter, it should not be wrapped in a pointer
+	elt, ok := ellipsis.Elt.(*ast.Ident)
+	if !ok {
+		// If it's a StarExpr with T inside, that's the bug we're testing for
+		if star, isStar := ellipsis.Elt.(*ast.StarExpr); isStar {
+			if ident, isIdent := star.X.(*ast.Ident); isIdent && ident.Name == "T" {
+				t.Errorf("Type parameter T in variadic should not be wrapped in *ast.StarExpr, got *T")
+			}
+		}
+		t.Errorf("Expected ellipsis element to be *ast.Ident for type parameter T, got %T", ellipsis.Elt)
+	} else if elt.Name != "T" {
+		t.Errorf("Expected ellipsis element name 'T', got '%s'", elt.Name)
+	}
 }

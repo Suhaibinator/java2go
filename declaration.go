@@ -309,9 +309,14 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 		// Build the return type: *ClassName or *ClassName[T, U, ...]
 		returnType := &ast.StarExpr{X: structType}
 
+		constructorTypeParams := append([]string{}, ctx.currentClass.TypeParameters...)
+		if ctx.localScope != nil && len(ctx.localScope.TypeParameters) > 0 {
+			constructorTypeParams = append(constructorTypeParams, ctx.localScope.TypeParameters...)
+		}
+
 		return GenFuncDeclWithTypeParams(
 			ctx.localScope.Name,
-			ctx.currentClass.TypeParameters,
+			constructorTypeParams,
 			ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList),
 			&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
 			body,
@@ -446,7 +451,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 			}, body.List...)
 		}
 
-		return &ast.FuncDecl{
+		funcDecl := &ast.FuncDecl{
 			Doc:  &ast.CommentGroup{List: comments},
 			Name: &ast.Ident{Name: ctx.localScope.Name},
 			Recv: receiver,
@@ -460,6 +465,24 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 			},
 			Body: body,
 		}
+		if static {
+			if len(ctx.localScope.TypeParameters) > 0 {
+				typeParamFields := make([]*ast.Field, len(ctx.localScope.TypeParameters))
+				for i, tp := range ctx.localScope.TypeParameters {
+					typeParamFields[i] = &ast.Field{
+						Names: []*ast.Ident{{Name: tp}},
+						Type:  &ast.Ident{Name: "any"},
+					}
+				}
+				funcDecl.Type.TypeParams = &ast.FieldList{List: typeParamFields}
+			}
+		} else if len(ctx.localScope.TypeParameters) > 0 {
+			log.WithFields(log.Fields{
+				"class":  ctx.className,
+				"method": ctx.localScope.Name,
+			}).Warn("Instance methods with type parameters are not supported in Go; type parameters ignored")
+		}
+		return funcDecl
 	case "static_initializer":
 
 		ctx.localScope = &symbol.Definition{}

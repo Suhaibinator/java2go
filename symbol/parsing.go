@@ -6,6 +6,20 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+func extractTypeParameterNames(node *sitter.Node, source []byte) []string {
+	if node == nil {
+		return nil
+	}
+
+	var params []string
+	for _, param := range nodeutil.NamedChildrenOf(node) {
+		if param.Type() == "type_parameter" {
+			params = append(params, param.NamedChild(0).Content(source))
+		}
+	}
+	return params
+}
+
 // ParseSymbols generates a symbol table for a single class file.
 func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 	var filePackage string
@@ -63,15 +77,7 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	}
 
 	// Extract this class's own type parameters first (e.g., class Foo<T, U>)
-	var ownTypeParams []string
-	if typeParamsNode := root.ChildByFieldName("type_parameters"); typeParamsNode != nil {
-		for _, param := range nodeutil.NamedChildrenOf(typeParamsNode) {
-			if param.Type() == "type_parameter" {
-				// The first named child is the type identifier (e.g., "T")
-				ownTypeParams = append(ownTypeParams, param.NamedChild(0).Content(source))
-			}
-		}
-	}
+	ownTypeParams := extractTypeParameterNames(root.ChildByFieldName("type_parameters"), source)
 
 	// Build the type parameters list:
 	// 1. Start with parent type parameters (for nested classes)
@@ -167,14 +173,19 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		nodeutil.AssertTypeIs(node.ChildByFieldName("name"), "identifier")
 
 		name := node.ChildByFieldName("name").Content(source)
+		methodTypeParams := extractTypeParameterNames(node.ChildByFieldName("type_parameters"), source)
+		combinedTypeParams := append([]string{}, scope.TypeParameters...)
+		combinedTypeParams = append(combinedTypeParams, methodTypeParams...)
+
 		declaration := &Definition{
-			Name:         HandleExportStatus(public, name),
-			OriginalName: name,
-			Parameters:   []*Definition{},
+			Name:           HandleExportStatus(public, name),
+			OriginalName:   name,
+			Parameters:     []*Definition{},
+			TypeParameters: methodTypeParams,
 		}
 
 		if node.Type() == "method_declaration" {
-			declaration.Type = nodeToStr(astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, scope.TypeParameters))
+			declaration.Type = nodeToStr(astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, combinedTypeParams))
 			declaration.OriginalType = node.ChildByFieldName("type").Content(source)
 		} else {
 			// A constructor declaration returns the type being constructed
@@ -208,7 +219,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			declaration.Parameters = append(declaration.Parameters, &Definition{
 				Name:         paramName,
 				OriginalName: paramName,
-				Type:         nodeToStr(astutil.ParseTypeWithTypeParams(paramType, source, scope.TypeParameters)),
+				Type:         nodeToStr(astutil.ParseTypeWithTypeParams(paramType, source, combinedTypeParams)),
 				OriginalType: paramType.Content(source),
 			})
 		}

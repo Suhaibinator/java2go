@@ -150,12 +150,6 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			}
 		}
 
-		parameters := &ast.FieldList{}
-
-		for _, param := range nodeutil.NamedChildrenOf(node.ChildByFieldName("parameters")) {
-			parameters.List = append(parameters.List, ParseNode(param, source, ctx).(*ast.Field))
-		}
-
 		methodName := node.ChildByFieldName("name").Content(source)
 		methodParameters := node.ChildByFieldName("parameters")
 
@@ -187,6 +181,12 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 
 		def := ctx.currentClass.FindMethod().By(comparison)[0]
+		ctx.localScope = def
+
+		parameters := &ast.FieldList{}
+		for _, param := range nodeutil.NamedChildrenOf(methodParameters) {
+			parameters.List = append(parameters.List, ParseNode(param, source, ctx).(*ast.Field))
+		}
 
 		return &ast.Field{
 			Doc:   &ast.CommentGroup{List: comments},
@@ -249,9 +249,13 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 				Type:  &ast.Ident{Name: paramDef.Type},
 			}
 		}
+		var typeParams []string
+		if ctx.currentClass != nil {
+			typeParams = ctx.currentClass.TypeParameters
+		}
 		return &ast.Field{
 			Names: []*ast.Ident{ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)},
-			Type:  astutil.ParseType(node.ChildByFieldName("type"), source),
+			Type:  astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, typeParams),
 		}
 	case "spread_parameter":
 		// The spread paramater takes a list and separates it into multiple elements
@@ -260,10 +264,15 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		spreadType := node.NamedChild(0)
 		spreadDeclarator := node.NamedChild(1)
 
+		var typeParams []string
+		if ctx.currentClass != nil {
+			typeParams = ctx.currentClass.TypeParameters
+		}
+
 		return &ast.Field{
 			Names: []*ast.Ident{ParseExpr(spreadDeclarator.ChildByFieldName("name"), source, ctx).(*ast.Ident)},
 			Type: &ast.Ellipsis{
-				Elt: astutil.ParseType(spreadType, source),
+				Elt: astutil.ParseTypeWithTypeParams(spreadType, source, typeParams),
 			},
 		}
 	case "inferred_parameters":

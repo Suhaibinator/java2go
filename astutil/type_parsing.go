@@ -97,7 +97,38 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		// No type arguments, just return the base type as a pointer
 		return &ast.StarExpr{X: &ast.Ident{Name: baseName}}
 	case "array_type":
-		return &ast.ArrayType{Elt: ParseTypeWithTypeParams(node.NamedChild(0), source, typeParams)}
+		elementNode := node.ChildByFieldName("element")
+		if elementNode == nil {
+			elementNode = node.NamedChild(0)
+		}
+		elemType := ParseTypeWithTypeParams(elementNode, source, typeParams)
+
+		// Tree-sitter represents multiple array dimensions as a single dimensions node
+		// containing raw '[' ']' tokens (and possibly annotations). Count the brackets
+		// to determine how many times to wrap the element type.
+		dimensionsNode := node.ChildByFieldName("dimensions")
+		dimensionCount := 1
+		if dimensionsNode != nil {
+			count := 0
+			for i := 0; i < int(dimensionsNode.ChildCount()); i++ {
+				child := dimensionsNode.Child(i)
+				switch child.Type() {
+				case "[":
+					count++
+				case "dimension":
+					count++
+				}
+			}
+			if count > 0 {
+				dimensionCount = count
+			}
+		}
+
+		var arrayType ast.Expr = elemType
+		for i := 0; i < dimensionCount; i++ {
+			arrayType = &ast.ArrayType{Elt: arrayType}
+		}
+		return arrayType
 	case "type_identifier": // Any reference type
 		typeName := node.Content(source)
 
