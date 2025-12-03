@@ -64,7 +64,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 				fieldDef := ctx.currentClass.FindField().ByOriginalName(fieldName)[0]
 
-				field.Names, field.Type = []*ast.Ident{&ast.Ident{Name: fieldDef.Name}}, &ast.Ident{Name: fieldDef.Type}
+				field.Names, field.Type = []*ast.Ident{{Name: fieldDef.Name}}, &ast.Ident{Name: fieldDef.Type}
 
 				if staticField {
 					globalVariables.Specs = append(globalVariables.Specs, &ast.ValueSpec{Names: field.Names, Type: field.Type})
@@ -372,8 +372,8 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 			}
 			receiver = &ast.FieldList{
 				List: []*ast.Field{
-					&ast.Field{
-						Names: []*ast.Ident{&ast.Ident{Name: ShortName(ctx.className)}},
+					{
+						Names: []*ast.Ident{{Name: ShortName(ctx.className)}},
 						Type:  &ast.StarExpr{X: receiverType},
 					},
 				},

@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"go/ast"
+	"go/printer"
+	"go/token"
+	"strings"
 	"testing"
 
 	"github.com/NickyBoy89/java2go/parsing"
@@ -351,4 +355,116 @@ public class TestImport {}
 	if importSpec.Name.Name != "java" {
 		t.Errorf("Expected import name 'java', got '%s'", importSpec.Name.Name)
 	}
+}
+
+// TestDiamondOperatorDetection tests that diamond operator (<>) is correctly
+// distinguished from raw type usage (no type parameters)
+func TestDiamondOperatorDetection(t *testing.T) {
+	// Test diamond operator: new Box<>() - should infer type from declaration
+	t.Run("DiamondOperator", func(t *testing.T) {
+		src := `
+package com.example;
+public class Box<T> {
+    T value;
+    public Box() {}
+    public static void test() {
+        Box<String> box = new Box<>();
+    }
+}
+`
+		helper := setupParseHelper(t, src)
+		node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+		file, ok := node.(*ast.File)
+		if !ok {
+			t.Fatalf("Expected *ast.File, got %T", node)
+		}
+
+		// Find the generated code and verify it includes type parameters
+		var buf bytes.Buffer
+		if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+			t.Fatalf("Failed to print AST: %v", err)
+		}
+		output := buf.String()
+
+		// Diamond operator should result in type inference - the call should include [String]
+		if !strings.Contains(output, "[String]") && !strings.Contains(output, "[string]") {
+			t.Errorf("Diamond operator should infer type arguments, got:\n%s", output)
+		}
+	})
+
+	// Test raw type: new Box() - should NOT infer type (deprecated but valid Java)
+	t.Run("RawType", func(t *testing.T) {
+		src := `
+package com.example;
+public class Box<T> {
+    T value;
+    public Box() {}
+    public static void test() {
+        Box raw = new Box();
+    }
+}
+`
+		helper := setupParseHelper(t, src)
+		node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+		file, ok := node.(*ast.File)
+		if !ok {
+			t.Fatalf("Expected *ast.File, got %T", node)
+		}
+
+		// Find the object_creation_expression node and check isDiamond behavior
+		objectCreationNode := findNode(helper.File.Ast, "object_creation_expression")
+		if objectCreationNode == nil {
+			t.Fatal("Could not find object_creation_expression")
+		}
+
+		// Get the type node - for raw type it should be type_identifier, not generic_type
+		typeNode := objectCreationNode.ChildByFieldName("type")
+		if typeNode == nil {
+			t.Fatal("Could not find type node in object_creation_expression")
+		}
+
+		// Raw type should NOT be parsed as generic_type
+		if typeNode.Type() == "generic_type" {
+			t.Error("Raw type 'new Box()' should not be parsed as generic_type")
+		}
+
+		// Verify the generated code - raw type should result in ConstructBox() without type args
+		var buf bytes.Buffer
+		if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+			t.Fatalf("Failed to print AST: %v", err)
+		}
+		output := buf.String()
+		t.Logf("Generated output:\n%s", output)
+	})
+
+	// Test explicit type: new Box<String>() - should use explicit type args
+	t.Run("ExplicitType", func(t *testing.T) {
+		src := `
+package com.example;
+public class Box<T> {
+    T value;
+    public Box() {}
+    public static void test() {
+        Box<Integer> box = new Box<Integer>();
+    }
+}
+`
+		helper := setupParseHelper(t, src)
+		node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+		file, ok := node.(*ast.File)
+		if !ok {
+			t.Fatalf("Expected *ast.File, got %T", node)
+		}
+
+		var buf bytes.Buffer
+		if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+			t.Fatalf("Failed to print AST: %v", err)
+		}
+		output := buf.String()
+
+		// Explicit type args should be preserved
+		if !strings.Contains(output, "[Integer]") && !strings.Contains(output, "[int]") {
+			t.Errorf("Explicit type arguments should be preserved, got:\n%s", output)
+		}
+	})
 }
