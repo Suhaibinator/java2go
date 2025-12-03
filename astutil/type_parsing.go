@@ -75,19 +75,23 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		}
 
 		// If we have type arguments, create an IndexExpr or IndexListExpr
+		// The pointer wraps the entire indexed expression: *List[T], not (*List)[T]
 		if len(typeArgs) > 0 {
-			baseExpr := &ast.StarExpr{X: &ast.Ident{Name: baseName}}
+			baseIdent := &ast.Ident{Name: baseName}
+			var indexedExpr ast.Expr
 			if len(typeArgs) == 1 {
-				return &ast.IndexExpr{
-					X:     baseExpr,
+				indexedExpr = &ast.IndexExpr{
+					X:     baseIdent,
 					Index: typeArgs[0],
 				}
+			} else {
+				// Multiple type arguments use IndexListExpr
+				indexedExpr = &ast.IndexListExpr{
+					X:       baseIdent,
+					Indices: typeArgs,
+				}
 			}
-			// Multiple type arguments use IndexListExpr
-			return &ast.IndexListExpr{
-				X:       baseExpr,
-				Indices: typeArgs,
-			}
+			return &ast.StarExpr{X: indexedExpr}
 		}
 
 		// No type arguments, just return the base type as a pointer
