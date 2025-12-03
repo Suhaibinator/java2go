@@ -269,8 +269,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if objectType.Type() == "generic_type" {
 			className = objectType.NamedChild(0).Content(source)
 			typeArgs = astutil.ExtractTypeArguments(objectType, source)
-			// Diamond operator: generic_type with no type arguments
-			isDiamond = len(typeArgs) == 0
+			// Diamond operator: generic_type with no type arguments and explicit "<>" in source
+			if len(typeArgs) == 0 {
+				content := objectType.Content(source)
+				// Look for "<>" after the class name (allowing for whitespace)
+				afterClass := strings.TrimSpace(content[len(className):])
+				isDiamond = strings.HasPrefix(afterClass, "<>")
+			}
 		} else {
 			className = objectType.Content(source)
 		}
@@ -342,15 +347,22 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "array_creation_expression":
 		dimensions := []ast.Expr{}
 		arrayType := astutil.ParseType(node.ChildByFieldName("type"), source)
+		var initializer ast.Expr
 
 		for _, child := range nodeutil.NamedChildrenOf(node) {
 			if child.Type() == "dimensions_expr" {
 				dimensions = append(dimensions, ParseExpr(child, source, ctx))
+			} else if child.Type() == "array_initializer" {
+				initCtx := ctx.Clone()
+				initCtx.lastType = arrayType
+				initializer = ParseExpr(child, source, initCtx)
 			}
 		}
 
-		// TODO: Fix this to handle arrays that are declared with types,
-		// i.e `new int[] {1, 2, 3};`
+		if initializer != nil {
+			return initializer
+		}
+
 		if len(dimensions) == 0 {
 			panic("Array had zero dimensions")
 		}
