@@ -41,7 +41,7 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 			return &ast.Ident{Name: node.Content(source)}
 		}
 
-		panic(fmt.Errorf("Unknown integral type: %v", node.Child(0).Type()))
+		panic(fmt.Errorf("unknown integral type: %v", node.Child(0).Type()))
 	case "floating_point_type": // Can be either `float` or `double`
 		switch node.Child(0).Type() {
 		case "float":
@@ -50,7 +50,7 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 			return &ast.Ident{Name: "float64"}
 		}
 
-		panic(fmt.Errorf("Unknown float type: %v", node.Child(0).Type()))
+		panic(fmt.Errorf("unknown float type: %v", node.Child(0).Type()))
 	case "void_type":
 		return &ast.Ident{}
 	case "boolean_type":

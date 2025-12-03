@@ -34,18 +34,6 @@ func findNode(node *sitter.Node, typeName string) *sitter.Node {
 	return nil
 }
 
-// findAllNodes recursively finds all nodes of a given type
-func findAllNodes(node *sitter.Node, typeName string) []*sitter.Node {
-	var results []*sitter.Node
-	if node.Type() == typeName {
-		results = append(results, node)
-	}
-	for i := 0; i < int(node.ChildCount()); i++ {
-		results = append(results, findAllNodes(node.Child(i), typeName)...)
-	}
-	return results
-}
-
 func TestParseTypeWithTypeParams_TypeIdentifier(t *testing.T) {
 	tests := []struct {
 		name       string

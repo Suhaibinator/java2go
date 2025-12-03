@@ -727,6 +727,108 @@ public class Utils {
 	}
 }
 
+func TestInstanceGenericMethodHelperRequired(t *testing.T) {
+	src := `
+package com.example;
+public class Box<T> {
+    public <R> R identity(R value) {
+        return value;
+    }
+
+    public static <X> X callIdentity(Box<X> box, X value) {
+        return box.identity(value);
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+	file, ok := node.(*ast.File)
+	if !ok {
+		t.Fatalf("Expected *ast.File, got %T", node)
+	}
+
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+		t.Fatalf("Failed to print AST: %v", err)
+	}
+	output := buf.String()
+
+	if !strings.Contains(output, "type BoxIdentityHelper") {
+		t.Errorf("Expected helper type for instance generic method, got:\n%s", output)
+	}
+	if !strings.Contains(output, "func NewBoxIdentityHelper") {
+		t.Errorf("Expected helper constructor for instance generic method, got:\n%s", output)
+	}
+	if !strings.Contains(output, "NewBoxIdentityHelper") || !strings.Contains(output, ".Identity(") {
+		t.Errorf("Expected call sites to use helper, got:\n%s", output)
+	}
+}
+
+func TestParseExpr_InstanceGenericMethodInvocationUsesHelper(t *testing.T) {
+	src := `
+package com.example;
+public class Box<T> {
+    public <R> R identity(R value) {
+        return value;
+    }
+
+    public static <X> X callIdentity(Box<X> box, X value) {
+        return box.identity(value);
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+
+	invocationNode := findNode(helper.File.Ast, "method_invocation")
+	if invocationNode == nil {
+		t.Fatal("Could not find method_invocation node")
+	}
+
+	methodDefs := helper.Ctx.currentClass.FindMethod().ByName("CallIdentity")
+	if len(methodDefs) == 0 {
+		t.Fatal("Could not find CallIdentity definition")
+	}
+
+	ctx := helper.Ctx
+	ctx.localScope = methodDefs[0]
+
+	expr := ParseExpr(invocationNode, helper.File.Source, ctx)
+	call, ok := expr.(*ast.CallExpr)
+	if !ok {
+		t.Fatalf("Expected *ast.CallExpr, got %T", expr)
+	}
+
+	sel, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok {
+		t.Fatalf("Expected call fun to be SelectorExpr, got %T", call.Fun)
+	}
+
+	helperCall, ok := sel.X.(*ast.CallExpr)
+	if !ok {
+		t.Fatalf("Expected selector receiver to be CallExpr (helper constructor), got %T", sel.X)
+	}
+
+	var constructorName string
+	switch fun := helperCall.Fun.(type) {
+	case *ast.Ident:
+		constructorName = fun.Name
+	case *ast.IndexExpr:
+		if ident, ok := fun.X.(*ast.Ident); ok {
+			constructorName = ident.Name
+		}
+	case *ast.IndexListExpr:
+		if ident, ok := fun.X.(*ast.Ident); ok {
+			constructorName = ident.Name
+		}
+	default:
+		t.Fatalf("Expected helper constructor to be Ident or indexed generic call, got %T", helperCall.Fun)
+	}
+
+	if constructorName != "NewBoxIdentityHelper" {
+		t.Errorf("Expected helper constructor 'NewBoxIdentityHelper', got '%s'", constructorName)
+	}
+}
+
 // TestInnerClass_ParentTypeParameterReuse tests that inner class constructors
 // inherit the parent class's type parameters (the third fallback path in expression.go)
 func TestInnerClass_ParentTypeParameterReuse(t *testing.T) {

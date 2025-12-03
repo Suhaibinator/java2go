@@ -161,11 +161,15 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		})
 	case "method_declaration", "constructor_declaration":
 		var public bool
+		var isStatic bool
 		// Rename the type based on the public/static rules
 		if node.NamedChild(0).Type() == "modifiers" {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
 				if modifier.Type() == "public" {
 					public = true
+				}
+				if modifier.Type() == "static" {
+					isStatic = true
 				}
 			}
 		}
@@ -182,6 +186,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			OriginalName:   name,
 			Parameters:     []*Definition{},
 			TypeParameters: methodTypeParams,
+			IsStatic:       isStatic,
 		}
 
 		if node.Type() == "method_declaration" {
@@ -229,6 +234,11 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			if !methodScope.IsEmpty() {
 				declaration.Children = append(declaration.Children, methodScope.Children...)
 			}
+		}
+
+		if len(methodTypeParams) > 0 && !isStatic {
+			declaration.RequiresHelper = true
+			declaration.HelperName = scope.Class.Name + declaration.Name + "Helper"
 		}
 
 		scope.Methods = append(scope.Methods, declaration)

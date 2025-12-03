@@ -206,6 +206,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if node.ChildByFieldName("object") != nil {
 			objectNode := node.ChildByFieldName("object")
 			methodName := node.ChildByFieldName("name").Content(source)
+			methodIdent := ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)
 
 			// Check if this is an enum values() call
 			// Transform EnumName.values() to EnumNameValues()
@@ -232,12 +233,18 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 
+			objectExpr := ParseExpr(objectNode, source, ctx)
+			args := ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr)
+			if rewritten := maybeRewriteInstanceGenericMethodInvocation(objectNode, objectExpr, methodName, args, node, ctx, source); rewritten != nil {
+				return rewritten
+			}
+
 			return &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
-					X:   ParseExpr(objectNode, source, ctx),
-					Sel: ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident),
+					X:   objectExpr,
+					Sel: methodIdent,
 				},
-				Args: ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr),
+				Args: args,
 			}
 		}
 		return &ast.CallExpr{
@@ -504,4 +511,234 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		return &ast.Ident{Name: node.Content(source)}
 	}
 	panic("Unhandled expression: " + node.Type())
+}
+
+func findClassScopeByName(scope *symbol.ClassScope, name string) *symbol.ClassScope {
+	if scope == nil {
+		return nil
+	}
+	if scope.Class.OriginalName == name {
+		return scope
+	}
+	for _, sub := range scope.Subclasses {
+		if found := findClassScopeByName(sub, name); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+func parseJavaTypeString(typeStr string) (string, []string) {
+	typeStr = strings.TrimSpace(typeStr)
+	if typeStr == "" {
+		return "", nil
+	}
+	base := typeStr
+	if idx := strings.Index(typeStr, "<"); idx >= 0 {
+		base = strings.TrimSpace(typeStr[:idx])
+	}
+	return base, extractTypeArgsFromString(typeStr)
+}
+
+func javaTypeComponentToExpr(typeName string) ast.Expr {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return &ast.Ident{Name: "any"}
+	}
+	switch typeName {
+	case "String":
+		return &ast.Ident{Name: "string"}
+	default:
+		return &ast.Ident{Name: typeName}
+	}
+}
+
+func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
+	if ctx.localScope != nil {
+		if param := ctx.localScope.ParameterByName(name); param != nil && param.OriginalType != "" {
+			return param.OriginalType, true
+		}
+		if local := ctx.localScope.FindVariable(name); local != nil && local.OriginalType != "" {
+			return local.OriginalType, true
+		}
+	}
+	if ctx.currentClass != nil {
+		if field := ctx.currentClass.FindFieldByName(name); field != nil && field.OriginalType != "" {
+			return field.OriginalType, true
+		}
+	}
+	return "", false
+}
+
+func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+	switch node.Type() {
+	case "identifier":
+		return inferIdentifierJavaType(node.Content(source), ctx)
+	case "this":
+		if ctx.currentClass == nil {
+			return "", false
+		}
+		base := ctx.currentClass.Class.OriginalName
+		if len(ctx.currentClass.TypeParameters) == 0 {
+			return base, true
+		}
+		return fmt.Sprintf("%s<%s>", base, strings.Join(ctx.currentClass.TypeParameters, ", ")), true
+	case "object_creation_expression":
+		typeNode := node.ChildByFieldName("type")
+		if typeNode == nil {
+			return "", false
+		}
+		return typeNode.Content(source), true
+	}
+	return "", false
+}
+
+func applyTypeArguments(fun ast.Expr, args []ast.Expr) ast.Expr {
+	if len(args) == 0 {
+		return fun
+	}
+	if len(args) == 1 {
+		return &ast.IndexExpr{X: fun, Index: args[0]}
+	}
+	return &ast.IndexListExpr{X: fun, Indices: args}
+}
+
+type invocationTargetInfo struct {
+	classScope    *symbol.ClassScope
+	classTypeArgs []ast.Expr
+}
+
+func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *invocationTargetInfo {
+	if ctx.currentFile == nil || ctx.currentFile.BaseClass == nil {
+		return nil
+	}
+
+	var className string
+	var classTypeArgs []string
+	switch objectNode.Type() {
+	case "this":
+		if ctx.currentClass == nil {
+			return nil
+		}
+		className = ctx.currentClass.Class.OriginalName
+		classTypeArgs = ctx.currentClass.TypeParameters
+	case "identifier":
+		javaType, ok := inferIdentifierJavaType(objectNode.Content(source), ctx)
+		if !ok {
+			return nil
+		}
+		className, classTypeArgs = parseJavaTypeString(javaType)
+	default:
+		javaType, ok := inferExprJavaType(objectNode, ctx, source)
+		if !ok {
+			return nil
+		}
+		className, classTypeArgs = parseJavaTypeString(javaType)
+	}
+
+	classScope := findClassScopeByName(ctx.currentFile.BaseClass, className)
+	if classScope == nil {
+		return nil
+	}
+
+	classTypeArgExprs := make([]ast.Expr, 0, len(classTypeArgs))
+	for _, arg := range classTypeArgs {
+		classTypeArgExprs = append(classTypeArgExprs, javaTypeComponentToExpr(arg))
+	}
+
+	return &invocationTargetInfo{
+		classScope:    classScope,
+		classTypeArgs: classTypeArgExprs,
+	}
+}
+
+func explicitTypeArgumentExprs(node *sitter.Node, source []byte) []ast.Expr {
+	typeArgsNode := node.ChildByFieldName("type_arguments")
+	if typeArgsNode == nil {
+		return nil
+	}
+	var exprs []ast.Expr
+	for _, arg := range nodeutil.NamedChildrenOf(typeArgsNode) {
+		exprs = append(exprs, javaTypeComponentToExpr(arg.Content(source)))
+	}
+	return exprs
+}
+
+func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
+	if len(def.TypeParameters) == 0 {
+		return nil
+	}
+
+	if explicit := explicitTypeArgumentExprs(invocationNode, source); len(explicit) == len(def.TypeParameters) && len(explicit) > 0 {
+		return explicit
+	}
+
+	argsNode := invocationNode.ChildByFieldName("arguments")
+	if argsNode == nil {
+		return nil
+	}
+
+	resolved := make(map[string]ast.Expr)
+	argNodes := nodeutil.NamedChildrenOf(argsNode)
+	for idx, param := range def.Parameters {
+		for _, tp := range def.TypeParameters {
+			if param.OriginalType == tp && idx < len(argNodes) {
+				if javaType, ok := inferExprJavaType(argNodes[idx], ctx, source); ok {
+					resolved[tp] = javaTypeComponentToExpr(javaType)
+				}
+			}
+		}
+	}
+
+	result := make([]ast.Expr, len(def.TypeParameters))
+	for i, tp := range def.TypeParameters {
+		if expr, ok := resolved[tp]; ok {
+			result[i] = expr
+		} else {
+			result[i] = &ast.Ident{Name: "any"}
+		}
+	}
+	return result
+}
+
+func maybeRewriteInstanceGenericMethodInvocation(objectNode *sitter.Node, objectExpr ast.Expr, methodName string, args []ast.Expr, invocationNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	target := resolveInvocationTarget(objectNode, ctx, source)
+	if target == nil {
+		return nil
+	}
+
+	methodDefs := target.classScope.FindMethod().By(func(d *symbol.Definition) bool {
+		return d.OriginalName == methodName
+	})
+	var helperDef *symbol.Definition
+	for _, def := range methodDefs {
+		if def.RequiresHelper {
+			helperDef = def
+			break
+		}
+	}
+	if helperDef == nil {
+		return nil
+	}
+
+	classTypeArgs := target.classTypeArgs
+	methodTypeArgs := inferMethodTypeArguments(helperDef, invocationNode, ctx, source)
+	helperTypeArgs := append(classTypeArgs, methodTypeArgs...)
+
+	constructorIdent := &ast.Ident{Name: "New" + helperDef.HelperName}
+	helperConstructor := applyTypeArguments(constructorIdent, helperTypeArgs)
+	helperCall := &ast.CallExpr{
+		Fun:  helperConstructor,
+		Args: []ast.Expr{objectExpr},
+	}
+
+	selIdent := &ast.Ident{Name: helperDef.Name}
+
+	return &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   helperCall,
+			Sel: selIdent,
+		},
+		Args: args,
+	}
 }

@@ -99,21 +99,23 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			// Skip fields, comments, and enum constants (already processed)
 			case "field_declaration", "comment", "enum_constant":
 			case "constructor_declaration", "method_declaration", "static_initializer":
-				d := ParseDecl(child, source, ctx)
-				// If the declaration is bad, skip it
-				_, bad := d.(*ast.BadDecl)
-				if !bad {
-					decls = append(decls, d)
+				for _, d := range ParseDecl(child, source, ctx) {
+					// If the declaration is bad, skip it
+					_, bad := d.(*ast.BadDecl)
+					if !bad {
+						decls = append(decls, d)
+					}
 				}
 			case "enum_body_declarations":
 				// Process methods and constructors inside enum body declarations
 				for _, declChild := range nodeutil.NamedChildrenOf(child) {
 					switch declChild.Type() {
 					case "constructor_declaration", "method_declaration", "static_initializer":
-						d := ParseDecl(declChild, source, ctx)
-						_, bad := d.(*ast.BadDecl)
-						if !bad {
-							decls = append(decls, d)
+						for _, d := range ParseDecl(declChild, source, ctx) {
+							_, bad := d.(*ast.BadDecl)
+							if !bad {
+								decls = append(decls, d)
+							}
 						}
 					}
 				}
@@ -234,9 +236,124 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	panic("Unknown type to parse for decls: " + node.Type())
 }
 
+func typeParamExprs(params []string) []ast.Expr {
+	if len(params) == 0 {
+		return nil
+	}
+	result := make([]ast.Expr, len(params))
+	for i, tp := range params {
+		result[i] = &ast.Ident{Name: tp}
+	}
+	return result
+}
+
+func instantiateGenericType(name string, args []ast.Expr) ast.Expr {
+	if len(args) == 0 {
+		return &ast.Ident{Name: name}
+	}
+	if len(args) == 1 {
+		return &ast.IndexExpr{
+			X:     &ast.Ident{Name: name},
+			Index: args[0],
+		}
+	}
+	return &ast.IndexListExpr{
+		X:       &ast.Ident{Name: name},
+		Indices: args,
+	}
+}
+
+func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {
+	classTypeParams := ctx.currentClass.TypeParameters
+	combinedTypeParams := append([]string{}, classTypeParams...)
+	combinedTypeParams = append(combinedTypeParams, def.TypeParameters...)
+
+	helperName := def.HelperName
+	helperFields := &ast.FieldList{
+		List: []*ast.Field{
+			{
+				Names: []*ast.Ident{{Name: "recv"}},
+				Type:  &ast.StarExpr{X: receiverBaseType},
+			},
+		},
+	}
+	helperStruct := GenStructWithTypeParams(helperName, helperFields, combinedTypeParams)
+
+	helperTypeArgs := typeParamExprs(combinedTypeParams)
+	helperTypeExpr := instantiateGenericType(helperName, helperTypeArgs)
+
+	receiverShortName := ShortName(ctx.className)
+	constructorName := "New" + helperName
+	constructorParams := &ast.FieldList{
+		List: []*ast.Field{
+			{
+				Names: []*ast.Ident{{Name: receiverShortName}},
+				Type:  &ast.StarExpr{X: receiverBaseType},
+			},
+		},
+	}
+	returnType := &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: helperTypeExpr}}}}
+	constructorBody := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.ReturnStmt{
+				Results: []ast.Expr{
+					&ast.UnaryExpr{
+						Op: token.AND,
+						X: &ast.CompositeLit{
+							Type: helperTypeExpr,
+							Elts: []ast.Expr{
+								&ast.KeyValueExpr{
+									Key:   &ast.Ident{Name: "recv"},
+									Value: &ast.Ident{Name: receiverShortName},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	constructor := GenFuncDeclWithTypeParams(constructorName, combinedTypeParams, constructorParams, returnType, constructorBody)
+
+	helperRecvName := receiverShortName + "Helper"
+	helperReceiver := &ast.FieldList{
+		List: []*ast.Field{
+			{
+				Names: []*ast.Ident{{Name: helperRecvName}},
+				Type:  &ast.StarExpr{X: helperTypeExpr},
+			},
+		},
+	}
+
+	assignOriginalReceiver := &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: receiverShortName}},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{
+			&ast.SelectorExpr{
+				X:   &ast.Ident{Name: helperRecvName},
+				Sel: &ast.Ident{Name: "recv"},
+			},
+		},
+	}
+	body.List = append([]ast.Stmt{assignOriginalReceiver}, body.List...)
+
+	funcDecl := &ast.FuncDecl{
+		Doc:  doc,
+		Name: &ast.Ident{Name: def.Name},
+		Recv: helperReceiver,
+		Type: &ast.FuncType{
+			Params:  params,
+			Results: results,
+		},
+		Body: body,
+	}
+
+	return []ast.Decl{helperStruct, constructor, funcDecl}
+}
+
 // ParseDecl parses a top-level declaration within a source file, including
 // but not limited to fields and methods
-func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
+func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
 	case "constructor_declaration":
 		paramNode := node.ChildByFieldName("parameters")
@@ -314,13 +431,13 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 			constructorTypeParams = append(constructorTypeParams, ctx.localScope.TypeParameters...)
 		}
 
-		return GenFuncDeclWithTypeParams(
+		return []ast.Decl{GenFuncDeclWithTypeParams(
 			ctx.localScope.Name,
 			constructorTypeParams,
 			ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList),
 			&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
 			body,
-		)
+		)}
 	case "method_declaration":
 		var static bool
 
@@ -335,73 +452,44 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 				case "abstract":
 					log.Warn("Unhandled abstract class")
 					// TODO: Handle abstract methods correctly
-					return &ast.BadDecl{}
+					return []ast.Decl{&ast.BadDecl{}}
 				case "marker_annotation", "annotation":
 					comments = append(comments, &ast.Comment{Text: "//" + modifier.Content(source)})
 					// If the annotation was on the list of ignored annotations, don't
 					// parse the method
 					if _, in := excludedAnnotations[modifier.Content(source)]; in {
-						return &ast.BadDecl{}
+						return []ast.Decl{&ast.BadDecl{}}
 					}
 				}
 			}
 		}
 
 		var receiver *ast.FieldList
+		var receiverBaseType ast.Expr
 
 		// If a function is non-static, it has a method receiver
 		if !static {
-			// Build the receiver type - for generics, it should be *ClassName[T, U, ...]
-			var receiverType ast.Expr = &ast.Ident{Name: ctx.className}
-			if len(ctx.currentClass.TypeParameters) > 0 {
-				typeParamExprs := make([]ast.Expr, len(ctx.currentClass.TypeParameters))
-				for i, tp := range ctx.currentClass.TypeParameters {
-					typeParamExprs[i] = &ast.Ident{Name: tp}
-				}
-				if len(typeParamExprs) == 1 {
-					receiverType = &ast.IndexExpr{
-						X:     &ast.Ident{Name: ctx.className},
-						Index: typeParamExprs[0],
-					}
-				} else {
-					receiverType = &ast.IndexListExpr{
-						X:       &ast.Ident{Name: ctx.className},
-						Indices: typeParamExprs,
-					}
-				}
-			}
+			receiverBaseType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameters))
 			receiver = &ast.FieldList{
 				List: []*ast.Field{
 					{
 						Names: []*ast.Ident{{Name: ShortName(ctx.className)}},
-						Type:  &ast.StarExpr{X: receiverType},
+						Type:  &ast.StarExpr{X: receiverBaseType},
 					},
 				},
 			}
 		}
 
 		methodName := ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)
-
 		methodParameters := node.ChildByFieldName("parameters")
 
-		// Find the declaration for the method that we are defining
-
-		// Find a method that is more or less exactly the same
 		comparison := func(d *symbol.Definition) bool {
-			// Throw out any methods that aren't named the same
 			if d.OriginalName != methodName.Name {
 				return false
 			}
-
-			// Now, even though the method might have the same name, it could be overloaded,
-			// so we have to check the parameters as well
-
-			// Number of parameters are not the same, invalid
 			if len(d.Parameters) != int(methodParameters.NamedChildCount()) {
 				return false
 			}
-
-			// Go through the types and check to see if they differ
 			for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
 				var paramType string
 				if param.Type() == "spread_parameter" {
@@ -413,14 +501,11 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 					return false
 				}
 			}
-
-			// We found the correct method
 			return true
 		}
 
 		methodDefinition := ctx.currentClass.FindMethod().By(comparison)
 
-		// No definition was found
 		if len(methodDefinition) == 0 {
 			log.WithFields(log.Fields{
 				"methodName": methodName.Name,
@@ -430,11 +515,8 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 		ctx.localScope = methodDefinition[0]
 
 		body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
+		params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
 
-		params := ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList)
-
-		// Special case for the main method, because in Java, this method has the
-		// command line args passed in as a parameter
 		if methodName.Name == "main" {
 			params = nil
 			body.List = append([]ast.Stmt{
@@ -451,17 +533,35 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 			}, body.List...)
 		}
 
+		var docGroup *ast.CommentGroup
+		if len(comments) > 0 {
+			docGroup = &ast.CommentGroup{List: comments}
+		}
+
+		results := &ast.FieldList{
+			List: []*ast.Field{
+				{Type: &ast.Ident{Name: ctx.localScope.Type}},
+			},
+		}
+
+		if ctx.localScope.RequiresHelper {
+			if receiverBaseType == nil {
+				log.WithFields(log.Fields{
+					"class":  ctx.className,
+					"method": ctx.localScope.Name,
+				}).Error("Receiver type missing for helper generation")
+				return []ast.Decl{&ast.BadDecl{}}
+			}
+			return genInstanceGenericHelperDecls(ctx, ctx.localScope, docGroup, params, results, body, receiverBaseType)
+		}
+
 		funcDecl := &ast.FuncDecl{
-			Doc:  &ast.CommentGroup{List: comments},
+			Doc:  docGroup,
 			Name: &ast.Ident{Name: ctx.localScope.Name},
 			Recv: receiver,
 			Type: &ast.FuncType{
-				Params: params,
-				Results: &ast.FieldList{
-					List: []*ast.Field{
-						&ast.Field{Type: &ast.Ident{Name: ctx.localScope.Type}},
-					},
-				},
+				Params:  params,
+				Results: results,
 			},
 			Body: body,
 		}
@@ -482,19 +582,19 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 				"method": ctx.localScope.Name,
 			}).Warn("Instance methods with type parameters are not supported in Go; type parameters ignored")
 		}
-		return funcDecl
+		return []ast.Decl{funcDecl}
 	case "static_initializer":
 
 		ctx.localScope = &symbol.Definition{}
 
 		// A block of `static`, which is run before the main function
-		return &ast.FuncDecl{
+		return []ast.Decl{&ast.FuncDecl{
 			Name: &ast.Ident{Name: "init"},
 			Type: &ast.FuncType{
 				Params: &ast.FieldList{List: []*ast.Field{}},
 			},
 			Body: ParseStmt(node.NamedChild(0), source, ctx).(*ast.BlockStmt),
-		}
+		}}
 	}
 
 	panic("Unknown node type for declaration: " + node.Type())
