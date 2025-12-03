@@ -306,13 +306,8 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) ast.Decl {
 
 		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: ShortName(ctx.className)}}})
 
-		// Build the return type - for generics, it should be *ClassName[T, U, ...]
-		var returnType ast.Expr
-		if len(ctx.currentClass.TypeParameters) > 0 {
-			returnType = &ast.StarExpr{X: structType}
-		} else {
-			returnType = &ast.Ident{Name: ctx.localScope.Type}
-		}
+		// Build the return type: *ClassName or *ClassName[T, U, ...]
+		returnType := &ast.StarExpr{X: structType}
 
 		return GenFuncDeclWithTypeParams(
 			ctx.localScope.Name,
