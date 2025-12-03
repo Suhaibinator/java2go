@@ -62,18 +62,34 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 		IsEnum: root.Type() == "enum_declaration",
 	}
 
-	// Inherit type parameters from parent class (for nested classes)
-	scope.TypeParameters = append(scope.TypeParameters, parentTypeParams...)
-
-	// Extract type parameters if present (e.g., class Foo<T, U>)
+	// Extract this class's own type parameters first (e.g., class Foo<T, U>)
+	var ownTypeParams []string
 	if typeParamsNode := root.ChildByFieldName("type_parameters"); typeParamsNode != nil {
 		for _, param := range nodeutil.NamedChildrenOf(typeParamsNode) {
 			if param.Type() == "type_parameter" {
 				// The first named child is the type identifier (e.g., "T")
-				scope.TypeParameters = append(scope.TypeParameters, param.NamedChild(0).Content(source))
+				ownTypeParams = append(ownTypeParams, param.NamedChild(0).Content(source))
 			}
 		}
 	}
+
+	// Build the type parameters list:
+	// 1. Start with parent type parameters (for nested classes)
+	// 2. Add own type parameters, but if a name matches a parent's, the inner one shadows it
+	// This handles cases like: class Outer<T> { class Inner<T> { } } where Inner's T shadows Outer's T
+	for _, parentTP := range parentTypeParams {
+		shadowed := false
+		for _, ownTP := range ownTypeParams {
+			if parentTP == ownTP {
+				shadowed = true
+				break
+			}
+		}
+		if !shadowed {
+			scope.TypeParameters = append(scope.TypeParameters, parentTP)
+		}
+	}
+	scope.TypeParameters = append(scope.TypeParameters, ownTypeParams...)
 
 	// Parse the body of the class (or enum)
 
