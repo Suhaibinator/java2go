@@ -829,6 +829,72 @@ public class Box<T> {
 	}
 }
 
+func TestInstanceGenericMethodHelper_InfersPointerTypeArgs(t *testing.T) {
+	src := `
+package com.example;
+public class Box<T> {
+    public <R> R identity(R value) {
+        return value;
+    }
+
+    public static Foo call(Box<Foo> box, Foo value) {
+        return box.identity(value);
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+	file, ok := node.(*ast.File)
+	if !ok {
+		t.Fatalf("Expected *ast.File, got %T", node)
+	}
+
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+		t.Fatalf("Failed to print AST: %v", err)
+	}
+	output := buf.String()
+
+	// Foo is a Java reference type; the generator represents it as *Foo, so the
+	// helper invocation needs to pass *Foo as a type argument (not Foo).
+	if !strings.Contains(output, "NewBoxIdentityHelper[*Foo, *Foo]") && !strings.Contains(output, "NewBoxIdentityHelper[*Foo,*Foo]") {
+		t.Errorf("Expected helper invocation to use pointer type args for Foo, got:\n%s", output)
+	}
+}
+
+func TestInstanceGenericMethodHelper_InfersNestedGenericTypeArgs(t *testing.T) {
+	src := `
+package com.example;
+public class Box<T> {
+    public <R> R identity(R value) {
+        return value;
+    }
+
+    public static List<Foo> call(Box<List<Foo>> box, List<Foo> value) {
+        return box.identity(value);
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+	file, ok := node.(*ast.File)
+	if !ok {
+		t.Fatalf("Expected *ast.File, got %T", node)
+	}
+
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, token.NewFileSet(), file); err != nil {
+		t.Fatalf("Failed to print AST: %v", err)
+	}
+	output := buf.String()
+
+	// Nested type args should be converted to Go's indexed generic form and keep
+	// pointer semantics for reference types.
+	if !strings.Contains(output, "NewBoxIdentityHelper[*List[*Foo], *List[*Foo]]") && !strings.Contains(output, "NewBoxIdentityHelper[*List[*Foo],*List[*Foo]]") {
+		t.Errorf("Expected helper invocation to use nested generic type args, got:\n%s", output)
+	}
+}
+
 // TestInnerClass_ParentTypeParameterReuse tests that inner class constructors
 // inherit the parent class's type parameters (the third fallback path in expression.go)
 func TestInnerClass_ParentTypeParameterReuse(t *testing.T) {

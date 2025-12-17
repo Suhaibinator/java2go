@@ -540,17 +540,126 @@ func parseJavaTypeString(typeStr string) (string, []string) {
 	return base, extractTypeArgsFromString(typeStr)
 }
 
-func javaTypeComponentToExpr(typeName string) ast.Expr {
+func stripJavaQualifier(typeName string) string {
 	typeName = strings.TrimSpace(typeName)
 	if typeName == "" {
+		return ""
+	}
+	// Tree-sitter (and symbol.OriginalType) can include package qualifiers like
+	// "java.util.List<String>". The generator doesn't model Java packages as Go
+	// packages, so drop the qualifier and keep the leaf type name.
+	if idx := strings.LastIndex(typeName, "."); idx >= 0 {
+		return typeName[idx+1:]
+	}
+	return typeName
+}
+
+func inScopeTypeParameters(ctx Ctx) []string {
+	var params []string
+	if ctx.currentClass != nil {
+		params = append(params, ctx.currentClass.TypeParameters...)
+	}
+	if ctx.localScope != nil {
+		params = append(params, ctx.localScope.TypeParameters...)
+	}
+	return params
+}
+
+// javaTypeStringToGoTypeExpr converts a Java type string (as it appears in
+// symbol.OriginalType) into a Go AST expression suitable for use as a type
+// argument in an IndexExpr/IndexListExpr. It mirrors astutil.ParseTypeWithTypeParams
+// behavior for pointer-wrapping reference types, but operates on strings to support
+// type inference paths.
+func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string) ast.Expr {
+	typeStr = strings.TrimSpace(typeStr)
+	if typeStr == "" {
 		return &ast.Ident{Name: "any"}
 	}
-	switch typeName {
-	case "String":
-		return &ast.Ident{Name: "string"}
-	default:
-		return &ast.Ident{Name: typeName}
+
+	// Arrays like Foo[][].
+	arrayDims := 0
+	for strings.HasSuffix(typeStr, "[]") {
+		arrayDims++
+		typeStr = strings.TrimSpace(typeStr[:len(typeStr)-2])
 	}
+
+	// Wildcards like ?, ? extends Foo, ? super Foo.
+	if strings.HasPrefix(typeStr, "?") {
+		rest := strings.TrimSpace(strings.TrimPrefix(typeStr, "?"))
+		if rest == "" {
+			return &ast.Ident{Name: "any"}
+		}
+		if strings.HasPrefix(rest, "extends") {
+			bound := strings.TrimSpace(strings.TrimPrefix(rest, "extends"))
+			if bound == "" {
+				return &ast.Ident{Name: "any"}
+			}
+			return javaTypeStringToGoTypeExpr(bound, typeParams)
+		}
+		// ? super ... is hard to model faithfully in Go; fall back to any.
+		return &ast.Ident{Name: "any"}
+	}
+
+	// Normalize qualifiers.
+	base, typeArgs := parseJavaTypeString(typeStr)
+	base = stripJavaQualifier(base)
+
+	isTypeParam := func(name string) bool {
+		for _, tp := range typeParams {
+			if tp == name {
+				return true
+			}
+		}
+		return false
+	}
+
+	primitive := func(name string) (ast.Expr, bool) {
+		switch name {
+		case "String":
+			return &ast.Ident{Name: "string"}, true
+		case "boolean":
+			return &ast.Ident{Name: "bool"}, true
+		case "int":
+			return &ast.Ident{Name: "int32"}, true
+		case "short":
+			return &ast.Ident{Name: "int16"}, true
+		case "long":
+			return &ast.Ident{Name: "int64"}, true
+		case "char":
+			return &ast.Ident{Name: "rune"}, true
+		case "byte":
+			return &ast.Ident{Name: "byte"}, true
+		case "float":
+			return &ast.Ident{Name: "float32"}, true
+		case "double":
+			return &ast.Ident{Name: "float64"}, true
+		}
+		return nil, false
+	}
+
+	var expr ast.Expr
+	if prim, ok := primitive(base); ok {
+		expr = prim
+	} else if isTypeParam(base) {
+		expr = &ast.Ident{Name: base}
+	} else {
+		// Reference type (including parameterized reference types) is represented as a pointer.
+		baseIdent := &ast.Ident{Name: base}
+		if len(typeArgs) > 0 {
+			argExprs := make([]ast.Expr, 0, len(typeArgs))
+			for _, arg := range typeArgs {
+				argExprs = append(argExprs, javaTypeStringToGoTypeExpr(arg, typeParams))
+			}
+			expr = &ast.StarExpr{X: applyTypeArguments(baseIdent, argExprs)}
+		} else {
+			expr = &ast.StarExpr{X: baseIdent}
+		}
+	}
+
+	for i := 0; i < arrayDims; i++ {
+		expr = &ast.ArrayType{Elt: expr}
+	}
+	return expr
 }
 
 func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
@@ -613,6 +722,8 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		return nil
 	}
 
+	scopeTypeParams := inScopeTypeParameters(ctx)
+
 	var className string
 	var classTypeArgs []string
 	switch objectNode.Type() {
@@ -643,7 +754,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 
 	classTypeArgExprs := make([]ast.Expr, 0, len(classTypeArgs))
 	for _, arg := range classTypeArgs {
-		classTypeArgExprs = append(classTypeArgExprs, javaTypeComponentToExpr(arg))
+		classTypeArgExprs = append(classTypeArgExprs, javaTypeStringToGoTypeExpr(arg, scopeTypeParams))
 	}
 
 	return &invocationTargetInfo{
@@ -652,14 +763,14 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 	}
 }
 
-func explicitTypeArgumentExprs(node *sitter.Node, source []byte) []ast.Expr {
+func explicitTypeArgumentExprs(node *sitter.Node, source []byte, typeParams []string) []ast.Expr {
 	typeArgsNode := node.ChildByFieldName("type_arguments")
 	if typeArgsNode == nil {
 		return nil
 	}
 	var exprs []ast.Expr
 	for _, arg := range nodeutil.NamedChildrenOf(typeArgsNode) {
-		exprs = append(exprs, javaTypeComponentToExpr(arg.Content(source)))
+		exprs = append(exprs, javaTypeStringToGoTypeExpr(arg.Content(source), typeParams))
 	}
 	return exprs
 }
@@ -669,7 +780,7 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 		return nil
 	}
 
-	if explicit := explicitTypeArgumentExprs(invocationNode, source); len(explicit) == len(def.TypeParameters) && len(explicit) > 0 {
+	if explicit := explicitTypeArgumentExprs(invocationNode, source, inScopeTypeParameters(ctx)); len(explicit) == len(def.TypeParameters) && len(explicit) > 0 {
 		return explicit
 	}
 
@@ -684,7 +795,7 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 		for _, tp := range def.TypeParameters {
 			if param.OriginalType == tp && idx < len(argNodes) {
 				if javaType, ok := inferExprJavaType(argNodes[idx], ctx, source); ok {
-					resolved[tp] = javaTypeComponentToExpr(javaType)
+					resolved[tp] = javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx))
 				}
 			}
 		}

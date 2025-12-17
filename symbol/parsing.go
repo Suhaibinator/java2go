@@ -236,7 +236,11 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			}
 		}
 
-		if len(methodTypeParams) > 0 && !isStatic {
+		// Go doesn't support method type parameters on methods, so instance generic
+		// methods are modeled via helper types. Constructors are plain functions in
+		// the generated Go, so they don't need helpers even if they declare type
+		// parameters.
+		if node.Type() == "method_declaration" && len(methodTypeParams) > 0 && !isStatic {
 			declaration.RequiresHelper = true
 			declaration.HelperName = scope.Class.Name + declaration.Name + "Helper"
 		}
