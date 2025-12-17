@@ -18,10 +18,8 @@ Note: Java2go is still in development, and as such, please expect many bugs
 Currently, the following features are not implemented (or only partially implemented):
 
 * [ ] Enums (advanced features)
-* [ ] Inheritance / polymorphism
-    * [ ] Extends / implements
-    * [ ] Abstract classes / methods
-    * [ ] Interface embedding
+* [ ] Abstract classes / methods
+* [ ] Interface embedding
 * [ ] Decorators / annotations (beyond passthrough as comments and optional exclusion)
 * [ ] Anything that checks `instanceof`
 * [ ] Types for lambda expressions
