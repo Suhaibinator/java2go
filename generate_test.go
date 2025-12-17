@@ -7,6 +7,8 @@ import (
 	"go/token"
 	"strings"
 	"testing"
+
+	"github.com/NickyBoy89/java2go/symbol"
 )
 
 func TestGenStructWithTypeParams_NoTypeParams(t *testing.T) {
@@ -68,7 +70,9 @@ func TestGenStructWithTypeParams_SingleTypeParam(t *testing.T) {
 		},
 	}
 
-	result := GenStructWithTypeParams("Box", fields, []string{"T"})
+	typeParams := []symbol.TypeParam{{Name: "T"}}
+
+	result := GenStructWithTypeParams("Box", fields, typeParams)
 
 	genDecl, ok := result.(*ast.GenDecl)
 	if !ok {
@@ -122,7 +126,9 @@ func TestGenStructWithTypeParams_MultipleTypeParams(t *testing.T) {
 		},
 	}
 
-	result := GenStructWithTypeParams("Pair", fields, []string{"K", "V"})
+	typeParams := []symbol.TypeParam{{Name: "K"}, {Name: "V"}}
+
+	result := GenStructWithTypeParams("Pair", fields, typeParams)
 
 	genDecl, ok := result.(*ast.GenDecl)
 	if !ok {
@@ -165,6 +171,62 @@ func TestGenStructWithTypeParams_MultipleTypeParams(t *testing.T) {
 
 	if !strings.Contains(output, "Pair[K any, V any]") {
 		t.Errorf("Expected 'Pair[K any, V any]' in output, got:\n%s", output)
+	}
+}
+
+func TestGenStructWithTypeParams_TypeParamBounds(t *testing.T) {
+	fields := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: "value"}}, Type: &ast.Ident{Name: "T"}}}}
+	typeParams := []symbol.TypeParam{{
+		Name:   "T",
+		Bounds: []symbol.JavaType{{Original: "Number"}, {Original: "Comparable<T>"}},
+	}}
+
+	result := GenStructWithTypeParams("Bounded", fields, typeParams)
+
+	genDecl, ok := result.(*ast.GenDecl)
+	if !ok {
+		t.Fatalf("Expected *ast.GenDecl, got %T", result)
+	}
+
+	typeSpec, ok := genDecl.Specs[0].(*ast.TypeSpec)
+	if !ok {
+		t.Fatalf("Expected *ast.TypeSpec, got %T", genDecl.Specs[0])
+	}
+
+	if len(typeSpec.TypeParams.List) != 1 {
+		t.Fatalf("Expected 1 type param, got %d", len(typeSpec.TypeParams.List))
+	}
+
+	constraint, ok := typeSpec.TypeParams.List[0].Type.(*ast.InterfaceType)
+	if !ok {
+		t.Fatalf("Expected constraint to be *ast.InterfaceType, got %T", typeSpec.TypeParams.List[0].Type)
+	}
+
+	if got := len(constraint.Methods.List); got != 2 {
+		t.Fatalf("Expected 2 embedded bounds, got %d", got)
+	}
+
+	firstBound, ok := constraint.Methods.List[0].Type.(*ast.StarExpr)
+	if !ok {
+		t.Fatalf("Expected first bound to be *ast.StarExpr, got %T", constraint.Methods.List[0].Type)
+	}
+	if ident, ok := firstBound.X.(*ast.Ident); !ok || ident.Name != "Number" {
+		t.Fatalf("Expected first bound identifier 'Number', got %v", firstBound.X)
+	}
+
+	secondBound, ok := constraint.Methods.List[1].Type.(*ast.StarExpr)
+	if !ok {
+		t.Fatalf("Expected second bound to be *ast.StarExpr, got %T", constraint.Methods.List[1].Type)
+	}
+	indexExpr, ok := secondBound.X.(*ast.IndexExpr)
+	if !ok {
+		t.Fatalf("Expected second bound to be *ast.IndexExpr inside *ast.StarExpr, got %T", secondBound.X)
+	}
+	if ident, ok := indexExpr.X.(*ast.Ident); !ok || ident.Name != "Comparable" {
+		t.Fatalf("Expected base identifier 'Comparable', got %v", indexExpr.X)
+	}
+	if arg, ok := indexExpr.Index.(*ast.Ident); !ok || arg.Name != "T" {
+		t.Fatalf("Expected type argument 'T', got %v", indexExpr.Index)
 	}
 }
 
@@ -235,7 +297,9 @@ func TestGenFuncDeclWithTypeParams_SingleTypeParam(t *testing.T) {
 		},
 	}
 
-	result := GenFuncDeclWithTypeParams("ConstructBox", []string{"T"}, params, results, body)
+	typeParams := []symbol.TypeParam{{Name: "T"}}
+
+	result := GenFuncDeclWithTypeParams("ConstructBox", typeParams, params, results, body)
 
 	if result.Name.Name != "ConstructBox" {
 		t.Errorf("Expected name 'ConstructBox', got '%s'", result.Name.Name)
@@ -284,7 +348,9 @@ func TestGenFuncDeclWithTypeParams_MultipleTypeParams(t *testing.T) {
 	}
 	body := &ast.BlockStmt{}
 
-	result := GenFuncDeclWithTypeParams("ConstructPair", []string{"K", "V"}, params, results, body)
+	typeParams := []symbol.TypeParam{{Name: "K"}, {Name: "V"}}
+
+	result := GenFuncDeclWithTypeParams("ConstructPair", typeParams, params, results, body)
 
 	// Check type params
 	if result.Type.TypeParams == nil {

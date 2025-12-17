@@ -43,14 +43,14 @@ public class Pair<K extends Number, V> {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "type Pair[K any, V any] struct") {
+	if !strings.Contains(out, "type Pair[K *Number, V any] struct") {
 		t.Errorf("Expected generic struct with 2 type params, got:\n%s", out)
 	}
 	flat := normalizeSpaces(out)
 	if !strings.Contains(flat, "key K") || !strings.Contains(flat, "value V") {
 		t.Errorf("Expected fields to use type params K/V, got:\n%s", out)
 	}
-	if !strings.Contains(out, "func NewPair[K any, V any]") {
+	if !strings.Contains(out, "func NewPair[K *Number, V any]") {
 		t.Errorf("Expected generic constructor function with type params, got:\n%s", out)
 	}
 	if !strings.Contains(out, "func (pr *Pair[K, V]) GetKey()") {
