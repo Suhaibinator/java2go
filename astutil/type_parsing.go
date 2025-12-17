@@ -58,7 +58,11 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 	case "generic_type":
 		// A generic type is any type that is of the form GenericType<T>
 		// Extract the base type and type arguments
-		baseName := node.NamedChild(0).Content(source)
+		baseNode := node.NamedChild(0)
+		if baseNode == nil {
+			panic(fmt.Errorf("generic_type has no base type"))
+		}
+		baseName := baseNode.Content(source)
 
 		// Find the type_arguments node
 		var typeArgs []ast.Expr
@@ -166,6 +170,9 @@ func ExtractTypeArguments(node *sitter.Node, source []byte) []string {
 		if child.Type() == "type_arguments" {
 			for j := 0; j < int(child.NamedChildCount()); j++ {
 				argNode := child.NamedChild(j)
+				if argNode == nil {
+					continue
+				}
 				typeArgs = append(typeArgs, argNode.Content(source))
 			}
 			break

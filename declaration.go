@@ -335,7 +335,9 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 			},
 		},
 	}
-	body.List = append([]ast.Stmt{assignOriginalReceiver}, body.List...)
+	modifiedBody := &ast.BlockStmt{
+		List: append([]ast.Stmt{assignOriginalReceiver}, body.List...),
+	}
 
 	funcDecl := &ast.FuncDecl{
 		Doc:  doc,
@@ -345,7 +347,7 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 			Params:  params,
 			Results: results,
 		},
-		Body: body,
+		Body: modifiedBody,
 	}
 
 	return []ast.Decl{helperStruct, constructor, funcDecl}

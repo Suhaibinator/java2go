@@ -14,7 +14,9 @@ func extractTypeParameterNames(node *sitter.Node, source []byte) []string {
 	var params []string
 	for _, param := range nodeutil.NamedChildrenOf(node) {
 		if param.Type() == "type_parameter" {
-			params = append(params, param.NamedChild(0).Content(source))
+			if nameNode := param.NamedChild(0); nameNode != nil {
+				params = append(params, nameNode.Content(source))
+			}
 		}
 	}
 	return params
