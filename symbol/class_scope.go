@@ -1,5 +1,14 @@
 package symbol
 
+// EnumConstant represents a single enum constant with its name and optional arguments
+type EnumConstant struct {
+	// Name is the constant's identifier (e.g., "NORTH", "PENDING")
+	Name string
+	// Arguments are the literal values passed to the enum constructor
+	// For example, in PENDING("pending", 1), Arguments = ["\"pending\"", "1"]
+	Arguments []string
+}
+
 // ClassScope represents a single defined class, and the declarations in it
 type ClassScope struct {
 	// The definition for the class defined within the class
@@ -13,7 +22,11 @@ type ClassScope struct {
 	// Whether this class is an enum
 	IsEnum bool
 	// Enum constant names (only populated if IsEnum is true)
+	// Deprecated: Use EnumConstantList instead for full enum constant information
 	EnumConstants []string
+	// EnumConstantList contains detailed information about each enum constant
+	// including their arguments (only populated if IsEnum is true)
+	EnumConstantList []*EnumConstant
 	// Type parameters for generic classes (e.g., ["T", "U"] for class Foo<T, U>)
 	TypeParameters []string
 }
@@ -155,6 +168,44 @@ func (cs *ClassScope) FindFieldByDisplayName(name string) *Definition {
 	for _, field := range cs.Fields {
 		if field.Name == name {
 			return field
+		}
+	}
+	return nil
+}
+
+// HasEnumFields returns true if this enum has instance fields (non-static)
+func (cs *ClassScope) HasEnumFields() bool {
+	if !cs.IsEnum {
+		return false
+	}
+	// Any fields in an enum are considered instance fields for enum constants
+	return len(cs.Fields) > 0
+}
+
+// HasEnumConstructorArgs returns true if any enum constant has constructor arguments
+func (cs *ClassScope) HasEnumConstructorArgs() bool {
+	if !cs.IsEnum {
+		return false
+	}
+	for _, ec := range cs.EnumConstantList {
+		if len(ec.Arguments) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// IsAdvancedEnum returns true if this enum requires struct-based representation
+// (i.e., has fields, constructor arguments, or non-trivial methods)
+func (cs *ClassScope) IsAdvancedEnum() bool {
+	return cs.IsEnum && (cs.HasEnumFields() || cs.HasEnumConstructorArgs())
+}
+
+// FindEnumConstant returns the EnumConstant with the given name, or nil if not found
+func (cs *ClassScope) FindEnumConstant(name string) *EnumConstant {
+	for _, ec := range cs.EnumConstantList {
+		if ec.Name == name {
+			return ec
 		}
 	}
 	return nil

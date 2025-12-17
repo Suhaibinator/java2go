@@ -208,25 +208,41 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			methodName := node.ChildByFieldName("name").Content(source)
 			methodIdent := ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)
 
-			// Check if this is an enum values() call
-			// Transform EnumName.values() to EnumNameValues()
-			if objectNode.Type() == "identifier" && methodName == "values" {
+			// Check if this is an enum static method call
+			if objectNode.Type() == "identifier" {
 				enumName := objectNode.Content(source)
 				// Check if this identifier refers to an enum
 				if ctx.currentFile != nil && ctx.currentFile.BaseClass != nil {
+					var enumScope *symbol.ClassScope
+
 					// Check base class
 					if ctx.currentFile.BaseClass.Class.OriginalName == enumName && ctx.currentFile.BaseClass.IsEnum {
-						return &ast.CallExpr{
-							Fun:  &ast.Ident{Name: ctx.currentFile.BaseClass.Class.Name + "Values"},
-							Args: []ast.Expr{},
-						}
+						enumScope = ctx.currentFile.BaseClass
 					}
 					// Check subclasses
-					for _, subclass := range ctx.currentFile.BaseClass.Subclasses {
-						if subclass.Class.OriginalName == enumName && subclass.IsEnum {
+					if enumScope == nil {
+						for _, subclass := range ctx.currentFile.BaseClass.Subclasses {
+							if subclass.Class.OriginalName == enumName && subclass.IsEnum {
+								enumScope = subclass
+								break
+							}
+						}
+					}
+
+					if enumScope != nil {
+						// Transform EnumName.values() to EnumNameValues()
+						if methodName == "values" {
 							return &ast.CallExpr{
-								Fun:  &ast.Ident{Name: subclass.Class.Name + "Values"},
+								Fun:  &ast.Ident{Name: enumScope.Class.Name + "Values"},
 								Args: []ast.Expr{},
+							}
+						}
+						// Transform EnumName.valueOf("CONST") to EnumNameValueOf("CONST")
+						if methodName == "valueOf" {
+							args := ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr)
+							return &ast.CallExpr{
+								Fun:  &ast.Ident{Name: enumScope.Class.Name + "ValueOf"},
+								Args: args,
 							}
 						}
 					}

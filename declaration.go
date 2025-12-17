@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 
@@ -149,83 +150,21 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		return ParseDecls(node.ChildByFieldName("body"), source, ctx)
 	case "enum_declaration":
-		// An enum is treated as a type alias (int) and a list of constants
-		// that define the possible values the enum can have
+		// An enum is treated as either:
+		// 1. Simple enum: type alias (int) with iota constants (no fields/constructor args)
+		// 2. Advanced enum: struct type with fields and methods (has fields/constructor args)
 
 		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
 		ctx.currentClass = ctx.currentFile.BaseClass
 
 		declarations := []ast.Decl{}
 
-		// Generate type declaration: type EnumName int
-		declarations = append(declarations, &ast.GenDecl{
-			Tok: token.TYPE,
-			Specs: []ast.Spec{
-				&ast.TypeSpec{
-					Name: &ast.Ident{Name: ctx.className},
-					Type: &ast.Ident{Name: "int"},
-				},
-			},
-		})
-
-		// Generate constants using iota
-		if len(ctx.currentClass.EnumConstants) > 0 {
-			constSpecs := []ast.Spec{}
-			for i, constName := range ctx.currentClass.EnumConstants {
-				spec := &ast.ValueSpec{
-					Names: []*ast.Ident{{Name: constName}},
-					Type:  &ast.Ident{Name: ctx.className},
-				}
-				if i == 0 {
-					spec.Values = []ast.Expr{&ast.Ident{Name: "iota"}}
-				}
-				constSpecs = append(constSpecs, spec)
-			}
-			declarations = append(declarations, &ast.GenDecl{
-				Tok:   token.CONST,
-				Specs: constSpecs,
-			})
-
-			// Generate a values variable: var _enumNameValues = []EnumName{CONST1, CONST2, ...}
-			valuesVarName := "_" + symbol.Lowercase(ctx.className) + "Values"
-			constExprs := []ast.Expr{}
-			for _, constName := range ctx.currentClass.EnumConstants {
-				constExprs = append(constExprs, &ast.Ident{Name: constName})
-			}
-			declarations = append(declarations, &ast.GenDecl{
-				Tok: token.VAR,
-				Specs: []ast.Spec{
-					&ast.ValueSpec{
-						Names: []*ast.Ident{{Name: valuesVarName}},
-						Values: []ast.Expr{
-							&ast.CompositeLit{
-								Type: &ast.ArrayType{Elt: &ast.Ident{Name: ctx.className}},
-								Elts: constExprs,
-							},
-						},
-					},
-				},
-			})
-
-			// Generate Values() function: func EnumNameValues() []EnumName { return _enumNameValues }
-			declarations = append(declarations, &ast.FuncDecl{
-				Name: &ast.Ident{Name: ctx.className + "Values"},
-				Type: &ast.FuncType{
-					Params: &ast.FieldList{},
-					Results: &ast.FieldList{
-						List: []*ast.Field{
-							{Type: &ast.ArrayType{Elt: &ast.Ident{Name: ctx.className}}},
-						},
-					},
-				},
-				Body: &ast.BlockStmt{
-					List: []ast.Stmt{
-						&ast.ReturnStmt{
-							Results: []ast.Expr{&ast.Ident{Name: valuesVarName}},
-						},
-					},
-				},
-			})
+		if ctx.currentClass.IsAdvancedEnum() {
+			// Generate struct-based enum for enums with fields/constructor arguments
+			declarations = append(declarations, generateAdvancedEnum(ctx, node, source)...)
+		} else {
+			// Generate simple iota-based enum
+			declarations = append(declarations, generateSimpleEnum(ctx)...)
 		}
 
 		// Parse the enum body declarations (methods, constructors, etc.)
@@ -600,4 +539,563 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	}
 
 	panic("Unknown node type for declaration: " + node.Type())
+}
+
+// generateSimpleEnum generates a simple iota-based enum for enums without fields/constructor args
+func generateSimpleEnum(ctx Ctx) []ast.Decl {
+	declarations := []ast.Decl{}
+
+	// Generate type declaration: type EnumName int
+	declarations = append(declarations, &ast.GenDecl{
+		Tok: token.TYPE,
+		Specs: []ast.Spec{
+			&ast.TypeSpec{
+				Name: &ast.Ident{Name: ctx.className},
+				Type: &ast.Ident{Name: "int"},
+			},
+		},
+	})
+
+	// Generate constants using iota
+	if len(ctx.currentClass.EnumConstants) > 0 {
+		constSpecs := []ast.Spec{}
+		for i, constName := range ctx.currentClass.EnumConstants {
+			spec := &ast.ValueSpec{
+				Names: []*ast.Ident{{Name: constName}},
+				Type:  &ast.Ident{Name: ctx.className},
+			}
+			if i == 0 {
+				spec.Values = []ast.Expr{&ast.Ident{Name: "iota"}}
+			}
+			constSpecs = append(constSpecs, spec)
+		}
+		declarations = append(declarations, &ast.GenDecl{
+			Tok:   token.CONST,
+			Specs: constSpecs,
+		})
+
+		// Generate enum constant name map: var _enumNameNames = map[EnumName]string{...}
+		namesMapName := "_" + symbol.Lowercase(ctx.className) + "Names"
+		mapElts := []ast.Expr{}
+		for _, constName := range ctx.currentClass.EnumConstants {
+			mapElts = append(mapElts, &ast.KeyValueExpr{
+				Key:   &ast.Ident{Name: constName},
+				Value: &ast.BasicLit{Kind: token.STRING, Value: "\"" + constName + "\""},
+			})
+		}
+		declarations = append(declarations, &ast.GenDecl{
+			Tok: token.VAR,
+			Specs: []ast.Spec{
+				&ast.ValueSpec{
+					Names: []*ast.Ident{{Name: namesMapName}},
+					Values: []ast.Expr{
+						&ast.CompositeLit{
+							Type: &ast.MapType{
+								Key:   &ast.Ident{Name: ctx.className},
+								Value: &ast.Ident{Name: "string"},
+							},
+							Elts: mapElts,
+						},
+					},
+				},
+			},
+		})
+
+		// Generate a values variable: var _enumNameValues = []EnumName{CONST1, CONST2, ...}
+		valuesVarName := "_" + symbol.Lowercase(ctx.className) + "Values"
+		constExprs := []ast.Expr{}
+		for _, constName := range ctx.currentClass.EnumConstants {
+			constExprs = append(constExprs, &ast.Ident{Name: constName})
+		}
+		declarations = append(declarations, &ast.GenDecl{
+			Tok: token.VAR,
+			Specs: []ast.Spec{
+				&ast.ValueSpec{
+					Names: []*ast.Ident{{Name: valuesVarName}},
+					Values: []ast.Expr{
+						&ast.CompositeLit{
+							Type: &ast.ArrayType{Elt: &ast.Ident{Name: ctx.className}},
+							Elts: constExprs,
+						},
+					},
+				},
+			},
+		})
+
+		// Generate Values() function: func EnumNameValues() []EnumName { return _enumNameValues }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: ctx.className + "Values"},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{Type: &ast.ArrayType{Elt: &ast.Ident{Name: ctx.className}}},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{&ast.Ident{Name: valuesVarName}},
+					},
+				},
+			},
+		})
+
+		// Generate Ordinal() method: func (e EnumName) Ordinal() int { return int(e) }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: "Ordinal"},
+			Recv: &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "e"}},
+						Type:  &ast.Ident{Name: ctx.className},
+					},
+				},
+			},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{Type: &ast.Ident{Name: "int"}},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{
+							&ast.CallExpr{
+								Fun:  &ast.Ident{Name: "int"},
+								Args: []ast.Expr{&ast.Ident{Name: "e"}},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		// Generate Name() method: func (e EnumName) Name() string { return _enumNameNames[e] }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: "Name"},
+			Recv: &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "e"}},
+						Type:  &ast.Ident{Name: ctx.className},
+					},
+				},
+			},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{Type: &ast.Ident{Name: "string"}},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{
+							&ast.IndexExpr{
+								X:     &ast.Ident{Name: namesMapName},
+								Index: &ast.Ident{Name: "e"},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		// Generate String() method: func (e EnumName) String() string { return e.Name() }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: "String"},
+			Recv: &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "e"}},
+						Type:  &ast.Ident{Name: ctx.className},
+					},
+				},
+			},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{Type: &ast.Ident{Name: "string"}},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{
+							&ast.CallExpr{
+								Fun: &ast.SelectorExpr{
+									X:   &ast.Ident{Name: "e"},
+									Sel: &ast.Ident{Name: "Name"},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		// Generate ValueOf() function: func EnumNameValueOf(name string) (EnumName, bool)
+		declarations = append(declarations, generateValueOfFunc(ctx.className, ctx.currentClass.EnumConstants))
+	}
+
+	return declarations
+}
+
+// generateAdvancedEnum generates a struct-based enum for enums with fields/constructor args
+func generateAdvancedEnum(ctx Ctx, node *sitter.Node, source []byte) []ast.Decl {
+	declarations := []ast.Decl{}
+
+	// Build the struct fields list
+	// Always include ordinal and name fields
+	structFields := &ast.FieldList{
+		List: []*ast.Field{
+			{
+				Names: []*ast.Ident{{Name: "ordinal"}},
+				Type:  &ast.Ident{Name: "int"},
+			},
+			{
+				Names: []*ast.Ident{{Name: "name"}},
+				Type:  &ast.Ident{Name: "string"},
+			},
+		},
+	}
+
+	// Add user-defined fields from the enum
+	for _, field := range ctx.currentClass.Fields {
+		structFields.List = append(structFields.List, &ast.Field{
+			Names: []*ast.Ident{{Name: field.Name}},
+			Type:  &ast.Ident{Name: field.Type},
+		})
+	}
+
+	// Generate type declaration: type EnumName struct { ... }
+	declarations = append(declarations, &ast.GenDecl{
+		Tok: token.TYPE,
+		Specs: []ast.Spec{
+			&ast.TypeSpec{
+				Name: &ast.Ident{Name: ctx.className},
+				Type: &ast.StructType{
+					Fields: structFields,
+				},
+			},
+		},
+	})
+
+	// Generate enum constant variables
+	if len(ctx.currentClass.EnumConstantList) > 0 {
+		varSpecs := []ast.Spec{}
+
+		for i, ec := range ctx.currentClass.EnumConstantList {
+			// Build the composite literal elements
+			elts := []ast.Expr{
+				&ast.KeyValueExpr{
+					Key:   &ast.Ident{Name: "ordinal"},
+					Value: &ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", i)},
+				},
+				&ast.KeyValueExpr{
+					Key:   &ast.Ident{Name: "name"},
+					Value: &ast.BasicLit{Kind: token.STRING, Value: "\"" + ec.Name + "\""},
+				},
+			}
+
+			// Add field values from constructor arguments
+			for j, arg := range ec.Arguments {
+				if j < len(ctx.currentClass.Fields) {
+					fieldName := ctx.currentClass.Fields[j].Name
+					elts = append(elts, &ast.KeyValueExpr{
+						Key:   &ast.Ident{Name: fieldName},
+						Value: &ast.Ident{Name: arg}, // Use the argument as-is (it's already source text)
+					})
+				}
+			}
+
+			varSpecs = append(varSpecs, &ast.ValueSpec{
+				Names: []*ast.Ident{{Name: ec.Name}},
+				Values: []ast.Expr{
+					&ast.UnaryExpr{
+						Op: token.AND,
+						X: &ast.CompositeLit{
+							Type: &ast.Ident{Name: ctx.className},
+							Elts: elts,
+						},
+					},
+				},
+			})
+		}
+
+		declarations = append(declarations, &ast.GenDecl{
+			Tok:   token.VAR,
+			Specs: varSpecs,
+		})
+
+		// Generate values slice: var _enumNameValues = []*EnumName{&CONST1, &CONST2, ...}
+		valuesVarName := "_" + symbol.Lowercase(ctx.className) + "Values"
+		constPtrs := []ast.Expr{}
+		for _, ec := range ctx.currentClass.EnumConstantList {
+			constPtrs = append(constPtrs, &ast.Ident{Name: ec.Name})
+		}
+		declarations = append(declarations, &ast.GenDecl{
+			Tok: token.VAR,
+			Specs: []ast.Spec{
+				&ast.ValueSpec{
+					Names: []*ast.Ident{{Name: valuesVarName}},
+					Values: []ast.Expr{
+						&ast.CompositeLit{
+							Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}},
+							Elts: constPtrs,
+						},
+					},
+				},
+			},
+		})
+
+		// Generate Values() function: func EnumNameValues() []*EnumName { return _enumNameValues }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: ctx.className + "Values"},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{&ast.Ident{Name: valuesVarName}},
+					},
+				},
+			},
+		})
+
+		// Generate Ordinal() method: func (e *EnumName) Ordinal() int { return e.ordinal }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: "Ordinal"},
+			Recv: &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "e"}},
+						Type:  &ast.StarExpr{X: &ast.Ident{Name: ctx.className}},
+					},
+				},
+			},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{Type: &ast.Ident{Name: "int"}},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{
+							&ast.SelectorExpr{
+								X:   &ast.Ident{Name: "e"},
+								Sel: &ast.Ident{Name: "ordinal"},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		// Generate Name() method: func (e *EnumName) Name() string { return e.name }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: "Name"},
+			Recv: &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "e"}},
+						Type:  &ast.StarExpr{X: &ast.Ident{Name: ctx.className}},
+					},
+				},
+			},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{Type: &ast.Ident{Name: "string"}},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{
+							&ast.SelectorExpr{
+								X:   &ast.Ident{Name: "e"},
+								Sel: &ast.Ident{Name: "name"},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		// Generate String() method: func (e *EnumName) String() string { return e.name }
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: "String"},
+			Recv: &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "e"}},
+						Type:  &ast.StarExpr{X: &ast.Ident{Name: ctx.className}},
+					},
+				},
+			},
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{Type: &ast.Ident{Name: "string"}},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{
+							&ast.SelectorExpr{
+								X:   &ast.Ident{Name: "e"},
+								Sel: &ast.Ident{Name: "name"},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		// Generate ValueOf() function for advanced enum
+		declarations = append(declarations, generateAdvancedValueOfFunc(ctx.className, ctx.currentClass.EnumConstantList))
+	}
+
+	return declarations
+}
+
+// generateValueOfFunc generates the ValueOf function for simple enums
+func generateValueOfFunc(enumName string, constants []string) *ast.FuncDecl {
+	// Generate switch cases
+	cases := []ast.Stmt{}
+	for i, constName := range constants {
+		cases = append(cases, &ast.CaseClause{
+			List: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + constName + "\""}},
+			Body: []ast.Stmt{
+				&ast.ReturnStmt{
+					Results: []ast.Expr{
+						&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", i)},
+						&ast.Ident{Name: "true"},
+					},
+				},
+			},
+		})
+	}
+	// Default case
+	cases = append(cases, &ast.CaseClause{
+		Body: []ast.Stmt{
+			&ast.ReturnStmt{
+				Results: []ast.Expr{
+					&ast.BasicLit{Kind: token.INT, Value: "0"},
+					&ast.Ident{Name: "false"},
+				},
+			},
+		},
+	})
+
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: enumName + "ValueOf"},
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "name"}},
+						Type:  &ast.Ident{Name: "string"},
+					},
+				},
+			},
+			Results: &ast.FieldList{
+				List: []*ast.Field{
+					{Type: &ast.Ident{Name: enumName}},
+					{Type: &ast.Ident{Name: "bool"}},
+				},
+			},
+		},
+		Body: &ast.BlockStmt{
+			List: []ast.Stmt{
+				&ast.SwitchStmt{
+					Tag:  &ast.Ident{Name: "name"},
+					Body: &ast.BlockStmt{List: cases},
+				},
+			},
+		},
+	}
+}
+
+// generateAdvancedValueOfFunc generates the ValueOf function for advanced enums
+func generateAdvancedValueOfFunc(enumName string, constants []*symbol.EnumConstant) *ast.FuncDecl {
+	// Generate switch cases
+	cases := []ast.Stmt{}
+	for _, ec := range constants {
+		cases = append(cases, &ast.CaseClause{
+			List: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + ec.Name + "\""}},
+			Body: []ast.Stmt{
+				&ast.ReturnStmt{
+					Results: []ast.Expr{
+						&ast.Ident{Name: ec.Name},
+						&ast.Ident{Name: "true"},
+					},
+				},
+			},
+		})
+	}
+	// Default case
+	cases = append(cases, &ast.CaseClause{
+		Body: []ast.Stmt{
+			&ast.ReturnStmt{
+				Results: []ast.Expr{
+					&ast.Ident{Name: "nil"},
+					&ast.Ident{Name: "false"},
+				},
+			},
+		},
+	})
+
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: enumName + "ValueOf"},
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "name"}},
+						Type:  &ast.Ident{Name: "string"},
+					},
+				},
+			},
+			Results: &ast.FieldList{
+				List: []*ast.Field{
+					{Type: &ast.StarExpr{X: &ast.Ident{Name: enumName}}},
+					{Type: &ast.Ident{Name: "bool"}},
+				},
+			},
+		},
+		Body: &ast.BlockStmt{
+			List: []ast.Stmt{
+				&ast.SwitchStmt{
+					Tag:  &ast.Ident{Name: "name"},
+					Body: &ast.BlockStmt{List: cases},
+				},
+			},
+		},
+	}
 }

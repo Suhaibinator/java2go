@@ -17,8 +17,11 @@ Note: Java2go is still in development, and as such, please expect many bugs
 
 Currently, the following features are not implemented
 
-* [ ] Enum classes (Fully)
-* [ ] Generic types
+* [x] Enum classes (Fully) - Including:
+  * Simple enums (iota-based)
+  * Advanced enums with fields and constructor arguments
+  * Ordinal(), Name(), String(), valueOf(), values() methods
+* [x] Generic types
 * [ ] Any type of inheritance
     * [ ] Abstract classes
     * [ ] Lambda interfaces
