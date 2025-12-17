@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"strings"
 
 	"github.com/NickyBoy89/java2go/astutil"
 	"github.com/NickyBoy89/java2go/nodeutil"
@@ -11,6 +12,67 @@ import (
 	log "github.com/sirupsen/logrus"
 	sitter "github.com/smacker/go-tree-sitter"
 )
+
+// extractTypeArgsFromString extracts type arguments from a string like "List<Integer>"
+// or nested generics like "Map<String, List<Integer>>".
+// Returns ["Integer"] or ["String", "List<Integer>"] respectively, or nil if no type arguments found
+// or if the input has unbalanced angle brackets.
+func extractTypeArgsFromString(typeStr string) []string {
+	start := strings.Index(typeStr, "<")
+	end := strings.LastIndex(typeStr, ">")
+	if start == -1 || end == -1 || end <= start {
+		return nil
+	}
+	argsStr := typeStr[start+1 : end]
+
+	// Split by commas, but only at the top level (not inside nested angle brackets)
+	var result []string
+	var current strings.Builder
+	depth := 0
+
+	for _, ch := range argsStr {
+		switch ch {
+		case '<':
+			depth++
+			current.WriteRune(ch)
+		case '>':
+			depth--
+			if depth < 0 {
+				log.WithField("typeStr", typeStr).Warn("Unbalanced angle brackets in type string: too many '>'")
+				return nil
+			}
+			current.WriteRune(ch)
+		case ',':
+			if depth == 0 {
+				// Top-level comma - split here
+				trimmed := strings.TrimSpace(current.String())
+				if trimmed != "" {
+					result = append(result, trimmed)
+				}
+				current.Reset()
+			} else {
+				// Comma inside nested generics - keep it
+				current.WriteRune(ch)
+			}
+		default:
+			current.WriteRune(ch)
+		}
+	}
+
+	// Validate that all angle brackets were closed
+	if depth != 0 {
+		log.WithField("typeStr", typeStr).Warn("Unbalanced angle brackets in type string: unclosed '<'")
+		return nil
+	}
+
+	// Don't forget the last argument
+	trimmed := strings.TrimSpace(current.String())
+	if trimmed != "" {
+		result = append(result, trimmed)
+	}
+
+	return result
+}
 
 // ParseExpr parses an expression type
 func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
@@ -144,6 +206,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if node.ChildByFieldName("object") != nil {
 			objectNode := node.ChildByFieldName("object")
 			methodName := node.ChildByFieldName("name").Content(source)
+			methodIdent := ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)
 
 			// Check if this is an enum values() call
 			// Transform EnumName.values() to EnumNameValues()
@@ -170,16 +233,39 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 
+			objectExpr := ParseExpr(objectNode, source, ctx)
+			args := ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr)
+
+			// If this is a static call on a class name (e.g., Utils.<T>id(...)),
+			// rewrite it to a plain function call to match how static methods are emitted.
+			if classScope := resolveClassScopeByIdentifier(ctx, source, objectNode); classScope != nil {
+				if staticDef := findStaticMethodByNameAndArgCount(classScope, methodName, len(args)); staticDef != nil {
+					fun := ast.Expr(&ast.Ident{Name: staticDef.Name})
+					if typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx)); len(typeArgs) > 0 {
+						fun = applyTypeArguments(fun, typeArgs)
+					}
+					return &ast.CallExpr{Fun: fun, Args: args}
+				}
+			}
+
+			if rewritten := maybeRewriteInstanceGenericMethodInvocation(objectNode, objectExpr, methodName, args, node, ctx, source); rewritten != nil {
+				return rewritten
+			}
+
 			return &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
-					X:   ParseExpr(objectNode, source, ctx),
-					Sel: ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident),
+					X:   objectExpr,
+					Sel: methodIdent,
 				},
-				Args: ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr),
+				Args: args,
 			}
 		}
+		fun := ParseExpr(node.ChildByFieldName("name"), source, ctx)
+		if typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx)); len(typeArgs) > 0 {
+			fun = applyTypeArguments(fun, typeArgs)
+		}
 		return &ast.CallExpr{
-			Fun:  ParseExpr(node.ChildByFieldName("name"), source, ctx),
+			Fun:  fun,
 			Args: ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr),
 		}
 	case "object_creation_expression":
@@ -211,39 +297,105 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
-		var constructor *symbol.Definition
-		// Find the respective constructor, and call it
+		// Extract base class name and type arguments
+		var className string
+		var typeArgs []string
+		isDiamond := false
 		if objectType.Type() == "generic_type" {
-			constructor = ctx.currentClass.FindMethodByName(objectType.NamedChild(0).Content(source), argumentTypes)
+			className = objectType.NamedChild(0).Content(source)
+			typeArgs = astutil.ExtractTypeArguments(objectType, source)
+			// Diamond operator: generic_type with no type arguments and explicit "<>" in source
+			if len(typeArgs) == 0 {
+				content := objectType.Content(source)
+				// Look for "<>" after the class name (allowing for whitespace)
+				afterClass := strings.TrimSpace(content[len(className):])
+				isDiamond = strings.HasPrefix(afterClass, "<>")
+			}
 		} else {
-			constructor = ctx.currentClass.FindMethodByName(objectType.Content(source), argumentTypes)
+			className = objectType.Content(source)
+		}
+
+		// Find the respective constructor (if we have symbol info for that class).
+		var constructor *symbol.Definition
+		targetScope := ctx.currentClass
+		if ctx.currentFile != nil && ctx.currentFile.BaseClass != nil {
+			if found := findClassScopeByName(ctx.currentFile.BaseClass, className); found != nil {
+				targetScope = found
+			}
+		}
+		constructor = findMatchingConstructor(targetScope, className, argumentTypes)
+
+		// Helper function to add type arguments to a function expression
+		addTypeArgs := func(funExpr ast.Expr, args []string) ast.Expr {
+			if len(args) == 0 {
+				return funExpr
+			}
+			scopeTypeParams := inScopeTypeParameters(ctx)
+			typeArgExprs := make([]ast.Expr, 0, len(args))
+			for _, ta := range args {
+				typeArgExprs = append(typeArgExprs, javaTypeStringToGoTypeExpr(ta, scopeTypeParams))
+			}
+			return applyTypeArguments(funExpr, typeArgExprs)
+		}
+
+		// Determine effective type arguments:
+		// 1. If explicit type arguments provided, use them
+		// 2. If diamond operator, try to infer from expectedType
+		// 3. For inner class constructors (non-diamond), use parent class type params
+		effectiveTypeArgs := typeArgs
+		if len(effectiveTypeArgs) == 0 {
+			// For diamond operator, try to infer from expectedType
+			if isDiamond && ctx.expectedType != "" {
+				effectiveTypeArgs = extractTypeArgsFromString(ctx.expectedType)
+			}
+
+			// For inner class constructors (not diamond), use parent class type parameters
+			// This handles cases like `new Node(element)` inside a generic class
+			if len(effectiveTypeArgs) == 0 && !isDiamond && len(ctx.currentClass.TypeParameters) > 0 {
+				// Check if className is a nested class of the current class
+				for _, sub := range ctx.currentClass.Subclasses {
+					if sub.Class.OriginalName == className {
+						effectiveTypeArgs = ctx.currentClass.TypeParameters
+						break
+					}
+				}
+			}
 		}
 
 		if constructor != nil {
+			funExpr := addTypeArgs(&ast.Ident{Name: constructor.Name}, effectiveTypeArgs)
 			return &ast.CallExpr{
-				Fun:  &ast.Ident{Name: constructor.Name},
+				Fun:  funExpr,
 				Args: arguments,
 			}
 		}
 
 		// It is also possible that a constructor could be unresolved, so we handle
 		// this by calling the type of the type + "Construct" at the beginning
+		funExpr := addTypeArgs(&ast.Ident{Name: "Construct" + className}, effectiveTypeArgs)
 		return &ast.CallExpr{
-			Fun:  &ast.Ident{Name: "Construct" + objectType.Content(source)},
+			Fun:  funExpr,
 			Args: arguments,
 		}
 	case "array_creation_expression":
 		dimensions := []ast.Expr{}
 		arrayType := astutil.ParseType(node.ChildByFieldName("type"), source)
+		var initializer ast.Expr
 
 		for _, child := range nodeutil.NamedChildrenOf(node) {
 			if child.Type() == "dimensions_expr" {
 				dimensions = append(dimensions, ParseExpr(child, source, ctx))
+			} else if child.Type() == "array_initializer" {
+				initCtx := ctx.Clone()
+				initCtx.lastType = arrayType
+				initializer = ParseExpr(child, source, initCtx)
 			}
 		}
 
-		// TODO: Fix this to handle arrays that are declared with types,
-		// i.e `new int[] {1, 2, 3};`
+		if initializer != nil {
+			return initializer
+		}
+
 		if len(dimensions) == 0 {
 			panic("Array had zero dimensions")
 		}
@@ -374,4 +526,432 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		return &ast.Ident{Name: node.Content(source)}
 	}
 	panic("Unhandled expression: " + node.Type())
+}
+
+func findClassScopeByName(scope *symbol.ClassScope, name string) *symbol.ClassScope {
+	if scope == nil {
+		return nil
+	}
+	if scope.Class.OriginalName == name {
+		return scope
+	}
+	for _, sub := range scope.Subclasses {
+		if found := findClassScopeByName(sub, name); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+func resolveClassScopeByIdentifier(ctx Ctx, source []byte, objectNode *sitter.Node) *symbol.ClassScope {
+	if objectNode == nil || objectNode.Type() != "identifier" {
+		return nil
+	}
+	if ctx.currentFile == nil || ctx.currentFile.BaseClass == nil {
+		return nil
+	}
+	return findClassScopeByName(ctx.currentFile.BaseClass, objectNode.Content(source))
+}
+
+func typeParamNameSet(typeParams []string) map[string]struct{} {
+	if len(typeParams) == 0 {
+		return nil
+	}
+	m := make(map[string]struct{}, len(typeParams))
+	for _, tp := range typeParams {
+		m[tp] = struct{}{}
+	}
+	return m
+}
+
+func findMatchingConstructor(scope *symbol.ClassScope, className string, argumentTypes []string) *symbol.Definition {
+	if scope == nil {
+		return nil
+	}
+
+	for _, def := range scope.Methods {
+		if !def.Constructor {
+			continue
+		}
+		if def.OriginalName != className {
+			continue
+		}
+		if len(def.Parameters) != len(argumentTypes) {
+			continue
+		}
+
+		// Allow type parameter positions (class or constructor type params) to match
+		// any argument type, since the constructor can be instantiated accordingly.
+		acceptedTypeParams := append([]string{}, scope.TypeParameters...)
+		acceptedTypeParams = append(acceptedTypeParams, def.TypeParameters...)
+		tpSet := typeParamNameSet(acceptedTypeParams)
+
+		matches := true
+		for i, param := range def.Parameters {
+			argType := argumentTypes[i]
+			if argType == "" {
+				continue
+			}
+			if param.OriginalType == argType {
+				continue
+			}
+			if tpSet != nil {
+				if _, ok := tpSet[param.OriginalType]; ok {
+					continue
+				}
+			}
+			matches = false
+			break
+		}
+		if matches {
+			return def
+		}
+	}
+
+	return nil
+}
+
+func findStaticMethodByNameAndArgCount(scope *symbol.ClassScope, methodName string, argCount int) *symbol.Definition {
+	if scope == nil {
+		return nil
+	}
+	for _, def := range scope.Methods {
+		if !def.IsStatic {
+			continue
+		}
+		if def.OriginalName != methodName {
+			continue
+		}
+		if len(def.Parameters) != argCount {
+			continue
+		}
+		return def
+	}
+	return nil
+}
+
+func parseJavaTypeString(typeStr string) (string, []string) {
+	typeStr = strings.TrimSpace(typeStr)
+	if typeStr == "" {
+		return "", nil
+	}
+	base := typeStr
+	if idx := strings.Index(typeStr, "<"); idx >= 0 {
+		base = strings.TrimSpace(typeStr[:idx])
+	}
+	return base, extractTypeArgsFromString(typeStr)
+}
+
+func stripJavaQualifier(typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return ""
+	}
+	// Tree-sitter (and symbol.OriginalType) can include package qualifiers like
+	// "java.util.List<String>". The generator doesn't model Java packages as Go
+	// packages, so drop the qualifier and keep the leaf type name.
+	if idx := strings.LastIndex(typeName, "."); idx >= 0 {
+		return typeName[idx+1:]
+	}
+	return typeName
+}
+
+func inScopeTypeParameters(ctx Ctx) []string {
+	var params []string
+	if ctx.currentClass != nil {
+		params = append(params, ctx.currentClass.TypeParameters...)
+	}
+	if ctx.localScope != nil {
+		params = append(params, ctx.localScope.TypeParameters...)
+	}
+	return params
+}
+
+// javaTypeStringToGoTypeExpr converts a Java type string (as it appears in
+// symbol.OriginalType) into a Go AST expression suitable for use as a type
+// argument in an IndexExpr/IndexListExpr. It mirrors astutil.ParseTypeWithTypeParams
+// behavior for pointer-wrapping reference types, but operates on strings to support
+// type inference paths.
+func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string) ast.Expr {
+	typeStr = strings.TrimSpace(typeStr)
+	if typeStr == "" {
+		return &ast.Ident{Name: "any"}
+	}
+
+	// Arrays like Foo[][].
+	arrayDims := 0
+	for strings.HasSuffix(typeStr, "[]") {
+		arrayDims++
+		typeStr = strings.TrimSpace(typeStr[:len(typeStr)-2])
+	}
+
+	// Wildcards like ?, ? extends Foo, ? super Foo.
+	if strings.HasPrefix(typeStr, "?") {
+		rest := strings.TrimSpace(strings.TrimPrefix(typeStr, "?"))
+		if rest == "" {
+			return &ast.Ident{Name: "any"}
+		}
+		if strings.HasPrefix(rest, "extends") {
+			bound := strings.TrimSpace(strings.TrimPrefix(rest, "extends"))
+			if bound == "" {
+				return &ast.Ident{Name: "any"}
+			}
+			return javaTypeStringToGoTypeExpr(bound, typeParams)
+		}
+		// ? super ... is hard to model faithfully in Go; fall back to any.
+		return &ast.Ident{Name: "any"}
+	}
+
+	// Normalize qualifiers.
+	base, typeArgs := parseJavaTypeString(typeStr)
+	base = stripJavaQualifier(base)
+
+	isTypeParam := func(name string) bool {
+		for _, tp := range typeParams {
+			if tp == name {
+				return true
+			}
+		}
+		return false
+	}
+
+	primitive := func(name string) (ast.Expr, bool) {
+		switch name {
+		case "String":
+			return &ast.Ident{Name: "string"}, true
+		case "boolean":
+			return &ast.Ident{Name: "bool"}, true
+		case "int":
+			return &ast.Ident{Name: "int32"}, true
+		case "short":
+			return &ast.Ident{Name: "int16"}, true
+		case "long":
+			return &ast.Ident{Name: "int64"}, true
+		case "char":
+			return &ast.Ident{Name: "rune"}, true
+		case "byte":
+			return &ast.Ident{Name: "byte"}, true
+		case "float":
+			return &ast.Ident{Name: "float32"}, true
+		case "double":
+			return &ast.Ident{Name: "float64"}, true
+		}
+		return nil, false
+	}
+
+	var expr ast.Expr
+	if prim, ok := primitive(base); ok {
+		expr = prim
+	} else if isTypeParam(base) {
+		expr = &ast.Ident{Name: base}
+	} else {
+		// Reference type (including parameterized reference types) is represented as a pointer.
+		baseIdent := &ast.Ident{Name: base}
+		if len(typeArgs) > 0 {
+			argExprs := make([]ast.Expr, 0, len(typeArgs))
+			for _, arg := range typeArgs {
+				argExprs = append(argExprs, javaTypeStringToGoTypeExpr(arg, typeParams))
+			}
+			expr = &ast.StarExpr{X: applyTypeArguments(baseIdent, argExprs)}
+		} else {
+			expr = &ast.StarExpr{X: baseIdent}
+		}
+	}
+
+	for i := 0; i < arrayDims; i++ {
+		expr = &ast.ArrayType{Elt: expr}
+	}
+	return expr
+}
+
+func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
+	if ctx.localScope != nil {
+		if param := ctx.localScope.ParameterByName(name); param != nil && param.OriginalType != "" {
+			return param.OriginalType, true
+		}
+		if local := ctx.localScope.FindVariable(name); local != nil && local.OriginalType != "" {
+			return local.OriginalType, true
+		}
+	}
+	if ctx.currentClass != nil {
+		if field := ctx.currentClass.FindFieldByName(name); field != nil && field.OriginalType != "" {
+			return field.OriginalType, true
+		}
+	}
+	return "", false
+}
+
+func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+	switch node.Type() {
+	case "identifier":
+		return inferIdentifierJavaType(node.Content(source), ctx)
+	case "this":
+		if ctx.currentClass == nil {
+			return "", false
+		}
+		base := ctx.currentClass.Class.OriginalName
+		if len(ctx.currentClass.TypeParameters) == 0 {
+			return base, true
+		}
+		return fmt.Sprintf("%s<%s>", base, strings.Join(ctx.currentClass.TypeParameters, ", ")), true
+	case "object_creation_expression":
+		typeNode := node.ChildByFieldName("type")
+		if typeNode == nil {
+			return "", false
+		}
+		return typeNode.Content(source), true
+	}
+	return "", false
+}
+
+func applyTypeArguments(fun ast.Expr, args []ast.Expr) ast.Expr {
+	if len(args) == 0 {
+		return fun
+	}
+	if len(args) == 1 {
+		return &ast.IndexExpr{X: fun, Index: args[0]}
+	}
+	return &ast.IndexListExpr{X: fun, Indices: args}
+}
+
+type invocationTargetInfo struct {
+	classScope    *symbol.ClassScope
+	classTypeArgs []ast.Expr
+}
+
+func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *invocationTargetInfo {
+	if ctx.currentFile == nil || ctx.currentFile.BaseClass == nil {
+		return nil
+	}
+
+	scopeTypeParams := inScopeTypeParameters(ctx)
+
+	var className string
+	var classTypeArgs []string
+	switch objectNode.Type() {
+	case "this":
+		if ctx.currentClass == nil {
+			return nil
+		}
+		className = ctx.currentClass.Class.OriginalName
+		classTypeArgs = ctx.currentClass.TypeParameters
+	case "identifier":
+		javaType, ok := inferIdentifierJavaType(objectNode.Content(source), ctx)
+		if !ok {
+			return nil
+		}
+		className, classTypeArgs = parseJavaTypeString(javaType)
+	default:
+		javaType, ok := inferExprJavaType(objectNode, ctx, source)
+		if !ok {
+			return nil
+		}
+		className, classTypeArgs = parseJavaTypeString(javaType)
+	}
+
+	classScope := findClassScopeByName(ctx.currentFile.BaseClass, className)
+	if classScope == nil {
+		return nil
+	}
+
+	classTypeArgExprs := make([]ast.Expr, 0, len(classTypeArgs))
+	for _, arg := range classTypeArgs {
+		classTypeArgExprs = append(classTypeArgExprs, javaTypeStringToGoTypeExpr(arg, scopeTypeParams))
+	}
+
+	return &invocationTargetInfo{
+		classScope:    classScope,
+		classTypeArgs: classTypeArgExprs,
+	}
+}
+
+func explicitTypeArgumentExprs(node *sitter.Node, source []byte, typeParams []string) []ast.Expr {
+	typeArgsNode := node.ChildByFieldName("type_arguments")
+	if typeArgsNode == nil {
+		return nil
+	}
+	var exprs []ast.Expr
+	for _, arg := range nodeutil.NamedChildrenOf(typeArgsNode) {
+		exprs = append(exprs, javaTypeStringToGoTypeExpr(arg.Content(source), typeParams))
+	}
+	return exprs
+}
+
+func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
+	if len(def.TypeParameters) == 0 {
+		return nil
+	}
+
+	if explicit := explicitTypeArgumentExprs(invocationNode, source, inScopeTypeParameters(ctx)); len(explicit) == len(def.TypeParameters) && len(explicit) > 0 {
+		return explicit
+	}
+
+	argsNode := invocationNode.ChildByFieldName("arguments")
+	if argsNode == nil {
+		return nil
+	}
+
+	resolved := make(map[string]ast.Expr)
+	argNodes := nodeutil.NamedChildrenOf(argsNode)
+	for idx, param := range def.Parameters {
+		for _, tp := range def.TypeParameters {
+			if param.OriginalType == tp && idx < len(argNodes) {
+				if javaType, ok := inferExprJavaType(argNodes[idx], ctx, source); ok {
+					resolved[tp] = javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx))
+				}
+			}
+		}
+	}
+
+	result := make([]ast.Expr, len(def.TypeParameters))
+	for i, tp := range def.TypeParameters {
+		if expr, ok := resolved[tp]; ok {
+			result[i] = expr
+		} else {
+			result[i] = &ast.Ident{Name: "any"}
+		}
+	}
+	return result
+}
+
+func maybeRewriteInstanceGenericMethodInvocation(objectNode *sitter.Node, objectExpr ast.Expr, methodName string, args []ast.Expr, invocationNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	target := resolveInvocationTarget(objectNode, ctx, source)
+	if target == nil {
+		return nil
+	}
+
+	methodDefs := target.classScope.FindMethod().By(func(d *symbol.Definition) bool {
+		return d.OriginalName == methodName
+	})
+	var helperDef *symbol.Definition
+	for _, def := range methodDefs {
+		if def.RequiresHelper {
+			helperDef = def
+			break
+		}
+	}
+	if helperDef == nil {
+		return nil
+	}
+
+	classTypeArgs := target.classTypeArgs
+	methodTypeArgs := inferMethodTypeArguments(helperDef, invocationNode, ctx, source)
+	helperTypeArgs := append(classTypeArgs, methodTypeArgs...)
+
+	constructorIdent := &ast.Ident{Name: "New" + helperDef.HelperName}
+	helperConstructor := applyTypeArguments(constructorIdent, helperTypeArgs)
+	helperCall := &ast.CallExpr{
+		Fun:  helperConstructor,
+		Args: []ast.Expr{objectExpr},
+	}
+
+	selIdent := &ast.Ident{Name: helperDef.Name}
+
+	return &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   helperCall,
+			Sel: selIdent,
+		},
+		Args: args,
+	}
 }

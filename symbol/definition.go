@@ -10,6 +10,14 @@ type Definition struct {
 	OriginalType string
 	// Display type of the object
 	Type string
+	// Type parameters declared on this definition (methods/constructors)
+	TypeParameters []string
+	// Whether this definition is static (applies to methods/fields)
+	IsStatic bool
+	// Indicates that this definition requires a helper to model method-level type parameters
+	RequiresHelper bool
+	// Name of the helper type to use (if RequiresHelper)
+	HelperName string
 
 	// If the definition is a constructor
 	// This is used so that the definition handles its special naming and

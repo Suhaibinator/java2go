@@ -48,6 +48,9 @@ type Ctx struct {
 	// arrType[] varName = {item, item, item}, and no class name data is defined
 	// Can either be of type `*ast.Ident` or `*ast.StarExpr`
 	lastType ast.Expr
+
+	// Expected type from variable declaration, used for diamond operator inference
+	expectedType string
 }
 
 // Clone performs a shallow copy on a `Ctx`, returning a new Ctx with its pointers
@@ -59,6 +62,7 @@ func (c Ctx) Clone() Ctx {
 		currentClass: c.currentClass,
 		localScope:   c.localScope,
 		lastType:     c.lastType,
+		expectedType: c.expectedType,
 	}
 }
 
@@ -103,7 +107,11 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			}
 		}
 
-		fieldType := ParseExpr(node.ChildByFieldName("type"), source, ctx)
+		var typeParams []string
+		if ctx.currentClass != nil {
+			typeParams = ctx.currentClass.TypeParameters
+		}
+		fieldType := astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, typeParams)
 		fieldName := ParseExpr(node.ChildByFieldName("declarator").ChildByFieldName("name"), source, ctx).(*ast.Ident)
 		fieldName.Name = symbol.HandleExportStatus(public, fieldName.Name)
 
@@ -142,12 +150,6 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			}
 		}
 
-		parameters := &ast.FieldList{}
-
-		for _, param := range nodeutil.NamedChildrenOf(node.ChildByFieldName("parameters")) {
-			parameters.List = append(parameters.List, ParseNode(param, source, ctx).(*ast.Field))
-		}
-
 		methodName := node.ChildByFieldName("name").Content(source)
 		methodParameters := node.ChildByFieldName("parameters")
 
@@ -179,6 +181,12 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 
 		def := ctx.currentClass.FindMethod().By(comparison)[0]
+		ctx.localScope = def
+
+		parameters := &ast.FieldList{}
+		for _, param := range nodeutil.NamedChildrenOf(methodParameters) {
+			parameters.List = append(parameters.List, ParseNode(param, source, ctx).(*ast.Field))
+		}
 
 		return &ast.Field{
 			Doc:   &ast.CommentGroup{List: comments},
@@ -241,9 +249,13 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 				Type:  &ast.Ident{Name: paramDef.Type},
 			}
 		}
+		var typeParams []string
+		if ctx.currentClass != nil {
+			typeParams = ctx.currentClass.TypeParameters
+		}
 		return &ast.Field{
 			Names: []*ast.Ident{ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)},
-			Type:  astutil.ParseType(node.ChildByFieldName("type"), source),
+			Type:  astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, typeParams),
 		}
 	case "spread_parameter":
 		// The spread paramater takes a list and separates it into multiple elements
@@ -252,10 +264,15 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		spreadType := node.NamedChild(0)
 		spreadDeclarator := node.NamedChild(1)
 
+		var typeParams []string
+		if ctx.currentClass != nil {
+			typeParams = ctx.currentClass.TypeParameters
+		}
+
 		return &ast.Field{
 			Names: []*ast.Ident{ParseExpr(spreadDeclarator.ChildByFieldName("name"), source, ctx).(*ast.Ident)},
 			Type: &ast.Ellipsis{
-				Elt: astutil.ParseType(spreadType, source),
+				Elt: astutil.ParseTypeWithTypeParams(spreadType, source, typeParams),
 			},
 		}
 	case "inferred_parameters":
