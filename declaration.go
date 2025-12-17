@@ -550,14 +550,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 		if static {
 			if len(ctx.localScope.TypeParameters) > 0 {
-				typeParamFields := make([]*ast.Field, len(ctx.localScope.TypeParameters))
-				for i, tp := range ctx.localScope.TypeParameters {
-					typeParamFields[i] = &ast.Field{
-						Names: []*ast.Ident{{Name: tp.Name}},
-						Type:  &ast.Ident{Name: "any"},
-					}
-				}
-				funcDecl.Type.TypeParams = &ast.FieldList{List: typeParamFields}
+				funcDecl.Type.TypeParams = &ast.FieldList{List: makeTypeParamFields(ctx.localScope.TypeParameters)}
 			}
 		} else if len(ctx.localScope.TypeParameters) > 0 {
 			log.WithFields(log.Fields{
