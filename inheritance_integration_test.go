@@ -16,7 +16,10 @@ public class Cat extends Animal implements Pet {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "type Cat struct { *Animal *Pet }") {
+	if !strings.Contains(flat, "type Cat struct { *Animal Pet }") {
 		t.Fatalf("expected Cat to embed superclass and interfaces, got:\n%s", out)
+	}
+	if strings.Contains(flat, "*Pet }") {
+		t.Fatalf("expected Cat to embed interfaces without pointer indirection, got:\n%s", out)
 	}
 }
