@@ -235,6 +235,19 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 			objectExpr := ParseExpr(objectNode, source, ctx)
 			args := ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr)
+
+			// If this is a static call on a class name (e.g., Utils.<T>id(...)),
+			// rewrite it to a plain function call to match how static methods are emitted.
+			if classScope := resolveClassScopeByIdentifier(ctx, source, objectNode); classScope != nil {
+				if staticDef := findStaticMethodByNameAndArgCount(classScope, methodName, len(args)); staticDef != nil {
+					fun := ast.Expr(&ast.Ident{Name: staticDef.Name})
+					if typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx)); len(typeArgs) > 0 {
+						fun = applyTypeArguments(fun, typeArgs)
+					}
+					return &ast.CallExpr{Fun: fun, Args: args}
+				}
+			}
+
 			if rewritten := maybeRewriteInstanceGenericMethodInvocation(objectNode, objectExpr, methodName, args, node, ctx, source); rewritten != nil {
 				return rewritten
 			}
@@ -247,8 +260,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				Args: args,
 			}
 		}
+		fun := ParseExpr(node.ChildByFieldName("name"), source, ctx)
+		if typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx)); len(typeArgs) > 0 {
+			fun = applyTypeArguments(fun, typeArgs)
+		}
 		return &ast.CallExpr{
-			Fun:  ParseExpr(node.ChildByFieldName("name"), source, ctx),
+			Fun:  fun,
 			Args: ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr),
 		}
 	case "object_creation_expression":
@@ -298,29 +315,27 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			className = objectType.Content(source)
 		}
 
+		// Find the respective constructor (if we have symbol info for that class).
 		var constructor *symbol.Definition
-		// Find the respective constructor, and call it
-		constructor = ctx.currentClass.FindMethodByName(className, argumentTypes)
+		targetScope := ctx.currentClass
+		if ctx.currentFile != nil && ctx.currentFile.BaseClass != nil {
+			if found := findClassScopeByName(ctx.currentFile.BaseClass, className); found != nil {
+				targetScope = found
+			}
+		}
+		constructor = findMatchingConstructor(targetScope, className, argumentTypes)
 
 		// Helper function to add type arguments to a function expression
 		addTypeArgs := func(funExpr ast.Expr, args []string) ast.Expr {
 			if len(args) == 0 {
 				return funExpr
 			}
-			typeArgExprs := make([]ast.Expr, len(args))
-			for i, ta := range args {
-				typeArgExprs[i] = &ast.Ident{Name: ta}
+			scopeTypeParams := inScopeTypeParameters(ctx)
+			typeArgExprs := make([]ast.Expr, 0, len(args))
+			for _, ta := range args {
+				typeArgExprs = append(typeArgExprs, javaTypeStringToGoTypeExpr(ta, scopeTypeParams))
 			}
-			if len(typeArgExprs) == 1 {
-				return &ast.IndexExpr{
-					X:     funExpr,
-					Index: typeArgExprs[0],
-				}
-			}
-			return &ast.IndexListExpr{
-				X:       funExpr,
-				Indices: typeArgExprs,
-			}
+			return applyTypeArguments(funExpr, typeArgExprs)
 		}
 
 		// Determine effective type arguments:
@@ -524,6 +539,93 @@ func findClassScopeByName(scope *symbol.ClassScope, name string) *symbol.ClassSc
 		if found := findClassScopeByName(sub, name); found != nil {
 			return found
 		}
+	}
+	return nil
+}
+
+func resolveClassScopeByIdentifier(ctx Ctx, source []byte, objectNode *sitter.Node) *symbol.ClassScope {
+	if objectNode == nil || objectNode.Type() != "identifier" {
+		return nil
+	}
+	if ctx.currentFile == nil || ctx.currentFile.BaseClass == nil {
+		return nil
+	}
+	return findClassScopeByName(ctx.currentFile.BaseClass, objectNode.Content(source))
+}
+
+func typeParamNameSet(typeParams []string) map[string]struct{} {
+	if len(typeParams) == 0 {
+		return nil
+	}
+	m := make(map[string]struct{}, len(typeParams))
+	for _, tp := range typeParams {
+		m[tp] = struct{}{}
+	}
+	return m
+}
+
+func findMatchingConstructor(scope *symbol.ClassScope, className string, argumentTypes []string) *symbol.Definition {
+	if scope == nil {
+		return nil
+	}
+
+	for _, def := range scope.Methods {
+		if !def.Constructor {
+			continue
+		}
+		if def.OriginalName != className {
+			continue
+		}
+		if len(def.Parameters) != len(argumentTypes) {
+			continue
+		}
+
+		// Allow type parameter positions (class or constructor type params) to match
+		// any argument type, since the constructor can be instantiated accordingly.
+		acceptedTypeParams := append([]string{}, scope.TypeParameters...)
+		acceptedTypeParams = append(acceptedTypeParams, def.TypeParameters...)
+		tpSet := typeParamNameSet(acceptedTypeParams)
+
+		matches := true
+		for i, param := range def.Parameters {
+			argType := argumentTypes[i]
+			if argType == "" {
+				continue
+			}
+			if param.OriginalType == argType {
+				continue
+			}
+			if tpSet != nil {
+				if _, ok := tpSet[param.OriginalType]; ok {
+					continue
+				}
+			}
+			matches = false
+			break
+		}
+		if matches {
+			return def
+		}
+	}
+
+	return nil
+}
+
+func findStaticMethodByNameAndArgCount(scope *symbol.ClassScope, methodName string, argCount int) *symbol.Definition {
+	if scope == nil {
+		return nil
+	}
+	for _, def := range scope.Methods {
+		if !def.IsStatic {
+			continue
+		}
+		if def.OriginalName != methodName {
+			continue
+		}
+		if len(def.Parameters) != argCount {
+			continue
+		}
+		return def
 	}
 	return nil
 }
