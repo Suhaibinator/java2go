@@ -88,7 +88,10 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		for _, c := range nodeutil.NamedChildrenOf(node) {
 			switch c.Type() {
 			case "package_declaration":
-				program.Name = &ast.Ident{Name: c.NamedChild(0).NamedChild(int(c.NamedChild(0).NamedChildCount()) - 1).Content(source)}
+				pkg := c.NamedChild(0)
+				if pkg != nil && pkg.NamedChildCount() > 0 {
+					program.Name = &ast.Ident{Name: pkg.NamedChild(int(pkg.NamedChildCount() - 1)).Content(source)}
+				}
 			case "class_declaration", "interface_declaration", "enum_declaration":
 				program.Decls = ParseDecls(c, source, ctx)
 			case "import_declaration":

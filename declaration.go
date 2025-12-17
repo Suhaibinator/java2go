@@ -4,24 +4,65 @@ import (
 	"go/ast"
 	"go/token"
 
+	"github.com/NickyBoy89/java2go/astutil"
 	"github.com/NickyBoy89/java2go/nodeutil"
 	"github.com/NickyBoy89/java2go/symbol"
 	log "github.com/sirupsen/logrus"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+var javaTypeNodeKinds = map[string]struct{}{
+	"integral_type":          {},
+	"floating_point_type":    {},
+	"void_type":              {},
+	"boolean_type":           {},
+	"generic_type":           {},
+	"array_type":             {},
+	"type_identifier":        {},
+	"scoped_type_identifier": {},
+	"annotated_type":         {},
+}
+
+func collectTypeNodes(node *sitter.Node) []*sitter.Node {
+	if node == nil {
+		return nil
+	}
+
+	if _, ok := javaTypeNodeKinds[node.Type()]; ok {
+		return []*sitter.Node{node}
+	}
+
+	var types []*sitter.Node
+	for _, child := range nodeutil.NamedChildrenOf(node) {
+		types = append(types, collectTypeNodes(child)...)
+	}
+
+	return types
+}
+
 // ParseDecls represents any type that returns a list of top-level declarations,
 // this is any class, interface, or enum declaration
 func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
 	case "class_declaration":
-		// TODO: Currently ignores implements and extends with the following tags:
-		//"superclass"
-		//"interfaces"
-
 		// The declarations and fields for the class
 		declarations := []ast.Decl{}
 		fields := &ast.FieldList{}
+
+		// Handle inheritance: embed superclass and implemented interfaces
+		typeParams := ctx.currentClass.TypeParameterNames()
+
+		if superNode := node.ChildByFieldName("superclass"); superNode != nil {
+			for _, t := range collectTypeNodes(superNode) {
+				fields.List = append(fields.List, &ast.Field{Type: astutil.ParseTypeWithTypeParams(t, source, typeParams)})
+			}
+		}
+
+		if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
+			for _, t := range collectTypeNodes(interfacesNode) {
+				fields.List = append(fields.List, &ast.Field{Type: astutil.ParseTypeWithTypeParams(t, source, typeParams)})
+			}
+		}
 
 		// Global variables
 		globalVariables := &ast.GenDecl{Tok: token.VAR}
