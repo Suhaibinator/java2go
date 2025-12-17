@@ -144,6 +144,19 @@ func (cs *ClassScope) FindClass(name string) *Definition {
 	return nil
 }
 
+// FindClassScope searches for the class scope by its original name.
+func (cs *ClassScope) FindClassScope(name string) *ClassScope {
+	if cs.Class.OriginalName == name {
+		return cs
+	}
+	for _, subclass := range cs.Subclasses {
+		if scope := subclass.FindClassScope(name); scope != nil {
+			return scope
+		}
+	}
+	return nil
+}
+
 // FindFieldByName searches for a field by its original name, and returns its definition
 // or nil if none was found
 func (cs *ClassScope) FindFieldByName(name string) *Definition {

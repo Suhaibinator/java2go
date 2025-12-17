@@ -93,7 +93,13 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 					program.Name = &ast.Ident{Name: pkg.NamedChild(int(pkg.NamedChildCount() - 1)).Content(source)}
 				}
 			case "class_declaration", "interface_declaration", "enum_declaration":
-				program.Decls = ParseDecls(c, source, ctx)
+				declCtx := ctx.Clone()
+				if nameNode := c.ChildByFieldName("name"); nameNode != nil && ctx.currentFile != nil {
+					if scope := ctx.currentFile.FindClassScope(nameNode.Content(source)); scope != nil {
+						declCtx.currentClass = scope
+					}
+				}
+				program.Decls = append(program.Decls, ParseDecls(c, source, declCtx)...)
 			case "import_declaration":
 				program.Imports = append(program.Imports, ParseNode(c, source, ctx).(*ast.ImportSpec))
 			}

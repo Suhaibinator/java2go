@@ -170,25 +170,72 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		return decls
-	case "interface_body":
-		methods := &ast.FieldList{}
+	case "interface_declaration":
+		nameNode := node.ChildByFieldName("name")
+		interfaceName := nameNode.Content(source)
 
-		for _, c := range nodeutil.NamedChildrenOf(node) {
-			if c.Type() == "method_declaration" {
-				parsedMethod := ParseNode(c, source, ctx).(*ast.Field)
-				// If the method was ignored with an annotation, it will return a blank
-				// field, so ignore that
-				if parsedMethod.Type != nil {
-					methods.List = append(methods.List, parsedMethod)
+		// Prefer the resolved, exported name from symbols when available
+		if ctx.currentClass != nil && ctx.currentClass.Class != nil {
+			interfaceName = ctx.currentClass.Class.Name
+		} else if ctx.currentFile != nil {
+			if def := ctx.currentFile.FindClass(interfaceName); def != nil {
+				interfaceName = def.Name
+			}
+		}
+
+		ctx.className = interfaceName
+
+		var typeParams []string
+		if ctx.currentClass != nil {
+			typeParams = ctx.currentClass.TypeParameterNames()
+		}
+
+		interfacesNode := node.ChildByFieldName("extends_interfaces")
+		if interfacesNode == nil {
+			interfacesNode = node.ChildByFieldName("interfaces")
+		}
+		if interfacesNode == nil {
+			for _, child := range nodeutil.NamedChildrenOf(node) {
+				if child.Type() == "extends_interfaces" || child.Type() == "interfaces" {
+					interfacesNode = child
+					break
 				}
 			}
 		}
 
-		return []ast.Decl{GenInterface(ctx.className, methods)}
-	case "interface_declaration":
-		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
+		methods := &ast.FieldList{}
 
-		return ParseDecls(node.ChildByFieldName("body"), source, ctx)
+		// Embed any extended interfaces directly into the generated interface
+		if interfacesNode != nil {
+			for _, t := range collectTypeNodes(interfacesNode) {
+				embedType := astutil.ParseTypeWithTypeParams(t, source, typeParams)
+				if star, ok := embedType.(*ast.StarExpr); ok {
+					embedType = star.X
+				}
+				methods.List = append(methods.List, &ast.Field{Type: embedType})
+			}
+		}
+
+		// Add the interface's declared methods
+		if body := node.ChildByFieldName("body"); body != nil {
+			for _, c := range nodeutil.NamedChildrenOf(body) {
+				if c.Type() == "method_declaration" {
+					parsedMethod := ParseNode(c, source, ctx).(*ast.Field)
+					// If the method was ignored with an annotation, it will return a blank
+					// field, so ignore that
+					if parsedMethod.Type != nil {
+						methods.List = append(methods.List, parsedMethod)
+					}
+				}
+			}
+		}
+
+		var classTypeParams []symbol.TypeParam
+		if ctx.currentClass != nil {
+			classTypeParams = ctx.currentClass.TypeParameters
+		}
+
+		return []ast.Decl{GenInterface(interfaceName, methods, classTypeParams)}
 	case "enum_declaration":
 		// An enum is treated as a type alias (int) and a list of constants
 		// that define the possible values the enum can have

@@ -109,7 +109,7 @@ func extractTypeParameters(node *sitter.Node, source []byte) []TypeParam {
 func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 	var filePackage string
 
-	var baseClass *sitter.Node
+	var topLevelNodes []*sitter.Node
 
 	imports := make(map[string]string)
 	for _, node := range nodeutil.NamedChildrenOf(root) {
@@ -122,14 +122,25 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 
 			imports[importedItem] = importPath
 		case "class_declaration", "interface_declaration", "enum_declaration", "annotation_type_declaration":
-			baseClass = node
+			topLevelNodes = append(topLevelNodes, node)
 		}
 	}
 
+	classScopes := make([]*ClassScope, 0, len(topLevelNodes))
+	for _, decl := range topLevelNodes {
+		classScopes = append(classScopes, parseClassScope(decl, source))
+	}
+
+	var baseClass *ClassScope
+	if len(classScopes) > 0 {
+		baseClass = classScopes[0]
+	}
+
 	return &FileScope{
-		Imports:   imports,
-		Package:   filePackage,
-		BaseClass: parseClassScope(baseClass, source),
+		Imports:         imports,
+		Package:         filePackage,
+		TopLevelClasses: classScopes,
+		BaseClass:       baseClass,
 	}
 }
 
