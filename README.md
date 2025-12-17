@@ -38,7 +38,7 @@ Java2go supports Go 1.18+ generics for many common Java patterns:
 
 Current limitations:
 
-* Type parameter bounds (e.g. `<T extends Number>`) are not converted into Go constraints yet (defaults to `any`).
+* Type parameter bounds (e.g. `<T extends Number>`) are converted into Go constraints, but complex cases may still be approximated.
 * Wildcards and variance (`?`, `? extends`, `? super`) are approximated (often as `any`).
 * Generic interfaces are not fully modeled as parameterized Go interfaces yet.
 

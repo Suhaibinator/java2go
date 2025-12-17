@@ -6,6 +6,8 @@ import (
 	"go/token"
 	"strconv"
 	"unicode"
+
+	"github.com/NickyBoy89/java2go/symbol"
 )
 
 var tokens = map[string]token.Token{
@@ -80,9 +82,9 @@ func GenStruct(structName string, structFields *ast.FieldList) ast.Decl {
 }
 
 // GenStructWithTypeParams generates a struct with optional type parameters.
-// typeParams is a list of type parameter names (e.g., ["T", "U"]).
-// For Go generics, type parameters default to "any" constraint.
-func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typeParams []string) ast.Decl {
+// Each type parameter can optionally include bounds, which are converted into
+// Go constraints. Missing bounds default to the "any" constraint.
+func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typeParams []symbol.TypeParam) ast.Decl {
 	typeSpec := &ast.TypeSpec{
 		Name: &ast.Ident{
 			Name: structName,
@@ -94,16 +96,7 @@ func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typ
 
 	// Add type parameters if present
 	if len(typeParams) > 0 {
-		typeParamFields := make([]*ast.Field, len(typeParams))
-		for i, tp := range typeParams {
-			typeParamFields[i] = &ast.Field{
-				Names: []*ast.Ident{{Name: tp}},
-				Type:  &ast.Ident{Name: "any"},
-			}
-		}
-		typeSpec.TypeParams = &ast.FieldList{
-			List: typeParamFields,
-		}
+		typeSpec.TypeParams = &ast.FieldList{List: makeTypeParamFields(typeParams)}
 	}
 
 	return &ast.GenDecl{
@@ -114,7 +107,7 @@ func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typ
 
 // GenFuncDeclWithTypeParams creates a function declaration with type parameters.
 // This is used for constructors and static methods of generic classes.
-func GenFuncDeclWithTypeParams(name string, typeParams []string, params, results *ast.FieldList, body *ast.BlockStmt) *ast.FuncDecl {
+func GenFuncDeclWithTypeParams(name string, typeParams []symbol.TypeParam, params, results *ast.FieldList, body *ast.BlockStmt) *ast.FuncDecl {
 	funcDecl := &ast.FuncDecl{
 		Name: &ast.Ident{Name: name},
 		Type: &ast.FuncType{
@@ -126,19 +119,43 @@ func GenFuncDeclWithTypeParams(name string, typeParams []string, params, results
 
 	// Add type parameters if present
 	if len(typeParams) > 0 {
-		typeParamFields := make([]*ast.Field, len(typeParams))
-		for i, tp := range typeParams {
-			typeParamFields[i] = &ast.Field{
-				Names: []*ast.Ident{{Name: tp}},
-				Type:  &ast.Ident{Name: "any"},
-			}
-		}
-		funcDecl.Type.TypeParams = &ast.FieldList{
-			List: typeParamFields,
-		}
+		funcDecl.Type.TypeParams = &ast.FieldList{List: makeTypeParamFields(typeParams)}
 	}
 
 	return funcDecl
+}
+
+func makeTypeParamFields(typeParams []symbol.TypeParam) []*ast.Field {
+	if len(typeParams) == 0 {
+		return nil
+	}
+
+	paramNames := symbol.TypeParamNames(typeParams)
+	fields := make([]*ast.Field, len(typeParams))
+	for i, tp := range typeParams {
+		fields[i] = &ast.Field{
+			Names: []*ast.Ident{{Name: tp.Name}},
+			Type:  constraintExpr(tp.Bounds, paramNames),
+		}
+	}
+	return fields
+}
+
+func constraintExpr(bounds []symbol.JavaType, typeParams []string) ast.Expr {
+	if len(bounds) == 0 {
+		return &ast.Ident{Name: "any"}
+	}
+
+	if len(bounds) == 1 {
+		return javaTypeStringToGoTypeExpr(bounds[0].Original, typeParams)
+	}
+
+	fields := make([]*ast.Field, len(bounds))
+	for i, b := range bounds {
+		fields[i] = &ast.Field{Type: javaTypeStringToGoTypeExpr(b.Original, typeParams)}
+	}
+
+	return &ast.InterfaceType{Methods: &ast.FieldList{List: fields}}
 }
 
 func genType(remaining []string) ast.Expr {
