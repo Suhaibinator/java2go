@@ -60,7 +60,11 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
 			for _, t := range collectTypeNodes(interfacesNode) {
-				fields.List = append(fields.List, &ast.Field{Type: astutil.ParseTypeWithTypeParams(t, source, typeParams)})
+				embedType := astutil.ParseTypeWithTypeParams(t, source, typeParams)
+				if star, ok := embedType.(*ast.StarExpr); ok {
+					embedType = star.X
+				}
+				fields.List = append(fields.List, &ast.Field{Type: embedType})
 			}
 		}
 
