@@ -11,7 +11,7 @@ type Definition struct {
 	// Display type of the object
 	Type string
 	// Type parameters declared on this definition (methods/constructors)
-	TypeParameters []string
+	TypeParameters []TypeParam
 	// Whether this definition is static (applies to methods/fields)
 	IsStatic bool
 	// Indicates that this definition requires a helper to model method-level type parameters
@@ -71,4 +71,11 @@ func (d *Definition) FindVariable(name string) *Definition {
 
 func (d Definition) IsEmpty() bool {
 	return d.OriginalName == "" && len(d.Children) == 0
+}
+
+func (d *Definition) TypeParameterNames() []string {
+	if d == nil {
+		return nil
+	}
+	return TypeParamNames(d.TypeParameters)
 }

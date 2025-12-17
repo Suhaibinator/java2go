@@ -109,7 +109,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 
 		var typeParams []string
 		if ctx.currentClass != nil {
-			typeParams = ctx.currentClass.TypeParameters
+			typeParams = ctx.currentClass.TypeParameterNames()
 		}
 		fieldType := astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, typeParams)
 		fieldName := ParseExpr(node.ChildByFieldName("declarator").ChildByFieldName("name"), source, ctx).(*ast.Ident)
@@ -251,7 +251,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 		var typeParams []string
 		if ctx.currentClass != nil {
-			typeParams = ctx.currentClass.TypeParameters
+			typeParams = ctx.currentClass.TypeParameterNames()
 		}
 		return &ast.Field{
 			Names: []*ast.Ident{ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)},
@@ -266,7 +266,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 
 		var typeParams []string
 		if ctx.currentClass != nil {
-			typeParams = ctx.currentClass.TypeParameters
+			typeParams = ctx.currentClass.TypeParameterNames()
 		}
 
 		return &ast.Field{

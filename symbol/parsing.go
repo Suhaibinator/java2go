@@ -6,18 +6,101 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-func extractTypeParameterNames(node *sitter.Node, source []byte) []string {
+func isJavaTypeNode(node *sitter.Node) bool {
+	if node == nil {
+		return false
+	}
+	switch node.Type() {
+	case "integral_type", "floating_point_type", "void_type", "boolean_type",
+		"generic_type", "array_type", "type_identifier", "scoped_type_identifier",
+		"annotated_type":
+		return true
+	default:
+		return false
+	}
+}
+
+func extractTypeParameterBounds(param *sitter.Node, source []byte) []JavaType {
+	if param == nil {
+		return nil
+	}
+
+	// Prefer field-based access when available.
+	boundsNode := param.ChildByFieldName("bounds")
+	if boundsNode == nil {
+		boundsNode = param.ChildByFieldName("bound")
+	}
+
+	var boundTypeNodes []*sitter.Node
+	var collectFrom func(n *sitter.Node)
+	collectFrom = func(n *sitter.Node) {
+		if n == nil {
+			return
+		}
+		if isJavaTypeNode(n) {
+			boundTypeNodes = append(boundTypeNodes, n)
+			return
+		}
+		for _, child := range nodeutil.NamedChildrenOf(n) {
+			// If the child is a type node at this level, keep it as a whole bound.
+			if isJavaTypeNode(child) {
+				boundTypeNodes = append(boundTypeNodes, child)
+				continue
+			}
+			// Otherwise recurse; this covers containers like type_bound/type_bounds.
+			collectFrom(child)
+		}
+	}
+
+	if boundsNode != nil {
+		collectFrom(boundsNode)
+	} else {
+		// Fall back to scanning named children after the parameter name.
+		// (tree-sitter grammars can differ in whether bounds are exposed via fields).
+		for i := 1; i < int(param.NamedChildCount()); i++ {
+			collectFrom(param.NamedChild(i))
+		}
+	}
+
+	if len(boundTypeNodes) == 0 {
+		return nil
+	}
+
+	// De-duplicate by node range (same node can be reached via recursion).
+	seen := make(map[[2]uint32]struct{}, len(boundTypeNodes))
+	bounds := make([]JavaType, 0, len(boundTypeNodes))
+	for _, n := range boundTypeNodes {
+		if n == nil {
+			continue
+		}
+		key := [2]uint32{n.StartByte(), n.EndByte()}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		bounds = append(bounds, JavaType{Original: n.Content(source)})
+	}
+	return bounds
+}
+
+func extractTypeParameters(node *sitter.Node, source []byte) []TypeParam {
 	if node == nil {
 		return nil
 	}
 
-	var params []string
+	var params []TypeParam
 	for _, param := range nodeutil.NamedChildrenOf(node) {
-		if param.Type() == "type_parameter" {
-			if nameNode := param.NamedChild(0); nameNode != nil {
-				params = append(params, nameNode.Content(source))
-			}
+		if param.Type() != "type_parameter" {
+			continue
 		}
+		nameNode := param.NamedChild(0)
+		if nameNode == nil {
+			continue
+		}
+		params = append(params, TypeParam{
+			Name:   nameNode.Content(source),
+			Bounds: extractTypeParameterBounds(param, source),
+		})
 	}
 	return params
 }
@@ -54,7 +137,7 @@ func parseClassScope(root *sitter.Node, source []byte) *ClassScope {
 	return parseClassScopeWithParentTypeParams(root, source, nil)
 }
 
-func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, parentTypeParams []string) *ClassScope {
+func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, parentTypeParams []TypeParam) *ClassScope {
 	var public bool
 	// Rename the type based on the public/static rules
 	if root.NamedChild(0).Type() == "modifiers" {
@@ -79,25 +162,11 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	}
 
 	// Extract this class's own type parameters first (e.g., class Foo<T, U>)
-	ownTypeParams := extractTypeParameterNames(root.ChildByFieldName("type_parameters"), source)
+	ownTypeParams := extractTypeParameters(root.ChildByFieldName("type_parameters"), source)
 
-	// Build the type parameters list:
-	// 1. Start with parent type parameters (for nested classes)
-	// 2. Add own type parameters, but if a name matches a parent's, the inner one shadows it
-	// This handles cases like: class Outer<T> { class Inner<T> { } } where Inner's T shadows Outer's T
-	for _, parentTP := range parentTypeParams {
-		shadowed := false
-		for _, ownTP := range ownTypeParams {
-			if parentTP == ownTP {
-				shadowed = true
-				break
-			}
-		}
-		if !shadowed {
-			scope.TypeParameters = append(scope.TypeParameters, parentTP)
-		}
-	}
-	scope.TypeParameters = append(scope.TypeParameters, ownTypeParams...)
+	// Merge parent type parameters (for nested classes), applying shadowing:
+	// class Outer<T> { class Inner<T> { } } where Inner's T shadows Outer's T.
+	scope.TypeParameters = MergeTypeParams(parentTypeParams, ownTypeParams)
 
 	// Parse the body of the class (or enum)
 
@@ -153,7 +222,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		// The converted name and type of the field
 		fieldName := fieldNameNode.Content(source)
-		fieldType := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, scope.TypeParameters))
+		fieldType := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, scope.TypeParameterNames()))
 
 		scope.Fields = append(scope.Fields, &Definition{
 			Name:         HandleExportStatus(public, fieldName),
@@ -179,9 +248,9 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		nodeutil.AssertTypeIs(node.ChildByFieldName("name"), "identifier")
 
 		name := node.ChildByFieldName("name").Content(source)
-		methodTypeParams := extractTypeParameterNames(node.ChildByFieldName("type_parameters"), source)
-		combinedTypeParams := append([]string{}, scope.TypeParameters...)
-		combinedTypeParams = append(combinedTypeParams, methodTypeParams...)
+		methodTypeParams := extractTypeParameters(node.ChildByFieldName("type_parameters"), source)
+		combinedTypeParams := MergeTypeParams(scope.TypeParameters, methodTypeParams)
+		combinedTypeParamNames := TypeParamNames(combinedTypeParams)
 
 		declaration := &Definition{
 			Name:           HandleExportStatus(public, name),
@@ -192,7 +261,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		}
 
 		if node.Type() == "method_declaration" {
-			declaration.Type = nodeToStr(astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, combinedTypeParams))
+			declaration.Type = nodeToStr(astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, combinedTypeParamNames))
 			declaration.OriginalType = node.ChildByFieldName("type").Content(source)
 		} else {
 			// A constructor declaration returns the type being constructed
@@ -226,7 +295,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			declaration.Parameters = append(declaration.Parameters, &Definition{
 				Name:         paramName,
 				OriginalName: paramName,
-				Type:         nodeToStr(astutil.ParseTypeWithTypeParams(paramType, source, combinedTypeParams)),
+				Type:         nodeToStr(astutil.ParseTypeWithTypeParams(paramType, source, combinedTypeParamNames)),
 				OriginalType: paramType.Content(source),
 			})
 		}

@@ -15,17 +15,21 @@ type ClassScope struct {
 	// Enum constant names (only populated if IsEnum is true)
 	EnumConstants []string
 	// Type parameters for generic classes (e.g., ["T", "U"] for class Foo<T, U>)
-	TypeParameters []string
+	TypeParameters []TypeParam
 }
 
 // IsTypeParameter checks if a given name is a type parameter of this class
 func (cs *ClassScope) IsTypeParameter(name string) bool {
 	for _, tp := range cs.TypeParameters {
-		if tp == name {
+		if tp.Name == name {
 			return true
 		}
 	}
 	return false
+}
+
+func (cs *ClassScope) TypeParameterNames() []string {
+	return TypeParamNames(cs.TypeParameters)
 }
 
 // FindMethod searches through the immediate class's methods find a specific method

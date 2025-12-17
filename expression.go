@@ -355,7 +355,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				// Check if className is a nested class of the current class
 				for _, sub := range ctx.currentClass.Subclasses {
 					if sub.Class.OriginalName == className {
-						effectiveTypeArgs = ctx.currentClass.TypeParameters
+						effectiveTypeArgs = ctx.currentClass.TypeParameterNames()
 						break
 					}
 				}
@@ -582,8 +582,8 @@ func findMatchingConstructor(scope *symbol.ClassScope, className string, argumen
 
 		// Allow type parameter positions (class or constructor type params) to match
 		// any argument type, since the constructor can be instantiated accordingly.
-		acceptedTypeParams := append([]string{}, scope.TypeParameters...)
-		acceptedTypeParams = append(acceptedTypeParams, def.TypeParameters...)
+		acceptedTypeParams := append([]string{}, scope.TypeParameterNames()...)
+		acceptedTypeParams = append(acceptedTypeParams, def.TypeParameterNames()...)
 		tpSet := typeParamNameSet(acceptedTypeParams)
 
 		matches := true
@@ -659,10 +659,10 @@ func stripJavaQualifier(typeName string) string {
 func inScopeTypeParameters(ctx Ctx) []string {
 	var params []string
 	if ctx.currentClass != nil {
-		params = append(params, ctx.currentClass.TypeParameters...)
+		params = append(params, ctx.currentClass.TypeParameterNames()...)
 	}
 	if ctx.localScope != nil {
-		params = append(params, ctx.localScope.TypeParameters...)
+		params = append(params, ctx.localScope.TypeParameterNames()...)
 	}
 	return params
 }
@@ -793,7 +793,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		if len(ctx.currentClass.TypeParameters) == 0 {
 			return base, true
 		}
-		return fmt.Sprintf("%s<%s>", base, strings.Join(ctx.currentClass.TypeParameters, ", ")), true
+		return fmt.Sprintf("%s<%s>", base, strings.Join(ctx.currentClass.TypeParameterNames(), ", ")), true
 	case "object_creation_expression":
 		typeNode := node.ChildByFieldName("type")
 		if typeNode == nil {
@@ -834,7 +834,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 			return nil
 		}
 		className = ctx.currentClass.Class.OriginalName
-		classTypeArgs = ctx.currentClass.TypeParameters
+		classTypeArgs = ctx.currentClass.TypeParameterNames()
 	case "identifier":
 		javaType, ok := inferIdentifierJavaType(objectNode.Content(source), ctx)
 		if !ok {
@@ -895,9 +895,9 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 	argNodes := nodeutil.NamedChildrenOf(argsNode)
 	for idx, param := range def.Parameters {
 		for _, tp := range def.TypeParameters {
-			if param.OriginalType == tp && idx < len(argNodes) {
+			if param.OriginalType == tp.Name && idx < len(argNodes) {
 				if javaType, ok := inferExprJavaType(argNodes[idx], ctx, source); ok {
-					resolved[tp] = javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx))
+					resolved[tp.Name] = javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx))
 				}
 			}
 		}
@@ -905,7 +905,7 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 
 	result := make([]ast.Expr, len(def.TypeParameters))
 	for i, tp := range def.TypeParameters {
-		if expr, ok := resolved[tp]; ok {
+		if expr, ok := resolved[tp.Name]; ok {
 			result[i] = expr
 		} else {
 			result[i] = &ast.Ident{Name: "any"}

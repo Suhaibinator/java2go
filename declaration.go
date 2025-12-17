@@ -80,7 +80,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		// Add the struct for the class (with type parameters if present)
-		declarations = append(declarations, GenStructWithTypeParams(ctx.className, fields, ctx.currentClass.TypeParameters))
+		declarations = append(declarations, GenStructWithTypeParams(ctx.className, fields, ctx.currentClass.TypeParameterNames()))
 
 		// Add all the declarations that appear in the class
 		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
@@ -264,9 +264,8 @@ func instantiateGenericType(name string, args []ast.Expr) ast.Expr {
 }
 
 func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {
-	classTypeParams := ctx.currentClass.TypeParameters
-	combinedTypeParams := append([]string{}, classTypeParams...)
-	combinedTypeParams = append(combinedTypeParams, def.TypeParameters...)
+	combinedTypeParams := symbol.MergeTypeParams(ctx.currentClass.TypeParameters, def.TypeParameters)
+	combinedTypeParamNames := symbol.TypeParamNames(combinedTypeParams)
 
 	helperName := def.HelperName
 	helperFields := &ast.FieldList{
@@ -277,9 +276,9 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 			},
 		},
 	}
-	helperStruct := GenStructWithTypeParams(helperName, helperFields, combinedTypeParams)
+	helperStruct := GenStructWithTypeParams(helperName, helperFields, combinedTypeParamNames)
 
-	helperTypeArgs := typeParamExprs(combinedTypeParams)
+	helperTypeArgs := typeParamExprs(combinedTypeParamNames)
 	helperTypeExpr := instantiateGenericType(helperName, helperTypeArgs)
 
 	receiverShortName := ShortName(ctx.className)
@@ -313,7 +312,7 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 			},
 		},
 	}
-	constructor := GenFuncDeclWithTypeParams(constructorName, combinedTypeParams, constructorParams, returnType, constructorBody)
+	constructor := GenFuncDeclWithTypeParams(constructorName, combinedTypeParamNames, constructorParams, returnType, constructorBody)
 
 	helperRecvName := receiverShortName + "Helper"
 	helperReceiver := &ast.FieldList{
@@ -397,22 +396,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Generate the struct type for `new` call - if generic, include type params
 		var structType ast.Expr = &ast.Ident{Name: ctx.className}
 		if len(ctx.currentClass.TypeParameters) > 0 {
-			// Create ClassName[T, U, ...] for generic structs
-			typeParamExprs := make([]ast.Expr, len(ctx.currentClass.TypeParameters))
-			for i, tp := range ctx.currentClass.TypeParameters {
-				typeParamExprs[i] = &ast.Ident{Name: tp}
-			}
-			if len(typeParamExprs) == 1 {
-				structType = &ast.IndexExpr{
-					X:     &ast.Ident{Name: ctx.className},
-					Index: typeParamExprs[0],
-				}
-			} else {
-				structType = &ast.IndexListExpr{
-					X:       &ast.Ident{Name: ctx.className},
-					Indices: typeParamExprs,
-				}
-			}
+			structType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
 		}
 
 		body.List = append([]ast.Stmt{
@@ -428,10 +412,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Build the return type: *ClassName or *ClassName[T, U, ...]
 		returnType := &ast.StarExpr{X: structType}
 
-		constructorTypeParams := append([]string{}, ctx.currentClass.TypeParameters...)
-		if ctx.localScope != nil && len(ctx.localScope.TypeParameters) > 0 {
-			constructorTypeParams = append(constructorTypeParams, ctx.localScope.TypeParameters...)
-		}
+		constructorTypeParams := symbol.TypeParamNames(symbol.MergeTypeParams(ctx.currentClass.TypeParameters, ctx.localScope.TypeParameters))
 
 		return []ast.Decl{GenFuncDeclWithTypeParams(
 			ctx.localScope.Name,
@@ -471,7 +452,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		// If a function is non-static, it has a method receiver
 		if !static {
-			receiverBaseType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameters))
+			receiverBaseType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
 			receiver = &ast.FieldList{
 				List: []*ast.Field{
 					{
@@ -572,7 +553,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				typeParamFields := make([]*ast.Field, len(ctx.localScope.TypeParameters))
 				for i, tp := range ctx.localScope.TypeParameters {
 					typeParamFields[i] = &ast.Field{
-						Names: []*ast.Ident{{Name: tp}},
+						Names: []*ast.Ident{{Name: tp.Name}},
 						Type:  &ast.Ident{Name: "any"},
 					}
 				}

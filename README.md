@@ -15,17 +15,32 @@ It does this through several steps:
 
 Note: Java2go is still in development, and as such, please expect many bugs
 
-Currently, the following features are not implemented
+Currently, the following features are not implemented (or only partially implemented):
 
-* [ ] Enum classes (Fully)
-* [ ] Generic types
-* [ ] Any type of inheritance
-    * [ ] Abstract classes
-    * [ ] Lambda interfaces
-    * [ ] Inheritance
-* [ ] Decorators
+* [ ] Enums (advanced features)
+* [ ] Inheritance / polymorphism
+    * [ ] Extends / implements
+    * [ ] Abstract classes / methods
+    * [ ] Interface embedding
+* [ ] Decorators / annotations (beyond passthrough as comments and optional exclusion)
 * [ ] Anything that checks `instanceof`
 * [ ] Types for lambda expressions
+
+## Generics support
+
+Java2go supports Go 1.18+ generics for many common Java patterns:
+
+* Generic classes (e.g. `class Box<T>`) become parameterized Go types (e.g. `type Box[T any] struct { ... }`).
+* Generic constructors and `new` calls support explicit type arguments and the diamond operator (`<>`) when the expected type is known from a local variable declaration.
+* Nested generic types are handled (e.g. `Map<String, List<Integer>>`).
+* Static generic methods are emitted as generic Go functions.
+* Instance generic methods are modeled via generated helper types (since Go methods can’t declare their own type parameters).
+
+Current limitations:
+
+* Type parameter bounds (e.g. `<T extends Number>`) are not converted into Go constraints yet (defaults to `any`).
+* Wildcards and variance (`?`, `? extends`, `? super`) are approximated (often as `any`).
+* Generic interfaces are not fully modeled as parameterized Go interfaces yet.
 
 ## Usage
 

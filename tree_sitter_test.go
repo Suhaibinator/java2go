@@ -1012,3 +1012,61 @@ public class Utils<T> {
 		t.Errorf("Expected ellipsis element name 'T', got '%s'", elt.Name)
 	}
 }
+
+func findTypeParam(t *testing.T, params []symbol.TypeParam, name string) symbol.TypeParam {
+	t.Helper()
+	for _, p := range params {
+		if p.Name == name {
+			return p
+		}
+	}
+	t.Fatalf("Could not find type parameter %q", name)
+	return symbol.TypeParam{}
+}
+
+func TestSymbolParsing_TypeParameterBounds_ClassAndMethod(t *testing.T) {
+	src := `
+package com.example;
+public class Bounds<T extends Number & Comparable<T>, U> {
+    public <R extends Foo & Bar> R id(R value) {
+        return value;
+    }
+}
+`
+	helper := setupParseHelper(t, src)
+
+	classParams := helper.Ctx.currentClass.TypeParameters
+	if len(classParams) != 2 {
+		t.Fatalf("Expected 2 class type parameters, got %d", len(classParams))
+	}
+
+	tpT := findTypeParam(t, classParams, "T")
+	if len(tpT.Bounds) != 2 {
+		t.Fatalf("Expected 2 bounds for T, got %d", len(tpT.Bounds))
+	}
+	if tpT.Bounds[0].Original != "Number" || tpT.Bounds[1].Original != "Comparable<T>" {
+		t.Fatalf("Unexpected bounds for T: %#v", tpT.Bounds)
+	}
+
+	tpU := findTypeParam(t, classParams, "U")
+	if len(tpU.Bounds) != 0 {
+		t.Fatalf("Expected no bounds for U, got %#v", tpU.Bounds)
+	}
+
+	methodDefs := helper.Ctx.currentClass.FindMethod().ByOriginalName("id")
+	if len(methodDefs) != 1 {
+		t.Fatalf("Expected to find method 'id', got %d matches", len(methodDefs))
+	}
+	methodParams := methodDefs[0].TypeParameters
+	if len(methodParams) != 1 {
+		t.Fatalf("Expected 1 method type parameter, got %d", len(methodParams))
+	}
+
+	tpR := findTypeParam(t, methodParams, "R")
+	if len(tpR.Bounds) != 2 {
+		t.Fatalf("Expected 2 bounds for R, got %d", len(tpR.Bounds))
+	}
+	if tpR.Bounds[0].Original != "Foo" || tpR.Bounds[1].Original != "Bar" {
+		t.Fatalf("Unexpected bounds for R: %#v", tpR.Bounds)
+	}
+}
