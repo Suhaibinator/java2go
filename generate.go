@@ -192,17 +192,20 @@ func GenTypeInterface(name string, types []string) ast.Decl {
 	}
 }
 
-func GenInterface(name string, methods *ast.FieldList) ast.Decl {
-	return &ast.GenDecl{
-		Tok: token.TYPE,
-		Specs: []ast.Spec{
-			&ast.TypeSpec{
-				Name: &ast.Ident{Name: name},
-				Type: &ast.InterfaceType{
-					Methods: methods,
-				},
-			},
+func GenInterface(name string, methods *ast.FieldList, typeParams []symbol.TypeParam) ast.Decl {
+	typeSpec := &ast.TypeSpec{
+		Name: &ast.Ident{Name: name},
+		Type: &ast.InterfaceType{
+			Methods: methods,
 		},
+	}
+	if len(typeParams) > 0 {
+		typeSpec.TypeParams = &ast.FieldList{List: makeTypeParamFields(typeParams)}
+	}
+
+	return &ast.GenDecl{
+		Tok:   token.TYPE,
+		Specs: []ast.Spec{typeSpec},
 	}
 }
 

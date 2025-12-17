@@ -8,19 +8,28 @@ type FileScope struct {
 	// Every external package that is imported into the file
 	// Formatted as map[ImportedType: full.package.path]
 	Imports map[string]string
-	// The base class that is in the file
+	// Top-level classes/interfaces/enums declared in this file, in source order
+	TopLevelClasses []*ClassScope
+	// The first top-level declaration (kept for backward compatibility)
 	BaseClass *ClassScope
 }
 
 // FindClass searches through a file to find if a given class has been defined
 // at its root class, or within any of the subclasses
 func (fs *FileScope) FindClass(name string) *Definition {
-	if def := fs.BaseClass.FindClass(name); def != nil {
-		return def
-	}
-	for _, subclass := range fs.BaseClass.Subclasses {
-		if def := subclass.FindClass(name); def != nil {
+	for _, top := range fs.TopLevelClasses {
+		if def := top.FindClass(name); def != nil {
 			return def
+		}
+	}
+	return nil
+}
+
+// FindClassScope searches for the class scope (not just its definition) by name.
+func (fs *FileScope) FindClassScope(name string) *ClassScope {
+	for _, top := range fs.TopLevelClasses {
+		if scope := top.FindClassScope(name); scope != nil {
+			return scope
 		}
 	}
 	return nil
