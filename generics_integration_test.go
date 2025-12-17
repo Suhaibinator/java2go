@@ -125,6 +125,24 @@ public class Box<T> {
 	}
 }
 
+func TestGenericsIntegration_InstanceGenericMethodHelper_WithBounds(t *testing.T) {
+	src := `
+package gen.integration4b;
+public class Box<T extends Number> {
+    public <R extends Comparable<T>> R identity(R value) { return value; }
+    public static void call(Box<Integer> box, Integer value) { box.identity(value); }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+	if !strings.Contains(flat, "type BoxIdentityHelper[T *Number, R *Comparable[T]] struct") {
+		t.Fatalf("Expected helper struct with bounded type params, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func NewBoxIdentityHelper[T *Number, R *Comparable[T]]") {
+		t.Fatalf("Expected helper constructor to propagate bounds, got:\n%s", out)
+	}
+}
+
 func TestGenericsIntegration_ExplicitTypeArgumentsOnGenericFunctionCall(t *testing.T) {
 	src := `
 package gen.integration5;
@@ -143,6 +161,19 @@ public class Utils {
 	}
 	if !strings.Contains(out, "id[*Foo]") && !strings.Contains(out, "id[Foo]") {
 		t.Errorf("Expected explicit type args to be applied at call site, got:\n%s", out)
+	}
+}
+
+func TestGenericsIntegration_StaticMethodWithBounds(t *testing.T) {
+	src := `
+package gen.integration5b;
+public class Utils {
+    static <T extends Number> T id(T value) { return value; }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	if !strings.Contains(out, "func id[T *Number]") {
+		t.Fatalf("Expected bounded type parameter on static method, got:\n%s", out)
 	}
 }
 

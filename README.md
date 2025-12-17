@@ -31,6 +31,7 @@ Currently, the following features are not implemented (or only partially impleme
 Java2go supports Go 1.18+ generics for many common Java patterns:
 
 * Generic classes (e.g. `class Box<T>`) become parameterized Go types (e.g. `type Box[T any] struct { ... }`).
+* Java type parameter bounds (e.g. `<T extends Number & Comparable<T>>`) are converted into Go constraint expressions on structs, functions, and generated helpers/constructors.
 * Generic constructors and `new` calls support explicit type arguments and the diamond operator (`<>`) when the expected type is known from a local variable declaration.
 * Nested generic types are handled (e.g. `Map<String, List<Integer>>`).
 * Static generic methods are emitted as generic Go functions.
@@ -38,7 +39,7 @@ Java2go supports Go 1.18+ generics for many common Java patterns:
 
 Current limitations:
 
-* Type parameter bounds (e.g. `<T extends Number>`) are converted into Go constraints, but complex cases may still be approximated.
+* Complex bound combinations or wildcard/variance semantics may still be approximated when translated into Go constraints.
 * Wildcards and variance (`?`, `? extends`, `? super`) are approximated (often as `any`).
 * Generic interfaces are not fully modeled as parameterized Go interfaces yet.
 
