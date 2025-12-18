@@ -314,7 +314,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			Type:         fieldType,
 			OriginalType: typeNode.Content(source),
 		})
-	case "method_declaration", "constructor_declaration":
+	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
 		var public bool
 		var isStatic bool
 		// Rename the type based on the public/static rules

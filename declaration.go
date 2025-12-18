@@ -143,7 +143,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			switch child.Type() {
 			// Skip fields, comments, and enum constants (already processed)
 			case "field_declaration", "comment", "enum_constant":
-			case "constructor_declaration", "method_declaration", "static_initializer":
+			case "constructor_declaration", "method_declaration", "abstract_method_declaration", "static_initializer":
 				for _, d := range ParseDecl(child, source, ctx) {
 					// If the declaration is bad, skip it
 					_, bad := d.(*ast.BadDecl)
@@ -155,7 +155,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				// Process methods and constructors inside enum body declarations
 				for _, declChild := range nodeutil.NamedChildrenOf(child) {
 					switch declChild.Type() {
-					case "constructor_declaration", "method_declaration", "static_initializer":
+					case "constructor_declaration", "method_declaration", "abstract_method_declaration", "static_initializer":
 						for _, d := range ParseDecl(declChild, source, ctx) {
 							_, bad := d.(*ast.BadDecl)
 							if !bad {
@@ -243,8 +243,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	case "enum_declaration":
 		// Enums are modeled as structs with named singleton instances rather than integer constants.
 
-		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
-		ctx.currentClass = ctx.currentFile.BaseClass
+		enumName := node.ChildByFieldName("name").Content(source)
+		if ctx.currentClass != nil {
+			ctx.className = ctx.currentClass.Class.Name
+		} else {
+			ctx.className = ctx.currentFile.FindClass(enumName).Name
+			ctx.currentClass = ctx.currentFile.FindClassScope(enumName)
+		}
 
 		declarations := []ast.Decl{}
 
@@ -756,7 +761,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
 			body,
 		)}
-	case "method_declaration":
+	case "method_declaration", "abstract_method_declaration":
 		var static bool
 
 		// Store the annotations as comments on the method
@@ -767,10 +772,6 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				switch modifier.Type() {
 				case "static":
 					static = true
-				case "abstract":
-					log.Warn("Unhandled abstract class")
-					// TODO: Handle abstract methods correctly
-					return []ast.Decl{&ast.BadDecl{}}
 				case "marker_annotation", "annotation":
 					comments = append(comments, &ast.Comment{Text: "//" + modifier.Content(source)})
 					// If the annotation was on the list of ignored annotations, don't
