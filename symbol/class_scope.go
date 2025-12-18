@@ -8,6 +8,9 @@ type ClassScope struct {
 	Class *Definition
 	// Every class that is nested within the base class
 	Subclasses []*ClassScope
+	// Superclass (as written in source, may include type arguments), if any.
+	// Example: "Animal" or "Base<T>".
+	Superclass string
 	// Any normal and static fields associated with the class
 	Fields []*Definition
 	// Methods and constructors

@@ -188,6 +188,17 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 		IsEnum: root.Type() == "enum_declaration",
 	}
 
+	// Track superclass (for classes/enums). Tree-sitter represents the superclass
+	// clause as a container that can include keywords like "extends", so extract
+	// the underlying type node (e.g., "Animal" or "Base<T>").
+	if superNode := root.ChildByFieldName("superclass"); superNode != nil {
+		if types := collectTypeNodes(superNode); len(types) > 0 {
+			scope.Superclass = types[0].Content(source)
+		} else {
+			scope.Superclass = superNode.Content(source)
+		}
+	}
+
 	// Extract this class's own type parameters first (e.g., class Foo<T, U>)
 	ownTypeParams := extractTypeParameters(root.ChildByFieldName("type_parameters"), source)
 

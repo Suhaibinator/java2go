@@ -235,21 +235,33 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 			objectExpr := ParseExpr(objectNode, source, ctx)
 			args := ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr)
+			typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx))
 
 			// If this is a static call on a class name (e.g., Utils.<T>id(...)),
 			// rewrite it to a plain function call to match how static methods are emitted.
 			if classScope := resolveClassScopeByIdentifier(ctx, source, objectNode); classScope != nil {
 				if staticDef := findStaticMethodByNameAndArgCount(classScope, methodName, len(args)); staticDef != nil {
 					fun := ast.Expr(&ast.Ident{Name: staticDef.Name})
-					if typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx)); len(typeArgs) > 0 {
-						fun = applyTypeArguments(fun, typeArgs)
-					}
+					fun = applyTypeArguments(fun, typeArgs)
 					return &ast.CallExpr{Fun: fun, Args: args}
 				}
 			}
 
-			if rewritten := maybeRewriteInstanceGenericMethodInvocation(objectNode, objectExpr, methodName, args, node, ctx, source); rewritten != nil {
+			target := resolveInvocationTarget(objectNode, ctx, source)
+			if rewritten := maybeRewriteInstanceGenericMethodInvocationWithTarget(target, objectExpr, methodName, args, node, ctx, source); rewritten != nil {
 				return rewritten
+			}
+
+			if target != nil {
+				if resolved := findInstanceMethodInHierarchy(target.classScope, methodName, len(args), ctx); resolved != nil {
+					methodIdent = &ast.Ident{Name: resolved.def.Name}
+				} else if resolved := findStaticMethodInHierarchy(target.classScope, methodName, len(args), ctx); resolved != nil {
+					// Java permits calling static methods via an instance expression; rewrite
+					// to a plain function call to match codegen.
+					fun := ast.Expr(&ast.Ident{Name: resolved.def.Name})
+					fun = applyTypeArguments(fun, typeArgs)
+					return &ast.CallExpr{Fun: fun, Args: args}
+				}
 			}
 
 			return &ast.CallExpr{
@@ -260,14 +272,46 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				Args: args,
 			}
 		}
+		methodName := node.ChildByFieldName("name").Content(source)
+		args := ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr)
+		typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx))
+
+		// Unqualified invocation in Java is typically an implicit receiver call.
+		// Only do this in a non-static method/constructor body where the receiver
+		// variable exists.
+		if ctx.currentClass != nil && ctx.localScope != nil && ctx.localScope.OriginalName != "" && !ctx.localScope.IsStatic {
+			recv := &ast.Ident{Name: ShortName(ctx.className)}
+			target := &invocationTargetInfo{
+				classScope:    ctx.currentClass,
+				classTypeArgs: typeParamExprs(ctx.currentClass.TypeParameterNames()),
+			}
+			if rewritten := maybeRewriteInstanceGenericMethodInvocationWithTarget(target, recv, methodName, args, node, ctx, source); rewritten != nil {
+				return rewritten
+			}
+			if resolved := findInstanceMethodInHierarchy(ctx.currentClass, methodName, len(args), ctx); resolved != nil {
+				return &ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   recv,
+						Sel: &ast.Ident{Name: resolved.def.Name},
+					},
+					Args: args,
+				}
+			}
+		}
+
+		// Otherwise, treat as a plain function call (static methods are emitted as
+		// functions).
+		if ctx.currentClass != nil {
+			if resolved := findStaticMethodInHierarchy(ctx.currentClass, methodName, len(args), ctx); resolved != nil {
+				fun := ast.Expr(&ast.Ident{Name: resolved.def.Name})
+				fun = applyTypeArguments(fun, typeArgs)
+				return &ast.CallExpr{Fun: fun, Args: args}
+			}
+		}
+
 		fun := ParseExpr(node.ChildByFieldName("name"), source, ctx)
-		if typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx)); len(typeArgs) > 0 {
-			fun = applyTypeArguments(fun, typeArgs)
-		}
-		return &ast.CallExpr{
-			Fun:  fun,
-			Args: ParseNode(node.ChildByFieldName("arguments"), source, ctx).([]ast.Expr),
-		}
+		fun = applyTypeArguments(fun, typeArgs)
+		return &ast.CallExpr{Fun: fun, Args: args}
 	case "object_creation_expression":
 		// This is called when anything is created with a constructor
 
@@ -449,18 +493,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		obj := node.ChildByFieldName("object")
 
 		if obj.Type() == "this" {
-			def := ctx.currentClass.FindField().ByOriginalName(node.ChildByFieldName("field").Content(source))
-			if len(def) == 0 {
-				// TODO: This field could not be found in the current class, because it exists in the superclass
-				// definition for the class
-				def = []*symbol.Definition{&symbol.Definition{
-					Name: node.ChildByFieldName("field").Content(source),
-				}}
+			fieldName := node.ChildByFieldName("field").Content(source)
+			def := findFieldInHierarchy(ctx.currentClass, fieldName, ctx)
+			selName := fieldName
+			if def != nil && def.Name != "" {
+				selName = def.Name
 			}
 
 			return &ast.SelectorExpr{
 				X:   ParseExpr(node.ChildByFieldName("object"), source, ctx),
-				Sel: &ast.Ident{Name: def[0].Name},
+				Sel: &ast.Ident{Name: selName},
 			}
 		}
 		return &ast.SelectorExpr{
@@ -543,14 +585,189 @@ func findClassScopeByName(scope *symbol.ClassScope, name string) *symbol.ClassSc
 	return nil
 }
 
+func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
+	if ctx.currentFile == nil {
+		return nil
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil
+	}
+
+	// Try fully-qualified lookup first: "pkg.path.Class".
+	if idx := strings.LastIndex(name, "."); idx >= 0 {
+		pkgPath := name[:idx]
+		className := name[idx+1:]
+		if pkg := symbol.GlobalScope.FindPackage(pkgPath); pkg != nil {
+			if scope := pkg.FindClassScope(className); scope != nil {
+				return scope
+			}
+		}
+		// Fall back to unqualified lookup.
+		name = className
+	}
+
+	// Current file.
+	if scope := ctx.currentFile.FindClassScope(name); scope != nil {
+		return scope
+	}
+
+	// Current package (other files).
+	if pkg := symbol.GlobalScope.FindPackage(ctx.currentFile.Package); pkg != nil {
+		if scope := pkg.FindClassScope(name); scope != nil {
+			return scope
+		}
+	}
+
+	// Imported package.
+	if pkgPath, ok := ctx.currentFile.Imports[name]; ok {
+		if pkg := symbol.GlobalScope.FindPackage(pkgPath); pkg != nil {
+			if scope := pkg.FindClassScope(name); scope != nil {
+				return scope
+			}
+		}
+	}
+
+	return nil
+}
+
 func resolveClassScopeByIdentifier(ctx Ctx, source []byte, objectNode *sitter.Node) *symbol.ClassScope {
 	if objectNode == nil || objectNode.Type() != "identifier" {
 		return nil
 	}
-	if ctx.currentFile == nil {
+	return resolveClassScopeByQualifiedName(ctx, objectNode.Content(source))
+}
+
+func resolveSuperclassScope(ctx Ctx, scope *symbol.ClassScope) *symbol.ClassScope {
+	if scope == nil || strings.TrimSpace(scope.Superclass) == "" {
 		return nil
 	}
-	return ctx.currentFile.FindClassScope(objectNode.Content(source))
+	base, _ := parseJavaTypeString(scope.Superclass)
+	return resolveClassScopeByQualifiedName(ctx, base)
+}
+
+type methodResolution struct {
+	def   *symbol.Definition
+	owner *symbol.ClassScope
+}
+
+func findInstanceMethodInHierarchy(start *symbol.ClassScope, methodName string, argCount int, ctx Ctx) *methodResolution {
+	seen := map[*symbol.ClassScope]struct{}{}
+	for scope := start; scope != nil; scope = resolveSuperclassScope(ctx, scope) {
+		if _, ok := seen[scope]; ok {
+			return nil
+		}
+		seen[scope] = struct{}{}
+		for _, def := range scope.Methods {
+			if def == nil || def.IsStatic {
+				continue
+			}
+			if def.OriginalName != methodName {
+				continue
+			}
+			if len(def.Parameters) != argCount {
+				continue
+			}
+			return &methodResolution{def: def, owner: scope}
+		}
+	}
+	return nil
+}
+
+func findStaticMethodInHierarchy(start *symbol.ClassScope, methodName string, argCount int, ctx Ctx) *methodResolution {
+	seen := map[*symbol.ClassScope]struct{}{}
+	for scope := start; scope != nil; scope = resolveSuperclassScope(ctx, scope) {
+		if _, ok := seen[scope]; ok {
+			return nil
+		}
+		seen[scope] = struct{}{}
+		for _, def := range scope.Methods {
+			if def == nil || !def.IsStatic {
+				continue
+			}
+			if def.OriginalName != methodName {
+				continue
+			}
+			if len(def.Parameters) != argCount {
+				continue
+			}
+			return &methodResolution{def: def, owner: scope}
+		}
+	}
+	return nil
+}
+
+func findFieldInHierarchy(start *symbol.ClassScope, fieldName string, ctx Ctx) *symbol.Definition {
+	seen := map[*symbol.ClassScope]struct{}{}
+	for scope := start; scope != nil; scope = resolveSuperclassScope(ctx, scope) {
+		if _, ok := seen[scope]; ok {
+			return nil
+		}
+		seen[scope] = struct{}{}
+		if field := scope.FindFieldByName(fieldName); field != nil {
+			return field
+		}
+	}
+	return nil
+}
+
+func mapClassTypeArgsToAncestor(child *symbol.ClassScope, childTypeArgs []ast.Expr, ancestor *symbol.ClassScope, ctx Ctx) []ast.Expr {
+	if child == nil || ancestor == nil {
+		return nil
+	}
+	if child == ancestor {
+		return childTypeArgs
+	}
+
+	currentScope := child
+	currentArgs := childTypeArgs
+	seen := map[*symbol.ClassScope]struct{}{}
+
+	for currentScope != nil && currentScope != ancestor {
+		if _, ok := seen[currentScope]; ok {
+			return nil
+		}
+		seen[currentScope] = struct{}{}
+
+		superType := strings.TrimSpace(currentScope.Superclass)
+		if superType == "" {
+			return nil
+		}
+
+		base, superArgStrs := parseJavaTypeString(superType)
+		parentScope := resolveClassScopeByQualifiedName(ctx, base)
+		if parentScope == nil {
+			return nil
+		}
+
+		// Map child's type parameters to its actual type arguments.
+		paramNames := currentScope.TypeParameterNames()
+		paramMap := make(map[string]ast.Expr, len(paramNames))
+		for i, p := range paramNames {
+			if i < len(currentArgs) {
+				paramMap[p] = currentArgs[i]
+			}
+		}
+
+		scopeTypeParams := append(inScopeTypeParameters(ctx), paramNames...)
+		parentArgs := make([]ast.Expr, 0, len(superArgStrs))
+		for _, a := range superArgStrs {
+			a = strings.TrimSpace(stripJavaQualifier(a))
+			if expr, ok := paramMap[a]; ok {
+				parentArgs = append(parentArgs, expr)
+				continue
+			}
+			parentArgs = append(parentArgs, javaTypeStringToGoTypeExpr(a, scopeTypeParams))
+		}
+
+		currentScope = parentScope
+		currentArgs = parentArgs
+	}
+
+	if currentScope == ancestor {
+		return currentArgs
+	}
+	return nil
 }
 
 func typeParamNameSet(typeParams []string) map[string]struct{} {
@@ -774,7 +991,7 @@ func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
 		}
 	}
 	if ctx.currentClass != nil {
-		if field := ctx.currentClass.FindFieldByName(name); field != nil && field.OriginalType != "" {
+		if field := findFieldInHierarchy(ctx.currentClass, name, ctx); field != nil && field.OriginalType != "" {
 			return field.OriginalType, true
 		}
 	}
@@ -849,7 +1066,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		className, classTypeArgs = parseJavaTypeString(javaType)
 	}
 
-	classScope := ctx.currentFile.FindClassScope(className)
+	classScope := resolveClassScopeByQualifiedName(ctx, className)
 	if classScope == nil {
 		return nil
 	}
@@ -916,25 +1133,30 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 
 func maybeRewriteInstanceGenericMethodInvocation(objectNode *sitter.Node, objectExpr ast.Expr, methodName string, args []ast.Expr, invocationNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
 	target := resolveInvocationTarget(objectNode, ctx, source)
+	return maybeRewriteInstanceGenericMethodInvocationWithTarget(target, objectExpr, methodName, args, invocationNode, ctx, source)
+}
+
+func maybeRewriteInstanceGenericMethodInvocationWithTarget(target *invocationTargetInfo, objectExpr ast.Expr, methodName string, args []ast.Expr, invocationNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
 	if target == nil {
 		return nil
 	}
 
-	methodDefs := target.classScope.FindMethod().By(func(d *symbol.Definition) bool {
-		return d.OriginalName == methodName
-	})
-	var helperDef *symbol.Definition
-	for _, def := range methodDefs {
-		if def.RequiresHelper {
-			helperDef = def
-			break
-		}
-	}
-	if helperDef == nil {
+	resolved := findInstanceMethodInHierarchy(target.classScope, methodName, len(args), ctx)
+	if resolved == nil || resolved.def == nil || !resolved.def.RequiresHelper {
 		return nil
 	}
+	helperDef := resolved.def
+	ownerScope := resolved.owner
 
+	receiverExpr := objectExpr
 	classTypeArgs := target.classTypeArgs
+	if ownerScope != nil && ownerScope != target.classScope {
+		receiverExpr = &ast.SelectorExpr{X: objectExpr, Sel: &ast.Ident{Name: ownerScope.Class.Name}}
+		if mapped := mapClassTypeArgsToAncestor(target.classScope, target.classTypeArgs, ownerScope, ctx); mapped != nil {
+			classTypeArgs = mapped
+		}
+	}
+
 	methodTypeArgs := inferMethodTypeArguments(helperDef, invocationNode, ctx, source)
 	helperTypeArgs := append(classTypeArgs, methodTypeArgs...)
 
@@ -942,15 +1164,13 @@ func maybeRewriteInstanceGenericMethodInvocation(objectNode *sitter.Node, object
 	helperConstructor := applyTypeArguments(constructorIdent, helperTypeArgs)
 	helperCall := &ast.CallExpr{
 		Fun:  helperConstructor,
-		Args: []ast.Expr{objectExpr},
+		Args: []ast.Expr{receiverExpr},
 	}
-
-	selIdent := &ast.Ident{Name: helperDef.Name}
 
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X:   helperCall,
-			Sel: selIdent,
+			Sel: &ast.Ident{Name: helperDef.Name},
 		},
 		Args: args,
 	}
