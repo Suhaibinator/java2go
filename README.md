@@ -17,12 +17,25 @@ Note: Java2go is still in development, and as such, please expect many bugs
 
 Currently, the following features are not implemented (or only partially implemented):
 
-* [ ] Enums (advanced features)
-* [ ] Abstract classes / methods
-* [ ] Interface embedding
+* [ ] Abstract classes (abstract methods in enums are supported)
 * [ ] Decorators / annotations (beyond passthrough as comments and optional exclusion)
 * [ ] Anything that checks `instanceof`
 * [ ] Types for lambda expressions
+
+## Enum support
+
+Java2go provides comprehensive enum support, converting Java enums to Go structs with singleton instances:
+
+* Basic enum constants become pointer variables to struct instances
+* Enums with fields and constructors are fully supported
+* Standard enum methods are generated:
+  * `EnumNameValues()` returns all enum constants as a slice
+  * `EnumNameValueOf(name string)` converts a string to an enum constant
+  * `Name()` and `Ordinal()` accessors
+  * `CompareTo(other)` for comparing enum constants
+* Enums implementing interfaces embed those interfaces in the generated struct
+* Constant-specific class bodies (method overrides per constant) are supported via dispatch wrappers
+* Abstract methods in enums generate wrappers that panic for unimplemented constants
 
 ## Generics support
 
