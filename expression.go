@@ -547,10 +547,10 @@ func resolveClassScopeByIdentifier(ctx Ctx, source []byte, objectNode *sitter.No
 	if objectNode == nil || objectNode.Type() != "identifier" {
 		return nil
 	}
-	if ctx.currentFile == nil || ctx.currentFile.BaseClass == nil {
+	if ctx.currentFile == nil {
 		return nil
 	}
-	return findClassScopeByName(ctx.currentFile.BaseClass, objectNode.Content(source))
+	return ctx.currentFile.FindClassScope(objectNode.Content(source))
 }
 
 func typeParamNameSet(typeParams []string) map[string]struct{} {
@@ -820,7 +820,7 @@ type invocationTargetInfo struct {
 }
 
 func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *invocationTargetInfo {
-	if ctx.currentFile == nil || ctx.currentFile.BaseClass == nil {
+	if ctx.currentFile == nil {
 		return nil
 	}
 
@@ -849,7 +849,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		className, classTypeArgs = parseJavaTypeString(javaType)
 	}
 
-	classScope := findClassScopeByName(ctx.currentFile.BaseClass, className)
+	classScope := ctx.currentFile.FindClassScope(className)
 	if classScope == nil {
 		return nil
 	}

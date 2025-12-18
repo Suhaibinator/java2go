@@ -31,6 +31,22 @@ public enum State {
 	}
 }
 
+func TestEnumIntegration_ValueOfInvocationRewritesToGeneratedHelper(t *testing.T) {
+	src := `
+package enums.valueof;
+public class UsesValueOf {
+    public State parse(String in) { return State.valueOf(in); }
+}
+public enum State { ON, OFF }
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	if !strings.Contains(flat, "return StateValueOf(in)") {
+		t.Fatalf("expected valueOf invocation to call generated helper, got:\n%s", out)
+	}
+}
+
 func TestEnumIntegration_EmbedsInterfacesAndOverrides(t *testing.T) {
 	src := `
 package enums.overrides;

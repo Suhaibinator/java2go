@@ -41,7 +41,7 @@ public enum Switch implements Flag {
 		t.Fatalf("expected enum constant without body to have nil body node")
 	}
 
-	for _, required := range []string{"Name", "Ordinal", "CompareTo", "ValueOf"} {
+	for _, required := range []string{"Name", "Ordinal", "CompareTo", "SwitchValueOf"} {
 		if len(base.FindMethod().ByName(required)) == 0 {
 			t.Fatalf("expected synthetic method %s to be registered on enum", required)
 		}

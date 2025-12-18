@@ -232,40 +232,40 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	}
 
 	// Inject standard enum methods that Java provides implicitly.
-	if scope.IsEnum {
-		baseType := "*" + scope.Class.Name
-		scope.Methods = append(scope.Methods,
-			&Definition{
-				Name:         HandleExportStatus(true, "name"),
-				OriginalName: "name",
-				Type:         "string",
-			},
-			&Definition{
-				Name:         HandleExportStatus(true, "ordinal"),
-				OriginalName: "ordinal",
-				Type:         "int",
-			},
-			&Definition{
-				Name:         HandleExportStatus(true, "compareTo"),
-				OriginalName: "compareTo",
-				Type:         "int",
-				Parameters: []*Definition{{
-					Name:         "other",
-					OriginalName: "other",
-					Type:         baseType,
-					OriginalType: scope.Class.OriginalName,
-				}},
-			},
-			&Definition{
-				Name:         HandleExportStatus(true, "valueOf"),
-				OriginalName: "valueOf",
-				Type:         baseType,
-				IsStatic:     true,
-				Parameters: []*Definition{{
-					Name:         "name",
-					OriginalName: "name",
-					Type:         "string",
-					OriginalType: "String",
+if scope.IsEnum {
+baseType := "*" + scope.Class.Name
+scope.Methods = append(scope.Methods,
+&Definition{
+Name:         HandleExportStatus(true, "name"),
+OriginalName: "name",
+Type:         "string",
+},
+&Definition{
+Name:         HandleExportStatus(true, "ordinal"),
+OriginalName: "ordinal",
+Type:         "int",
+},
+&Definition{
+Name:         HandleExportStatus(true, "compareTo"),
+OriginalName: "compareTo",
+Type:         "int",
+Parameters: []*Definition{{
+Name:         "other",
+OriginalName: "other",
+Type:         baseType,
+OriginalType: scope.Class.OriginalName,
+}},
+},
+&Definition{
+Name:         scope.Class.Name + "ValueOf",
+OriginalName: "valueOf",
+Type:         baseType,
+IsStatic:     true,
+Parameters: []*Definition{{
+Name:         "name",
+OriginalName: "name",
+Type:         "string",
+OriginalType: "String",
 				}},
 			},
 		)
