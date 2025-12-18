@@ -256,6 +256,18 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				{Names: []*ast.Ident{{Name: "Ordinal"}}, Type: &ast.Ident{Name: "int"}},
 			},
 		}
+
+		// Embed implemented interfaces
+		typeParams := ctx.currentClass.TypeParameterNames()
+		if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
+			for _, t := range collectTypeNodes(interfacesNode) {
+				embedType := astutil.ParseTypeWithTypeParams(t, source, typeParams)
+				if star, ok := embedType.(*ast.StarExpr); ok {
+					embedType = star.X
+				}
+				fields.List = append(fields.List, &ast.Field{Type: embedType})
+			}
+		}
 		globalVariables := &ast.GenDecl{Tok: token.VAR}
 
 		// Add declared fields from the enum body
@@ -334,6 +346,63 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				},
 				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valuesVarName}}}}},
 			})
+
+			// Generate valueOf(String) method
+			valueOfCases := []ast.Stmt{}
+			for _, enumConst := range ctx.currentClass.EnumConstants {
+				valueOfCases = append(valueOfCases, &ast.CaseClause{
+					List: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + enumConst.Name + "\""}},
+					Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: enumConst.Name}}}},
+				})
+			}
+			valueOfCases = append(valueOfCases, &ast.CaseClause{
+				List: nil,
+				Body: []ast.Stmt{&ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.Ident{Name: "panic"}, Args: []ast.Expr{&ast.BinaryExpr{X: &ast.BasicLit{Kind: token.STRING, Value: "\"No enum constant \""}, Op: token.ADD, Y: &ast.Ident{Name: "name"}}}}}, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}},
+			})
+
+			declarations = append(declarations, &ast.FuncDecl{
+				Name: &ast.Ident{Name: ctx.className + "ValueOf"},
+				Type: &ast.FuncType{
+					Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: "name"}}, Type: &ast.Ident{Name: "string"}}}},
+					Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}},
+				},
+				Body: &ast.BlockStmt{List: []ast.Stmt{
+					&ast.SwitchStmt{
+						Tag:  &ast.Ident{Name: "name"},
+						Body: &ast.BlockStmt{List: valueOfCases},
+					},
+				}},
+			})
+
+			receiverBase := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
+			receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBase}}}}
+
+			// name() accessor
+			declarations = append(declarations, &ast.FuncDecl{
+				Name: &ast.Ident{Name: symbol.HandleExportStatus(true, "name")},
+				Recv: receiver,
+				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "string"}}}}},
+				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: "Name"}}}}}},
+			})
+
+			// ordinal() accessor
+			declarations = append(declarations, &ast.FuncDecl{
+				Name: &ast.Ident{Name: symbol.HandleExportStatus(true, "ordinal")},
+				Recv: receiver,
+				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "int"}}}}},
+				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: "Ordinal"}}}}}},
+			})
+
+			// compareTo(E)
+			declarations = append(declarations, &ast.FuncDecl{
+				Name: &ast.Ident{Name: symbol.HandleExportStatus(true, "compareTo")},
+				Recv: receiver,
+				Type: &ast.FuncType{
+					Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: "other"}}, Type: &ast.StarExpr{X: receiverBase}}}},
+					Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "int"}}}},
+				},
+				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.BinaryExpr{X: &ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: "Ordinal"}}, Op: token.SUB, Y: &ast.SelectorExpr{X: &ast.Ident{Name: "other"}, Sel: &ast.Ident{Name: "Ordinal"}}}}}}},
+			})
 		}
 
 		// Parse the enum body declarations (methods, constructors, etc.)
@@ -342,6 +411,123 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		return declarations
 	}
 	panic("Unknown type to parse for decls: " + node.Type())
+}
+
+func zeroValueForType(expr ast.Expr) ast.Expr {
+	switch t := expr.(type) {
+	case *ast.Ident:
+		switch t.Name {
+		case "", "void":
+			return nil
+		case "string":
+			return &ast.BasicLit{Kind: token.STRING, Value: "\"\""}
+		case "bool":
+			return &ast.Ident{Name: "false"}
+		case "int", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "float32", "float64", "byte", "rune":
+			return &ast.BasicLit{Kind: token.INT, Value: "0"}
+		default:
+			return &ast.Ident{Name: "nil"}
+		}
+	case *ast.StarExpr, *ast.ArrayType, *ast.MapType, *ast.InterfaceType, *ast.FuncType, *ast.SliceExpr, *ast.ChanType:
+		return &ast.Ident{Name: "nil"}
+	default:
+		return &ast.CompositeLit{Type: expr}
+	}
+}
+
+func methodNodeMatchesDefinition(node *sitter.Node, def *symbol.Definition, source []byte) bool {
+	if def == nil || node == nil {
+		return false
+	}
+	if node.ChildByFieldName("name").Content(source) != def.OriginalName {
+		return false
+	}
+
+	paramsNode := node.ChildByFieldName("parameters")
+	if def.Parameters == nil {
+		return paramsNode.NamedChildCount() == 0
+	}
+	if len(def.Parameters) != int(paramsNode.NamedChildCount()) {
+		return false
+	}
+
+	for index, param := range nodeutil.NamedChildrenOf(paramsNode) {
+		var paramType string
+		if param.Type() == "spread_parameter" {
+			paramType = param.NamedChild(0).Content(source)
+		} else {
+			paramType = param.ChildByFieldName("type").Content(source)
+		}
+		if def.Parameters[index].OriginalType != paramType {
+			return false
+		}
+	}
+	return true
+}
+
+func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symbol.Definition, ctx Ctx, source []byte, receiverBaseType ast.Expr) *ast.FuncDecl {
+	ctx.localScope = def
+	params := ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList)
+	params.List = append([]*ast.Field{{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBaseType}}}, params.List...)
+
+	body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
+
+	var results *ast.FieldList
+	if def.Type != "" {
+		results = &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: def.Type}}}}
+	}
+
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: funcName},
+		Type: &ast.FuncType{Params: params, Results: results},
+		Body: body,
+	}
+}
+
+func buildEnumMethodWrapper(def *symbol.Definition, overrides map[string]string, defaultImpl string, params *ast.FieldList, results *ast.FieldList, receiver *ast.FieldList, ctx Ctx) *ast.FuncDecl {
+	recvName := ShortName(ctx.className)
+	args := []ast.Expr{&ast.Ident{Name: recvName}}
+	if params != nil {
+		for _, field := range params.List {
+			for _, name := range field.Names {
+				args = append(args, &ast.Ident{Name: name.Name})
+			}
+		}
+	}
+
+	clauses := []ast.Stmt{}
+	for constName, implName := range overrides {
+		clauses = append(clauses, &ast.CaseClause{
+			List: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + constName + "\""}},
+			Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: implName}, Args: args}}}},
+		})
+	}
+
+	defaultBody := []ast.Stmt{}
+	if defaultImpl != "" {
+		defaultBody = []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: defaultImpl}, Args: args}}}}
+	} else {
+		panicStmt := &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.Ident{Name: "panic"}, Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"abstract enum method not implemented\""}}}}
+		defaultBody = append(defaultBody, panicStmt)
+		if results != nil && len(results.List) > 0 {
+			defaultBody = append(defaultBody, &ast.ReturnStmt{Results: []ast.Expr{zeroValueForType(results.List[0].Type)}})
+		}
+	}
+	clauses = append(clauses, &ast.CaseClause{Body: defaultBody})
+
+	wrapperBody := &ast.BlockStmt{List: []ast.Stmt{
+		&ast.SwitchStmt{
+			Tag:  &ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: "Name"}},
+			Body: &ast.BlockStmt{List: clauses},
+		},
+	}}
+
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: def.Name},
+		Recv: receiver,
+		Type: &ast.FuncType{Params: params, Results: results},
+		Body: wrapperBody,
+	}
 }
 
 func typeParamExprs(params []string) []ast.Expr {
@@ -645,6 +831,43 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		ctx.localScope = methodDefinition[0]
+
+		if ctx.currentClass.IsEnum && !static {
+			params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
+			var results *ast.FieldList
+			if ctx.localScope.Type != "" {
+				results = &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: ctx.localScope.Type}}}}
+			}
+
+			implDecls := []ast.Decl{}
+			defaultImpl := ""
+			if node.ChildByFieldName("body") != nil {
+				defaultImpl = "_" + ctx.className + "_" + ctx.localScope.Name + "_default"
+				implDecls = append(implDecls, buildEnumMethodImplementation(defaultImpl, node, ctx.localScope, ctx, source, receiverBaseType))
+			}
+
+			overrides := map[string]string{}
+			for _, enumConst := range ctx.currentClass.EnumConstants {
+				if enumConst.Body == nil {
+					continue
+				}
+				for _, child := range nodeutil.NamedChildrenOf(enumConst.Body) {
+					if child.Type() != "method_declaration" {
+						continue
+					}
+					if !methodNodeMatchesDefinition(child, ctx.localScope, source) {
+						continue
+					}
+					implName := "_" + ctx.className + "_" + enumConst.Name + "_" + ctx.localScope.Name
+					implDecls = append(implDecls, buildEnumMethodImplementation(implName, child, ctx.localScope, ctx, source, receiverBaseType))
+					overrides[enumConst.Name] = implName
+					break
+				}
+			}
+
+			wrapper := buildEnumMethodWrapper(ctx.localScope, overrides, defaultImpl, params, results, receiver, ctx)
+			return append(implDecls, wrapper)
+		}
 
 		body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
 		params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)

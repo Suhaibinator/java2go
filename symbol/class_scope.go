@@ -14,6 +14,8 @@ type ClassScope struct {
 	Methods []*Definition
 	// Whether this class is an enum
 	IsEnum bool
+	// Interfaces implemented by this class/enum (content as written in source)
+	ImplementedInterfaces []string
 	// Enum constants declared on the enum (only populated if IsEnum is true)
 	EnumConstants []EnumConstant
 	// Type parameters for generic classes (e.g., ["T", "U"] for class Foo<T, U>)
@@ -26,6 +28,7 @@ type ClassScope struct {
 type EnumConstant struct {
 	Name      string
 	Arguments []*sitter.Node
+	Body      *sitter.Node
 }
 
 // IsTypeParameter checks if a given name is a type parameter of this class
