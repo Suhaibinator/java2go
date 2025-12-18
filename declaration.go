@@ -470,6 +470,25 @@ func methodNodeMatchesDefinition(node *sitter.Node, def *symbol.Definition, sour
 	return true
 }
 
+func enumConstantMethodDeclarations(body *sitter.Node) []*sitter.Node {
+	methods := []*sitter.Node{}
+	var walk func(node *sitter.Node)
+	walk = func(node *sitter.Node) {
+		if node == nil {
+			return
+		}
+		if node.Type() == "method_declaration" {
+			methods = append(methods, node)
+			return
+		}
+		for _, child := range nodeutil.NamedChildrenOf(node) {
+			walk(child)
+		}
+	}
+	walk(body)
+	return methods
+}
+
 func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symbol.Definition, ctx Ctx, source []byte, receiverBaseType ast.Expr) *ast.FuncDecl {
 	ctx.localScope = def
 	params := ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList)
@@ -852,10 +871,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				if enumConst.Body == nil {
 					continue
 				}
-				for _, child := range nodeutil.NamedChildrenOf(enumConst.Body) {
-					if child.Type() != "method_declaration" {
-						continue
-					}
+				for _, child := range enumConstantMethodDeclarations(enumConst.Body) {
 					if !methodNodeMatchesDefinition(child, ctx.localScope, source) {
 						continue
 					}
