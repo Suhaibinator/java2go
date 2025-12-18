@@ -185,9 +185,18 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 
 		switch node.Type() {
 		case "enum_constant":
-			// Parse enum constants
+			// Parse enum constants and capture their constructor arguments for later codegen
 			constName := node.ChildByFieldName("name").Content(source)
-			scope.EnumConstants = append(scope.EnumConstants, constName)
+
+			var args []*sitter.Node
+			if argsNode := node.ChildByFieldName("arguments"); argsNode != nil {
+				args = nodeutil.NamedChildrenOf(argsNode)
+			}
+
+			scope.EnumConstants = append(scope.EnumConstants, EnumConstant{
+				Name:      constName,
+				Arguments: args,
+			})
 		case "enum_body_declarations":
 			// Parse the methods and constructors inside the enum
 			for _, declNode := range nodeutil.NamedChildrenOf(node) {

@@ -1,5 +1,7 @@
 package symbol
 
+import sitter "github.com/smacker/go-tree-sitter"
+
 // ClassScope represents a single defined class, and the declarations in it
 type ClassScope struct {
 	// The definition for the class defined within the class
@@ -12,10 +14,18 @@ type ClassScope struct {
 	Methods []*Definition
 	// Whether this class is an enum
 	IsEnum bool
-	// Enum constant names (only populated if IsEnum is true)
-	EnumConstants []string
+	// Enum constants declared on the enum (only populated if IsEnum is true)
+	EnumConstants []EnumConstant
 	// Type parameters for generic classes (e.g., ["T", "U"] for class Foo<T, U>)
 	TypeParameters []TypeParam
+}
+
+// EnumConstant represents a single enum constant and its constructor arguments.
+// Arguments are stored as tree-sitter nodes so they can later be converted into
+// Go expressions during code generation.
+type EnumConstant struct {
+	Name      string
+	Arguments []*sitter.Node
 }
 
 // IsTypeParameter checks if a given name is a type parameter of this class

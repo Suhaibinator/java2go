@@ -241,49 +241,73 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		return []ast.Decl{GenInterface(interfaceName, methods, classTypeParams)}
 	case "enum_declaration":
-		// An enum is treated as a type alias (int) and a list of constants
-		// that define the possible values the enum can have
+		// Enums are modeled as structs with named singleton instances rather than integer constants.
 
 		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
 		ctx.currentClass = ctx.currentFile.BaseClass
 
 		declarations := []ast.Decl{}
 
-		// Generate type declaration: type EnumName int
-		declarations = append(declarations, &ast.GenDecl{
-			Tok: token.TYPE,
-			Specs: []ast.Spec{
-				&ast.TypeSpec{
-					Name: &ast.Ident{Name: ctx.className},
-					Type: &ast.Ident{Name: "int"},
-				},
+		// Build struct fields for enum instances. Always include Name and Ordinal
+		// to mirror Java's Enum metadata.
+		fields := &ast.FieldList{
+			List: []*ast.Field{
+				{Names: []*ast.Ident{{Name: "Name"}}, Type: &ast.Ident{Name: "string"}},
+				{Names: []*ast.Ident{{Name: "Ordinal"}}, Type: &ast.Ident{Name: "int"}},
 			},
-		})
+		}
+		globalVariables := &ast.GenDecl{Tok: token.VAR}
 
-		// Generate constants using iota
+		// Add declared fields from the enum body
+		for _, fieldDef := range ctx.currentClass.Fields {
+			field := &ast.Field{}
+			field.Names, field.Type = []*ast.Ident{{Name: fieldDef.Name}}, &ast.Ident{Name: fieldDef.Type}
+
+			if fieldDef.IsStatic {
+				globalVariables.Specs = append(globalVariables.Specs, &ast.ValueSpec{Names: field.Names, Type: field.Type})
+			} else {
+				fields.List = append(fields.List, field)
+			}
+		}
+
+		if len(globalVariables.Specs) > 0 {
+			declarations = append(declarations, globalVariables)
+		}
+
+		// Declare the enum struct type
+		declarations = append(declarations, GenStructWithTypeParams(ctx.className, fields, ctx.currentClass.TypeParameters))
+
+		// Generate ordinal constants to preserve declaration order
 		if len(ctx.currentClass.EnumConstants) > 0 {
-			constSpecs := []ast.Spec{}
-			for i, constName := range ctx.currentClass.EnumConstants {
-				spec := &ast.ValueSpec{
-					Names: []*ast.Ident{{Name: constName}},
-					Type:  &ast.Ident{Name: ctx.className},
-				}
+			ordinalSpecs := []ast.Spec{}
+			ordinalPrefix := "_" + symbol.Lowercase(ctx.className) + "_ordinal_"
+			for i, enumConst := range ctx.currentClass.EnumConstants {
+				spec := &ast.ValueSpec{Names: []*ast.Ident{{Name: ordinalPrefix + enumConst.Name}}}
 				if i == 0 {
 					spec.Values = []ast.Expr{&ast.Ident{Name: "iota"}}
 				}
-				constSpecs = append(constSpecs, spec)
+				ordinalSpecs = append(ordinalSpecs, spec)
 			}
-			declarations = append(declarations, &ast.GenDecl{
-				Tok:   token.CONST,
-				Specs: constSpecs,
-			})
 
-			// Generate a values variable: var _enumNameValues = []EnumName{CONST1, CONST2, ...}
+			declarations = append(declarations, &ast.GenDecl{Tok: token.CONST, Specs: ordinalSpecs})
+
+			// Build enum instances
+			valueSpecs := []ast.Spec{}
 			valuesVarName := "_" + symbol.Lowercase(ctx.className) + "Values"
-			constExprs := []ast.Expr{}
-			for _, constName := range ctx.currentClass.EnumConstants {
-				constExprs = append(constExprs, &ast.Ident{Name: constName})
+			valuesSlice := []ast.Expr{}
+			for _, enumConst := range ctx.currentClass.EnumConstants {
+				ordinalIdent := &ast.Ident{Name: ordinalPrefix + enumConst.Name}
+				initializer := buildEnumConstantInitializer(enumConst, ordinalIdent, ctx, source)
+
+				valueSpecs = append(valueSpecs, &ast.ValueSpec{
+					Names:  []*ast.Ident{{Name: enumConst.Name}},
+					Values: []ast.Expr{initializer},
+				})
+				valuesSlice = append(valuesSlice, &ast.Ident{Name: enumConst.Name})
 			}
+
+			declarations = append(declarations, &ast.GenDecl{Tok: token.VAR, Specs: valueSpecs})
+
 			declarations = append(declarations, &ast.GenDecl{
 				Tok: token.VAR,
 				Specs: []ast.Spec{
@@ -291,32 +315,24 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						Names: []*ast.Ident{{Name: valuesVarName}},
 						Values: []ast.Expr{
 							&ast.CompositeLit{
-								Type: &ast.ArrayType{Elt: &ast.Ident{Name: ctx.className}},
-								Elts: constExprs,
+								Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}},
+								Elts: valuesSlice,
 							},
 						},
 					},
 				},
 			})
 
-			// Generate Values() function: func EnumNameValues() []EnumName { return _enumNameValues }
+			// Generate Values() function: func EnumNameValues() []*EnumName { return _enumNameValues }
 			declarations = append(declarations, &ast.FuncDecl{
 				Name: &ast.Ident{Name: ctx.className + "Values"},
 				Type: &ast.FuncType{
 					Params: &ast.FieldList{},
 					Results: &ast.FieldList{
-						List: []*ast.Field{
-							{Type: &ast.ArrayType{Elt: &ast.Ident{Name: ctx.className}}},
-						},
+						List: []*ast.Field{{Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}},
 					},
 				},
-				Body: &ast.BlockStmt{
-					List: []ast.Stmt{
-						&ast.ReturnStmt{
-							Results: []ast.Expr{&ast.Ident{Name: valuesVarName}},
-						},
-					},
-				},
+				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valuesVarName}}}}},
 			})
 		}
 
@@ -353,6 +369,47 @@ func instantiateGenericType(name string, args []ast.Expr) ast.Expr {
 		X:       &ast.Ident{Name: name},
 		Indices: args,
 	}
+}
+
+// buildEnumConstantInitializer constructs the Go expression used to initialize a single enum constant.
+// It invokes a matching constructor if one exists, then injects the synthetic Name and Ordinal fields
+// to mirror Java enum metadata.
+func buildEnumConstantInitializer(enumConst symbol.EnumConstant, ordinal ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	args := parseEnumConstantArguments(enumConst, ctx, source)
+
+	var baseInit ast.Expr = &ast.UnaryExpr{Op: token.AND, X: &ast.CompositeLit{Type: &ast.Ident{Name: ctx.className}}}
+	if ctor := findEnumConstructor(ctx, len(args)); ctor != nil {
+		baseInit = &ast.CallExpr{Fun: &ast.Ident{Name: ctor.Name}, Args: args}
+	}
+
+	return &ast.CallExpr{
+		Fun: &ast.FuncLit{
+			Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}}},
+			Body: &ast.BlockStmt{List: []ast.Stmt{
+				&ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "inst"}}, Tok: token.DEFINE, Rhs: []ast.Expr{baseInit}},
+				&ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "inst"}, Sel: &ast.Ident{Name: "Name"}}}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + enumConst.Name + "\""}}},
+				&ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "inst"}, Sel: &ast.Ident{Name: "Ordinal"}}}, Tok: token.ASSIGN, Rhs: []ast.Expr{ordinal}},
+				&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "inst"}}},
+			}},
+		},
+	}
+}
+
+func parseEnumConstantArguments(enumConst symbol.EnumConstant, ctx Ctx, source []byte) []ast.Expr {
+	args := []ast.Expr{}
+	for _, arg := range enumConst.Arguments {
+		args = append(args, ParseExpr(arg, source, ctx))
+	}
+	return args
+}
+
+func findEnumConstructor(ctx Ctx, argumentCount int) *symbol.Definition {
+	for _, def := range ctx.currentClass.Methods {
+		if def.Constructor && len(def.Parameters) == argumentCount {
+			return def
+		}
+	}
+	return nil
 }
 
 func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {
