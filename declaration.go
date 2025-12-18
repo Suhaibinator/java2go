@@ -886,7 +886,12 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			return append(implDecls, wrapper)
 		}
 
-		body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
+		bodyNode := node.ChildByFieldName("body")
+		if bodyNode == nil {
+			return nil
+		}
+
+		body := ParseStmt(bodyNode, source, ctx).(*ast.BlockStmt)
 		params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
 
 		if methodName.Name == "main" {
