@@ -20,6 +20,22 @@ func isJavaTypeNode(node *sitter.Node) bool {
 	}
 }
 
+func collectTypeNodes(node *sitter.Node) []*sitter.Node {
+	if node == nil {
+		return nil
+	}
+
+	if isJavaTypeNode(node) {
+		return []*sitter.Node{node}
+	}
+
+	var types []*sitter.Node
+	for _, child := range nodeutil.NamedChildrenOf(node) {
+		types = append(types, collectTypeNodes(child)...)
+	}
+	return types
+}
+
 func extractTypeParameterBounds(param *sitter.Node, source []byte) []JavaType {
 	if param == nil {
 		return nil
@@ -179,6 +195,13 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	// class Outer<T> { class Inner<T> { } } where Inner's T shadows Outer's T.
 	scope.TypeParameters = MergeTypeParams(parentTypeParams, ownTypeParams)
 
+	// Track implemented interfaces (for enums this is not handled elsewhere)
+	if interfacesNode := root.ChildByFieldName("interfaces"); interfacesNode != nil {
+		for _, t := range collectTypeNodes(interfacesNode) {
+			scope.ImplementedInterfaces = append(scope.ImplementedInterfaces, t.Content(source))
+		}
+	}
+
 	// Parse the body of the class (or enum)
 
 	for _, node := range nodeutil.NamedChildrenOf(root.ChildByFieldName("body")) {
@@ -196,6 +219,7 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			scope.EnumConstants = append(scope.EnumConstants, EnumConstant{
 				Name:      constName,
 				Arguments: args,
+				Body:      node.ChildByFieldName("body"),
 			})
 		case "enum_body_declarations":
 			// Parse the methods and constructors inside the enum
@@ -205,6 +229,46 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 		default:
 			parseClassMember(scope, node, source)
 		}
+	}
+
+	// Inject standard enum methods that Java provides implicitly.
+if scope.IsEnum {
+baseType := "*" + scope.Class.Name
+scope.Methods = append(scope.Methods,
+&Definition{
+Name:         HandleExportStatus(true, "name"),
+OriginalName: "name",
+Type:         "string",
+},
+&Definition{
+Name:         HandleExportStatus(true, "ordinal"),
+OriginalName: "ordinal",
+Type:         "int",
+},
+&Definition{
+Name:         HandleExportStatus(true, "compareTo"),
+OriginalName: "compareTo",
+Type:         "int",
+Parameters: []*Definition{{
+Name:         "other",
+OriginalName: "other",
+Type:         baseType,
+OriginalType: scope.Class.OriginalName,
+}},
+},
+&Definition{
+Name:         scope.Class.Name + "ValueOf",
+OriginalName: "valueOf",
+Type:         baseType,
+IsStatic:     true,
+Parameters: []*Definition{{
+Name:         "name",
+OriginalName: "name",
+Type:         "string",
+OriginalType: "String",
+				}},
+			},
+		)
 	}
 
 	return scope
@@ -250,7 +314,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			Type:         fieldType,
 			OriginalType: typeNode.Content(source),
 		})
-	case "method_declaration", "constructor_declaration":
+	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
 		var public bool
 		var isStatic bool
 		// Rename the type based on the public/static rules
