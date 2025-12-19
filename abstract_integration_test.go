@@ -1,22 +1,27 @@
 package main
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
 
+func loadJavaTestFile(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read test java file %s: %v", path, err)
+	}
+	return string(data)
+}
+
+func renderGoFileFromJavaFile(t *testing.T, path string) string {
+	t.Helper()
+	return renderGoFileFromJava(t, loadJavaTestFile(t, path))
+}
+
 func TestAbstractIntegration_GeneratesStubAndTracksMetadata(t *testing.T) {
-	src := `
-    package abs.integration;
-    public abstract class Shape {
-        public abstract double area();
-    }
-    public class Square extends Shape {
-        double side;
-        public Square(double side) { this.side = side; }
-        public double area() { return side * side; }
-    }
-    `
+	src := loadJavaTestFile(t, "testfiles/abstract/ShapeHierarchy.java")
 
 	helper := setupParseHelper(t, src)
 	shapeScope := helper.File.Symbols.FindClassScope("Shape")
@@ -33,7 +38,13 @@ func TestAbstractIntegration_GeneratesStubAndTracksMetadata(t *testing.T) {
 	if !strings.Contains(flat, "*Shape) Area() float64") {
 		t.Fatalf("expected abstract method stub on Shape, got:\n%s", out)
 	}
+	if !strings.Contains(flat, "*Shape) Perimeter() float64") {
+		t.Fatalf("expected perimeter abstract stub on Shape, got:\n%s", out)
+	}
 	if !strings.Contains(flat, "abstract method area not implemented") {
+		t.Fatalf("expected stub to panic for abstract method, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "abstract method perimeter not implemented") {
 		t.Fatalf("expected stub to panic for abstract method, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*Square) Area() float64") {
@@ -42,33 +53,13 @@ func TestAbstractIntegration_GeneratesStubAndTracksMetadata(t *testing.T) {
 	if !strings.Contains(flat, "side * side") {
 		t.Fatalf("expected concrete Area implementation to use side field, got:\n%s", out)
 	}
+	if !strings.Contains(flat, "*Circle) Perimeter() float64") {
+		t.Fatalf("expected concrete Circle.Perimeter implementation, got:\n%s", out)
+	}
 }
 
 func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
-	src := `
-    package abs.integration;
-    public abstract class BaseThing {
-        protected int value;
-        public BaseThing(int value) { this.value = value; }
-        public int value() { return value; }
-        public abstract String id();
-        public abstract double compute(double a, double b);
-    }
-
-    public abstract class MidThing extends BaseThing {
-        protected String name;
-        public MidThing(int value, String name) { super(value); this.name = name; }
-        public String label() { return name + "-" + value(); }
-        public abstract String id();
-    }
-
-    public class ConcreteThing extends MidThing {
-        public ConcreteThing(int value, String name) { super(value, name); }
-        public String id() { return name; }
-        public double compute(double a, double b) { return a * b + value(); }
-        public String label() { return "override-" + super.label(); }
-    }
-    `
+	src := loadJavaTestFile(t, "testfiles/abstract/ComplexAbstractHierarchy.java")
 
 	helper := setupParseHelper(t, src)
 
@@ -106,6 +97,9 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "*MidThing) Id() string") {
 		t.Fatalf("expected MidThing.Id abstract stub in output, got:\n%s", out)
 	}
+	if !strings.Contains(flat, "*MidThing) Combine(first float64, second float64, third float64) float64") {
+		t.Fatalf("expected MidThing.Combine abstract stub in output, got:\n%s", out)
+	}
 	if !strings.Contains(flat, "func (mg *MidThing) Label() string") {
 		t.Fatalf("expected MidThing.label concrete method to be emitted, got:\n%s", out)
 	}
@@ -121,5 +115,11 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	}
 	if !strings.Contains(flat, "\"override-\"") {
 		t.Fatalf("expected ConcreteThing.Label to include override marker, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "*AltConcreteThing) Id() string") {
+		t.Fatalf("expected AltConcreteThing.Id concrete override in output, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "*AltConcreteThing) Combine(first float64, second float64, third float64) float64") {
+		t.Fatalf("expected AltConcreteThing.Combine concrete implementation, got:\n%s", out)
 	}
 }
