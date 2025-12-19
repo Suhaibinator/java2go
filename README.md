@@ -52,7 +52,7 @@ Current limitations:
 
 * Complex bound combinations or wildcard/variance semantics may still be approximated when translated into Go constraints.
 * Wildcards and variance (`?`, `? extends`, `? super`) are approximated (often as `any`).
-* Generic interfaces are not fully modeled as parameterized Go interfaces yet.
+* Generic interfaces are emitted as parameterized Go interfaces, including constraints derived from Java bounds.
 
 ## Usage
 

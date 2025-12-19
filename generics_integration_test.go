@@ -195,3 +195,20 @@ public class Outer<T> {
 		t.Errorf("Expected Inner to inherit parent type params and add its own, got:\n%s", out)
 	}
 }
+
+func TestGenericsIntegration_GenericInterface(t *testing.T) {
+	src := `
+package gen.interfaces;
+public interface Box<T> {
+    T get();
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+	if !strings.Contains(flat, "type Box[T any] interface") {
+		t.Fatalf("Expected generic interface with type parameter, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "get() T") {
+		t.Fatalf("Expected method to use the type parameter T, got:\n%s", out)
+	}
+}
