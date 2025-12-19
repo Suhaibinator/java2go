@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"strings"
 
 	"github.com/NickyBoy89/java2go/astutil"
 	"github.com/NickyBoy89/java2go/nodeutil"
@@ -40,7 +41,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					Tok: token.VAR,
 					Specs: []ast.Spec{
 						&ast.ValueSpec{
-							Names: []*ast.Ident{ParseExpr(variableDeclarator.ChildByFieldName("name"), source, ctx).(*ast.Ident)},
+							Names: []*ast.Ident{identFromNode(variableDeclarator.ChildByFieldName("name"), source)},
 							Type:  variableType,
 						},
 					},
@@ -94,12 +95,12 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		// If there is only one node, then that node is just a name
 		if node.NamedChildCount() == 1 {
-			names = append(names, ParseExpr(node.NamedChild(0), source, ctx))
+			names = append(names, identFromNode(node.NamedChild(0), source))
 		}
 
 		// Loop through every pair of name and value
 		for ind := 0; ind < int(node.NamedChildCount())-1; ind += 2 {
-			names = append(names, ParseExpr(node.NamedChild(ind), source, ctx))
+			names = append(names, identFromNode(node.NamedChild(ind), source))
 			values = append(values, ParseExpr(node.NamedChild(ind+1), source, ctx))
 		}
 
@@ -169,10 +170,59 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "explicit_constructor_invocation":
 		// This is when a constructor calls another constructor with the use of
 		// something such as `this(args...)`
+		argsNode := node.ChildByFieldName("arguments")
+		if argsNode == nil && node.NamedChildCount() > 1 {
+			argsNode = node.NamedChild(1)
+		}
+		var args []ast.Expr
+		if argsNode != nil {
+			args = ParseNode(argsNode, source, ctx).([]ast.Expr)
+		}
+
+		constructorNode := node.ChildByFieldName("constructor")
+		if constructorNode == nil && node.NamedChildCount() > 0 {
+			constructorNode = node.NamedChild(0)
+		}
+		if constructorNode != nil && constructorNode.Type() == "super" && ctx.currentClass != nil {
+			superType := strings.TrimSpace(ctx.currentClass.Superclass)
+			if superType != "" {
+				base, superArgStrs := parseJavaTypeString(superType)
+				if base != "" {
+					superName := stripJavaQualifier(base)
+					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
+						superName = scope.Class.Name
+					}
+					funExpr := ast.Expr(&ast.Ident{Name: "New" + superName})
+					if len(superArgStrs) > 0 {
+						scopeTypeParams := inScopeTypeParameters(ctx)
+						typeArgs := make([]ast.Expr, 0, len(superArgStrs))
+						for _, arg := range superArgStrs {
+							typeArgs = append(typeArgs, javaTypeStringToGoTypeExpr(arg, scopeTypeParams))
+						}
+						funExpr = applyTypeArguments(funExpr, typeArgs)
+					}
+					recvName := ctx.className
+					if recvName == "" && ctx.currentClass.Class != nil {
+						recvName = ctx.currentClass.Class.Name
+					}
+					if recvName != "" {
+						return &ast.AssignStmt{
+							Lhs: []ast.Expr{&ast.SelectorExpr{
+								X:   &ast.Ident{Name: ShortName(recvName)},
+								Sel: &ast.Ident{Name: superName},
+							}},
+							Tok: token.ASSIGN,
+							Rhs: []ast.Expr{&ast.CallExpr{Fun: funExpr, Args: args}},
+						}
+					}
+				}
+			}
+		}
+
 		return &ast.ExprStmt{
 			X: &ast.CallExpr{
 				Fun:  &ast.Ident{Name: "New" + ctx.className},
-				Args: ParseNode(node.NamedChild(1), source, ctx).([]ast.Expr),
+				Args: args,
 			},
 		}
 	case "return_statement":
@@ -182,17 +232,17 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		return &ast.ReturnStmt{Results: []ast.Expr{ParseExpr(node.NamedChild(0), source, ctx)}}
 	case "labeled_statement":
 		return &ast.LabeledStmt{
-			Label: ParseExpr(node.NamedChild(0), source, ctx).(*ast.Ident),
+			Label: identFromNode(node.NamedChild(0), source),
 			Stmt:  ParseStmt(node.NamedChild(1), source, ctx),
 		}
 	case "break_statement":
 		if node.NamedChildCount() > 0 {
-			return &ast.BranchStmt{Tok: token.BREAK, Label: ParseExpr(node.NamedChild(0), source, ctx).(*ast.Ident)}
+			return &ast.BranchStmt{Tok: token.BREAK, Label: identFromNode(node.NamedChild(0), source)}
 		}
 		return &ast.BranchStmt{Tok: token.BREAK}
 	case "continue_statement":
 		if node.NamedChildCount() > 0 {
-			return &ast.BranchStmt{Tok: token.CONTINUE, Label: ParseExpr(node.NamedChild(0), source, ctx).(*ast.Ident)}
+			return &ast.BranchStmt{Tok: token.CONTINUE, Label: identFromNode(node.NamedChild(0), source)}
 		}
 		return &ast.BranchStmt{Tok: token.CONTINUE}
 	case "throw_statement":

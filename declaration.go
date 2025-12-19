@@ -834,7 +834,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 		}
 
-		methodName := ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)
+		methodName := identFromNode(node.ChildByFieldName("name"), source)
 		methodParameters := node.ChildByFieldName("parameters")
 
 		comparison := func(d *symbol.Definition) bool {
