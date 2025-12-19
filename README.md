@@ -17,7 +17,7 @@ Note: Java2go is still in development, and as such, please expect many bugs
 
 Currently, the following features are not implemented (or only partially implemented):
 
-* [ ] Abstract classes (abstract methods in enums are supported)
+* [x] Abstract classes (abstract methods in enums are supported)
 * [ ] Decorators / annotations (beyond passthrough as comments and optional exclusion)
 * [ ] Anything that checks `instanceof`
 * [ ] Types for lambda expressions
