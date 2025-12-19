@@ -181,8 +181,12 @@ func TestAbstractMethodGenerationSkipsBodies(t *testing.T) {
 
 	output := strings.Join(strings.Fields(strings.ReplaceAll(generated.String(), "\t", " ")), " ")
 
-	if strings.Contains(output, "func (*shape) area()") {
-		t.Fatalf("expected abstract method without body to be skipped, got: %s", output)
+	if !strings.Contains(output, "func (se *shape) area() float64") {
+		t.Fatalf("expected abstract method stub on abstract class, got: %s", output)
+	}
+
+	if !strings.Contains(output, "panic(\"abstract method area not implemented\")") {
+		t.Fatalf("expected abstract method stub to panic, got: %s", output)
 	}
 
 	if !strings.Contains(output, "*square) area() float64") {

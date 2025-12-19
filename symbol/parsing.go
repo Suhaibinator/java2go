@@ -166,11 +166,15 @@ func parseClassScope(root *sitter.Node, source []byte) *ClassScope {
 
 func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, parentTypeParams []TypeParam) *ClassScope {
 	var public bool
+	var isAbstract bool
 	// Rename the type based on the public/static rules
 	if root.NamedChild(0).Type() == "modifiers" {
 		for _, node := range nodeutil.UnnamedChildrenOf(root.NamedChild(0)) {
 			if node.Type() == "public" {
 				public = true
+			}
+			if node.Type() == "abstract" {
+				isAbstract = true
 			}
 		}
 	}
@@ -185,7 +189,8 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			OriginalName: className,
 			Name:         HandleExportStatus(public, className),
 		},
-		IsEnum: root.Type() == "enum_declaration",
+		IsEnum:     root.Type() == "enum_declaration",
+		IsAbstract: isAbstract,
 	}
 
 	// Track superclass (for classes/enums). Tree-sitter represents the superclass
@@ -243,40 +248,40 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	}
 
 	// Inject standard enum methods that Java provides implicitly.
-if scope.IsEnum {
-baseType := "*" + scope.Class.Name
-scope.Methods = append(scope.Methods,
-&Definition{
-Name:         HandleExportStatus(true, "name"),
-OriginalName: "name",
-Type:         "string",
-},
-&Definition{
-Name:         HandleExportStatus(true, "ordinal"),
-OriginalName: "ordinal",
-Type:         "int",
-},
-&Definition{
-Name:         HandleExportStatus(true, "compareTo"),
-OriginalName: "compareTo",
-Type:         "int",
-Parameters: []*Definition{{
-Name:         "other",
-OriginalName: "other",
-Type:         baseType,
-OriginalType: scope.Class.OriginalName,
-}},
-},
-&Definition{
-Name:         scope.Class.Name + "ValueOf",
-OriginalName: "valueOf",
-Type:         baseType,
-IsStatic:     true,
-Parameters: []*Definition{{
-Name:         "name",
-OriginalName: "name",
-Type:         "string",
-OriginalType: "String",
+	if scope.IsEnum {
+		baseType := "*" + scope.Class.Name
+		scope.Methods = append(scope.Methods,
+			&Definition{
+				Name:         HandleExportStatus(true, "name"),
+				OriginalName: "name",
+				Type:         "string",
+			},
+			&Definition{
+				Name:         HandleExportStatus(true, "ordinal"),
+				OriginalName: "ordinal",
+				Type:         "int",
+			},
+			&Definition{
+				Name:         HandleExportStatus(true, "compareTo"),
+				OriginalName: "compareTo",
+				Type:         "int",
+				Parameters: []*Definition{{
+					Name:         "other",
+					OriginalName: "other",
+					Type:         baseType,
+					OriginalType: scope.Class.OriginalName,
+				}},
+			},
+			&Definition{
+				Name:         scope.Class.Name + "ValueOf",
+				OriginalName: "valueOf",
+				Type:         baseType,
+				IsStatic:     true,
+				Parameters: []*Definition{{
+					Name:         "name",
+					OriginalName: "name",
+					Type:         "string",
+					OriginalType: "String",
 				}},
 			},
 		)

@@ -440,6 +440,22 @@ func zeroValueForType(expr ast.Expr) ast.Expr {
 	}
 }
 
+func buildAbstractMethodBody(methodName string, results *ast.FieldList) *ast.BlockStmt {
+	panicMsg := "\"abstract method " + methodName + " not implemented\""
+	stmts := []ast.Stmt{
+		&ast.ExprStmt{
+			X: &ast.CallExpr{
+				Fun:  &ast.Ident{Name: "panic"},
+				Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: panicMsg}},
+			},
+		},
+	}
+	if results != nil && len(results.List) > 0 {
+		stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{zeroValueForType(results.List[0].Type)}})
+	}
+	return &ast.BlockStmt{List: stmts}
+}
+
 func methodNodeMatchesDefinition(node *sitter.Node, def *symbol.Definition, source []byte) bool {
 	if def == nil || node == nil {
 		return false
@@ -818,7 +834,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 		}
 
-		methodName := ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)
+		methodName := identFromNode(node.ChildByFieldName("name"), source)
 		methodParameters := node.ChildByFieldName("parameters")
 
 		comparison := func(d *symbol.Definition) bool {
@@ -887,14 +903,25 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		bodyNode := node.ChildByFieldName("body")
-		if bodyNode == nil {
-			return nil
-		}
-
-		body := ParseStmt(bodyNode, source, ctx).(*ast.BlockStmt)
 		params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
 
-		if methodName.Name == "main" {
+		var results *ast.FieldList
+		if ctx.localScope.Type != "" {
+			results = &ast.FieldList{
+				List: []*ast.Field{
+					{Type: &ast.Ident{Name: ctx.localScope.Type}},
+				},
+			}
+		}
+
+		var body *ast.BlockStmt
+		if bodyNode != nil {
+			body = ParseStmt(bodyNode, source, ctx).(*ast.BlockStmt)
+		} else {
+			body = buildAbstractMethodBody(ctx.localScope.OriginalName, results)
+		}
+
+		if methodName.Name == "main" && bodyNode != nil {
 			params = nil
 			body.List = append([]ast.Stmt{
 				&ast.AssignStmt{
@@ -913,12 +940,6 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		var docGroup *ast.CommentGroup
 		if len(comments) > 0 {
 			docGroup = &ast.CommentGroup{List: comments}
-		}
-
-		results := &ast.FieldList{
-			List: []*ast.Field{
-				{Type: &ast.Ident{Name: ctx.localScope.Type}},
-			},
 		}
 
 		if ctx.localScope.RequiresHelper {

@@ -117,7 +117,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			},
 		}
 	case "super":
-		return &ast.BadExpr{}
+		return superSelectorExpr(ctx)
 	case "lambda_expression":
 		// Lambdas can either be called with a list of expressions
 		// (ex: (n1, n1) -> {}), or with a single expression
@@ -154,7 +154,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			lambdaParameters = &ast.FieldList{
 				List: []*ast.Field{
 					&ast.Field{
-						Names: []*ast.Ident{ParseExpr(paramNode, source, ctx).(*ast.Ident)},
+						Names: []*ast.Ident{identFromNode(paramNode, source)},
 						Type:  &ast.Ident{Name: "any"},
 					},
 				},
@@ -181,7 +181,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		return &ast.SelectorExpr{
 			X:   ParseExpr(node.NamedChild(0), source, ctx),
-			Sel: ParseExpr(node.NamedChild(1), source, ctx).(*ast.Ident),
+			Sel: identFromNode(node.NamedChild(1), source),
 		}
 	case "array_initializer":
 		// A literal that initilzes an array, such as `{1, 2, 3}`
@@ -206,7 +206,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if node.ChildByFieldName("object") != nil {
 			objectNode := node.ChildByFieldName("object")
 			methodName := node.ChildByFieldName("name").Content(source)
-			methodIdent := ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)
+			methodIdent := identFromNode(node.ChildByFieldName("name"), source)
 
 			// Check if this is an enum values() call
 			// Transform EnumName.values() to EnumNameValues()
@@ -309,7 +309,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
-		fun := ParseExpr(node.ChildByFieldName("name"), source, ctx)
+		fun := ast.Expr(identFromNode(node.ChildByFieldName("name"), source))
 		fun = applyTypeArguments(fun, typeArgs)
 		return &ast.CallExpr{Fun: fun, Args: args}
 	case "object_creation_expression":
@@ -507,7 +507,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		return &ast.SelectorExpr{
 			X:   ParseExpr(obj, source, ctx),
-			Sel: ParseExpr(node.ChildByFieldName("field"), source, ctx).(*ast.Ident),
+			Sel: identFromNode(node.ChildByFieldName("field"), source),
 		}
 	case "array_access":
 		return &ast.IndexExpr{
@@ -519,7 +519,33 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "this":
 		return &ast.Ident{Name: ShortName(ctx.className)}
 	case "identifier":
-		return &ast.Ident{Name: node.Content(source)}
+		identName := node.Content(source)
+		if ctx.localScope != nil {
+			if param := ctx.localScope.ParameterByName(identName); param != nil {
+				return &ast.Ident{Name: param.Name}
+			}
+			if local := ctx.localScope.FindVariable(identName); local != nil {
+				return &ast.Ident{Name: local.Name}
+			}
+		}
+		if ctx.currentClass != nil {
+			if field := findFieldInHierarchy(ctx.currentClass, identName, ctx); field != nil {
+				if ctx.localScope != nil && ctx.localScope.IsStatic {
+					return &ast.Ident{Name: field.Name}
+				}
+				recvName := ctx.className
+				if recvName == "" && ctx.currentClass.Class != nil {
+					recvName = ctx.currentClass.Class.Name
+				}
+				if recvName != "" {
+					return &ast.SelectorExpr{
+						X:   &ast.Ident{Name: ShortName(recvName)},
+						Sel: &ast.Ident{Name: field.Name},
+					}
+				}
+			}
+		}
+		return &ast.Ident{Name: identName}
 	case "type_identifier": // Any reference type
 		switch node.Content(source) {
 		// Special case for strings, because in Go, these are primitive types
@@ -1021,6 +1047,35 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 	return "", false
 }
 
+func superSelectorExpr(ctx Ctx) ast.Expr {
+	if ctx.currentClass == nil {
+		return &ast.BadExpr{}
+	}
+	superType := strings.TrimSpace(ctx.currentClass.Superclass)
+	if superType == "" {
+		return &ast.BadExpr{}
+	}
+	base, _ := parseJavaTypeString(superType)
+	if base == "" {
+		return &ast.BadExpr{}
+	}
+	superName := stripJavaQualifier(base)
+	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
+		superName = scope.Class.Name
+	}
+	recvName := ctx.className
+	if recvName == "" && ctx.currentClass.Class != nil {
+		recvName = ctx.currentClass.Class.Name
+	}
+	if recvName == "" {
+		return &ast.BadExpr{}
+	}
+	return &ast.SelectorExpr{
+		X:   &ast.Ident{Name: ShortName(recvName)},
+		Sel: &ast.Ident{Name: superName},
+	}
+}
+
 func applyTypeArguments(fun ast.Expr, args []ast.Expr) ast.Expr {
 	if len(args) == 0 {
 		return fun
@@ -1052,6 +1107,15 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		}
 		className = ctx.currentClass.Class.OriginalName
 		classTypeArgs = ctx.currentClass.TypeParameterNames()
+	case "super":
+		if ctx.currentClass == nil {
+			return nil
+		}
+		superType := strings.TrimSpace(ctx.currentClass.Superclass)
+		if superType == "" {
+			return nil
+		}
+		className, classTypeArgs = parseJavaTypeString(superType)
 	case "identifier":
 		javaType, ok := inferIdentifierJavaType(objectNode.Content(source), ctx)
 		if !ok {

@@ -31,6 +31,13 @@ func LowercaseIdent(in *ast.Ident) *ast.Ident {
 	return &ast.Ident{Name: symbol.Lowercase(in.Name)}
 }
 
+func identFromNode(node *sitter.Node, source []byte) *ast.Ident {
+	if node == nil {
+		return &ast.Ident{}
+	}
+	return &ast.Ident{Name: node.Content(source)}
+}
+
 // A Ctx is all the context that is needed to parse a single source file
 type Ctx struct {
 	// Used to generate the names of all the methods, as well as the names
@@ -121,7 +128,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			typeParams = ctx.currentClass.TypeParameterNames()
 		}
 		fieldType := astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, typeParams)
-		fieldName := ParseExpr(node.ChildByFieldName("declarator").ChildByFieldName("name"), source, ctx).(*ast.Ident)
+		fieldName := identFromNode(node.ChildByFieldName("declarator").ChildByFieldName("name"), source)
 		fieldName.Name = symbol.HandleExportStatus(public, fieldName.Name)
 
 		// If the field is assigned to a value (ex: int field = 1)
@@ -263,7 +270,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			typeParams = ctx.currentClass.TypeParameterNames()
 		}
 		return &ast.Field{
-			Names: []*ast.Ident{ParseExpr(node.ChildByFieldName("name"), source, ctx).(*ast.Ident)},
+			Names: []*ast.Ident{identFromNode(node.ChildByFieldName("name"), source)},
 			Type:  astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, typeParams),
 		}
 	case "spread_parameter":
@@ -279,7 +286,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 
 		return &ast.Field{
-			Names: []*ast.Ident{ParseExpr(spreadDeclarator.ChildByFieldName("name"), source, ctx).(*ast.Ident)},
+			Names: []*ast.Ident{identFromNode(spreadDeclarator.ChildByFieldName("name"), source)},
 			Type: &ast.Ellipsis{
 				Elt: astutil.ParseTypeWithTypeParams(spreadType, source, typeParams),
 			},
@@ -288,7 +295,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		params := &ast.FieldList{}
 		for _, param := range nodeutil.NamedChildrenOf(node) {
 			params.List = append(params.List, &ast.Field{
-				Names: []*ast.Ident{ParseExpr(param, source, ctx).(*ast.Ident)},
+				Names: []*ast.Ident{identFromNode(param, source)},
 				// When we're not sure what parameters to infer, set them as interface
 				// values to avoid a panic
 				Type: &ast.Ident{Name: "interface{}"},

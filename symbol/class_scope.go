@@ -11,6 +11,8 @@ type ClassScope struct {
 	// Superclass (as written in source, may include type arguments), if any.
 	// Example: "Animal" or "Base<T>".
 	Superclass string
+	// Whether this class was declared abstract.
+	IsAbstract bool
 	// Any normal and static fields associated with the class
 	Fields []*Definition
 	// Methods and constructors
