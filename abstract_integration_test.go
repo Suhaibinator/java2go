@@ -15,11 +15,6 @@ func loadJavaTestFile(t *testing.T, path string) string {
 	return string(data)
 }
 
-func renderGoFileFromJavaFile(t *testing.T, path string) string {
-	t.Helper()
-	return renderGoFileFromJava(t, loadJavaTestFile(t, path))
-}
-
 func TestAbstractIntegration_GeneratesStubAndTracksMetadata(t *testing.T) {
 	src := loadJavaTestFile(t, "testfiles/abstract/ShapeHierarchy.java")
 
