@@ -189,8 +189,9 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			OriginalName: className,
 			Name:         HandleExportStatus(public, className),
 		},
-		IsEnum:     root.Type() == "enum_declaration",
-		IsAbstract: isAbstract,
+		IsEnum:      root.Type() == "enum_declaration",
+		IsInterface: root.Type() == "interface_declaration",
+		IsAbstract:  isAbstract,
 	}
 
 	// Track superclass (for classes/enums). Tree-sitter represents the superclass
@@ -295,11 +296,15 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 	switch node.Type() {
 	case "field_declaration":
 		var public bool
+		var isStatic bool
 		// Rename the type based on the public/static rules
 		if node.NamedChild(0).Type() == "modifiers" {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
 				if modifier.Type() == "public" {
 					public = true
+				}
+				if modifier.Type() == "static" {
+					isStatic = true
 				}
 			}
 		}
@@ -329,10 +334,15 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			OriginalName: fieldName,
 			Type:         fieldType,
 			OriginalType: typeNode.Content(source),
+			IsStatic:     isStatic,
 		})
 	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
 		var public bool
 		var isStatic bool
+		// Java interface methods are implicitly public.
+		if scope.IsInterface && node.Type() != "constructor_declaration" {
+			public = true
+		}
 		// Rename the type based on the public/static rules
 		if node.NamedChild(0).Type() == "modifiers" {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
@@ -401,7 +411,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		}
 
 		if node.ChildByFieldName("body") != nil {
-			methodScope := parseScope(node.ChildByFieldName("body"), source)
+			methodScope := parseScope(node.ChildByFieldName("body"), source, combinedTypeParamNames)
 			if !methodScope.IsEmpty() {
 				declaration.Children = append(declaration.Children, methodScope.Children...)
 			}
@@ -425,22 +435,48 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 	}
 }
 
-func parseScope(root *sitter.Node, source []byte) *Definition {
+func parseScope(root *sitter.Node, source []byte, typeParams []string) *Definition {
 	def := &Definition{}
+	if root == nil {
+		return def
+	}
 	for _, node := range nodeutil.NamedChildrenOf(root) {
 		switch node.Type() {
 		case "local_variable_declaration":
-			/*
-				name := nodeToStr(ParseExpr(node.ChildByFieldName("declarator").ChildByFieldName("name"), source, Ctx{}))
-				def.Children = append(def.Children, &symbol.Definition{
-					OriginalName: name,
-					OriginalType: node.ChildByFieldName("type").Content(source),
-					Type:         nodeToStr(ParseExpr(node.ChildByFieldName("type"), source, Ctx{})),
-					Name:         name,
+			typeNode := node.ChildByFieldName("type")
+			declarator := node.ChildByFieldName("declarator")
+			if typeNode == nil || declarator == nil {
+				continue
+			}
+
+			typeStr := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, typeParams))
+			originalType := typeNode.Content(source)
+
+			if declarator.NamedChildCount() == 1 {
+				nameNode := declarator.NamedChild(0)
+				def.Children = append(def.Children, &Definition{
+					OriginalName: nameNode.Content(source),
+					Name:         nameNode.Content(source),
+					OriginalType: originalType,
+					Type:         typeStr,
 				})
-			*/
-		case "for_statement", "enhanced_for_statement", "while_statement", "if_statement":
-			def.Children = append(def.Children, parseScope(node, source))
+				continue
+			}
+
+			for ind := 0; ind < int(declarator.NamedChildCount())-1; ind += 2 {
+				nameNode := declarator.NamedChild(ind)
+				def.Children = append(def.Children, &Definition{
+					OriginalName: nameNode.Content(source),
+					Name:         nameNode.Content(source),
+					OriginalType: originalType,
+					Type:         typeStr,
+				})
+			}
+		default:
+			inner := parseScope(node, source, typeParams)
+			if len(inner.Children) > 0 {
+				def.Children = append(def.Children, inner.Children...)
+			}
 		}
 	}
 	return def

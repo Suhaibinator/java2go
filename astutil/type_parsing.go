@@ -3,9 +3,25 @@ package astutil
 import (
 	"fmt"
 	"go/ast"
+	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
+
+func autoCloseableInterfaceType() ast.Expr {
+	return &ast.InterfaceType{
+		Methods: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{{Name: "Close"}},
+					Type: &ast.FuncType{
+						Params: &ast.FieldList{},
+					},
+				},
+			},
+		},
+	}
+}
 
 // ParseType parses a Java type node and converts it to a Go AST expression.
 // This version does not handle type parameters - use ParseTypeWithTypeParams for generic contexts.
@@ -140,6 +156,9 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		if typeName == "String" {
 			return &ast.Ident{Name: "string"}
 		}
+		if typeName == "AutoCloseable" {
+			return autoCloseableInterfaceType()
+		}
 
 		// If this is a type parameter, don't wrap it in a pointer
 		if isTypeParam(typeName) {
@@ -152,7 +171,24 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 	case "scoped_type_identifier":
 		// This contains a reference to the type of a nested class
 		// Ex: LinkedList.Node
+		if strings.HasSuffix(node.Content(source), ".AutoCloseable") {
+			return autoCloseableInterfaceType()
+		}
 		return &ast.StarExpr{X: &ast.Ident{Name: node.Content(source)}}
+	case "wildcard":
+		// Java wildcards are approximated. ? and ? super T become any;
+		// ? extends T maps to T's parsed type.
+		content := node.Content(source)
+		if strings.Contains(content, "super") {
+			return &ast.Ident{Name: "any"}
+		}
+		if node.NamedChildCount() > 0 {
+			last := node.NamedChild(int(node.NamedChildCount()) - 1)
+			if last != nil && last.Type() != "super" {
+				return ParseTypeWithTypeParams(last, source, typeParams)
+			}
+		}
+		return &ast.Ident{Name: "any"}
 	}
 	panic("Unknown type to convert: " + node.Type())
 }

@@ -6,6 +6,8 @@ import sitter "github.com/smacker/go-tree-sitter"
 type ClassScope struct {
 	// The definition for the class defined within the class
 	Class *Definition
+	// Whether this class was declared as an interface.
+	IsInterface bool
 	// Every class that is nested within the base class
 	Subclasses []*ClassScope
 	// Superclass (as written in source, may include type arguments), if any.
@@ -25,6 +27,9 @@ type ClassScope struct {
 	EnumConstants []EnumConstant
 	// Type parameters for generic classes (e.g., ["T", "U"] for class Foo<T, U>)
 	TypeParameters []TypeParam
+	// Whether this class contains included (non-static, non-excluded) field initializers.
+	// This is set during transpilation pass and used to wire constructor initialization.
+	HasInstanceFieldInitializers bool
 }
 
 // EnumConstant represents a single enum constant and its constructor arguments.

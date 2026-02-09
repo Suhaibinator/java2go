@@ -7,7 +7,7 @@ import java.util.Map;
 public class UntypedMap {
 
   // This map has no type information supplied with it
-  Map fruits;
+  Map<String, Integer> fruits;
 
   // This method supplies both correct types for both the key and value of the map
   public int getCount(String key) {
@@ -16,7 +16,7 @@ public class UntypedMap {
 
   public static void main(String[] args) {
     UntypedMap storage = new UntypedMap();
-    storage.fruits = new HashMap();
+    storage.fruits = new HashMap<>();
     storage.fruits.put("Apple", 1);
     storage.fruits.put("Orange", 3);
     System.out.println(storage.getCount("Apple"));

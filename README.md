@@ -58,9 +58,9 @@ Current limitations:
 
 * Clone the repo
 
-* `go build` to build the java2go binary
+* `go build ./cmd/java2go` to build the java2go binary
 
-* `./java2go <files>` to parse a list of files or directories
+* `./java2go <files>` to parse a list of files or directories (or run directly with `go run ./cmd/java2go <files>`)
 
 ## Options
 
@@ -77,3 +77,8 @@ Current limitations:
 * `-sync` parses the files in sequential order, instead of in parallel
 
 * `-exclude-annotations` specifies a list of annotations on methods and fields that will exclude them from the generated code
+
+* `-init-go-mod` creates a `go.mod` file in the output directory when writing files (`-w`)
+
+* `-module` sets the module path used by `-init-go-mod` (default: `generated`)
+  * When Java packages share that prefix (for example module `com/acme` with package `com.acme.app`), generated files are written module-relative (for example `app/MainApp.go`)
