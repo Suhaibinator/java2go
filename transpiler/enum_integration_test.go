@@ -67,7 +67,7 @@ public enum Switch implements Flag {
 	if !strings.Contains(flat, "Switch) IsOn() bool") {
 		t.Fatalf("expected interface method wrapper on enum, got:\n%s", out)
 	}
-	if !(strings.Contains(flat, "switch sw.enumName") || strings.Contains(flat, "switch sh.enumName")) {
+	if !strings.Contains(flat, "switch sw.enumName") && !strings.Contains(flat, "switch sh.enumName") {
 		t.Fatalf("expected wrapper to dispatch based on enum constant name, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "_Switch_ON_IsOn(") {

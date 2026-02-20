@@ -144,7 +144,7 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 			}
 		}
 
-		var arrayType ast.Expr = elemType
+		arrayType := elemType
 		for i := 0; i < dimensionCount; i++ {
 			arrayType = &ast.ArrayType{Elt: arrayType}
 		}

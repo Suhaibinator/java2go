@@ -295,7 +295,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 
 		// If the `if` statement is inline, replace the line with a full block
-		var body ast.Stmt = ParseStmt(node.ChildByFieldName("consequence"), source, ctx)
+		body := ParseStmt(node.ChildByFieldName("consequence"), source, ctx)
 		if _, ok := body.(*ast.BlockStmt); !ok {
 			body = &ast.BlockStmt{List: []ast.Stmt{
 				body,

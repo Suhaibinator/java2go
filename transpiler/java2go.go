@@ -165,7 +165,7 @@ or to fix crashes with the symbol handling`,
 		log.Infof("Converting file \"%s\"", file.Name)
 
 		// Write to stdout by default
-		var output io.Writer = stdout
+		output := stdout
 		if writeFiles {
 			// Write to a `.go` file in the same directory
 			outputFile := filepath.Join(outputDirectory, outputRelativePath(file, inputRoots, modulePath))
@@ -193,7 +193,9 @@ or to fix crashes with the symbol handling`,
 
 		// Print the generated AST
 		if displayAST {
-			ast.Print(token.NewFileSet(), parsed)
+			if err := ast.Print(token.NewFileSet(), parsed); err != nil {
+				return fmt.Errorf("error printing generated AST for %s: %w", file.Name, err)
+			}
 		}
 
 		// Output the parsed AST, into the source specified earlier

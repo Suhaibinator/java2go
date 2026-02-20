@@ -797,21 +797,6 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	panic("Unhandled expression: " + node.Type())
 }
 
-func findClassScopeByName(scope *symbol.ClassScope, name string) *symbol.ClassScope {
-	if scope == nil {
-		return nil
-	}
-	if scope.Class.OriginalName == name {
-		return scope
-	}
-	for _, sub := range scope.Subclasses {
-		if found := findClassScopeByName(sub, name); found != nil {
-			return found
-		}
-	}
-	return nil
-}
-
 func isSystemOutSelector(node *sitter.Node, source []byte) bool {
 	if node == nil {
 		return false
@@ -1819,11 +1804,6 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 		}
 	}
 	return result
-}
-
-func maybeRewriteInstanceGenericMethodInvocation(objectNode *sitter.Node, objectExpr ast.Expr, methodName string, args []ast.Expr, invocationNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
-	target := resolveInvocationTarget(objectNode, ctx, source)
-	return maybeRewriteInstanceGenericMethodInvocationWithTarget(target, objectExpr, methodName, args, invocationNode, ctx, source)
 }
 
 func maybeRewriteInstanceGenericMethodInvocationWithTarget(target *invocationTargetInfo, objectExpr ast.Expr, methodName string, args []ast.Expr, invocationNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
