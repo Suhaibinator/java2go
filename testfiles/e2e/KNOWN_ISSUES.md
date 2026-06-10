@@ -15,7 +15,8 @@ Last swept: HEAD 4ee1a98 (checkpoint 3 + Optional fixes).
 Java `int` locals/expressions are emitted as Go `int` (or untyped constants), not
 `int32`, so they clash with int32 fields/params/returns and don't wrap on overflow.
 Blocks: lambdas, var_infer, numeric_edge (overflow line), collections/CollectionOps,
-nested/AnonLocal (captured local).
+nested/AnonLocal (captured local), concurrency/ThreadJoin (entirely), concurrency/SyncCounter
+(partly). 7 e2e fixtures — the single highest-leverage fix.
 ```java
 public class K1 {
     static int f() { int count = 0; return count; } // count is Go int, return wants int32
@@ -108,11 +109,20 @@ Switch expressions (`switch(x){case ... -> ...}` emit panic() in value position)
 instanceof patterns (`x instanceof String s`), records (ConstructX undefined),
 text blocks (`"""..."""` -> raw string with literal newlines). All in progress.
 
-## K11 — concurrency: Thread subclass / anonymous Runnable (OPEN, ROADMAP §7, task #11)
-`extends Thread` and anonymous `Runnable` aren't mapped to goroutines yet
-(lambda/method-ref Thread forms and synchronized ARE done).
+## K11 — concurrency: anonymous Runnable inside a loop (OPEN, ROADMAP §7, task #11)
+PARTIALLY FIXED in checkpoint 4: `extends Thread`→goroutine and synchronized work
+now (ThreadJoin compiles modulo K1). Remaining: an anonymous `Runnable` created
+inside a loop emits `undefined: Runnable` and `undefined: i` (the loop var captured
+into the anon body isn't wired). Seen in concurrency/SyncCounter.
 ```java
-public class K11 extends Thread { public void run(){} public static void main(String[] a){} }
+public class K11 {
+    public static void main(String[] a) {
+        for (int i = 0; i < 2; i++) {
+            Runnable r = new Runnable() { public void run() { System.out.println(i); } };
+            r.run();
+        }
+    }
+}
 ```
 
 ## K12 — compound `>>>=` emits undefined non-assigning call (OPEN, ROADMAP §6/§1) — found by fuzzer

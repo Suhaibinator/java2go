@@ -48,8 +48,8 @@ var skipReasons = map[string]string{
 	"collections/Optionals":                "Optional.empty() cannot infer T (needs type param at empty() site); Optional.map() unimplemented (num.map_ undefined); Optional.of(10) infers element type any not int (ROADMAP §2/§3)",
 
 	"var_simple/VarSimple":    "var works and String.length() maps on string literals/vars, but a var inferred from a string-CONCAT expression loses its String type so .length() is left unmapped (ROADMAP §2/§6)",
-	"concurrency/SyncCounter": "Thread/Runnable/anonymous-class not mapped to goroutines; synchronized not lowered (ROADMAP §7)",
-	"concurrency/ThreadJoin":  "Thread subclass start()/join() not mapped to goroutines; new T[n] emits make(T,n) missing slice type (ROADMAP §7, §6)",
+	"concurrency/SyncCounter": "Thread+synchronized now lower (task #11), but blocked by: anonymous Runnable inside a loop (undefined: Runnable, undefined: i captured) + int/int32 (K1) in the run() body (ROADMAP §7 anon-Runnable, §6 int typing)",
+	"concurrency/ThreadJoin":  "Thread-subclass->goroutine + sized arrays now work; blocked ENTIRELY by int/int32 (K1): loop vars/fields/args int vs int32 (ROADMAP §6 int typing)",
 
 	"nested/AnonLocal":        "SAM anon class captures local typed int not int32 (value+bump mismatch); method-local class field not emitted (undefined: n) (ROADMAP §4 M4/M5, §6 int typing)",
 	"static_init/StaticInit":  "user method named init() collides with Go's reserved init func (emitted as func init with args/return -> invalid); needs name escaping. Also static-init ordering unverified (ROADMAP §4 naming, §6)",
