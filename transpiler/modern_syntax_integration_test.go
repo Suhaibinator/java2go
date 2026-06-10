@@ -301,3 +301,30 @@ func TestRecordRuntime(t *testing.T) {
 }
 `)
 }
+
+// --- Reserved Go name escaping (e2e Bug A) ---
+
+func TestReservedName_InitMethodRenamed(t *testing.T) {
+	src := `
+package modern;
+public class App {
+    static int init(String name, int value) { return value; }
+    static int a = init("a", 5);
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	// A user static method named init collides with Go's package-init function, so
+	// it must be renamed at the definition and call sites.
+	if strings.Contains(flat, "func init(name string") {
+		t.Fatalf("expected user `init` method to be renamed away from Go's reserved init, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func init0(name string, value int32) int32") {
+		t.Fatalf("expected init method renamed to init0, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "init0(\"a\", 5)") {
+		t.Fatalf("expected call site to use the renamed init0, got:\n%s", out)
+	}
+}
