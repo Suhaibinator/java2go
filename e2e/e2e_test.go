@@ -47,8 +47,8 @@ var skipReasons = map[string]string{
 	"collections/CollectionOps":            "List/Map intrinsics ARE wired now; blocked by int/int32 typing only (i*i is int but nums.Add wants int32; sum += n mixes int and int32) (ROADMAP §6 int typing)",
 	"streams/Streams":                      "java.util.stream not implemented yet (stdlib-dev task #13); currently blocked even earlier by int/int32 (nums.add(i)) before reaching stream ops (ROADMAP §2 streams, §6)",
 
-	"concurrency/SyncCounter": "Thread+synchronized now lower (task #11), but blocked by: anonymous Runnable inside a loop (undefined: Runnable, undefined: i captured) + int/int32 (K1) in the run() body (ROADMAP §7 anon-Runnable, §6 int typing)",
-	"concurrency/ThreadJoin":  "Thread-subclass->goroutine + sized arrays now work; blocked ENTIRELY by int/int32 (K1): loop vars/fields/args int vs int32 (ROADMAP §6 int typing)",
+	"concurrency/SyncCounter": "all concurrency work done (Thread+synchronized+anon-Runnable, task #11); blocked ENTIRELY by int/int32 (K1) now (ROADMAP §6 int typing, task #15)",
+	"concurrency/ThreadJoin":  "Thread-subclass->goroutine + sized arrays done; blocked ENTIRELY by int/int32 (K1): loop vars/fields/args int vs int32 (ROADMAP §6 int typing, task #15)",
 
 	"nested/AnonLocal":        "SAM anon class captures local typed int not int32 (value+bump mismatch); method-local class field not emitted (undefined: n) (ROADMAP §4 M4/M5, §6 int typing)",
 	"static_init/StaticInit":  "user method named init() collides with Go's reserved init func (emitted as func init with args/return -> invalid); needs name escaping. Also static-init ordering unverified (ROADMAP §4 naming, §6)",

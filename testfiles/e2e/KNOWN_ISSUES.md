@@ -115,21 +115,12 @@ public class K15 {
 }
 ```
 
-## K11 — concurrency: anonymous Runnable inside a loop (OPEN, ROADMAP §7, task #11)
-PARTIALLY FIXED in checkpoint 4: `extends Thread`→goroutine and synchronized work
-now (ThreadJoin compiles modulo K1). Remaining: an anonymous `Runnable` created
-inside a loop emits `undefined: Runnable` and `undefined: i` (the loop var captured
-into the anon body isn't wired). Seen in concurrency/SyncCounter.
-```java
-public class K11 {
-    public static void main(String[] a) {
-        for (int i = 0; i < 2; i++) {
-            Runnable r = new Runnable() { public void run() { System.out.println(i); } };
-            r.run();
-        }
-    }
-}
-```
+## K11 — concurrency: Thread subclass + anonymous Runnable (FIXED, task #11)
+All landed: `extends Thread`→goroutine, synchronized, and anonymous `Runnable`
+(including inside a loop — struct now embeds `stdjava.Runnable`, `r.run()`→`r.Run()`).
+Both concurrency fixtures (SyncCounter, ThreadJoin) are now blocked ONLY by K1 (int32)
+and should pass the moment K1 lands. (The earlier `undefined: i` was the int32 literal
+mismatch surfacing, not a capture-wiring bug — `i` was in scope.)
 
 ## K12 — compound `>>>=` emits undefined non-assigning call (OPEN, ROADMAP §6/§1) — found by fuzzer
 The expression form `a >>> b` works (stdjava.UnsignedRightShift), but the compound
