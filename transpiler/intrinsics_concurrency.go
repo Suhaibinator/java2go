@@ -74,7 +74,10 @@ func init() {
 	registerThreadIntrinsics()
 	registerExecutorIntrinsics()
 	registerConcurrentMapIntrinsics()
+	registerObjectMonitorIntrinsics()
+}
 
+func registerObjectMonitorIntrinsics() {
 	// new Object() -> stdjava.NewObject() (a unique lock token).
 	registerConstructorIntrinsic("Object", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 0 {
@@ -82,6 +85,25 @@ func init() {
 		}
 		return stdjavaCall(ctx, "NewObject")
 	})
+
+	// wait()/notify()/notifyAll() on a lock typed as Object route to the stdjava
+	// monitor's condition variable. These fire when the receiver's Java type
+	// resolves to Object (the common `Object lock` idiom). wait(millis) is not
+	// modelled; only the zero-arg forms match.
+	monitorMethods := map[string]string{
+		"wait":      "MonitorWait",
+		"notify":    "MonitorNotify",
+		"notifyAll": "MonitorNotifyAll",
+	}
+	for javaMethod, runtimeFn := range monitorMethods {
+		runtimeFn := runtimeFn
+		registerInstanceIntrinsic("Object", javaMethod, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if recv == nil || len(args) != 0 {
+				return nil
+			}
+			return stdjavaCall(ctx, runtimeFn, recv)
+		})
+	}
 }
 
 // synchronizedMethodPrologue builds the statements that acquire and defer the

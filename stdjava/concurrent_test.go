@@ -128,6 +128,32 @@ func TestMonitor_SameObjectSameMutex(t *testing.T) {
 	monitorFor(obj).Unlock()
 }
 
+func TestMonitor_WaitNotify(t *testing.T) {
+	lock := NewObject()
+	ready := false
+
+	go func() {
+		// Producer: set the flag and notify under the monitor.
+		m := MonitorEnter(lock)
+		ready = true
+		MonitorNotifyAll(lock)
+		MonitorExit(m)
+	}()
+
+	// Consumer: wait under the monitor until the flag is set, using the
+	// while-loop idiom that tolerates spurious wakeups.
+	m := MonitorEnter(lock)
+	for !ready {
+		MonitorWait(lock)
+	}
+	got := ready
+	MonitorExit(m)
+
+	if !got {
+		t.Fatal("consumer woke without the condition being satisfied")
+	}
+}
+
 func TestExecutorService_RunsAllSubmittedTasks(t *testing.T) {
 	pool := NewFixedThreadPool(4)
 	var counter AtomicInteger

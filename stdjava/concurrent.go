@@ -206,20 +206,35 @@ func NewObject() any {
 // transient boxed copy and not exclude correctly; such uses are rare and not
 // modelled. The registry never releases monitors, matching the fact that an
 // object's monitor lives as long as the object.
+// monitor pairs an object's lock with the condition variable that backs
+// wait/notify/notifyAll. The cond is lazily created over the same mutex so that
+// waiting atomically releases the lock and re-acquires it on wake, matching Java.
+type monitor struct {
+	mu   sync.Mutex
+	cond *sync.Cond
+}
+
 var (
 	monitorsMu sync.Mutex
-	monitors   = map[interface{}]*sync.Mutex{}
+	monitors   = map[interface{}]*monitor{}
 )
 
-func monitorFor(obj interface{}) *sync.Mutex {
+func monitorRecord(obj interface{}) *monitor {
 	monitorsMu.Lock()
 	defer monitorsMu.Unlock()
 	m, ok := monitors[obj]
 	if !ok {
-		m = &sync.Mutex{}
+		m = &monitor{}
+		m.cond = sync.NewCond(&m.mu)
 		monitors[obj] = m
 	}
 	return m
+}
+
+// monitorFor returns the lock for obj. Retained for callers (and tests) that
+// only need the mutex.
+func monitorFor(obj interface{}) *sync.Mutex {
+	return &monitorRecord(obj).mu
 }
 
 // MonitorEnter acquires the intrinsic monitor for obj and returns it, mirroring
@@ -236,6 +251,29 @@ func MonitorExit(m *sync.Mutex) {
 	if m != nil {
 		m.Unlock()
 	}
+}
+
+// MonitorWait implements Object.wait(): the caller must hold obj's monitor; it
+// atomically releases the lock and blocks until notified, then re-acquires the
+// lock before returning.
+//
+// LIMITATION: Java's wait can wake spuriously and is always used in a loop that
+// rechecks a condition; sync.Cond.Wait has the same contract, so transpiled code
+// that follows the `while (!cond) obj.wait();` idiom behaves correctly. Timed
+// wait(millis) is not modelled and falls back to an untimed wait.
+func MonitorWait(obj interface{}) {
+	monitorRecord(obj).cond.Wait()
+}
+
+// MonitorNotify implements Object.notify(): wake one waiter on obj's monitor.
+func MonitorNotify(obj interface{}) {
+	monitorRecord(obj).cond.Signal()
+}
+
+// MonitorNotifyAll implements Object.notifyAll(): wake all waiters on obj's
+// monitor.
+func MonitorNotifyAll(obj interface{}) {
+	monitorRecord(obj).cond.Broadcast()
 }
 
 // ClassMonitorEnter acquires the class-level monitor named by className, used to

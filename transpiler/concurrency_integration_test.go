@@ -55,6 +55,38 @@ public class Counter {
 	}
 }
 
+func TestConcurrency_WaitNotifyTranspile(t *testing.T) {
+	src := `
+public class Box {
+    private final Object lock = new Object();
+    private boolean ready = false;
+    public void produce() {
+        synchronized (lock) {
+            ready = true;
+            lock.notifyAll();
+        }
+    }
+    public void consume() throws InterruptedException {
+        synchronized (lock) {
+            while (!ready) {
+                lock.wait();
+            }
+        }
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	for _, want := range []string{
+		"stdjava.MonitorNotifyAll(",
+		"stdjava.MonitorWait(",
+		"stdjava.MonitorEnter(",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("expected wait/notify lowering to contain %q, got:\n%s", want, out)
+		}
+	}
+}
+
 func TestConcurrency_RuntimeMutualExclusion(t *testing.T) {
 	// A synchronized increment, driven concurrently from goroutines, must not
 	// lose updates. Uses a plain int field guarded by the method monitor.
