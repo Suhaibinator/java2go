@@ -51,6 +51,10 @@ var skipReasons = map[string]string{
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
 	"nested/Nested":                        "inner (non-static) class does not capture the enclosing instance; references to outer fields are undefined (ROADMAP §4)",
 	"collections/Collections":              "java.util imports not stripped/mapped (emit import \"java/util\"); ArrayList/HashMap not mapped (ROADMAP §2)",
+
+	"var_simple/VarSimple":    "var inference itself works; only blocker is String.length() intrinsic (ROADMAP §2). Unskip once String methods map.",
+	"concurrency/SyncCounter": "Thread/Runnable/anonymous-class not mapped to goroutines; synchronized not lowered (ROADMAP §7)",
+	"concurrency/ThreadJoin":  "Thread subclass start()/join() not mapped to goroutines; new T[n] emits make(T,n) missing slice type (ROADMAP §7, §6)",
 }
 
 func moduleRoot(t *testing.T) string {
