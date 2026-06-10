@@ -10,7 +10,7 @@ import (
 func (g *generator) statement(budget int) string {
 	// Weighted choice over statement kinds. Declarations dominate early so later
 	// statements have locals to work with.
-	switch g.weighted([]int{30, 14, 10, 10, 8, 8, 8, 6, 6}) {
+	switch g.weighted([]int{28, 13, 10, 9, 8, 8, 8, 6, 6, 6}) {
 	case 0:
 		return g.declStmt()
 	case 1:
@@ -38,6 +38,8 @@ func (g *generator) statement(budget int) string {
 		return g.stringBuilderStmt()
 	case 8:
 		return g.arrayStmt()
+	case 9:
+		return g.stringMethodStmt()
 	}
 	return g.declStmt()
 }
@@ -267,6 +269,44 @@ func (g *generator) arrayStmt() string {
 	fmt.Fprintf(&b, "for (int %s = 0; %s < %s.length; %s++) { %s += %s[%s]; }",
 		iv, iv, arr, iv, sumName, arr, iv)
 	return b.String()
+}
+
+// stringMethodStmt declares a String and records the results of several
+// supported String instance methods (ROADMAP §2). These operate on strings and
+// ints/booleans returned by the methods, so they exercise a supported area that
+// is independent of the int-local typing gap.
+func (g *generator) stringMethodStmt() string {
+	base := g.stringLiteral()
+	s := g.freshName(tString)
+	var b strings.Builder
+	fmt.Fprintf(&b, "String %s = %s;\n", s, base)
+	// Pick a couple of method results to print; each becomes its own observable.
+	r1 := g.freshName(tInt)
+	fmt.Fprintf(&b, "int %s = %s.length();\n", r1, s)
+	switch g.rng.Intn(4) {
+	case 0:
+		r := g.freshName(tString)
+		fmt.Fprintf(&b, "String %s = %s.toUpperCase();", r, s)
+	case 1:
+		r := g.freshName(tString)
+		// substring with an in-range index derived from length keeps it valid.
+		fmt.Fprintf(&b, "String %s = %s.length() > 1 ? %s.substring(1) : %s;", r, s, s, s)
+	case 2:
+		r := g.freshName(tBool)
+		fmt.Fprintf(&b, "boolean %s = %s.startsWith(%s);", r, s, g.stringLiteral())
+	default:
+		r := g.freshName(tInt)
+		fmt.Fprintf(&b, "int %s = %s.indexOf(%s);", r, s, g.stringLiteral())
+	}
+	return b.String()
+}
+
+// stringLiteral returns a quoted Java string literal drawn from a small pool of
+// words, biased toward a few that stress methods (mixed case, leading/trailing
+// substrings).
+func (g *generator) stringLiteral() string {
+	pool := []string{"Hello", "world", "abcabc", "AaBbCc", "", "x", "racecar", "Java"}
+	return fmt.Sprintf("%q", pool[g.rng.Intn(len(pool))])
 }
 
 // indent prefixes each line of s with four spaces and ensures a trailing newline.
