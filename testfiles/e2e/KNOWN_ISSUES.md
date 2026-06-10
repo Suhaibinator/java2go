@@ -89,28 +89,31 @@ public class K7 {
 }
 ```
 
-## K8 — var inferred from string concat loses String type (OPEN, ROADMAP §2/§6)
-`var g = a + b` where the result is String produces a Sprintf whose type isn't
-recorded as String, so String intrinsics on `g` aren't dispatched.
-```java
-public class K8 { public static void main(String[] a){ var g = "ab"+"cd"; System.out.println(g.length()); } }
-```
+## K8 — var inferred from string concat loses String type (FIXED, task #13 item 1)
+`var g = a + b` (String result) now records String type; var_simple passes.
 
-## K9 — Optional gaps (OPEN, ROADMAP §2/§3)
-`Optional.empty()` can't infer T (no type context); `Optional.of(literal)` infers
-element type `any` not the literal's type. (`Optional.map` was recently added.)
+## K9 — Optional empty()/of() inference (FIXED, task #3 / #13 item 1)
+`Optional.empty()` inference, `Optional.of(literal)` element type, and `Optional.map`
+all work now. Optionals' only remaining blocker is K3 method casing (.get/.Get).
+
+## K10 — modern syntax: records, text blocks (OPEN, ROADMAP §5, task #6)
+Records (`new Point(..)` -> undefined ConstructPoint) and text blocks (`"""..."""`
+-> raw Go string with literal newlines) still unimplemented. Switch expressions and
+instanceof pattern-binding now LOWER correctly (see K1 for switch_expr's remaining
+int32 block, and K15 for the instanceof autoboxing gap).
+
+## K15 — instanceof against a boxed primitive doesn't match (OPEN, ROADMAP §6 autoboxing)
+`x instanceof String s` works (reference types match), but `obj instanceof Integer i`
+where obj holds an autoboxed int (e.g. 21) does NOT match — the value is a Go
+int/int32, not a boxed Integer, so the type assertion fails and it falls through.
 ```java
-import java.util.Optional;
-public class K9 {
-    static Optional<String> e(){ return Optional.empty(); }
-    public static void main(String[] a){ System.out.println(e().orElse("x")); }
+public class K15 {
+    public static void main(String[] a) {
+        Object o = 21;
+        System.out.println(o instanceof Integer); // Java true; transpiled false
+    }
 }
 ```
-
-## K10 — modern syntax unimplemented (OPEN, ROADMAP §5, task #6)
-Switch expressions (`switch(x){case ... -> ...}` emit panic() in value position),
-instanceof patterns (`x instanceof String s`), records (ConstructX undefined),
-text blocks (`"""..."""` -> raw string with literal newlines). All in progress.
 
 ## K11 — concurrency: anonymous Runnable inside a loop (OPEN, ROADMAP §7, task #11)
 PARTIALLY FIXED in checkpoint 4: `extends Thread`→goroutine and synchronized work
