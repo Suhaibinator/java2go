@@ -7,6 +7,43 @@ import (
 	"github.com/NickyBoy89/java2go/symbol"
 )
 
+// goReservedFuncNames are Go identifiers that break code generation when used
+// verbatim as a generated top-level function name: `init` is reserved for
+// package initialization (and may not take parameters or return a value), and
+// the predeclared builtins shadow/conflict when redeclared as functions. `main`
+// is intentionally excluded — a Java `public static void main(String[])` is the
+// legitimate program entry point and is emitted as Go's `main`.
+var goReservedFuncNames = map[string]struct{}{
+	"init":    {},
+	"len":     {},
+	"cap":     {},
+	"copy":    {},
+	"new":     {},
+	"make":    {},
+	"append":  {},
+	"delete":  {},
+	"panic":   {},
+	"recover": {},
+	"print":   {},
+	"println": {},
+	"close":   {},
+	"complex": {},
+	"real":    {},
+	"imag":    {},
+}
+
+// collidesWithGoFuncName reports whether a method's generated Go name would
+// clash with a reserved/predeclared Go function name. Methods with receivers are
+// safe (the name lives in the type's method set, not package scope), so this only
+// applies to static methods, which are emitted as package-level functions.
+func collidesWithGoFuncName(method *symbol.Definition) bool {
+	if method == nil || method.Constructor || !method.IsStatic {
+		return false
+	}
+	_, reserved := goReservedFuncNames[method.Name]
+	return reserved
+}
+
 func ResolveFile(file parsing.SourceFile) {
 	ResolveClass(file.Symbols.BaseClass, file)
 	for _, subclass := range file.Symbols.BaseClass.Subclasses {
@@ -63,7 +100,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 			return false
 		}
 
-		for i := 0; symbol.IsReserved(method.Name) || len(class.FindMethod().By(comparison)) > 0; i++ {
+		for i := 0; symbol.IsReserved(method.Name) || collidesWithGoFuncName(method) || len(class.FindMethod().By(comparison)) > 0; i++ {
 			method.Rename(method.Name + strconv.Itoa(i))
 		}
 		// Resolve all the paramters of the method
