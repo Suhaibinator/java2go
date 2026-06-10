@@ -256,3 +256,70 @@ func TestOnlyNotFound(t *testing.T) {
 }
 `)
 }
+
+func TestExceptions_NativeRuntimePanicNormalization(t *testing.T) {
+	// Native Go runtime panics (divide by zero, nil dereference, index out of
+	// range, failed cast) must be catchable as the corresponding Java exception.
+	src := `
+public class RuntimeExProgram {
+    public static int divide(int a, int b) {
+        try {
+            return a / b;
+        } catch (ArithmeticException e) {
+            return -1;
+        }
+    }
+    public static int indexAccess(int[] arr, int i) {
+        try {
+            return arr[i];
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return -1;
+        }
+    }
+    public static int byRuntimeException(int a, int b) {
+        try {
+            return a / b;
+        } catch (RuntimeException e) {
+            return -2;
+        }
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	if !strings.Contains(out, "stdjava.NormalizePanic(") {
+		t.Fatalf("expected recover boundary to call stdjava.NormalizePanic, got:\n%s", out)
+	}
+
+	runGeneratedWithStdjava(t, out, `
+package main
+
+import "testing"
+
+func TestDivide(t *testing.T) {
+	if got := Divide(10, 2); got != 5 {
+		t.Fatalf("Divide(10,2) = %d, want 5", got)
+	}
+	// Divide by zero panics in Go; it must be caught as ArithmeticException.
+	if got := Divide(10, 0); got != -1 {
+		t.Fatalf("Divide(10,0) = %d, want -1 (ArithmeticException caught)", got)
+	}
+}
+
+func TestIndexAccess(t *testing.T) {
+	arr := []int32{1, 2, 3}
+	if got := IndexAccess(arr, 1); got != 2 {
+		t.Fatalf("in-range access = %d, want 2", got)
+	}
+	if got := IndexAccess(arr, 9); got != -1 {
+		t.Fatalf("out-of-range = %d, want -1 (ArrayIndexOutOfBoundsException caught)", got)
+	}
+}
+
+func TestByRuntimeException(t *testing.T) {
+	// A normalized ArithmeticException is also catchable as RuntimeException.
+	if got := ByRuntimeException(1, 0); got != -2 {
+		t.Fatalf("got %d, want -2 (caught as RuntimeException)", got)
+	}
+}
+`)
+}

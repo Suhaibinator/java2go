@@ -2,6 +2,85 @@ package stdjava
 
 import "testing"
 
+// recoverNormalized runs fn, recovers any panic it raises, and returns the
+// value after NormalizePanic, mimicking the generated recover boundary.
+func recoverNormalized(fn func()) (out interface{}) {
+	defer func() {
+		out = NormalizePanic(recover())
+	}()
+	fn()
+	return nil
+}
+
+func TestNormalizePanic_DivideByZero(t *testing.T) {
+	got := recoverNormalized(func() {
+		a, b := 1, 0
+		_ = a / b
+	})
+	if !CaughtAs(got, "ArithmeticException") {
+		t.Fatalf("divide by zero should normalize to ArithmeticException, got %T (%v)", got, got)
+	}
+}
+
+func TestNormalizePanic_NilPointerDereference(t *testing.T) {
+	got := recoverNormalized(func() {
+		var p *int
+		_ = *p
+	})
+	if !CaughtAs(got, "NullPointerException") {
+		t.Fatalf("nil dereference should normalize to NullPointerException, got %T (%v)", got, got)
+	}
+}
+
+func TestNormalizePanic_IndexOutOfRange(t *testing.T) {
+	got := recoverNormalized(func() {
+		s := []int{1, 2, 3}
+		idx := 5
+		_ = s[idx]
+	})
+	if !CaughtAs(got, "ArrayIndexOutOfBoundsException") {
+		t.Fatalf("index out of range should normalize to ArrayIndexOutOfBoundsException, got %T (%v)", got, got)
+	}
+	// It must also be catchable by the supertype.
+	if !CaughtAs(got, "IndexOutOfBoundsException") || !CaughtAs(got, "RuntimeException") {
+		t.Fatal("normalized index error should be catchable by supertypes")
+	}
+}
+
+func TestNormalizePanic_FailedTypeAssertion(t *testing.T) {
+	got := recoverNormalized(func() {
+		var v interface{} = "a string"
+		_ = v.(int)
+	})
+	if !CaughtAs(got, "ClassCastException") {
+		t.Fatalf("failed type assertion should normalize to ClassCastException, got %T (%v)", got, got)
+	}
+}
+
+func TestNormalizePanic_ThrowablePassesThrough(t *testing.T) {
+	orig := NewIllegalArgumentException("explicit")
+	got := NormalizePanic(orig)
+	if !CaughtAs(got, "IllegalArgumentException") {
+		t.Fatal("an explicit stdjava exception must pass through normalization unchanged")
+	}
+	if GetMessage(got) != "explicit" {
+		t.Fatalf("message lost during normalization: %q", GetMessage(got))
+	}
+}
+
+func TestNormalizePanic_NilIsNil(t *testing.T) {
+	if NormalizePanic(nil) != nil {
+		t.Fatal("normalizing a nil (no panic) must yield nil")
+	}
+}
+
+func TestNormalizePanic_PlainStringUntouched(t *testing.T) {
+	got := NormalizePanic("custom panic")
+	if got != "custom panic" {
+		t.Fatalf("a non-runtime panic value should be returned unchanged, got %v", got)
+	}
+}
+
 func TestCaughtAs_ExactMatch(t *testing.T) {
 	e := NewIllegalArgumentException("bad arg")
 	if !CaughtAs(e, "IllegalArgumentException") {

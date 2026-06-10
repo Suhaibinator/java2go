@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -106,6 +108,68 @@ func throwableTypeName(recovered interface{}) string {
 		rt = rt.Elem()
 	}
 	return rt.Name()
+}
+
+// NormalizePanic converts a recovered panic value into the Java exception it
+// corresponds to. Transpiled `throw` statements already panic with stdjava
+// Throwable values, which pass through unchanged. Native Go runtime panics are
+// mapped to the matching Java exception so they can be caught by the usual catch
+// dispatch:
+//
+//	integer divide by zero  -> ArithmeticException
+//	nil pointer dereference  -> NullPointerException
+//	slice/array index range  -> ArrayIndexOutOfBoundsException
+//	failed type assertion    -> ClassCastException
+//
+// The Go runtime does not expose distinct exported types for most of these
+// (they are unexported runtime.Error implementations), so the mapping inspects
+// the *runtime.TypeAssertionError type and otherwise the runtime.Error message.
+// A nil value (no panic) and any value that is already a Throwable are returned
+// as-is. This is meant to be called at the recover boundary in generated code.
+func NormalizePanic(recovered interface{}) interface{} {
+	if recovered == nil {
+		return nil
+	}
+	if _, ok := recovered.(Throwable); ok {
+		return recovered
+	}
+
+	// A failed type assertion surfaces as *runtime.TypeAssertionError, which is
+	// the Go analogue of a Java ClassCastException.
+	if _, ok := recovered.(*runtime.TypeAssertionError); ok {
+		return NewClassCastException(errorMessage(recovered))
+	}
+
+	rerr, ok := recovered.(runtime.Error)
+	if !ok {
+		// Not a runtime panic (e.g. a panicked string or a plain error); leave it
+		// untouched so it still escapes or is caught by a broad clause.
+		return recovered
+	}
+
+	msg := rerr.Error()
+	switch {
+	case strings.Contains(msg, "integer divide by zero"),
+		strings.Contains(msg, "division by zero"):
+		return NewArithmeticException("/ by zero")
+	case strings.Contains(msg, "index out of range"),
+		strings.Contains(msg, "slice bounds out of range"):
+		return NewArrayIndexOutOfBoundsException(msg)
+	case strings.Contains(msg, "nil pointer dereference"),
+		strings.Contains(msg, "invalid memory address"):
+		return NewNullPointerException(msg)
+	default:
+		return recovered
+	}
+}
+
+// errorMessage extracts the message from a value that implements error, falling
+// back to default formatting otherwise.
+func errorMessage(v interface{}) string {
+	if err, ok := v.(error); ok {
+		return err.Error()
+	}
+	return fmt.Sprintf("%v", v)
 }
 
 // CaughtAs reports whether a recovered panic value should be handled by a catch
