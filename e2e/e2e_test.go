@@ -52,9 +52,9 @@ var skipReasons = map[string]string{
 	"concurrency/SyncCounter": "Thread/Runnable/anonymous-class not mapped to goroutines; synchronized not lowered (ROADMAP §7)",
 	"concurrency/ThreadJoin":  "Thread subclass start()/join() not mapped to goroutines; new T[n] emits make(T,n) missing slice type (ROADMAP §7, §6)",
 
-	"nested/AnonLocal":        "pending validation: SAM anon class landed (M3) but multi-method anon (extends abstract) and local classes are M4/M5 in progress (ROADMAP §4)",
-	"static_init/StaticInit":  "pending validation: static{} block + field-initializer interleaved ordering (ROADMAP §6 static init order)",
-	"overloading/Overloading": "pending validation: method overload resolution (int/long/double/String) not yet e2e-validated (ROADMAP §6/§7)",
+	"nested/AnonLocal":        "SAM anon class captures local typed int not int32 (value+bump mismatch); method-local class field not emitted (undefined: n) (ROADMAP §4 M4/M5, §6 int typing)",
+	"static_init/StaticInit":  "user method named init() collides with Go's reserved init func (emitted as func init with args/return -> invalid); needs name escaping. Also static-init ordering unverified (ROADMAP §4 naming, §6)",
+	"overloading/Overloading": "overload resolution collapses all calls to the first overload (describe0/int32); long/double/String/arity dispatch by arg type not implemented (ROADMAP §6/§7)",
 }
 
 func moduleRoot(t *testing.T) string {
