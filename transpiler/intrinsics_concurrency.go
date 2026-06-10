@@ -4,6 +4,10 @@ import (
 	"go/ast"
 	"go/token"
 	"strconv"
+	"strings"
+
+	"github.com/NickyBoy89/java2go/symbol"
+	sitter "github.com/smacker/go-tree-sitter"
 )
 
 // intLit builds an integer literal expression, used to supply the default value
@@ -103,6 +107,66 @@ func registerObjectMonitorIntrinsics() {
 			}
 			return stdjavaCall(ctx, runtimeFn, recv)
 		})
+	}
+}
+
+// extendsBuiltinThread reports whether the class scope directly extends
+// java.lang.Thread (and not a user-defined class of that name).
+func extendsBuiltinThread(ctx Ctx) bool {
+	return classScopeExtendsThread(ctx, ctx.currentClass)
+}
+
+// classScopeExtendsThread reports whether scope transitively extends
+// java.lang.Thread.
+func classScopeExtendsThread(ctx Ctx, scope *symbol.ClassScope) bool {
+	for scope != nil {
+		super, _ := parseJavaTypeString(strings.TrimSpace(scope.Superclass))
+		base := stripJavaQualifier(super)
+		if base == "" {
+			return false
+		}
+		parent := resolveClassScopeByQualifiedName(ctx, super)
+		if base == "Thread" && parent == nil {
+			return true
+		}
+		scope = parent
+	}
+	return false
+}
+
+// threadSubclassMethod maps a zero-arg Thread method called on a receiver whose
+// Java type extends Thread onto the exported method promoted from the embedded
+// *stdjava.Thread (start->Start, join->Join, run->Run). It returns ("", false)
+// when the receiver is not a Thread subclass or the method is not one of these.
+func threadSubclassMethod(objectNode *sitter.Node, methodName string, ctx Ctx, source []byte) (string, bool) {
+	goMethod, ok := map[string]string{"start": "Start", "join": "Join", "run": "Run"}[methodName]
+	if !ok {
+		return "", false
+	}
+	javaType, ok := inferExprJavaType(objectNode, ctx, source)
+	if !ok {
+		return "", false
+	}
+	base, _ := parseJavaTypeString(javaType)
+	scope := resolveClassScopeByQualifiedName(ctx, base)
+	if scope == nil || !classScopeExtendsThread(ctx, scope) {
+		return "", false
+	}
+	return goMethod, true
+}
+
+// threadBaseWiringStmt builds `self.Thread = stdjava.NewThreadBase(self)` for a
+// Thread subclass constructor, so the embedded runtime Thread dispatches Start()
+// to this instance's Run() override. Returns nil for non-Thread classes.
+func threadBaseWiringStmt(ctx Ctx) ast.Stmt {
+	if !extendsBuiltinThread(ctx) {
+		return nil
+	}
+	recv := ShortName(ctx.className)
+	return &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recv}, Sel: &ast.Ident{Name: "Thread"}}},
+		Tok: token.ASSIGN,
+		Rhs: []ast.Expr{stdjavaCall(ctx, "NewThreadBase", &ast.Ident{Name: recv})},
 	}
 }
 

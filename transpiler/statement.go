@@ -527,6 +527,15 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 func parseSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
 	switchBlock := &ast.BlockStmt{}
 
+	// Arrow-form switches (Java 14+) use `switch_rule` children, each of which is
+	// self-contained (no fallthrough). Handle them separately from the classic
+	// colon-form `switch_block_statement_group`s.
+	for _, c := range nodeutil.NamedChildrenOf(node) {
+		if c.Type() == "switch_rule" {
+			return parseArrowSwitchBlock(node, source, ctx)
+		}
+	}
+
 	groups := []*sitter.Node{}
 	for _, c := range nodeutil.NamedChildrenOf(node) {
 		if c.Type() == "switch_block_statement_group" {
@@ -572,6 +581,56 @@ func parseSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt 
 	}
 
 	return switchBlock
+}
+
+// parseArrowSwitchBlock lowers an arrow-form (`case X -> ...`) switch body. Each
+// switch_rule maps to a single Go case clause with no fallthrough. A `default ->`
+// rule becomes the default clause. The rule body is an expression statement, a
+// block, or a throw, all converted as ordinary statements.
+func parseArrowSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+	switchBlock := &ast.BlockStmt{}
+
+	for _, rule := range nodeutil.NamedChildrenOf(node) {
+		if rule.Type() != "switch_rule" {
+			continue
+		}
+		caseExprs, isDefault, bodyNodes := splitSwitchRule(rule, source, ctx)
+
+		clause := &ast.CaseClause{}
+		if !isDefault {
+			clause.List = caseExprs
+		}
+		for _, bodyNode := range bodyNodes {
+			if stmts := TryParseStmts(bodyNode, source, ctx); stmts != nil {
+				clause.Body = append(clause.Body, stmts...)
+			} else {
+				clause.Body = append(clause.Body, ParseStmt(bodyNode, source, ctx))
+			}
+		}
+		switchBlock.List = append(switchBlock.List, clause)
+	}
+
+	return switchBlock
+}
+
+// splitSwitchRule separates a switch_rule into its case label expressions (empty
+// for default), whether it is the default rule, and the body nodes after the
+// arrow.
+func splitSwitchRule(rule *sitter.Node, source []byte, ctx Ctx) (caseExprs []ast.Expr, isDefault bool, bodyNodes []*sitter.Node) {
+	for _, child := range nodeutil.NamedChildrenOf(rule) {
+		if child.Type() == "switch_label" {
+			if child.NamedChildCount() == 0 {
+				isDefault = true
+			} else {
+				for _, labelExpr := range nodeutil.NamedChildrenOf(child) {
+					caseExprs = append(caseExprs, ParseExpr(labelExpr, source, ctx))
+				}
+			}
+			continue
+		}
+		bodyNodes = append(bodyNodes, child)
+	}
+	return caseExprs, isDefault, bodyNodes
 }
 
 // splitSwitchGroup separates a switch_block_statement_group into its case label

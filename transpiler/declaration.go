@@ -68,6 +68,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
 					continue
 				}
+				// A class extending java.lang.Thread embeds *stdjava.Thread so it
+				// inherits Start()/Join(); the constructor wires the embedded Thread
+				// to dispatch to this struct's Run() override.
+				if super := stripJavaQualifier(t.Content(source)); super == "Thread" && resolveClassScopeByQualifiedName(ctx, super) == nil {
+					fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("Thread", ctx)}})
+					continue
+				}
 				// When the superclass is a user-defined class (possibly a nested class
 				// or a package-private one whose Go struct name was lowercased), embed
 				// its resolved Go struct name so the field reference matches the struct
@@ -633,6 +640,12 @@ func buildDefaultConstructorDecl(ctx Ctx) ast.Decl {
 			Tok: token.DEFINE,
 			Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
 		},
+	}
+
+	// A Thread subclass with no explicit constructor still needs its embedded
+	// *stdjava.Thread wired so Start() dispatches to this instance's Run().
+	if stmt := threadBaseWiringStmt(ctx); stmt != nil {
+		body = append(body, stmt)
 	}
 
 	// Inner classes capture their enclosing instance through a synthesized
@@ -1438,6 +1451,11 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				Tok: token.ASSIGN,
 				Rhs: []ast.Expr{&ast.Ident{Name: enclFieldName}},
 			})
+		}
+		// For a `class X extends Thread` subclass, wire the embedded *stdjava.Thread
+		// to dispatch Start() to this instance's Run() override.
+		if stmt := threadBaseWiringStmt(ctx); stmt != nil {
+			prelude = append(prelude, stmt)
 		}
 		preludeLen := len(prelude)
 		userBody := body.List

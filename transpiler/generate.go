@@ -211,9 +211,11 @@ func GenInterface(name string, methods *ast.FieldList, typeParams []symbol.TypeP
 
 func GenMultiDimArray(arrayType string, dimensions []ast.Expr) ast.Expr {
 	if len(dimensions) == 1 {
+		// `new T[n]` becomes `make([]T, n)`; the make target must be the slice
+		// type, not the bare element type.
 		return &ast.CallExpr{
 			Fun:  &ast.Ident{Name: "make"},
-			Args: append([]ast.Expr{&ast.Ident{Name: arrayType}}, dimensions...),
+			Args: append([]ast.Expr{genArrayType(arrayType, 1)}, dimensions...),
 		}
 	}
 

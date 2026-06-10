@@ -133,6 +133,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 	case "super":
 		return superSelectorExpr(ctx)
+	case "switch_expression":
+		// A switch used as a value (Java 14+) is lowered to an immediately-invoked
+		// function literal whose arms `return` the produced value. yield X and
+		// arrow-form `case X -> expr` both become `return X`.
+		return buildSwitchExpressionIIFE(node, source, ctx)
 	case "lambda_expression":
 		// Lambdas can either be called with a list of expressions
 		// (ex: (n1, n1) -> {}), or with a single expression
@@ -340,6 +345,19 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					return &ast.CallExpr{
 						Fun:  stdjavaQualifiedExpr(runtimeFn, ctx),
 						Args: []ast.Expr{ParseExpr(objectNode, source, ctx)},
+					}
+				}
+			}
+
+			// Thread methods on a `class X extends Thread` subclass dispatch to the
+			// embedded *stdjava.Thread, whose methods use Go's exported casing.
+			if argCount == 0 {
+				if goMethod, ok := threadSubclassMethod(objectNode, methodName, ctx, source); ok {
+					return &ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   ParseExpr(objectNode, source, ctx),
+							Sel: &ast.Ident{Name: goMethod},
+						},
 					}
 				}
 			}
@@ -669,6 +687,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// not the array type, so wrap it so the initializer can emit a typed
 		// composite literal like `[]int32{...}` instead of a bare `{...}`.
 		elementType := astutil.ParseType(node.ChildByFieldName("type"), source)
+		// A user-defined reference element type may have been generated under a
+		// different name (e.g. a package-private `Worker` becomes the struct
+		// `worker`). Resolve to the generated struct name so `new Worker[n]`
+		// allocates `make([]*worker, n)` and not an undefined `*Worker`.
+		if typeNode := node.ChildByFieldName("type"); typeNode != nil {
+			elementType = resolveElementTypeCasing(elementType, typeNode.Content(source), ctx)
+		}
 		var initializer ast.Expr
 
 		for _, child := range nodeutil.NamedChildrenOf(node) {
@@ -747,7 +772,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if operator == ">>>" {
 			return stdjavaCall(ctx, "UnsignedRightShift",
 				ParseExpr(node.Child(0), source, ctx),
-				maskedShiftAmount(node.Child(2), source, ctx),
+				maskedShiftAmount(node.Child(0), node.Child(2), source, ctx),
 			)
 		}
 		leftNode := node.Child(0)
@@ -761,7 +786,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// shifting, whereas Go applies the full count. Mask constant shift amounts
 		// at transpile time so e.g. `1 << 32` stays 1.
 		if operator == "<<" || operator == ">>" {
-			rightExpr = maskedShiftAmount(rightNode, source, ctx)
+			rightExpr = maskedShiftAmount(leftNode, rightNode, source, ctx)
 		}
 		return &ast.BinaryExpr{
 			X:  leftExpr,
@@ -1712,6 +1737,117 @@ func anonymousClassDeclaredFields(classBody *sitter.Node, source []byte, ctx Ctx
 	return defs, astFields
 }
 
+// buildSwitchExpressionIIFE lowers a switch expression into an immediately
+// invoked function literal whose arms return the switch's value.
+func buildSwitchExpressionIIFE(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	condNode := node.ChildByFieldName("condition")
+	bodyNode := node.ChildByFieldName("body")
+	if condNode == nil || bodyNode == nil {
+		// Fall back to a stub so the rest of the file still converts.
+		diag := reportUnsupported("expression", node, source, ctx)
+		return &ast.CallExpr{Fun: &ast.Ident{Name: "panic"}, Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("%q", strings.TrimPrefix(unsupportedComment(diag), "// "))}}}
+	}
+
+	// Result type of the IIFE: prefer the expected type, else any.
+	var resultType ast.Expr = &ast.Ident{Name: "any"}
+	if strings.TrimSpace(ctx.expectedType) != "" {
+		resultType = javaTypeStringToGoTypeExpr(ctx.expectedType, inScopeTypeParameters(ctx), ctx)
+	}
+
+	switchStmt := &ast.SwitchStmt{
+		Tag:  ParseExpr(condNode, source, ctx),
+		Body: buildSwitchExpressionBody(bodyNode, source, ctx),
+	}
+
+	body := &ast.BlockStmt{List: []ast.Stmt{
+		switchStmt,
+		// Go cannot prove switch exhaustiveness, so guard the fallthrough path.
+		&ast.ExprStmt{X: &ast.CallExpr{
+			Fun:  &ast.Ident{Name: "panic"},
+			Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"unreachable switch expression\""}},
+		}},
+	}}
+
+	return &ast.CallExpr{
+		Fun: &ast.FuncLit{
+			Type: &ast.FuncType{
+				Params:  &ast.FieldList{},
+				Results: &ast.FieldList{List: []*ast.Field{{Type: resultType}}},
+			},
+			Body: body,
+		},
+	}
+}
+
+// buildSwitchExpressionBody builds the case clauses for a switch expression,
+// turning each arm's produced value into a `return`. Handles both arrow-form
+// (`case X -> expr` / `case X -> { yield V; }`) and colon-form arms with yield.
+func buildSwitchExpressionBody(bodyNode *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+	switchBlock := &ast.BlockStmt{}
+
+	for _, child := range nodeutil.NamedChildrenOf(bodyNode) {
+		switch child.Type() {
+		case "switch_rule":
+			caseExprs, isDefault, ruleBody := splitSwitchRule(child, source, ctx)
+			clause := &ast.CaseClause{}
+			if !isDefault {
+				clause.List = caseExprs
+			}
+			clause.Body = switchArmReturnStmts(ruleBody, source, ctx)
+			switchBlock.List = append(switchBlock.List, clause)
+		case "switch_block_statement_group":
+			caseExprs, isDefault, groupBody := splitSwitchGroup(child, source, ctx)
+			clause := &ast.CaseClause{}
+			if !isDefault {
+				clause.List = caseExprs
+			}
+			clause.Body = switchArmReturnStmts(groupBody, source, ctx)
+			switchBlock.List = append(switchBlock.List, clause)
+		}
+	}
+
+	return switchBlock
+}
+
+// switchArmReturnStmts converts the body nodes of a switch-expression arm into Go
+// statements where the produced value is returned. A bare expression statement
+// becomes `return expr`; `yield X` becomes `return X`; other statements are
+// preserved as-is.
+func switchArmReturnStmts(bodyNodes []*sitter.Node, source []byte, ctx Ctx) []ast.Stmt {
+	var stmts []ast.Stmt
+	for _, n := range bodyNodes {
+		switch n.Type() {
+		case "expression_statement":
+			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{ParseExpr(n.NamedChild(0), source, ctx)}})
+		case "block":
+			stmts = append(stmts, convertYieldBlock(n, source, ctx)...)
+		case "yield_statement":
+			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{ParseExpr(n.NamedChild(0), source, ctx)}})
+		default:
+			stmts = append(stmts, ParseStmt(n, source, ctx))
+		}
+	}
+	return stmts
+}
+
+// convertYieldBlock converts the statements of a block in a switch-expression
+// arm, rewriting `yield X` into `return X`.
+func convertYieldBlock(block *sitter.Node, source []byte, ctx Ctx) []ast.Stmt {
+	var stmts []ast.Stmt
+	for _, n := range nodeutil.NamedChildrenOf(block) {
+		if n.Type() == "yield_statement" {
+			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{ParseExpr(n.NamedChild(0), source, ctx)}})
+			continue
+		}
+		if parsed := TryParseStmts(n, source, ctx); parsed != nil {
+			stmts = append(stmts, parsed...)
+		} else {
+			stmts = append(stmts, ParseStmt(n, source, ctx))
+		}
+	}
+	return stmts
+}
+
 // objectCreationClassBody returns the class_body child of an object creation
 // expression (present only for anonymous classes), or nil.
 func objectCreationClassBody(node *sitter.Node) *sitter.Node {
@@ -2152,25 +2288,102 @@ func instanceofAssertTypeExpr(javaType string, ctx Ctx) ast.Expr {
 	return javaTypeStringToGoTypeExpr(javaType, inScopeParams, ctx)
 }
 
+// resolveElementTypeCasing rewrites a parsed array element type so a user-defined
+// reference type uses its generated Go struct name. astutil.ParseType emits the
+// verbatim Java name (e.g. *Worker), but a package-private class is generated
+// under a lowercased name (worker), so the array element type must match. Only
+// pointer-to-named-type expressions are adjusted; primitives, slices, and types
+// with no resolvable class scope are returned unchanged.
+func resolveElementTypeCasing(parsed ast.Expr, javaType string, ctx Ctx) ast.Expr {
+	star, ok := parsed.(*ast.StarExpr)
+	if !ok {
+		return parsed
+	}
+	if _, ok := star.X.(*ast.Ident); !ok {
+		return parsed
+	}
+	base, _ := parseJavaTypeString(javaType)
+	if base == "" {
+		return parsed
+	}
+	scope := resolveClassScopeByQualifiedName(ctx, base)
+	if scope == nil || scope.Class == nil || scope.Class.Name == "" {
+		return parsed
+	}
+	return &ast.StarExpr{X: &ast.Ident{Name: scope.Class.Name}}
+}
+
 // maskedShiftAmount returns the Go expression for a Java shift count. Java masks
-// the count to the low 5 bits for int shifts and the low 6 bits for long shifts
-// before shifting, while Go applies the full count. For a constant decimal count
-// we fold the mask at transpile time (e.g. `1 << 32` becomes `1 << 0`). Variable
-// counts are left as-is: masking them would change the type of the shift and the
-// common case (counts already in range) is unaffected.
-func maskedShiftAmount(rightNode *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+// the count to the low 5 bits when the left operand is int (or a narrower type
+// promoted to int) and to the low 6 bits when it is long, before shifting, while
+// Go applies the full count. For a constant decimal count we fold the mask at
+// transpile time (e.g. int `1 << 32` becomes `1 << 0`, but long `1L << 32` stays
+// `1L << 32`). Variable counts are left as-is: masking them would change the type
+// of the shift and the common case (counts already in range) is unaffected.
+func maskedShiftAmount(leftNode, rightNode *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	if rightNode != nil && rightNode.Type() == "decimal_integer_literal" {
 		literal := rightNode.Content(source)
 		// Drop a trailing long suffix if present; the count itself is always int.
 		trimmed := strings.TrimRight(literal, "lL")
 		if value, ok := parseDecimalUint(trimmed); ok {
-			masked := value & 31
+			var mask uint64 = 31
+			if shiftOperandIsLong(leftNode, source, ctx) {
+				mask = 63
+			}
+			masked := value & mask
 			if masked != value {
 				return &ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", masked)}
 			}
 		}
 	}
 	return ParseExpr(rightNode, source, ctx)
+}
+
+// shiftOperandIsLong reports whether a shift's left operand has Java type long
+// (so the shift count masks to 6 bits rather than 5). It recognizes long
+// literals (1L), casts to long, and operands whose inferred type is long/Long.
+// Anything else is treated as int, matching Java's promotion of narrower types.
+func shiftOperandIsLong(node *sitter.Node, source []byte, ctx Ctx) bool {
+	if node == nil {
+		return false
+	}
+	switch node.Type() {
+	case "decimal_integer_literal", "hex_integer_literal", "octal_integer_literal", "binary_integer_literal":
+		lit := node.Content(source)
+		return strings.HasSuffix(lit, "L") || strings.HasSuffix(lit, "l")
+	case "parenthesized_expression":
+		if node.NamedChildCount() > 0 {
+			return shiftOperandIsLong(node.NamedChild(0), source, ctx)
+		}
+	case "cast_expression":
+		if typeNode := node.NamedChild(0); typeNode != nil {
+			return isLongJavaType(typeNode.Content(source))
+		}
+	case "unary_expression":
+		// Sign/complement preserve the operand's type.
+		if count := int(node.NamedChildCount()); count > 0 {
+			return shiftOperandIsLong(node.NamedChild(count-1), source, ctx)
+		}
+	case "binary_expression":
+		// A binary op is long if either side is long (Java numeric promotion).
+		if node.NamedChildCount() >= 2 {
+			return shiftOperandIsLong(node.Child(0), source, ctx) || shiftOperandIsLong(node.Child(2), source, ctx)
+		}
+	}
+	if javaType, ok := inferExprJavaType(node, ctx, source); ok {
+		return isLongJavaType(javaType)
+	}
+	return false
+}
+
+// isLongJavaType reports whether a Java type string denotes the 64-bit long type.
+func isLongJavaType(javaType string) bool {
+	base, _ := parseJavaTypeString(javaType)
+	switch stripJavaQualifier(base) {
+	case "long", "Long":
+		return true
+	}
+	return false
 }
 
 // parseDecimalUint parses a non-negative decimal integer string, ignoring Java
@@ -2436,6 +2649,23 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			return "", false
 		}
 		return typeNode.Content(source), true
+	case "array_access":
+		// The element type of an array access is the array's type with one
+		// dimension removed (e.g. Worker[] indexed -> Worker).
+		arrayNode := node.ChildByFieldName("array")
+		if arrayNode == nil {
+			arrayNode = node.NamedChild(0)
+		}
+		if arrayNode == nil {
+			return "", false
+		}
+		if arrayType, ok := inferExprJavaType(arrayNode, ctx, source); ok {
+			trimmed := strings.TrimSpace(arrayType)
+			if strings.HasSuffix(trimmed, "[]") {
+				return strings.TrimSpace(trimmed[:len(trimmed)-2]), true
+			}
+		}
+		return "", false
 	case "string_literal":
 		// A string literal is a java.lang.String, so chained calls on a literal
 		// (e.g. "  x  ".trim()) resolve as String intrinsics.
@@ -2443,6 +2673,15 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 	case "parenthesized_expression":
 		if inner := node.NamedChild(0); inner != nil {
 			return inferExprJavaType(inner, ctx, source)
+		}
+	case "binary_expression":
+		// Java's `+` is String concatenation when either operand is a String, so
+		// the whole expression is a String (e.g. `var g = "a" + n;` makes g a
+		// String). This lets intrinsics dispatch on a concatenation result.
+		if op := node.Child(1); op != nil && op.Content(source) == "+" {
+			if isStringLikeExprNode(node.Child(0), ctx, source) || isStringLikeExprNode(node.Child(2), ctx, source) {
+				return "String", true
+			}
 		}
 	case "method_invocation":
 		// Chained String intrinsics: if the inner call is itself a String method

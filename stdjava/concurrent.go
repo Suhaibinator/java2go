@@ -144,31 +144,71 @@ func (c *ConcurrentHashMap[K, V]) Size() int32 {
 	return int32(len(c.m))
 }
 
-// Thread mirrors the subset of java.lang.Thread used by transpiled code: it
-// wraps a Runnable (a func()) and runs it in a goroutine on Start(), with Join()
-// blocking until it finishes. Java's Thread is far richer (priorities,
-// interruption, daemon status); those are out of scope and documented as such.
+// Runnable is the Go counterpart of java.lang.Runnable: anything with a Run()
+// method. Anonymous Runnable classes and Thread subclasses (whose run() override
+// is generated as Run()) satisfy it, so they can be handed to a Thread directly.
+type Runnable interface {
+	Run()
+}
+
+// runnableFunc adapts a plain func() (a lambda or method reference) to Runnable.
+type runnableFunc func()
+
+func (f runnableFunc) Run() {
+	if f != nil {
+		f()
+	}
+}
+
+// Thread mirrors the subset of java.lang.Thread used by transpiled code: it holds
+// a Runnable and runs it in a goroutine on Start(), with Join() blocking until it
+// finishes. Java's Thread is far richer (priorities, interruption, daemon status,
+// fairness); those are out of scope and documented as such.
 type Thread struct {
-	run  func()
+	run  Runnable
 	done chan struct{}
 	once sync.Once
 }
 
-// NewThread builds a Thread from a Runnable. The Runnable is a plain func() in
-// generated code (Runnable.run lowered to a closure).
-func NewThread(run func()) *Thread {
-	return &Thread{run: run, done: make(chan struct{})}
+// NewThread builds a Thread from a Runnable. The argument is either a plain
+// func() (the lambda / method-reference form) or a value implementing Runnable
+// (an anonymous Runnable class). Other values produce a Thread that does
+// nothing when started.
+func NewThread(runnable any) *Thread {
+	return &Thread{run: asRunnable(runnable), done: make(chan struct{})}
+}
+
+// asRunnable coerces the accepted Thread argument forms into a Runnable.
+func asRunnable(runnable any) Runnable {
+	switch r := runnable.(type) {
+	case nil:
+		return nil
+	case Runnable:
+		return r
+	case func():
+		return runnableFunc(r)
+	default:
+		return nil
+	}
+}
+
+// NewThreadBase backs a `class X extends Thread` subclass. The generated
+// constructor passes the subclass instance (which provides the run() override as
+// Run()) so that Start() dispatches to it. It is embedded as the *Thread field of
+// the subclass struct.
+func NewThreadBase(self Runnable) *Thread {
+	return &Thread{run: self, done: make(chan struct{})}
 }
 
 // Start runs the thread's Runnable in a goroutine. Calling Start more than once
 // is a no-op after the first, approximating Java's IllegalThreadStateException
-// without panicking.
+// without panicking. There is no scheduling fairness or interruption.
 func (t *Thread) Start() {
 	t.once.Do(func() {
 		go func() {
 			defer close(t.done)
 			if t.run != nil {
-				t.run()
+				t.run.Run()
 			}
 		}()
 	})
@@ -317,10 +357,17 @@ func NewFixedThreadPool(n int32) *ExecutorService {
 	return e
 }
 
-// Submit enqueues a Runnable for execution by the pool.
-func (e *ExecutorService) Submit(task func()) {
+// Submit enqueues a task for execution by the pool. The task is either a func()
+// (lambda / method reference) or a value implementing Runnable (an anonymous
+// Runnable class), matching the forms ExecutorService.submit accepts in Java.
+func (e *ExecutorService) Submit(task any) {
+	r := asRunnable(task)
 	e.wg.Add(1)
-	e.tasks <- task
+	e.tasks <- func() {
+		if r != nil {
+			r.Run()
+		}
+	}
 }
 
 // Shutdown stops accepting new tasks and lets the workers drain the queue.

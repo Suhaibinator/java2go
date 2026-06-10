@@ -22,10 +22,10 @@ roughly in suggested priority order. See file references for where each gap live
 - [x] Build a systematic intrinsics table (Java method → Go equivalent) — `transpiler/intrinsics.go` (instance/static/static-field/constructor registries)
 - [x] `java.lang.String` methods: rune-safe `substring`, `split` (literal separators; regex patterns TODO), `equals`, `toUpperCase`, `toLowerCase`, `charAt`, `indexOf`, `trim`, `replace`, `format`, ... (`stdjava/strings.go`)
 - [x] `StringBuilder` / `StringBuffer` → `stdjava` wrapper (`stdjava/stringbuilder.go`)
-- [ ] Collections: `ArrayList`, `LinkedList`, `HashMap`, `TreeMap`, `HashSet`, `TreeSet` (slices/maps or `stdjava` shim types)
-- [ ] `java.util.Collections` utilities (`sort`, `reverse`, `max`, `min`, ...)
-- [ ] Iterators / `Iterable` protocol mapping
-- [ ] Wire `java.util.Optional` to the existing (currently unused) `stdjava/optional.go` stub
+- [x] Collections: `ArrayList`, `LinkedList`, `HashMap`, `TreeMap`, `HashSet`, `TreeSet` — `stdjava.List/Map/Set` (insertion-ordered maps for deterministic iteration; Tree* sorted-iteration approximated, documented)
+- [x] `java.util.Collections` utilities (`sort`, `reverse`, `max`, `min`, ...) + `Arrays.asList/sort/toString`
+- [x] Iterators / `Iterable` protocol — enhanced-for ranges over collection `.Slice()` views
+- [x] Wire `java.util.Optional` to `stdjava.Optional[T]` (of/empty/ofNullable/get/isPresent/orElse/map/ifPresent; lambda-param inference for `map` is a §2-remainder follow-up)
 - [ ] `java.util.stream.*` (Streams API) — map to loops or a `stdjava` stream shim
 - [ ] `java.io.*` basics (`File`, readers/writers, `Scanner`) → `os` / `bufio` / `io`
 - [x] `java.lang.Math`, boxed-type statics (`Integer.parseInt`, `Long.MAX_VALUE`, ...) — type-preserving generics in `stdjava/math.go`, `stdjava/convert.go`
@@ -72,7 +72,7 @@ roughly in suggested priority order. See file references for where each gap live
 - [x] `Thread` / `Runnable` → goroutines (lambda/method-ref form; `extends Thread` and anonymous `Runnable` are follow-ups in task #11)
 - [x] `volatile` → documented limitation (doc comment on the field; atomic rewrite of every access site deliberately out of scope)
 - [x] `java.util.concurrent.*` basics — `AtomicInteger/Long/Boolean` (sync/atomic), `ConcurrentHashMap`, `ExecutorService` worker pool
-- [ ] `wait`/`notify` → `sync.Cond` on identity monitors (in progress)
+- [x] `wait`/`notify`/`notifyAll` → `sync.Cond` over the identity-monitor mutex (atomic release/re-acquire matches Java; timed `wait(millis)` documented as unsupported)
 
 ## 8. Out of scope / decide explicitly
 

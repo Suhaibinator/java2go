@@ -162,6 +162,34 @@ public class A {
 	}
 }
 
+// TestCodegen_SizedArrayAllocationKeepsSliceType verifies `new T[n]` emits
+// `make([]T, n)` rather than `make(T, n)`, for primitive, string, and
+// user-defined (package-private) element types.
+func TestCodegen_SizedArrayAllocationKeepsSliceType(t *testing.T) {
+	src := `
+class Worker { int id; }
+public class Alloc {
+    public void run(int n) {
+        int[] a = new int[n];
+        String[] s = new String[n];
+        Worker[] w = new Worker[n];
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	if !strings.Contains(out, "make([]int32, n)") {
+		t.Errorf("expected make([]int32, n), got:\n%s", out)
+	}
+	if !strings.Contains(out, "make([]string, n)") {
+		t.Errorf("expected make([]string, n), got:\n%s", out)
+	}
+	// Worker is package-private, so its struct is lowercased to `worker`; the
+	// element type must match.
+	if !strings.Contains(out, "make([]*worker, n)") {
+		t.Errorf("expected make([]*worker, n) with lowercased element type, got:\n%s", out)
+	}
+}
+
 // TestCodegen_ShiftCountMasking verifies constant shift counts are masked at
 // transpile time to match Java (int shifts mask to 5 bits) and that `>>>` is
 // stdjava-qualified.
