@@ -1,5 +1,5 @@
-# Main binary
-java2go
+# Main binary (anchored so it doesn't ignore cmd/java2go/)
+/java2go
 
 # Intemediary decompiled directories
 quiltflower-src/
