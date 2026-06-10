@@ -40,6 +40,12 @@ func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx 
 		return &ast.Ident{Name: "any"}, true
 	}
 
+	// java.lang.Runnable is an interface, so it maps to stdjava.Runnable without a
+	// pointer. A value typed Runnable (or a struct that embeds it) resolves here.
+	if baseName == "Runnable" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+		return stdjavaQualifiedExpr("Runnable", ctx), true
+	}
+
 	generic, ok := concurrencyRuntimeTypes[baseName]
 	if !ok {
 		return nil, false
@@ -286,6 +292,15 @@ func registerThreadIntrinsics() {
 			return selectorCall(recv, goMethod, nil)
 		})
 	}
+
+	// runnable.run() -> runnable.Run(): a value typed Runnable (e.g. a captured
+	// anonymous Runnable) invokes the exported method on the stdjava interface.
+	registerInstanceIntrinsic("Runnable", "run", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if recv == nil || len(args) != 0 {
+			return nil
+		}
+		return selectorCall(recv, "Run", nil)
+	})
 }
 
 func registerExecutorIntrinsics() {

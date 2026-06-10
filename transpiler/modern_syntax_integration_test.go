@@ -175,3 +175,64 @@ func TestInstanceofPatternRuntime(t *testing.T) {
 }
 `)
 }
+
+// --- Text blocks (Java 13+) ---
+
+func TestTextBlock_IncidentalWhitespaceStripping(t *testing.T) {
+	src := "package modern;\n" +
+		"public class App {\n" +
+		"    public static String run() {\n" +
+		"        return \"\"\"\n" +
+		"                Hello\n" +
+		"                  World\n" +
+		"                Bye\"\"\";\n" +
+		"    }\n" +
+		"}\n"
+
+	out := renderGoFileFromJava(t, src)
+	if strings.TrimSpace(out) == "" {
+		t.Fatal("expected transpiler to produce non-empty Go output")
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestTextBlockRuntime(t *testing.T) {
+	got := Run()
+	want := "Hello\n  World\nBye"
+	if got != want {
+		t.Fatalf("Run() = %q, want %q", got, want)
+	}
+}
+`)
+}
+
+func TestTextBlock_TrailingNewlineWhenClosingOnOwnLine(t *testing.T) {
+	src := "package modern;\n" +
+		"public class App {\n" +
+		"    public static String run() {\n" +
+		"        return \"\"\"\n" +
+		"                line1\n" +
+		"                line2\n" +
+		"                \"\"\";\n" +
+		"    }\n" +
+		"}\n"
+
+	out := renderGoFileFromJava(t, src)
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestTextBlockTrailingNewline(t *testing.T) {
+	got := Run()
+	want := "line1\nline2\n"
+	if got != want {
+		t.Fatalf("Run() = %q, want %q", got, want)
+	}
+}
+`)
+}

@@ -5,6 +5,31 @@ import (
 	"testing"
 )
 
+func TestConcurrency_AnonymousRunnableTranspile(t *testing.T) {
+	// An anonymous Runnable (here in loop position) lowers to a struct embedding
+	// stdjava.Runnable with an exported Run(); a Runnable-typed call uses Run().
+	src := `
+public class R {
+    public static void run() {
+        Runnable r = new Runnable() {
+            public void run() { System.out.println("hi"); }
+        };
+        r.run();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	if !strings.Contains(out, "stdjava.Runnable") {
+		t.Errorf("anonymous Runnable should embed stdjava.Runnable, got:\n%s", out)
+	}
+	if strings.Contains(normalizeSpaces(out), "r.run()") {
+		t.Errorf("Runnable.run() should dispatch to exported Run(), got:\n%s", out)
+	}
+	if !strings.Contains(out, ".Run()") {
+		t.Errorf("expected a Run() call, got:\n%s", out)
+	}
+}
+
 func TestConcurrency_AtomicAndThreadTranspile(t *testing.T) {
 	src := `
 import java.util.concurrent.atomic.AtomicInteger;
