@@ -46,6 +46,9 @@ var skipReasons = map[string]string{
 	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
 	"collections/Collections":              "java.util imports not stripped/mapped (emit import \"java/util\"); ArrayList/HashMap not mapped (ROADMAP §2)",
+	"collections/CollectionOps":            "ArrayList/HashMap operations and java.util import not mapped (ROADMAP §2/§3, stdlib-dev task #3 in progress)",
+	"collections/Optionals":                "java.util.Optional not wired to stdjava/optional.go (ROADMAP §2/§3, stdlib-dev task #3 in progress)",
+	"exceptions/UserException":             "pending validation: user-defined exception class extends RuntimeException; catch-by-supertype of a user type may not register in the Throwable hierarchy yet (ROADMAP §3)",
 
 	"var_simple/VarSimple":    "var works and String.length() maps on string literals/vars, but a var inferred from a string-CONCAT expression loses its String type so .length() is left unmapped (ROADMAP §2/§6)",
 	"concurrency/SyncCounter": "Thread/Runnable/anonymous-class not mapped to goroutines; synchronized not lowered (ROADMAP §7)",
