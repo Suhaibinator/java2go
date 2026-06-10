@@ -127,6 +127,15 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						switch modifier.Type() {
 						case "static":
 							staticField = true
+						case "volatile":
+							// Go has no field-level volatile. The visibility/ordering
+							// guarantee is documented rather than enforced; callers
+							// needing atomicity should use the sync/atomic helpers or a
+							// mutex. Full atomic-field lowering would have to rewrite
+							// every read/write site and is out of scope for this task.
+							comments = append(comments, &ast.Comment{
+								Text: "// volatile: Java visibility/ordering not enforced in Go; guard with sync/atomic or a mutex if shared across goroutines",
+							})
 						case "marker_annotation", "annotation":
 							modContent := modifier.Content(source)
 							comments = append(comments, &ast.Comment{Text: "//" + modContent})
@@ -1481,6 +1490,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		)}
 	case "method_declaration", "abstract_method_declaration":
 		var static bool
+		var synchronizedMethod bool
 
 		// Store the annotations as comments on the method
 		comments := []*ast.Comment{}
@@ -1490,6 +1500,8 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				switch modifier.Type() {
 				case "static":
 					static = true
+				case "synchronized":
+					synchronizedMethod = true
 				case "marker_annotation", "annotation":
 					comments = append(comments, &ast.Comment{Text: "//" + modifier.Content(source)})
 					// If the annotation was on the list of ignored annotations, don't
@@ -1629,6 +1641,13 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					Rhs: []ast.Expr{&ast.Ident{Name: "args"}},
 				},
 			}, body.List...)
+		}
+
+		// A synchronized method holds its monitor for the whole body: the
+		// receiver instance for an instance method, or a class-level token for a
+		// static method. Prepend monitor enter + deferred exit.
+		if synchronizedMethod && bodyNode != nil {
+			body.List = append(synchronizedMethodPrologue(ctx, static), body.List...)
 		}
 
 		if results != nil && bodyNeedsFallbackReturn(body) {

@@ -868,10 +868,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		identName := node.Content(source)
 		if ctx.localScope != nil {
 			if param := ctx.localScope.ParameterByName(identName); param != nil {
-				return &ast.Ident{Name: param.Name}
+				return &ast.Ident{Name: sanitizeGoIdent(param.Name)}
 			}
 			if local := ctx.localScope.FindVariable(identName); local != nil {
-				return &ast.Ident{Name: local.Name}
+				return &ast.Ident{Name: sanitizeGoIdent(local.Name)}
 			}
 		}
 		if ctx.currentClass != nil {
@@ -905,7 +905,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return &ast.Ident{Name: alias}
 			}
 		}
-		return &ast.Ident{Name: identName}
+		return &ast.Ident{Name: sanitizeGoIdent(identName)}
 	case "type_identifier": // Any reference type
 		switch node.Content(source) {
 		// Special case for strings, because in Go, these are primitive types
@@ -1679,6 +1679,39 @@ func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []captured
 	return captured
 }
 
+// anonymousClassDeclaredFields extracts the instance fields declared directly in
+// an anonymous/local class body, returning both the symbol definitions (for
+// in-body resolution through the receiver) and the Go struct fields to emit.
+func anonymousClassDeclaredFields(classBody *sitter.Node, source []byte, ctx Ctx) ([]*symbol.Definition, []*ast.Field) {
+	var defs []*symbol.Definition
+	var astFields []*ast.Field
+	for _, member := range nodeutil.NamedChildrenOf(classBody) {
+		if member.Type() != "field_declaration" {
+			continue
+		}
+		declarator := member.ChildByFieldName("declarator")
+		typeNode := member.ChildByFieldName("type")
+		if declarator == nil || typeNode == nil {
+			continue
+		}
+		fieldNameNode := declarator.ChildByFieldName("name")
+		if fieldNameNode == nil {
+			continue
+		}
+		fieldName := fieldNameNode.Content(source)
+		defs = append(defs, &symbol.Definition{
+			OriginalName: fieldName,
+			Name:         fieldName,
+			OriginalType: typeNode.Content(source),
+		})
+		astFields = append(astFields, &ast.Field{
+			Names: []*ast.Ident{{Name: fieldName}},
+			Type:  javaTypeStringToGoTypeExpr(typeNode.Content(source), inScopeTypeParameters(ctx), ctx),
+		})
+	}
+	return defs, astFields
+}
+
 // objectCreationClassBody returns the class_body child of an object creation
 // expression (present only for anonymous classes), or nil.
 func objectCreationClassBody(node *sitter.Node) *sitter.Node {
@@ -1825,9 +1858,11 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	}
 	structName := fmt.Sprintf("%sAnon%d", prefix, ctx.nextAnonClassIndex())
 
+	declaredFieldDefs, declaredAstFields := anonymousClassDeclaredFields(classBody, source, ctx)
 	captured := collectCapturedLocals(classBody, source, ctx)
 
-	// Build the struct fields: an embedded supertype followed by captured locals.
+	// Build the struct fields: an embedded supertype, declared fields, then
+	// captured locals.
 	fields := &ast.FieldList{}
 	if superScope != nil && superScope.Class != nil {
 		if superScope.IsInterface {
@@ -1839,6 +1874,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		// Unresolved supertype: embed it by its written name as a best effort.
 		fields.List = append(fields.List, &ast.Field{Type: &ast.Ident{Name: stripJavaQualifier(baseType)}})
 	}
+	fields.List = append(fields.List, declaredAstFields...)
 	for _, cap := range captured {
 		fields.List = append(fields.List, &ast.Field{
 			Names: []*ast.Ident{{Name: cap.name}},
@@ -1848,9 +1884,10 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 
 	ctx.addHoistedDecl(GenStruct(structName, fields))
 
-	// Emit a method for each declared method in the anonymous body.
+	// Emit a method for each declared method in the anonymous body. Methods are
+	// exported so the struct satisfies the embedded interface.
 	for _, methodNode := range anonymousClassMethods(classBody) {
-		methodDecl := buildAnonymousStructMethod(structName, methodNode, captured, source, ctx)
+		methodDecl := buildAnonymousStructMethod(structName, methodNode, declaredFieldDefs, captured, source, ctx, false)
 		if methodDecl != nil {
 			ctx.addHoistedDecl(methodDecl)
 		}
@@ -1877,8 +1914,33 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 // buildAnonymousStructMethod builds a method declaration on a synthesized
 // anonymous-class struct. Captured locals are made available inside the body by
 // reading them back from the receiver's fields, so the original body references
-// resolve unchanged.
-func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, captured []capturedLocal, source []byte, ctx Ctx) *ast.FuncDecl {
+// synthAnonClassScope builds a synthetic ClassScope for a synthesized anonymous
+// or local class. Both the class's own declared instance fields and its captured
+// enclosing locals are registered as fields, so that references inside method
+// bodies resolve through the receiver (recv.field) via the normal field
+// resolution path. This is correct for mutation (e.g. n++ -> recv.n++), unlike
+// unpacking captures into locals.
+func synthAnonClassScope(structName string, declaredFields []*symbol.Definition, captured []capturedLocal) *symbol.ClassScope {
+	scope := &symbol.ClassScope{
+		Class: &symbol.Definition{OriginalName: structName, Name: structName},
+	}
+	scope.Fields = append(scope.Fields, declaredFields...)
+	for _, cap := range captured {
+		if cap.javaDef != nil {
+			scope.Fields = append(scope.Fields, cap.javaDef)
+		}
+	}
+	return scope
+}
+
+// buildAnonymousStructMethod builds a method on a synthesized struct. When
+// keepOriginalName is false (anonymous classes), the method name follows Go
+// export rules so it satisfies the embedded interface; when true (local
+// classes, whose call sites are unresolved), the original Java method name is
+// kept so `m.method()` call sites match. declaredFields are the class's own
+// instance fields; together with captures they form the synthetic class scope
+// used to resolve field references inside the body.
+func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, declaredFields []*symbol.Definition, captured []capturedLocal, source []byte, ctx Ctx, keepOriginalName bool) *ast.FuncDecl {
 	nameNode := methodNode.ChildByFieldName("name")
 	bodyNode := methodNode.ChildByFieldName("body")
 	if nameNode == nil || bodyNode == nil {
@@ -1894,9 +1956,13 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, capt
 		}
 	}
 	methodName := symbol.HandleExportStatus(public, nameNode.Content(source))
+	if keepOriginalName {
+		methodName = nameNode.Content(source)
+	}
 
-	// Local scope seeded with this method's parameters plus the captured locals,
-	// so identifier resolution inside the body works.
+	recvName := ShortName(structName)
+
+	// Local scope seeded with this method's parameters so they resolve by name.
 	methodScope := &symbol.Definition{}
 	for _, param := range nodeutil.NamedChildrenOf(methodNode.ChildByFieldName("parameters")) {
 		var pn, pt *sitter.Node
@@ -1916,12 +1982,13 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, capt
 			OriginalType: pt.Content(source),
 		})
 	}
-	for _, cap := range captured {
-		methodScope.Children = append(methodScope.Children, cap.javaDef)
-	}
 
+	// Parse the body with the synthetic class scope in context, so references to
+	// the class's own fields and captured locals resolve to receiver selectors.
 	methodCtx := ctx.Clone()
 	methodCtx.localScope = methodScope
+	methodCtx.currentClass = synthAnonClassScope(structName, declaredFields, captured)
+	methodCtx.className = structName
 
 	params := ParseNode(methodNode.ChildByFieldName("parameters"), source, methodCtx).(*ast.FieldList)
 
@@ -1936,25 +2003,6 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, capt
 	}
 
 	body := ParseStmt(bodyNode, source, methodCtx).(*ast.BlockStmt)
-
-	// Unpack captured fields into locals at the top of the method body so the
-	// converted body references resolve to the captured values.
-	recvName := ShortName(structName)
-	prelude := make([]ast.Stmt, 0, len(captured))
-	for _, cap := range captured {
-		prelude = append(prelude, &ast.AssignStmt{
-			Lhs: []ast.Expr{&ast.Ident{Name: cap.name}},
-			Tok: token.DEFINE,
-			Rhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: cap.name}}},
-		})
-		// Avoid "declared and not used" for captures only referenced indirectly.
-		prelude = append(prelude, &ast.AssignStmt{
-			Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
-			Tok: token.ASSIGN,
-			Rhs: []ast.Expr{&ast.Ident{Name: cap.name}},
-		})
-	}
-	body.List = append(prelude, body.List...)
 
 	return &ast.FuncDecl{
 		Name: &ast.Ident{Name: methodName},
@@ -1989,31 +2037,13 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	}
 	structName := fmt.Sprintf("%sLocal%s%d", prefix, javaName, ctx.nextAnonClassIndex())
 
-	captured := collectCapturedLocals(classBody, source, ctx)
-
-	// Struct fields: declared instance fields first, then captured locals.
-	fields := &ast.FieldList{}
+	declaredFieldDefs, declaredAstFields := anonymousClassDeclaredFields(classBody, source, ctx)
 	declaredFieldNames := map[string]struct{}{}
-	for _, member := range nodeutil.NamedChildrenOf(classBody) {
-		if member.Type() != "field_declaration" {
-			continue
-		}
-		declarator := member.ChildByFieldName("declarator")
-		typeNode := member.ChildByFieldName("type")
-		if declarator == nil || typeNode == nil {
-			continue
-		}
-		fieldNameNode := declarator.ChildByFieldName("name")
-		if fieldNameNode == nil {
-			continue
-		}
-		fieldName := fieldNameNode.Content(source)
-		declaredFieldNames[fieldName] = struct{}{}
-		fields.List = append(fields.List, &ast.Field{
-			Names: []*ast.Ident{{Name: fieldName}},
-			Type:  javaTypeStringToGoTypeExpr(typeNode.Content(source), inScopeTypeParameters(ctx), ctx),
-		})
+	for _, def := range declaredFieldDefs {
+		declaredFieldNames[def.Name] = struct{}{}
 	}
+
+	captured := collectCapturedLocals(classBody, source, ctx)
 	// Drop captures that collide with a declared field name to avoid duplicates.
 	deduped := captured[:0]
 	for _, cap := range captured {
@@ -2024,6 +2054,9 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	}
 	captured = deduped
 
+	// Struct fields: declared instance fields first, then captured locals.
+	fields := &ast.FieldList{}
+	fields.List = append(fields.List, declaredAstFields...)
 	for _, cap := range captured {
 		fields.List = append(fields.List, &ast.Field{
 			Names: []*ast.Ident{{Name: cap.name}},
@@ -2034,7 +2067,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	ctx.addHoistedDecl(GenStruct(structName, fields))
 
 	for _, methodNode := range anonymousClassMethods(classBody) {
-		if methodDecl := buildAnonymousStructMethod(structName, methodNode, captured, source, ctx); methodDecl != nil {
+		if methodDecl := buildAnonymousStructMethod(structName, methodNode, declaredFieldDefs, captured, source, ctx, true); methodDecl != nil {
 			ctx.addHoistedDecl(methodDecl)
 		}
 	}
@@ -2236,6 +2269,19 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 	isInterface := false
 	baseName := stripJavaQualifier(base)
 	targetPkg := ""
+
+	// java.util collection types map to the stdjava runtime types, provided the
+	// name is not shadowed by a user-defined class.
+	if resolveClassScopeByQualifiedName(ctx, base) == nil {
+		if collExpr := collectionTypeExpr(baseName, typeArgs, typeParams, ctx); collExpr != nil {
+			expr := collExpr
+			for i := 0; i < arrayDims; i++ {
+				expr = &ast.ArrayType{Elt: expr}
+			}
+			return expr
+		}
+	}
+
 	if resolvedScope := resolveClassScopeByQualifiedName(ctx, base); resolvedScope != nil && resolvedScope.Class != nil {
 		isInterface = resolvedScope.IsInterface
 		if resolvedScope.Class.Name != "" {

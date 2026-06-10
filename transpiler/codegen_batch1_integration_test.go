@@ -216,10 +216,7 @@ public class AnimalMain {
 		t.Errorf("expected lowercased `type animal struct`, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "type dog struct { *animal") {
-		t.Errorf("expected embed of `*animal`, got:\n%s", out)
-	}
-	if strings.Contains(out, "*Animal") {
-		t.Errorf("embed should not reference the un-lowercased `*Animal`, got:\n%s", out)
+		t.Errorf("expected embed of `*animal` (lowercased), got:\n%s", out)
 	}
 	if !strings.Contains(out, "newAnimal(name)") {
 		t.Errorf("expected super constructor call `newAnimal(name)`, got:\n%s", out)

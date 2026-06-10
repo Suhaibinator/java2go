@@ -68,9 +68,10 @@ public class Container {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	// Integer is a boxed type and maps to its Go primitive (int32).
-	if !strings.Contains(out, "m *Map[string, *List[int32]]") {
-		t.Errorf("Expected nested generic field type '*Map[string, *List[int32]]', got:\n%s", out)
+	// java.util.Map/List map to the stdjava runtime types; Integer is a boxed
+	// type and maps to its Go primitive (int32).
+	if !strings.Contains(out, "m *stdjava.Map[string, *stdjava.List[int32]]") {
+		t.Errorf("Expected nested generic field type '*stdjava.Map[string, *stdjava.List[int32]]', got:\n%s", out)
 	}
 }
 

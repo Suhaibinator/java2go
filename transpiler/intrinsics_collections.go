@@ -1,6 +1,10 @@
 package transpiler
 
-import "go/ast"
+import (
+	"go/ast"
+
+	sitter "github.com/smacker/go-tree-sitter"
+)
 
 // This file registers the java.util collection intrinsics: List (ArrayList /
 // LinkedList), Map (HashMap / TreeMap), Set (HashSet / TreeSet), Optional, and
@@ -29,6 +33,56 @@ var (
 	mapTypeNames  = []string{"Map", "HashMap", "TreeMap", "LinkedHashMap", "AbstractMap"}
 	setTypeNames  = []string{"Set", "HashSet", "TreeSet", "LinkedHashSet", "AbstractSet"}
 )
+
+func containsString(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
+}
+
+// collectionNeedsSliceForRange reports whether an enhanced-for over the given
+// expression must range over its stdjava .Slice() view rather than the value
+// directly. This is true for List and Set receivers (pointer types backed by a
+// slice). Map iteration in Java goes through keySet/values/entrySet, which the
+// intrinsics already lower to slices, so maps are not included.
+func collectionNeedsSliceForRange(node *sitter.Node, ctx Ctx, source []byte) bool {
+	javaType, ok := inferExprJavaType(node, ctx, source)
+	if !ok {
+		return false
+	}
+	base, _ := parseJavaTypeString(javaType)
+	name := stripJavaQualifier(base)
+	return containsString(listTypeNames, name) || containsString(setTypeNames, name)
+}
+
+// collectionTypeExpr maps a Java collection type name plus its type-argument
+// strings onto the corresponding stdjava Go type expression, or nil if the name
+// is not a collection type. List/Map/Set are reference types and map to a
+// pointer (mutations are shared); Optional is a value type.
+func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx Ctx) ast.Expr {
+	argExprs := func() []ast.Expr {
+		exprs := make([]ast.Expr, 0, len(typeArgs))
+		for _, ta := range typeArgs {
+			exprs = append(exprs, javaTypeStringToGoTypeExpr(ta, scopeTypeParams, ctx))
+		}
+		return exprs
+	}
+
+	switch {
+	case containsString(listTypeNames, baseName):
+		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("List", ctx), argExprs())}
+	case containsString(mapTypeNames, baseName):
+		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("Map", ctx), argExprs())}
+	case containsString(setTypeNames, baseName):
+		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("Set", ctx), argExprs())}
+	case baseName == "Optional":
+		return applyTypeArguments(stdjavaQualifiedExpr("Optional", ctx), argExprs())
+	}
+	return nil
+}
 
 func registerCollectionConstructors() {
 	// new ArrayList<T>() / new LinkedList<T>() -> stdjava.NewList[T]()

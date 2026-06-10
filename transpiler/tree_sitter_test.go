@@ -894,8 +894,8 @@ public class Box<T> {
 	output := buf.String()
 
 	// Nested type args should be converted to Go's indexed generic form and keep
-	// pointer semantics for reference types.
-	if !strings.Contains(output, "NewBoxIdentityHelper[*List[*Foo], *List[*Foo]]") && !strings.Contains(output, "NewBoxIdentityHelper[*List[*Foo],*List[*Foo]]") {
+	// pointer semantics for reference types. java.util.List maps to stdjava.List.
+	if !strings.Contains(output, "NewBoxIdentityHelper[*stdjava.List[*Foo], *stdjava.List[*Foo]]") && !strings.Contains(output, "NewBoxIdentityHelper[*stdjava.List[*Foo],*stdjava.List[*Foo]]") {
 		t.Errorf("Expected helper invocation to use nested generic type args, got:\n%s", output)
 	}
 }

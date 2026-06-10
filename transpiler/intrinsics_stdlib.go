@@ -170,13 +170,14 @@ func registerStringIntrinsics() {
 		return stdjavaCall(ctx, "StringReplace", recv, args[0], args[1])
 	})
 
-	// split(regex) -> strings.Split. NOTE: Java's split takes a regex; this maps
-	// to a literal split. Patterns with regex metacharacters are not handled.
+	// split(regex) -> stdjava.StringSplit, which treats the separator as a Java
+	// regex (RE2 approximation), splits literally when the pattern has no regex
+	// metacharacters, and removes trailing empty strings like Java's one-arg split.
 	registerInstanceIntrinsic("String", "split", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return pkgCall(ctx, "strings", "Split", recv, args[0])
+		return stdjavaCall(ctx, "StringSplit", recv, args[0])
 	})
 
 	// chars() -> stdjava.StringChars(s) (returns []rune)

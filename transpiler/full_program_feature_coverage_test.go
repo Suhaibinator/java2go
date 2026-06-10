@@ -70,10 +70,11 @@ func TestFullProgram_WildcardsAndVarianceGenerics(t *testing.T) {
 	outputs := convertJavaProjectDir(t, root)
 	flat := normalizeSpaces(outputs["com/acme/generics/VarianceProgram.go"])
 
-	if !strings.Contains(flat, "source *List[*Number]") {
+	// java.util.List maps to the stdjava runtime type.
+	if !strings.Contains(flat, "source *stdjava.List[*Number]") {
 		t.Fatalf("expected '? extends Number' to map to bounded generic element type:\n%s", outputs["com/acme/generics/VarianceProgram.go"])
 	}
-	if !strings.Contains(flat, "sink *List[any]") {
+	if !strings.Contains(flat, "sink *stdjava.List[any]") {
 		t.Fatalf("expected '? super Integer' to be approximated as any:\n%s", outputs["com/acme/generics/VarianceProgram.go"])
 	}
 }

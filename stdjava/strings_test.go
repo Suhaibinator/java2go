@@ -56,6 +56,26 @@ func TestStringIsBlank(t *testing.T) {
 	}
 }
 
+func TestStringSplit(t *testing.T) {
+	// Literal separator.
+	if got := StringSplit("a,b,c", ","); len(got) != 3 || got[0] != "a" || got[2] != "c" {
+		t.Errorf("StringSplit literal = %v, want [a b c]", got)
+	}
+	// Regex metacharacter: "." is a regex match; Java escapes a literal dot as
+	// "\\.", which must split on the dot character.
+	if got := StringSplit("a.b.c", "\\."); len(got) != 3 || got[1] != "b" {
+		t.Errorf("StringSplit escaped-dot = %v, want [a b c]", got)
+	}
+	// Regex character class.
+	if got := StringSplit("a1b2c", "[0-9]"); len(got) != 3 || got[2] != "c" {
+		t.Errorf("StringSplit char-class = %v, want [a b c]", got)
+	}
+	// Trailing empty strings are removed (Java one-arg split semantics).
+	if got := StringSplit("a,b,,", ","); len(got) != 2 {
+		t.Errorf("StringSplit trailing-empty = %v, want length 2", got)
+	}
+}
+
 func TestCharPredicates(t *testing.T) {
 	if !CharIsDigit('7') || CharIsDigit('a') {
 		t.Errorf("CharIsDigit misbehaved")

@@ -48,7 +48,7 @@ func TestIntrinsics_StringMethods(t *testing.T) {
 		{"trim", "s.trim()", "strings.TrimSpace(s)"},
 		{"strip", "s.strip()", "strings.TrimSpace(s)"},
 		{"replace", "s.replace(\"a\", \"b\")", "stdjava.StringReplace(s, \"a\", \"b\")"},
-		{"split", "s.split(\",\")", "strings.Split(s, \",\")"},
+		{"split", "s.split(\",\")", "stdjava.StringSplit(s, \",\")"},
 		{"chars", "s.chars()", "stdjava.StringChars(s)"},
 	}
 	for _, tc := range cases {
@@ -235,7 +235,7 @@ public class LiteralReceiver {
 	out := renderIntrinsicProgram(t, src)
 	assertContains(t, out, `strings.TrimSpace("  hi  ")`)
 	// split returns []string; Java array.length lowers to int32(len(...)).
-	assertContains(t, out, `int32(len(strings.Split("a,b,c", ",")))`)
+	assertContains(t, out, `int32(len(stdjava.StringSplit("a,b,c", ",")))`)
 }
 
 func TestIntrinsics_ChainedStringCalls(t *testing.T) {

@@ -428,6 +428,13 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		rangeExpr := ast.Expr(&ast.BadExpr{})
 		if valueNode != nil {
 			rangeExpr = ParseExpr(valueNode, source, ctx)
+			// stdjava List/Set are pointer types, not slices, so an enhanced-for
+			// over them ranges over their Slice() view instead.
+			if collectionNeedsSliceForRange(valueNode, ctx, source) {
+				rangeExpr = &ast.CallExpr{
+					Fun: &ast.SelectorExpr{X: rangeExpr, Sel: &ast.Ident{Name: "Slice"}},
+				}
+			}
 		}
 		rangeBody := &ast.BlockStmt{}
 		if bodyNode != nil {

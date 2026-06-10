@@ -194,3 +194,46 @@ func TestMathAndBoxedBehavior(t *testing.T) {
 }
 `)
 }
+
+func TestRuntime_Collections(t *testing.T) {
+	src := `
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+public class CollRuntime {
+    public static String listJoin() {
+        List<String> xs = new ArrayList<String>();
+        xs.add("a");
+        xs.add("b");
+        xs.add("c");
+        String out = "";
+        for (String s : xs) {
+            out = out + s;
+        }
+        return out + ":" + xs.size() + ":" + xs.get(1);
+    }
+    public static int mapLookup() {
+        Map<String, Integer> m = new HashMap<String, Integer>();
+        m.put("one", 1);
+        m.put("two", 2);
+        return m.get("one") + m.get("two") + m.size();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	runGoTestWithStdjava(t, out, `
+package main
+
+import "testing"
+
+func TestCollectionsBehavior(t *testing.T) {
+	if got := ListJoin(); got != "abc:3:b" {
+		t.Fatalf("ListJoin = %q, want abc:3:b", got)
+	}
+	if got := MapLookup(); got != 5 {
+		t.Fatalf("MapLookup = %d, want 5", got)
+	}
+}
+`)
+}

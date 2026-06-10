@@ -448,3 +448,37 @@ func TestLocalClassRuntime(t *testing.T) {
 }
 `)
 }
+
+// A top-level class whose name collides with a nested class's concatenated name
+// (Outer + Inner == OuterInner) must be disambiguated so the generated Go has no
+// duplicate type/constructor declarations.
+func TestNestedClass_NameCollisionWithTopLevel(t *testing.T) {
+	src := `
+package nested;
+public class Outer {
+    public static class Inner {
+        public int a;
+    }
+}
+public class OuterInner {
+    public int b;
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	// The nested class claims OuterInner; the top-level one is suffixed.
+	if !strings.Contains(flat, "type OuterInner struct { A int32 }") {
+		t.Fatalf("expected nested Outer.Inner to keep the OuterInner name, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "type OuterInner2 struct { B int32 }") {
+		t.Fatalf("expected colliding top-level OuterInner to be disambiguated, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func NewOuterInner2() *OuterInner2") {
+		t.Fatalf("expected the disambiguated class's constructor to be retargeted, got:\n%s", out)
+	}
+	if strings.Count(flat, "type OuterInner struct") != 1 {
+		t.Fatalf("expected exactly one `type OuterInner struct` declaration, got:\n%s", out)
+	}
+}

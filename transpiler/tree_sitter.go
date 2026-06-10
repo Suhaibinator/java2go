@@ -36,7 +36,7 @@ func identFromNode(node *sitter.Node, source []byte) *ast.Ident {
 	if node == nil {
 		return &ast.Ident{}
 	}
-	return &ast.Ident{Name: node.Content(source)}
+	return &ast.Ident{Name: sanitizeGoIdent(node.Content(source))}
 }
 
 // A Ctx is all the context that is needed to parse a single source file

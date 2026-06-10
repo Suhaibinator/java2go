@@ -44,8 +44,8 @@ roughly in suggested priority order. See file references for where each gap live
 - [x] Inner (non-static) classes — synthesized enclosing-instance field, `outer.new Inner()`, outer-member access through the enclosing chain
 - [x] Static nested classes — emitted as `OuterInner` top-level structs with retargeted constructors
 - [x] Anonymous classes implementing a SAM interface — lowered to the existing `FuncAdapter` machinery with enclosing locals as ordinary closure captures
-- [ ] Anonymous classes with multiple methods / extending a class
-- [ ] Local classes declared inside methods
+- [x] Anonymous classes with multiple methods / extending a class — synthesized uniquely-named file-scoped structs with captured locals as fields
+- [x] Local classes declared inside methods — hoisted to file scope with captures as fields
 
 ## 5. Modern Java syntax (Java 10–17+)
 
@@ -68,11 +68,11 @@ roughly in suggested priority order. See file references for where each gap live
 
 ## 7. Concurrency
 
-- [ ] `synchronized` blocks/methods → mutexes (currently silently stripped, `transpiler/tree_sitter.go:261`) — at minimum warn instead of dropping
-- [ ] `Thread` / `Runnable` → goroutines
-- [ ] `volatile` → atomics
-- [ ] `java.util.concurrent.*` basics (`ExecutorService`, `ConcurrentHashMap`, `AtomicInteger`, ...)
-- [ ] `wait`/`notify` → channels or condition variables
+- [x] `synchronized` blocks/methods → identity-keyed monitors (`stdjava.MonitorEnter/MonitorExit`), race-tested
+- [x] `Thread` / `Runnable` → goroutines (lambda/method-ref form; `extends Thread` and anonymous `Runnable` are follow-ups in task #11)
+- [x] `volatile` → documented limitation (doc comment on the field; atomic rewrite of every access site deliberately out of scope)
+- [x] `java.util.concurrent.*` basics — `AtomicInteger/Long/Boolean` (sync/atomic), `ConcurrentHashMap`, `ExecutorService` worker pool
+- [ ] `wait`/`notify` → `sync.Cond` on identity monitors (in progress)
 
 ## 8. Out of scope / decide explicitly
 

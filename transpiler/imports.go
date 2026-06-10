@@ -19,6 +19,17 @@ var goKeywords = map[string]struct{}{
 	"continue": {}, "for": {}, "import": {}, "return": {}, "var": {},
 }
 
+// sanitizeGoIdent renames a Java identifier that collides with a Go reserved
+// keyword (e.g. a variable named `map` or `type`) to a safe form by appending an
+// underscore. Applied consistently at every point a Java identifier becomes a Go
+// identifier so a declaration and its references rename identically.
+func sanitizeGoIdent(name string) string {
+	if _, isKeyword := goKeywords[name]; isKeyword {
+		return name + "_"
+	}
+	return name
+}
+
 func parseImportDeclaration(node *sitter.Node, source []byte) *ast.ImportSpec {
 	importNode := node.NamedChild(0)
 	if importNode == nil {

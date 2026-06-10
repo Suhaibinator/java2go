@@ -1,6 +1,7 @@
 package stdjava
 
 import (
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -12,6 +13,46 @@ import (
 // which matches Java's char-based indexing for those code points. Characters
 // outside the BMP (which Java represents as surrogate pairs) are not modeled;
 // the approximation is documented per-function where it matters.
+//
+// Documented approximations (Java semantics not fully reproduced):
+//   - Surrogate pairs / non-BMP code points: indexing and length count runes,
+//     not UTF-16 code units, so a non-BMP character counts as 1 here vs 2 in Java.
+//   - StringTrim/strip: trim removes chars <= U+0020 in Java, while TrimSpace is
+//     Unicode-whitespace aware — a close but not identical approximation.
+//   - StringSplit: Java's regex flavor (java.util.regex) is approximated by Go's
+//     RE2 (regexp); patterns using Java-only constructs (backreferences,
+//     possessive quantifiers, lookaround) are not supported and fall back to a
+//     literal split.
+
+// regexMetacharacters reports whether the pattern contains any character that
+// Java's String.split would interpret as a regex operator. A pattern with none
+// is a plain literal and can be split with strings.Split (faster, and exact).
+func regexMetacharacters(pattern string) bool {
+	return strings.ContainsAny(pattern, `\.[]{}()*+?^$|`)
+}
+
+// StringSplit splits s around matches of pattern, matching Java's
+// String.split(regex). Java always treats the separator as a regular expression;
+// a literal separator (no metacharacters) is split directly, otherwise the
+// pattern is compiled as a regex. Like Java's one-argument split, trailing empty
+// strings are removed. If the pattern is not a valid Go regex, it falls back to a
+// literal split so output is never silently dropped.
+func StringSplit(s, pattern string) []string {
+	var parts []string
+	if !regexMetacharacters(pattern) {
+		parts = strings.Split(s, pattern)
+	} else if re, err := regexp.Compile(pattern); err == nil {
+		parts = re.Split(s, -1)
+	} else {
+		parts = strings.Split(s, pattern)
+	}
+	// Java's split(regex) with the default limit discards trailing empty strings.
+	end := len(parts)
+	for end > 0 && parts[end-1] == "" {
+		end--
+	}
+	return parts[:end]
+}
 
 // StringCharAt returns the character at the given index, matching Java's
 // String.charAt which returns a char. We model a Java char as a rune. Indexing
