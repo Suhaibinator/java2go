@@ -323,3 +323,58 @@ func TestByRuntimeException(t *testing.T) {
 }
 `)
 }
+
+func TestExceptions_ErrorNotCaughtByExceptionClause(t *testing.T) {
+	// catch (Exception e) must not catch an Error-level throw, but catch
+	// (Throwable t) must. This mirrors Java's exception hierarchy.
+	src := `
+public class ErrorProgram {
+    public static String onlyException(int n) {
+        try {
+            if (n == 1) {
+                throw new AssertionError("boom");
+            }
+            return "ok";
+        } catch (Exception e) {
+            return "ex";
+        }
+    }
+    public static String byThrowable(int n) {
+        try {
+            if (n == 1) {
+                throw new AssertionError("boom");
+            }
+            return "ok";
+        } catch (Throwable t) {
+            return "thr";
+        }
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	if !strings.Contains(out, `stdjava.CaughtAs(`) {
+		t.Fatalf("catch (Exception) should now dispatch through CaughtAs, got:\n%s", out)
+	}
+
+	runGeneratedWithStdjava(t, out, `
+package main
+
+import "testing"
+
+func TestByThrowable(t *testing.T) {
+	if got := ByThrowable(1); got != "thr" {
+		t.Fatalf("AssertionError should be caught by catch (Throwable): got %q", got)
+	}
+}
+
+func TestOnlyException(t *testing.T) {
+	// AssertionError must escape catch (Exception e) as a panic.
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("AssertionError must not be caught by catch (Exception e)")
+		}
+	}()
+	OnlyException(1)
+}
+`)
+}
