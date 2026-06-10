@@ -1,6 +1,7 @@
 package symbol
 
 import (
+	"strconv"
 	"unicode"
 
 	"github.com/NickyBoy89/java2go/astutil"
@@ -148,6 +149,12 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 	for _, decl := range topLevelNodes {
 		classScopes = append(classScopes, parseClassScope(decl, source))
 	}
+
+	// The nested-class naming scheme concatenates the enclosing and nested names
+	// (Outer + Inner = OuterInner), which can collide with a top-level class of
+	// the same name. Disambiguate any duplicates so the generated Go has unique
+	// type and constructor names.
+	resolveClassNameCollisions(classScopes)
 
 	var baseClass *ClassScope
 	if len(classScopes) > 0 {
@@ -482,6 +489,42 @@ func retargetConstructorNames(scope *ClassScope) {
 			exported = unicode.IsUpper(rune(method.Name[0]))
 		}
 		method.Rename(HandleExportStatus(exported, "New") + className)
+	}
+}
+
+// resolveClassNameCollisions walks every class scope in the file (top-level and
+// nested, depth-first) and ensures each generated Go type name is unique. The
+// first scope to claim a name keeps it; any later scope with the same name is
+// renamed with a numeric suffix and its constructors retargeted. This guards the
+// Outer+Inner concatenation scheme against colliding with a same-named top-level
+// class.
+func resolveClassNameCollisions(scopes []*ClassScope) {
+	used := make(map[string]struct{})
+	var visit func(scope *ClassScope)
+	visit = func(scope *ClassScope) {
+		if scope == nil || scope.Class == nil {
+			return
+		}
+		name := scope.Class.Name
+		if _, taken := used[name]; taken {
+			// Find the next free suffixed name (Name2, Name3, ...).
+			for i := 2; ; i++ {
+				candidate := name + strconv.Itoa(i)
+				if _, clash := used[candidate]; !clash {
+					name = candidate
+					break
+				}
+			}
+			scope.Class.Rename(name)
+			retargetConstructorNames(scope)
+		}
+		used[name] = struct{}{}
+		for _, sub := range scope.Subclasses {
+			visit(sub)
+		}
+	}
+	for _, scope := range scopes {
+		visit(scope)
 	}
 }
 
