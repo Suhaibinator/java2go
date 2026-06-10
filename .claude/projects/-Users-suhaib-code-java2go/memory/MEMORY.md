@@ -1,1 +1,0 @@
-- [Shared worktree is not isolated](shared-worktree-not-isolated.md) — team agents co-edit one dir; build flaps red from others' WIP, don't git-add co-edited files

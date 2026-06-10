@@ -18,3 +18,4 @@ namedSrc/
 # Compiled test files
 *.class
 transpiler/zz_*_test.go
+.claude/
