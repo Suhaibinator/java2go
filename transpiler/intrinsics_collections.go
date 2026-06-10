@@ -1,0 +1,247 @@
+package transpiler
+
+import "go/ast"
+
+// This file registers the java.util collection intrinsics: List (ArrayList /
+// LinkedList), Map (HashMap / TreeMap), Set (HashSet / TreeSet), Optional, and
+// the Collections / Arrays static utilities. They are mapped onto the slice- and
+// map-backed runtime types in stdjava (list.go, map.go, set.go, optional.go,
+// collections_common.go).
+//
+// The List/Map/Set interface names and their concrete implementations all map to
+// the same stdjava type, so an instance intrinsic is registered under every name
+// a receiver might carry (e.g. a variable declared `List<T>` but assigned an
+// ArrayList reports type List; one declared `ArrayList<T>` reports ArrayList).
+
+func init() {
+	registerCollectionConstructors()
+	registerListIntrinsics()
+	registerMapIntrinsics()
+	registerSetIntrinsics()
+	registerOptionalIntrinsics()
+	registerCollectionsStatics()
+}
+
+// listTypeNames are the Java types that a List-valued receiver may be declared
+// as. mapTypeNames and setTypeNames are the equivalents for maps and sets.
+var (
+	listTypeNames = []string{"List", "ArrayList", "LinkedList", "AbstractList"}
+	mapTypeNames  = []string{"Map", "HashMap", "TreeMap", "LinkedHashMap", "AbstractMap"}
+	setTypeNames  = []string{"Set", "HashSet", "TreeSet", "LinkedHashSet", "AbstractSet"}
+)
+
+func registerCollectionConstructors() {
+	// new ArrayList<T>() / new LinkedList<T>() -> stdjava.NewList[T]()
+	for _, name := range []string{"ArrayList", "LinkedList"} {
+		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+			// Only the no-arg constructor is mapped; copy-constructors fall through.
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaGenericCall(ctx, "NewList", typeArgs, nil)
+		})
+	}
+	// new HashMap<K,V>() / new TreeMap<K,V>() -> stdjava.NewMap[K,V]()
+	for _, name := range []string{"HashMap", "TreeMap", "LinkedHashMap"} {
+		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaGenericCall(ctx, "NewMap", typeArgs, nil)
+		})
+	}
+	// new HashSet<T>() / new TreeSet<T>() -> stdjava.NewSet[T]()
+	for _, name := range []string{"HashSet", "TreeSet", "LinkedHashSet"} {
+		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaGenericCall(ctx, "NewSet", typeArgs, nil)
+		})
+	}
+}
+
+// registerForTypes registers the same instance-method generator under each of
+// the given Java receiver type names.
+func registerForTypes(typeNames []string, method string, gen intrinsicGenerator) {
+	for _, t := range typeNames {
+		registerInstanceIntrinsic(t, method, gen)
+	}
+}
+
+func registerListIntrinsics() {
+	method := func(goName string, argc int) intrinsicGenerator {
+		return func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if !expectArgs(args, argc) {
+				return nil
+			}
+			return methodCall(recv, goName, args...)
+		}
+	}
+	registerForTypes(listTypeNames, "add", method("Add", 1))
+	registerForTypes(listTypeNames, "get", method("Get", 1))
+	registerForTypes(listTypeNames, "set", method("Set", 2))
+	registerForTypes(listTypeNames, "size", method("Size", 0))
+	registerForTypes(listTypeNames, "isEmpty", method("IsEmpty", 0))
+	registerForTypes(listTypeNames, "clear", method("Clear", 0))
+	registerForTypes(listTypeNames, "contains", method("Contains", 1))
+	registerForTypes(listTypeNames, "indexOf", method("IndexOf", 1))
+	registerForTypes(listTypeNames, "addAll", method("AddAll", 1))
+	registerForTypes(listTypeNames, "toArray", method("ToArray", 0))
+	// remove(int) maps to RemoveAt; remove(Object) is a different overload that is
+	// not handled here (it would need element-type analysis to disambiguate).
+	registerForTypes(listTypeNames, "remove", method("RemoveAt", 1))
+}
+
+func registerMapIntrinsics() {
+	method := func(goName string, argc int) intrinsicGenerator {
+		return func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if !expectArgs(args, argc) {
+				return nil
+			}
+			return methodCall(recv, goName, args...)
+		}
+	}
+	registerForTypes(mapTypeNames, "put", method("Put", 2))
+	registerForTypes(mapTypeNames, "get", method("Get", 1))
+	registerForTypes(mapTypeNames, "getOrDefault", method("GetOrDefault", 2))
+	registerForTypes(mapTypeNames, "containsKey", method("ContainsKey", 1))
+	registerForTypes(mapTypeNames, "containsValue", method("ContainsValue", 1))
+	registerForTypes(mapTypeNames, "remove", method("Remove", 1))
+	registerForTypes(mapTypeNames, "size", method("Size", 0))
+	registerForTypes(mapTypeNames, "isEmpty", method("IsEmpty", 0))
+	registerForTypes(mapTypeNames, "clear", method("Clear", 0))
+	registerForTypes(mapTypeNames, "keySet", method("KeySet", 0))
+	registerForTypes(mapTypeNames, "values", method("Values", 0))
+	registerForTypes(mapTypeNames, "entrySet", method("EntrySet", 0))
+}
+
+func registerSetIntrinsics() {
+	method := func(goName string, argc int) intrinsicGenerator {
+		return func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if !expectArgs(args, argc) {
+				return nil
+			}
+			return methodCall(recv, goName, args...)
+		}
+	}
+	registerForTypes(setTypeNames, "add", method("Add", 1))
+	registerForTypes(setTypeNames, "contains", method("Contains", 1))
+	registerForTypes(setTypeNames, "remove", method("Remove", 1))
+	registerForTypes(setTypeNames, "size", method("Size", 0))
+	registerForTypes(setTypeNames, "isEmpty", method("IsEmpty", 0))
+	registerForTypes(setTypeNames, "clear", method("Clear", 0))
+}
+
+func registerOptionalIntrinsics() {
+	// Optional.of/empty/ofNullable are static factories.
+	registerStaticIntrinsic("Optional", "of", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "OptionalOf", args[0])
+	})
+	registerStaticIntrinsic("Optional", "empty", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 0) {
+			return nil
+		}
+		// The element type is inferred by Go from the assignment context where
+		// possible; emit the call without explicit type arguments.
+		return stdjavaCall(ctx, "OptionalEmpty")
+	})
+
+	// Instance methods on an Optional receiver.
+	registerInstanceIntrinsic("Optional", "isPresent", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 0) {
+			return nil
+		}
+		return methodCall(recv, "IsPresent")
+	})
+	registerInstanceIntrinsic("Optional", "isEmpty", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 0) {
+			return nil
+		}
+		return methodCall(recv, "IsEmpty")
+	})
+	registerInstanceIntrinsic("Optional", "get", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 0) {
+			return nil
+		}
+		return methodCall(recv, "Get")
+	})
+	registerInstanceIntrinsic("Optional", "orElse", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return methodCall(recv, "OrElse", args[0])
+	})
+	registerInstanceIntrinsic("Optional", "ifPresent", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return methodCall(recv, "IfPresent", args[0])
+	})
+}
+
+func registerCollectionsStatics() {
+	// java.util.Collections
+	registerStaticIntrinsic("Collections", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "SortOrdered", args[0])
+	})
+	registerStaticIntrinsic("Collections", "reverse", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "ReverseList", args[0])
+	})
+	registerStaticIntrinsic("Collections", "max", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "MaxOrdered", args[0])
+	})
+	registerStaticIntrinsic("Collections", "min", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "MinOrdered", args[0])
+	})
+	registerStaticIntrinsic("Collections", "emptyList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 0) {
+			return nil
+		}
+		return stdjavaCall(ctx, "EmptyList")
+	})
+	registerStaticIntrinsic("Collections", "singletonList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "SingletonList", args[0])
+	})
+	registerStaticIntrinsic("Collections", "unmodifiableList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "UnmodifiableList", args[0])
+	})
+
+	// java.util.Arrays
+	registerStaticIntrinsic("Arrays", "asList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		return stdjavaCall(ctx, "AsList", args...)
+	})
+	registerStaticIntrinsic("Arrays", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "SortSlice", args[0])
+	})
+	registerStaticIntrinsic("Arrays", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "SliceToString", args[0])
+	})
+}

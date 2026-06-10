@@ -13,6 +13,23 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+// constructorFuncName returns the generated Go constructor function name for a
+// class scope (e.g. "newAnimal" for a package-private class, "NewFoo" for a
+// public one), or "" if the scope declares no constructor. The name is taken
+// from the constructor's symbol definition, which is exactly what the emitted
+// constructor FuncDecl uses, so super(...) calls resolve to the right function.
+func constructorFuncName(scope *symbol.ClassScope) string {
+	if scope == nil {
+		return ""
+	}
+	for _, method := range scope.Methods {
+		if method != nil && method.Constructor && method.Name != "" {
+			return method.Name
+		}
+	}
+	return ""
+}
+
 // isStmtListNode reports whether a node type is one that ParseNode lowers into a
 // list of statements (rather than a single statement). These are the constructs
 // that must be expanded inline when filling a block body.
@@ -52,6 +69,12 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		return &ast.BadStmt{}
 	case "comment", "line_comment", "block_comment":
 		return &ast.BadStmt{}
+	case "class_declaration", "interface_declaration", "enum_declaration":
+		// A type declaration appearing as a statement is a local class. Hoist it to
+		// file scope, capturing referenced enclosing locals as fields, and drop the
+		// in-body declaration (signalled by an empty statement the block filters).
+		hoistLocalClass(node, source, ctx)
+		return &ast.EmptyStmt{Implicit: true}
 	case "local_variable_declaration":
 		variableType := astutil.ParseType(node.ChildByFieldName("type"), source)
 		originalType := node.ChildByFieldName("type").Content(source)
@@ -189,6 +212,11 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				continue
 			}
 			if stmt := TryParseStmt(line, source, ctx); stmt != nil {
+				// A hoisted local class leaves behind an implicit empty statement;
+				// skip it so no stray semicolon is emitted.
+				if empty, ok := stmt.(*ast.EmptyStmt); ok && empty.Implicit {
+					continue
+				}
 				body.List = append(body.List, stmt)
 			} else if isStmtListNode(line.Type()) {
 				// Try and synchronized statements are lowered into a list of statements
@@ -248,10 +276,21 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 							}
 						}
 					}
+					// Default constructor name; overridden below by the superclass's
+					// actual generated constructor name when its scope is known.
+					constructorFnName := "New" + superName
 					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
 						superName = scope.Class.Name
+						// Use the superclass's generated constructor function name so the
+						// call matches the emitted decl exactly (e.g. `newAnimal`, not
+						// `Newanimal`, for a package-private superclass).
+						if ctorName := constructorFuncName(scope); ctorName != "" {
+							constructorFnName = ctorName
+						} else {
+							constructorFnName = "New" + superName
+						}
 					}
-					funExpr := ast.Expr(&ast.Ident{Name: "New" + superName})
+					funExpr := ast.Expr(&ast.Ident{Name: constructorFnName})
 					if len(superArgStrs) > 0 {
 						scopeTypeParams := inScopeTypeParameters(ctx)
 						typeArgs := make([]ast.Expr, 0, len(superArgStrs))

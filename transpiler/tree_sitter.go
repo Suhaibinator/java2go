@@ -68,6 +68,44 @@ type Ctx struct {
 	// When set, return statements are rewritten into assignments + bare return
 	// for lowered try/catch/finally closures.
 	tryReturnTarget *tryReturnTarget
+
+	// Collects top-level declarations synthesized while parsing nested contexts,
+	// such as anonymous (non-SAM) and local classes that must be hoisted to file
+	// scope. It is a shared pointer so cloned contexts append to the same slice.
+	hoistedDecls *[]ast.Decl
+
+	// Monotonic counter used to give synthesized anonymous/local classes unique
+	// names within a file. Shared via pointer across cloned contexts.
+	anonClassCounter *int
+
+	// Maps a local class's Java name to the synthesized file-scope struct it was
+	// hoisted into, so `new LocalClass(...)` in the same method body resolves to
+	// the hoisted struct and threads captured locals. Shared via pointer.
+	localClasses map[string]*localClassInfo
+}
+
+// localClassInfo records how a local class was hoisted to file scope.
+type localClassInfo struct {
+	structName string
+	captured   []capturedLocal
+}
+
+// addHoistedDecl appends a synthesized top-level declaration to be emitted at
+// file scope. No-op when the collector is not initialized.
+func (ctx Ctx) addHoistedDecl(decl ast.Decl) {
+	if ctx.hoistedDecls != nil && decl != nil {
+		*ctx.hoistedDecls = append(*ctx.hoistedDecls, decl)
+	}
+}
+
+// nextAnonClassIndex returns the next unique index for a synthesized
+// anonymous/local class in the current file.
+func (ctx Ctx) nextAnonClassIndex() int {
+	if ctx.anonClassCounter == nil {
+		return 0
+	}
+	*ctx.anonClassCounter++
+	return *ctx.anonClassCounter
 }
 
 type tryReturnTarget struct {
@@ -80,15 +118,18 @@ type tryReturnTarget struct {
 // pointing at the same things as the previous Ctx
 func (c Ctx) Clone() Ctx {
 	return Ctx{
-		className:       c.className,
-		currentFile:     c.currentFile,
-		currentClass:    c.currentClass,
-		localScope:      c.localScope,
-		lastType:        c.lastType,
-		expectedType:    c.expectedType,
-		importAliases:   c.importAliases,
-		usedImports:     c.usedImports,
-		tryReturnTarget: c.tryReturnTarget,
+		className:        c.className,
+		currentFile:      c.currentFile,
+		currentClass:     c.currentClass,
+		localScope:       c.localScope,
+		lastType:         c.lastType,
+		expectedType:     c.expectedType,
+		importAliases:    c.importAliases,
+		usedImports:      c.usedImports,
+		tryReturnTarget:  c.tryReturnTarget,
+		hoistedDecls:     c.hoistedDecls,
+		anonClassCounter: c.anonClassCounter,
+		localClasses:     c.localClasses,
 	}
 }
 
@@ -113,6 +154,15 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		if ctx.usedImports == nil {
 			ctx.usedImports = make(map[string]bool)
 		}
+		if ctx.hoistedDecls == nil {
+			ctx.hoistedDecls = &[]ast.Decl{}
+		}
+		if ctx.anonClassCounter == nil {
+			ctx.anonClassCounter = new(int)
+		}
+		if ctx.localClasses == nil {
+			ctx.localClasses = make(map[string]*localClassInfo)
+		}
 
 		program := &ast.File{
 			Name: &ast.Ident{Name: "main"},
@@ -135,6 +185,11 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 				program.Decls = append(program.Decls, ParseDecls(c, source, declCtx)...)
 			}
 		}
+
+		// Emit any classes synthesized during parsing (anonymous non-SAM and local
+		// classes) at file scope.
+		program.Decls = append(program.Decls, *ctx.hoistedDecls...)
+
 		program.Imports = buildUsedImportSpecs(ctx)
 		if len(program.Imports) > 0 {
 			importSpecs := make([]ast.Spec, len(program.Imports))
@@ -259,11 +314,43 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 	case "try_statement":
 		return lowerTryStatement(node, source, ctx, false)
 	case "synchronized_statement":
-		// A synchronized statement contains the variable to be synchronized, as
-		// well as the block
-
-		// Ignore the sychronized statement
-		return ParseStmt(node.NamedChild(1), source, ctx).(*ast.BlockStmt).List
+		// `synchronized (obj) { body }` acquires obj's intrinsic monitor for the
+		// duration of the block. It is lowered to a closure that enters the
+		// stdjava monitor for obj and defers the exit, then runs the body, giving
+		// true per-object mutual exclusion:
+		//
+		//   func() {
+		//       __mon := stdjava.MonitorEnter(obj)
+		//       defer stdjava.MonitorExit(__mon)
+		//       body...
+		//   }()
+		lockNode := node.NamedChild(0)
+		blockNode := node.NamedChild(1)
+		bodyStmts := []ast.Stmt{}
+		if blockNode != nil {
+			if block, ok := ParseStmt(blockNode, source, ctx).(*ast.BlockStmt); ok {
+				bodyStmts = block.List
+			}
+		}
+		monName := fmt.Sprintf("__java2goMonitor_%d", node.StartByte())
+		guarded := append([]ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: monName}},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{stdjavaCall(ctx, "MonitorEnter", ParseExpr(lockNode, source, ctx))},
+			},
+			&ast.DeferStmt{
+				Call: stdjavaCall(ctx, "MonitorExit", &ast.Ident{Name: monName}),
+			},
+		}, bodyStmts...)
+		return []ast.Stmt{
+			&ast.ExprStmt{X: &ast.CallExpr{
+				Fun: &ast.FuncLit{
+					Type: &ast.FuncType{},
+					Body: &ast.BlockStmt{List: guarded},
+				},
+			}},
+		}
 	case "switch_label":
 		if node.NamedChildCount() > 0 {
 			return &ast.CaseClause{

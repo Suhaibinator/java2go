@@ -43,7 +43,7 @@ roughly in suggested priority order. See file references for where each gap live
 
 - [x] Inner (non-static) classes — synthesized enclosing-instance field, `outer.new Inner()`, outer-member access through the enclosing chain
 - [x] Static nested classes — emitted as `OuterInner` top-level structs with retargeted constructors
-- [ ] Anonymous classes implementing a SAM interface (reuse the existing functional-interface adapter machinery in `transpiler/declaration.go:853`)
+- [x] Anonymous classes implementing a SAM interface — lowered to the existing `FuncAdapter` machinery with enclosing locals as ordinary closure captures
 - [ ] Anonymous classes with multiple methods / extending a class
 - [ ] Local classes declared inside methods
 

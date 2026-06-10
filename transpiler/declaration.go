@@ -68,10 +68,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
 					continue
 				}
-				// When the superclass is itself a user-defined exception (possibly a
-				// nested class), embed its resolved Go struct name so the field
-				// reference matches what the super() constructor call assigns.
-				if base, _ := parseJavaTypeString(t.Content(source)); isExceptionJavaType(ctx, base) {
+				// When the superclass is a user-defined class (possibly a nested class
+				// or a package-private one whose Go struct name was lowercased), embed
+				// its resolved Go struct name so the field reference matches the struct
+				// type and what the super() constructor call assigns. Without this the
+				// embed would use the verbatim Java name (e.g. *Animal) while the type
+				// is generated as `animal`.
+				if base, _ := parseJavaTypeString(t.Content(source)); base != "" {
 					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
 						fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: &ast.Ident{Name: scope.Class.Name}}})
 						continue

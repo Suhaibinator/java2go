@@ -37,8 +37,7 @@ var skipReasons = map[string]string{
 	"interfaces/Interfaces":    "array creation with initializer emits a bare {..} composite literal missing its type (ROADMAP §6)",
 	"lambdas/Lambdas":          "array creation with initializer (new int[]{..}) emits a bare {..} composite literal missing its type (ROADMAP §6)",
 	"enums/Enums":              "qualified enum constant access (Day.WED) left unresolved; package-private enum casing mismatch (ROADMAP §6)",
-	"strings/Strings":          "charAt() returns char but prints as int code point (101) instead of the character (e) (ROADMAP §2)",
-	"numeric_edge/NumericEdge": "int overflow not wrapped (int locals are untyped Go consts, not int32); ~0 prints 4294967295; char-cast prints code point; long shift over-masked to 5 bits so 1L<<32 yields 1 (ROADMAP §6)",
+	"numeric_edge/NumericEdge": "int overflow not wrapped (int locals are untyped Go consts, not int32); ~0 prints 4294967295; (char) cast prints code point 66 not 'B'; long shift over-masked to 5 bits so 1L<<32 yields 1 (ROADMAP §6, task #10 items 11-12)",
 
 	"var_infer/VarInfer":                   "blocked by array-initializer bug (new int[]{..} emits bare composite literal); var itself works (ROADMAP §5, §6)",
 	"switch_expr/SwitchExpr":               "switch expressions emit panic() used as a value; loop-var int vs method int32 mismatch (ROADMAP §5)",
@@ -48,7 +47,6 @@ var skipReasons = map[string]string{
 	"collections/Collections":              "java.util imports not stripped/mapped (emit import \"java/util\"); ArrayList/HashMap not mapped (ROADMAP §2)",
 	"collections/CollectionOps":            "ArrayList/HashMap operations and java.util import not mapped (ROADMAP §2/§3, stdlib-dev task #3 in progress)",
 	"collections/Optionals":                "java.util.Optional not wired to stdjava/optional.go (ROADMAP §2/§3, stdlib-dev task #3 in progress)",
-	"exceptions/UserException":             "pending validation: user-defined exception class extends RuntimeException; catch-by-supertype of a user type may not register in the Throwable hierarchy yet (ROADMAP §3)",
 
 	"var_simple/VarSimple":    "var works and String.length() maps on string literals/vars, but a var inferred from a string-CONCAT expression loses its String type so .length() is left unmapped (ROADMAP §2/§6)",
 	"concurrency/SyncCounter": "Thread/Runnable/anonymous-class not mapped to goroutines; synchronized not lowered (ROADMAP §7)",

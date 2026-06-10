@@ -43,9 +43,11 @@ type intrinsicKey struct {
 	methodName string
 }
 
-// constructorGenerator builds the Go replacement for a `new Type(args)`
-// expression. Returning nil falls through to the normal constructor path.
-type constructorGenerator func(args []ast.Expr, ctx Ctx) ast.Expr
+// constructorGenerator builds the Go replacement for a `new Type<TypeArgs>(args)`
+// expression. typeArgs are the resolved Go type-argument expressions (e.g. for
+// `new ArrayList<String>()`, typeArgs is [string]). Returning nil falls through
+// to the normal constructor path.
+type constructorGenerator func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr
 
 var (
 	instanceIntrinsics    = map[intrinsicKey]intrinsicGenerator{}
@@ -61,10 +63,10 @@ func registerConstructorIntrinsic(className string, gen constructorGenerator) {
 	constructorIntrinsics[className] = gen
 }
 
-// tryConstructorIntrinsic attempts to rewrite a `new className(args)` expression
-// via the constructor intrinsics table. It only fires when className is not a
-// user-defined class.
-func tryConstructorIntrinsic(className string, args []ast.Expr, ctx Ctx) (ast.Expr, bool) {
+// tryConstructorIntrinsic attempts to rewrite a `new className<typeArgs>(args)`
+// expression via the constructor intrinsics table. It only fires when className
+// is not a user-defined class.
+func tryConstructorIntrinsic(className string, typeArgs, args []ast.Expr, ctx Ctx) (ast.Expr, bool) {
 	name := stripJavaQualifier(className)
 	if name == "" {
 		return nil, false
@@ -76,7 +78,7 @@ func tryConstructorIntrinsic(className string, args []ast.Expr, ctx Ctx) (ast.Ex
 	if !ok {
 		return nil, false
 	}
-	if result := gen(args, ctx); result != nil {
+	if result := gen(typeArgs, args, ctx); result != nil {
 		return result, true
 	}
 	return nil, false
@@ -223,6 +225,13 @@ func callIdent(name string, args ...ast.Expr) *ast.CallExpr {
 
 func stdjavaCall(ctx Ctx, name string, args ...ast.Expr) *ast.CallExpr {
 	return &ast.CallExpr{Fun: stdjavaQualifiedExpr(name, ctx), Args: args}
+}
+
+// stdjavaGenericCall emits stdjava.Name[typeArgs](args), used for the generic
+// collection constructors (e.g. stdjava.NewList[string]()).
+func stdjavaGenericCall(ctx Ctx, name string, typeArgs, args []ast.Expr) *ast.CallExpr {
+	fun := applyTypeArguments(stdjavaQualifiedExpr(name, ctx), typeArgs)
+	return &ast.CallExpr{Fun: fun, Args: args}
 }
 
 func pkgCall(ctx Ctx, javaPkg, name string, args ...ast.Expr) *ast.CallExpr {

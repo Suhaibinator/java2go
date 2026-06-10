@@ -1,0 +1,235 @@
+package transpiler
+
+import (
+	"go/ast"
+	"go/token"
+	"strconv"
+)
+
+// intLit builds an integer literal expression, used to supply the default value
+// for a no-arg atomic constructor (Java defaults to 0).
+func intLit(n int) ast.Expr {
+	return &ast.BasicLit{Kind: token.INT, Value: strconv.Itoa(n)}
+}
+
+// concurrencyRuntimeTypes lists the stdjava-backed concurrency types and whether
+// each is generic (so its declared type takes type arguments).
+var concurrencyRuntimeTypes = map[string]bool{
+	"AtomicInteger":     false,
+	"AtomicLong":        false,
+	"AtomicBoolean":     false,
+	"Thread":            false,
+	"ExecutorService":   false,
+	"ConcurrentHashMap": true,
+}
+
+// stdjavaRuntimeTypeExpr maps a Java concurrency type name to its stdjava
+// runtime Go type (e.g. AtomicInteger -> *stdjava.AtomicInteger,
+// ConcurrentHashMap<K,V> -> *stdjava.ConcurrentHashMap[K, V]). It returns
+// (nil, false) for any other name, and never fires for a user-defined class of
+// the same name. Generic args are themselves lowered through
+// javaTypeStringToGoTypeExpr.
+func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+	generic, ok := concurrencyRuntimeTypes[baseName]
+	if !ok {
+		return nil, false
+	}
+	if resolveClassScopeByQualifiedName(ctx, baseName) != nil {
+		return nil, false
+	}
+
+	base := stdjavaQualifiedExpr(baseName, ctx)
+	if generic && len(typeArgs) > 0 {
+		argExprs := make([]ast.Expr, 0, len(typeArgs))
+		for _, arg := range typeArgs {
+			argExprs = append(argExprs, javaTypeStringToGoTypeExpr(arg, typeParams, ctx))
+		}
+		base = applyTypeArguments(base, argExprs)
+	}
+	return &ast.StarExpr{X: base}, true
+}
+
+// This file registers java.util.concurrent and java.lang.Thread intrinsics onto
+// the shared intrinsics tables (machinery in intrinsics.go). They rewrite calls
+// onto the stdjava concurrency runtime (stdjava/concurrent.go):
+//
+//   new AtomicInteger(0)            -> stdjava.NewAtomicInteger(0)
+//   counter.incrementAndGet()      -> counter.IncrementAndGet()
+//   Thread.sleep(100)              -> stdjava.ThreadSleep(100)
+//   new Thread(r).start()          -> stdjava.NewThread(r).Start()
+//   Executors.newFixedThreadPool(4)-> stdjava.NewFixedThreadPool(4)
+//
+// Atomic/Thread/ExecutorService/ConcurrentHashMap instances are stdjava pointer
+// types whose methods are named with Go's exported casing, so the instance
+// intrinsics simply re-case the method name onto the receiver.
+
+func init() {
+	registerAtomicIntrinsics()
+	registerThreadIntrinsics()
+	registerExecutorIntrinsics()
+	registerConcurrentMapIntrinsics()
+}
+
+// selectorCall builds recv.MethodName(args...), used to map a Java instance
+// method onto its stdjava (exported-cased) counterpart.
+func selectorCall(recv ast.Expr, method string, args []ast.Expr) ast.Expr {
+	return &ast.CallExpr{
+		Fun:  &ast.SelectorExpr{X: recv, Sel: &ast.Ident{Name: method}},
+		Args: args,
+	}
+}
+
+// registerAtomicMethods wires the instance methods shared by the atomic wrapper
+// types onto their exported stdjava equivalents.
+func registerAtomicMethods(javaType string) {
+	methods := map[string]string{
+		"get":             "Get",
+		"set":             "Set",
+		"incrementAndGet": "IncrementAndGet",
+		"decrementAndGet": "DecrementAndGet",
+		"getAndIncrement": "GetAndIncrement",
+		"getAndDecrement": "GetAndDecrement",
+		"addAndGet":       "AddAndGet",
+		"getAndAdd":       "GetAndAdd",
+		"compareAndSet":   "CompareAndSet",
+	}
+	for javaMethod, goMethod := range methods {
+		goMethod := goMethod
+		registerInstanceIntrinsic(javaType, javaMethod, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if recv == nil {
+				return nil
+			}
+			return selectorCall(recv, goMethod, args)
+		})
+	}
+}
+
+func registerAtomicIntrinsics() {
+	// Constructors: new AtomicInteger(n) -> stdjava.NewAtomicInteger(n). A no-arg
+	// Java constructor defaults to 0/false, so supply the zero value.
+	registerConstructorIntrinsic("AtomicInteger", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 0 {
+			return stdjavaCall(ctx, "NewAtomicInteger", intLit(0))
+		}
+		return stdjavaCall(ctx, "NewAtomicInteger", args[0])
+	})
+	registerConstructorIntrinsic("AtomicLong", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 0 {
+			return stdjavaCall(ctx, "NewAtomicLong", intLit(0))
+		}
+		return stdjavaCall(ctx, "NewAtomicLong", args[0])
+	})
+	registerConstructorIntrinsic("AtomicBoolean", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 0 {
+			return stdjavaCall(ctx, "NewAtomicBoolean", &ast.Ident{Name: "false"})
+		}
+		return stdjavaCall(ctx, "NewAtomicBoolean", args[0])
+	})
+
+	registerAtomicMethods("AtomicInteger")
+	registerAtomicMethods("AtomicLong")
+	// AtomicBoolean only supports get/set/compareAndSet, but reusing the table is
+	// harmless: the extra method names never appear on an AtomicBoolean receiver.
+	registerAtomicMethods("AtomicBoolean")
+}
+
+func registerThreadIntrinsics() {
+	// new Thread(runnable) -> stdjava.NewThread(runnable). The Runnable argument
+	// is already a func() in generated code (lambda or method reference).
+	registerConstructorIntrinsic("Thread", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "NewThread", args[0])
+	})
+
+	// Thread.sleep(ms) -> stdjava.ThreadSleep(ms)
+	registerStaticIntrinsic("Thread", "sleep", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "ThreadSleep", args[0])
+	})
+
+	for javaMethod, goMethod := range map[string]string{"start": "Start", "join": "Join"} {
+		goMethod := goMethod
+		registerInstanceIntrinsic("Thread", javaMethod, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if recv == nil || len(args) != 0 {
+				return nil
+			}
+			return selectorCall(recv, goMethod, nil)
+		})
+	}
+}
+
+func registerExecutorIntrinsics() {
+	// Executors.newFixedThreadPool(n) -> stdjava.NewFixedThreadPool(n)
+	registerStaticIntrinsic("Executors", "newFixedThreadPool", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "NewFixedThreadPool", args[0])
+	})
+	// A single-thread executor is just a pool of size 1.
+	registerStaticIntrinsic("Executors", "newSingleThreadExecutor", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "NewFixedThreadPool", intLit(1))
+	})
+
+	for javaMethod, goMethod := range map[string]string{
+		"submit":           "Submit",
+		"execute":          "Submit",
+		"shutdown":         "Shutdown",
+		"awaitTermination": "AwaitTermination",
+	} {
+		goMethod := goMethod
+		registerInstanceIntrinsic("ExecutorService", javaMethod, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if recv == nil {
+				return nil
+			}
+			// awaitTermination(timeout, unit) in Java takes args; the stdjava shim
+			// waits unconditionally, so drop them.
+			if goMethod == "AwaitTermination" {
+				return selectorCall(recv, goMethod, nil)
+			}
+			if goMethod == "Submit" {
+				if len(args) != 1 {
+					return nil
+				}
+				return selectorCall(recv, goMethod, args)
+			}
+			return selectorCall(recv, goMethod, nil)
+		})
+	}
+}
+
+func registerConcurrentMapIntrinsics() {
+	registerConstructorIntrinsic("ConcurrentHashMap", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		// Go cannot infer the type parameters of a no-arg generic constructor, so
+		// pass them explicitly: stdjava.NewConcurrentHashMap[K, V]().
+		fun := stdjavaQualifiedExpr("NewConcurrentHashMap", ctx)
+		fun = applyTypeArguments(fun, typeArgs)
+		return &ast.CallExpr{Fun: fun}
+	})
+
+	for javaMethod, goMethod := range map[string]string{
+		"put":         "Put",
+		"get":         "Get",
+		"remove":      "Remove",
+		"containsKey": "ContainsKey",
+		"size":        "Size",
+	} {
+		goMethod := goMethod
+		registerInstanceIntrinsic("ConcurrentHashMap", javaMethod, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if recv == nil {
+				return nil
+			}
+			return selectorCall(recv, goMethod, args)
+		})
+	}
+}

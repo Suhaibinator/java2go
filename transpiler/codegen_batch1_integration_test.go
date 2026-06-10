@@ -189,6 +189,80 @@ public class Sh {
 	}
 }
 
+// TestCodegen_PackagePrivateInheritanceCasing verifies that a package-private
+// superclass is embedded and constructed using its generated (lowercased) Go
+// names, so the generated code compiles.
+func TestCodegen_PackagePrivateInheritanceCasing(t *testing.T) {
+	src := `
+class Animal {
+    String name;
+    Animal(String name) { this.name = name; }
+    String speak() { return "..."; }
+}
+class Dog extends Animal {
+    Dog(String name) { super(name); }
+    String speak() { return "Woof"; }
+}
+public class AnimalMain {
+    public static void main(String[] args) {}
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	// The superclass struct is lowercased; the embed and constructor call must use
+	// the same casing.
+	if !strings.Contains(out, "type animal struct") {
+		t.Errorf("expected lowercased `type animal struct`, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "type dog struct { *animal") {
+		t.Errorf("expected embed of `*animal`, got:\n%s", out)
+	}
+	if strings.Contains(out, "*Animal") {
+		t.Errorf("embed should not reference the un-lowercased `*Animal`, got:\n%s", out)
+	}
+	if !strings.Contains(out, "newAnimal(name)") {
+		t.Errorf("expected super constructor call `newAnimal(name)`, got:\n%s", out)
+	}
+	if strings.Contains(out, "Newanimal") {
+		t.Errorf("super constructor call should be `newAnimal`, not `Newanimal`, got:\n%s", out)
+	}
+}
+
+// TestCodegen_PackagePrivateInheritance_RuntimeBehavior verifies the generated
+// code for package-private inheritance compiles and dispatches the override.
+func TestCodegen_PackagePrivateInheritance_RuntimeBehavior(t *testing.T) {
+	src := `
+class Animal {
+    String name;
+    Animal(String name) { this.name = name; }
+    String speak() { return "..."; }
+}
+class Dog extends Animal {
+    Dog(String name) { super(name); }
+    String speak() { return "Woof"; }
+}
+public class AnimalApp {
+    public static String run() {
+        Dog d = new Dog("Rex");
+        return d.speak();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestPkgPrivateInheritance(t *testing.T) {
+	if got := Run(); got != "Woof" {
+		t.Fatalf("Run() = %q, want \"Woof\"", got)
+	}
+}
+`)
+}
+
 // TestCodegen_QualifiedEnumConstantAccess verifies `Enum.CONSTANT` in expression
 // position lowers to the bare generated constant var.
 func TestCodegen_QualifiedEnumConstantAccess(t *testing.T) {

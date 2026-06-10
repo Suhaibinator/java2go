@@ -319,3 +319,68 @@ func TestAnonSAMRuntime(t *testing.T) {
 }
 `)
 }
+
+// --- Anonymous classes with multiple methods / extending a class ---
+
+func TestAnonymousClass_MultiMethod_SynthesizedStruct(t *testing.T) {
+	src := `
+package nested;
+public interface Shape { int area(); int perimeter(); }
+public class App {
+    public static Shape make(int w, int h) {
+        return new Shape() {
+            public int area() { return w * h; }
+            public int perimeter() { return 2 * (w + h); }
+        };
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	if !strings.Contains(flat, "type AppAnon1 struct { Shape") {
+		t.Fatalf("expected a synthesized struct embedding the interface for a multi-method anonymous class, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "return &AppAnon1{w: w, h: h}") {
+		t.Fatalf("expected the creation site to build the synthesized struct capturing locals, got:\n%s", out)
+	}
+}
+
+func TestAnonymousClass_MultiMethod_RuntimeBehavior(t *testing.T) {
+	src := `
+package nested;
+public interface Shape { int area(); int perimeter(); }
+public class App {
+    public static Shape make(int w, int h) {
+        return new Shape() {
+            public int area() { return w * h; }
+            public int perimeter() { return 2 * (w + h); }
+        };
+    }
+    public static int run() {
+        Shape s = make(3, 4);
+        return s.area() + s.perimeter();
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	if strings.TrimSpace(out) == "" {
+		t.Fatal("expected transpiler to produce non-empty Go output")
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestAnonMultiRuntime(t *testing.T) {
+	got := Run()
+	// area(3*4=12) + perimeter(2*(3+4)=14) = 26
+	if got != 26 {
+		t.Fatalf("Run() = %d, want 26", got)
+	}
+}
+`)
+}

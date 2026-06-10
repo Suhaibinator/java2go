@@ -224,7 +224,7 @@ func registerStringIntrinsics() {
 func registerStringBuilderIntrinsics() {
 	for _, typeName := range []string{"StringBuilder", "StringBuffer"} {
 		// new StringBuilder() / new StringBuilder(String)
-		registerConstructorIntrinsic(typeName, func(args []ast.Expr, ctx Ctx) ast.Expr {
+		registerConstructorIntrinsic(typeName, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 			switch len(args) {
 			case 0:
 				return stdjavaCall(ctx, "NewStringBuilder")
