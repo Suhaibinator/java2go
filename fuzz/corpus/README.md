@@ -5,6 +5,8 @@ java2go's transpiled Go, grouped by failure category:
 
 - `transpile_crash/` — java2go panicked or errored converting the program.
 - `go_compile_error/` — the transpiled Go did not compile.
+- `go_runtime_error/` — the Go compiled but panicked/exited non-zero at runtime
+  while Java ran cleanly.
 - `output_mismatch/` — both sides ran but printed different stdout.
 
 For each `<name>.java` there are two siblings:
