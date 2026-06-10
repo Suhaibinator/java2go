@@ -33,23 +33,18 @@ func TestMain(m *testing.M) {
 // test pass. Remove an entry here to turn its program into an enforced regression
 // test. Keep this list in sync as features land.
 var skipReasons = map[string]string{
-	"controlflow/ControlFlow":  "switch statements emit UNSUPPORTED panic; ternary and do-while condition emit undefined ternary()/ILLEGAL() helpers (ROADMAP §1 robustness, §5 switch)",
-	"arithmetic/Arithmetic":    "postfix/prefix increment used as an expression emits undefined PostUpdate()/PreUpdate() (ROADMAP §1/§6)",
 	"inheritance/Inheritance":  "array creation with initializer emits a bare {..} composite literal missing its type; package-private superclass casing mismatch (ROADMAP §6)",
 	"interfaces/Interfaces":    "array creation with initializer emits a bare {..} composite literal missing its type (ROADMAP §6)",
 	"lambdas/Lambdas":          "array creation with initializer (new int[]{..}) emits a bare {..} composite literal missing its type (ROADMAP §6)",
-	"generics/Generics":        "boxed Integer type parameter emits undefined *Integer; autoboxing not mapped (ROADMAP §6)",
 	"enums/Enums":              "qualified enum constant access (Day.WED) left unresolved; package-private enum casing mismatch (ROADMAP §6)",
-	"exceptions/Exceptions":    "native Go panics (divide-by-zero) not normalized to Java ArithmeticException, so catch does not fire (ROADMAP §3)",
-	"strings/Strings":          "String instance methods (trim/split) and StringBuilder construction not mapped to runtime (ROADMAP §2)",
-	"numeric_edge/NumericEdge": ">>> emits undefined UnsignedRightShift(); int shift distance not masked to 5 bits (ROADMAP §6)",
+	"strings/Strings":          "charAt() returns char but prints as int code point (101) instead of the character (e) (ROADMAP §2)",
+	"numeric_edge/NumericEdge": "int overflow not wrapped (int locals are untyped Go consts, not int32); ~0 prints 4294967295; char-cast prints code point; long shift over-masked to 5 bits so 1L<<32 yields 1 (ROADMAP §6)",
 
-	"var_infer/VarInfer":                   "blocked by array-initializer bug (new int[]{..} emits bare composite literal); var itself may work (ROADMAP §5, §6)",
+	"var_infer/VarInfer":                   "blocked by array-initializer bug (new int[]{..} emits bare composite literal); var itself works (ROADMAP §5, §6)",
 	"switch_expr/SwitchExpr":               "switch expressions emit panic() used as a value; loop-var int vs method int32 mismatch (ROADMAP §5)",
 	"instanceof_pattern/InstanceofPattern": "instanceof pattern binding not supported; emits invalid composite literal (ROADMAP §5)",
 	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
-	"nested/Nested":                        "inner (non-static) class does not capture the enclosing instance; references to outer fields are undefined (ROADMAP §4)",
 	"collections/Collections":              "java.util imports not stripped/mapped (emit import \"java/util\"); ArrayList/HashMap not mapped (ROADMAP §2)",
 
 	"var_simple/VarSimple":    "var inference itself works; only blocker is String.length() intrinsic (ROADMAP §2). Unskip once String methods map.",
