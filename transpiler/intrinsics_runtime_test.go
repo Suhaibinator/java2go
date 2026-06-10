@@ -332,3 +332,44 @@ func TestStreamsBehavior(t *testing.T) {
 }
 `)
 }
+
+func TestRuntime_FileIO(t *testing.T) {
+	src := `
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.BufferedReader;
+import java.io.FileReader;
+public class IORuntime {
+    public static String roundtrip(String path) throws Exception {
+        PrintWriter w = new PrintWriter(path);
+        w.println("alpha");
+        w.println("beta");
+        w.close();
+        File f = new File(path);
+        String out = "exists=" + f.exists() + " name=" + f.getName();
+        BufferedReader r = new BufferedReader(new FileReader(path));
+        out = out + " l1=" + r.readLine() + " l2=" + r.readLine();
+        r.close();
+        return out;
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	runGoTestWithStdjava(t, out, `
+package main
+
+import (
+	"path/filepath"
+	"testing"
+)
+
+func TestFileIOBehavior(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "rt.txt")
+	got := Roundtrip(p)
+	want := "exists=true name=rt.txt l1=alpha l2=beta"
+	if got != want {
+		t.Fatalf("Roundtrip = %q, want %q", got, want)
+	}
+}
+`)
+}
