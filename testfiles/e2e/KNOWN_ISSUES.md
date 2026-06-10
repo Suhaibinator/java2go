@@ -39,7 +39,10 @@ public class K2 { public static void main(String[] x){ System.out.println(new Do
 
 ## K3 — method-name casing on generated types (OPEN, folded into K2 / item 13)
 Call site emits the Java lowercase method name but the generated method is
-capitalized. Seen on enum built-ins: `.ordinal()` vs generated `.Ordinal()`.
+capitalized. Seen on enum built-ins (`.ordinal()` vs `.Ordinal()`) AND on stdjava
+runtime types: `stdjava.Optional` has `.Get()` but the call emits `.get()`. So this
+isn't enum-specific — any generated/runtime type method call re-derives the lowercase
+Java name instead of the generated capitalized name. Blocks enums and collections/Optionals.
 ```java
 enum E { A, B; }
 public class K3 { public static void main(String[] x){ System.out.println(E.A.ordinal()); } }

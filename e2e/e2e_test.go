@@ -45,7 +45,7 @@ var skipReasons = map[string]string{
 	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
 	"collections/CollectionOps":            "List/Map intrinsics ARE wired now; blocked by int/int32 typing only (i*i is int but nums.Add wants int32; sum += n mixes int and int32) (ROADMAP §6 int typing)",
-	"collections/Optionals":                "Optional.empty() cannot infer T (needs type param at empty() site); Optional.map() unimplemented (num.map_ undefined); Optional.of(10) infers element type any not int (ROADMAP §2/§3)",
+	"collections/Optionals":                "empty()/map()/of() all fixed (task #3); now down to ONE error: method-name casing (K3) — call site .get() but generated method is .Get() on stdjava.Optional. Flips when casing item 13 lands (ROADMAP §6/#7)",
 
 	"var_simple/VarSimple":    "var works and String.length() maps on string literals/vars, but a var inferred from a string-CONCAT expression loses its String type so .length() is left unmapped (ROADMAP §2/§6)",
 	"concurrency/SyncCounter": "Thread+synchronized now lower (task #11), but blocked by: anonymous Runnable inside a loop (undefined: Runnable, undefined: i captured) + int/int32 (K1) in the run() body (ROADMAP §7 anon-Runnable, §6 int typing)",
