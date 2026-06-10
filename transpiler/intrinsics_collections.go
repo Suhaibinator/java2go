@@ -2,6 +2,7 @@ package transpiler
 
 import (
 	"go/ast"
+	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -41,6 +42,21 @@ func containsString(haystack []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+// optionalElementTypeExpr returns the Go type expression for T when the expected
+// type in scope is an Optional<T>, or nil if it cannot be determined. Used to
+// supply Optional.empty()'s type argument explicitly.
+func optionalElementTypeExpr(ctx Ctx) ast.Expr {
+	expected := strings.TrimSpace(ctx.expectedType)
+	if expected == "" {
+		return nil
+	}
+	base, typeArgs := parseJavaTypeString(expected)
+	if stripJavaQualifier(base) != "Optional" || len(typeArgs) != 1 {
+		return nil
+	}
+	return javaTypeStringToGoTypeExpr(typeArgs[0], inScopeTypeParameters(ctx), ctx)
 }
 
 // collectionNeedsSliceForRange reports whether an enhanced-for over the given
@@ -199,8 +215,12 @@ func registerOptionalIntrinsics() {
 		if !expectArgs(args, 0) {
 			return nil
 		}
-		// The element type is inferred by Go from the assignment context where
-		// possible; emit the call without explicit type arguments.
+		// Go cannot infer OptionalEmpty's type parameter from the call's context
+		// (return position / assignment), so supply it explicitly from the
+		// expected Optional<T> type when known.
+		if elem := optionalElementTypeExpr(ctx); elem != nil {
+			return stdjavaGenericCall(ctx, "OptionalEmpty", []ast.Expr{elem}, nil)
+		}
 		return stdjavaCall(ctx, "OptionalEmpty")
 	})
 
@@ -234,6 +254,14 @@ func registerOptionalIntrinsics() {
 			return nil
 		}
 		return methodCall(recv, "IfPresent", args[0])
+	})
+	// map introduces a new result type parameter, which a Go method cannot, so it
+	// is a free function: stdjava.OptionalMap(o, mapper).
+	registerInstanceIntrinsic("Optional", "map", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "OptionalMap", recv, args[0])
 	})
 }
 
