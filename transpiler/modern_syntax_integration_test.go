@@ -236,3 +236,68 @@ func TestTextBlockTrailingNewline(t *testing.T) {
 }
 `)
 }
+
+// --- Records (Java 14+) ---
+
+func TestRecord_StructAccessorsConstructor(t *testing.T) {
+	src := `
+package modern;
+public record Point(int x, int y) {
+    public int sum() { return x + y; }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	if !strings.Contains(flat, "type Point struct { x int32 y int32 }") {
+		t.Fatalf("expected record components to become unexported struct fields, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func NewPoint(x int32, y int32) *Point") {
+		t.Fatalf("expected a canonical record constructor, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func (pt *Point) X() int32 { return pt.x }") {
+		t.Fatalf("expected an exported accessor named after the component, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func (pt *Point) Equals(other *Point) bool") {
+		t.Fatalf("expected a synthesized value-equality method, got:\n%s", out)
+	}
+}
+
+func TestRecord_RuntimeBehavior(t *testing.T) {
+	src := `
+package modern;
+public class App {
+    record Point(int x, int y) {
+        int sum() { return x + y; }
+    }
+    public static int run() {
+        Point p = new Point(3, 4);
+        Point q = new Point(3, 4);
+        Point r = new Point(5, 6);
+        int eq = (p.equals(q) ? 1 : 0) + (p.equals(r) ? 1 : 0);
+        return p.x() * 1000 + p.y() * 100 + p.sum() * 10 + eq;
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	if strings.TrimSpace(out) == "" {
+		t.Fatal("expected transpiler to produce non-empty Go output")
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestRecordRuntime(t *testing.T) {
+	got := Run()
+	// x=3, y=4, sum=7, eq = (p==q ->1) + (p==r ->0) = 1
+	// 3*1000 + 4*100 + 7*10 + 1 = 3471
+	if got != 3471 {
+		t.Fatalf("Run() = %d, want 3471", got)
+	}
+}
+`)
+}
