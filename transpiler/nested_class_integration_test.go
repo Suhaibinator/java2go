@@ -384,3 +384,67 @@ func TestAnonMultiRuntime(t *testing.T) {
 }
 `)
 }
+
+// --- Local classes (declared inside a method) ---
+
+func TestLocalClass_HoistedToFileScope(t *testing.T) {
+	src := `
+package nested;
+public class App {
+    public static int run(int factor) {
+        class Multiplier {
+            int times(int x) { return x * factor; }
+        }
+        Multiplier m = new Multiplier();
+        return m.times(5);
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	if !strings.Contains(flat, "type AppLocalMultiplier1 struct { factor int32 }") {
+		t.Fatalf("expected local class to be hoisted to a file-scope struct capturing the enclosing local, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "m := &AppLocalMultiplier1{factor: factor}") {
+		t.Fatalf("expected `new Multiplier()` to build the hoisted struct with captures, got:\n%s", out)
+	}
+}
+
+func TestLocalClass_RuntimeBehavior(t *testing.T) {
+	src := `
+package nested;
+public class App {
+    public static int compute(int factor) {
+        class Multiplier {
+            int times(int x) { return x * factor; }
+        }
+        Multiplier m = new Multiplier();
+        return m.times(5);
+    }
+    public static int run() {
+        return compute(3);
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	if strings.TrimSpace(out) == "" {
+		t.Fatal("expected transpiler to produce non-empty Go output")
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestLocalClassRuntime(t *testing.T) {
+	got := Run()
+	// times(5) with captured factor(3) = 15
+	if got != 15 {
+		t.Fatalf("Run() = %d, want 15 (local class should capture the enclosing local)", got)
+	}
+}
+`)
+}
