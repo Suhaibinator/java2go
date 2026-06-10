@@ -1,0 +1,8 @@
+exists true
+endsWith true
+1: line one
+2: line two
+3: no newline tail
+lines 3
+deleted true
+exists false

@@ -46,6 +46,7 @@ var skipReasons = map[string]string{
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
 	"collections/CollectionOps":            "List/Map intrinsics ARE wired now; blocked by int/int32 typing only (i*i is int but nums.Add wants int32; sum += n mixes int and int32) (ROADMAP §6 int typing)",
 	"streams/Streams":                      "java.util.stream not implemented yet (stdlib-dev task #13); currently blocked even earlier by int/int32 (nums.add(i)) before reaching stream ops (ROADMAP §2 streams, §6)",
+	"io/FileRoundTrip":                     "java.io (File/FileWriter/PrintWriter/BufferedReader/FileReader) not implemented yet (stdlib-dev task #13 item 3) (ROADMAP §2 java.io)",
 
 	"concurrency/SyncCounter": "all concurrency work done (Thread+synchronized+anon-Runnable, task #11); blocked ENTIRELY by int/int32 (K1) now (ROADMAP §6 int typing, task #15)",
 	"concurrency/ThreadJoin":  "Thread-subclass->goroutine + sized arrays done; blocked ENTIRELY by int/int32 (K1): loop vars/fields/args int vs int32 (ROADMAP §6 int typing, task #15)",
