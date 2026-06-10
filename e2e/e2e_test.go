@@ -40,14 +40,13 @@ var skipReasons = map[string]string{
 	"numeric_edge/NumericEdge": "int overflow not wrapped (int locals are untyped Go consts, not int32); ~0 prints 4294967295; (char) cast prints code point 66 not 'B'; long shift over-masked to 5 bits so 1L<<32 yields 1 (ROADMAP §6, task #10 items 11-12)",
 
 	"var_infer/VarInfer":                   "int/int32 mismatch (untyped local int vs int32 method/return). Array-literal part fixed; var itself works (ROADMAP §6 int typing, item 12)",
-	"switch_expr/SwitchExpr":               "switch expressions emit panic() used as a value; loop-var int vs method int32 mismatch (ROADMAP §5)",
-	"instanceof_pattern/InstanceofPattern": "instanceof pattern binding not supported; emits invalid composite literal (ROADMAP §5)",
+	"switch_expr/SwitchExpr":               "switch-expression lowering works now; blocked only by int/int32 (K1): loop var d is int but method param is int32 (ROADMAP §6 int typing)",
+	"instanceof_pattern/InstanceofPattern": "instanceof pattern works for reference types (String matches), but a boxed primitive (21 as Integer) doesn't match `instanceof Integer` -> falls to 'unknown'. Autoboxing gap (ROADMAP §6 autoboxing)",
 	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
 	"collections/CollectionOps":            "List/Map intrinsics ARE wired now; blocked by int/int32 typing only (i*i is int but nums.Add wants int32; sum += n mixes int and int32) (ROADMAP §6 int typing)",
-	"collections/Optionals":                "empty()/map()/of() all fixed (task #3); now down to ONE error: method-name casing (K3) — call site .get() but generated method is .Get() on stdjava.Optional. Flips when casing item 13 lands (ROADMAP §6/#7)",
+	"streams/Streams":                      "java.util.stream not implemented yet (stdlib-dev task #13); currently blocked even earlier by int/int32 (nums.add(i)) before reaching stream ops (ROADMAP §2 streams, §6)",
 
-	"var_simple/VarSimple":    "var works and String.length() maps on string literals/vars, but a var inferred from a string-CONCAT expression loses its String type so .length() is left unmapped (ROADMAP §2/§6)",
 	"concurrency/SyncCounter": "Thread+synchronized now lower (task #11), but blocked by: anonymous Runnable inside a loop (undefined: Runnable, undefined: i captured) + int/int32 (K1) in the run() body (ROADMAP §7 anon-Runnable, §6 int typing)",
 	"concurrency/ThreadJoin":  "Thread-subclass->goroutine + sized arrays now work; blocked ENTIRELY by int/int32 (K1): loop vars/fields/args int vs int32 (ROADMAP §6 int typing)",
 
