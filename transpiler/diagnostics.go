@@ -124,11 +124,12 @@ func nodeSnippet(node *sitter.Node, source []byte) string {
 		}
 		trimmed = append(trimmed, r)
 	}
-	out := string(trimmed)
-	if len(out) > maxLen {
-		out = out[:maxLen] + "..."
+	// Truncate on the rune slice, not the string, so a multi-byte rune is never
+	// split into invalid UTF-8.
+	if len(trimmed) > maxLen {
+		return string(trimmed[:maxLen]) + "..."
 	}
-	return out
+	return string(trimmed)
 }
 
 // unsupportedComment builds the text of an `// UNSUPPORTED:` comment describing a
