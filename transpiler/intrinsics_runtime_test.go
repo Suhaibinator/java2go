@@ -272,3 +272,63 @@ func TestOptionalConcatBehavior(t *testing.T) {
 }
 `)
 }
+
+func TestRuntime_Streams(t *testing.T) {
+	src := `
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+public class StreamRuntime {
+    static List<Integer> nums() {
+        List<Integer> xs = new ArrayList<Integer>();
+        xs.add(1);
+        xs.add(2);
+        xs.add(3);
+        xs.add(4);
+        return xs;
+    }
+    public static int evenSumDoubled() {
+        List<Integer> doubled = nums().stream()
+            .filter(n -> n % 2 == 0)
+            .map(n -> n * 2)
+            .collect(Collectors.toList());
+        int total = 0;
+        for (int n : doubled) {
+            total += n;
+        }
+        return total;
+    }
+    public static long countBig() {
+        return nums().stream().filter(n -> n > 2).count();
+    }
+    public static int reduceSum() {
+        return nums().stream().reduce(0, (a, b) -> a + b);
+    }
+    public static boolean hasThree() {
+        return nums().stream().anyMatch(n -> n == 3);
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	runGoTestWithStdjava(t, out, `
+package main
+
+import "testing"
+
+func TestStreamsBehavior(t *testing.T) {
+	// evens {2,4} -> doubled {4,8} -> sum 12
+	if got := EvenSumDoubled(); got != 12 {
+		t.Fatalf("EvenSumDoubled = %d, want 12", got)
+	}
+	if got := CountBig(); got != 2 {
+		t.Fatalf("CountBig = %d, want 2", got)
+	}
+	if got := ReduceSum(); got != 10 {
+		t.Fatalf("ReduceSum = %d, want 10", got)
+	}
+	if got := HasThree(); !got {
+		t.Fatalf("HasThree = false, want true")
+	}
+}
+`)
+}
