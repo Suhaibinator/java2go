@@ -77,8 +77,42 @@ func buildUsedImportSpecs(ctx Ctx) []*ast.ImportSpec {
 	return specs
 }
 
+// stdjavaImportPath is the Go import path of the runtime support package that
+// generated code uses for Java behavior with no direct Go analogue. It is keyed
+// in the import maps by its full path; javaPackageToGoImportPath leaves a path
+// that already contains slashes untouched.
+const stdjavaImportPath = "github.com/NickyBoy89/java2go/stdjava"
+
 func javaPackageToGoImportPath(javaPkg string) string {
-	return strings.ReplaceAll(strings.TrimSpace(javaPkg), ".", "/")
+	javaPkg = strings.TrimSpace(javaPkg)
+	// A key that already looks like a Go import path (contains a slash) is used
+	// verbatim. This covers the stdjava runtime package, whose path does not
+	// follow Java's dotted-package convention.
+	if strings.Contains(javaPkg, "/") {
+		return javaPkg
+	}
+	return strings.ReplaceAll(javaPkg, ".", "/")
+}
+
+// stdjavaQualifiedExpr returns a selector expression referencing name within the
+// stdjava runtime package (e.g. stdjava.StringCharAt) and registers the import.
+func stdjavaQualifiedExpr(name string, ctx Ctx) ast.Expr {
+	markStdjavaUsage(ctx)
+	return &ast.SelectorExpr{
+		X:   &ast.Ident{Name: "stdjava"},
+		Sel: &ast.Ident{Name: name},
+	}
+}
+
+// markStdjavaUsage registers the stdjava runtime package import under a fixed
+// "stdjava" alias so generated references resolve.
+func markStdjavaUsage(ctx Ctx) {
+	if ctx.importAliases != nil {
+		ctx.importAliases[stdjavaImportPath] = "stdjava"
+	}
+	if ctx.usedImports != nil {
+		ctx.usedImports[stdjavaImportPath] = true
+	}
 }
 
 func packageAliasFromJavaPackage(javaPkg string) string {
