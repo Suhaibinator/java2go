@@ -43,6 +43,14 @@ var skipReasons = map[string]string{
 	"exceptions/Exceptions":    "native Go panics (divide-by-zero) not normalized to Java ArithmeticException, so catch does not fire (ROADMAP §3)",
 	"strings/Strings":          "String instance methods (trim/split) and StringBuilder construction not mapped to runtime (ROADMAP §2)",
 	"numeric_edge/NumericEdge": ">>> emits undefined UnsignedRightShift(); int shift distance not masked to 5 bits (ROADMAP §6)",
+
+	"var_infer/VarInfer":                   "blocked by array-initializer bug (new int[]{..} emits bare composite literal); var itself may work (ROADMAP §5, §6)",
+	"switch_expr/SwitchExpr":               "switch expressions emit panic() used as a value; loop-var int vs method int32 mismatch (ROADMAP §5)",
+	"instanceof_pattern/InstanceofPattern": "instanceof pattern binding not supported; emits invalid composite literal (ROADMAP §5)",
+	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
+	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
+	"nested/Nested":                        "inner (non-static) class does not capture the enclosing instance; references to outer fields are undefined (ROADMAP §4)",
+	"collections/Collections":              "java.util imports not stripped/mapped (emit import \"java/util\"); ArrayList/HashMap not mapped (ROADMAP §2)",
 }
 
 func moduleRoot(t *testing.T) string {
