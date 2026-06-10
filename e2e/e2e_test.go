@@ -47,7 +47,7 @@ var skipReasons = map[string]string{
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
 	"collections/Collections":              "java.util imports not stripped/mapped (emit import \"java/util\"); ArrayList/HashMap not mapped (ROADMAP §2)",
 
-	"var_simple/VarSimple":    "var inference itself works; only blocker is String.length() intrinsic (ROADMAP §2). Unskip once String methods map.",
+	"var_simple/VarSimple":    "var works and String.length() maps on string literals/vars, but a var inferred from a string-CONCAT expression loses its String type so .length() is left unmapped (ROADMAP §2/§6)",
 	"concurrency/SyncCounter": "Thread/Runnable/anonymous-class not mapped to goroutines; synchronized not lowered (ROADMAP §7)",
 	"concurrency/ThreadJoin":  "Thread subclass start()/join() not mapped to goroutines; new T[n] emits make(T,n) missing slice type (ROADMAP §7, §6)",
 }
