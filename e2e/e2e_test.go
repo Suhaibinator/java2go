@@ -33,13 +33,13 @@ func TestMain(m *testing.M) {
 // test pass. Remove an entry here to turn its program into an enforced regression
 // test. Keep this list in sync as features land.
 var skipReasons = map[string]string{
-	"inheritance/Inheritance":  "array creation with initializer emits a bare {..} composite literal missing its type; package-private superclass casing mismatch (ROADMAP §6)",
-	"interfaces/Interfaces":    "array creation with initializer emits a bare {..} composite literal missing its type (ROADMAP §6)",
-	"lambdas/Lambdas":          "array creation with initializer (new int[]{..}) emits a bare {..} composite literal missing its type (ROADMAP §6)",
-	"enums/Enums":              "qualified enum constant access (Day.WED) left unresolved; package-private enum casing mismatch (ROADMAP §6)",
+	"inheritance/Inheritance":  "package-private class casing: undefined Shape / Newrectangle / Newsquare (superclass embed + super-ctor refs miscased). Array-literal part fixed (task #10 item 5) (ROADMAP §6/#7 casing item 13)",
+	"interfaces/Interfaces":    "package-private interface name casing: undefined Greeter. Array-literal part fixed (ROADMAP §6/#7 casing item 13)",
+	"lambdas/Lambdas":          "int/int32: 'count' is Go int but return type is int32 (count used as int32 in return). Array-literal part fixed (ROADMAP §6 int typing, item 12)",
+	"enums/Enums":              "enum METHOD-name casing: call site emits .ordinal() but generated method is .Ordinal() (WED.ordinal undefined). Enum-constant access fixed (task #10 item 8) (ROADMAP §6/#7 casing item 13)",
 	"numeric_edge/NumericEdge": "int overflow not wrapped (int locals are untyped Go consts, not int32); ~0 prints 4294967295; (char) cast prints code point 66 not 'B'; long shift over-masked to 5 bits so 1L<<32 yields 1 (ROADMAP §6, task #10 items 11-12)",
 
-	"var_infer/VarInfer":                   "blocked by array-initializer bug (new int[]{..} emits bare composite literal); var itself works (ROADMAP §5, §6)",
+	"var_infer/VarInfer":                   "int/int32 mismatch (untyped local int vs int32 method/return). Array-literal part fixed; var itself works (ROADMAP §6 int typing, item 12)",
 	"switch_expr/SwitchExpr":               "switch expressions emit panic() used as a value; loop-var int vs method int32 mismatch (ROADMAP §5)",
 	"instanceof_pattern/InstanceofPattern": "instanceof pattern binding not supported; emits invalid composite literal (ROADMAP §5)",
 	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
