@@ -121,3 +121,47 @@ public class KeywordProgram {
 	assertContains(t, out, "map_.Put(\"a\", 1)")
 	assertContains(t, out, "map_.Get(\"a\")")
 }
+
+func TestOptional_LambdaAndTypeInference(t *testing.T) {
+	src := `
+import java.util.Optional;
+public class OptProgram {
+    static Optional<String> find(int id) {
+        if (id == 1) {
+            return Optional.of("a");
+        }
+        return Optional.empty();
+    }
+    public static int run() {
+        Optional<Integer> num = Optional.of(10);
+        return num.map(n -> n * 2).get();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	// empty() in return position gets its element type from the method return type.
+	assertContains(t, out, "stdjava.OptionalEmpty[string]()")
+	// of(10) with Optional<Integer> expected type instantiates as int32, not Go int.
+	assertContains(t, out, "stdjava.OptionalOf[int32](10)")
+	// map's lambda is re-typed from the element type and the chained .get() resolves.
+	assertContains(t, out, "func(n int32) int32")
+	assertContains(t, out, "return n * 2")
+	assertContains(t, out, ").Get()")
+}
+
+func TestStringConcat_InfersStringType(t *testing.T) {
+	// A var/local initialized from a string concatenation is a String, so String
+	// intrinsics dispatch on it.
+	src := `
+public class ConcatProgram {
+    public static int run() {
+        var g = "ab" + "cd";
+        String h = "x" + 5;
+        return g.length() + h.length();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	assertContains(t, out, "stdjava.StringLength(g)")
+	assertContains(t, out, "stdjava.StringLength(h)")
+}

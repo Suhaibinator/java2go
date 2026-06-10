@@ -209,6 +209,12 @@ func registerOptionalIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
+		// When the expected type is Optional<T>, instantiate explicitly so the
+		// element type matches Java (e.g. Optional<Integer> -> int32, not the Go
+		// `int` that a bare integer literal would infer).
+		if elem := optionalElementTypeExpr(ctx); elem != nil {
+			return stdjavaGenericCall(ctx, "OptionalOf", []ast.Expr{elem}, []ast.Expr{args[0]})
+		}
 		return stdjavaCall(ctx, "OptionalOf", args[0])
 	})
 	registerStaticIntrinsic("Optional", "empty", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {

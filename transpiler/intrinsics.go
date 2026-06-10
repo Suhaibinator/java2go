@@ -117,10 +117,81 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 
 	recv := ParseExpr(objectNode, source, ctx)
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
+
+	// Methods whose argument is a lambda over the receiver's element type
+	// (Optional.map, Optional.ifPresent, ...) parse the lambda without knowing
+	// its parameter type, so it comes back as `func(x any)`. Re-type the lambda
+	// from the receiver's element type so the generated Go closure is well-typed.
+	if elementTypedLambdaMethods[methodName] {
+		if elem := receiverElementTypeExpr(objectNode, ctx, source); elem != nil {
+			for i, a := range args {
+				args[i] = retypeLambdaParam(a, elem)
+			}
+		}
+	}
+
 	if result := gen(recv, args, ctx); result != nil {
 		return result, true
 	}
 	return nil, false
+}
+
+// elementTypedLambdaMethods are intrinsic instance methods whose lambda argument
+// takes the receiver's element type as its single parameter.
+var elementTypedLambdaMethods = map[string]bool{
+	"map":       true,
+	"ifPresent": true,
+	"filter":    true,
+	"forEach":   true,
+}
+
+// receiverElementTypeExpr returns the Go type expression for a single-type-arg
+// receiver's element type (e.g. for an Optional<Integer> receiver, int32), or nil
+// when it cannot be determined.
+func receiverElementTypeExpr(objectNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	javaType, ok := inferExprJavaType(objectNode, ctx, source)
+	if !ok {
+		return nil
+	}
+	_, typeArgs := parseJavaTypeString(javaType)
+	if len(typeArgs) != 1 {
+		return nil
+	}
+	return javaTypeStringToGoTypeExpr(typeArgs[0], inScopeTypeParameters(ctx), ctx)
+}
+
+// retypeLambdaParam, given a parsed single-parameter lambda whose parameter type
+// is the placeholder `any`, rewrites the parameter to paramType and — for a
+// single-expression body that was lowered to a bare ExprStmt — turns it into a
+// `return` with the parameter type as the (inferred) result type. Non-lambda
+// args and already-typed lambdas are returned unchanged.
+func retypeLambdaParam(arg ast.Expr, paramType ast.Expr) ast.Expr {
+	funcLit, ok := arg.(*ast.FuncLit)
+	if !ok || funcLit.Type == nil || funcLit.Type.Params == nil {
+		return arg
+	}
+	if len(funcLit.Type.Params.List) != 1 {
+		return arg
+	}
+	field := funcLit.Type.Params.List[0]
+	// Only adjust the placeholder `any` parameter type, so an explicitly typed
+	// lambda is left untouched.
+	if ident, ok := field.Type.(*ast.Ident); !ok || ident.Name != "any" {
+		return arg
+	}
+	field.Type = paramType
+
+	// A single-expression lambda body is lowered to one ExprStmt; with the
+	// parameter now typed, give the closure a result type and a real return so it
+	// is a valid Go func value. The result type is approximated as the parameter
+	// type (correct for identity/arithmetic maps; richer inference is a TODO).
+	if funcLit.Type.Results == nil && len(funcLit.Body.List) == 1 {
+		if exprStmt, ok := funcLit.Body.List[0].(*ast.ExprStmt); ok {
+			funcLit.Type.Results = &ast.FieldList{List: []*ast.Field{{Type: paramType}}}
+			funcLit.Body.List[0] = &ast.ReturnStmt{Results: []ast.Expr{exprStmt.X}}
+		}
+	}
+	return arg
 }
 
 // tryStaticIntrinsic attempts to rewrite a static call `Class.method(args)` (or a

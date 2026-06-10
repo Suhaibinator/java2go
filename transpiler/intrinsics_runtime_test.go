@@ -237,3 +237,38 @@ func TestCollectionsBehavior(t *testing.T) {
 }
 `)
 }
+
+func TestRuntime_OptionalMapAndConcat(t *testing.T) {
+	src := `
+import java.util.Optional;
+public class OptRuntime {
+    public static int doubled(int x) {
+        Optional<Integer> num = Optional.of(x);
+        return num.map(n -> n * 2).get();
+    }
+    public static String orElse(boolean present) {
+        Optional<String> o = present ? Optional.of("yes") : Optional.<String>empty();
+        return o.orElse("no");
+    }
+    public static int concatLen() {
+        var g = "ab" + "cd";
+        return g.length();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	runGoTestWithStdjava(t, out, `
+package main
+
+import "testing"
+
+func TestOptionalConcatBehavior(t *testing.T) {
+	if got := Doubled(21); got != 42 {
+		t.Fatalf("Doubled(21) = %d, want 42", got)
+	}
+	if got := ConcatLen(); got != 4 {
+		t.Fatalf("ConcatLen() = %d, want 4", got)
+	}
+}
+`)
+}
