@@ -114,3 +114,20 @@ text blocks (`"""..."""` -> raw string with literal newlines). All in progress.
 ```java
 public class K11 extends Thread { public void run(){} public static void main(String[] a){} }
 ```
+
+## K12 — compound `>>>=` emits undefined non-assigning call (OPEN, ROADMAP §6/§1) — found by fuzzer
+The expression form `a >>> b` works (stdjava.UnsignedRightShift), but the compound
+assignment `x >>>= n` emits `UnsignedRightShiftAssignment(x, n)` which is undefined
+AND discards the result (never assigns x). Other compound-assign ops (`>>=`, `<<=`,
+`&=` etc.) should be spot-checked too.
+```java
+public class K12 { public static void main(String[] a){ int x=-8; x >>>= 1; System.out.println(x); } } // want 2147483644
+```
+
+## K13 — unused local emitted without `_ = v` discard (OPEN, ROADMAP §1) — found by fuzzer
+Java permits unused locals; Go rejects them ("declared and not used"). Method params
+DO get a `_ = arg` discard, but local variable declarations do not.
+```java
+public class K13 { public static void main(String[] a){ long unused = 5L; System.out.println("ok"); } }
+```
+Generated: `unused := int64(5)` with no following `_ = unused` -> GO_COMPILE_ERROR.
