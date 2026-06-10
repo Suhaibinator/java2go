@@ -44,9 +44,8 @@ var skipReasons = map[string]string{
 	"instanceof_pattern/InstanceofPattern": "instanceof pattern binding not supported; emits invalid composite literal (ROADMAP §5)",
 	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
-	"collections/Collections":              "java.util imports not stripped/mapped (emit import \"java/util\"); ArrayList/HashMap not mapped (ROADMAP §2)",
-	"collections/CollectionOps":            "ArrayList/HashMap operations and java.util import not mapped (ROADMAP §2/§3, stdlib-dev task #3 in progress)",
-	"collections/Optionals":                "java.util.Optional not wired to stdjava/optional.go (ROADMAP §2/§3, stdlib-dev task #3 in progress)",
+	"collections/CollectionOps":            "List/Map intrinsics ARE wired now; blocked by int/int32 typing only (i*i is int but nums.Add wants int32; sum += n mixes int and int32) (ROADMAP §6 int typing)",
+	"collections/Optionals":                "Optional.empty() cannot infer T (needs type param at empty() site); Optional.map() unimplemented (num.map_ undefined); Optional.of(10) infers element type any not int (ROADMAP §2/§3)",
 
 	"var_simple/VarSimple":    "var works and String.length() maps on string literals/vars, but a var inferred from a string-CONCAT expression loses its String type so .length() is left unmapped (ROADMAP §2/§6)",
 	"concurrency/SyncCounter": "Thread/Runnable/anonymous-class not mapped to goroutines; synchronized not lowered (ROADMAP §7)",
