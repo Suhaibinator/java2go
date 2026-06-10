@@ -1,5 +1,10 @@
 package stdjava
 
+import (
+	"fmt"
+	"strings"
+)
+
 // This file implements the map type that java.util.Map implementations
 // (HashMap, TreeMap) are mapped onto. HashMap and TreeMap share one Go type;
 // TreeMap's sorted iteration is approximated by sorting keys at iteration time
@@ -128,4 +133,14 @@ func (m *Map[K, V]) EntrySet() []MapEntry[K, V] {
 		es = append(es, MapEntry[K, V]{Key: k, Value: m.backing[k]})
 	}
 	return es
+}
+
+// String returns the Java AbstractMap.toString form, e.g. "{a=1, b=2}", in key
+// insertion order, so a Map printed via fmt matches Java's output.
+func (m *Map[K, V]) String() string {
+	parts := make([]string, len(m.keys))
+	for i, k := range m.keys {
+		parts[i] = fmt.Sprintf("%v=%v", k, m.backing[k])
+	}
+	return "{" + strings.Join(parts, ", ") + "}"
 }

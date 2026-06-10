@@ -1,5 +1,10 @@
 package stdjava
 
+import (
+	"fmt"
+	"strings"
+)
+
 // This file implements the set type that java.util.Set implementations
 // (HashSet, TreeSet) are mapped onto. HashSet and TreeSet share one Go type;
 // TreeSet's sorted iteration is not faithfully modelled (insertion order is
@@ -74,4 +79,14 @@ func (s *Set[T]) Slice() []T {
 	cp := make([]T, len(s.order))
 	copy(cp, s.order)
 	return cp
+}
+
+// String returns the Java AbstractCollection.toString form, e.g. "[a, b]", in
+// insertion order, so a Set printed via fmt matches Java's output.
+func (s *Set[T]) String() string {
+	parts := make([]string, len(s.order))
+	for i, e := range s.order {
+		parts[i] = fmt.Sprintf("%v", e)
+	}
+	return "[" + strings.Join(parts, ", ") + "]"
 }

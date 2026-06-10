@@ -62,3 +62,12 @@ func TestListSliceForRange(t *testing.T) {
 		t.Fatalf("ranged over Slice got %q, want xy", got)
 	}
 }
+
+func TestListString(t *testing.T) {
+	if got := NewListFrom(1, 2, 3).String(); got != "[1, 2, 3]" {
+		t.Fatalf("List.String() = %q, want [1, 2, 3]", got)
+	}
+	if got := NewList[string]().String(); got != "[]" {
+		t.Fatalf("empty List.String() = %q, want []", got)
+	}
+}

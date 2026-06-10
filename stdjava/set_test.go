@@ -38,3 +38,12 @@ func TestSetSliceOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestSetString(t *testing.T) {
+	s := NewSet[int32]()
+	s.Add(1)
+	s.Add(2)
+	if got := s.String(); got != "[1, 2]" {
+		t.Fatalf("Set.String() = %q, want [1, 2]", got)
+	}
+}

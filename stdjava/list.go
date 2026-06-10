@@ -1,5 +1,10 @@
 package stdjava
 
+import (
+	"fmt"
+	"strings"
+)
+
 // This file implements the slice-backed list type that java.util.List
 // implementations (ArrayList, LinkedList) are mapped onto. The Java List
 // interface and its common implementations share one Go type here; the
@@ -109,4 +114,14 @@ func (l *List[T]) IndexOf(target T) int32 {
 // list's storage and must not be retained across mutations.
 func (l *List[T]) Slice() []T {
 	return l.elements
+}
+
+// String returns the Java AbstractCollection.toString form, e.g. "[a, b, c]", so
+// that a List printed via fmt (System.out.println) matches Java's output.
+func (l *List[T]) String() string {
+	parts := make([]string, len(l.elements))
+	for i, e := range l.elements {
+		parts[i] = fmt.Sprintf("%v", e)
+	}
+	return "[" + strings.Join(parts, ", ") + "]"
 }

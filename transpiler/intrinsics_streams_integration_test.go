@@ -63,3 +63,23 @@ public class SortedProgram {
 	assertContains(t, out, "stdjava.StreamSorted(stdjava.StreamOfSlice(xs.Slice()))")
 	assertContains(t, out, ".Limit(2)")
 }
+
+func TestStreams_TypeChangingMap(t *testing.T) {
+	// map(Integer -> String) followed by forEach(String) must type both lambdas:
+	// the mapper returns string (string concat), and the consumer's param is string.
+	src := `
+import java.util.List;
+import java.util.ArrayList;
+public class TypeMapProgram {
+    public static void run() {
+        List<Integer> xs = new ArrayList<Integer>();
+        xs.stream().map(n -> "n" + n).forEach(s -> System.out.println(s));
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	// mapper result type inferred as string from the concat body.
+	assertContains(t, out, "func(n int32) string")
+	// the consumer after the type-changing map takes a string.
+	assertContains(t, out, "ForEach(func(s string) {")
+}

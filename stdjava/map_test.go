@@ -63,3 +63,12 @@ func TestMapInsertionOrderViews(t *testing.T) {
 		t.Fatalf("EntrySet unexpected: %+v", entries)
 	}
 }
+
+func TestMapString(t *testing.T) {
+	m := NewMap[string, int32]()
+	m.Put("a", 1)
+	m.Put("b", 2)
+	if got := m.String(); got != "{a=1, b=2}" {
+		t.Fatalf("Map.String() = %q, want {a=1, b=2}", got)
+	}
+}

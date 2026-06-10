@@ -208,7 +208,18 @@ func retypeElementLambda(arg, elementType ast.Expr, kind lambdaResultKind) ast.E
 	case lambdaResultBool:
 		resultType = &ast.Ident{Name: "bool"}
 	case lambdaResultElement:
+		// A mapper (Function<T,R>) may change the type. Infer R from the body's Go
+		// expression where recognizable (e.g. a string concatenation lowers to
+		// fmt.Sprintf and is a string); otherwise default to the element type,
+		// which is correct for identity/arithmetic maps.
 		resultType = elementType
+		if len(funcLit.Body.List) == 1 {
+			if exprStmt, ok := funcLit.Body.List[0].(*ast.ExprStmt); ok {
+				if inferred := goExprResultType(exprStmt.X); inferred != nil {
+					resultType = inferred
+				}
+			}
+		}
 	case lambdaResultVoid:
 		resultType = nil
 	}
@@ -224,6 +235,23 @@ func retypeElementLambda(arg, elementType ast.Expr, kind lambdaResultKind) ast.E
 		}
 	}
 	return arg
+}
+
+// goExprResultType returns a Go type expression for a lowered Go expression when
+// it can be recognized, or nil to fall back to a caller default. It recognizes
+// the string-concatenation form (fmt.Sprintf(...)) as a string.
+func goExprResultType(expr ast.Expr) ast.Expr {
+	if call, ok := expr.(*ast.CallExpr); ok {
+		if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
+			if base, ok := sel.X.(*ast.Ident); ok && base.Name == "fmt" && sel.Sel != nil {
+				switch sel.Sel.Name {
+				case "Sprintf", "Sprint":
+					return &ast.Ident{Name: "string"}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // tryStaticIntrinsic attempts to rewrite a static call `Class.method(args)` (or a
