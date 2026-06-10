@@ -16,10 +16,15 @@ import (
 // result stays a runnable program. Shrinking is best-effort: if no reduction
 // reproduces, the original source is returned unchanged.
 func Shrink(h *Harness, seed int64, source string, target Category) string {
+	targetSig := Signature(h.Run(seed, source))
 	best := source
 
+	// Bound total reduction work so a pathological program cannot stall the
+	// fuzzer; each pass is O(lines) harness runs and passes converge quickly.
+	const maxPasses = 40
+
 	// Iterate to a fixpoint: each pass may enable further drops.
-	for {
+	for pass := 0; pass < maxPasses; pass++ {
 		lines := strings.Split(best, "\n")
 		reduced := false
 
@@ -28,7 +33,7 @@ func Shrink(h *Harness, seed int64, source string, target Category) string {
 				continue
 			}
 			candidate := dropLine(lines, i)
-			if reproduces(h, seed, candidate, target) {
+			if reproduces(h, seed, candidate, target, targetSig) {
 				best = candidate
 				reduced = true
 				break
@@ -42,16 +47,18 @@ func Shrink(h *Harness, seed int64, source string, target Category) string {
 
 	// Second phase: try dropping trailing println lines (each is independent), so
 	// a mismatch caused by one printed value shrinks to just that value.
-	best = shrinkPrints(h, seed, best, target)
+	best = shrinkPrints(h, seed, best, target, targetSig)
 	return best
 }
 
-// reproduces reports whether candidate still yields the target divergence
-// category. A candidate that no longer compiles as Java, or flips to a different
-// category, does not count as reproducing.
-func reproduces(h *Harness, seed int64, candidate string, target Category) bool {
+// reproduces reports whether candidate still yields the SAME root-cause
+// divergence: same category and same normalized signature. Requiring the
+// signature to match prevents the shrinker from collapsing one bug onto a
+// different one that happens to share a category. A candidate that no longer
+// compiles as Java does not count.
+func reproduces(h *Harness, seed int64, candidate string, target Category, targetSig string) bool {
 	res := h.Run(seed, candidate)
-	return res.Category == target
+	return res.Category == target && Signature(res) == targetSig
 }
 
 // isReducibleLine reports whether a line is a candidate for removal: a statement
@@ -93,7 +100,7 @@ func dropLine(lines []string, i int) string {
 // shrinkPrints removes trailing println statements one at a time while the
 // divergence persists, so an OUTPUT_MISMATCH collapses to the minimal set of
 // printed values that still differ.
-func shrinkPrints(h *Harness, seed int64, source string, target Category) string {
+func shrinkPrints(h *Harness, seed int64, source string, target Category, targetSig string) string {
 	best := source
 	for {
 		lines := strings.Split(best, "\n")
@@ -103,7 +110,7 @@ func shrinkPrints(h *Harness, seed int64, source string, target Category) string
 				continue
 			}
 			candidate := dropLine(lines, i)
-			if reproduces(h, seed, candidate, target) {
+			if reproduces(h, seed, candidate, target, targetSig) {
 				best = candidate
 				reduced = true
 				break

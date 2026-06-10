@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 
 	fuzz "github.com/NickyBoy89/java2go/fuzz"
@@ -30,6 +31,7 @@ func main() {
 		only     = flag.Bool("only", false, "run just -seed and print its generated program + outcome")
 		noShrink = flag.Bool("no-shrink", false, "skip shrinking divergences (faster triage)")
 		quiet    = flag.Bool("quiet", false, "suppress per-divergence detail, print only the summary")
+		addFile  = flag.String("add", "", "run a hand-written Java file, print its outcome, and save it to the corpus")
 	)
 	flag.Parse()
 
@@ -44,12 +46,51 @@ func main() {
 	defer h.Cleanup()
 	moduleRoot := *root
 
+	if *addFile != "" {
+		addCorpusFile(h, moduleRoot, *addFile)
+		return
+	}
+
 	if *only {
 		runSingle(h, moduleRoot, *start)
 		return
 	}
 
 	runBatch(h, moduleRoot, *start, *count, !*noShrink, *quiet)
+}
+
+// addCorpusFile runs a curated minimal Java repro and, if it diverges, saves it
+// to the corpus under its category. Used to promote a hand-verified minimal bug
+// (cleaner than an auto-shrunk one) into the permanent regression corpus.
+func addCorpusFile(h *fuzz.Harness, root, path string) {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "reading", path, ":", err)
+		os.Exit(2)
+	}
+	res := h.Run(0, string(src))
+	fmt.Printf("category: %s  sig=%q\n", res.Category, fuzz.Signature(res))
+	if !res.Diverged() {
+		fmt.Println("does not diverge — not saved")
+		return
+	}
+	entry := fuzz.CorpusEntry{
+		Category: res.Category,
+		Seed:     0,
+		Source:   string(src),
+		Expected: res.JavaOut,
+		Actual:   corpusActual(res),
+	}
+	// Preserve the input file's stem as the corpus name so curated repros keep
+	// their descriptive filename.
+	name := filepath.Base(path)
+	name = name[:len(name)-len(filepath.Ext(name))]
+	saved, err := entry.SaveNamed(root, name)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "saving:", err)
+		os.Exit(2)
+	}
+	fmt.Println("saved:", saved)
 }
 
 // runSingle prints one program and its differential outcome — the reproduction
@@ -172,7 +213,7 @@ func printDivergence(seed int64, e fuzz.CorpusEntry) {
 func printSummary(total int, counts map[fuzz.Category]int, bugs []bug) {
 	fmt.Printf("\n========== SUMMARY ==========\n")
 	fmt.Printf("programs run: %d\n", total)
-	order := []fuzz.Category{fuzz.OK, fuzz.JavaError, fuzz.TranspileCrash, fuzz.GoCompileError, fuzz.OutputMismatch}
+	order := []fuzz.Category{fuzz.OK, fuzz.JavaError, fuzz.TranspileCrash, fuzz.GoCompileError, fuzz.GoRuntimeError, fuzz.OutputMismatch}
 	for _, c := range order {
 		fmt.Printf("  %-16s %d\n", c, counts[c])
 	}

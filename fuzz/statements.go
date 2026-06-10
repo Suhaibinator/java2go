@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// statement generates a single Java statement (possibly multi-line). budget
-// limits recursion into nested blocks. It returns "" to skip (caller tolerates).
+// statement generates a single top-level statement (possibly multi-line). budget
+// limits recursion into nested blocks.
 func (g *generator) statement(budget int) string {
 	// Weighted choice over statement kinds. Declarations dominate early so later
 	// statements have locals to work with.
@@ -40,6 +40,44 @@ func (g *generator) statement(budget int) string {
 		return g.arrayStmt()
 	}
 	return g.declStmt()
+}
+
+// nestedStatement generates a statement for a block body. It deliberately avoids
+// introducing new locals: a local declared inside a block is scope-restored when
+// the block closes, so it would never be printed and would surface in Go as a
+// "declared and not used" error (Java tolerates unused locals; Go does not). To
+// keep generated programs valid Go without masking real bugs, block bodies only
+// mutate already-in-scope locals or nest further control flow.
+func (g *generator) nestedStatement(budget int) string {
+	// Without an in-scope numeric local to mutate, the only no-new-local options
+	// are nested control flow (which also needs a body); fall back to an empty
+	// body marker the block emitters turn into "{}".
+	_, _, hasNum := g.pickNumericLocal()
+	if !hasNum {
+		if budget > 0 && g.rng.Intn(2) == 0 {
+			return g.forStmt(budget)
+		}
+		return ""
+	}
+	switch g.weighted([]int{34, 24, 18, 12, 12}) {
+	case 0:
+		return g.assignStmt()
+	case 1:
+		return g.compoundAssignStmt()
+	case 2:
+		return g.incDecStmt()
+	case 3:
+		if budget <= 0 {
+			return g.compoundAssignStmt()
+		}
+		return g.ifStmt(budget)
+	case 4:
+		if budget <= 0 {
+			return g.compoundAssignStmt()
+		}
+		return g.forStmt(budget)
+	}
+	return g.compoundAssignStmt()
 }
 
 // declStmt declares a new local initialized to a random expression of a chosen
@@ -113,10 +151,10 @@ func (g *generator) ifStmt(budget int) string {
 	cond := g.expr(tBool, 2)
 	var b strings.Builder
 	fmt.Fprintf(&b, "if (%s) {\n", cond)
-	b.WriteString(indent(g.scoped(func() string { return g.statement(budget - 1) })))
+	b.WriteString(indent(g.scoped(func() string { return g.nestedStatement(budget - 1) })))
 	if g.rng.Intn(2) == 0 {
 		b.WriteString("} else {\n")
-		b.WriteString(indent(g.scoped(func() string { return g.statement(budget - 1) })))
+		b.WriteString(indent(g.scoped(func() string { return g.nestedStatement(budget - 1) })))
 	}
 	b.WriteString("}")
 	return b.String()
@@ -178,7 +216,9 @@ func (g *generator) loopBody(accName string, budget int) string {
 	rhs := g.intAtom()
 	line := fmt.Sprintf("%s %s %s;", accName, op, rhs)
 	if budget > 1 && g.rng.Intn(3) == 0 {
-		return line + "\n" + g.statement(budget-1)
+		if extra := g.nestedStatement(budget - 1); extra != "" {
+			return line + "\n" + extra
+		}
 	}
 	return line
 }

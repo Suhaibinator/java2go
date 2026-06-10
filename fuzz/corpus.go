@@ -22,6 +22,8 @@ func categoryDir(c Category) string {
 		return "transpile_crash"
 	case GoCompileError:
 		return "go_compile_error"
+	case GoRuntimeError:
+		return "go_runtime_error"
 	case OutputMismatch:
 		return "output_mismatch"
 	default:
@@ -44,11 +46,16 @@ type CorpusEntry struct {
 // .expected and .actual files. The file name embeds the seed and a short content
 // hash so re-finding the same shrunk program twice does not create a duplicate.
 func (e CorpusEntry) Save(root string) (string, error) {
+	return e.SaveNamed(root, corpusName(e.Seed, e.Source))
+}
+
+// SaveNamed is Save with a caller-chosen file stem, used to give curated minimal
+// repros descriptive filenames.
+func (e CorpusEntry) SaveNamed(root, name string) (string, error) {
 	dir := filepath.Join(CorpusDir(root), categoryDir(e.Category))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
-	name := corpusName(e.Seed, e.Source)
 	javaPath := filepath.Join(dir, name+".java")
 	if err := os.WriteFile(javaPath, []byte(e.Source), 0o644); err != nil {
 		return "", err
@@ -120,6 +127,8 @@ func categoryFromDir(name string) Category {
 		return TranspileCrash
 	case "go_compile_error":
 		return GoCompileError
+	case "go_runtime_error":
+		return GoRuntimeError
 	case "output_mismatch":
 		return OutputMismatch
 	default:

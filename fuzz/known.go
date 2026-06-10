@@ -15,13 +15,32 @@ var knownSignatureMarkers = []struct {
 	reason string
 }{
 	// int locals emitted as untyped Go int rather than int32 — pervasive; causes
-	// every "mismatched types int and int32" and "constant overflows int32".
-	{"mismatched types int and intN", "int locals not pinned to int32 (task #10)"},
-	{"overflows intN", "int locals not pinned to int32 (task #10)"},
-	{"truncated to int", "int/double mixing from untyped int locals (task #10)"},
-	{"as intN value", "int locals not pinned to int32 (task #10)"},
-	{"as rune value", "char/rune vs int typing (task #10 int typing)"},
-	{"mismatched types rune and int", "char/rune vs int typing (task #10 int typing)"},
+	// every int/int32 mismatch, int32 overflow, and int32-target assignment error.
+	{"mismatched-types:int+int32", "int locals not pinned to int32 (task #10)"},
+	{"mismatched-types:int32+int", "int locals not pinned to int32 (task #10)"},
+	{"overflows:int32", "int locals not pinned to int32 (task #10)"},
+	{"truncated:int", "int/double mixing from untyped int locals (task #10)"},
+	{"cannot-use-as:int32", "int locals not pinned to int32 (task #10)"},
+	{"cannot-use-as:int", "int locals not pinned to int32 (task #10)"},
+	// char (rune) vs int promotion not handled — char arithmetic stays rune.
+	{"cannot-use-as:rune", "char/rune vs int typing (task #10 int typing)"},
+	{"overflows:rune", "char/rune vs int typing (task #10 int typing)"},
+	{"truncated:rune", "char/rune vs int typing (task #10 int typing)"},
+	{"mismatched-types:rune+int", "char/rune vs int typing (task #10 int typing)"},
+	{"mismatched-types:int+rune", "char/rune vs int typing (task #10 int typing)"},
+	// int local mixed with double — variant of the int-typing gap.
+	{"mismatched-types:int+float64", "int locals not pinned, mixed with float64 (task #10)"},
+	{"mismatched-types:float64+int", "int locals not pinned, mixed with float64 (task #10)"},
+
+	// --- NEW fuzzer-found root causes (reported to team-lead; task #14) ---
+	// >>>= compound assign emits an undefined, non-assigning Go call.
+	{"undefined: V", "fuzzer K-bug: >>>= emits undefined UnsignedRightShiftAssignment (task #14)"},
+	// Unused local emitted without `_ = v`; valid Java, invalid Go.
+	{"declared and not used", "fuzzer K-bug: unused local not discarded (task #14)"},
+	// -9223372036854775808L emitted as -int64(9223372036854775808); overflows.
+	{"overflows:int64", "fuzzer K-bug: negative long-min literal mis-emitted (task #14)"},
+	// Explicit upcast (Super) sub emits a failing Go type assertion.
+	{"interface conversion", "fuzzer K-bug: upcast emits failing type assertion (task #14)"},
 }
 
 // IsKnown reports whether a divergence signature matches an already-tracked open
@@ -33,4 +52,22 @@ func IsKnown(sig string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// knownOpenCorpus marks specific corpus files (by basename, no extension) whose
+// underlying bug is still open but whose OUTPUT_MISMATCH signature shape is too
+// generic to safely list in knownSignatureMarkers (it could collide with a
+// future genuine mismatch). The replay test skips these by name, exactly as the
+// e2e suite skips a fixture by key. Remove an entry once its bug is fixed to turn
+// the corpus program into an enforced regression test.
+var knownOpenCorpus = map[string]string{
+	"DoubleFormat":   "fuzzer K-bug: integral double prints '96' not '96.0' (System.out.println(double); task #14)",
+	"StringPlusChar": "fuzzer K-bug: string + char concatenates the numeric code, not the glyph (task #14)",
+}
+
+// IsKnownOpenCorpus reports whether a corpus file (by stem) is a still-open bug
+// tracked outside the signature list.
+func IsKnownOpenCorpus(stem string) (string, bool) {
+	r, ok := knownOpenCorpus[stem]
+	return r, ok
 }

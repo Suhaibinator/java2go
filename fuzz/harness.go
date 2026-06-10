@@ -26,6 +26,10 @@ const (
 	// OutputMismatch means both sides ran but printed different stdout — the
 	// highest-value category (a real behavioral divergence).
 	OutputMismatch Category = "OUTPUT_MISMATCH"
+	// GoRuntimeError means the transpiled Go compiled but panicked/exited non-zero
+	// at runtime while the Java side ran cleanly — a behavioral divergence (Java
+	// produced a value, Go crashed).
+	GoRuntimeError Category = "GO_RUNTIME_ERROR"
 	// JavaError means the generated program is not valid Java (compile error or
 	// runtime exception on the JDK). This is a generator bug, not a transpiler
 	// bug; such programs are discarded, never reported.
@@ -49,7 +53,7 @@ type Result struct {
 // recording (i.e. not OK and not a generator bug).
 func (r Result) Diverged() bool {
 	switch r.Category {
-	case TranspileCrash, GoCompileError, OutputMismatch:
+	case TranspileCrash, GoCompileError, GoRuntimeError, OutputMismatch:
 		return true
 	}
 	return false
@@ -138,7 +142,9 @@ func (h *Harness) Run(seed int64, source string) Result {
 		return res
 	}
 
-	// 3. Compile + run the generated Go from the module root so imports resolve.
+	// 3. Compile the generated Go from the module root so imports resolve. Build
+	//    and run are split so a compile failure (GO_COMPILE_ERROR) is distinguished
+	//    from a clean-compile-but-panic-at-runtime (GO_RUNTIME_ERROR).
 	rel, err := filepath.Rel(h.root, goOutDir)
 	if err != nil {
 		res.Category = GoCompileError
@@ -146,16 +152,25 @@ func (h *Harness) Run(seed int64, source string) Result {
 		return res
 	}
 	pkgPath := "./" + filepath.ToSlash(rel) + "/"
-	goOut, goErr := h.runCmd(h.root, "go", "run", pkgPath)
-	if goErr != nil {
+	bin := filepath.Join(goOutDir, "prog")
+	if buildOut, buildErr := h.runCmd(h.root, "go", "build", "-o", bin, pkgPath); buildErr != nil {
 		res.Category = GoCompileError
-		res.Detail = goErr.Error() + "\n" + goOut
-		res.GoOut = goOut
+		res.Detail = buildErr.Error() + "\n" + buildOut
 		return res
 	}
-	res.GoOut = goOut
 
-	// 4. Diff stdout.
+	// 4. Run the compiled binary.
+	goOut, goErr := h.runCmd(h.root, bin)
+	res.GoOut = goOut
+	if goErr != nil {
+		// Compiled fine but exited non-zero (panic, etc.) — a runtime divergence
+		// since the Java oracle ran cleanly to completion.
+		res.Category = GoRuntimeError
+		res.Detail = goErr.Error() + "\n" + goOut
+		return res
+	}
+
+	// 5. Diff stdout.
 	if normalize(javaOut) != normalize(goOut) {
 		res.Category = OutputMismatch
 		return res

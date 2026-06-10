@@ -21,6 +21,8 @@ func Signature(r Result) string {
 	switch r.Category {
 	case GoCompileError:
 		return string(GoCompileError) + ":" + normalizeErr(firstGoError(r.Detail))
+	case GoRuntimeError:
+		return string(GoRuntimeError) + ":" + normalizeErr(firstPanic(r.Detail))
 	case TranspileCrash:
 		return string(TranspileCrash) + ":" + normalizeErr(r.Detail)
 	case OutputMismatch:
@@ -29,7 +31,24 @@ func Signature(r Result) string {
 	return string(r.Category)
 }
 
-var goErrLine = regexp.MustCompile(`(?m)^.*\.go:\d+:\d+:\s*(.*)$`)
+var (
+	goErrLine = regexp.MustCompile(`(?m)^.*\.go:\d+:\d+:\s*(.*)$`)
+	panicLine = regexp.MustCompile(`(?m)^panic:\s*(.*)$`)
+)
+
+// firstPanic extracts the Go panic message (the line after "panic:") so distinct
+// crash causes form distinct signatures.
+func firstPanic(detail string) string {
+	if m := panicLine.FindStringSubmatch(detail); m != nil {
+		return m[1]
+	}
+	for _, line := range strings.Split(detail, "\n") {
+		if s := strings.TrimSpace(line); s != "" && !strings.HasPrefix(s, "exit status") {
+			return s
+		}
+	}
+	return detail
+}
 
 // firstGoError pulls the first "file.go:line:col: message" out of go-build output.
 func firstGoError(detail string) string {
@@ -47,24 +66,87 @@ func firstGoError(detail string) string {
 }
 
 var (
-	reIdent   = regexp.MustCompile(`\b[A-Za-z_][A-Za-z0-9_]*\d+\b`) // i12, arr3, seed_4
-	reNum     = regexp.MustCompile(`-?\b\d+\b`)
-	reHex     = regexp.MustCompile(`0x[0-9A-Fa-f]+`)
-	reSpaces  = regexp.MustCompile(`\s+`)
-	reQuoted  = regexp.MustCompile(`"[^"]*"`)
-	reBracket = regexp.MustCompile(`\[[^\]]*\]`)
+	reSpaces = regexp.MustCompile(`\s+`)
+	reQuoted = regexp.MustCompile(`"[^"]*"`)
+
+	// goTypes are the Go type names worth PRESERVING in a signature: which types
+	// are involved is the discriminating fact of a typing bug, so two
+	// "overflows int32" errors must share a key while "overflows rune" stays
+	// distinct. Order matters: longer names first so int64 isn't truncated to int.
+	goTypes = []string{"int64", "int32", "int16", "int8", "uint64", "uint32",
+		"float64", "float32", "rune", "byte", "bool", "string", "int", "uint"}
+
+	// errKinds collapses a compiler error to its KIND, discarding the specific
+	// (program-dependent) expression that triggered it. Each pattern keeps only
+	// the structural part plus any Go type names it mentions.
+	overflowKind  = regexp.MustCompile(`overflows (` + typeAlt() + `)`)
+	mismatchKind  = regexp.MustCompile(`mismatched types (` + typeAlt() + `) and (` + typeAlt() + `)`)
+	cannotUseKind = regexp.MustCompile(`cannot use .* as (` + typeAlt() + `) value`)
+	truncKind     = regexp.MustCompile(`truncated to (` + typeAlt() + `)`)
 )
 
+func typeAlt() string { return strings.Join(goTypes, "|") }
+
 // normalizeErr canonicalizes a compiler/transpiler message so structurally
-// identical errors over different programs map to the same string.
+// identical errors over different programs map to the same key. It first tries
+// to recognize a known error KIND and reduce to "<kind>:<types>", discarding the
+// program-specific expression; otherwise it falls back to blanking identifiers
+// and literals while preserving Go type names.
 func normalizeErr(msg string) string {
-	msg = reHex.ReplaceAllString(msg, "H")
+	if m := mismatchKind.FindStringSubmatch(msg); m != nil {
+		return "mismatched-types:" + m[1] + "+" + m[2]
+	}
+	if m := overflowKind.FindStringSubmatch(msg); m != nil {
+		return "overflows:" + m[1]
+	}
+	if m := truncKind.FindStringSubmatch(msg); m != nil {
+		return "truncated:" + m[1]
+	}
+	if m := cannotUseKind.FindStringSubmatch(msg); m != nil {
+		return "cannot-use-as:" + m[1]
+	}
+	// Generic fallback: blank quoted strings, hex, decimals, brackets, and
+	// identifiers, but keep Go type keywords.
 	msg = reQuoted.ReplaceAllString(msg, "Q")
-	msg = reBracket.ReplaceAllString(msg, "[]")
-	msg = reIdent.ReplaceAllString(msg, "V")
-	msg = reNum.ReplaceAllString(msg, "N")
+	msg = regexp.MustCompile(`0x[0-9A-Fa-f]+`).ReplaceAllString(msg, "H")
+	msg = regexp.MustCompile(`\[[^\]]*\]`).ReplaceAllString(msg, "[]")
+	msg = blankIdents(msg)
+	msg = regexp.MustCompile(`-?\b\d+\b`).ReplaceAllString(msg, "N")
 	msg = reSpaces.ReplaceAllString(msg, " ")
 	return strings.TrimSpace(msg)
+}
+
+// goTypeSet is the lookup form of goTypes, for blankIdents.
+var goTypeSet = func() map[string]bool {
+	m := map[string]bool{}
+	for _, t := range goTypes {
+		m[t] = true
+	}
+	return m
+}()
+
+var reWord = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*`)
+
+// blankIdents replaces identifiers with "V" but preserves Go type keywords and
+// a few structural words, so signatures stay meaningful without encoding the
+// program's variable names.
+func blankIdents(msg string) string {
+	return reWord.ReplaceAllStringFunc(msg, func(w string) string {
+		if goTypeSet[w] {
+			return w
+		}
+		switch w {
+		case "invalid", "operation", "cannot", "use", "as", "value", "in",
+			"assignment", "array", "or", "slice", "literal", "undefined",
+			"declared", "and", "not", "used", "constant", "type", "of",
+			"len", "take", "address", "stdjava",
+			// runtime panic vocabulary
+			"interface", "conversion", "index", "out", "range", "nil",
+			"pointer", "dereference", "divide", "zero", "runtime", "error":
+			return w
+		}
+		return "V"
+	})
 }
 
 // mismatchShape summarizes an output mismatch by the index and type of the first
@@ -95,7 +177,7 @@ func valueShape(s string) string {
 	switch {
 	case s == "true" || s == "false":
 		return "bool"
-	case reNum.MatchString(s) && !strings.ContainsAny(s, ".eE"):
+	case regexp.MustCompile(`^-?\d+$`).MatchString(s):
 		return "int"
 	case strings.ContainsAny(s, ".") && regexp.MustCompile(`^-?\d`).MatchString(s):
 		return "float"

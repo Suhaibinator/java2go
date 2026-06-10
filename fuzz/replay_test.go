@@ -80,6 +80,11 @@ func TestCorpusReplay(t *testing.T) {
 
 			sig := Signature(res)
 			reason, known := IsKnown(sig)
+			// Also consult the per-file skip list for open bugs whose signature
+			// shape is too generic to list globally.
+			if r, ok := IsKnownOpenCorpus(stem(e.Path)); ok {
+				known, reason = true, r
+			}
 
 			switch {
 			case res.Category == OK:
@@ -109,6 +114,37 @@ func relName(root, path string) string {
 		return path[len(root)+1:]
 	}
 	return path
+}
+
+// stem returns the file basename without directory or extension, e.g.
+// ".../DoubleFormat.java" -> "DoubleFormat".
+func stem(path string) string {
+	base := path
+	if i := lastSlash(path); i >= 0 {
+		base = path[i+1:]
+	}
+	if i := lastDot(base); i >= 0 {
+		base = base[:i]
+	}
+	return base
+}
+
+func lastSlash(s string) int {
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == '/' {
+			return i
+		}
+	}
+	return -1
+}
+
+func lastDot(s string) int {
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == '.' {
+			return i
+		}
+	}
+	return -1
 }
 
 // replaySeed derives a stable per-program scratch id from its content hash so
