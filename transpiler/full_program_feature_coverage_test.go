@@ -86,8 +86,11 @@ func TestFullProgram_MethodReferencesAndNestedConstructors(t *testing.T) {
 	if !strings.Contains(outer, "NewMapperFuncAdapter[string, string](Id)") {
 		t.Fatalf("expected static method reference to map through SAM adapter:\n%s", outputs["com/acme/refs/Outer.go"])
 	}
-	if !strings.Contains(outer, "NewInner(in)") && !strings.Contains(outer, "NewOuterInner(in)") && !strings.Contains(outer, "ConstructInner(in)") {
-		t.Fatalf("expected nested-class constructor form to generate constructor call:\n%s", outputs["com/acme/refs/Outer.go"])
+	// Inner (non-static) class: `this.new Inner(in)` lowers to the renamed
+	// nested-class constructor and threads the enclosing instance as the leading
+	// argument, e.g. NewOuterInner(or, in).
+	if !strings.Contains(outer, "NewOuterInner(or, in)") {
+		t.Fatalf("expected inner-class constructor call to thread the enclosing instance, got:\n%s", outputs["com/acme/refs/Outer.go"])
 	}
 }
 
@@ -105,8 +108,11 @@ func TestFullProgram_ControlFlowAndTryCatchPatterns(t *testing.T) {
 	if !strings.Contains(flat, "for {") {
 		t.Fatalf("expected do-while conversion to loop with break guard:\n%s", outputs["com/acme/control/Flow.go"])
 	}
-	if !strings.Contains(flat, "ILLEGAL(") {
-		t.Fatalf("expected current do-while guard lowering behavior in output:\n%s", outputs["com/acme/control/Flow.go"])
+	if !strings.Contains(flat, "if !(n > 0) { break }") {
+		t.Fatalf("expected do-while guard to break on negated condition:\n%s", outputs["com/acme/control/Flow.go"])
+	}
+	if strings.Contains(flat, "ILLEGAL(") {
+		t.Fatalf("do-while guard regressed to ILLEGAL() lowering:\n%s", outputs["com/acme/control/Flow.go"])
 	}
 	if !strings.Contains(flat, "recover(") {
 		t.Fatalf("expected try/catch lowering to use recover:\n%s", outputs["com/acme/control/Flow.go"])

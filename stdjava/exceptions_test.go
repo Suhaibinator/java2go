@@ -1,6 +1,9 @@
 package stdjava
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 // recoverNormalized runs fn, recovers any panic it raises, and returns the
 // value after NormalizePanic, mimicking the generated recover boundary.
@@ -74,10 +77,50 @@ func TestNormalizePanic_NilIsNil(t *testing.T) {
 	}
 }
 
-func TestNormalizePanic_PlainStringUntouched(t *testing.T) {
+func TestNormalizePanic_PlainStringWrappedAsRuntimeException(t *testing.T) {
 	got := NormalizePanic("custom panic")
-	if got != "custom panic" {
-		t.Fatalf("a non-runtime panic value should be returned unchanged, got %v", got)
+	if !CaughtAs(got, "RuntimeException") {
+		t.Fatalf("a non-runtime panic value should be wrapped as RuntimeException, got %T (%v)", got, got)
+	}
+	if GetMessage(got) != "custom panic" {
+		t.Fatalf("wrapped message lost: %q", GetMessage(got))
+	}
+}
+
+func TestNormalizePanic_PlainErrorWrappedAsRuntimeException(t *testing.T) {
+	got := NormalizePanic(fmt.Errorf("boom"))
+	if !CaughtAs(got, "RuntimeException") {
+		t.Fatalf("a panicked error should be wrapped as RuntimeException, got %T (%v)", got, got)
+	}
+}
+
+func TestExceptionFidelity_ErrorNotCaughtByException(t *testing.T) {
+	// In Java, catch (Exception e) must NOT catch an Error/Throwable-level throw.
+	err := NewAssertionError("assertion failed")
+	if CaughtAs(err, "Exception") {
+		t.Fatal("AssertionError must NOT be caught by catch (Exception e)")
+	}
+	if CaughtAs(err, "RuntimeException") {
+		t.Fatal("AssertionError must NOT be caught by catch (RuntimeException e)")
+	}
+	// It IS catchable by Error and Throwable.
+	if !CaughtAs(err, "Error") {
+		t.Fatal("AssertionError should be caught by catch (Error e)")
+	}
+	if !CaughtAs(err, "Throwable") {
+		t.Fatal("AssertionError should be caught by catch (Throwable e)")
+	}
+}
+
+func TestRegisterException_ConflictingParentWarns(t *testing.T) {
+	// Registering the same simple name with a different parent should not panic
+	// and should leave the most recent registration in effect (a warning is
+	// printed to stderr, which we don't assert on here).
+	RegisterException("CollidingName", "RuntimeException")
+	RegisterException("CollidingName", "IOException")
+	v := ThrowableBase{typeName: "CollidingName", message: "x"}
+	if !CaughtAs(v, "IOException") {
+		t.Fatal("most recent registration should win for a colliding simple name")
 	}
 }
 

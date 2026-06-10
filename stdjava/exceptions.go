@@ -35,6 +35,7 @@ var (
 	exceptionHierarchy   = map[string]string{
 		"Throwable":                      "",
 		"Error":                          "Throwable",
+		"AssertionError":                 "Error",
 		"Exception":                      "Throwable",
 		"RuntimeException":               "Exception",
 		"IOException":                    "Exception",
@@ -52,11 +53,24 @@ var (
 
 // RegisterException records that the exception type child extends parent. It is
 // called from generated init() blocks so that user-defined exception classes
-// participate in catch-by-supertype dispatch. Re-registering an existing type
-// updates its parent, which keeps the call idempotent across init ordering.
+// participate in catch-by-supertype dispatch. Re-registering a type with the
+// same parent is idempotent across init ordering.
+//
+// LIMITATION: the hierarchy is keyed by simple (unqualified) type name. Two
+// user-defined exception classes with the same simple name in different Java
+// packages collide in this map; the last registration wins for both. This is
+// acceptable for the common single-package case. When a collision with a
+// *different* parent is detected, a warning is printed to stderr so the
+// ambiguity is at least visible rather than silently mis-dispatching.
 func RegisterException(child, parent string) {
 	exceptionHierarchyMu.Lock()
 	defer exceptionHierarchyMu.Unlock()
+	if existing, ok := exceptionHierarchy[child]; ok && existing != parent {
+		fmt.Fprintf(os.Stderr,
+			"stdjava: exception type %q registered with conflicting parents %q and %q; "+
+				"catch-by-supertype dispatch for %q may be ambiguous (simple-name collision across packages)\n",
+			child, existing, parent, child)
+	}
 	exceptionHierarchy[child] = parent
 }
 
@@ -142,9 +156,13 @@ func NormalizePanic(recovered interface{}) interface{} {
 
 	rerr, ok := recovered.(runtime.Error)
 	if !ok {
-		// Not a runtime panic (e.g. a panicked string or a plain error); leave it
-		// untouched so it still escapes or is caught by a broad clause.
-		return recovered
+		// Any other panic value (a panicked string, a plain error, or any other
+		// Go value) is wrapped as a RuntimeException. This keeps every non-typed
+		// panic catchable through the normal hierarchy so `catch (Exception e)`
+		// and `catch (RuntimeException e)` can be routed through CaughtAs rather
+		// than treated as unconditional catch-alls, matching Java semantics where
+		// catch (Exception) does not catch Error/Throwable-level throws.
+		return NewRuntimeException(errorMessage(recovered))
 	}
 
 	msg := rerr.Error()
@@ -159,7 +177,9 @@ func NormalizePanic(recovered interface{}) interface{} {
 		strings.Contains(msg, "invalid memory address"):
 		return NewNullPointerException(msg)
 	default:
-		return recovered
+		// Some other runtime panic (e.g. a closed-channel send): a RuntimeException
+		// is the closest Java analogue.
+		return NewRuntimeException(msg)
 	}
 }
 
@@ -246,6 +266,8 @@ func newThrowableBase(typeName, message string) ThrowableBase {
 // ThrowableBase so generated code can type-assert/construct specific types,
 // while hierarchy matching is handled by name through CaughtAs.
 
+type Error struct{ ThrowableBase }
+type AssertionError struct{ ThrowableBase }
 type Exception struct{ ThrowableBase }
 type RuntimeException struct{ ThrowableBase }
 type IllegalArgumentException struct{ ThrowableBase }
@@ -261,6 +283,14 @@ type IOException struct{ ThrowableBase }
 
 // The New* constructors mirror `new X(message)` in Java. They are referenced by
 // name from generated `throw` statements.
+
+func NewError(message string) Error {
+	return Error{newThrowableBase("Error", message)}
+}
+
+func NewAssertionError(message string) AssertionError {
+	return AssertionError{newThrowableBase("AssertionError", message)}
+}
 
 func NewException(message string) Exception {
 	return Exception{newThrowableBase("Exception", message)}

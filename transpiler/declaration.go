@@ -62,6 +62,21 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		if superNode := node.ChildByFieldName("superclass"); superNode != nil {
 			for _, t := range collectTypeNodes(superNode) {
+				// A class extending a built-in exception embeds the stdjava runtime
+				// type so it inherits the Throwable method set and message storage.
+				if builtin := stripJavaQualifier(t.Content(source)); isBuiltinExceptionType(builtin) && resolveClassScopeByQualifiedName(ctx, builtin) == nil {
+					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
+					continue
+				}
+				// When the superclass is itself a user-defined exception (possibly a
+				// nested class), embed its resolved Go struct name so the field
+				// reference matches what the super() constructor call assigns.
+				if base, _ := parseJavaTypeString(t.Content(source)); isExceptionJavaType(ctx, base) {
+					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
+						fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: &ast.Ident{Name: scope.Class.Name}}})
+						continue
+					}
+				}
 				fields.List = append(fields.List, &ast.Field{Type: astutil.ParseTypeWithTypeParams(t, source, typeParams)})
 			}
 		}
@@ -86,6 +101,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		instanceFieldInitializers := []ast.Stmt{}
 
 		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
+
+		// Inner (non-static nested) classes hold an implicit reference to an
+		// instance of their enclosing class. Model that as a leading struct field
+		// so unqualified outer-member access and `outer.new Inner()` resolve.
+		if enclField := buildEnclosingInstanceField(ctx); enclField != nil {
+			fields.List = append([]*ast.Field{enclField}, fields.List...)
+		}
 
 		// First, look through the class's body for field declarations
 		for _, child := range nodeutil.NamedChildrenOf(node.ChildByFieldName("body")) {
@@ -179,6 +201,15 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			declarations = append(declarations, helperDecl)
 		}
 
+		// Java provides an implicit no-arg constructor for any class that does not
+		// declare one of its own. Without an explicit `New<Class>` function, calls
+		// to `new Class()` have nothing to bind to, so synthesize one. This is
+		// especially important for nested classes, which frequently omit
+		// constructors.
+		if ctorDecl := buildDefaultConstructorDecl(ctx); ctorDecl != nil {
+			declarations = append(declarations, ctorDecl)
+		}
+
 		// Generate companion interface for abstract classes so that method
 		// parameters typed as the abstract class preserve runtime type identity.
 		if ctx.currentClass.IsAbstract {
@@ -189,6 +220,18 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		// Add all the declarations that appear in the class
 		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
+
+		// User-defined exception classes are wired into the stdjava hierarchy: a
+		// ThrowableTypeName() override reports the class's own Java name (the
+		// embedded runtime type would otherwise report the parent's), and an
+		// init() registers the parent link so catch-by-supertype dispatch works.
+		if parentName := exceptionSuperclassName(ctx, ctx.currentClass); parentName != "" {
+			javaName := node.ChildByFieldName("name").Content(source)
+			declarations = append(declarations,
+				buildThrowableTypeNameMethod(ctx, javaName),
+				buildExceptionRegistrationDecl(javaName, parentName, ctx),
+			)
+		}
 
 		return declarations
 	case "class_body", "enum_body": // The body of the currently parsed class or enum
@@ -509,6 +552,110 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) a
 		},
 		Body: &ast.BlockStmt{List: initializers},
 	}
+}
+
+// enclosingInstanceType returns the Go type expression (*Outer or *Outer[T,...])
+// used for an inner class's enclosing-instance field/parameter, or nil if the
+// scope is not an inner class with a resolvable enclosing class.
+func enclosingInstanceType(scope *symbol.ClassScope) ast.Expr {
+	if scope == nil || !scope.IsInner || scope.Enclosing == nil || scope.Enclosing.Class == nil {
+		return nil
+	}
+	encl := scope.Enclosing
+	base := instantiateGenericType(encl.Class.Name, typeParamExprs(encl.TypeParameterNames()))
+	return &ast.StarExpr{X: base}
+}
+
+// buildEnclosingInstanceField returns the synthesized struct field that holds an
+// inner class's enclosing instance, or nil for non-inner classes.
+func buildEnclosingInstanceField(ctx Ctx) *ast.Field {
+	scope := ctx.currentClass
+	enclType := enclosingInstanceType(scope)
+	if enclType == nil {
+		return nil
+	}
+	return &ast.Field{
+		Names: []*ast.Ident{{Name: scope.EnclosingFieldName()}},
+		Type:  enclType,
+	}
+}
+
+// classHasExplicitConstructor reports whether the class scope declares at least
+// one constructor of its own.
+func classHasExplicitConstructor(scope *symbol.ClassScope) bool {
+	if scope == nil {
+		return false
+	}
+	for _, method := range scope.Methods {
+		if method != nil && method.Constructor {
+			return true
+		}
+	}
+	return false
+}
+
+// buildDefaultConstructorDecl synthesizes an implicit no-arg constructor for a
+// class that declares none. The generated function mirrors the shape produced
+// for explicit constructors: allocate the struct, run instance-field
+// initializers, and return the pointer. Interfaces and enums are skipped since
+// they are never instantiated through a `New<Class>` function.
+func buildDefaultConstructorDecl(ctx Ctx) ast.Decl {
+	scope := ctx.currentClass
+	if scope == nil || scope.IsInterface || scope.IsEnum {
+		return nil
+	}
+	if classHasExplicitConstructor(scope) {
+		return nil
+	}
+
+	typeParams := scope.TypeParameters
+	var structType ast.Expr = &ast.Ident{Name: ctx.className}
+	if len(typeParams) > 0 {
+		structType = instantiateGenericType(ctx.className, typeParamExprs(scope.TypeParameterNames()))
+	}
+
+	recvName := ShortName(ctx.className)
+	body := []ast.Stmt{
+		&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: recvName}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
+		},
+	}
+
+	// Inner classes capture their enclosing instance through a synthesized
+	// leading parameter that is stored into the enclosing-instance field.
+	params := &ast.FieldList{}
+	if enclType := enclosingInstanceType(scope); enclType != nil {
+		enclFieldName := scope.EnclosingFieldName()
+		params.List = append(params.List, &ast.Field{
+			Names: []*ast.Ident{{Name: enclFieldName}},
+			Type:  enclType,
+		})
+		body = append(body, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: enclFieldName}}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: enclFieldName}},
+		})
+	}
+
+	if scope.HasInstanceFieldInitializers {
+		body = append(body, &ast.ExprStmt{
+			X: &ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: recvName},
+					Sel: &ast.Ident{Name: fieldInitMethodName},
+				},
+			},
+		})
+	}
+
+	body = append(body, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: recvName}}})
+
+	constructorName := "New" + ctx.className
+	returnType := &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: structType}}}}
+
+	return GenFuncDeclWithTypeParams(constructorName, typeParams, params, returnType, &ast.BlockStmt{List: body})
 }
 
 func zeroValueForType(expr ast.Expr) ast.Expr {
@@ -1132,6 +1279,38 @@ func shouldCallFieldInitializerMethod(constructorBody []ast.Stmt, ctx Ctx) bool 
 	return !startsWithThisConstructorInvocation(constructorBody, ctx.className)
 }
 
+// shouldCallFieldInitializerMethodForBody is like shouldCallFieldInitializerMethod
+// but operates on the raw, parsed constructor body (before the synthesized
+// allocation prelude is prepended), where a delegating this(...) call appears as
+// the first statement.
+func shouldCallFieldInitializerMethodForBody(userBody []ast.Stmt, ctx Ctx) bool {
+	if ctx.currentClass == nil || !ctx.currentClass.HasInstanceFieldInitializers {
+		return false
+	}
+	if len(userBody) == 0 {
+		return true
+	}
+	return !isThisConstructorInvocation(userBody[0], ctx.className)
+}
+
+// isThisConstructorInvocation reports whether a statement is a delegating
+// this(...) constructor call lowered to New<Class>(...).
+func isThisConstructorInvocation(stmt ast.Stmt, className string) bool {
+	exprStmt, ok := stmt.(*ast.ExprStmt)
+	if !ok {
+		return false
+	}
+	callExpr, ok := exprStmt.X.(*ast.CallExpr)
+	if !ok {
+		return false
+	}
+	funIdent, ok := callExpr.Fun.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	return funIdent.Name == "New"+className
+}
+
 func startsWithThisConstructorInvocation(stmts []ast.Stmt, className string) bool {
 	if len(stmts) < 2 {
 		return false
@@ -1230,15 +1409,29 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			structType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
 		}
 
-		body.List = append([]ast.Stmt{
+		prelude := []ast.Stmt{
 			&ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: ShortName(ctx.className)}},
 				Tok: token.DEFINE,
 				Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
 			},
-		}, body.List...)
+		}
+		// For an inner class, store the captured enclosing instance into its field
+		// immediately after allocation so the rest of the constructor body can use
+		// it.
+		if enclosingInstanceType(ctx.currentClass) != nil {
+			enclFieldName := ctx.currentClass.EnclosingFieldName()
+			prelude = append(prelude, &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: enclFieldName}}},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{&ast.Ident{Name: enclFieldName}},
+			})
+		}
+		preludeLen := len(prelude)
+		userBody := body.List
+		body.List = append(prelude, body.List...)
 
-		if shouldCallFieldInitializerMethod(body.List, ctx) {
+		if shouldCallFieldInitializerMethodForBody(userBody, ctx) {
 			initCall := &ast.ExprStmt{
 				X: &ast.CallExpr{
 					Fun: &ast.SelectorExpr{
@@ -1248,7 +1441,10 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				},
 			}
 
-			insertIndex := 1
+			// Insert right after the prelude (allocation + enclosing-instance
+			// capture), unless the first user statement is an explicit super(...)
+			// call, which must run before instance-field initializers.
+			insertIndex := preludeLen
 			if insertIndex < len(body.List) && isExplicitSuperConstructorAssignment(body.List[insertIndex], ctx) {
 				insertIndex++
 			}
@@ -1262,10 +1458,21 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		constructorTypeParams := symbol.MergeTypeParams(ctx.currentClass.TypeParameters, ctx.localScope.TypeParameters)
 
+		constructorParams := ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList)
+		// Inner-class constructors take the captured enclosing instance as a
+		// leading parameter.
+		if enclType := enclosingInstanceType(ctx.currentClass); enclType != nil {
+			enclParam := &ast.Field{
+				Names: []*ast.Ident{{Name: ctx.currentClass.EnclosingFieldName()}},
+				Type:  enclType,
+			}
+			constructorParams.List = append([]*ast.Field{enclParam}, constructorParams.List...)
+		}
+
 		return []ast.Decl{GenFuncDeclWithTypeParams(
 			ctx.localScope.Name,
 			constructorTypeParams,
-			ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList),
+			constructorParams,
 			&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
 			body,
 		)}
@@ -1289,6 +1496,12 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					}
 				}
 			}
+		}
+
+		// Preserve a `throws` clause as documentation. Full error-return
+		// translation is out of scope; the clause records the original contract.
+		if throwsComment := throwsClauseComment(node, source); throwsComment != "" {
+			comments = append(comments, &ast.Comment{Text: throwsComment})
 		}
 
 		var receiver *ast.FieldList
@@ -1472,5 +1685,26 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}}
 	}
 
-	panic("Unknown node type for declaration: " + node.Type())
+	diag := reportUnsupported("declaration", node, source, ctx)
+	// Emit a placeholder declaration carrying the diagnostic as a comment, so the
+	// rest of the file can be converted.
+	return []ast.Decl{unsupportedDeclStub(diag)}
+}
+
+// unsupportedDeclStub builds a declaration-level placeholder that records an
+// unsupported construct via a leading `// UNSUPPORTED:` comment while remaining
+// valid Go.
+func unsupportedDeclStub(diag Diagnostic) ast.Decl {
+	return &ast.GenDecl{
+		Doc: &ast.CommentGroup{
+			List: []*ast.Comment{{Text: unsupportedComment(diag)}},
+		},
+		Tok: token.VAR,
+		Specs: []ast.Spec{
+			&ast.ValueSpec{
+				Names: []*ast.Ident{{Name: "_"}},
+				Type:  &ast.Ident{Name: "struct{}"},
+			},
+		},
+	}
 }

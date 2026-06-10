@@ -14,7 +14,7 @@ func Main() {
 	args := os.Args
 	_ = args
 	task := domain.NewParseTask("alpha")
-	identity := common.NewMapperFuncAdapter[string, string](func(v string) string {
+	identity := common.NewMapperFuncAdapter(func(v string) string {
 		return v
 	})
 	count := Execute(task, identity)
@@ -28,11 +28,11 @@ func Main() {
 	common.Log(fmt.Sprintf("%v%v", "", GuardedFinallyOverride()))
 	common.Log(fmt.Sprintf("%v%v", "", GuardedCatchFinallyOverride()))
 	var (
-		__java2goRecovered_792	interface {
+		__java2goRecovered_792 interface {
 		}
-		__java2goDidPanic_792		bool
-		__java2goCatchHandled_792	bool
-		__java2goShouldReturn_792	bool
+		__java2goDidPanic_792     bool
+		__java2goCatchHandled_792 bool
+		__java2goShouldReturn_792 bool
 	)
 	func() {
 		defer func() {

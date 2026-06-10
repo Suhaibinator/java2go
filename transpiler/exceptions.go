@@ -17,6 +17,7 @@ import (
 var builtinExceptionTypes = map[string]struct{}{
 	"Throwable":                      {},
 	"Error":                          {},
+	"AssertionError":                 {},
 	"Exception":                      {},
 	"RuntimeException":               {},
 	"IllegalArgumentException":       {},

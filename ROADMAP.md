@@ -10,46 +10,46 @@ roughly in suggested priority order. See file references for where each gap live
 
 ## 1. Robustness / graceful degradation
 
-- [ ] Replace `panic("Unhandled expression: ...")` in `ParseExpr` with a diagnostic + recoverable error (`transpiler/expression.go:797`)
-- [ ] Replace `panic` in `ParseStmt` with error recovery (`transpiler/statement.go:20`)
-- [ ] Replace `panic` in `ParseDecl` with error recovery (`transpiler/declaration.go:1475`)
-- [ ] Replace `panic` in `ParseNode` catch-all (`transpiler/tree_sitter.go:339`)
-- [ ] Emit `// UNSUPPORTED: <construct>` stubs (or collect diagnostics) so one unknown construct doesn't abort the whole conversion
-- [ ] Add a `-strict` flag to opt back into fail-fast behavior
+- [x] Replace `panic("Unhandled expression: ...")` in `ParseExpr` with a diagnostic + recoverable error
+- [x] Replace `panic` in `ParseStmt` with error recovery
+- [x] Replace `panic` in `ParseDecl` with error recovery
+- [x] Replace `panic` in `ParseNode` catch-all
+- [x] Emit `// UNSUPPORTED: <construct>` stubs (collected as thread-safe diagnostics; see `transpiler/diagnostics.go`)
+- [x] Add a `-strict` flag to opt back into fail-fast behavior (CLI + library API via `java2go.Diagnostics()`)
 
 ## 2. Standard library mapping
 
-- [ ] Build a systematic intrinsics table (Java method → Go equivalent) instead of one-off cases in `transpiler/expression.go:276`
-- [ ] `java.lang.String` methods: `substring`, `split`, `equals`, `toUpperCase`, `toLowerCase`, `charAt`, `indexOf`, `trim`, `replace`, `format`, ...
-- [ ] `StringBuilder` / `StringBuffer` → `strings.Builder`
+- [x] Build a systematic intrinsics table (Java method → Go equivalent) — `transpiler/intrinsics.go` (instance/static/static-field/constructor registries)
+- [x] `java.lang.String` methods: rune-safe `substring`, `split` (literal separators; regex patterns TODO), `equals`, `toUpperCase`, `toLowerCase`, `charAt`, `indexOf`, `trim`, `replace`, `format`, ... (`stdjava/strings.go`)
+- [x] `StringBuilder` / `StringBuffer` → `stdjava` wrapper (`stdjava/stringbuilder.go`)
 - [ ] Collections: `ArrayList`, `LinkedList`, `HashMap`, `TreeMap`, `HashSet`, `TreeSet` (slices/maps or `stdjava` shim types)
 - [ ] `java.util.Collections` utilities (`sort`, `reverse`, `max`, `min`, ...)
 - [ ] Iterators / `Iterable` protocol mapping
 - [ ] Wire `java.util.Optional` to the existing (currently unused) `stdjava/optional.go` stub
 - [ ] `java.util.stream.*` (Streams API) — map to loops or a `stdjava` stream shim
 - [ ] `java.io.*` basics (`File`, readers/writers, `Scanner`) → `os` / `bufio` / `io`
-- [ ] `java.lang.Math`, boxed-type statics (`Integer.parseInt`, `Long.MAX_VALUE`, ...)
-- [ ] Expand the `stdjava` runtime package to back anything with no direct Go analogue
+- [x] `java.lang.Math`, boxed-type statics (`Integer.parseInt`, `Long.MAX_VALUE`, ...) — type-preserving generics in `stdjava/math.go`, `stdjava/convert.go`
+- [x] Expand the `stdjava` runtime package to back anything with no direct Go analogue (ongoing as features land)
 
 ## 3. Exception semantics
 
-- [ ] Model the `Throwable → Exception → RuntimeException` hierarchy so catch-by-supertype dispatches correctly (`transpiler/tree_sitter.go:560`)
-- [ ] Preserve exception messages and types in the panic value (currently lost as `any`)
-- [ ] Map common exception types (`NullPointerException`, `IllegalArgumentException`, ...) to `stdjava` types
-- [ ] Handle `throws` clauses (currently ignored) — at minimum document, ideally translate to Go error returns as an option
-- [ ] Support `e.getMessage()` / `e.printStackTrace()` on caught exceptions
+- [x] Model the `Throwable → Exception → RuntimeException` hierarchy so catch-by-supertype dispatches correctly (name-based registry; `stdjava.CaughtAs`, user types register via generated `init()`)
+- [x] Preserve exception messages and types in the panic value (`stdjava/exceptions.go` typed values; runtime panics normalized via `stdjava.NormalizePanic`)
+- [x] Map common exception types (`NullPointerException`, `IllegalArgumentException`, ...) to `stdjava` types
+- [x] Handle `throws` clauses — preserved as `// throws ...` doc comments (error-return translation deliberately out of scope)
+- [x] Support `e.getMessage()` / `e.printStackTrace()` on caught exceptions
 
 ## 4. Inner / nested / anonymous classes
 
-- [ ] Inner (non-static) classes — TODO at `transpiler/expression.go:449` (`parent.new Nested()`)
-- [ ] Static nested classes
+- [x] Inner (non-static) classes — synthesized enclosing-instance field, `outer.new Inner()`, outer-member access through the enclosing chain
+- [x] Static nested classes — emitted as `OuterInner` top-level structs with retargeted constructors
 - [ ] Anonymous classes implementing a SAM interface (reuse the existing functional-interface adapter machinery in `transpiler/declaration.go:853`)
 - [ ] Anonymous classes with multiple methods / extending a class
 - [ ] Local classes declared inside methods
 
 ## 5. Modern Java syntax (Java 10–17+)
 
-- [ ] `var` local variable type inference
+- [x] `var` local variable type inference (verified working by e2e suite; was already covered by existing inference)
 - [ ] Switch expressions with `->` arms and `yield` (Java 12+)
 - [ ] `instanceof` pattern matching: `if (x instanceof String s)` (Java 16+)
 - [ ] Records (Java 14+)

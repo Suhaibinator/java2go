@@ -30,6 +30,23 @@ type ClassScope struct {
 	// Whether this class contains included (non-static, non-excluded) field initializers.
 	// This is set during transpilation pass and used to wire constructor initialization.
 	HasInstanceFieldInitializers bool
+	// IsInner is true for a non-static nested class (an "inner" class in Java
+	// terms). Inner classes hold an implicit reference to an instance of their
+	// enclosing class, which is modeled as a synthesized field.
+	IsInner bool
+	// Enclosing is the immediately-enclosing class scope for a nested class, or
+	// nil for top-level classes. Set when the nested class is parsed.
+	Enclosing *ClassScope
+}
+
+// EnclosingFieldName returns the name of the synthesized field that an inner
+// class uses to hold its enclosing instance (e.g. an inner class of Outer gets
+// a field named "outer"). Empty for non-inner classes.
+func (cs *ClassScope) EnclosingFieldName() string {
+	if cs == nil || !cs.IsInner || cs.Enclosing == nil || cs.Enclosing.Class == nil {
+		return ""
+	}
+	return Lowercase(cs.Enclosing.Class.OriginalName)
 }
 
 // EnumConstant represents a single enum constant and its constructor arguments.

@@ -28,6 +28,43 @@ func UnsignedRightShiftAssignment[A any, V constraints.Integer](assignTo *A, val
 	*assignTo = interface{}(UnsignedRightShift(value, 2)).(A)
 }
 
+// number covers the Java primitive numeric types that support the ++ and --
+// operators.
+type number interface {
+	constraints.Integer | constraints.Float
+}
+
+// PostIncrement implements Java's post-increment (`x++`) in expression position:
+// it increments the pointed-to value and returns the value from before the
+// increment.
+func PostIncrement[T number](p *T) T {
+	old := *p
+	*p++
+	return old
+}
+
+// PreIncrement implements Java's pre-increment (`++x`): it increments the
+// pointed-to value and returns the new value.
+func PreIncrement[T number](p *T) T {
+	*p++
+	return *p
+}
+
+// PostDecrement implements Java's post-decrement (`x--`): it decrements the
+// pointed-to value and returns the value from before the decrement.
+func PostDecrement[T number](p *T) T {
+	old := *p
+	*p--
+	return old
+}
+
+// PreDecrement implements Java's pre-decrement (`--x`): it decrements the
+// pointed-to value and returns the new value.
+func PreDecrement[T number](p *T) T {
+	*p--
+	return *p
+}
+
 // HashCode is an implementation of Java's String `hashCode` method
 func HashCode(s string) int {
 	var total int

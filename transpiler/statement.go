@@ -13,11 +13,33 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+// isStmtListNode reports whether a node type is one that ParseNode lowers into a
+// list of statements (rather than a single statement). These are the constructs
+// that must be expanded inline when filling a block body.
+func isStmtListNode(nodeType string) bool {
+	switch nodeType {
+	case "try_statement", "try_with_resources_statement", "synchronized_statement":
+		return true
+	}
+	return false
+}
+
 func ParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	if stmt := TryParseStmt(node, source, ctx); stmt != nil {
 		return stmt
 	}
-	panic(fmt.Errorf("unhandled stmt type: %v", node.Type()))
+
+	diag := reportUnsupported("statement", node, source, ctx)
+	// Emit a placeholder statement that still compiles, so the rest of the file
+	// can be converted. The panic call preserves the diagnostic at runtime.
+	return &ast.ExprStmt{
+		X: &ast.CallExpr{
+			Fun: &ast.Ident{Name: "panic"},
+			Args: []ast.Expr{
+				&ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("%q", strings.TrimPrefix(unsupportedComment(diag), "// "))},
+			},
+		},
+	}
 }
 
 func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
@@ -168,9 +190,13 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			}
 			if stmt := TryParseStmt(line, source, ctx); stmt != nil {
 				body.List = append(body.List, stmt)
-			} else {
-				// Try statements are ignored, so they return a list of statements
+			} else if isStmtListNode(line.Type()) {
+				// Try and synchronized statements are lowered into a list of statements
 				body.List = append(body.List, ParseNode(line, source, ctx).([]ast.Stmt)...)
+			} else {
+				// Anything else (including unsupported constructs) is converted via
+				// ParseStmt, which emits an UNSUPPORTED placeholder rather than crashing.
+				body.List = append(body.List, ParseStmt(line, source, ctx))
 			}
 		}
 		return body
@@ -201,6 +227,27 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				base, superArgStrs := parseJavaTypeString(superType)
 				if base != "" {
 					superName := stripJavaQualifier(base)
+					// A built-in exception superclass is constructed via the stdjava
+					// runtime; the embedded field is named after the runtime type.
+					if isBuiltinExceptionType(superName) && resolveClassScopeByQualifiedName(ctx, base) == nil {
+						recvName := ctx.className
+						if recvName == "" && ctx.currentClass.Class != nil {
+							recvName = ctx.currentClass.Class.Name
+						}
+						if recvName != "" {
+							return &ast.AssignStmt{
+								Lhs: []ast.Expr{&ast.SelectorExpr{
+									X:   &ast.Ident{Name: ShortName(recvName)},
+									Sel: &ast.Ident{Name: superName},
+								}},
+								Tok: token.ASSIGN,
+								Rhs: []ast.Expr{&ast.CallExpr{
+									Fun:  stdjavaQualifiedExpr("New"+superName, ctx),
+									Args: args,
+								}},
+							}
+						}
+					}
 					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
 						superName = scope.Class.Name
 					}
@@ -387,6 +434,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		body.List = append(body.List, &ast.IfStmt{
 			Cond: &ast.UnaryExpr{
+				Op: token.NOT,
 				X: &ast.ParenExpr{
 					X: ParseExpr(node.NamedChild(1), source, ctx),
 				},
@@ -397,34 +445,128 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		return &ast.ForStmt{
 			Body: body,
 		}
-	case "switch_statement":
-		return &ast.SwitchStmt{
-			Tag:  ParseExpr(node.NamedChild(0), source, ctx),
-			Body: ParseStmt(node.NamedChild(1), source, ctx).(*ast.BlockStmt),
-		}
-	case "switch_block":
-		switchBlock := &ast.BlockStmt{}
-		var currentCase *ast.CaseClause
+	case "switch_statement", "switch_expression":
+		// A classic switch statement parses as `switch_expression` in tree-sitter.
+		// Children: a parenthesized tag expression followed by the switch_block.
+		var tagNode, blockNode *sitter.Node
 		for _, c := range nodeutil.NamedChildrenOf(node) {
 			switch c.Type() {
-			case "switch_label":
-				// When a new switch label comes, append it to the switch block
-				if currentCase != nil {
-					switchBlock.List = append(switchBlock.List, currentCase)
-				}
-				currentCase = ParseNode(c, source, ctx).(*ast.CaseClause)
+			case "switch_block":
+				blockNode = c
 			default:
-				if exprs := TryParseStmts(c, source, ctx); exprs != nil {
-					currentCase.Body = append(currentCase.Body, exprs...)
-				} else {
-					currentCase.Body = append(currentCase.Body, ParseStmt(c, source, ctx))
+				if tagNode == nil {
+					tagNode = c
 				}
 			}
 		}
-
-		return switchBlock
+		if blockNode == nil {
+			return &ast.SwitchStmt{Body: &ast.BlockStmt{}}
+		}
+		return &ast.SwitchStmt{
+			Tag:  ParseExpr(tagNode, source, ctx),
+			Body: parseSwitchBlock(blockNode, source, ctx),
+		}
+	case "switch_block":
+		return parseSwitchBlock(node, source, ctx)
 	}
 	return nil
+}
+
+// parseSwitchBlock lowers a Java switch body into a Go switch body, translating
+// Java's fallthrough-by-default semantics into Go's break-by-default. A group
+// that ends with `break` becomes an ordinary Go case (the break is dropped); a
+// non-terminal group that does not break gets an explicit `fallthrough`. Empty
+// groups (a label with no statements) are merged into the next group's case
+// list, matching Java's stacked `case` labels.
+func parseSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+	switchBlock := &ast.BlockStmt{}
+
+	groups := []*sitter.Node{}
+	for _, c := range nodeutil.NamedChildrenOf(node) {
+		if c.Type() == "switch_block_statement_group" {
+			groups = append(groups, c)
+		}
+	}
+
+	// Labels carried forward from preceding empty groups (stacked cases).
+	var pendingExprs []ast.Expr
+	var pendingDefault bool
+
+	for index, group := range groups {
+		caseExprs, isDefault, bodyNodes := splitSwitchGroup(group, source, ctx)
+
+		caseExprs = append(pendingExprs, caseExprs...)
+		isDefault = isDefault || pendingDefault
+
+		// An empty group (no statements) stacks its labels onto the next group.
+		if len(bodyNodes) == 0 && index != len(groups)-1 {
+			pendingExprs = caseExprs
+			pendingDefault = isDefault
+			continue
+		}
+		pendingExprs = nil
+		pendingDefault = false
+
+		clause := &ast.CaseClause{}
+		if !isDefault {
+			clause.List = caseExprs
+		}
+
+		body, terminatedByBreak := parseSwitchGroupBody(bodyNodes, source, ctx)
+		clause.Body = body
+
+		// Java cases fall through unless they break/return. Go does the opposite,
+		// so add an explicit fallthrough when the group neither breaks nor is the
+		// final group.
+		if !terminatedByBreak && index != len(groups)-1 && len(body) > 0 {
+			clause.Body = append(clause.Body, &ast.BranchStmt{Tok: token.FALLTHROUGH})
+		}
+
+		switchBlock.List = append(switchBlock.List, clause)
+	}
+
+	return switchBlock
+}
+
+// splitSwitchGroup separates a switch_block_statement_group into its case label
+// expressions (empty when the group is `default`), whether it is the default
+// group, and the statement nodes that make up its body.
+func splitSwitchGroup(group *sitter.Node, source []byte, ctx Ctx) (caseExprs []ast.Expr, isDefault bool, bodyNodes []*sitter.Node) {
+	for _, child := range nodeutil.NamedChildrenOf(group) {
+		if child.Type() == "switch_label" {
+			if child.NamedChildCount() == 0 {
+				// A `default` label has no child expression.
+				isDefault = true
+			} else {
+				caseExprs = append(caseExprs, ParseExpr(child.NamedChild(0), source, ctx))
+			}
+			continue
+		}
+		bodyNodes = append(bodyNodes, child)
+	}
+	return caseExprs, isDefault, bodyNodes
+}
+
+// parseSwitchGroupBody converts the statement nodes of a switch group, dropping a
+// trailing `break` (Go cases break implicitly) and reporting whether the group
+// was terminated by such a break so the caller can decide on fallthrough.
+func parseSwitchGroupBody(bodyNodes []*sitter.Node, source []byte, ctx Ctx) (body []ast.Stmt, terminatedByBreak bool) {
+	for _, stmtNode := range bodyNodes {
+		if stmtNode.Type() == "break_statement" {
+			// A plain `break` ends the case in Java; Go does this implicitly. A
+			// labeled break is rare in switches and is preserved as-is.
+			if stmtNode.NamedChildCount() == 0 {
+				terminatedByBreak = true
+				continue
+			}
+		}
+		if stmts := TryParseStmts(stmtNode, source, ctx); stmts != nil {
+			body = append(body, stmts...)
+		} else {
+			body = append(body, ParseStmt(stmtNode, source, ctx))
+		}
+	}
+	return body, terminatedByBreak
 }
 
 func recordLocalVariableDefinition(ctx Ctx, name, originalType, parsedType string) {

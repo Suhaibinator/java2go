@@ -54,7 +54,8 @@ func buildUsedImportSpecs(ctx Ctx) []*ast.ImportSpec {
 
 	javaPkgs := make([]string, 0, len(ctx.usedImports))
 	for javaPkg, used := range ctx.usedImports {
-		if used {
+		// JDK packages have no Go import path; never emit them.
+		if used && !isJavaStdlibPackage(javaPkg) {
 			javaPkgs = append(javaPkgs, javaPkg)
 		}
 	}
@@ -160,9 +161,24 @@ func packageAliasTaken(ctx Ctx, alias string) bool {
 	return false
 }
 
+// isJavaStdlibPackage reports whether a Java package belongs to the JDK
+// (java.* / javax.*). These have no Go import path: their types are either
+// modelled by the stdjava runtime / intrinsics table or mapped to Go builtins,
+// so they must never be emitted as Go imports (an `import "java/util"` is an
+// invalid path that fails to compile).
+func isJavaStdlibPackage(javaPkg string) bool {
+	javaPkg = strings.TrimSpace(javaPkg)
+	return javaPkg == "java" || javaPkg == "javax" ||
+		strings.HasPrefix(javaPkg, "java.") || strings.HasPrefix(javaPkg, "javax.")
+}
+
 func markJavaPackageUsage(ctx Ctx, javaPkg string) string {
 	javaPkg = strings.TrimSpace(javaPkg)
 	if javaPkg == "" || ctx.currentFile == nil || javaPkg == ctx.currentFile.Package {
+		return ""
+	}
+	// JDK packages are never emitted as Go imports.
+	if isJavaStdlibPackage(javaPkg) {
 		return ""
 	}
 

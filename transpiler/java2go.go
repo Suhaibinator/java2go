@@ -31,6 +31,7 @@ func run(args []string, stdout io.Writer) error {
 	var displayAST bool
 	var symbolAware bool
 	var parseFilesSynchronously bool
+	var strict bool
 	var initGoMod bool
 	var outputDirectory string
 	var modulePath string
@@ -42,6 +43,7 @@ func run(args []string, stdout io.Writer) error {
 	flagSet.BoolVar(&dryRun, "q", false, "Don't write to stdout on successful parse")
 	flagSet.BoolVar(&displayAST, "ast", false, "Print out go's pretty-printed ast, instead of source code")
 	flagSet.BoolVar(&parseFilesSynchronously, "sync", false, "Parse the files one by one, instead of in parallel")
+	flagSet.BoolVar(&strict, "strict", false, "Fail fast on the first unsupported construct instead of emitting an UNSUPPORTED stub")
 	flagSet.BoolVar(&initGoMod, "init-go-mod", false, "Create a go.mod file in the output directory when writing files")
 	flagSet.BoolVar(&symbolAware, "symbols", true, `Whether the program is aware of the symbols of the parsed code
 Results in better code generation, but can be disabled for a more direct translation
@@ -53,6 +55,9 @@ or to fix crashes with the symbol handling`,
 	if err := flagSet.Parse(args); err != nil {
 		return err
 	}
+
+	resetDiagnostics()
+	setStrictMode(strict)
 
 	excludedAnnotations = make(map[string]bool)
 	for _, annotation := range strings.Split(ignoredAnnotations, ",") {
@@ -189,7 +194,10 @@ or to fix crashes with the symbol handling`,
 			initialContext.currentClass = file.Symbols.BaseClass
 		}
 
-		parsed := ParseNode(file.Ast, file.Source, initialContext).(ast.Node)
+		parsed, err := convertFileNode(file, initialContext)
+		if err != nil {
+			return fmt.Errorf("error converting %s: %w", file.Name, err)
+		}
 
 		// Print the generated AST
 		if displayAST {
@@ -210,7 +218,32 @@ or to fix crashes with the symbol handling`,
 		}
 	}
 
+	if diags := collectedDiagnostics(); len(diags) > 0 {
+		log.Warnf("Conversion completed with %d unsupported construct(s):", len(diags))
+		for _, diag := range diags {
+			log.Warnf("  %s", diag.String())
+		}
+	}
+
 	return nil
+}
+
+// convertFileNode converts a parsed file's tree-sitter AST into a Go AST. In
+// strict mode an unsupported construct panics with a strictModeError, which this
+// function recovers into a returned error to restore fail-fast behavior.
+func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if strictErr, ok := r.(strictModeError); ok {
+				err = strictErr
+				return
+			}
+			panic(r)
+		}
+	}()
+
+	node = ParseNode(file.Ast, file.Source, ctx).(ast.Node)
+	return node, nil
 }
 
 func inputRootForArg(path string) string {

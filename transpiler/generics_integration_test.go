@@ -68,8 +68,9 @@ public class Container {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "m *Map[string, *List[*Integer]]") {
-		t.Errorf("Expected nested generic field type '*Map[string, *List[*Integer]]', got:\n%s", out)
+	// Integer is a boxed type and maps to its Go primitive (int32).
+	if !strings.Contains(out, "m *Map[string, *List[int32]]") {
+		t.Errorf("Expected nested generic field type '*Map[string, *List[int32]]', got:\n%s", out)
 	}
 }
 
@@ -90,7 +91,8 @@ public class Box<T> {
 	if !strings.Contains(out, "NewBox[string]") {
 		t.Errorf("Expected diamond operator to infer 'string' type arg, got:\n%s", out)
 	}
-	if !strings.Contains(out, "NewBox[*Integer]") && !strings.Contains(out, "NewBox[Integer]") {
+	// Integer is a boxed type and maps to its Go primitive (int32).
+	if !strings.Contains(out, "NewBox[*Integer]") && !strings.Contains(out, "NewBox[Integer]") && !strings.Contains(out, "NewBox[int32]") {
 		t.Errorf("Expected explicit type args on constructor call, got:\n%s", out)
 	}
 	if strings.Contains(out, "raw := NewBox[") || strings.Contains(out, "raw = NewBox[") {

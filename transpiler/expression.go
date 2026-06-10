@@ -86,23 +86,38 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "comment":
 		return &ast.BadExpr{}
 	case "update_expression":
-		// This can either be a pre or post expression
-		// a pre expression has the identifier second, while the post expression
-		// has the identifier first
-
-		// Post-update expression, e.g. `i++`
+		// Go has no ++/-- in expression position (e.g. `println(counter++)` or
+		// `arr[i++]`), so route through stdjava helpers that take a pointer to the
+		// operand, mutate it, and return the appropriate (pre or post) value.
+		//
+		// A post expression has the operand first (`i++`); a pre expression has the
+		// operator first (`++i`).
+		var operandNode *sitter.Node
+		var post bool
 		if node.Child(0).IsNamed() {
-			return &ast.CallExpr{
-				Fun:  &ast.Ident{Name: "PostUpdate"},
-				Args: []ast.Expr{ParseExpr(node.Child(0), source, ctx)},
-			}
+			operandNode = node.Child(0)
+			post = true
+		} else {
+			operandNode = node.Child(1)
 		}
 
-		// Otherwise, pre-update expression
-		return &ast.CallExpr{
-			Fun:  &ast.Ident{Name: "PreUpdate"},
-			Args: []ast.Expr{ParseExpr(node.Child(1), source, ctx)},
+		increment := strings.Contains(node.Content(source), "++")
+		var helper string
+		switch {
+		case post && increment:
+			helper = "PostIncrement"
+		case post && !increment:
+			helper = "PostDecrement"
+		case !post && increment:
+			helper = "PreIncrement"
+		default:
+			helper = "PreDecrement"
 		}
+
+		return stdjavaCall(ctx, helper, &ast.UnaryExpr{
+			Op: token.AND,
+			X:  ParseExpr(operandNode, source, ctx),
+		})
 	case "class_literal":
 		// Class literals refer to the class directly, such as
 		// Object.class
@@ -276,6 +291,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if isSystemOutSelector(objectNode, source) && (methodName == "println" || methodName == "print") {
 				argListNode := node.ChildByFieldName("arguments")
 				args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, nil)
+				// Java prints a char as its glyph, but a transpiled char is a Go
+				// rune (int32), which fmt prints as a number. Wrap char-typed
+				// arguments in string(...) so println(c) prints the character.
+				if argListNode != nil {
+					for ind, argNode := range nodeutil.NamedChildrenOf(argListNode) {
+						if ind < len(args) && isCharTypedExprNode(argNode, ctx, source) {
+							args[ind] = &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{args[ind]}}
+						}
+					}
+				}
 				funName := "Println"
 				if methodName == "print" {
 					funName = "Print"
@@ -435,6 +460,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					Args: args,
 				}
 			}
+			// Unqualified call to an enclosing class's instance method from inside
+			// an inner class: route it through the enclosing-instance field, e.g.
+			// foo() -> or.outer.Foo().
+			if enclSel := enclosingMemberMethodSelector(methodName, argCount, ctx); enclSel != nil {
+				return &ast.CallExpr{Fun: enclSel, Args: args}
+			}
 		}
 
 		// Otherwise, treat as a plain function call (static methods are emitted as
@@ -455,9 +486,17 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		objectType := node.ChildByFieldName("type")
 
-		// TODO: Handle case where object is created with this format:
-		// parentClass.new NestedClass()
-		// (when node.NamedChild(0) != objectType)
+		// An anonymous class declaration carries a class_body. When the supertype
+		// is a single-abstract-method interface, lower it to the functional
+		// interface adapter with a closure (mirroring lambda lowering).
+		if classBody := objectCreationClassBody(node); classBody != nil {
+			if lowered := lowerAnonymousClass(node, objectType, classBody, source, ctx); lowered != nil {
+				return lowered
+			}
+		}
+
+		// The `outer.new Inner()` / `this.new Inner()` qualifier form is handled
+		// below by threading the leading expression as the enclosing instance.
 
 		// Get all the arguments, and look up their types
 		objectArguments := node.ChildByFieldName("arguments")
@@ -515,6 +554,17 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		targetScope := resolveClassScopeByQualifiedName(ctx, className)
 		constructor = findMatchingConstructor(targetScope, stripJavaQualifier(className), argumentTypes)
 		targetPkg := resolveJavaPackageForType(ctx, className, targetScope)
+
+		// Inner-class instantiation captures an enclosing instance. For the
+		// explicit `outer.new Inner()` form, the qualifier expression precedes the
+		// type; for the implicit `new Inner()` form inside the enclosing class, the
+		// current receiver is captured. The captured value is threaded as the
+		// constructor's leading argument.
+		if targetScope != nil && targetScope.IsInner {
+			if enclArg := enclosingInstanceArgument(node, objectType, source, ctx); enclArg != nil {
+				arguments = append([]ast.Expr{enclArg}, arguments...)
+			}
+		}
 
 		// Helper function to add type arguments to a function expression
 		addTypeArgs := func(funExpr ast.Expr, args []string) ast.Expr {
@@ -582,7 +632,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 	case "array_creation_expression":
 		dimensions := []ast.Expr{}
-		arrayType := astutil.ParseType(node.ChildByFieldName("type"), source)
+		// The "type" field is the element type (e.g. `int` in `new int[]{...}`),
+		// not the array type, so wrap it so the initializer can emit a typed
+		// composite literal like `[]int32{...}` instead of a bare `{...}`.
+		elementType := astutil.ParseType(node.ChildByFieldName("type"), source)
 		var initializer ast.Expr
 
 		for _, child := range nodeutil.NamedChildrenOf(node) {
@@ -590,7 +643,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				dimensions = append(dimensions, ParseExpr(child, source, ctx))
 			} else if child.Type() == "array_initializer" {
 				initCtx := ctx.Clone()
-				initCtx.lastType = arrayType
+				initCtx.lastType = &ast.ArrayType{Elt: elementType}
 				initializer = ParseExpr(child, source, initCtx)
 			}
 		}
@@ -603,7 +656,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			panic("Array had zero dimensions")
 		}
 
-		return GenMultiDimArray(symbol.NodeToStr(arrayType), dimensions)
+		return GenMultiDimArray(symbol.NodeToStr(elementType), dimensions)
 	case "instanceof_expression":
 		left := node.ChildByFieldName("left")
 		if left == nil && node.NamedChildCount() > 0 {
@@ -657,22 +710,29 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "dimensions_expr":
 		return ParseExpr(node.NamedChild(0), source, ctx)
 	case "binary_expression":
-		if node.Child(1).Content(source) == ">>>" {
-			return &ast.CallExpr{
-				Fun:  &ast.Ident{Name: "UnsignedRightShift"},
-				Args: []ast.Expr{ParseExpr(node.Child(0), source, ctx), ParseExpr(node.Child(2), source, ctx)},
-			}
+		operator := node.Child(1).Content(source)
+		if operator == ">>>" {
+			return stdjavaCall(ctx, "UnsignedRightShift",
+				ParseExpr(node.Child(0), source, ctx),
+				maskedShiftAmount(node.Child(2), source, ctx),
+			)
 		}
 		leftNode := node.Child(0)
 		rightNode := node.Child(2)
 		leftExpr := ParseExpr(leftNode, source, ctx)
 		rightExpr := ParseExpr(rightNode, source, ctx)
-		if node.Child(1).Content(source) == "+" && (isStringLikeExprNode(leftNode, ctx, source) || isStringLikeExprNode(rightNode, ctx, source) || isFmtSprintfCall(leftExpr)) {
+		if operator == "+" && (isStringLikeExprNode(leftNode, ctx, source) || isStringLikeExprNode(rightNode, ctx, source) || isFmtSprintfCall(leftExpr)) {
 			return mergeFmtSprintCall(leftExpr, rightExpr, ctx)
+		}
+		// Java masks shift counts (int: low 5 bits, long: low 6 bits) before
+		// shifting, whereas Go applies the full count. Mask constant shift amounts
+		// at transpile time so e.g. `1 << 32` stays 1.
+		if operator == "<<" || operator == ">>" {
+			rightExpr = maskedShiftAmount(rightNode, source, ctx)
 		}
 		return &ast.BinaryExpr{
 			X:  leftExpr,
-			Op: StrToToken(node.Child(1).Content(source)),
+			Op: StrToToken(operator),
 			Y:  rightExpr,
 		}
 	case "unary_expression":
@@ -692,10 +752,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		for _, c := range nodeutil.NamedChildrenOf(node) {
 			args = append(args, ParseExpr(c, source, ctx))
 		}
-		return &ast.CallExpr{
-			Fun:  &ast.Ident{Name: "ternary"},
-			Args: args,
-		}
+		return stdjavaCall(ctx, "Ternary", args...)
 	case "cast_expression":
 		targetJavaType := node.NamedChild(0).Content(source)
 		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
@@ -723,6 +780,28 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if fieldNode := node.ChildByFieldName("field"); fieldNode != nil {
 			if rewritten, ok := tryStaticFieldIntrinsic(obj, fieldNode.Content(source), source, ctx); ok {
 				return rewritten
+			}
+
+			// Java's array.length is a field; Go uses len(). Only lower when the
+			// receiver is known to be an array, so a user class field named
+			// "length" is left untouched.
+			if fieldNode.Content(source) == "length" && isArrayTypedExprNode(obj, ctx, source) {
+				return &ast.CallExpr{
+					Fun:  &ast.Ident{Name: "int32"},
+					Args: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "len"}, Args: []ast.Expr{ParseExpr(obj, source, ctx)}}},
+				}
+			}
+		}
+
+		// Qualified enum constant access (Day.WED, Planet.EARTH). Enum constants are
+		// generated as package-level vars named after the constant, so `Day.WED`
+		// lowers to `WED` (qualified with the enum's Go package when it lives
+		// elsewhere) rather than an invalid `Day.WED` selector.
+		if fieldNode := node.ChildByFieldName("field"); fieldNode != nil {
+			if enumScope := resolveClassScopeByIdentifier(ctx, source, obj); enumScope != nil && enumScope.IsEnum {
+				constName := fieldNode.Content(source)
+				enumPkg := resolveJavaPackageForType(ctx, obj.Content(source), enumScope)
+				return qualifiedNameExpr(constName, enumPkg, ctx)
 			}
 		}
 
@@ -780,6 +859,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 						Sel: &ast.Ident{Name: field.Name},
 					}
 				}
+			}
+			// Unqualified access to an enclosing class's instance field from inside
+			// an inner class goes through the synthesized enclosing-instance field:
+			// `base` -> `or.outer.base`.
+			if enclAccess := enclosingMemberFieldAccess(identName, ctx); enclAccess != nil {
+				return enclAccess
 			}
 		}
 		if classScope := resolveClassScopeByQualifiedName(ctx, identName); classScope != nil {
@@ -949,6 +1034,99 @@ func abstractClassToInterface(expr ast.Expr, javaType string, ctx Ctx) ast.Expr 
 		return inner
 	}
 	return expr
+}
+
+// enclosingMemberFieldAccess resolves an unqualified identifier that names an
+// instance field of an enclosing class, reached from inside an inner class. It
+// walks the chain of enclosing classes, building a selector that hops through
+// each synthesized enclosing-instance field, e.g. recv.outer.base. Returns nil
+// if the identifier does not resolve to an enclosing instance field, or if the
+// current scope is static.
+func enclosingMemberFieldAccess(identName string, ctx Ctx) ast.Expr {
+	scope := ctx.currentClass
+	if scope == nil || !scope.IsInner {
+		return nil
+	}
+	if ctx.localScope != nil && ctx.localScope.IsStatic {
+		return nil
+	}
+	recvName := ctx.className
+	if recvName == "" && scope.Class != nil {
+		recvName = scope.Class.Name
+	}
+	if recvName == "" {
+		return nil
+	}
+
+	var expr ast.Expr = &ast.Ident{Name: ShortName(recvName)}
+	for cur := scope; cur != nil && cur.IsInner; cur = cur.Enclosing {
+		expr = &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: cur.EnclosingFieldName()}}
+		encl := cur.Enclosing
+		if encl == nil {
+			break
+		}
+		if field := encl.FindFieldByName(identName); field != nil && !field.IsStatic {
+			return &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: field.Name}}
+		}
+	}
+	return nil
+}
+
+// enclosingMemberMethodSelector resolves an unqualified method call that targets
+// an enclosing class's instance method from inside an inner class, returning the
+// selector to invoke (e.g. or.outer.Foo). Returns nil if no enclosing method
+// matches or the current scope is static.
+func enclosingMemberMethodSelector(methodName string, argCount int, ctx Ctx) ast.Expr {
+	scope := ctx.currentClass
+	if scope == nil || !scope.IsInner {
+		return nil
+	}
+	if ctx.localScope != nil && ctx.localScope.IsStatic {
+		return nil
+	}
+	recvName := ctx.className
+	if recvName == "" && scope.Class != nil {
+		recvName = scope.Class.Name
+	}
+	if recvName == "" {
+		return nil
+	}
+
+	var expr ast.Expr = &ast.Ident{Name: ShortName(recvName)}
+	for cur := scope; cur != nil && cur.IsInner; cur = cur.Enclosing {
+		expr = &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: cur.EnclosingFieldName()}}
+		encl := cur.Enclosing
+		if encl == nil {
+			break
+		}
+		if resolved := findInstanceMethodInHierarchy(encl, methodName, argCount, ctx); resolved != nil && resolved.def != nil {
+			return &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: resolved.def.Name}}
+		}
+	}
+	return nil
+}
+
+// enclosingInstanceArgument computes the enclosing-instance expression passed to
+// an inner class's constructor. If the object creation is written as
+// `qualifier.new Inner(...)`, the qualifier expression is used; otherwise the
+// current method receiver (the implicit enclosing instance) is used.
+func enclosingInstanceArgument(node, objectType *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	if node != nil && node.NamedChildCount() > 0 {
+		first := node.NamedChild(0)
+		// A leading named child that is not the type node is the explicit
+		// qualifier in `qualifier.new Inner()`.
+		if first != nil && objectType != nil && first.StartByte() != objectType.StartByte() {
+			if _, isType := javaTypeNodeKinds[first.Type()]; !isType {
+				return ParseExpr(first, source, ctx)
+			}
+		}
+	}
+
+	// Implicit form: use the current receiver as the enclosing instance.
+	if ctx.className != "" {
+		return &ast.Ident{Name: ShortName(ctx.className)}
+	}
+	return nil
 }
 
 func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
@@ -1424,6 +1602,129 @@ func inferLambdaParameterTypeExprs(ctx Ctx, parameterCount int) []ast.Expr {
 	return types
 }
 
+// objectCreationClassBody returns the class_body child of an object creation
+// expression (present only for anonymous classes), or nil.
+func objectCreationClassBody(node *sitter.Node) *sitter.Node {
+	if node == nil {
+		return nil
+	}
+	for _, child := range nodeutil.NamedChildrenOf(node) {
+		if child.Type() == "class_body" {
+			return child
+		}
+	}
+	return nil
+}
+
+// anonymousClassMethods returns the method declarations directly declared in an
+// anonymous class body.
+func anonymousClassMethods(classBody *sitter.Node) []*sitter.Node {
+	var methods []*sitter.Node
+	for _, child := range nodeutil.NamedChildrenOf(classBody) {
+		if child.Type() == "method_declaration" {
+			methods = append(methods, child)
+		}
+	}
+	return methods
+}
+
+// lowerAnonymousClass lowers an anonymous class instantiation. When the
+// supertype is a functional (single-abstract-method) interface and the body
+// declares exactly that method, it is lowered to the interface's func adapter
+// invoked with a closure that captures the surrounding locals. Returns nil when
+// the anonymous class is not a SAM implementation (handled by Milestone 4).
+func lowerAnonymousClass(node, objectType, classBody *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	if objectType == nil {
+		return nil
+	}
+	supertype := objectType.Content(source)
+	baseType, _ := parseJavaTypeString(supertype)
+
+	interfaceScope := resolveClassScopeByQualifiedName(ctx, baseType)
+	if interfaceScope == nil || !interfaceScope.IsInterface {
+		return nil
+	}
+
+	// Identify the interface's single abstract method.
+	method, _ := resolveFunctionalInterfaceMethod(ctx, supertype)
+	if method == nil {
+		return nil
+	}
+
+	// The anonymous class must implement exactly that one method for the SAM
+	// lowering to be sound. Anything else is left for the synthesized-struct path.
+	bodyMethods := anonymousClassMethods(classBody)
+	if len(bodyMethods) != 1 {
+		return nil
+	}
+	implMethod := bodyMethods[0]
+	if implMethod.ChildByFieldName("name").Content(source) != method.OriginalName {
+		return nil
+	}
+
+	// Build a function literal from the implementing method's signature and body.
+	// The body is parsed in a scope that knows the method's parameters so captured
+	// locals from the enclosing method resolve naturally as closure captures.
+	implScope := scopeForAnonymousMethod(implMethod, method, source)
+	methodCtx := ctx.Clone()
+	methodCtx.localScope = implScope
+
+	params := ParseNode(implMethod.ChildByFieldName("parameters"), source, methodCtx).(*ast.FieldList)
+
+	var results *ast.FieldList
+	if strings.TrimSpace(method.OriginalType) != "" && strings.TrimSpace(method.OriginalType) != "void" {
+		results = &ast.FieldList{
+			List: []*ast.Field{
+				{Type: javaTypeStringToGoTypeExpr(method.OriginalType, inScopeTypeParameters(ctx), ctx)},
+			},
+		}
+	}
+
+	bodyNode := implMethod.ChildByFieldName("body")
+	if bodyNode == nil {
+		return nil
+	}
+	body := ParseStmt(bodyNode, source, methodCtx).(*ast.BlockStmt)
+
+	funcLit := &ast.FuncLit{
+		Type: &ast.FuncType{Params: params, Results: results},
+		Body: body,
+	}
+
+	return wrapLambdaWithFunctionalInterfaceAdapter(funcLit, supertype, ctx)
+}
+
+// scopeForAnonymousMethod builds a local scope describing the parameters of an
+// anonymous class's implementing method so its body parses with the right names
+// and types.
+func scopeForAnonymousMethod(implMethod *sitter.Node, samDef *symbol.Definition, source []byte) *symbol.Definition {
+	scope := &symbol.Definition{
+		OriginalName: samDef.OriginalName,
+		Name:         samDef.Name,
+		OriginalType: samDef.OriginalType,
+	}
+	paramsNode := implMethod.ChildByFieldName("parameters")
+	for _, param := range nodeutil.NamedChildrenOf(paramsNode) {
+		var nameNode, typeNode *sitter.Node
+		if param.Type() == "spread_parameter" {
+			nameNode = param.NamedChild(1).ChildByFieldName("name")
+			typeNode = param.NamedChild(0)
+		} else {
+			nameNode = param.ChildByFieldName("name")
+			typeNode = param.ChildByFieldName("type")
+		}
+		if nameNode == nil || typeNode == nil {
+			continue
+		}
+		scope.Parameters = append(scope.Parameters, &symbol.Definition{
+			OriginalName: nameNode.Content(source),
+			Name:         nameNode.Content(source),
+			OriginalType: typeNode.Content(source),
+		})
+	}
+	return scope
+}
+
 func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType string, ctx Ctx) ast.Expr {
 	method, _ := resolveFunctionalInterfaceMethod(ctx, expectedType)
 	if method == nil {
@@ -1496,6 +1797,46 @@ func instanceofAssertTypeExpr(javaType string, ctx Ctx) ast.Expr {
 	}
 
 	return javaTypeStringToGoTypeExpr(javaType, inScopeParams, ctx)
+}
+
+// maskedShiftAmount returns the Go expression for a Java shift count. Java masks
+// the count to the low 5 bits for int shifts and the low 6 bits for long shifts
+// before shifting, while Go applies the full count. For a constant decimal count
+// we fold the mask at transpile time (e.g. `1 << 32` becomes `1 << 0`). Variable
+// counts are left as-is: masking them would change the type of the shift and the
+// common case (counts already in range) is unaffected.
+func maskedShiftAmount(rightNode *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	if rightNode != nil && rightNode.Type() == "decimal_integer_literal" {
+		literal := rightNode.Content(source)
+		// Drop a trailing long suffix if present; the count itself is always int.
+		trimmed := strings.TrimRight(literal, "lL")
+		if value, ok := parseDecimalUint(trimmed); ok {
+			masked := value & 31
+			if masked != value {
+				return &ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", masked)}
+			}
+		}
+	}
+	return ParseExpr(rightNode, source, ctx)
+}
+
+// parseDecimalUint parses a non-negative decimal integer string, ignoring Java
+// digit separators ('_'). It reports false on any non-digit input.
+func parseDecimalUint(s string) (uint64, bool) {
+	if s == "" {
+		return 0, false
+	}
+	var value uint64
+	for _, r := range s {
+		if r == '_' {
+			continue
+		}
+		if r < '0' || r > '9' {
+			return 0, false
+		}
+		value = value*10 + uint64(r-'0')
+	}
+	return value, true
 }
 
 func parseJavaTypeString(typeStr string) (string, []string) {
@@ -1602,6 +1943,27 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		switch name {
 		case "String":
 			return &ast.Ident{Name: "string"}, true
+		// Boxed wrapper types map to their Go primitive. Java distinguishes a
+		// boxed wrapper (nullable) from a primitive, but transpiled code uses the
+		// value form; nullability is not modelled here. This makes boxed type
+		// arguments (e.g. Box<Integer>, List<Integer>) and boxed declared types
+		// resolve to a real Go type instead of an undefined *Integer.
+		case "Integer":
+			return &ast.Ident{Name: "int32"}, true
+		case "Long":
+			return &ast.Ident{Name: "int64"}, true
+		case "Short":
+			return &ast.Ident{Name: "int16"}, true
+		case "Byte":
+			return &ast.Ident{Name: "byte"}, true
+		case "Character":
+			return &ast.Ident{Name: "rune"}, true
+		case "Float":
+			return &ast.Ident{Name: "float32"}, true
+		case "Double":
+			return &ast.Ident{Name: "float64"}, true
+		case "Boolean":
+			return &ast.Ident{Name: "bool"}, true
 		case "AutoCloseable":
 			return &ast.InterfaceType{
 				Methods: &ast.FieldList{
@@ -1704,8 +2066,99 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			return "", false
 		}
 		return typeNode.Content(source), true
+	case "string_literal":
+		// A string literal is a java.lang.String, so chained calls on a literal
+		// (e.g. "  x  ".trim()) resolve as String intrinsics.
+		return "String", true
+	case "parenthesized_expression":
+		if inner := node.NamedChild(0); inner != nil {
+			return inferExprJavaType(inner, ctx, source)
+		}
+	case "method_invocation":
+		// Chained String intrinsics: if the inner call is itself a String method
+		// that returns a String, the result type is String so the outer call also
+		// resolves (e.g. s.trim().toUpperCase()).
+		if objectNode := node.ChildByFieldName("object"); objectNode != nil {
+			nameNode := node.ChildByFieldName("name")
+			if nameNode != nil {
+				methodName := nameNode.Content(source)
+				// Character.toUpperCase/toLowerCase(char) return char.
+				if objectNode.Type() == "identifier" && objectNode.Content(source) == "Character" {
+					switch methodName {
+					case "toUpperCase", "toLowerCase":
+						return "char", true
+					}
+				}
+				if recvType, ok := inferExprJavaType(objectNode, ctx, source); ok {
+					base, _ := parseJavaTypeString(recvType)
+					switch stripJavaQualifier(base) {
+					case "String":
+						switch {
+						case methodName == "charAt":
+							// String.charAt returns char.
+							return "char", true
+						case stringReturningStringMethods[methodName]:
+							return "String", true
+						case methodName == "split":
+							// String.split returns String[].
+							return "String[]", true
+						}
+					case "StringBuilder", "StringBuffer":
+						if methodName == "charAt" {
+							return "char", true
+						}
+					}
+				}
+			}
+		}
 	}
 	return "", false
+}
+
+// isCharTypedExprNode reports whether the expression node evaluates to a Java
+// char. Used so that printing a char emits its glyph rather than its code point.
+func isCharTypedExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
+	if node == nil {
+		return false
+	}
+	if node.Type() == "character_literal" {
+		return true
+	}
+	if javaType, ok := inferExprJavaType(node, ctx, source); ok {
+		base, _ := parseJavaTypeString(javaType)
+		switch stripJavaQualifier(base) {
+		case "char", "Character":
+			return true
+		}
+	}
+	return false
+}
+
+// isArrayTypedExprNode reports whether the expression node is known to evaluate
+// to a Java array, so that `expr.length` can be lowered to len().
+func isArrayTypedExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
+	if node == nil {
+		return false
+	}
+	if node.Type() == "array_creation_expression" {
+		return true
+	}
+	if javaType, ok := inferExprJavaType(node, ctx, source); ok {
+		return strings.HasSuffix(strings.TrimSpace(javaType), "[]")
+	}
+	return false
+}
+
+// stringReturningStringMethods lists the String instance methods whose result is
+// itself a String, so chained intrinsic calls infer their receiver type.
+var stringReturningStringMethods = map[string]bool{
+	"substring":   true,
+	"toUpperCase": true,
+	"toLowerCase": true,
+	"trim":        true,
+	"strip":       true,
+	"replace":     true,
+	"concat":      true,
 }
 
 func superSelectorExpr(ctx Ctx) ast.Expr {

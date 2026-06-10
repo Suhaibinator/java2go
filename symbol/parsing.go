@@ -1,6 +1,8 @@
 package symbol
 
 import (
+	"unicode"
+
 	"github.com/NickyBoy89/java2go/astutil"
 	"github.com/NickyBoy89/java2go/nodeutil"
 	sitter "github.com/smacker/go-tree-sitter"
@@ -431,7 +433,55 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		other := parseClassScopeWithParentTypeParams(node, source, scope.TypeParameters)
 		// Any subclasses will be renamed to part of their parent class
 		other.Class.Rename(scope.Class.Name + other.Class.Name)
+		// Constructors carry the (now stale) original short name in their "New" +
+		// Name form, so rebuild them against the renamed nested-class name.
+		retargetConstructorNames(other)
+		other.Enclosing = scope
+		// A non-static nested class (only plain classes can be "inner"; nested
+		// interfaces and enums are implicitly static) holds an enclosing instance.
+		if node.Type() == "class_declaration" && !nestedClassIsStatic(node) {
+			other.IsInner = true
+		}
 		scope.Subclasses = append(scope.Subclasses, other)
+	}
+}
+
+// nestedClassIsStatic reports whether a nested class declaration carries the
+// `static` modifier.
+func nestedClassIsStatic(node *sitter.Node) bool {
+	if node == nil {
+		return false
+	}
+	modifiers := node.NamedChild(0)
+	if modifiers == nil || modifiers.Type() != "modifiers" {
+		return false
+	}
+	for _, modifier := range nodeutil.UnnamedChildrenOf(modifiers) {
+		if modifier.Type() == "static" {
+			return true
+		}
+	}
+	return false
+}
+
+// retargetConstructorNames rebuilds the "New<Class>" constructor names for a
+// class scope after the class itself has been renamed (e.g. when a nested class
+// Inner is renamed to OuterInner). It preserves each constructor's export
+// status, which is encoded in the first character of its existing name.
+func retargetConstructorNames(scope *ClassScope) {
+	if scope == nil || scope.Class == nil {
+		return
+	}
+	className := scope.Class.Name
+	for _, method := range scope.Methods {
+		if method == nil || !method.Constructor {
+			continue
+		}
+		exported := false
+		if len(method.Name) > 0 {
+			exported = unicode.IsUpper(rune(method.Name[0]))
+		}
+		method.Rename(HandleExportStatus(exported, "New") + className)
 	}
 }
 

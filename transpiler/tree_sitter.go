@@ -336,7 +336,11 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 	case "comment", "line_comment", "block_comment": // Ignore comments
 		return nil
 	}
-	panic(fmt.Sprintf("Unknown node type: %v", node.Type()))
+
+	reportUnsupported("node", node, source, ctx)
+	// Mirror the ERROR case: return a bad statement so a single unknown node does
+	// not abort the whole conversion.
+	return &ast.BadStmt{}
 }
 
 func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources bool) []ast.Stmt {
@@ -451,10 +455,16 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		},
 		Body: &ast.BlockStmt{
 			List: []ast.Stmt{
+				// Normalize native Go runtime panics (divide by zero, nil
+				// dereference, index out of range, failed type assertion) into the
+				// matching Java exception so catch dispatch can handle them.
 				&ast.AssignStmt{
 					Lhs: []ast.Expr{&ast.Ident{Name: recoveredName}},
 					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{&ast.Ident{Name: "r"}},
+					Rhs: []ast.Expr{&ast.CallExpr{
+						Fun:  stdjavaQualifiedExpr("NormalizePanic", ctx),
+						Args: []ast.Expr{&ast.Ident{Name: "r"}},
+					}},
 				},
 				&ast.AssignStmt{
 					Lhs: []ast.Expr{&ast.Ident{Name: didPanicName}},
@@ -490,10 +500,9 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		},
 	})
 
-	if catchDispatch := buildCatchDispatchStmt(catchClauses, recoveredName, didPanicName, handledName, returnTarget, source, ctx); catchDispatch != nil {
-		stmts = append(stmts, catchDispatch)
-	}
+	catchDispatch := buildCatchDispatchStmt(catchClauses, recoveredName, didPanicName, handledName, returnTarget, source, ctx)
 
+	var parsedFinally *ast.BlockStmt
 	if finallyClause != nil {
 		finallyBody := finallyClause.ChildByFieldName("body")
 		if finallyBody == nil && finallyClause.NamedChildCount() > 0 {
@@ -502,19 +511,68 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		if finallyBody != nil {
 			finallyCtx := ctx.Clone()
 			finallyCtx.tryReturnTarget = returnTarget
-			parsedFinally := ParseStmt(finallyBody, source, finallyCtx).(*ast.BlockStmt)
-			stmts = append(stmts, &ast.ExprStmt{
-				X: &ast.CallExpr{
-					Fun: &ast.FuncLit{
-						Type: &ast.FuncType{},
-						Body: parsedFinally,
-					},
-				},
-			})
+			parsedFinally = ParseStmt(finallyBody, source, finallyCtx).(*ast.BlockStmt)
 		}
 	}
 
-	if hasReturnValue {
+	if parsedFinally != nil {
+		// The finally block must run on every exit path from the catch dispatch,
+		// including when a catch clause rethrows. Registering it as a deferred
+		// call inside the closure that runs the catch dispatch guarantees it
+		// executes before any rethrown panic propagates, matching Java semantics.
+		dispatchBody := &ast.BlockStmt{
+			List: []ast.Stmt{
+				&ast.DeferStmt{
+					Call: &ast.CallExpr{
+						Fun: &ast.FuncLit{
+							Type: &ast.FuncType{},
+							Body: parsedFinally,
+						},
+					},
+				},
+			},
+		}
+		if catchDispatch != nil {
+			dispatchBody.List = append(dispatchBody.List, catchDispatch)
+		}
+		stmts = append(stmts, &ast.ExprStmt{
+			X: &ast.CallExpr{
+				Fun: &ast.FuncLit{
+					Type: &ast.FuncType{},
+					Body: dispatchBody,
+				},
+			},
+		})
+	} else if catchDispatch != nil {
+		stmts = append(stmts, catchDispatch)
+	}
+
+	// When this try statement is itself nested inside another try's body, the
+	// lowered code runs inside a `func() {}` body closure that returns nothing.
+	// A method-level `return` therefore cannot happen here; instead, propagate
+	// the pending return to the enclosing try's return target and return from the
+	// body closure with a bare return. The enclosing machinery performs the real
+	// method return once its own body closure unwinds.
+	if enclosing := ctx.tryReturnTarget; enclosing != nil {
+		propagation := []ast.Stmt{}
+		if hasReturnValue && enclosing.HasValue {
+			propagation = append(propagation, &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: enclosing.ValueName}},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{&ast.Ident{Name: returnValueName}},
+			})
+		}
+		propagation = append(propagation, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: enclosing.FlagName}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: "true"}},
+		})
+		propagation = append(propagation, &ast.ReturnStmt{})
+		stmts = append(stmts, &ast.IfStmt{
+			Cond: &ast.Ident{Name: shouldReturnName},
+			Body: &ast.BlockStmt{List: propagation},
+		})
+	} else if hasReturnValue {
 		stmts = append(stmts, &ast.IfStmt{
 			Cond: &ast.Ident{Name: shouldReturnName},
 			Body: &ast.BlockStmt{
@@ -683,29 +741,16 @@ func catchConditionExpr(catchTypes []string, recoveredName string, ctx Ctx) ast.
 			return &ast.Ident{Name: "true"}
 		}
 
-		assertType := javaTypeStringToGoTypeExpr(catchType, inScopeTypeParameters(ctx), ctx)
+		// Match by hierarchy through the stdjava runtime: a thrown
+		// IllegalArgumentException is caught by `catch (RuntimeException e)`.
+		// Multi-catch (catch (A | B e)) is handled by OR-ing each type's check.
+		base, _ := parseJavaTypeString(catchType)
+		typeName := stripJavaQualifier(base)
 		checks = append(checks, &ast.CallExpr{
-			Fun: &ast.FuncLit{
-				Type: &ast.FuncType{
-					Results: &ast.FieldList{
-						List: []*ast.Field{{Type: &ast.Ident{Name: "bool"}}},
-					},
-				},
-				Body: &ast.BlockStmt{
-					List: []ast.Stmt{
-						&ast.AssignStmt{
-							Lhs: []ast.Expr{&ast.Ident{Name: "_"}, &ast.Ident{Name: "ok"}},
-							Tok: token.DEFINE,
-							Rhs: []ast.Expr{
-								&ast.TypeAssertExpr{
-									X:    &ast.Ident{Name: recoveredName},
-									Type: assertType,
-								},
-							},
-						},
-						&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "ok"}}},
-					},
-				},
+			Fun: stdjavaQualifiedExpr("CaughtAs", ctx),
+			Args: []ast.Expr{
+				&ast.Ident{Name: recoveredName},
+				&ast.BasicLit{Kind: token.STRING, Value: `"` + typeName + `"`},
 			},
 		})
 	}
@@ -729,9 +774,21 @@ func shouldTreatAsCatchAll(javaType string, ctx Ctx) bool {
 	base, _ := parseJavaTypeString(javaType)
 	base = stripJavaQualifier(base)
 
+	// Throwable and Object are the only true catch-alls: they match anything that
+	// escaped the try body. Everything else — including Exception and
+	// RuntimeException — is matched by hierarchy through stdjava.CaughtAs. This is
+	// sound because stdjava.NormalizePanic converts every raw Go panic into a
+	// typed exception (RuntimeException by default) at the recover boundary, so a
+	// thrown Error/Throwable is correctly NOT caught by catch (Exception e), while
+	// more specific clauses still win by appearing earlier in the dispatch chain.
 	switch base {
-	case "Throwable", "Exception", "RuntimeException", "Error", "Object":
+	case "Throwable", "Object":
 		return true
+	}
+
+	// Built-in exception types are modelled by stdjava and matched by hierarchy.
+	if isBuiltinExceptionType(base) {
+		return false
 	}
 
 	if resolveClassScopeByQualifiedName(ctx, javaType) != nil {

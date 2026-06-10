@@ -23,6 +23,31 @@ func autoCloseableInterfaceType() ast.Expr {
 	}
 }
 
+// boxedPrimitiveType maps a Java boxed wrapper type name to its Go primitive
+// equivalent. The value form is used; Java's wrapper nullability is not modelled.
+// A Java int is int32 in this codebase, so Integer maps to int32.
+func boxedPrimitiveType(name string) (ast.Expr, bool) {
+	switch name {
+	case "Integer":
+		return &ast.Ident{Name: "int32"}, true
+	case "Long":
+		return &ast.Ident{Name: "int64"}, true
+	case "Short":
+		return &ast.Ident{Name: "int16"}, true
+	case "Byte":
+		return &ast.Ident{Name: "byte"}, true
+	case "Character":
+		return &ast.Ident{Name: "rune"}, true
+	case "Float":
+		return &ast.Ident{Name: "float32"}, true
+	case "Double":
+		return &ast.Ident{Name: "float64"}, true
+	case "Boolean":
+		return &ast.Ident{Name: "bool"}, true
+	}
+	return nil, false
+}
+
 // ParseType parses a Java type node and converts it to a Go AST expression.
 // This version does not handle type parameters - use ParseTypeWithTypeParams for generic contexts.
 func ParseType(node *sitter.Node, source []byte) ast.Expr {
@@ -156,8 +181,19 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		if typeName == "String" {
 			return &ast.Ident{Name: "string"}
 		}
+		// Java's Object is the universal supertype, which maps to Go's any.
+		if typeName == "Object" {
+			return &ast.Ident{Name: "any"}
+		}
 		if typeName == "AutoCloseable" {
 			return autoCloseableInterfaceType()
+		}
+		// Boxed wrapper types map to their Go primitive (value form; nullability
+		// is not modelled). This covers boxed declared types (Integer x) and boxed
+		// type arguments (List<Integer>), which would otherwise emit an undefined
+		// *Integer.
+		if boxed, ok := boxedPrimitiveType(typeName); ok {
+			return boxed
 		}
 
 		// If this is a type parameter, don't wrap it in a pointer

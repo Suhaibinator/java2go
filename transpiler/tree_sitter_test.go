@@ -556,8 +556,9 @@ public class Box<T> {
 		}
 		output := buf.String()
 
-		// Explicit type args should be preserved
-		if !strings.Contains(output, "[Integer]") && !strings.Contains(output, "[*Integer]") && !strings.Contains(output, "[int]") {
+		// Explicit type args should be preserved. Integer is a boxed type and now
+		// maps to its Go primitive (int32).
+		if !strings.Contains(output, "[Integer]") && !strings.Contains(output, "[*Integer]") && !strings.Contains(output, "[int]") && !strings.Contains(output, "[int32]") {
 			t.Errorf("Explicit type arguments should be preserved, got:\n%s", output)
 		}
 	})
@@ -594,7 +595,7 @@ public class Pair<K, V> {
 		}
 		output := buf.String()
 
-		if !strings.Contains(output, "NewPair[String, Integer]") && !strings.Contains(output, "NewPair[string, *Integer]") && !strings.Contains(output, "NewPair[string,*Integer]") {
+		if !strings.Contains(output, "NewPair[String, Integer]") && !strings.Contains(output, "NewPair[string, *Integer]") && !strings.Contains(output, "NewPair[string,*Integer]") && !strings.Contains(output, "NewPair[string, int32]") {
 			t.Errorf("Diamond operator should infer multiple type arguments, got:\n%s", output)
 		}
 	})
@@ -938,11 +939,16 @@ public class LinkedList<E> {
 	}
 	output := buf.String()
 
-	// The inner class constructor call should inherit parent type params
-	// new Node(e) inside a generic class should become a generic constructor call
-	// using the parent type parameter, e.g. ConstructNode[E](e) or newNode[E](e).
-	if !strings.Contains(output, "ConstructNode[E]") && !strings.Contains(output, "newNode[E]") && !strings.Contains(output, "NewNode[E]") {
-		t.Errorf("Inner class constructor should use parent type param [E], got:\n%s", output)
+	// The inner class constructor call should inherit parent type params.
+	// new Node(e) inside a generic class becomes a generic constructor call using
+	// the parent type parameter. The nested class Node is renamed to the
+	// collision-safe LinkedListnode, and its constructor follows that name so the
+	// call binds to the actual generated struct, e.g. newLinkedListnode[E](e).
+	if !strings.Contains(output, "[E]") ||
+		(!strings.Contains(output, "newLinkedListnode[E]") &&
+			!strings.Contains(output, "NewLinkedListnode[E]") &&
+			!strings.Contains(output, "ConstructNode[E]")) {
+		t.Errorf("Inner class constructor should use parent type param [E] and the renamed nested-class name, got:\n%s", output)
 	}
 }
 
