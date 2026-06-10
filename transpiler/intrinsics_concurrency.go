@@ -30,6 +30,12 @@ var concurrencyRuntimeTypes = map[string]bool{
 // the same name. Generic args are themselves lowered through
 // javaTypeStringToGoTypeExpr.
 func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+	// java.lang.Object maps to the empty interface. It commonly appears as the
+	// type of a lock token; new Object() is handled by its constructor intrinsic.
+	if baseName == "Object" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+		return &ast.Ident{Name: "any"}, true
+	}
+
 	generic, ok := concurrencyRuntimeTypes[baseName]
 	if !ok {
 		return nil, false
@@ -68,6 +74,40 @@ func init() {
 	registerThreadIntrinsics()
 	registerExecutorIntrinsics()
 	registerConcurrentMapIntrinsics()
+
+	// new Object() -> stdjava.NewObject() (a unique lock token).
+	registerConstructorIntrinsic("Object", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "NewObject")
+	})
+}
+
+// synchronizedMethodPrologue builds the statements that acquire and defer the
+// release of a synchronized method's monitor. An instance method locks its
+// receiver; a static method locks a class-level token keyed by the generated
+// type name. The acquired mutex is stored in a uniquely-named local so the
+// deferred MonitorExit can release it.
+func synchronizedMethodPrologue(ctx Ctx, static bool) []ast.Stmt {
+	monName := "__java2goMethodMonitor"
+	var enter ast.Expr
+	if static {
+		enter = stdjavaCall(ctx, "ClassMonitorEnter",
+			&ast.BasicLit{Kind: token.STRING, Value: `"` + ctx.className + `"`})
+	} else {
+		enter = stdjavaCall(ctx, "MonitorEnter", &ast.Ident{Name: ShortName(ctx.className)})
+	}
+	return []ast.Stmt{
+		&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: monName}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{enter},
+		},
+		&ast.DeferStmt{
+			Call: stdjavaCall(ctx, "MonitorExit", &ast.Ident{Name: monName}),
+		},
+	}
 }
 
 // selectorCall builds recv.MethodName(args...), used to map a Java instance

@@ -238,6 +238,13 @@ func MonitorExit(m *sync.Mutex) {
 	}
 }
 
+// ClassMonitorEnter acquires the class-level monitor named by className, used to
+// lower a `static synchronized` method (which in Java locks the Class object).
+// The name is the generated Go type name, unique per class within the program.
+func ClassMonitorEnter(className string) *sync.Mutex {
+	return MonitorEnter(className)
+}
+
 // ExecutorService is a minimal fixed-size worker pool mirroring the
 // ExecutorService methods transpiled code commonly uses: submit a Runnable,
 // shutdown, and awaitTermination. Tasks are plain func() values.
