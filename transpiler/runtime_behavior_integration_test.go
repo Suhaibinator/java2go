@@ -13,7 +13,10 @@ func runGoTestInTempModule(t *testing.T, generatedGo string, goTestSource string
 
 	tempDir := t.TempDir()
 
-	if err := os.WriteFile(filepath.Join(tempDir, "go.mod"), []byte("module generated\n\ngo 1.25.0\n"), 0644); err != nil {
+	// Generated code may import the stdjava runtime (try/catch lowering,
+	// intrinsics), so resolve it against this repository's copy.
+	goMod := "module generated\n\ngo 1.25.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => " + repoRootDir(t) + "\n"
+	if err := os.WriteFile(filepath.Join(tempDir, "go.mod"), []byte(goMod), 0644); err != nil {
 		t.Fatalf("failed writing temp go.mod: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(tempDir, "generated.go"), []byte(generatedGo), 0644); err != nil {
@@ -21,6 +24,12 @@ func runGoTestInTempModule(t *testing.T, generatedGo string, goTestSource string
 	}
 	if err := os.WriteFile(filepath.Join(tempDir, "generated_behavior_test.go"), []byte(goTestSource), 0644); err != nil {
 		t.Fatalf("failed writing generated behavior test: %v", err)
+	}
+
+	tidy := exec.Command("go", "mod", "tidy")
+	tidy.Dir = tempDir
+	if out, err := tidy.CombinedOutput(); err != nil {
+		t.Fatalf("go mod tidy failed:\n%s", string(out))
 	}
 
 	cmd := exec.Command("go", "test", "./...")
