@@ -140,7 +140,7 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 			importPath := node.NamedChild(0).ChildByFieldName("scope").Content(source)
 
 			imports[importedItem] = importPath
-		case "class_declaration", "interface_declaration", "enum_declaration", "annotation_type_declaration":
+		case "class_declaration", "interface_declaration", "enum_declaration", "annotation_type_declaration", "record_declaration":
 			topLevelNodes = append(topLevelNodes, node)
 		}
 	}
@@ -255,6 +255,12 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 		default:
 			parseClassMember(scope, node, source)
 		}
+	}
+
+	// A record's components (its header parameters) become fields plus implicit
+	// accessor methods named after each component, and a canonical constructor.
+	if root.Type() == "record_declaration" {
+		injectRecordMembers(scope, root, source)
 	}
 
 	// Inject standard enum methods that Java provides implicitly.
@@ -436,7 +442,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		}
 
 		scope.Methods = append(scope.Methods, declaration)
-	case "class_declaration", "interface_declaration", "enum_declaration":
+	case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
 		other := parseClassScopeWithParentTypeParams(node, source, scope.TypeParameters)
 		// Any subclasses will be renamed to part of their parent class
 		other.Class.Rename(scope.Class.Name + other.Class.Name)
@@ -450,6 +456,105 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			other.IsInner = true
 		}
 		scope.Subclasses = append(scope.Subclasses, other)
+	}
+}
+
+// injectRecordMembers adds a record's components as fields, an accessor method
+// per component (named after the component, e.g. x() not getX()), and a
+// canonical constructor. Components are exported since records expose them
+// publicly. Explicit accessors/constructors already declared in the body are not
+// duplicated.
+func injectRecordMembers(scope *ClassScope, root *sitter.Node, source []byte) {
+	paramsNode := root.ChildByFieldName("parameters")
+	if paramsNode == nil {
+		return
+	}
+
+	type component struct {
+		name     string
+		origType string
+		goType   string
+	}
+	var components []component
+	for _, param := range nodeutil.NamedChildrenOf(paramsNode) {
+		if param.Type() != "formal_parameter" {
+			continue
+		}
+		nameNode := param.ChildByFieldName("name")
+		typeNode := param.ChildByFieldName("type")
+		if nameNode == nil || typeNode == nil {
+			continue
+		}
+		comp := component{
+			name:     nameNode.Content(source),
+			origType: typeNode.Content(source),
+			goType:   nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, scope.TypeParameterNames())),
+		}
+		components = append(components, comp)
+
+		// The component field is unexported so it does not collide with the
+		// exported accessor METHOD of the same Java name (Go shares the field/method
+		// namespace; Java does not).
+		scope.Fields = append(scope.Fields, &Definition{
+			Name:         Lowercase(comp.name),
+			OriginalName: comp.name,
+			Type:         comp.goType,
+			OriginalType: comp.origType,
+		})
+
+		// Accessor method named exactly after the component (exported), unless the
+		// body already declares one.
+		if scope.FindMethodByName(comp.name, nil) == nil {
+			scope.Methods = append(scope.Methods, &Definition{
+				Name:         HandleExportStatus(true, comp.name),
+				OriginalName: comp.name,
+				Type:         comp.goType,
+				OriginalType: comp.origType,
+			})
+		}
+	}
+
+	// Implicit value-equality method, so `a.equals(b)` resolves to the synthesized
+	// Equals, unless the body declares its own.
+	if scope.FindMethodByName("equals", nil) == nil {
+		scope.Methods = append(scope.Methods, &Definition{
+			Name:         "Equals",
+			OriginalName: "equals",
+			Type:         "boolean",
+			OriginalType: "boolean",
+			Parameters: []*Definition{{
+				Name:         "other",
+				OriginalName: "other",
+				Type:         "*" + scope.Class.Name,
+				OriginalType: scope.Class.OriginalName,
+			}},
+		})
+	}
+
+	// Canonical constructor, unless one is already declared.
+	hasCanonical := false
+	for _, method := range scope.Methods {
+		if method != nil && method.Constructor && len(method.Parameters) == len(components) {
+			hasCanonical = true
+			break
+		}
+	}
+	if !hasCanonical {
+		ctor := &Definition{
+			Name:         "New" + scope.Class.Name,
+			OriginalName: scope.Class.OriginalName,
+			Constructor:  true,
+			Type:         scope.Class.OriginalName,
+		}
+		for _, comp := range components {
+			ctor.Parameters = append(ctor.Parameters, &Definition{
+				Name:         comp.name,
+				OriginalName: comp.name,
+				Type:         comp.goType,
+				OriginalType: comp.origType,
+			})
+		}
+		scope.Methods = append(scope.Methods, ctor)
 	}
 }
 

@@ -50,8 +50,8 @@ roughly in suggested priority order. See file references for where each gap live
 ## 5. Modern Java syntax (Java 10–17+)
 
 - [x] `var` local variable type inference (verified working by e2e suite; was already covered by existing inference)
-- [ ] Switch expressions with `->` arms and `yield` (Java 12+)
-- [ ] `instanceof` pattern matching: `if (x instanceof String s)` (Java 16+)
+- [x] Switch expressions with `->` arms and `yield` (Java 12+) — lowered to IIFE returning the value; arrow-form switch statements too
+- [x] `instanceof` pattern matching: `if (x instanceof String s)` → `if t, ok := any(x).(T); ok` with the bound variable scoped to the body
 - [ ] Records (Java 14+)
 - [ ] Sealed classes/interfaces (Java 15+)
 - [ ] Text blocks `"""..."""` (Java 13+)

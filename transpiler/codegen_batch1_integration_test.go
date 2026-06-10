@@ -313,3 +313,103 @@ public class E {
 		t.Errorf("expected `d == WED`, got:\n%s", out)
 	}
 }
+
+// TestCodegen_LongShiftMaskWidth verifies long shifts mask the count to 6 bits
+// while int shifts use 5 bits, matching Java.
+func TestCodegen_LongShiftMaskWidth(t *testing.T) {
+	src := `
+public class LSh {
+    public long bigLong() { return 1L << 32; }
+    public int bigInt() { return 1 << 32; }
+    public long overLong() { return 1L << 64; }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	// long: 32 & 63 == 32, so the count is preserved.
+	if !strings.Contains(out, "int64(1) << 32") {
+		t.Errorf("expected long `1L << 32` to keep count 32 (6-bit mask), got:\n%s", out)
+	}
+	// int: 32 & 31 == 0.
+	if !strings.Contains(out, "1 << 0") {
+		t.Errorf("expected int `1 << 32` to mask to `1 << 0`, got:\n%s", out)
+	}
+	// long: 64 & 63 == 0.
+	if !strings.Contains(out, "int64(1) << 0") {
+		t.Errorf("expected long `1L << 64` to mask to count 0, got:\n%s", out)
+	}
+}
+
+// TestCodegen_PackagePrivateConstructorCallCasing verifies `new T(...)` on a
+// package-private class emits the lowercased constructor name.
+func TestCodegen_PackagePrivateConstructorCallCasing(t *testing.T) {
+	src := `
+class Rectangle {
+    Rectangle(double w, double h) {}
+}
+public class Maker {
+    public void run() {
+        Rectangle r = new Rectangle(2.0, 3.0);
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	if strings.Contains(out, "Newrectangle") {
+		t.Errorf("constructor call should be `newRectangle`, not miscased `Newrectangle`:\n%s", out)
+	}
+	if !strings.Contains(out, "newRectangle(2.0, 3.0)") {
+		t.Errorf("expected `newRectangle(2.0, 3.0)`, got:\n%s", out)
+	}
+}
+
+// TestCodegen_PackagePrivateInterfaceCasing verifies a package-private interface
+// is embedded and referenced by its lowercased generated name (and by value).
+func TestCodegen_PackagePrivateInterfaceCasing(t *testing.T) {
+	src := `
+interface Greeter {
+    String greet(String who);
+}
+class Formal implements Greeter {
+    public String greet(String who) { return "Hi " + who; }
+}
+public class App {
+    public void run() {
+        Greeter[] gs = new Greeter[] { new Formal() };
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+	if !strings.Contains(out, "type greeter interface") {
+		t.Errorf("expected lowercased `type greeter interface`, got:\n%s", out)
+	}
+	if strings.Contains(flat, "type formal struct { Greeter") {
+		t.Errorf("interface embed should be lowercased `greeter`, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "type formal struct { greeter") {
+		t.Errorf("expected struct to embed `greeter`, got:\n%s", out)
+	}
+	// Interface element type is by value, not a pointer.
+	if !strings.Contains(out, "[]greeter{") {
+		t.Errorf("expected `[]greeter{...}` (interface element by value), got:\n%s", out)
+	}
+}
+
+// TestCodegen_EnumMethodCallCasing verifies a built-in enum method call resolves
+// to the generated (capitalized) Go method name.
+func TestCodegen_EnumMethodCallCasing(t *testing.T) {
+	src := `
+public class E {
+    enum Day { MON, TUE, WED }
+    public int wedOrdinal() {
+        return Day.WED.ordinal();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	if strings.Contains(out, ".ordinal()") {
+		t.Errorf("enum method call should resolve to `.Ordinal()`, got lowercased:\n%s", out)
+	}
+	if !strings.Contains(out, "WED.Ordinal()") {
+		t.Errorf("expected `WED.Ordinal()`, got:\n%s", out)
+	}
+}

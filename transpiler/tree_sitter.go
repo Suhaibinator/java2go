@@ -175,7 +175,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 				if pkg != nil && pkg.NamedChildCount() > 0 {
 					program.Name = &ast.Ident{Name: pkg.NamedChild(int(pkg.NamedChildCount() - 1)).Content(source)}
 				}
-			case "class_declaration", "interface_declaration", "enum_declaration":
+			case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
 				declCtx := ctx.Clone()
 				if nameNode := c.ChildByFieldName("name"); nameNode != nil && ctx.currentFile != nil {
 					if scope := ctx.currentFile.FindClassScope(nameNode.Content(source)); scope != nil {

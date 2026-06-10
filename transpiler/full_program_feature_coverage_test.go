@@ -100,8 +100,9 @@ func TestFullProgram_ControlFlowAndTryCatchPatterns(t *testing.T) {
 	outputs := convertJavaProjectDir(t, root)
 	flat := normalizeSpaces(outputs["com/acme/control/Flow.go"])
 
-	if !strings.Contains(flat, "for i := 0; i < n; i++") {
-		t.Fatalf("expected classic for-loop conversion:\n%s", outputs["com/acme/control/Flow.go"])
+	// int loop counters are pinned to int32 (K1), so the init is `i := int32(0)`.
+	if !strings.Contains(flat, "for i := int32(0); i < n; i++") {
+		t.Fatalf("expected classic for-loop conversion with int32-pinned counter:\n%s", outputs["com/acme/control/Flow.go"])
 	}
 	if !strings.Contains(flat, "for j < n") {
 		t.Fatalf("expected while-loop conversion:\n%s", outputs["com/acme/control/Flow.go"])

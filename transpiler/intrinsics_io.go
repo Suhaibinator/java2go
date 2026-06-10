@@ -15,6 +15,17 @@ import "go/ast"
 func init() {
 	registerIOConstructors()
 	registerIOInstanceMethods()
+	registerIOStatics()
+}
+
+func registerIOStatics() {
+	// File.createTempFile(prefix, suffix) -> stdjava.CreateTempFile(prefix, suffix).
+	registerStaticIntrinsic("File", "createTempFile", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 2 {
+			return nil
+		}
+		return stdjavaCall(ctx, "CreateTempFile", args[0], args[1])
+	})
 }
 
 func registerIOConstructors() {
@@ -25,37 +36,29 @@ func registerIOConstructors() {
 		return stdjavaCall(ctx, "NewJavaFile", args[0])
 	})
 
+	// PrintWriter/FileWriter take a path, a File, or a nested writer. The stdjava
+	// constructor accepts a path string or *JavaFile, so unwrap one writer layer
+	// (new PrintWriter(new FileWriter(x)) -> x) and pass the result through.
 	for _, name := range []string{"PrintWriter", "FileWriter"} {
 		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) != 1 {
 				return nil
 			}
-			// `new PrintWriter(new File(path))` nests a File; unwrap to the path.
-			return stdjavaCall(ctx, "NewPrintWriter", unwrapFileToPath(args[0]))
+			return stdjavaCall(ctx, "NewPrintWriter", unwrapWriterArg(args[0]))
 		})
 	}
 
-	// `new BufferedReader(new FileReader(path))` — unwrap the inner FileReader to
-	// its path. A FileReader/Reader argument that is not a recognized wrapper
-	// falls through.
-	registerConstructorIntrinsic("BufferedReader", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) != 1 {
-			return nil
-		}
-		path, ok := readerArgToPath(args[0])
-		if !ok {
-			return nil
-		}
-		return stdjavaCall(ctx, "NewBufferedReader", path)
-	})
-	// A bare `new FileReader(path)` used directly as a reader maps to a
-	// BufferedReader so readLine() is available.
-	registerConstructorIntrinsic("FileReader", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) != 1 {
-			return nil
-		}
-		return stdjavaCall(ctx, "NewBufferedReader", unwrapFileToPath(args[0]))
-	})
+	// BufferedReader/FileReader take a path, a File, or a nested reader. Unwrap one
+	// reader layer (new BufferedReader(new FileReader(x)) -> x) and pass through;
+	// the stdjava constructor accepts a path string or *JavaFile.
+	for _, name := range []string{"BufferedReader", "FileReader"} {
+		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 1 {
+				return nil
+			}
+			return stdjavaCall(ctx, "NewBufferedReader", unwrapReaderArg(args[0]))
+		})
+	}
 
 	registerConstructorIntrinsic("Scanner", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 1 {
@@ -64,11 +67,8 @@ func registerIOConstructors() {
 		if isSystemInExpr(args[0]) {
 			return stdjavaCall(ctx, "NewScannerStdin")
 		}
-		// new Scanner(new File(path)) -> NewScannerFile(path).
-		if path, ok := newFilePathArg(args[0]); ok {
-			return stdjavaCall(ctx, "NewScannerFile", path)
-		}
-		return nil
+		// new Scanner(new File(path)) -> NewScannerFile(file-or-path).
+		return stdjavaCall(ctx, "NewScannerFile", args[0])
 	})
 }
 
@@ -143,41 +143,34 @@ func isSystemInExpr(arg ast.Expr) bool {
 	return ok && base.Name == "System"
 }
 
-// unwrapFileToPath returns the inner path expression if arg is a
-// stdjava.NewJavaFile(path) call (i.e. a `new File(path)`), else arg unchanged.
-func unwrapFileToPath(arg ast.Expr) ast.Expr {
-	if path, ok := newFilePathArg(arg); ok {
-		return path
+// unwrapWriterArg unwraps one writer layer: if arg is a rewritten FileWriter
+// (stdjava.NewPrintWriter(x)), return its inner x; otherwise return arg (a path
+// string or a *JavaFile expression, both accepted by NewPrintWriter).
+func unwrapWriterArg(arg ast.Expr) ast.Expr {
+	if inner, ok := stdjavaCallArg(arg, "NewPrintWriter"); ok {
+		return inner
 	}
 	return arg
 }
 
-// newFilePathArg returns the path argument if arg is a stdjava.NewJavaFile(path)
-// call.
-func newFilePathArg(arg ast.Expr) (ast.Expr, bool) {
-	call, ok := arg.(*ast.CallExpr)
-	if !ok || len(call.Args) != 1 {
-		return nil, false
+// unwrapReaderArg unwraps one reader layer: if arg is a rewritten FileReader
+// (stdjava.NewBufferedReader(x)), return its inner x; otherwise return arg.
+func unwrapReaderArg(arg ast.Expr) ast.Expr {
+	if inner, ok := stdjavaCallArg(arg, "NewBufferedReader"); ok {
+		return inner
 	}
-	if sel, ok := call.Fun.(*ast.SelectorExpr); ok && sel.Sel != nil && sel.Sel.Name == "NewJavaFile" {
-		return call.Args[0], true
-	}
-	return nil, false
+	return arg
 }
 
-// readerArgToPath extracts the path from a reader argument that is a
-// stdjava.NewBufferedReader(path) call (i.e. a `new FileReader(path)` already
-// rewritten) or a `new File(path)`.
-func readerArgToPath(arg ast.Expr) (ast.Expr, bool) {
+// stdjavaCallArg returns the single argument of arg if it is a call to
+// stdjava.<name>(x).
+func stdjavaCallArg(arg ast.Expr, name string) (ast.Expr, bool) {
 	call, ok := arg.(*ast.CallExpr)
 	if !ok || len(call.Args) != 1 {
 		return nil, false
 	}
-	if sel, ok := call.Fun.(*ast.SelectorExpr); ok && sel.Sel != nil {
-		switch sel.Sel.Name {
-		case "NewBufferedReader", "NewJavaFile":
-			return call.Args[0], true
-		}
+	if sel, ok := call.Fun.(*ast.SelectorExpr); ok && sel.Sel != nil && sel.Sel.Name == name {
+		return call.Args[0], true
 	}
 	return nil, false
 }

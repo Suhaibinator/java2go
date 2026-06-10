@@ -42,10 +42,11 @@ public class Robust {
 		t.Fatalf("expected an UNSUPPORTED stub in output, got:\n%s", out)
 	}
 	// The supported statements surrounding the assert must still be converted.
-	if !strings.Contains(out, "before := 1") {
+	// int locals are pinned to int32 (K1), so the initializers carry int32(...).
+	if !strings.Contains(out, "before := int32(1)") {
 		t.Errorf("expected supported statement before the unsupported one, got:\n%s", out)
 	}
-	if !strings.Contains(out, "after := before + 1") {
+	if !strings.Contains(out, "after := int32(before + 1)") {
 		t.Errorf("expected supported statement after the unsupported one, got:\n%s", out)
 	}
 	if !strings.Contains(out, "return after") {

@@ -1,0 +1,5 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_221/out
+fuzz/.fuzzbuild/seed_221/out/Gen.go:35:23: cannot use 0xFFFFFFFF (untyped int constant 4294967295) as int32 value in array or slice literal (overflows)
+fuzz/.fuzzbuild/seed_221/out/Gen.go:45:16: invalid operation: (stdjava.Ternary((int64(1000000000000) < int64(4294967296)), i1, i1)) - (stdjava.Ternary((true || false), -100, -930)) (mismatched types int32 and int)
+fuzz/.fuzzbuild/seed_221/out/Gen.go:54:2: undefined: UnsignedRightShiftAssignment

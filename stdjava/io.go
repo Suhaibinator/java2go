@@ -31,6 +31,19 @@ func NewJavaFile(path string) *JavaFile {
 	return &JavaFile{path: path}
 }
 
+// CreateTempFile creates a new empty file in the default temp directory with the
+// given prefix and suffix, matching File.createTempFile, and returns a File for
+// it. It panics on failure.
+func CreateTempFile(prefix, suffix string) *JavaFile {
+	f, err := os.CreateTemp("", prefix+"*"+suffix)
+	if err != nil {
+		panic(err)
+	}
+	name := f.Name()
+	f.Close()
+	return &JavaFile{path: name}
+}
+
 // Exists reports whether the file or directory exists, matching File.exists.
 func (f *JavaFile) Exists() bool {
 	_, err := os.Stat(f.path)
@@ -74,14 +87,29 @@ type PrintWriter struct {
 	buf  *bufio.Writer
 }
 
-// NewPrintWriter opens (creating/truncating) the file for writing, matching
-// `new PrintWriter(path)` / `new FileWriter(path)`. It panics on failure.
-func NewPrintWriter(path string) *PrintWriter {
-	file, err := os.Create(path)
+// NewPrintWriter opens (creating/truncating) the destination for writing,
+// matching `new PrintWriter(...)` / `new FileWriter(...)`. The destination may be
+// a path string or a *JavaFile (so the nested new PrintWriter(new FileWriter(f))
+// and new PrintWriter(path) forms both work). It panics on failure.
+func NewPrintWriter(dest any) *PrintWriter {
+	file, err := os.Create(ioPathOf(dest))
 	if err != nil {
 		panic(err)
 	}
 	return &PrintWriter{file: file, buf: bufio.NewWriter(file)}
+}
+
+// ioPathOf extracts a filesystem path from an io destination/source argument
+// that is either a path string or a *JavaFile.
+func ioPathOf(arg any) string {
+	switch v := arg.(type) {
+	case string:
+		return v
+	case *JavaFile:
+		return v.path
+	default:
+		panic("stdjava: unsupported file argument type")
+	}
 }
 
 // Print writes the textual form of value, matching PrintWriter.print.
@@ -119,10 +147,11 @@ type BufferedReader struct {
 	buf  *bufio.Reader
 }
 
-// NewBufferedReader opens the file for reading, matching
-// `new BufferedReader(new FileReader(path))`. It panics on failure.
-func NewBufferedReader(path string) *BufferedReader {
-	file, err := os.Open(path)
+// NewBufferedReader opens the source for reading, matching
+// `new BufferedReader(new FileReader(...))`. The source may be a path string or a
+// *JavaFile. It panics on failure.
+func NewBufferedReader(src any) *BufferedReader {
+	file, err := os.Open(ioPathOf(src))
 	if err != nil {
 		panic(err)
 	}
@@ -170,10 +199,11 @@ func NewScannerStdin() *Scanner {
 	return newScanner(os.Stdin)
 }
 
-// NewScannerFile returns a Scanner reading from the named file, matching
-// `new Scanner(new File(path))`. It panics on failure.
-func NewScannerFile(path string) *Scanner {
-	file, err := os.Open(path)
+// NewScannerFile returns a Scanner reading from a file, matching
+// `new Scanner(new File(path))`. The source may be a path string or a *JavaFile.
+// It panics on failure.
+func NewScannerFile(src any) *Scanner {
+	file, err := os.Open(ioPathOf(src))
 	if err != nil {
 		panic(err)
 	}

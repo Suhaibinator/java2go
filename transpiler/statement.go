@@ -13,6 +13,29 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+// needsExplicitPrimitiveType reports whether a Java primitive local declaration
+// must be emitted with an explicit Go type rather than `:=` inference. It covers
+// the primitives whose Go type is narrower than the type an untyped constant
+// would infer: int->int32, long->int64, short->int16, byte->byte, char->rune,
+// float->float32. double/boolean already infer to the right Go type (float64,
+// bool), so they are left to `:=`. The original Java type may carry array
+// brackets or qualifiers; only the bare primitive name is matched.
+func needsExplicitPrimitiveType(originalType string) bool {
+	base, _ := parseJavaTypeString(originalType)
+	switch strings.TrimSpace(base) {
+	case "int", "long", "short", "byte", "char", "float":
+		return true
+	}
+	return false
+}
+
+// isVarKeywordType reports whether a local declaration used Java's `var` type
+// inference (so its element type must be inferred from the initializer).
+func isVarKeywordType(originalType string) bool {
+	t := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(originalType), "final"))
+	return strings.TrimSpace(t) == "var"
+}
+
 // constructorFuncName returns the generated Go constructor function name for a
 // class scope (e.g. "newAnimal" for a package-private class, "NewFoo" for a
 // public one), or "" if the scope declares no constructor. The name is taken
@@ -143,6 +166,29 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 						},
 					},
 				},
+			}
+		}
+
+		// A Java primitive whose Go type is narrower than the type an untyped
+		// constant would infer (int->int32, long->int64, char->rune, ...) must be
+		// pinned. Otherwise `int total = 0` becomes a Go `int`, losing Java's
+		// 32-bit overflow wrap and clashing with int32 fields/params. Wrap each
+		// initializer in the Go type conversion and keep the short declaration:
+		// `total := int32(0)`. Unlike `var total int32 = 0`, the `:=` form is also
+		// valid in a for-loop init, where this same case is reached.
+		pinType := variableType
+		pin := needsExplicitPrimitiveType(strings.TrimSpace(originalType))
+		// `var x = <int expr>` carries no declared type, so infer it from the
+		// initializer and pin if it is a sized integer primitive.
+		if !pin && isVarKeywordType(strings.TrimSpace(originalType)) && variableDeclarator.NamedChildCount() == 2 {
+			if inferred, ok := inferExprJavaType(variableDeclarator.NamedChild(1), ctx, source); ok && needsExplicitPrimitiveType(inferred) {
+				pin = true
+				pinType = javaTypeStringToGoTypeExpr(inferred, inScopeTypeParameters(ctx), ctx)
+			}
+		}
+		if pin {
+			for ind, rhs := range declaration.Rhs {
+				declaration.Rhs[ind] = &ast.CallExpr{Fun: pinType, Args: []ast.Expr{rhs}}
 			}
 		}
 
@@ -380,6 +426,24 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			other = ParseStmt(node.ChildByFieldName("alternative"), source, ctx)
 		}
 
+		// `if (x instanceof T t)` (Java 16+) binds t for the if-body. Lower it to
+		// the Go type-assertion idiom: `if t, ok := any(x).(T); ok { ... }` with the
+		// bound variable registered for the body. Only this pattern form diverges
+		// from the plain if lowering below.
+		if patternNode := instanceofPatternNode(node.ChildByFieldName("condition")); patternNode != nil {
+			initStmt, condExpr, bodyCtx := lowerInstanceofPattern(patternNode, source, ctx)
+			body := ParseStmt(node.ChildByFieldName("consequence"), source, bodyCtx)
+			if _, ok := body.(*ast.BlockStmt); !ok {
+				body = &ast.BlockStmt{List: []ast.Stmt{body}}
+			}
+			return &ast.IfStmt{
+				Init: initStmt,
+				Cond: condExpr,
+				Body: body.(*ast.BlockStmt),
+				Else: other,
+			}
+		}
+
 		// If the `if` statement is inline, replace the line with a full block
 		body := ParseStmt(node.ChildByFieldName("consequence"), source, ctx)
 		if _, ok := body.(*ast.BlockStmt); !ok {
@@ -581,6 +645,53 @@ func parseSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt 
 	}
 
 	return switchBlock
+}
+
+// instanceofPatternNode returns the instanceof_expression node if the given
+// condition is a direct instanceof pattern with a bound variable (`x instanceof
+// T t`), or nil otherwise.
+func instanceofPatternNode(condNode *sitter.Node) *sitter.Node {
+	if condNode == nil {
+		return nil
+	}
+	// Unwrap a parenthesized condition.
+	for condNode.Type() == "parenthesized_expression" && condNode.NamedChildCount() > 0 {
+		condNode = condNode.NamedChild(0)
+	}
+	if condNode.Type() == "instanceof_expression" && condNode.ChildByFieldName("name") != nil {
+		return condNode
+	}
+	return nil
+}
+
+// lowerInstanceofPattern lowers `x instanceof T t` into the Go type-assertion
+// idiom, returning the init statement (`t, ok := any(x).(T)`), the condition
+// (`ok`), and a context with the bound variable registered for the if-body.
+func lowerInstanceofPattern(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt, ast.Expr, Ctx) {
+	left := node.ChildByFieldName("left")
+	right := node.ChildByFieldName("right")
+	nameNode := node.ChildByFieldName("name")
+
+	bindName := nameNode.Content(source)
+	assertType := instanceofAssertTypeExpr(right.Content(source), ctx)
+	if assertType == nil {
+		assertType = &ast.Ident{Name: "any"}
+	}
+
+	bodyCtx := ctx.Clone()
+	recordLocalVariableDefinition(bodyCtx, bindName, right.Content(source), symbol.NodeToStr(assertType))
+
+	initStmt := &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: bindName}, &ast.Ident{Name: "ok"}},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{
+			&ast.TypeAssertExpr{
+				X:    &ast.CallExpr{Fun: &ast.Ident{Name: "any"}, Args: []ast.Expr{ParseExpr(left, source, ctx)}},
+				Type: assertType,
+			},
+		},
+	}
+	return initStmt, &ast.Ident{Name: "ok"}, bodyCtx
 }
 
 // parseArrowSwitchBlock lowers an arrow-form (`case X -> ...`) switch body. Each

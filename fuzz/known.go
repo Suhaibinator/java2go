@@ -24,6 +24,9 @@ var knownSignatureMarkers = []struct {
 	{"cannot-use-as:int", "K1 int locals not pinned to int32 (ROADMAP §6, task #10/#15)"},
 	{"mismatched-types:int+float64", "K1 int local mixed with float64 (ROADMAP §6, task #10/#15)"},
 	{"mismatched-types:float64+int", "K1 int local mixed with float64 (ROADMAP §6, task #10/#15)"},
+	{"mismatched-types:int32+float64", "K1 int32 local mixed with float64 (ROADMAP §6, task #10/#15)"},
+	{"mismatched-types:float64+int32", "K1 int32 local mixed with float64 (ROADMAP §6, task #10/#15)"},
+	{"truncated:int32", "K1 int32/double mixing (ROADMAP §6, task #10/#15)"},
 	// K4: char value/cast — char (rune) vs int promotion not handled, char arith
 	// stays rune and prints/uses the code point.
 	{"cannot-use-as:rune", "K4 char prints as int code point / rune typing (ROADMAP §6)"},
@@ -31,6 +34,11 @@ var knownSignatureMarkers = []struct {
 	{"truncated:rune", "K4 char prints as int code point / rune typing (ROADMAP §6)"},
 	{"mismatched-types:rune+int", "K4 char prints as int code point / rune typing (ROADMAP §6)"},
 	{"mismatched-types:int+rune", "K4 char prints as int code point / rune typing (ROADMAP §6)"},
+	{"cause:K4-char-codepoint", "K4 char value prints code point / replacement char (ROADMAP §6)"},
+	// K5: long shift over-masked (5 bits not 6) / long arithmetic value divergence.
+	{"cause:long-shift-or-wrap(K5)", "K5 long shift over-masked or long wrap (ROADMAP §6)"},
+	// K18: integral double prints without the trailing .0.
+	{"cause:K18-double-dot-zero", "K18(new) integral double prints '96' not '96.0' (ROADMAP §2, task #14)"},
 
 	// --- fuzzer-found root causes already catalogued (task #14) ---
 	// K12: >>>= compound assign emits an undefined, non-assigning Go call.

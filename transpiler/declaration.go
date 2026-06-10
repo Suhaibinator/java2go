@@ -52,6 +52,8 @@ func collectTypeNodes(node *sitter.Node) []*sitter.Node {
 // this is any class, interface, or enum declaration
 func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
+	case "record_declaration":
+		return parseRecordDecls(node, source, ctx)
 	case "class_declaration":
 		// The declarations and fields for the class
 		declarations := []ast.Decl{}
@@ -93,6 +95,16 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
 			for _, t := range collectTypeNodes(interfacesNode) {
+				// A user-defined interface may have been generated under a different
+				// name (e.g. a package-private `Greeter` becomes `greeter`); embed the
+				// resolved interface name so the struct satisfies it. Interfaces embed
+				// by value (no pointer).
+				if base, _ := parseJavaTypeString(t.Content(source)); base != "" {
+					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.IsInterface && scope.Class != nil && scope.Class.Name != "" {
+						fields.List = append(fields.List, &ast.Field{Type: &ast.Ident{Name: scope.Class.Name}})
+						continue
+					}
+				}
 				embedType := astutil.ParseTypeWithTypeParams(t, source, typeParams)
 				if star, ok := embedType.(*ast.StarExpr); ok {
 					embedType = star.X
@@ -287,7 +299,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					}
 				}
 			// Subclasses
-			case "class_declaration", "interface_declaration", "enum_declaration":
+			case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
 				newCtx := ctx.Clone()
 				newCtx.currentClass = ctx.currentClass.Subclasses[subclassIndex]
 				subclassIndex++
@@ -599,6 +611,141 @@ func buildEnclosingInstanceField(ctx Ctx) *ast.Field {
 	}
 }
 
+// parseRecordDecls lowers a Java record into a Go struct with the components as
+// fields, a canonical constructor, an accessor method per component (named after
+// the component, e.g. X() not GetX()), a value-equality method, and any
+// user-declared body methods.
+func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
+	scope := ctx.currentClass
+	if scope == nil || scope.Class == nil {
+		return nil
+	}
+	ctx.className = scope.Class.Name
+	typeParams := scope.TypeParameterNames()
+
+	declarations := []ast.Decl{}
+
+	// Struct fields from the record components (recorded in scope.Fields).
+	fields := &ast.FieldList{}
+	for _, f := range scope.Fields {
+		fields.List = append(fields.List, &ast.Field{
+			Names: []*ast.Ident{{Name: f.Name}},
+			Type:  javaTypeStringToGoTypeExpr(f.OriginalType, typeParams, ctx),
+		})
+	}
+	declarations = append(declarations, GenStructWithTypeParams(ctx.className, fields, scope.TypeParameters))
+
+	recvBase := instantiateGenericType(ctx.className, typeParamExprs(typeParams))
+	recvName := ShortName(ctx.className)
+
+	// Canonical constructor: New<Name>(c1, c2, ...) *Name.
+	ctorParams := &ast.FieldList{}
+	ctorBody := []ast.Stmt{
+		&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: recvName}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{recvBase}}},
+		},
+	}
+	for _, f := range scope.Fields {
+		ctorParams.List = append(ctorParams.List, &ast.Field{
+			Names: []*ast.Ident{{Name: f.OriginalName}},
+			Type:  javaTypeStringToGoTypeExpr(f.OriginalType, typeParams, ctx),
+		})
+		ctorBody = append(ctorBody, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: f.Name}}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: f.OriginalName}},
+		})
+	}
+	ctorBody = append(ctorBody, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: recvName}}})
+	declarations = append(declarations, GenFuncDeclWithTypeParams(
+		"New"+ctx.className,
+		scope.TypeParameters,
+		ctorParams,
+		&ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: recvBase}}}},
+		&ast.BlockStmt{List: ctorBody},
+	))
+
+	// Accessor method per component: func (r *Name) X() T { return r.x }. The
+	// method is exported (matching the resolved accessor Definition); the field it
+	// returns is unexported, so they do not collide.
+	bodyMethodNames := recordBodyMethodNames(node, source)
+	for _, f := range scope.Fields {
+		if _, declared := bodyMethodNames[f.OriginalName]; declared {
+			continue // user provided an explicit accessor; emitted from the body below
+		}
+		accessorName := symbol.HandleExportStatus(true, f.OriginalName)
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: accessorName},
+			Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: recvName}}, Type: &ast.StarExpr{X: recvBase}}}},
+			Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: javaTypeStringToGoTypeExpr(f.OriginalType, typeParams, ctx)}}}},
+			Body: &ast.BlockStmt{List: []ast.Stmt{
+				&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: f.Name}}}},
+			}},
+		})
+	}
+
+	// Value-equality method mirroring Java record equals(): compares all fields.
+	declarations = append(declarations, buildRecordEqualsDecl(scope, recvBase, recvName))
+
+	// User-declared methods in the record body.
+	if body := node.ChildByFieldName("body"); body != nil {
+		declarations = append(declarations, ParseDecls(body, source, ctx)...)
+	}
+
+	return declarations
+}
+
+// recordBodyMethodNames returns the set of original method names declared in a
+// record body, so synthesized accessors don't collide with explicit ones.
+func recordBodyMethodNames(node *sitter.Node, source []byte) map[string]struct{} {
+	names := map[string]struct{}{}
+	body := node.ChildByFieldName("body")
+	if body == nil {
+		return names
+	}
+	for _, child := range nodeutil.NamedChildrenOf(body) {
+		if child.Type() == "method_declaration" {
+			if nameNode := child.ChildByFieldName("name"); nameNode != nil {
+				names[nameNode.Content(source)] = struct{}{}
+			}
+		}
+	}
+	return names
+}
+
+// buildRecordEqualsDecl synthesizes an Equals method comparing every field,
+// mirroring the value semantics of a Java record's equals().
+func buildRecordEqualsDecl(scope *symbol.ClassScope, recvBase ast.Expr, recvName string) ast.Decl {
+	otherName := "other"
+	var cond ast.Expr
+	for _, f := range scope.Fields {
+		cmp := ast.Expr(&ast.BinaryExpr{
+			X:  &ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: f.Name}},
+			Op: token.EQL,
+			Y:  &ast.SelectorExpr{X: &ast.Ident{Name: otherName}, Sel: &ast.Ident{Name: f.Name}},
+		})
+		if cond == nil {
+			cond = cmp
+		} else {
+			cond = &ast.BinaryExpr{X: cond, Op: token.LAND, Y: cmp}
+		}
+	}
+	if cond == nil {
+		cond = &ast.Ident{Name: "true"}
+	}
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: "Equals"},
+		Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: recvName}}, Type: &ast.StarExpr{X: recvBase}}}},
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: otherName}}, Type: &ast.StarExpr{X: recvBase}}}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "bool"}}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{cond}}}},
+	}
+}
+
 // classHasExplicitConstructor reports whether the class scope declares at least
 // one constructor of its own.
 func classHasExplicitConstructor(scope *symbol.ClassScope) bool {
@@ -677,7 +824,9 @@ func buildDefaultConstructorDecl(ctx Ctx) ast.Decl {
 
 	body = append(body, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: recvName}}})
 
-	constructorName := "New" + ctx.className
+	// Match the casing of the call-site reference (defaultConstructorName): a
+	// package-private class gets `new<Name>`, not the miscased `New<name>`.
+	constructorName := defaultConstructorName(ctx.className)
 	returnType := &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: structType}}}}
 
 	return GenFuncDeclWithTypeParams(constructorName, typeParams, params, returnType, &ast.BlockStmt{List: body})

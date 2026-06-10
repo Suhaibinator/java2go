@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"strconv"
 	"strings"
 
 	"github.com/NickyBoy89/java2go/astutil"
@@ -662,12 +663,17 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
-		// No explicit constructor matched. If we resolved the target class within
-		// our own symbols, it was given a synthesized default constructor named
-		// New<ResolvedGoName>; use the resolved Go name so nested classes (renamed
-		// e.g. Outer -> OuterInner) bind correctly.
+		// No explicit constructor matched by argument types. If we resolved the
+		// target class within our own symbols, use its actual generated constructor
+		// name. Prefer the constructor symbol's Name (so a package-private class
+		// binds to `newRectangle`, not the miscased `Newrectangle`); fall back to
+		// an export-status-aware New<Name> for a synthesized default constructor.
 		if targetScope != nil && targetScope.Class != nil && targetScope.Class.Name != "" {
-			funExpr := addTypeArgs(qualifiedNameExpr("New"+targetScope.Class.Name, targetPkg, ctx), effectiveTypeArgs)
+			ctorName := constructorFuncName(targetScope)
+			if ctorName == "" {
+				ctorName = defaultConstructorName(targetScope.Class.Name)
+			}
+			funExpr := addTypeArgs(qualifiedNameExpr(ctorName, targetPkg, ctx), effectiveTypeArgs)
 			return &ast.CallExpr{
 				Fun:  funExpr,
 				Args: arguments,
@@ -693,6 +699,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// allocates `make([]*worker, n)` and not an undefined `*Worker`.
 		if typeNode := node.ChildByFieldName("type"); typeNode != nil {
 			elementType = resolveElementTypeCasing(elementType, typeNode.Content(source), ctx)
+			// A stdjava-backed runtime element type (e.g. Thread in `new Thread[n]`)
+			// must resolve to its stdjava Go type (*stdjava.Thread), not a bare and
+			// undefined *Thread.
+			if rt, ok := stdjavaRuntimeTypeExpr(stripJavaQualifier(typeNode.Content(source)), nil, inScopeTypeParameters(ctx), ctx); ok {
+				elementType = rt
+			}
 		}
 		var initializer ast.Expr
 
@@ -882,8 +894,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 	case "array_access":
 		return &ast.IndexExpr{
-			X:     ParseExpr(node.NamedChild(0), source, ctx),
-			Index: ParseExpr(node.NamedChild(1), source, ctx),
+			X: ParseExpr(node.NamedChild(0), source, ctx),
+			// Java index expressions are int32 now that int locals are pinned, but
+			// Go requires an `int` index, so coerce. Plain integer literals are
+			// untyped constants and need no cast.
+			Index: goIndexExpr(node.NamedChild(1), source, ctx),
 		}
 	case "scoped_identifier":
 		return ParseExpr(node.NamedChild(0), source, ctx)
@@ -972,7 +987,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		return &ast.Ident{Name: literal}
 	case "string_literal":
-		return &ast.Ident{Name: node.Content(source)}
+		raw := node.Content(source)
+		// Text blocks (Java 13+) are delimited by triple quotes; lower them to a Go
+		// string literal after JLS incidental-whitespace stripping.
+		if strings.HasPrefix(raw, "\"\"\"") {
+			return textBlockLiteral(raw)
+		}
+		return &ast.Ident{Name: raw}
 	case "character_literal":
 		return &ast.Ident{Name: node.Content(source)}
 	case "true", "false":
@@ -1675,6 +1696,14 @@ func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []captured
 	if ctx.localScope == nil || body == nil {
 		return nil
 	}
+
+	// Names declared inside the anonymous/local body (method params, locals, loop
+	// variables, catch params, the class's own fields) are NOT captures — only
+	// references to enclosing locals are. The enclosing method's symbol scope can
+	// contain these inner names because symbol parsing flattens nested scopes, so
+	// exclude them explicitly.
+	declaredInside := collectDeclaredNames(body, source)
+
 	seen := map[string]struct{}{}
 	var captured []capturedLocal
 
@@ -1685,6 +1714,9 @@ func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []captured
 		}
 		if n.Type() == "identifier" {
 			name := n.Content(source)
+			if _, inside := declaredInside[name]; inside {
+				return
+			}
 			if _, ok := seen[name]; !ok {
 				if def := ctx.localScope.FindVariable(name); def != nil {
 					seen[name] = struct{}{}
@@ -1702,6 +1734,39 @@ func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []captured
 	}
 	walk(body)
 	return captured
+}
+
+// collectDeclaredNames gathers every identifier introduced as a binding within a
+// subtree: local variable declarations, formal/spread/catch parameters, and
+// for-loop / enhanced-for variables. These shadow or are local to the body and
+// must not be treated as captures of the enclosing scope.
+func collectDeclaredNames(node *sitter.Node, source []byte) map[string]struct{} {
+	names := map[string]struct{}{}
+	var walk func(n *sitter.Node)
+	walk = func(n *sitter.Node) {
+		if n == nil {
+			return
+		}
+		switch n.Type() {
+		case "variable_declarator":
+			if nameNode := n.ChildByFieldName("name"); nameNode != nil {
+				names[nameNode.Content(source)] = struct{}{}
+			}
+		case "formal_parameter", "spread_parameter", "catch_formal_parameter":
+			if nameNode := n.ChildByFieldName("name"); nameNode != nil {
+				names[nameNode.Content(source)] = struct{}{}
+			}
+		case "enhanced_for_statement":
+			if nameNode := n.ChildByFieldName("name"); nameNode != nil {
+				names[nameNode.Content(source)] = struct{}{}
+			}
+		}
+		for i := 0; i < int(n.NamedChildCount()); i++ {
+			walk(n.NamedChild(i))
+		}
+	}
+	walk(node)
+	return names
 }
 
 // anonymousClassDeclaredFields extracts the instance fields declared directly in
@@ -1735,6 +1800,68 @@ func anonymousClassDeclaredFields(classBody *sitter.Node, source []byte, ctx Ctx
 		})
 	}
 	return defs, astFields
+}
+
+// textBlockLiteral converts a Java text block (triple-quoted string) into a Go
+// string literal expression, applying JLS incidental-whitespace stripping. It
+// emits a raw string literal (backticks) when the content has no backticks;
+// otherwise it falls back to a double-quoted interpreted literal.
+func textBlockLiteral(raw string) ast.Expr {
+	content := stripTextBlockIncidentalWhitespace(raw)
+
+	if !strings.ContainsRune(content, '`') {
+		return &ast.BasicLit{Kind: token.STRING, Value: "`" + content + "`"}
+	}
+	return &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(content)}
+}
+
+// stripTextBlockIncidentalWhitespace implements the JLS text-block algorithm:
+// remove the opening/closing delimiters, strip the common leading indentation
+// (the minimum across all non-blank lines and the closing-delimiter line), and
+// trim trailing whitespace from each line.
+func stripTextBlockIncidentalWhitespace(raw string) string {
+	// Strip the opening delimiter and the rest of its line (whitespace then the
+	// required line terminator).
+	inner := strings.TrimPrefix(raw, "\"\"\"")
+	if nl := strings.IndexByte(inner, '\n'); nl >= 0 {
+		inner = inner[nl+1:]
+	}
+	// Strip the closing delimiter.
+	inner = strings.TrimSuffix(inner, "\"\"\"")
+
+	lines := strings.Split(inner, "\n")
+
+	// Determine the minimal indentation. Blank lines are ignored except the last
+	// line (which corresponds to the closing delimiter's indentation).
+	minIndent := -1
+	for i, line := range lines {
+		isLast := i == len(lines)-1
+		if strings.TrimSpace(line) == "" && !isLast {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		if minIndent < 0 || indent < minIndent {
+			minIndent = indent
+		}
+	}
+	if minIndent < 0 {
+		minIndent = 0
+	}
+
+	for i, line := range lines {
+		if len(line) >= minIndent {
+			line = line[minIndent:]
+		} else {
+			line = strings.TrimLeft(line, " \t")
+		}
+		// Trailing whitespace is incidental and removed.
+		lines[i] = strings.TrimRight(line, " \t")
+	}
+
+	// Join preserves a trailing newline when the closing delimiter was on its own
+	// line (the final element is empty), and omits it when the closing delimiter
+	// followed the last content line — exactly the JLS behavior.
+	return strings.Join(lines, "\n")
 }
 
 // buildSwitchExpressionIIFE lowers a switch expression into an immediately
@@ -1997,8 +2124,14 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	declaredFieldDefs, declaredAstFields := anonymousClassDeclaredFields(classBody, source, ctx)
 	captured := collectCapturedLocals(classBody, source, ctx)
 
-	// Build the struct fields: an embedded supertype, declared fields, then
-	// captured locals.
+	// Build the struct fields: an optional embedded supertype, declared fields,
+	// then captured locals.
+	//
+	// We embed only a resolved USER supertype: a class (as *Super, for inherited
+	// fields/methods) or a user interface. For stdjava-modeled interfaces (e.g.
+	// Runnable) and unresolved supertypes we DROP the embed — Go interface
+	// satisfaction is structural, so the struct's own exported methods are enough,
+	// and embedding a bare unqualified/undefined name would not compile.
 	fields := &ast.FieldList{}
 	if superScope != nil && superScope.Class != nil {
 		if superScope.IsInterface {
@@ -2006,9 +2139,6 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		} else {
 			fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: &ast.Ident{Name: superScope.Class.Name}}})
 		}
-	} else {
-		// Unresolved supertype: embed it by its written name as a best effort.
-		fields.List = append(fields.List, &ast.Field{Type: &ast.Ident{Name: stripJavaQualifier(baseType)}})
 	}
 	fields.List = append(fields.List, declaredAstFields...)
 	for _, cap := range captured {
@@ -2288,6 +2418,22 @@ func instanceofAssertTypeExpr(javaType string, ctx Ctx) ast.Expr {
 	return javaTypeStringToGoTypeExpr(javaType, inScopeParams, ctx)
 }
 
+// defaultConstructorName returns the synthesized default-constructor name for a
+// generated class struct, matching the casing used when one is emitted: a public
+// (capitalized) class gets `New<Name>`, a package-private one gets `new<Name>`.
+func defaultConstructorName(className string) string {
+	if className == "" {
+		return "New"
+	}
+	// A class is exported iff its generated struct name is already capitalized.
+	exported := className == symbol.Uppercase(className)
+	prefix := "new"
+	if exported {
+		prefix = "New"
+	}
+	return prefix + symbol.Uppercase(className)
+}
+
 // resolveElementTypeCasing rewrites a parsed array element type so a user-defined
 // reference type uses its generated Go struct name. astutil.ParseType emits the
 // verbatim Java name (e.g. *Worker), but a package-private class is generated
@@ -2309,6 +2455,11 @@ func resolveElementTypeCasing(parsed ast.Expr, javaType string, ctx Ctx) ast.Exp
 	scope := resolveClassScopeByQualifiedName(ctx, base)
 	if scope == nil || scope.Class == nil || scope.Class.Name == "" {
 		return parsed
+	}
+	// Interface element types are used by value (Go interfaces are reference types
+	// already), so `new Greeter[n]` is `[]greeter`, not `[]*greeter`.
+	if scope.IsInterface {
+		return &ast.Ident{Name: scope.Class.Name}
 	}
 	return &ast.StarExpr{X: &ast.Ident{Name: scope.Class.Name}}
 }
@@ -2440,6 +2591,55 @@ func inScopeTypeParameters(ctx Ctx) []string {
 		params = append(params, ctx.localScope.TypeParameterNames()...)
 	}
 	return params
+}
+
+// integerTypeRank orders the Java integer primitive types by width for numeric
+// promotion. A non-integer type returns (0, false).
+func integerTypeRank(javaType string) (int, bool) {
+	switch strings.TrimSpace(javaType) {
+	case "byte":
+		return 1, true
+	case "short":
+		return 2, true
+	case "char":
+		return 2, true
+	case "int":
+		return 3, true
+	case "long":
+		return 4, true
+	}
+	return 0, false
+}
+
+// widerIntegerType returns the wider of two Java integer primitive types under
+// Java numeric promotion (with the floor of int, since Java promotes byte/short/
+// char operands of an arithmetic op to int). It returns ("", false) if either
+// operand is not an integer primitive.
+func widerIntegerType(a, b string) (string, bool) {
+	ra, oka := integerTypeRank(a)
+	rb, okb := integerTypeRank(b)
+	if !oka || !okb {
+		return "", false
+	}
+	if ra == 4 || rb == 4 {
+		return "long", true
+	}
+	// byte/short/char/int all promote to int in an arithmetic expression.
+	return "int", true
+}
+
+// goIndexExpr parses a Java array/slice index expression and coerces it to Go's
+// required `int` index type. Java int indices are emitted as int32 now that int
+// locals are pinned (K1), so a variable or compound index must be wrapped in
+// int(...). Plain integer-literal indices are untyped constants and are left
+// uncast to avoid noise like a[int(0)].
+func goIndexExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	expr := ParseExpr(node, source, ctx)
+	switch node.Type() {
+	case "decimal_integer_literal", "hex_integer_literal", "octal_integer_literal", "binary_integer_literal":
+		return expr
+	}
+	return &ast.CallExpr{Fun: &ast.Ident{Name: "int"}, Args: []ast.Expr{expr}}
 }
 
 // javaTypeStringToGoTypeExpr converts a Java type string (as it appears in
@@ -2630,6 +2830,99 @@ func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
 	return "", false
 }
 
+// inferUserMethodReturnType returns the declared Java return type of a
+// user-defined method invocation, resolving the method from the receiver's class
+// (for X.m()) or the current class (for an unqualified m()). Returns false when
+// the method is unknown, has a void/empty return type, or is a builtin.
+func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+	nameNode := node.ChildByFieldName("name")
+	if nameNode == nil {
+		return "", false
+	}
+	methodName := nameNode.Content(source)
+
+	argListNode := node.ChildByFieldName("arguments")
+	argCount := 0
+	if argListNode != nil {
+		argCount = int(argListNode.NamedChildCount())
+	}
+
+	var scope *symbol.ClassScope
+	if objectNode := node.ChildByFieldName("object"); objectNode != nil {
+		if target := resolveInvocationTarget(objectNode, ctx, source); target != nil {
+			scope = target.classScope
+		}
+	} else {
+		scope = ctx.currentClass
+	}
+	if scope == nil {
+		return "", false
+	}
+
+	resolution := findInstanceMethodInHierarchy(scope, methodName, argCount, ctx)
+	if resolution == nil {
+		resolution = findStaticMethodInHierarchy(scope, methodName, argCount, ctx)
+	}
+	if resolution == nil || resolution.def == nil {
+		return "", false
+	}
+	rt := strings.TrimSpace(resolution.def.OriginalType)
+	if rt == "" || rt == "void" {
+		return "", false
+	}
+	// A bare type-parameter return (e.g. R from Mapper<T,R>) is not a concrete
+	// type, so don't report it — the caller's declared type is more useful and
+	// would otherwise be overwritten with an unusable type variable.
+	base, _ := parseJavaTypeString(rt)
+	for _, tp := range resolution.def.TypeParameterNames() {
+		if base == tp {
+			return "", false
+		}
+	}
+	if resolution.owner != nil {
+		for _, tp := range resolution.owner.TypeParameterNames() {
+			if base == tp {
+				return "", false
+			}
+		}
+	}
+	return rt, true
+}
+
+// inferStreamMapResultType infers the element type produced by a Stream.map(...)
+// call from the mapper lambda's body, binding the lambda parameter to the
+// receiver's element type. Returns the Java type of the result, or false when it
+// cannot be determined (the caller then falls back to a bare Stream).
+func inferStreamMapResultType(mapNode *sitter.Node, recvArgs []string, ctx Ctx, source []byte) (string, bool) {
+	if len(recvArgs) != 1 {
+		return "", false
+	}
+	argsNode := mapNode.ChildByFieldName("arguments")
+	if argsNode == nil || argsNode.NamedChildCount() != 1 {
+		return "", false
+	}
+	lambda := argsNode.NamedChild(0)
+	if lambda == nil || lambda.Type() != "lambda_expression" {
+		return "", false
+	}
+	paramNode := lambda.ChildByFieldName("parameters")
+	bodyNode := lambda.ChildByFieldName("body")
+	if paramNode == nil || bodyNode == nil || bodyNode.Type() == "block" {
+		return "", false
+	}
+	paramName := paramNode.Content(source)
+	if paramNode.NamedChildCount() == 1 {
+		paramName = paramNode.NamedChild(0).Content(source)
+	}
+	lambdaCtx := ctx.Clone()
+	lambdaCtx.localScope = &symbol.Definition{
+		Parameters: []*symbol.Definition{
+			{OriginalName: paramName, Name: paramName, OriginalType: recvArgs[0]},
+		},
+	}
+	return inferExprJavaType(bodyNode, lambdaCtx, source)
+}
+
 func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 	switch node.Type() {
 	case "identifier":
@@ -2649,6 +2942,14 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			return "", false
 		}
 		return typeNode.Content(source), true
+	case "cast_expression":
+		// A cast's static type is its target type, e.g. `(char)(c+1)` is char.
+		// This lets println wrap a char-casted value in string(...) so it prints
+		// the character rather than its code point.
+		if target := node.NamedChild(0); target != nil {
+			return target.Content(source), true
+		}
+		return "", false
 	case "array_access":
 		// The element type of an array access is the array's type with one
 		// dimension removed (e.g. Worker[] indexed -> Worker).
@@ -2670,6 +2971,18 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		// A string literal is a java.lang.String, so chained calls on a literal
 		// (e.g. "  x  ".trim()) resolve as String intrinsics.
 		return "String", true
+	case "decimal_integer_literal", "hex_integer_literal", "octal_integer_literal", "binary_integer_literal":
+		// An integer literal is `long` if it carries an L suffix, otherwise `int`.
+		// Used to infer `var x = 0` as int (-> int32) for K1 pinning.
+		content := node.Content(source)
+		if len(content) > 0 {
+			if last := content[len(content)-1]; last == 'L' || last == 'l' {
+				return "long", true
+			}
+		}
+		return "int", true
+	case "character_literal":
+		return "char", true
 	case "parenthesized_expression":
 		if inner := node.NamedChild(0); inner != nil {
 			return inferExprJavaType(inner, ctx, source)
@@ -2683,6 +2996,22 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 				return "String", true
 			}
 		}
+		// For an arithmetic/bitwise/shift binary op, the result is the wider of the
+		// two operand integer types (Java numeric promotion, simplified). This lets
+		// `var sum = n + 8` infer as int -> int32 for K1 pinning. Only fires when
+		// both operands resolve to an integer primitive.
+		if op := node.Child(1); op != nil {
+			switch op.Content(source) {
+			case "+", "-", "*", "/", "%", "&", "|", "^", "<<", ">>", ">>>":
+				lt, lok := inferExprJavaType(node.Child(0), ctx, source)
+				rt, rok := inferExprJavaType(node.Child(2), ctx, source)
+				if lok && rok {
+					if combined, ok := widerIntegerType(lt, rt); ok {
+						return combined, true
+					}
+				}
+			}
+		}
 	case "method_invocation":
 		// Chained String intrinsics: if the inner call is itself a String method
 		// that returns a String, the result type is String so the outer call also
@@ -2691,6 +3020,11 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			nameNode := node.ChildByFieldName("name")
 			if nameNode != nil {
 				methodName := nameNode.Content(source)
+				// Stream.of(...) returns a Stream, so a chained terminal/intermediate
+				// op (Stream.of(..).count()) resolves.
+				if objectNode.Type() == "identifier" && objectNode.Content(source) == "Stream" && methodName == "of" {
+					return "Stream", true
+				}
 				// Character.toUpperCase/toLowerCase(char) return char.
 				if objectNode.Type() == "identifier" && objectNode.Content(source) == "Character" {
 					switch methodName {
@@ -2699,8 +3033,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 					}
 				}
 				if recvType, ok := inferExprJavaType(objectNode, ctx, source); ok {
-					base, _ := parseJavaTypeString(recvType)
-					switch stripJavaQualifier(base) {
+					base, recvArgs := parseJavaTypeString(recvType)
+					recvBase := stripJavaQualifier(base)
+					switch recvBase {
 					case "String":
 						switch {
 						case methodName == "charAt":
@@ -2716,8 +3051,64 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 						if methodName == "charAt" {
 							return "char", true
 						}
+					case "Optional":
+						// Optional.map/filter return an Optional, so a chained call
+						// (o.map(f).get()) resolves the outer receiver as an Optional.
+						switch methodName {
+						case "map", "filter":
+							return "Optional", true
+						}
+					case "File":
+						// File methods that return a String, so chained String calls
+						// (f.getName().endsWith(...)) resolve.
+						switch methodName {
+						case "getName", "getPath", "getAbsolutePath":
+							return "String", true
+						}
+					case "BufferedReader", "FileReader":
+						if methodName == "readLine" {
+							return "String", true
+						}
+					case "Scanner":
+						switch methodName {
+						case "next", "nextLine":
+							return "String", true
+						}
+					}
+					// Collection.stream() yields a Stream of the collection's element type
+					// so a chained .filter/.map lambda is typed.
+					if methodName == "stream" && len(recvArgs) == 1 &&
+						(containsString(listTypeNames, recvBase) || containsString(setTypeNames, recvBase)) {
+						return "Stream<" + recvArgs[0] + ">", true
+					}
+					// Stream intermediate ops that keep the element type preserve Stream<T>
+					// for further chaining; map changes the element type so reports bare Stream.
+					if containsString(streamTypeNames, recvBase) {
+						switch methodName {
+						case "filter", "sorted", "limit", "distinct", "skip", "peek":
+							return recvType, true
+						case "map":
+							if r, ok := inferStreamMapResultType(node, recvArgs, ctx, source); ok {
+								return "Stream<" + r + ">", true
+							}
+							return "Stream", true
+						}
 					}
 				}
+			}
+		}
+		// Fall back to the declared return type of a user-defined method, so a
+		// chained call on its result (e.g. nums().stream()) can be typed.
+		if rt, ok := inferUserMethodReturnType(node, ctx, source); ok {
+			return rt, true
+		}
+	case "field_access":
+		// A qualified enum constant access (Day.WED) has the enum's type, so that
+		// chained calls like Day.WED.ordinal() resolve to the enum's methods.
+		obj := node.ChildByFieldName("object")
+		if obj != nil && obj.Type() == "identifier" {
+			if scope := resolveClassScopeByIdentifier(ctx, source, obj); scope != nil && scope.IsEnum {
+				return obj.Content(source), true
 			}
 		}
 	}
