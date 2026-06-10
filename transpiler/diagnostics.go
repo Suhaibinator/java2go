@@ -19,15 +19,22 @@ type Diagnostic struct {
 	NodeType string
 	// Message is a human-readable description of the problem.
 	Message string
+	// ClassName is the enclosing class being converted when the construct was hit,
+	// or "" if not known.
+	ClassName string
 	// Line is the 1-based source line where the construct begins, or 0 if unknown.
 	Line uint32
 }
 
 func (d Diagnostic) String() string {
+	location := ""
 	if d.Line > 0 {
-		return fmt.Sprintf("line %d: unsupported %s %q: %s", d.Line, d.Kind, d.NodeType, d.Message)
+		location = fmt.Sprintf("line %d: ", d.Line)
 	}
-	return fmt.Sprintf("unsupported %s %q: %s", d.Kind, d.NodeType, d.Message)
+	if d.ClassName != "" {
+		location += "in " + d.ClassName + ": "
+	}
+	return fmt.Sprintf("%sunsupported %s %q: %s", location, d.Kind, d.NodeType, d.Message)
 }
 
 // diagnostics collects unsupported-construct reports for the current conversion.
@@ -87,7 +94,8 @@ func collectedDiagnostics() []Diagnostic {
 // into a returned error.
 func reportUnsupported(kind string, node *sitter.Node, source []byte, ctx Ctx) Diagnostic {
 	diag := Diagnostic{
-		Kind: kind,
+		Kind:      kind,
+		ClassName: ctx.className,
 	}
 	if node != nil {
 		diag.NodeType = node.Type()
