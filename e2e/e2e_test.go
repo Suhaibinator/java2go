@@ -52,7 +52,7 @@ var skipReasons = map[string]string{
 	"concurrency/ThreadJoin":  "Thread-subclass->goroutine + sized arrays done; blocked ENTIRELY by int/int32 (K1): loop vars/fields/args int vs int32 (ROADMAP §6 int typing, task #15)",
 
 	"nested/AnonLocal":        "SAM anon class captures local typed int not int32 (value+bump mismatch); method-local class field not emitted (undefined: n) (ROADMAP §4 M4/M5, §6 int typing)",
-	"static_init/StaticInit":  "user method named init() collides with Go's reserved init func (emitted as func init with args/return -> invalid); needs name escaping. Also static-init ordering unverified (ROADMAP §4 naming, §6)",
+	"static_init/StaticInit":  "init reserved-name collision FIXED (renamed init0); compiles+runs now. Remaining: static-init ORDERING — Go runs all var-inits before init() funcs, so field initializer 'init c' runs before earlier static{} blocks instead of interleaved in Java source order (ROADMAP §6 static init order, task #7)",
 	"overloading/Overloading": "overload resolution collapses all calls to the first overload (describe0/int32); long/double/String/arity dispatch by arg type not implemented (ROADMAP §6/§7)",
 }
 

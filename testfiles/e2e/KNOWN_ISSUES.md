@@ -67,10 +67,12 @@ Shift amounts are masked to 5 bits for all shifts; long shifts must mask to 6.
 public class K5 { public static void main(String[] a){ System.out.println(1L << 32); } } // prints 1, want 4294967296
 ```
 
-## K6 — user identifier collides with Go reserved/builtin name (OPEN, ROADMAP §4 naming)
-A Java method named `init` becomes Go `func init(...)`, which Go reserves for
-no-arg/no-return package initializers -> invalid. Likely also `main` (non-entry),
-and builtins `len`/`cap`/`copy`/`new`/`delete` used as identifiers.
+## K6 — user identifier collides with Go reserved/builtin name (FIXED for `init`, task #6)
+A Java method named `init` now renames to `init0` at definition + all call sites
+(classes-dev, resolve.go). NOT yet spot-checked for other collisions: `main`
+(non-entry method), and builtins `len`/`cap`/`copy`/`new`/`delete`/`make`/`String`
+used as identifiers — fuzzer-dev, worth probing these to see if the same rename
+covers them or only `init` was special-cased.
 ```java
 public class K6 {
     static int init(int x){ return x+1; }
