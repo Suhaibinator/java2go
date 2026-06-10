@@ -286,26 +286,35 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 
+			// Standard-library intrinsics (String, StringBuilder, Math, boxed
+			// types, ...) are rewritten via a data-driven table. Instance
+			// intrinsics dispatch on the receiver's Java type; static intrinsics
+			// dispatch on a class-name receiver.
+			if rewritten, ok := tryInstanceIntrinsic(objectNode, methodName, source, ctx); ok {
+				return rewritten
+			}
+			if rewritten, ok := tryStaticIntrinsic(objectNode, methodName, source, ctx); ok {
+				return rewritten
+			}
+
 			argListNode := node.ChildByFieldName("arguments")
 			argCount := 0
 			if argListNode != nil {
 				argCount = int(argListNode.NamedChildCount())
 			}
 
-			// Java String.length() -> int32(len(x))
-			if methodName == "length" && argCount == 0 {
-				if javaType, ok := inferExprJavaType(objectNode, ctx, source); ok {
-					baseType, _ := parseJavaTypeString(javaType)
-					if stripJavaQualifier(baseType) == "String" {
-						return &ast.CallExpr{
-							Fun: &ast.Ident{Name: "int32"},
-							Args: []ast.Expr{
-								&ast.CallExpr{
-									Fun:  &ast.Ident{Name: "len"},
-									Args: []ast.Expr{ParseExpr(objectNode, source, ctx)},
-								},
-							},
-						}
+			// Throwable.getMessage()/printStackTrace() on a caught exception are
+			// routed through the stdjava runtime, which understands both the
+			// built-in exception types and user-defined ones.
+			if argCount == 0 && (methodName == "getMessage" || methodName == "printStackTrace") {
+				if javaType, ok := inferExprJavaType(objectNode, ctx, source); ok && isExceptionJavaType(ctx, javaType) {
+					runtimeFn := "GetMessage"
+					if methodName == "printStackTrace" {
+						runtimeFn = "PrintStackTrace"
+					}
+					return &ast.CallExpr{
+						Fun:  stdjavaQualifiedExpr(runtimeFn, ctx),
+						Args: []ast.Expr{ParseExpr(objectNode, source, ctx)},
 					}
 				}
 			}
@@ -488,6 +497,19 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			className = objectType.Content(source)
 		}
 
+		// Built-in exception types (java.lang/java.io) are modelled by the stdjava
+		// runtime, so `new IllegalArgumentException("msg")` becomes a call to the
+		// corresponding stdjava constructor, preserving the detail message.
+		if isBuiltinExceptionType(className) && resolveClassScopeByQualifiedName(ctx, className) == nil {
+			return builtinExceptionConstructorExpr(className, arguments, ctx)
+		}
+
+		// Standard-library constructors (StringBuilder, ...) are handled by the
+		// intrinsics table, which maps them onto stdjava runtime constructors.
+		if rewritten, ok := tryConstructorIntrinsic(className, arguments, ctx); ok {
+			return rewritten
+		}
+
 		// Find the respective constructor (if we have symbol info for that class).
 		var constructor *symbol.Definition
 		targetScope := resolveClassScopeByQualifiedName(ctx, className)
@@ -539,8 +561,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
-		// It is also possible that a constructor could be unresolved, so we handle
-		// this by calling the type of the type + "Construct" at the beginning
+		// No explicit constructor matched. If we resolved the target class within
+		// our own symbols, it was given a synthesized default constructor named
+		// New<ResolvedGoName>; use the resolved Go name so nested classes (renamed
+		// e.g. Outer -> OuterInner) bind correctly.
+		if targetScope != nil && targetScope.Class != nil && targetScope.Class.Name != "" {
+			funExpr := addTypeArgs(qualifiedNameExpr("New"+targetScope.Class.Name, targetPkg, ctx), effectiveTypeArgs)
+			return &ast.CallExpr{
+				Fun:  funExpr,
+				Args: arguments,
+			}
+		}
+
+		// Otherwise the constructor is genuinely unresolved (external type with no
+		// symbol info), so fall back to <Type> + "Construct".
 		funExpr := addTypeArgs(qualifiedNameExpr("Construct"+stripJavaQualifier(className), targetPkg, ctx), effectiveTypeArgs)
 		return &ast.CallExpr{
 			Fun:  funExpr,
@@ -685,6 +719,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// X.Sel
 		obj := node.ChildByFieldName("object")
 
+		// Standard-library constant access (Integer.MAX_VALUE, Math.PI, ...).
+		if fieldNode := node.ChildByFieldName("field"); fieldNode != nil {
+			if rewritten, ok := tryStaticFieldIntrinsic(obj, fieldNode.Content(source), source, ctx); ok {
+				return rewritten
+			}
+		}
+
 		if obj.Type() == "this" {
 			fieldName := node.ChildByFieldName("field").Content(source)
 			def := findFieldInHierarchy(ctx.currentClass, fieldName, ctx)
@@ -794,7 +835,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "true", "false":
 		return &ast.Ident{Name: node.Content(source)}
 	}
-	panic("Unhandled expression: " + node.Type())
+
+	diag := reportUnsupported("expression", node, source, ctx)
+	// Emit a placeholder expression that still compiles, so the rest of the file
+	// can be converted. The panic call preserves the diagnostic at runtime.
+	return &ast.CallExpr{
+		Fun: &ast.Ident{Name: "panic"},
+		Args: []ast.Expr{
+			&ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("%q", strings.TrimPrefix(unsupportedComment(diag), "// "))},
+		},
+	}
 }
 
 func isSystemOutSelector(node *sitter.Node, source []byte) bool {
