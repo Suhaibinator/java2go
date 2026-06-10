@@ -338,9 +338,7 @@ func registerConcurrentMapIntrinsics() {
 		}
 		// Go cannot infer the type parameters of a no-arg generic constructor, so
 		// pass them explicitly: stdjava.NewConcurrentHashMap[K, V]().
-		fun := stdjavaQualifiedExpr("NewConcurrentHashMap", ctx)
-		fun = applyTypeArguments(fun, typeArgs)
-		return &ast.CallExpr{Fun: fun}
+		return stdjavaGenericCall(ctx, "NewConcurrentHashMap", typeArgs, nil)
 	})
 
 	for javaMethod, goMethod := range map[string]string{
