@@ -1,0 +1,5 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_171/out
+fuzz/.fuzzbuild/seed_171/out/Gen.go:50:146: invalid operation: ((stdjava.Ternary((i1 <= i1), 100, 984)) / 3) > i1 (mismatched types int and int32)
+fuzz/.fuzzbuild/seed_171/out/Gen.go:52:2: declared and not used: l7
+fuzz/.fuzzbuild/seed_171/out/Gen.go:53:2: declared and not used: s8
