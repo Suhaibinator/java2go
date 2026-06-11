@@ -52,9 +52,9 @@ roughly in suggested priority order. See file references for where each gap live
 - [x] `var` local variable type inference (verified working by e2e suite; was already covered by existing inference)
 - [x] Switch expressions with `->` arms and `yield` (Java 12+) — lowered to IIFE returning the value; arrow-form switch statements too
 - [x] `instanceof` pattern matching: `if (x instanceof String s)` → `if t, ok := any(x).(T); ok` with the bound variable scoped to the body
-- [ ] Records (Java 14+)
-- [ ] Sealed classes/interfaces (Java 15+)
-- [ ] Text blocks `"""..."""` (Java 13+)
+- [x] Records (Java 14+) — unexported component fields, canonical constructor, accessor methods, value-equality Equals
+- [x] Sealed classes/interfaces (Java 15+) — sealed/non-sealed/permits modifiers gracefully dropped
+- [x] Text blocks `"""..."""` (Java 13+) — JLS incidental-whitespace stripping, raw-string emission with quote fallback
 
 ## 6. Semantic fidelity in existing features
 
@@ -63,7 +63,7 @@ roughly in suggested priority order. See file references for where each gap live
 - [ ] Implicit array-to-varargs conversion at call sites (declarations already work, `transpiler/tree_sitter.go:312`)
 - [ ] `? super T` wildcard currently approximated as `any` — preserve the bound where possible (`README.md:52`)
 - [ ] Static initializer ordering guarantees matching Java class-loading order
-- [ ] Verify integer overflow / division / shift semantics match Java
+- [x] Verify integer overflow / division / shift semantics match Java — int locals pinned to int32 (32-bit wrap), shift counts masked 31/63 by operand width, divide-by-zero → catchable ArithmeticException
 - [ ] Covariant return types in overridden methods
 
 ## 7. Concurrency

@@ -2124,14 +2124,8 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	declaredFieldDefs, declaredAstFields := anonymousClassDeclaredFields(classBody, source, ctx)
 	captured := collectCapturedLocals(classBody, source, ctx)
 
-	// Build the struct fields: an optional embedded supertype, declared fields,
-	// then captured locals.
-	//
-	// We embed only a resolved USER supertype: a class (as *Super, for inherited
-	// fields/methods) or a user interface. For stdjava-modeled interfaces (e.g.
-	// Runnable) and unresolved supertypes we DROP the embed — Go interface
-	// satisfaction is structural, so the struct's own exported methods are enough,
-	// and embedding a bare unqualified/undefined name would not compile.
+	// Build the struct fields: an embedded supertype, declared fields, then
+	// captured locals.
 	fields := &ast.FieldList{}
 	if superScope != nil && superScope.Class != nil {
 		if superScope.IsInterface {
@@ -2139,6 +2133,13 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		} else {
 			fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: &ast.Ident{Name: superScope.Class.Name}}})
 		}
+	} else if rt, ok := stdjavaRuntimeTypeExpr(stripJavaQualifier(baseType), nil, inScopeTypeParameters(ctx), ctx); ok {
+		// A stdjava-backed supertype (e.g. an anonymous Runnable) embeds the
+		// stdjava interface so the struct's exported methods satisfy it.
+		fields.List = append(fields.List, &ast.Field{Type: rt})
+	} else {
+		// Unresolved supertype: embed it by its written name as a best effort.
+		fields.List = append(fields.List, &ast.Field{Type: &ast.Ident{Name: stripJavaQualifier(baseType)}})
 	}
 	fields.List = append(fields.List, declaredAstFields...)
 	for _, cap := range captured {

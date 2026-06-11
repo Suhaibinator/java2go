@@ -1,0 +1,5 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_109/out
+fuzz/.fuzzbuild/seed_109/out/Gen.go:38:13: constant 8589934596 overflows int32
+fuzz/.fuzzbuild/seed_109/out/Gen.go:39:2: declared and not used: l8
+fuzz/.fuzzbuild/seed_109/out/Gen.go:40:2: declared and not used: d9

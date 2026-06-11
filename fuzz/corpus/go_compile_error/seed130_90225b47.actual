@@ -1,0 +1,8 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_130/out
+fuzz/.fuzzbuild/seed_130/out/Gen.go:57:77: invalid operation: i1 / d0 (mismatched types int32 and float64)
+fuzz/.fuzzbuild/seed_130/out/Gen.go:58:2: declared and not used: i7
+fuzz/.fuzzbuild/seed_130/out/Gen.go:58:97: 0xFFFFFFFF (untyped int constant 4294967295) overflows int32
+fuzz/.fuzzbuild/seed_130/out/Gen.go:66:2: declared and not used: s9
+fuzz/.fuzzbuild/seed_130/out/Gen.go:67:2: declared and not used: l10
+fuzz/.fuzzbuild/seed_130/out/Gen.go:67:50: constant 9223372036854775808 overflows int64

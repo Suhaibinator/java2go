@@ -6,8 +6,11 @@ import (
 )
 
 func TestConcurrency_AnonymousRunnableTranspile(t *testing.T) {
-	// An anonymous Runnable (here in loop position) lowers to a struct embedding
-	// stdjava.Runnable with an exported Run(); a Runnable-typed call uses Run().
+	// An anonymous Runnable lowers to a synthesized struct with an exported Run().
+	// It does NOT embed stdjava.Runnable: Go interface satisfaction is structural,
+	// so the Run() method alone makes the struct a Runnable, and embedding a
+	// stdjava interface as a field is unnecessary (and was a source of bad/bare
+	// embeds). A Runnable-typed call dispatches through the exported Run().
 	src := `
 public class R {
     public static void run() {
@@ -19,14 +22,18 @@ public class R {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.Runnable") {
-		t.Errorf("anonymous Runnable should embed stdjava.Runnable, got:\n%s", out)
+	flat := normalizeSpaces(out)
+	if strings.Contains(out, "stdjava.Runnable") {
+		t.Errorf("anonymous Runnable should satisfy Runnable structurally without embedding stdjava.Runnable, got:\n%s", out)
 	}
-	if strings.Contains(normalizeSpaces(out), "r.run()") {
+	if strings.Contains(flat, "r.run()") {
 		t.Errorf("Runnable.run() should dispatch to exported Run(), got:\n%s", out)
 	}
 	if !strings.Contains(out, ".Run()") {
 		t.Errorf("expected a Run() call, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func (r1 *RAnon1) Run()") {
+		t.Errorf("expected the synthesized struct to implement Run(), got:\n%s", out)
 	}
 }
 
