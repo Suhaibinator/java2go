@@ -1,9 +1,8 @@
 package stdjava
 
 import (
+	"cmp"
 	"sort"
-
-	"golang.org/x/exp/constraints"
 )
 
 // This file implements the slice-backed stream type that java.util.stream.Stream
@@ -140,7 +139,7 @@ func StreamReduce[T any](s Stream[T], identity T, accumulator func(T, T) T) T {
 
 // StreamSorted returns a stream sorted by natural ordering, matching
 // Stream.sorted() for a Comparable element type.
-func StreamSorted[T constraints.Ordered](s Stream[T]) Stream[T] {
+func StreamSorted[T cmp.Ordered](s Stream[T]) Stream[T] {
 	out := make([]T, len(s.elements))
 	copy(out, s.elements)
 	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })

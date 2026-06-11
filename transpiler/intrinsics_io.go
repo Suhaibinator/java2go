@@ -67,8 +67,9 @@ func registerIOConstructors() {
 		if isSystemInExpr(args[0]) {
 			return stdjavaCall(ctx, "NewScannerStdin")
 		}
-		// new Scanner(new File(path)) -> NewScannerFile(file-or-path).
-		return stdjavaCall(ctx, "NewScannerFile", args[0])
+		// new Scanner(new File(path)) -> NewScannerFile(path): unwrap the rewritten
+		// File layer (NewScannerFile accepts a path string or *JavaFile).
+		return stdjavaCall(ctx, "NewScannerFile", unwrapFileArg(args[0]))
 	})
 }
 
@@ -157,6 +158,16 @@ func unwrapWriterArg(arg ast.Expr) ast.Expr {
 // (stdjava.NewBufferedReader(x)), return its inner x; otherwise return arg.
 func unwrapReaderArg(arg ast.Expr) ast.Expr {
 	if inner, ok := stdjavaCallArg(arg, "NewBufferedReader"); ok {
+		return inner
+	}
+	return arg
+}
+
+// unwrapFileArg unwraps one File layer: if arg is a rewritten File
+// (stdjava.NewJavaFile(x)), return its inner x; otherwise return arg (a path
+// string or a *JavaFile expression, both accepted by NewScannerFile).
+func unwrapFileArg(arg ast.Expr) ast.Expr {
+	if inner, ok := stdjavaCallArg(arg, "NewJavaFile"); ok {
 		return inner
 	}
 	return arg

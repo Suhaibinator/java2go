@@ -1,11 +1,10 @@
 package stdjava
 
 import (
+	"cmp"
 	"fmt"
 	"reflect"
 	"sort"
-
-	"golang.org/x/exp/constraints"
 )
 
 // This file holds shared helpers for the collection types and the static
@@ -21,7 +20,7 @@ func ObjectsEqual[T any](a, b T) bool {
 
 // SortOrdered sorts a list of ordered elements in place, matching
 // Collections.sort on a List of a Comparable type with natural ordering.
-func SortOrdered[T constraints.Ordered](l *List[T]) {
+func SortOrdered[T cmp.Ordered](l *List[T]) {
 	sort.Slice(l.elements, func(i, j int) bool {
 		return l.elements[i] < l.elements[j]
 	})
@@ -36,7 +35,7 @@ func ReverseList[T any](l *List[T]) {
 
 // MaxOrdered returns the largest element of a list, matching
 // Collections.max on a Collection of a Comparable type.
-func MaxOrdered[T constraints.Ordered](l *List[T]) T {
+func MaxOrdered[T cmp.Ordered](l *List[T]) T {
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
 		if e > best {
@@ -47,7 +46,7 @@ func MaxOrdered[T constraints.Ordered](l *List[T]) T {
 }
 
 // MinOrdered returns the smallest element of a list, matching Collections.min.
-func MinOrdered[T constraints.Ordered](l *List[T]) T {
+func MinOrdered[T cmp.Ordered](l *List[T]) T {
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
 		if e < best {
@@ -81,7 +80,7 @@ func AsList[T any](elements ...T) *List[T] {
 }
 
 // SortSlice sorts a slice of ordered elements in place, matching Arrays.sort.
-func SortSlice[T constraints.Ordered](elements []T) {
+func SortSlice[T cmp.Ordered](elements []T) {
 	sort.Slice(elements, func(i, j int) bool {
 		return elements[i] < elements[j]
 	})

@@ -108,7 +108,7 @@ func (h *Harness) Run(seed int64, source string) Result {
 		res.Detail = "mkdir workdir: " + err.Error()
 		return res
 	}
-	defer os.RemoveAll(work)
+	defer func() { _ = os.RemoveAll(work) }()
 
 	// 1. Oracle: run on the real JDK via single-file source launch.
 	javaPath := filepath.Join(work, "Gen.java")

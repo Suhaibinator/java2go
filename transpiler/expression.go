@@ -2124,20 +2124,24 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	declaredFieldDefs, declaredAstFields := anonymousClassDeclaredFields(classBody, source, ctx)
 	captured := collectCapturedLocals(classBody, source, ctx)
 
-	// Build the struct fields: an embedded supertype, declared fields, then
-	// captured locals.
+	// Build the struct fields: the supertype, declared fields, then captured
+	// locals. A stdjava-backed supertype (e.g. an anonymous Runnable) is
+	// satisfied structurally — the struct's exported methods make it implement
+	// the interface — so it is NOT embedded; a bare embedded stdjava interface
+	// field is unnecessary and was a source of bad embeds. User-defined
+	// supertypes are embedded (an interface by name, a class as *Super).
+	_, stdjavaBacked := stdjavaRuntimeTypeExpr(stripJavaQualifier(baseType), nil, inScopeTypeParameters(ctx), ctx)
 	fields := &ast.FieldList{}
-	if superScope != nil && superScope.Class != nil {
+	switch {
+	case superScope != nil && superScope.Class != nil:
 		if superScope.IsInterface {
 			fields.List = append(fields.List, &ast.Field{Type: &ast.Ident{Name: superScope.Class.Name}})
 		} else {
 			fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: &ast.Ident{Name: superScope.Class.Name}}})
 		}
-	} else if rt, ok := stdjavaRuntimeTypeExpr(stripJavaQualifier(baseType), nil, inScopeTypeParameters(ctx), ctx); ok {
-		// A stdjava-backed supertype (e.g. an anonymous Runnable) embeds the
-		// stdjava interface so the struct's exported methods satisfy it.
-		fields.List = append(fields.List, &ast.Field{Type: rt})
-	} else {
+	case stdjavaBacked:
+		// Structural satisfaction; no embedded field.
+	default:
 		// Unresolved supertype: embed it by its written name as a best effort.
 		fields.List = append(fields.List, &ast.Field{Type: &ast.Ident{Name: stripJavaQualifier(baseType)}})
 	}

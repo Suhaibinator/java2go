@@ -80,6 +80,34 @@ var knownOpenCorpus = map[string]string{
 	"DoubleFormat": "K18(new) integral double prints '96' not '96.0' (println(double); ROADMAP §2, task #14)",
 	// K4-related: string + char concatenates the numeric code, not the glyph.
 	"StringPlusChar": "K4 string + char concatenates the code point, not the glyph (ROADMAP §6, task #14)",
+
+	// --- fuzzer-found output_mismatch regression seeds ---
+	// These shrunk seeds reproduce already-catalogued open root causes (K1 int32
+	// semantics, K4 char/string+char, K18 double rendering), but their
+	// OUTPUT_MISMATCH:<line>:<kind> signature shape is too generic to list in
+	// knownSignatureMarkers without risking a collision with a future genuine
+	// mismatch, so they are tracked by stem here. Promote (delete the entry) once
+	// the underlying bug is fixed to turn the seed into an enforced regression.
+	//
+	// K1: int locals not pinned to int32 -> arithmetic overflow / value divergence.
+	"seed119_6898bc09": "K1 int32 overflow on accumulation (ROADMAP §6, task #10/#15)",
+	"seed245_4331b637": "K1 int32 arithmetic value divergence (ROADMAP §6, task #10/#15)",
+	"seed295_b3c05133": "K1/K4 int32 + char arithmetic value divergence (ROADMAP §6)",
+	"seed336_7cc02db3": "K1 unsigned >>> result prints as uint32, not signed int (ROADMAP §6, task #10/#15)",
+	"seed360_20edf654": "K1/K4 int32 + char value divergence (ROADMAP §6)",
+	// K4: char prints as its int code point; string + char concatenates the code.
+	"seed140_98e5d19c": "K4 (int) char value / char code-point divergence (ROADMAP §6)",
+	"seed159_34208dbc": "K4 string + char concatenates the code point, not the glyph (ROADMAP §6, task #14)",
+	"seed238_ee9a1441": "K4 string + char concatenates the code point, not the glyph (ROADMAP §6, task #14)",
+	"seed246_c233600d": "K4 string + char concatenates the code point, not the glyph (ROADMAP §6, task #14)",
+	"seed309_7a28288d": "K4 char/string concatenation divergence (ROADMAP §6, task #14)",
+	"seed438_3d772ff9": "K4 char prints the replacement char, not the glyph (ROADMAP §6)",
+	// K18: double rendering differs from Java's Double.toString (trailing
+	// precision and the E-notation switch/format).
+	"seed148_3b65b8f9": "K18 double trailing-precision rendering differs from Double.toString (ROADMAP §2, task #14)",
+	"seed210_78b8dece": "K18 double E-notation rendering differs from Double.toString (ROADMAP §2, task #14)",
+	"seed330_3c689810": "K18 double trailing-precision rendering differs from Double.toString (ROADMAP §2, task #14)",
+	"seed418_74223ef5": "K18 double E-notation rendering differs from Double.toString (ROADMAP §2, task #14)",
 }
 
 // IsKnownOpenCorpus reports whether a corpus file (by stem) is a still-open bug

@@ -1446,13 +1446,6 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 	return []ast.Decl{helperStruct, constructor, funcDecl}
 }
 
-func shouldCallFieldInitializerMethod(constructorBody []ast.Stmt, ctx Ctx) bool {
-	if ctx.currentClass == nil || !ctx.currentClass.HasInstanceFieldInitializers {
-		return false
-	}
-	return !startsWithThisConstructorInvocation(constructorBody, ctx.className)
-}
-
 // shouldCallFieldInitializerMethodForBody is like shouldCallFieldInitializerMethod
 // but operates on the raw, parsed constructor body (before the synthesized
 // allocation prelude is prepended), where a delegating this(...) call appears as
@@ -1471,26 +1464,6 @@ func shouldCallFieldInitializerMethodForBody(userBody []ast.Stmt, ctx Ctx) bool 
 // this(...) constructor call lowered to New<Class>(...).
 func isThisConstructorInvocation(stmt ast.Stmt, className string) bool {
 	exprStmt, ok := stmt.(*ast.ExprStmt)
-	if !ok {
-		return false
-	}
-	callExpr, ok := exprStmt.X.(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-	funIdent, ok := callExpr.Fun.(*ast.Ident)
-	if !ok {
-		return false
-	}
-	return funIdent.Name == "New"+className
-}
-
-func startsWithThisConstructorInvocation(stmts []ast.Stmt, className string) bool {
-	if len(stmts) < 2 {
-		return false
-	}
-
-	exprStmt, ok := stmts[1].(*ast.ExprStmt)
 	if !ok {
 		return false
 	}

@@ -40,7 +40,7 @@ func CreateTempFile(prefix, suffix string) *JavaFile {
 		panic(err)
 	}
 	name := f.Name()
-	f.Close()
+	_ = f.Close()
 	return &JavaFile{path: name}
 }
 
@@ -114,31 +114,31 @@ func ioPathOf(arg any) string {
 
 // Print writes the textual form of value, matching PrintWriter.print.
 func (w *PrintWriter) Print(value any) {
-	w.buf.WriteString(javaString(value))
+	_, _ = w.buf.WriteString(javaString(value))
 }
 
 // Println writes the textual form of value followed by a newline, matching
 // PrintWriter.println. With no argument, writes just a newline.
 func (w *PrintWriter) Println(value any) {
-	w.buf.WriteString(javaString(value))
-	w.buf.WriteByte('\n')
+	_, _ = w.buf.WriteString(javaString(value))
+	_ = w.buf.WriteByte('\n')
 }
 
 // PrintlnEmpty writes a bare newline, matching the no-argument PrintWriter.println().
 func (w *PrintWriter) PrintlnEmpty() {
-	w.buf.WriteByte('\n')
+	_ = w.buf.WriteByte('\n')
 }
 
 // Flush writes any buffered data to the underlying file, matching
 // PrintWriter.flush.
 func (w *PrintWriter) Flush() {
-	w.buf.Flush()
+	_ = w.buf.Flush()
 }
 
 // Close flushes and closes the writer, matching PrintWriter.close.
 func (w *PrintWriter) Close() {
-	w.buf.Flush()
-	w.file.Close()
+	_ = w.buf.Flush()
+	_ = w.file.Close()
 }
 
 // BufferedReader models java.io.BufferedReader over a FileReader.
@@ -183,13 +183,12 @@ func (r *BufferedReader) Ready() bool {
 
 // Close closes the reader, matching BufferedReader.close.
 func (r *BufferedReader) Close() {
-	r.file.Close()
+	_ = r.file.Close()
 }
 
 // Scanner models java.util.Scanner over an io.Reader (e.g. System.in or a file).
 // Tokens are whitespace-separated, matching Scanner's default delimiter.
 type Scanner struct {
-	lineReader *bufio.Reader
 	wordReader *bufio.Scanner
 }
 

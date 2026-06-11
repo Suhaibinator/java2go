@@ -2,6 +2,10 @@ module github.com/NickyBoy89/java2go
 
 go 1.26.0
 
+// Pin the build toolchain to a stdlib patch that fixes GO-2026-4602 (os),
+// reached via the fuzz corpus loader's filepath.WalkDir; keeps govulncheck clean.
+toolchain go1.26.1
+
 require (
 	github.com/sirupsen/logrus v1.9.4
 	github.com/smacker/go-tree-sitter v0.0.0-20240827094217-dd81d9e9be82
