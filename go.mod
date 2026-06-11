@@ -4,7 +4,7 @@ go 1.26.0
 
 // Pin the build toolchain to a stdlib patch that fixes GO-2026-4602 (os),
 // reached via the fuzz corpus loader's filepath.WalkDir; keeps govulncheck clean.
-toolchain go1.26.1
+toolchain go1.26.4
 
 require (
 	github.com/sirupsen/logrus v1.9.4
