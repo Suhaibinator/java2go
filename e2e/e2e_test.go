@@ -33,25 +33,16 @@ func TestMain(m *testing.M) {
 // test pass. Remove an entry here to turn its program into an enforced regression
 // test. Keep this list in sync as features land.
 var skipReasons = map[string]string{
-	"inheritance/Inheritance":  "package-private class casing: undefined Shape / Newrectangle / Newsquare (superclass embed + super-ctor refs miscased). Array-literal part fixed (task #10 item 5) (ROADMAP §6/#7 casing item 13)",
-	"interfaces/Interfaces":    "package-private interface name casing: undefined Greeter. Array-literal part fixed (ROADMAP §6/#7 casing item 13)",
-	"lambdas/Lambdas":          "int/int32: 'count' is Go int but return type is int32 (count used as int32 in return). Array-literal part fixed (ROADMAP §6 int typing, item 12)",
-	"enums/Enums":              "enum METHOD-name casing: call site emits .ordinal() but generated method is .Ordinal() (WED.ordinal undefined). Enum-constant access fixed (task #10 item 8) (ROADMAP §6/#7 casing item 13)",
-	"numeric_edge/NumericEdge": "int overflow not wrapped (int locals are untyped Go consts, not int32); ~0 prints 4294967295; (char) cast prints code point 66 not 'B'; long shift over-masked to 5 bits so 1L<<32 yields 1 (ROADMAP §6, task #10 items 11-12)",
+	"inheritance/Inheritance": "package-private class casing: undefined Shape / Newrectangle / Newsquare (superclass embed + super-ctor refs miscased). Array-literal part fixed (task #10 item 5) (ROADMAP §6/#7 casing item 13)",
+	"interfaces/Interfaces":   "package-private interface name casing: undefined Greeter. Array-literal part fixed (ROADMAP §6/#7 casing item 13)",
+	"enums/Enums":             "enum METHOD-name casing: call site emits .ordinal() but generated method is .Ordinal() (WED.ordinal undefined). Enum-constant access fixed (task #10 item 8) (ROADMAP §6/#7 casing item 13)",
 
-	"var_infer/VarInfer":                   "int/int32 mismatch (untyped local int vs int32 method/return). Array-literal part fixed; var itself works (ROADMAP §6 int typing, item 12)",
-	"switch_expr/SwitchExpr":               "switch-expression lowering works now; blocked only by int/int32 (K1): loop var d is int but method param is int32 (ROADMAP §6 int typing)",
 	"instanceof_pattern/InstanceofPattern": "instanceof pattern works for reference types (String matches), but a boxed primitive (21 as Integer) doesn't match `instanceof Integer` -> falls to 'unknown'. Autoboxing gap (ROADMAP §6 autoboxing)",
 	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
 	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
-	"collections/CollectionOps":            "List/Map intrinsics ARE wired now; blocked by int/int32 typing only (i*i is int but nums.Add wants int32; sum += n mixes int and int32) (ROADMAP §6 int typing)",
-	"streams/Streams":                      "java.util.stream not implemented yet (stdlib-dev task #13); currently blocked even earlier by int/int32 (nums.add(i)) before reaching stream ops (ROADMAP §2 streams, §6)",
 	"io/FileRoundTrip":                     "java.io (File/FileWriter/PrintWriter/BufferedReader/FileReader) not implemented yet (stdlib-dev task #13 item 3) (ROADMAP §2 java.io)",
 
-	"concurrency/SyncCounter": "all concurrency work done (Thread+synchronized+anon-Runnable, task #11); blocked ENTIRELY by int/int32 (K1) now (ROADMAP §6 int typing, task #15)",
-	"concurrency/ThreadJoin":  "Thread-subclass->goroutine + sized arrays done; blocked ENTIRELY by int/int32 (K1): loop vars/fields/args int vs int32 (ROADMAP §6 int typing, task #15)",
-
-	"nested/AnonLocal":        "SAM anon class captures local typed int not int32 (value+bump mismatch); method-local class field not emitted (undefined: n) (ROADMAP §4 M4/M5, §6 int typing)",
+	"nested/AnonLocal":        "SAM anon + local class now work; remaining: anon class extending an ABSTRACT class doesn't dispatch its override — calling describe() hits the abstract base stub ('abstract method describe not implemented'), so shout() panics (ROADMAP §4 M4 anon-extends-abstract dispatch)",
 	"static_init/StaticInit":  "init reserved-name collision FIXED (renamed init0); compiles+runs now. Remaining: static-init ORDERING — Go runs all var-inits before init() funcs, so field initializer 'init c' runs before earlier static{} blocks instead of interleaved in Java source order (ROADMAP §6 static init order, task #7)",
 	"overloading/Overloading": "overload resolution collapses all calls to the first overload (describe0/int32); long/double/String/arity dispatch by arg type not implemented (ROADMAP §6/§7)",
 }
