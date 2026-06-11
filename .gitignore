@@ -19,3 +19,6 @@ namedSrc/
 *.class
 transpiler/zz_*_test.go
 .claude/
+
+# Agent verification artifacts
+.e2e_v/
