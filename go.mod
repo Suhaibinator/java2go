@@ -1,6 +1,8 @@
 module github.com/NickyBoy89/java2go
 
-go 1.26.0
+// go1.26.4 includes the stdlib patch for GO-2026-4602 (os), reached via the
+// fuzz corpus loader's filepath.WalkDir; keeps govulncheck clean.
+go 1.26.4
 
 require (
 	github.com/sirupsen/logrus v1.9.4

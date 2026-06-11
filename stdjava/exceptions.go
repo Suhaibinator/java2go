@@ -118,7 +118,7 @@ func throwableTypeName(recovered interface{}) string {
 	if rt == nil {
 		return ""
 	}
-	if rt.Kind() == reflect.Ptr {
+	if rt.Kind() == reflect.Pointer {
 		rt = rt.Elem()
 	}
 	return rt.Name()

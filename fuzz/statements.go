@@ -128,7 +128,6 @@ func (g *generator) compoundAssignStmt() string {
 	op := ops[g.rng.Intn(len(ops))]
 	rhsType := t
 	if strings.HasPrefix(op, "<<") || strings.HasPrefix(op, ">>") {
-		rhsType = tInt
 		return fmt.Sprintf("%s %s %s;", name, op, g.shiftAmount())
 	}
 	return fmt.Sprintf("%s %s %s;", name, op, g.expr(rhsType, 1))
