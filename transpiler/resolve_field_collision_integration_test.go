@@ -248,10 +248,30 @@ class CarrierNameCollision implements Token {
     }
 }
 
+interface OverrideValue {
+    default int value() {
+        return 1;
+    }
+}
+
+class OverrideFieldCollision implements OverrideValue {
+    public int value = 3;
+
+    public int value() {
+        return 4;
+    }
+
+    String observe() {
+        OverrideValue asInterface = this;
+        return value + ":" + value() + ":" + asInterface.value();
+    }
+}
+
 public class InterfaceMemberCollisionProgram {
     public static String run() {
         return new DefaultFieldCollision().observe() + ":"
-            + new CarrierNameCollision().observe();
+            + new CarrierNameCollision().observe() + ":"
+            + new OverrideFieldCollision().observe();
     }
 }
 `
@@ -263,8 +283,8 @@ package main
 import "testing"
 
 func TestInterfaceMemberNamespaceRuntime(t *testing.T) {
-	if got := Run(); got != "34:3:4:2" {
-		t.Fatalf("Run() = %q, want 34:3:4:2", got)
+	if got := Run(); got != "34:3:4:2:3:4:4" {
+		t.Fatalf("Run() = %q, want 34:3:4:2:3:4:4", got)
 	}
 }
 `)

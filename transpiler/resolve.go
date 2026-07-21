@@ -213,17 +213,6 @@ func classAncestorScopes(class *symbol.ClassScope) []*symbol.ClassScope {
 	return ancestors
 }
 
-func ancestorHasInstanceFieldName(ancestors []*symbol.ClassScope, name string) bool {
-	for _, ancestor := range ancestors {
-		for _, field := range ancestor.Fields {
-			if field != nil && !field.IsStatic && field.Name == name {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func ancestorHasInheritedInstanceMethodName(ancestors []*symbol.ClassScope, name string) bool {
 	for _, ancestor := range ancestors {
 		for _, method := range ancestor.Methods {
@@ -265,6 +254,12 @@ func classHasEmbeddedInterfaceDefaultCarrierName(class *symbol.ClassScope, name 
 }
 
 func resolvePromotedFieldMethodCollisions() {
+	for resolvePromotedFieldMethodCollisionsPass() {
+	}
+}
+
+func resolvePromotedFieldMethodCollisionsPass() bool {
+	changed := false
 	for _, pkg := range symbol.GlobalScope.Packages {
 		if pkg == nil {
 			continue
@@ -274,17 +269,44 @@ func resolvePromotedFieldMethodCollisions() {
 				continue
 			}
 			for _, top := range file.TopLevelClasses {
-				resolvePromotedFieldMethodCollisionsInTree(top)
+				if resolvePromotedFieldMethodCollisionsInTree(top) {
+					changed = true
+				}
 			}
 		}
 	}
+	return changed
 }
 
-func resolvePromotedFieldMethodCollisionsInTree(class *symbol.ClassScope) {
+func resolvePromotedFieldMethodCollisionsInTree(class *symbol.ClassScope) bool {
 	if class == nil {
-		return
+		return false
 	}
+	changed := false
 	ancestors := classAncestorScopes(class)
+	// A direct child method shadows a promoted superclass field in Go. Preserve
+	// the method spelling (it may be an interface implementation or override) and
+	// move the field instead; every field use resolves through its Definition.
+	for _, method := range class.Methods {
+		if method == nil || method.IsStatic || method.Constructor {
+			continue
+		}
+		for _, ancestor := range ancestors {
+			for _, field := range ancestor.Fields {
+				if field == nil || field.IsStatic {
+					continue
+				}
+				for suffix := 0; field.Name == method.Name ||
+					classHasOtherFieldName(ancestor, field, field.Name) ||
+					classHasOtherInstanceMethodName(ancestor, field, field.Name) ||
+					classHasEmbeddedInterfaceDefaultCarrierName(ancestor, field.Name) ||
+					classHasAffineArrayViewHelperName(ancestor, field.Name); suffix++ {
+					field.Rename(field.Name + strconv.Itoa(suffix))
+					changed = true
+				}
+			}
+		}
+	}
 	for _, field := range class.Fields {
 		if field == nil || field.IsStatic {
 			continue
@@ -296,23 +318,27 @@ func resolvePromotedFieldMethodCollisionsInTree(class *symbol.ClassScope) {
 			classHasOtherInstanceMethodName(class, field, field.Name) ||
 			classHasAffineArrayViewHelperName(class, field.Name); suffix++ {
 			field.Rename(field.Name + strconv.Itoa(suffix))
+			changed = true
 		}
 	}
 	for _, method := range class.Methods {
 		if method == nil || method.IsStatic || method.Constructor {
 			continue
 		}
-		for suffix := 0; ancestorHasInstanceFieldName(ancestors, method.Name) ||
-			classHasEmbeddedInterfaceDefaultCarrierName(class, method.Name) ||
+		for suffix := 0; classHasEmbeddedInterfaceDefaultCarrierName(class, method.Name) ||
 			classHasOtherFieldName(class, method, method.Name) ||
 			classHasOtherMethodName(class, method, method.Name) ||
 			classHasAffineArrayViewHelperName(class, method.Name); suffix++ {
 			method.Rename(method.Name + strconv.Itoa(suffix))
+			changed = true
 		}
 	}
 	for _, nested := range class.Subclasses {
-		resolvePromotedFieldMethodCollisionsInTree(nested)
+		if resolvePromotedFieldMethodCollisionsInTree(nested) {
+			changed = true
+		}
 	}
+	return changed
 }
 
 func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
@@ -329,6 +355,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 		// Rename the field if its name conflits with any keyword
 		for i := 0; symbol.IsReserved(field.Name) ||
 			classHasOtherFieldName(class, field, field.Name) ||
+			(!field.IsStatic && classHasOtherInstanceMethodName(class, field, field.Name)) ||
 			(field.IsStatic && packageHasOtherStaticFieldName(packageScope, field, field.Name)) ||
 			(field.IsStatic && packageHasOtherStaticMethodName(packageScope, field, field.Name)); i++ {
 			field.Rename(field.Name + strconv.Itoa(i))
