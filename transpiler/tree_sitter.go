@@ -729,7 +729,7 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		resourceCtx.tryReturnTarget = returnTarget
 		resourceCtx.tryControlBoundary = bodyNode
 		tryBodyStmts = append(tryBodyStmts, ParseStmt(decl.node, source, resourceCtx))
-		tryBodyStmts = append(tryBodyStmts, buildResourceCloseDeferStmt(decl.name))
+		tryBodyStmts = append(tryBodyStmts, buildResourceCloseDeferStmt(decl.name, ctx))
 	}
 	tryCtx := ctx.Clone()
 	tryCtx.tryReturnTarget = returnTarget
@@ -1212,35 +1212,30 @@ func parseResourceDecls(resourcesNode *sitter.Node, source []byte, ctx Ctx) []re
 	return decls
 }
 
-func buildResourceCloseDeferStmt(resourceName string) ast.Stmt {
+func buildResourceCloseDeferStmt(resourceName string, ctx Ctx) ast.Stmt {
 	return &ast.DeferStmt{
 		Call: &ast.CallExpr{
-			Fun: &ast.FuncLit{
+			Fun: stdjavaQualifiedExpr("CloseResource", ctx),
+			Args: []ast.Expr{&ast.FuncLit{
 				Type: &ast.FuncType{},
-				Body: &ast.BlockStmt{
-					List: []ast.Stmt{
-						&ast.IfStmt{
-							Cond: &ast.BinaryExpr{
-								X:  &ast.Ident{Name: resourceName},
-								Op: token.NEQ,
-								Y:  &ast.Ident{Name: "nil"},
-							},
-							Body: &ast.BlockStmt{
-								List: []ast.Stmt{
-									&ast.ExprStmt{
-										X: &ast.CallExpr{
-											Fun: &ast.SelectorExpr{
-												X:   &ast.Ident{Name: resourceName},
-												Sel: &ast.Ident{Name: "Close"},
-											},
-										},
-									},
-								},
-							},
+				Body: &ast.BlockStmt{List: []ast.Stmt{
+					&ast.IfStmt{
+						Cond: &ast.BinaryExpr{
+							X:  &ast.Ident{Name: resourceName},
+							Op: token.NEQ,
+							Y:  &ast.Ident{Name: "nil"},
 						},
+						Body: &ast.BlockStmt{List: []ast.Stmt{
+							&ast.ExprStmt{X: &ast.CallExpr{
+								Fun: &ast.SelectorExpr{
+									X:   &ast.Ident{Name: resourceName},
+									Sel: &ast.Ident{Name: "Close"},
+								},
+							}},
+						}},
 					},
-				},
-			},
+				}},
+			}},
 		},
 	}
 }

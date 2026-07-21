@@ -343,13 +343,18 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				argCount = int(argListNode.NamedChildCount())
 			}
 
-			// Throwable.getMessage()/printStackTrace() on a caught exception are
+			// Throwable.getCause()/getMessage()/getSuppressed()/printStackTrace() on a caught exception are
 			// routed through the stdjava runtime, which understands both the
 			// built-in exception types and user-defined ones.
-			if argCount == 0 && (methodName == "getMessage" || methodName == "printStackTrace") {
+			if argCount == 0 && (methodName == "getCause" || methodName == "getMessage" || methodName == "getSuppressed" || methodName == "printStackTrace") {
 				if javaType, ok := inferExprJavaType(objectNode, ctx, source); ok && isExceptionJavaType(ctx, javaType) {
 					runtimeFn := "GetMessage"
-					if methodName == "printStackTrace" {
+					switch methodName {
+					case "getCause":
+						runtimeFn = "GetCause"
+					case "getSuppressed":
+						runtimeFn = "GetSuppressed"
+					case "printStackTrace":
 						runtimeFn = "PrintStackTrace"
 					}
 					return &ast.CallExpr{
@@ -5672,6 +5677,14 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			nameNode := node.ChildByFieldName("name")
 			if nameNode != nil {
 				methodName := nameNode.Content(source)
+				if methodName == "getCause" || methodName == "getSuppressed" {
+					if receiverType, ok := inferExprJavaType(objectNode, ctx, source); ok && isExceptionJavaType(ctx, receiverType) {
+						if methodName == "getCause" {
+							return "Throwable", true
+						}
+						return "Throwable[]", true
+					}
+				}
 				// Stream.of(...) returns a Stream, so a chained terminal/intermediate
 				// op (Stream.of(..).count()) resolves.
 				if objectNode.Type() == "identifier" && objectNode.Content(source) == "Stream" && methodName == "of" {

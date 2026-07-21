@@ -197,6 +197,137 @@ func TestGetMessage(t *testing.T) {
 	}
 }
 
+func TestCloseResource_BodyPanicWinsAndClosePanicIsSuppressed(t *testing.T) {
+	primary := NewIllegalArgumentException("body")
+	secondary := NewIllegalStateException("close")
+
+	got := recoverNormalized(func() {
+		func() {
+			defer CloseResource(func() { panic(secondary) })
+			panic(primary)
+		}()
+	})
+
+	if !CaughtAs(got, "IllegalArgumentException") || GetMessage(got) != "body" {
+		t.Fatalf("primary panic = %T (%v), want body IllegalArgumentException", got, got)
+	}
+	suppressed := GetSuppressed(got)
+	if len(suppressed) != 1 || !CaughtAs(suppressed[0], "IllegalStateException") || GetMessage(suppressed[0]) != "close" {
+		t.Fatalf("suppressed = %#v, want one close IllegalStateException", suppressed)
+	}
+}
+
+func TestCloseResource_SelfSuppressionThrowsWithOriginalCause(t *testing.T) {
+	shared := NewRuntimeException("same")
+	copyUsedByClose := shared
+
+	got := recoverNormalized(func() {
+		func() {
+			defer CloseResource(func() { panic(copyUsedByClose) })
+			panic(shared)
+		}()
+	})
+
+	if !CaughtAs(got, "IllegalArgumentException") || GetMessage(got) != "Self-suppression not permitted" {
+		t.Fatalf("self-suppression panic = %T (%v), want IllegalArgumentException", got, got)
+	}
+	if suppressed := GetSuppressed(got); len(suppressed) != 0 {
+		t.Fatalf("self-suppression failure has suppressed = %#v, want none", suppressed)
+	}
+	if suppressed := GetSuppressed(shared); len(suppressed) != 0 {
+		t.Fatalf("original throwable has suppressed = %#v, want none", suppressed)
+	}
+	if cause := GetCause(got); !sameThrowableIdentity(cause, shared) {
+		t.Fatalf("self-suppression cause = %T (%v), want original throwable identity", cause, cause)
+	}
+}
+
+func TestCloseResource_DistinctEqualValueThrowablesAreNotSelfSuppression(t *testing.T) {
+	primary := NewRuntimeException("same")
+	secondary := NewRuntimeException("same")
+
+	got := recoverNormalized(func() {
+		func() {
+			defer CloseResource(func() { panic(secondary) })
+			panic(primary)
+		}()
+	})
+
+	if !sameThrowableIdentity(got, primary) {
+		t.Fatalf("primary panic = %T (%v), want original throwable identity", got, got)
+	}
+	suppressed := GetSuppressed(got)
+	if len(suppressed) != 1 || !sameThrowableIdentity(suppressed[0], secondary) {
+		t.Fatalf("suppressed = %#v, want distinct equal-value close throwable", suppressed)
+	}
+}
+
+func TestCloseResource_ClosePanicBecomesPrimaryAfterNormalBody(t *testing.T) {
+	got := recoverNormalized(func() {
+		func() {
+			defer CloseResource(func() { panic(NewIllegalStateException("close")) })
+		}()
+	})
+
+	if !CaughtAs(got, "IllegalStateException") || GetMessage(got) != "close" {
+		t.Fatalf("primary panic = %T (%v), want close IllegalStateException", got, got)
+	}
+	if suppressed := GetSuppressed(got); len(suppressed) != 0 {
+		t.Fatalf("suppressed = %#v, want none", suppressed)
+	}
+}
+
+func TestCloseResource_MultipleClosePanicsPreserveJavaOrder(t *testing.T) {
+	got := recoverNormalized(func() {
+		func() {
+			defer CloseResource(func() { panic(NewIllegalStateException("first")) })
+			defer CloseResource(func() { panic(NewIOException("second")) })
+			panic(NewIllegalArgumentException("body"))
+		}()
+	})
+
+	if !CaughtAs(got, "IllegalArgumentException") {
+		t.Fatalf("primary panic = %T (%v), want body IllegalArgumentException", got, got)
+	}
+	suppressed := GetSuppressed(got)
+	if len(suppressed) != 2 {
+		t.Fatalf("suppressed = %#v, want two close failures", suppressed)
+	}
+	if !CaughtAs(suppressed[0], "IOException") || GetMessage(suppressed[0]) != "second" {
+		t.Fatalf("first suppressed = %T (%v), want second resource IOException", suppressed[0], suppressed[0])
+	}
+	if !CaughtAs(suppressed[1], "IllegalStateException") || GetMessage(suppressed[1]) != "first" {
+		t.Fatalf("second suppressed = %T (%v), want first resource IllegalStateException", suppressed[1], suppressed[1])
+	}
+}
+
+func TestCloseResource_NormalizesNativeBodyPanicBeforeSuppression(t *testing.T) {
+	got := recoverNormalized(func() {
+		func() {
+			defer CloseResource(func() { panic(NewIllegalStateException("close")) })
+			numerator, denominator := 1, 0
+			_ = numerator / denominator
+		}()
+	})
+
+	if !CaughtAs(got, "ArithmeticException") {
+		t.Fatalf("primary panic = %T (%v), want normalized ArithmeticException", got, got)
+	}
+	suppressed := GetSuppressed(got)
+	if len(suppressed) != 1 || !CaughtAs(suppressed[0], "IllegalStateException") {
+		t.Fatalf("suppressed = %#v, want close IllegalStateException", suppressed)
+	}
+}
+
+func TestSuppressedStateSurvivesThrowableValueCopies(t *testing.T) {
+	primary := NewIllegalArgumentException("body")
+	copyOfPrimary := primary
+	AddSuppressed(copyOfPrimary, NewIllegalStateException("close"))
+	if got := GetSuppressed(primary); len(got) != 1 || GetMessage(got[0]) != "close" {
+		t.Fatalf("suppressed through copied throwable = %#v, want shared close failure", got)
+	}
+}
+
 func TestErrorRendering(t *testing.T) {
 	if got := NewNumberFormatException("not a number").Error(); got != "NumberFormatException: not a number" {
 		t.Fatalf("Error() = %q", got)

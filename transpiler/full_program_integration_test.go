@@ -150,8 +150,8 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	if !strings.Contains(pipelineOut, "func GuardedResourceOrder() string") {
 		t.Fatalf("expected guardedResourceOrder method to be converted:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
-	if !strings.Contains(pipelineOut, "defer func()") || !strings.Contains(pipelineOut, ".Close()") {
-		t.Fatalf("expected try-with-resources close lowering using defer and Close calls:\n%s", outputs["com/acme/app/Pipeline.go"])
+	if !strings.Contains(pipelineOut, "defer stdjava.CloseResource(func()") || !strings.Contains(pipelineOut, ".Close()") {
+		t.Fatalf("expected try-with-resources close lowering using suppression-aware defer and Close calls:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
 
 	mainOut := normalizeSpaces(outputs["com/acme/app/MainApp.go"])

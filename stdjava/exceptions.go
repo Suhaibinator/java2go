@@ -223,6 +223,103 @@ func GetMessage(recovered interface{}) string {
 	return fmt.Sprintf("%v", recovered)
 }
 
+// AddSuppressed attaches suppressed to primary, mirroring the part of
+// Throwable.addSuppressed used by javac's try-with-resources lowering. Values
+// produced by the built-in constructors, and generated user exceptions that
+// embed them, share suppression state across Go value copies.
+func AddSuppressed(primary, suppressed interface{}) {
+	if sameThrowableIdentity(primary, suppressed) {
+		panic(NewIllegalArgumentExceptionWithCause("Self-suppression not permitted", primary))
+	}
+	carrier, ok := primary.(interface {
+		AddSuppressedValue(interface{})
+	})
+	if !ok {
+		return
+	}
+	carrier.AddSuppressedValue(suppressed)
+}
+
+// sameThrowableIdentity compares the shared state allocated for one Java
+// Throwable object. Transpiled built-in exceptions are Go values, so ordinary
+// interface equality is not a sound identity test: copies of one throwable
+// must compare as the same Java object, while separately constructed values
+// with identical type and message must remain distinct.
+func sameThrowableIdentity(left, right interface{}) bool {
+	leftCarrier, leftOK := left.(interface {
+		ThrowableIdentity() *throwableState
+	})
+	rightCarrier, rightOK := right.(interface {
+		ThrowableIdentity() *throwableState
+	})
+	if !leftOK || !rightOK {
+		return false
+	}
+	leftIdentity := leftCarrier.ThrowableIdentity()
+	return leftIdentity != nil && leftIdentity == rightCarrier.ThrowableIdentity()
+}
+
+// GetSuppressed returns a snapshot of the exceptions attached to primary, in
+// the order in which resource close failures occurred.
+func GetSuppressed(primary interface{}) []interface{} {
+	carrier, ok := primary.(interface {
+		SuppressedValues() []interface{}
+	})
+	if !ok {
+		return []interface{}{}
+	}
+	return carrier.SuppressedValues()
+}
+
+// GetCause returns the cause associated with a throwable, mirroring
+// Throwable.getCause(). Most constructors leave it nil; the
+// IllegalArgumentException raised for self-suppression records the original
+// throwable as its cause, matching the JDK implementation.
+func GetCause(primary interface{}) interface{} {
+	carrier, ok := primary.(interface {
+		CauseValue() interface{}
+	})
+	if !ok {
+		return nil
+	}
+	return carrier.CauseValue()
+}
+
+// CloseResource implements the exceptional-completion rules for one Java
+// try-with-resources resource. Generated code must call it directly from a
+// defer statement so recover observes a panic already propagating out of the
+// resource body. A close panic becomes the primary panic only when the body
+// completed normally; otherwise it is attached to the body's primary panic.
+// Chaining one defer per resource naturally preserves Java's reverse close
+// order and suppressed-exception ordering.
+func CloseResource(closeFn func()) {
+	primary := recover()
+	if primary != nil {
+		primary = NormalizePanic(primary)
+	}
+
+	var closePanic interface{}
+	func() {
+		defer func() {
+			closePanic = recover()
+		}()
+		closeFn()
+	}()
+
+	if closePanic != nil {
+		closePanic = NormalizePanic(closePanic)
+		if primary == nil {
+			primary = closePanic
+		} else {
+			AddSuppressed(primary, closePanic)
+		}
+	}
+
+	if primary != nil {
+		panic(primary)
+	}
+}
+
 // PrintStackTrace writes a best-effort rendering of the exception to stderr,
 // mirroring Throwable.printStackTrace(). A full Java-style stack trace is out of
 // scope; the type name and message are printed instead.
@@ -246,6 +343,13 @@ func PrintStackTrace(recovered interface{}) {
 type ThrowableBase struct {
 	typeName string
 	message  string
+	state    *throwableState
+}
+
+type throwableState struct {
+	mu         sync.Mutex
+	suppressed []interface{}
+	cause      interface{}
 }
 
 func (t ThrowableBase) ThrowableTypeName() string { return t.typeName }
@@ -260,10 +364,49 @@ func (t ThrowableBase) Error() string {
 
 func (t ThrowableBase) String() string { return t.Error() }
 
+// ThrowableIdentity returns the state pointer that represents this Java
+// Throwable's object identity. The method is promoted through generated
+// exception subclasses that embed a built-in exception type.
+func (t ThrowableBase) ThrowableIdentity() *throwableState { return t.state }
+
+// AddSuppressedValue and SuppressedValues are exported so exception classes in
+// generated packages inherit the suppression carrier contract by embedding a
+// built-in exception type.
+func (t ThrowableBase) AddSuppressedValue(suppressed interface{}) {
+	if t.state == nil {
+		return
+	}
+	t.state.mu.Lock()
+	defer t.state.mu.Unlock()
+	t.state.suppressed = append(t.state.suppressed, suppressed)
+}
+
+func (t ThrowableBase) SuppressedValues() []interface{} {
+	if t.state == nil {
+		return []interface{}{}
+	}
+	t.state.mu.Lock()
+	defer t.state.mu.Unlock()
+	return append([]interface{}{}, t.state.suppressed...)
+}
+
+func (t ThrowableBase) CauseValue() interface{} {
+	if t.state == nil {
+		return nil
+	}
+	t.state.mu.Lock()
+	defer t.state.mu.Unlock()
+	return t.state.cause
+}
+
 // newThrowableBase builds a ThrowableBase and ensures the type participates in
 // the hierarchy. It is used by the built-in constructors below.
 func newThrowableBase(typeName, message string) ThrowableBase {
-	return ThrowableBase{typeName: typeName, message: message}
+	return ThrowableBase{
+		typeName: typeName,
+		message:  message,
+		state:    &throwableState{},
+	}
 }
 
 // The concrete built-in exception types. Each is a distinct struct embedding
@@ -307,6 +450,15 @@ func NewRuntimeException(message string) RuntimeException {
 
 func NewIllegalArgumentException(message string) IllegalArgumentException {
 	return IllegalArgumentException{newThrowableBase("IllegalArgumentException", message)}
+}
+
+// NewIllegalArgumentExceptionWithCause mirrors the two-argument JDK
+// constructor used internally when Throwable.addSuppressed rejects
+// self-suppression.
+func NewIllegalArgumentExceptionWithCause(message string, cause interface{}) IllegalArgumentException {
+	base := newThrowableBase("IllegalArgumentException", message)
+	base.state.cause = cause
+	return IllegalArgumentException{base}
 }
 
 func NewIllegalStateException(message string) IllegalStateException {
