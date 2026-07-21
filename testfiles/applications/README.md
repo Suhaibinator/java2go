@@ -106,7 +106,7 @@ A fixture becomes a benchmark by adding a strict `benchmark.json` marker:
 {
   "category": "floating_point_matrix",
   "description": "Deterministic floating-point and matrix workload",
-  "iterations": 3
+  "iterations": 1
 }
 ```
 
@@ -115,11 +115,18 @@ operation. Compilation and transpilation are excluded from timing. Both Java
 and generated Go receive one untimed warm-up, and every timed execution must
 still match `expected.stdout` and `expected.stderr` byte for byte.
 
+The checked-in performance fixtures are calibrated to run Java for roughly ten
+seconds or longer on the reference development host while remaining well below
+8 GiB of peak resident memory. These are workload-sizing targets rather than
+portable pass/fail thresholds: host speed, JVM version, and runtime tuning all
+affect them. Scale duration with bounded repeated computation rather than an
+ever-growing live dataset, and remeasure runtime and peak RSS after changes.
+
 Run one measured operation for every benchmark and repeat it for independent
 samples with:
 
 ```sh
-go test ./e2e -run '^$' -bench '^BenchmarkApplicationPerformance$' -benchtime=1x -count=5
+go test ./e2e -run '^$' -bench '^BenchmarkApplicationPerformance$' -benchtime=1x -count=3
 ```
 
 The normal `ns/op` value measures the configured batch. The additional

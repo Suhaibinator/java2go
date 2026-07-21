@@ -279,6 +279,6 @@ func validateApplicationBenchmarkRun(b testing.TB, fixture applicationFixture, c
 }
 
 func ExampleBenchmarkApplicationPerformance() {
-	fmt.Println("go test ./e2e -run ^$ -bench ^BenchmarkApplicationPerformance$ -benchtime=1x -count=5")
-	// Output: go test ./e2e -run ^$ -bench ^BenchmarkApplicationPerformance$ -benchtime=1x -count=5
+	fmt.Println("go test ./e2e -run ^$ -bench ^BenchmarkApplicationPerformance$ -benchtime=1x -count=3")
+	// Output: go test ./e2e -run ^$ -bench ^BenchmarkApplicationPerformance$ -benchtime=1x -count=3
 }

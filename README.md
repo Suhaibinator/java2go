@@ -100,12 +100,15 @@ builds both implementations outside the timer, performs an untimed validation
 run, then verifies the exact parity oracle after every measured process:
 
 ```sh
-go test ./e2e -run '^$' -bench '^BenchmarkApplicationPerformance$' -benchtime=1x -count=5
+go test ./e2e -run '^$' -bench '^BenchmarkApplicationPerformance$' -benchtime=1x -count=3
 ```
 
 Results include runtime startup and shutdown. The workloads are deliberately
 large enough to keep that overhead from dominating; use the reported `ns/run`
 metric to compare individual executions when a fixture batches multiple runs.
+The checked-in workloads are calibrated for roughly ten-second-or-longer Java
+runs on the reference development host while staying well below 8 GiB peak RSS.
+Those values guide workload sizing rather than acting as portable test limits.
 
 ## Options
 
