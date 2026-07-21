@@ -1,6 +1,6 @@
 package parity.numerical.model;
 
-public class DenseMatrix {
+public final class DenseMatrix {
     private final int size;
     private final double[] values;
 
