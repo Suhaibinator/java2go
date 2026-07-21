@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.objectmodel.app.RecursiveObjectModelApplication",
+  "module_path": "parity/objectmodel",
+  "status": "known_gap",
+  "known_gap": "A Java interface default inherited by a concrete implementing class is emitted with unresolved Java casing when called directly through that class.",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "has no field or method summary"
+}

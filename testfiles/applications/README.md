@@ -35,6 +35,9 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `allocation_gc_pressure` | Short-lived object/array churn, retained cyclic graphs, cohort rotation, traversal, mutation, reclamation pressure | Passing + benchmark |
 | `integer_branch_search` | Constraint search, prime sieve, branch-skewed pointer chase, bit operations, recursion, large integer arrays | Passing + benchmark |
 | `finally_loop_control_gap` | `break`/`continue` through `finally`, observable side-effect order, and loop-transfer resumption | Known gap (`go_compile`) |
+| `array_assignment_timing_gap` | Null-array assignment evaluation order, index/RHS side effects, and exception identity | Known gap (`go_run`) |
+| `constructor_nullable_field_gap` | Constructor-time virtual dispatch observing Java's pre-initializer null field value | Known gap (`output`) |
+| `recursive_object_model` | Mutual recursion, recursive generic graphs, constructor dispatch, hiding, and inherited interface defaults | Known gap (`go_compile`) |
 
 Known-gap fixtures are not skipped. In normal mode they must still have valid
 Java behavior and must fail at the exact declared stage for a pinned diagnostic

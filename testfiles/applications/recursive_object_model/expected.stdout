@@ -1,0 +1,10 @@
+OBJECT MODEL REPORT
+expression=mul=48
+interface=mul=15
+construction=0:7
+virtual=10:10
+mutual=true:true
+chain=3:tail
+nested=7
+hidden=5:9
+checksum=116

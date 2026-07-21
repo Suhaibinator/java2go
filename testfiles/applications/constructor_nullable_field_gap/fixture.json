@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.nullablefield.ConstructorNullableFieldApplication",
+  "module_path": "parity/nullablefield",
+  "status": "known_gap",
+  "known_gap": "A Java String field is null before its initializer runs, but generated Go value storage exposes the empty-string zero value during constructor-time virtual dispatch.",
+  "expected_failure_stage": "output",
+  "expected_failure_contains": "--- quoted go stdout ---\n\":ready\\n\""
+}
