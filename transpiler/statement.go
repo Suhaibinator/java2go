@@ -710,20 +710,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 		return &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(node.NamedChild(0), source, returnCtx)}}
 	case "labeled_statement":
-		labelCtx := ctx.Clone()
-		labelCtx.javaLabelTargets = cloneJavaLabelTargets(ctx.javaLabelTargets)
-		labelTarget := &javaLabelTarget{}
-		if key, ok := javaControlKey(node); ok {
-			labelCtx.javaLabelTargets[key] = labelTarget
-		}
-		stmt := ParseStmt(node.NamedChild(1), source, labelCtx)
-		if !labelTarget.NeedsGoLabel {
-			return stmt
-		}
-		return &ast.LabeledStmt{
-			Label: identFromNode(node.NamedChild(0), source),
-			Stmt:  stmt,
-		}
+		return lowerLabeledStatement(node, source, ctx)
 	case "break_statement":
 		return lowerTryControlBranch(node, source, ctx, token.BREAK)
 	case "continue_statement":
@@ -1476,6 +1463,12 @@ func lowerJavaControlTransferStmt(tok token.Token, label string, javaTarget *sit
 		if key, ok := javaControlKey(javaTarget); ok {
 			if target := ctx.javaLabelTargets[key]; target != nil {
 				target.NeedsGoLabel = true
+				if tok == token.BREAK && target.BreakLabel != "" {
+					return &ast.BranchStmt{
+						Tok:   token.GOTO,
+						Label: &ast.Ident{Name: target.BreakLabel},
+					}
+				}
 			}
 		}
 	}

@@ -36,10 +36,12 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `allocation_gc_pressure` | Short-lived object/array churn, retained cyclic graphs, cohort rotation, traversal, mutation, reclamation pressure | Passing + benchmark |
 | `integer_branch_search` | Constraint search, prime sieve, branch-skewed pointer chase, bit operations, recursion, large integer arrays | Passing + benchmark |
 | `finally_loop_control_gap` | `break`/`continue` through `finally`, observable side-effect order, and loop-transfer resumption | Passing |
-| `labeled_block_break_gap` | `break` through `finally` targeting a Java labeled block rather than a loop/switch | Known gap (`go_compile`) |
+| `labeled_block_break_gap` | `break` through `finally` targeting a Java labeled block rather than a loop/switch | Passing |
 | `do_while_continue_gap` | `continue` through `finally` targeting the condition phase of a Java do-while loop | Passing |
+| `synchronized_loop_control_gap` | Monitor cleanup plus `continue` crossing the generated synchronized closure boundary | Known gap (`go_compile`) |
 | `resource_suppressed_exception_gap` | Competing body/close exceptions in try-with-resources and Java suppressed-exception precedence | Known gap (`output`) |
 | `array_assignment_timing_gap` | Null-array assignment evaluation order, index/RHS side effects, and exception identity | Passing |
+| `covariant_array_store_gap` | Reified reference-array component checks, covariant aliases, store side effects, recursion, and mutation | Known gap (`output`) |
 | `constructor_nullable_field_gap` | Constructor-time virtual dispatch observing Java's pre-initializer null field value | Known gap (`output`) |
 | `string_field_null_comparison_gap` | Comparing an uninitialized Java String field with `null` | Known gap (`go_compile`) |
 | `nullable_string_compound_gap` | String `+=` conversion of null locals and default-null fields | Known gap (`output`) |

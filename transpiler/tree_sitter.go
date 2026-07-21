@@ -210,6 +210,11 @@ type doWhileContinueTarget struct {
 
 type javaLabelTarget struct {
 	NeedsGoLabel bool
+	// BreakLabel is set for a Java label whose statement is not directly
+	// breakable in Go. Resolved breaks to that exact Java target become gotos to
+	// this synthetic end label, avoiding ambiguous comparisons between sanitized
+	// source-label spellings.
+	BreakLabel string
 }
 
 func javaControlKey(node *sitter.Node) (javaControlTargetKey, bool) {
@@ -221,6 +226,17 @@ func javaControlKey(node *sitter.Node) (javaControlTargetKey, bool) {
 		TargetStart: node.StartByte(),
 		TargetEnd:   node.EndByte(),
 	}, true
+}
+
+// javaSourceLabelName assigns every Java labeled statement a deterministic Go
+// label based on the resolved source target rather than its spelling. Distinct
+// Java identifiers can sanitize to the same Go identifier (`map` and `map_`),
+// but their source spans cannot be identical.
+func javaSourceLabelName(target *sitter.Node) string {
+	if target == nil {
+		return ""
+	}
+	return fmt.Sprintf("__java2goLabel_%d_%d", target.StartByte(), target.EndByte())
 }
 
 type tryControlTransferKey struct {
@@ -270,10 +286,10 @@ func javaBranchTarget(node *sitter.Node, source []byte, tok token.Token) (*sitte
 	}
 
 	rawLabel := ""
-	goLabel := ""
+	fallbackLabel := ""
 	if node.NamedChildCount() > 0 {
 		rawLabel = node.NamedChild(0).Content(source)
-		goLabel = sanitizeGoIdent(rawLabel)
+		fallbackLabel = sanitizeGoIdent(rawLabel)
 	}
 
 	for ancestor := node.Parent(); ancestor != nil; ancestor = ancestor.Parent() {
@@ -282,7 +298,7 @@ func javaBranchTarget(node *sitter.Node, source []byte, tok token.Token) (*sitte
 				continue
 			}
 			if ancestor.NamedChild(0).Content(source) == rawLabel {
-				return ancestor, goLabel
+				return ancestor, javaSourceLabelName(ancestor)
 			}
 			continue
 		}
@@ -296,7 +312,7 @@ func javaBranchTarget(node *sitter.Node, source []byte, tok token.Token) (*sitte
 			}
 		}
 	}
-	return nil, goLabel
+	return nil, fallbackLabel
 }
 
 func javaTargetInsideBoundary(target *sitter.Node, boundary *sitter.Node) bool {

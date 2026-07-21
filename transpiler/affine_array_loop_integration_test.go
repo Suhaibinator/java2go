@@ -539,9 +539,9 @@ func TestAffineArrayLoopFastPath_ConservativeFallbackShape(t *testing.T) {
 		"grid.set(next(), next(), 1.0)",
 		"grid.set(markIndex(1), markIndex(2), markValue(3))",
 		"return grid.get(1/zero, 0)",
-		"outer: for once := int32(0); once < 1; once++ { func(dst *float64)",
-		"(&total)(grid.get(0, 0)) continue outer",
-		"inner: for once := int32(0); once < 1; once++ { total = grid.get(0, 0) break inner",
+		"for once := int32(0); once < 1; once++ { func(dst *float64)",
+		"(&total)(grid.get(0, 0)) continue __java2goLabel_",
+		"for once := int32(0); once < 1; once++ { total = grid.get(0, 0) break __java2goLabel_",
 	} {
 		if !strings.Contains(out, fragment) {
 			t.Fatalf("expected conservative fallback fragment %q:\n%s", fragment, out)
