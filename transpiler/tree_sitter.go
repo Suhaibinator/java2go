@@ -91,6 +91,10 @@ type Ctx struct {
 	// strict mode, failed on) the same source node; the second must still emit its
 	// placeholder AST without recording the diagnostic twice.
 	suppressUnsupportedDiagnostics bool
+	// disableAffineArrayRowSpecialization is set only while rendering the cold
+	// fallback subtree for a hoisted row-proof tier. Ordinary affine indexing
+	// remains enabled, but no descendant may register another row specialization.
+	disableAffineArrayRowSpecialization bool
 
 	// Collects top-level declarations synthesized while parsing nested contexts,
 	// such as anonymous (non-SAM) and local classes that must be hoisted to file
@@ -121,6 +125,12 @@ type Ctx struct {
 	// bounds-specialized copy of a canonical column loop. Calls absent from this
 	// exact source-span map retain the ordinary flat affine index.
 	affineArrayRowCallSites map[affineArrayCallSiteKey]*affineArrayRowCallSite
+	// affineArrayRowHoists carries pure row-proof preambles from a recognized
+	// inner column loop back to the enclosing lexical block that can evaluate
+	// them least often. The map is shared by cloned contexts while a method body
+	// is rendered; exact source spans keep duplicated guarded loop copies from
+	// consuming a fast-branch preamble.
+	affineArrayRowHoists map[affineArrayCallSiteKey][]*affineArrayRowHoist
 }
 
 // localClassInfo records how a local class was hoisted to file scope.
@@ -157,26 +167,28 @@ type tryReturnTarget struct {
 // pointing at the same things as the previous Ctx
 func (c Ctx) Clone() Ctx {
 	return Ctx{
-		className:                      c.className,
-		currentFile:                    c.currentFile,
-		currentClass:                   c.currentClass,
-		localScope:                     c.localScope,
-		lastType:                       c.lastType,
-		expectedType:                   c.expectedType,
-		expectedTypeRoot:               c.expectedTypeRoot,
-		syntheticTypeParameters:        c.syntheticTypeParameters,
-		rawGenericParameterTypes:       c.rawGenericParameterTypes,
-		importAliases:                  c.importAliases,
-		usedImports:                    c.usedImports,
-		tryReturnTarget:                c.tryReturnTarget,
-		suppressUnsupportedDiagnostics: c.suppressUnsupportedDiagnostics,
-		hoistedDecls:                   c.hoistedDecls,
-		anonClassCounter:               c.anonClassCounter,
-		localClasses:                   c.localClasses,
-		affineArrayBindings:            c.affineArrayBindings,
-		affineArrayCallSites:           c.affineArrayCallSites,
-		affineArrayNonNullBindings:     c.affineArrayNonNullBindings,
-		affineArrayRowCallSites:        c.affineArrayRowCallSites,
+		className:                           c.className,
+		currentFile:                         c.currentFile,
+		currentClass:                        c.currentClass,
+		localScope:                          c.localScope,
+		lastType:                            c.lastType,
+		expectedType:                        c.expectedType,
+		expectedTypeRoot:                    c.expectedTypeRoot,
+		syntheticTypeParameters:             c.syntheticTypeParameters,
+		rawGenericParameterTypes:            c.rawGenericParameterTypes,
+		importAliases:                       c.importAliases,
+		usedImports:                         c.usedImports,
+		tryReturnTarget:                     c.tryReturnTarget,
+		suppressUnsupportedDiagnostics:      c.suppressUnsupportedDiagnostics,
+		disableAffineArrayRowSpecialization: c.disableAffineArrayRowSpecialization,
+		hoistedDecls:                        c.hoistedDecls,
+		anonClassCounter:                    c.anonClassCounter,
+		localClasses:                        c.localClasses,
+		affineArrayBindings:                 c.affineArrayBindings,
+		affineArrayCallSites:                c.affineArrayCallSites,
+		affineArrayNonNullBindings:          c.affineArrayNonNullBindings,
+		affineArrayRowCallSites:             c.affineArrayRowCallSites,
+		affineArrayRowHoists:                c.affineArrayRowHoists,
 	}
 }
 

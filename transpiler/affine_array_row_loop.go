@@ -46,6 +46,7 @@ type affineArrayRowSlice struct {
 	lastName     string
 	startIntName string
 	sliceName    string
+	hoistTarget  *sitter.Node
 }
 
 type affineArrayCanonicalColumnLoop struct {
@@ -56,14 +57,48 @@ type affineArrayCanonicalColumnLoop struct {
 }
 
 type affineArrayRowLoopPlan struct {
-	canonical  affineArrayCanonicalColumnLoop
-	startName  string
-	endName    string
-	span64Name string
-	spanName   string
-	offsetName string
-	rowSlices  []*affineArrayRowSlice
-	callSites  map[affineArrayCallSiteKey]*affineArrayRowCallSite
+	canonical   affineArrayCanonicalColumnLoop
+	startName   string
+	endName     string
+	span64Name  string
+	spanName    string
+	offsetName  string
+	hoistTarget *sitter.Node
+	rowSlices   []*affineArrayRowSlice
+	callSites   map[affineArrayCallSiteKey]*affineArrayRowCallSite
+	wholeRange  *affineArrayWholeRangePlan
+}
+
+type affineArrayWholeRangeBinding struct {
+	binding     *affineArrayLoopBinding
+	productName string
+	lastName    string
+}
+
+// affineArrayWholeRangePlan is available only for an exact overflow-safe
+// blocked-loop nest. Its runtime proof covers every row and column that the
+// nest can visit, allowing inner scopes to carve slices without repeating the
+// full Java-int overflow and backing-length proof.
+type affineArrayWholeRangePlan struct {
+	owner       *sitter.Node
+	extent      affineArrayRowOperand
+	step        affineArrayRowOperand
+	extentName  string
+	stepName    string
+	lastRowName string
+	bindings    []*affineArrayWholeRangeBinding
+}
+
+// affineArrayRowHoist is a pure, non-panicking preamble that belongs directly
+// before one exact Java statement in the bounds-specialized affine branch.
+// bindings guards against installing it into a separately rendered guarded
+// copy of the same source loop.
+type affineArrayRowHoist struct {
+	bindings   []*affineArrayLoopBinding
+	preamble   []ast.Stmt
+	condition  ast.Expr
+	fastPrefix []ast.Stmt
+	fallback   ast.Stmt
 }
 
 // prepareAffineArrayRowLoop recognizes the deliberately narrow loop form used
@@ -171,6 +206,7 @@ func prepareAffineArrayRowLoop(node *sitter.Node, source []byte, ctx Ctx) (Ctx, 
 		rowSlices:  orderedGroups,
 		callSites:  callSites,
 	}
+	plan.hoistTarget = affineArrayRowHoistTarget(node, []affineArrayRowOperand{canonical.start, canonical.end}, affineRowPlanBindings(orderedGroups), source)
 	for index, rowSlice := range orderedGroups {
 		discriminator := strconv.Itoa(index)
 		rowSlice.baseName = affineUniqueLocalName(prefix+"Base"+discriminator, usedNames)
@@ -180,10 +216,16 @@ func prepareAffineArrayRowLoop(node *sitter.Node, source []byte, ctx Ctx) (Ctx, 
 		rowSlice.lastName = affineUniqueLocalName(prefix+"Last"+discriminator, usedNames)
 		rowSlice.startIntName = affineUniqueLocalName(prefix+"Start"+discriminator, usedNames)
 		rowSlice.sliceName = affineUniqueLocalName(prefix+"Slice"+discriminator, usedNames)
+		rowSlice.hoistTarget = affineArrayRowHoistTarget(node, []affineArrayRowOperand{rowSlice.row}, []*affineArrayLoopBinding{rowSlice.key.binding}, source)
+		// A row preamble consumes the common start/span locals, so it cannot be
+		// placed outside the common proof even when this individual binding and row
+		// are invariant across more loops.
+		rowSlice.hoistTarget = affineRowHoistTargetNoEarlierThan(rowSlice.hoistTarget, plan.hoistTarget)
 	}
 	for _, callSite := range callSites {
 		callSite.offsetName = plan.offsetName
 	}
+	plan.wholeRange = analyzeAffineArrayWholeRange(node, plan, source, ctx, usedNames, prefix)
 
 	rowCtx := ctx.Clone()
 	rowCtx.affineArrayRowCallSites = cloneAffineArrayRowCallSites(ctx.affineArrayRowCallSites)
@@ -199,6 +241,312 @@ func cloneAffineArrayRowCallSites(source map[affineArrayCallSiteKey]*affineArray
 		result[key] = callSite
 	}
 	return result
+}
+
+type affineBlockedDimension struct {
+	blockLoop *sitter.Node
+	extent    affineArrayRowOperand
+	step      affineArrayRowOperand
+}
+
+func analyzeAffineArrayWholeRange(inner *sitter.Node, plan *affineArrayRowLoopPlan, source []byte, ctx Ctx, usedNames map[string]struct{}, prefix string) *affineArrayWholeRangePlan {
+	if inner == nil || plan == nil || len(plan.rowSlices) == 0 {
+		return nil
+	}
+	// An in-scope user class named Math can legally provide a side-effecting or
+	// nonstandard min method. The blocked-range proof applies only to the
+	// side-effect-free java.lang.Math intrinsic.
+	if resolveClassScopeByQualifiedName(ctx, "Math") != nil {
+		return nil
+	}
+	if ctx.localScope != nil && affineTreeDeclaresAnyName(ctx.localScope.DeclarationNode, map[string]struct{}{"Math": {}}, source) {
+		return nil
+	}
+	if ctx.currentClass != nil && findFieldInHierarchy(ctx.currentClass, "Math", ctx) != nil {
+		return nil
+	}
+	if ctx.currentFile != nil {
+		for _, imported := range ctx.currentFile.Imports {
+			if strings.HasSuffix(imported, ".Math") && imported != "java.lang.Math" {
+				return nil
+			}
+		}
+	}
+	dimensions := make([]affineBlockedDimension, 0, len(plan.rowSlices)+1)
+	columnDimension, ok := analyzeAffineBlockedDimension(inner, plan.canonical, source, ctx)
+	if !ok {
+		return nil
+	}
+	dimensions = append(dimensions, columnDimension)
+	seenRows := make(map[*symbol.Definition]struct{})
+	for _, rowSlice := range plan.rowSlices {
+		if rowSlice == nil || rowSlice.row.name == "" || rowSlice.row.definition == nil {
+			return nil
+		}
+		if _, exists := seenRows[rowSlice.row.definition]; exists {
+			continue
+		}
+		seenRows[rowSlice.row.definition] = struct{}{}
+		rowLoop, rowCanonical, found := affineCanonicalAncestorForCounter(inner, rowSlice.row.name, source, ctx)
+		if !found {
+			return nil
+		}
+		dimension, found := analyzeAffineBlockedDimension(rowLoop, rowCanonical, source, ctx)
+		if !found {
+			return nil
+		}
+		dimensions = append(dimensions, dimension)
+	}
+
+	extent := dimensions[0].extent
+	step := dimensions[0].step
+	if extent.definition == nil || step.definition == nil {
+		return nil
+	}
+	for _, dimension := range dimensions[1:] {
+		if dimension.extent.definition != extent.definition || dimension.step.definition != step.definition {
+			return nil
+		}
+	}
+
+	bindings := affineRowPlanBindings(plan.rowSlices)
+	if len(bindings) == 0 {
+		return nil
+	}
+	ownerStart := bindings[0].ownerLoopStart
+	for _, binding := range bindings[1:] {
+		if binding == nil || binding.ownerLoopStart != ownerStart {
+			return nil
+		}
+	}
+	var owner *sitter.Node
+	for current := inner; current != nil; current = current.Parent() {
+		if current.Type() == "for_statement" && current.StartByte() == ownerStart {
+			owner = current
+			break
+		}
+	}
+	if owner == nil || !affineRowIdentifierStableInBody(owner, extent.name, source) || !affineRowIdentifierStableInBody(owner, step.name, source) {
+		return nil
+	}
+	ownerMatched := false
+	for _, dimension := range dimensions {
+		if dimension.blockLoop != nil && dimension.blockLoop.StartByte() == owner.StartByte() {
+			ownerMatched = true
+			break
+		}
+	}
+	if !ownerMatched {
+		return nil
+	}
+
+	whole := &affineArrayWholeRangePlan{
+		owner:       owner,
+		extent:      extent,
+		step:        step,
+		extentName:  affineUniqueLocalName(prefix+"Extent", usedNames),
+		stepName:    affineUniqueLocalName(prefix+"Step", usedNames),
+		lastRowName: affineUniqueLocalName(prefix+"LastRow64", usedNames),
+	}
+	for index, binding := range bindings {
+		discriminator := strconv.Itoa(index)
+		whole.bindings = append(whole.bindings, &affineArrayWholeRangeBinding{
+			binding:     binding,
+			productName: affineUniqueLocalName(prefix+"WholeProduct64"+discriminator, usedNames),
+			lastName:    affineUniqueLocalName(prefix+"WholeLast64"+discriminator, usedNames),
+		})
+	}
+	return whole
+}
+
+func affineCanonicalAncestorForCounter(inner *sitter.Node, counterName string, source []byte, ctx Ctx) (*sitter.Node, affineArrayCanonicalColumnLoop, bool) {
+	for current := inner.Parent(); current != nil; current = current.Parent() {
+		if current.Type() != "for_statement" {
+			continue
+		}
+		body := current.ChildByFieldName("body")
+		canonical, ok := analyzeAffineCanonicalColumnLoop(current, body, source, ctx)
+		if ok && canonical.counterName == counterName {
+			return current, canonical, true
+		}
+	}
+	return nil, affineArrayCanonicalColumnLoop{}, false
+}
+
+func analyzeAffineBlockedDimension(indexLoop *sitter.Node, index affineArrayCanonicalColumnLoop, source []byte, ctx Ctx) (affineBlockedDimension, bool) {
+	if indexLoop == nil || index.start.name == "" || index.end.name == "" {
+		return affineBlockedDimension{}, false
+	}
+	limitValue := affineLocalInitializerNode(ctx.localScope.DeclarationNode, index.end.name, source)
+	stepNode, extentNode, ok := matchAffineBlockedLimit(limitValue, index.start.name, source)
+	if !ok {
+		return affineBlockedDimension{}, false
+	}
+	step, ok := affineIntIdentifierOperand(stepNode, ctx, source)
+	if !ok {
+		return affineBlockedDimension{}, false
+	}
+	extent, ok := affineIntIdentifierOperand(extentNode, ctx, source)
+	if !ok {
+		return affineBlockedDimension{}, false
+	}
+	var blockLoop *sitter.Node
+	for current := indexLoop.Parent(); current != nil; current = current.Parent() {
+		if current.Type() == "for_statement" && matchAffineBlockedOuterLoop(current, index.start.name, step.name, extent.name, source) {
+			blockLoop = current
+			break
+		}
+	}
+	if blockLoop == nil || !affineRowIdentifierNotMutated(blockLoop, index.end.name, source) {
+		return affineBlockedDimension{}, false
+	}
+	return affineBlockedDimension{blockLoop: blockLoop, extent: extent, step: step}, true
+}
+
+func affineLocalInitializerNode(method *sitter.Node, name string, source []byte) *sitter.Node {
+	var value *sitter.Node
+	var walk func(*sitter.Node)
+	walk = func(node *sitter.Node) {
+		if node == nil || value != nil {
+			return
+		}
+		if node.Type() == "variable_declarator" {
+			nameNode := node.ChildByFieldName("name")
+			if nameNode != nil && nameNode.Content(source) == name {
+				value = node.ChildByFieldName("value")
+				if value == nil && node.NamedChildCount() > 1 {
+					value = node.NamedChild(1)
+				}
+				return
+			}
+		}
+		for _, child := range nodeutil.NamedChildrenOf(node) {
+			walk(child)
+		}
+	}
+	walk(method)
+	return value
+}
+
+func matchAffineBlockedLimit(node *sitter.Node, blockName string, source []byte) (*sitter.Node, *sitter.Node, bool) {
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil || node.Type() != "method_invocation" {
+		return nil, nil, false
+	}
+	object := node.ChildByFieldName("object")
+	name := node.ChildByFieldName("name")
+	if object == nil || object.Content(source) != "Math" || name == nil || name.Content(source) != "min" {
+		return nil, nil, false
+	}
+	args := nodeutil.NamedChildrenOf(node.ChildByFieldName("arguments"))
+	if len(args) != 2 {
+		return nil, nil, false
+	}
+	sum := unwrapParenthesizedExpressionNode(args[0])
+	extent := unwrapParenthesizedExpressionNode(args[1])
+	if sum == nil || sum.Type() != "binary_expression" || sum.ChildCount() < 3 || sum.Child(1).Content(source) != "+" || extent == nil || extent.Type() != "identifier" {
+		return nil, nil, false
+	}
+	block := unwrapParenthesizedExpressionNode(sum.Child(0))
+	step := unwrapParenthesizedExpressionNode(sum.Child(2))
+	if block == nil || block.Type() != "identifier" || block.Content(source) != blockName || step == nil || step.Type() != "identifier" {
+		return nil, nil, false
+	}
+	return step, extent, true
+}
+
+func affineIntIdentifierOperand(node *sitter.Node, ctx Ctx, source []byte) (affineArrayRowOperand, bool) {
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil || node.Type() != "identifier" {
+		return affineArrayRowOperand{}, false
+	}
+	name := node.Content(source)
+	definition := affineLocalDefinition(name, ctx)
+	if definition == nil || strings.TrimSpace(definition.OriginalType) != "int" {
+		return affineArrayRowOperand{}, false
+	}
+	return affineArrayRowOperand{node: node, definition: definition, key: "identifier:" + name, name: name}, true
+}
+
+func matchAffineBlockedOuterLoop(loop *sitter.Node, blockName, stepName, extentName string, source []byte) bool {
+	initNode := loop.ChildByFieldName("init")
+	condition := unwrapParenthesizedExpressionNode(loop.ChildByFieldName("condition"))
+	if initNode == nil || initNode.Type() != "local_variable_declaration" || condition == nil || condition.Type() != "binary_expression" || condition.ChildCount() < 3 {
+		return false
+	}
+	declarator := initNode.ChildByFieldName("declarator")
+	if declarator == nil {
+		for _, child := range nodeutil.NamedChildrenOf(initNode) {
+			if child.Type() == "variable_declarator" {
+				if declarator != nil {
+					return false
+				}
+				declarator = child
+			}
+		}
+	}
+	nameNode := (*sitter.Node)(nil)
+	if declarator != nil {
+		nameNode = declarator.ChildByFieldName("name")
+	}
+	if declarator == nil || nameNode == nil || nameNode.Content(source) != blockName {
+		return false
+	}
+	initial := unwrapParenthesizedExpressionNode(declarator.ChildByFieldName("value"))
+	if initial == nil || initial.Type() != "decimal_integer_literal" || initial.Content(source) != "0" {
+		return false
+	}
+	left := unwrapParenthesizedExpressionNode(condition.Child(0))
+	right := unwrapParenthesizedExpressionNode(condition.Child(2))
+	if left == nil || left.Type() != "identifier" || left.Content(source) != blockName || condition.Child(1).Content(source) != "<" || right == nil || right.Type() != "identifier" || right.Content(source) != extentName {
+		return false
+	}
+	var update *sitter.Node
+	count := 0
+	for index := 0; index < int(loop.ChildCount()); index++ {
+		if loop.FieldNameForChild(index) == "update" {
+			count++
+			update = loop.Child(index)
+		}
+	}
+	if count != 1 || update == nil || update.Type() != "assignment_expression" || update.ChildCount() < 3 {
+		return false
+	}
+	updateLeft := unwrapParenthesizedExpressionNode(update.Child(0))
+	updateRight := unwrapParenthesizedExpressionNode(update.Child(2))
+	body := loop.ChildByFieldName("body")
+	return body != nil && affineRowIdentifierNotMutated(body, blockName, source) &&
+		updateLeft != nil && updateLeft.Type() == "identifier" && updateLeft.Content(source) == blockName &&
+		update.Child(1).Content(source) == "+=" && updateRight != nil && updateRight.Type() == "identifier" && updateRight.Content(source) == stepName
+}
+
+func affineRowIdentifierNotMutated(root *sitter.Node, name string, source []byte) bool {
+	stable := true
+	var walk func(*sitter.Node)
+	walk = func(node *sitter.Node) {
+		if node == nil || !stable {
+			return
+		}
+		switch node.Type() {
+		case "assignment_expression":
+			if node.ChildCount() > 0 && affineSimpleIdentifierName(node.Child(0), source) == name {
+				stable = false
+				return
+			}
+		case "update_expression":
+			for _, child := range nodeutil.NamedChildrenOf(node) {
+				if affineSimpleIdentifierName(child, source) == name {
+					stable = false
+					return
+				}
+			}
+		}
+		for _, child := range nodeutil.NamedChildrenOf(node) {
+			walk(child)
+		}
+	}
+	walk(root)
+	return stable
 }
 
 func analyzeAffineCanonicalColumnLoop(node, body *sitter.Node, source []byte, ctx Ctx) (affineArrayCanonicalColumnLoop, bool) {
@@ -489,6 +837,140 @@ func affineRowClassDeclaresPackageIdent(class *symbol.ClassScope, name string) b
 	return false
 }
 
+func affineRowPlanBindings(rowSlices []*affineArrayRowSlice) []*affineArrayLoopBinding {
+	seen := make(map[*affineArrayLoopBinding]struct{})
+	bindings := make([]*affineArrayLoopBinding, 0, len(rowSlices))
+	for _, rowSlice := range rowSlices {
+		if rowSlice == nil || rowSlice.key.binding == nil {
+			continue
+		}
+		if _, exists := seen[rowSlice.key.binding]; exists {
+			continue
+		}
+		seen[rowSlice.key.binding] = struct{}{}
+		bindings = append(bindings, rowSlice.key.binding)
+	}
+	return bindings
+}
+
+// affineArrayRowHoistTarget walks only a direct block/for-loop ancestry. A
+// preamble may cross an enclosing loop when each of its simple operands is
+// unchanged throughout that loop. It never crosses the loop that owns an
+// affine view binding: the cached backing slice and stride are declared inside
+// that loop's versioned fast branch.
+func affineArrayRowHoistTarget(inner *sitter.Node, operands []affineArrayRowOperand, bindings []*affineArrayLoopBinding, source []byte) *sitter.Node {
+	target := inner
+	for target != nil {
+		block := target.Parent()
+		if block == nil || block.Type() != "block" {
+			break
+		}
+		loop := block.Parent()
+		if loop == nil || loop.Type() != "for_statement" || loop.ChildByFieldName("body") != block {
+			break
+		}
+		ownedHere := false
+		for _, binding := range bindings {
+			if binding != nil && binding.ownerLoopStart == loop.StartByte() {
+				ownedHere = true
+				break
+			}
+		}
+		if ownedHere {
+			break
+		}
+		invariant := true
+		for _, operand := range operands {
+			if operand.name != "" && !affineRowIdentifierStableInBody(loop, operand.name, source) {
+				invariant = false
+				break
+			}
+		}
+		if !invariant {
+			break
+		}
+		target = loop
+	}
+	return target
+}
+
+// affineRowHoistTargetNoEarlierThan preserves dominance between two preambles
+// discovered independently from the same inner loop. If target encloses the
+// prerequisite, using the prerequisite's target is the earliest legal scope.
+func affineRowHoistTargetNoEarlierThan(target, prerequisite *sitter.Node) *sitter.Node {
+	if target == nil {
+		return prerequisite
+	}
+	if prerequisite == nil {
+		return target
+	}
+	if target.StartByte() <= prerequisite.StartByte() && target.EndByte() >= prerequisite.EndByte() {
+		return prerequisite
+	}
+	return target
+}
+
+func registerAffineArrayRowHoist(ctx Ctx, target *sitter.Node, hoist *affineArrayRowHoist) bool {
+	if target == nil || hoist == nil || ctx.affineArrayRowHoists == nil || (hoist.condition == nil && len(hoist.preamble) == 0 && len(hoist.fastPrefix) == 0) || (hoist.condition != nil && hoist.fallback == nil) {
+		return false
+	}
+	key := affineArrayCallSiteKey{start: target.StartByte(), end: target.EndByte()}
+	ctx.affineArrayRowHoists[key] = append(ctx.affineArrayRowHoists[key], hoist)
+	return true
+}
+
+// applyAffineArrayRowHoists consumes only hoists whose binding proofs are
+// active in this exact parse context. Each tier branches outside the target
+// loop, so the hot child is dominated by the proof and its row slices can use
+// direct declarations. This preserves Go's bounds-check elimination; assigning
+// a maybe-empty slice before the branch makes the compiler retain a hot check.
+func applyAffineArrayRowHoists(node *sitter.Node, stmt ast.Stmt, ctx Ctx) []ast.Stmt {
+	if node == nil || stmt == nil || ctx.affineArrayRowHoists == nil {
+		return []ast.Stmt{stmt}
+	}
+	key := affineArrayCallSiteKey{start: node.StartByte(), end: node.EndByte()}
+	hoists := ctx.affineArrayRowHoists[key]
+	if len(hoists) == 0 {
+		return []ast.Stmt{stmt}
+	}
+	result := stmt
+	var prefix []ast.Stmt
+	remaining := hoists[:0]
+	for _, hoist := range hoists {
+		eligible := hoist != nil && (hoist.condition == nil || hoist.fallback != nil)
+		if eligible {
+			for _, binding := range hoist.bindings {
+				if _, proven := ctx.affineArrayNonNullBindings[binding]; !proven {
+					eligible = false
+					break
+				}
+			}
+		}
+		if eligible {
+			fast := append([]ast.Stmt{}, hoist.fastPrefix...)
+			fast = append(fast, result)
+			if hoist.condition == nil {
+				result = &ast.BlockStmt{List: fast}
+			} else {
+				result = &ast.IfStmt{
+					Cond: hoist.condition,
+					Body: &ast.BlockStmt{List: fast},
+					Else: &ast.BlockStmt{List: []ast.Stmt{hoist.fallback}},
+				}
+			}
+			prefix = append(prefix, hoist.preamble...)
+			continue
+		}
+		remaining = append(remaining, hoist)
+	}
+	if len(remaining) == 0 {
+		delete(ctx.affineArrayRowHoists, key)
+	} else {
+		ctx.affineArrayRowHoists[key] = remaining
+	}
+	return append(prefix, result)
+}
+
 // lowerAffineArrayRowLoop emits a pure bounds proof followed by two equivalent
 // loop copies. The specialized branch is entered only when every selected Java
 // int32 index is a contiguous, non-wrapping, in-bounds interval. Otherwise the
@@ -543,20 +1025,105 @@ func lowerAffineArrayRowLoop(
 	assign := func(name string, value ast.Expr) ast.Stmt {
 		return &ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: name}}, Tok: token.DEFINE, Rhs: []ast.Expr{value}}
 	}
-	set := func(name string, value ast.Expr) ast.Stmt {
-		return &ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: name}}, Tok: token.ASSIGN, Rhs: []ast.Expr{value}}
+
+	type rowHoistTier struct {
+		target     *sitter.Node
+		bindings   []*affineArrayLoopBinding
+		bindingSet map[*affineArrayLoopBinding]struct{}
+		preamble   []ast.Stmt
+		condition  ast.Expr
+		fastPrefix []ast.Stmt
 	}
-	declare := func(name, typeName string) ast.Stmt {
-		return &ast.DeclStmt{Decl: &ast.GenDecl{
-			Tok: token.VAR,
-			Specs: []ast.Spec{&ast.ValueSpec{
-				Names: []*ast.Ident{{Name: name}},
-				Type:  &ast.Ident{Name: typeName},
-			}},
-		}}
+	tiers := make(map[affineArrayCallSiteKey]*rowHoistTier)
+	var orderedTiers []*rowHoistTier
+	tierFor := func(target *sitter.Node) *rowHoistTier {
+		key := affineArrayCallSiteKey{start: target.StartByte(), end: target.EndByte()}
+		tier := tiers[key]
+		if tier == nil {
+			tier = &rowHoistTier{target: target, bindingSet: make(map[*affineArrayLoopBinding]struct{})}
+			tiers[key] = tier
+			orderedTiers = append(orderedTiers, tier)
+		}
+		return tier
+	}
+	addBinding := func(tier *rowHoistTier, binding *affineArrayLoopBinding) {
+		if binding == nil {
+			return
+		}
+		if _, exists := tier.bindingSet[binding]; exists {
+			return
+		}
+		tier.bindingSet[binding] = struct{}{}
+		tier.bindings = append(tier.bindings, binding)
+	}
+	appendCondition := func(tier *rowHoistTier, condition ast.Expr) {
+		if tier.condition == nil {
+			tier.condition = condition
+		} else {
+			tier.condition = affineRowAnd(tier.condition, condition)
+		}
+	}
+	wholeRange := plan.wholeRange != nil
+	if wholeRange {
+		whole := plan.wholeRange
+		tier := tierFor(whole.owner)
+		for _, binding := range whole.bindings {
+			addBinding(tier, binding.binding)
+		}
+		tier.preamble = append(tier.preamble,
+			assign(whole.extentName, int32Call(ParseExpr(whole.extent.node, source, baseCtx))),
+			assign(whole.stepName, int32Call(ParseExpr(whole.step.node, source, baseCtx))),
+			assign(whole.lastRowName, &ast.BinaryExpr{
+				X:  int64Call(&ast.Ident{Name: whole.extentName}),
+				Op: token.SUB,
+				Y:  &ast.BasicLit{Kind: token.INT, Value: "1"},
+			}),
+		)
+		appendCondition(tier, &ast.BinaryExpr{X: &ast.Ident{Name: whole.extentName}, Op: token.GTR, Y: &ast.BasicLit{Kind: token.INT, Value: "0"}})
+		appendCondition(tier, &ast.BinaryExpr{X: &ast.Ident{Name: whole.stepName}, Op: token.GTR, Y: &ast.BasicLit{Kind: token.INT, Value: "0"}})
+		appendCondition(tier, &ast.BinaryExpr{
+			X: &ast.BinaryExpr{
+				X: &ast.BinaryExpr{
+					X:  int64Call(&ast.Ident{Name: whole.extentName}),
+					Op: token.ADD,
+					Y:  int64Call(&ast.Ident{Name: whole.stepName}),
+				},
+				Op: token.SUB,
+				Y:  &ast.BasicLit{Kind: token.INT, Value: "1"},
+			},
+			Op: token.LEQ,
+			Y:  &ast.BasicLit{Kind: token.INT, Value: "2147483647"},
+		})
+		for _, wholeBinding := range whole.bindings {
+			array := &ast.Ident{Name: wholeBinding.binding.arrayName}
+			tier.preamble = append(tier.preamble,
+				assign(wholeBinding.productName, &ast.BinaryExpr{
+					X:  &ast.Ident{Name: whole.lastRowName},
+					Op: token.MUL,
+					Y:  int64Call(&ast.Ident{Name: wholeBinding.binding.strideName}),
+				}),
+				assign(wholeBinding.lastName, &ast.BinaryExpr{
+					X:  &ast.Ident{Name: wholeBinding.productName},
+					Op: token.ADD,
+					Y:  &ast.Ident{Name: whole.lastRowName},
+				}),
+			)
+			appendCondition(tier, &ast.BinaryExpr{X: &ast.Ident{Name: wholeBinding.productName}, Op: token.GEQ, Y: &ast.BasicLit{Kind: token.INT, Value: "0"}})
+			// Reserve one int32 unit for the exclusive slice high on 32-bit Go targets.
+			appendCondition(tier, &ast.BinaryExpr{X: &ast.Ident{Name: wholeBinding.lastName}, Op: token.LEQ, Y: &ast.BasicLit{Kind: token.INT, Value: "2147483646"}})
+			appendCondition(tier, &ast.BinaryExpr{
+				X:  &ast.Ident{Name: wholeBinding.lastName},
+				Op: token.LSS,
+				Y:  int64Call(&ast.CallExpr{Fun: &ast.Ident{Name: "len"}, Args: []ast.Expr{array}}),
+			})
+		}
 	}
 
-	statements := []ast.Stmt{
+	commonTier := tierFor(plan.hoistTarget)
+	for _, binding := range affineRowPlanBindings(plan.rowSlices) {
+		addBinding(commonTier, binding)
+	}
+	commonTier.preamble = append(commonTier.preamble,
 		assign(plan.startName, int32Call(ParseExpr(plan.canonical.start.node, source, baseCtx))),
 		assign(plan.endName, int32Call(ParseExpr(plan.canonical.end.node, source, baseCtx))),
 		assign(plan.span64Name, &ast.BinaryExpr{
@@ -564,43 +1131,58 @@ func lowerAffineArrayRowLoop(
 			Op: token.SUB,
 			Y:  int64Call(&ast.Ident{Name: plan.startName}),
 		}),
-	}
-
+		assign(plan.spanName, intCall(&ast.Ident{Name: plan.span64Name})),
+	)
 	minimumSpanCondition := ast.Expr(&ast.BinaryExpr{
 		X:  &ast.Ident{Name: plan.span64Name},
 		Op: token.GEQ,
 		Y:  &ast.BasicLit{Kind: token.INT, Value: strconv.Itoa(affineArrayRowMinimumSpan)},
 	})
-	condition := affineRowAnd(minimumSpanCondition, &ast.BinaryExpr{
+	appendCondition(commonTier, affineRowAnd(minimumSpanCondition, &ast.BinaryExpr{
 		X:  &ast.Ident{Name: plan.span64Name},
 		Op: token.LEQ,
 		Y:  &ast.BasicLit{Kind: token.INT, Value: "2147483647"},
-	})
-	var rangeStatements []ast.Stmt
+	}))
 
 	for _, rowSlice := range plan.rowSlices {
+		tier := tierFor(rowSlice.hoistTarget)
+		addBinding(tier, rowSlice.key.binding)
 		rowExpr := int32Call(ParseExpr(rowSlice.row.node, source, baseCtx))
-		statements = append(statements,
-			declare(rowSlice.rowName, "int32"),
-			declare(rowSlice.productName, "int64"),
-			declare(rowSlice.baseName, "int32"),
-			declare(rowSlice.firstName, "int64"),
-			declare(rowSlice.lastName, "int64"),
-		)
-		rangeStatements = append(rangeStatements,
-			set(rowSlice.rowName, rowExpr),
-			set(rowSlice.productName, &ast.BinaryExpr{
+		array := &ast.Ident{Name: rowSlice.key.binding.arrayName}
+		if wholeRange {
+			tier.fastPrefix = append(tier.fastPrefix,
+				assign(rowSlice.baseName, &ast.BinaryExpr{
+					X:  intCall(rowExpr),
+					Op: token.MUL,
+					Y:  intCall(&ast.Ident{Name: rowSlice.key.binding.strideName}),
+				}),
+				assign(rowSlice.startIntName, &ast.BinaryExpr{
+					X:  &ast.Ident{Name: rowSlice.baseName},
+					Op: token.ADD,
+					Y:  intCall(&ast.Ident{Name: plan.startName}),
+				}),
+				assign(rowSlice.sliceName, &ast.SliceExpr{
+					X:    array,
+					Low:  &ast.Ident{Name: rowSlice.startIntName},
+					High: &ast.BinaryExpr{X: &ast.Ident{Name: rowSlice.startIntName}, Op: token.ADD, Y: &ast.Ident{Name: plan.spanName}},
+				}),
+			)
+			continue
+		}
+		tier.preamble = append(tier.preamble,
+			assign(rowSlice.rowName, rowExpr),
+			assign(rowSlice.productName, &ast.BinaryExpr{
 				X:  int64Call(&ast.Ident{Name: rowSlice.rowName}),
 				Op: token.MUL,
 				Y:  int64Call(&ast.Ident{Name: rowSlice.key.binding.strideName}),
 			}),
-			set(rowSlice.baseName, &ast.BinaryExpr{X: &ast.Ident{Name: rowSlice.rowName}, Op: token.MUL, Y: &ast.Ident{Name: rowSlice.key.binding.strideName}}),
-			set(rowSlice.firstName, &ast.BinaryExpr{
+			assign(rowSlice.baseName, &ast.BinaryExpr{X: &ast.Ident{Name: rowSlice.rowName}, Op: token.MUL, Y: &ast.Ident{Name: rowSlice.key.binding.strideName}}),
+			assign(rowSlice.firstName, &ast.BinaryExpr{
 				X:  int64Call(&ast.Ident{Name: rowSlice.baseName}),
 				Op: token.ADD,
 				Y:  int64Call(&ast.Ident{Name: plan.startName}),
 			}),
-			set(rowSlice.lastName, &ast.BinaryExpr{
+			assign(rowSlice.lastName, &ast.BinaryExpr{
 				X: &ast.BinaryExpr{
 					X:  int64Call(&ast.Ident{Name: rowSlice.baseName}),
 					Op: token.ADD,
@@ -615,7 +1197,6 @@ func lowerAffineArrayRowLoop(
 		last := &ast.Ident{Name: rowSlice.lastName}
 		product := &ast.Ident{Name: rowSlice.productName}
 		base := &ast.Ident{Name: rowSlice.baseName}
-		array := &ast.Ident{Name: rowSlice.key.binding.arrayName}
 		checks := []ast.Expr{
 			&ast.BinaryExpr{X: product, Op: token.GEQ, Y: &ast.BasicLit{Kind: token.INT, Value: "-2147483648"}},
 			&ast.BinaryExpr{X: product, Op: token.LEQ, Y: &ast.BasicLit{Kind: token.INT, Value: "2147483647"}},
@@ -631,33 +1212,46 @@ func lowerAffineArrayRowLoop(
 				Y:  int64Call(&ast.CallExpr{Fun: &ast.Ident{Name: "len"}, Args: []ast.Expr{array}}),
 			},
 		}
-		for _, check := range checks {
-			condition = affineRowAnd(condition, check)
+		valid := ast.Expr(checks[0])
+		for _, check := range checks[1:] {
+			valid = affineRowAnd(valid, check)
 		}
-	}
-	statements = append(statements, &ast.IfStmt{
-		Cond: minimumSpanCondition,
-		Body: &ast.BlockStmt{List: rangeStatements},
-	})
-
-	fastStatements := []ast.Stmt{assign(plan.spanName, intCall(&ast.Ident{Name: plan.span64Name}))}
-	for _, rowSlice := range plan.rowSlices {
-		fastStatements = append(fastStatements,
+		appendCondition(tier, valid)
+		tier.fastPrefix = append(tier.fastPrefix,
 			assign(rowSlice.startIntName, intCall(&ast.Ident{Name: rowSlice.firstName})),
 			assign(rowSlice.sliceName, &ast.SliceExpr{
-				X:    &ast.Ident{Name: rowSlice.key.binding.arrayName},
+				X:    array,
 				Low:  &ast.Ident{Name: rowSlice.startIntName},
 				High: &ast.BinaryExpr{X: &ast.Ident{Name: rowSlice.startIntName}, Op: token.ADD, Y: &ast.Ident{Name: plan.spanName}},
 			}),
 		)
 	}
-	fastStatements = append(fastStatements, specializedLoop)
-	statements = append(statements, &ast.IfStmt{
-		Cond: condition,
-		Body: &ast.BlockStmt{List: fastStatements},
-		Else: &ast.BlockStmt{List: []ast.Stmt{fallbackLoop}},
-	})
-	return &ast.BlockStmt{List: statements}
+
+	registered := true
+	for _, tier := range orderedTiers {
+		var fallback ast.Stmt
+		if tier.condition != nil && tier.target.StartByte() == node.StartByte() && tier.target.EndByte() == node.EndByte() {
+			fallback = fallbackLoop
+		} else if tier.condition != nil {
+			fallbackCtx := baseCtx.Clone()
+			fallbackCtx.localScope = cloneLocalScopeDefinition(baseCtx.localScope)
+			fallbackCtx.suppressUnsupportedDiagnostics = true
+			fallbackCtx.disableAffineArrayRowSpecialization = true
+			fallbackCtx.affineArrayRowHoists = make(map[affineArrayCallSiteKey][]*affineArrayRowHoist)
+			fallback = ParseStmt(tier.target, source, fallbackCtx)
+		}
+		registered = registerAffineArrayRowHoist(baseCtx, tier.target, &affineArrayRowHoist{
+			bindings:   tier.bindings,
+			preamble:   tier.preamble,
+			condition:  tier.condition,
+			fastPrefix: tier.fastPrefix,
+			fallback:   fallback,
+		}) && registered
+	}
+	if !registered {
+		return fallbackLoop
+	}
+	return specializedLoop
 }
 
 func affineRowAnd(left, right ast.Expr) ast.Expr {

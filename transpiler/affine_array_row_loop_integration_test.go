@@ -244,6 +244,98 @@ func TestAffineRowRuntime(t *testing.T) {
 `)
 }
 
+func TestAffineArrayRowLoop_IntermediateVersionDoesNotDuplicateInheritedHoists(t *testing.T) {
+	src := `
+final class DuplicateHoistGrid {
+    private final int[] values = new int[16];
+    private final int stride = 16;
+    DuplicateHoistGrid(int seed) {
+        for (int index = 0; index < 16; index++) {
+            values[index] = seed + index;
+        }
+    }
+    int get(int row, int column) { return this.values[row * this.stride + column]; }
+    void set(int row, int column, int value) { this.values[row * this.stride + column] = value; }
+}
+public class DuplicateHoistProgram {
+    public static int run(DuplicateHoistGrid source, DuplicateHoistGrid target) {
+        for (int outer = 0; outer < 1; outer++) {
+            target = source;
+            for (int middle = 0; middle < 1; middle++) {
+                for (int column = 0; column < 16; column++) {
+                    int first = source.get(0, column);
+                    int second = source.get(0, column);
+                    int current = source.get(0, column);
+                    source.set(0, column, current + first + second);
+                }
+                int ignored = target.get(0, 0);
+            }
+        }
+        return target.get(0, 0) + target.get(0, 15);
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	run := generatedFunctionText(out, "Run")
+	if !strings.Contains(run, "__java2goAffineRow") {
+		t.Fatalf("intermediate version lost the inherited-binding row specialization:\n%s", run)
+	}
+	runGoTestInTempModule(t, out, `
+package main
+import "testing"
+func TestIntermediateVersionRuntime(t *testing.T) {
+    if got := Run(newDuplicateHoistGrid(1), newDuplicateHoistGrid(100)); got != 51 {
+        t.Fatalf("Run() = %d, want 51", got)
+    }
+}
+`)
+}
+
+func TestAffineArrayRowLoop_RowPreambleDoesNotEscapeCommonProof(t *testing.T) {
+	src := `
+final class DependentHoistGrid {
+    private final int[] values = new int[32];
+    private final int stride = 32;
+    DependentHoistGrid(int seed) {
+        for (int index = 0; index < 32; index++) {
+            values[index] = seed + index;
+        }
+    }
+    int get(int row, int column) { return this.values[row * this.stride + column]; }
+    void set(int row, int column, int value) { this.values[row * this.stride + column] = value; }
+}
+public class DependentHoistProgram {
+    public static int run(DependentHoistGrid grid) {
+        for (int owner = 0; owner < 1; owner++) {
+            for (int segment = 0; segment < 2; segment++) {
+                int start = segment * 16;
+                int end = start + 16;
+                for (int column = start; column < end; column++) {
+                    int current = grid.get(0, column);
+                    grid.set(0, column, current + 1);
+                }
+            }
+        }
+        return grid.get(0, 0) + grid.get(0, 31);
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	run := generatedFunctionText(out, "Run")
+	if !strings.Contains(run, "__java2goAffineRow") {
+		t.Fatalf("dependent row preamble fixture lost row specialization:\n%s", run)
+	}
+	runGoTestInTempModule(t, out, `
+package main
+import "testing"
+func TestDependentHoistRuntime(t *testing.T) {
+    if got := Run(newDependentHoistGrid(1)); got != 35 {
+        t.Fatalf("Run() = %d, want 35", got)
+    }
+}
+`)
+}
+
 func TestAffineArrayRowLoop_UnstableAndNonCanonicalFallback(t *testing.T) {
 	src := `
 final class RowFallbackGrid {
@@ -514,14 +606,276 @@ public class App {
 	}
 }
 
-func TestAffineArrayRowLoop_SiblingMethodLocalsDoNotDisableSpecialization(t *testing.T) {
-	sourceRoot := t.TempDir()
+func writeAffineRowLocalHelper(t *testing.T, sourceRoot string) {
 	writeJavaTestSource(t, sourceRoot, "rowlocals/Helper.java", `
 package rowlocals;
 final class Helper {
     static int sum(int len, int int64) { return len + int64; }
 }
 `)
+}
+
+const affineWholeRangeProgramSource = `
+final class WholeRangeGrid {
+    private final int[] values;
+    private final int stride;
+
+    WholeRangeGrid(int stride, int capacity, int seed) {
+        this.stride = stride;
+        this.values = new int[capacity];
+        for (int index = 0; index < capacity; index++) {
+            this.values[index] = seed + index;
+        }
+    }
+
+    int get(int row, int column) {
+        return this.values[row * this.stride + column];
+    }
+
+    void set(int row, int column, int value) {
+        this.values[row * this.stride + column] = value;
+    }
+}
+
+public class AffineWholeRangeProgram {
+    public static WholeRangeGrid grid(int stride, int capacity, int seed) {
+        return new WholeRangeGrid(stride, capacity, seed);
+    }
+
+    public static int blocked(WholeRangeGrid source, WholeRangeGrid target,
+                              int extent, int step) {
+        for (int rowBlock = 0; rowBlock < extent; rowBlock += step) {
+            int rowLimit = Math.min(rowBlock + step, extent);
+            for (int depthBlock = 0; depthBlock < extent; depthBlock += step) {
+                int depthLimit = Math.min(depthBlock + step, extent);
+                for (int columnBlock = 0; columnBlock < extent; columnBlock += step) {
+                    int columnLimit = Math.min(columnBlock + step, extent);
+                    for (int row = rowBlock; row < rowLimit; row++) {
+                        for (int depth = depthBlock; depth < depthLimit; depth++) {
+                            for (int column = columnBlock; column < columnLimit; column++) {
+                                int value = source.get(depth, column);
+                                int current = target.get(row, column);
+                                target.set(row, column, current + value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return extent == 0 ? 7 : target.get(0, 0) + target.get(extent - 1, extent - 1);
+    }
+
+    public static int mutatedLimit(WholeRangeGrid source, WholeRangeGrid target,
+                                   int extent, int step) {
+        for (int rowBlock = 0; rowBlock < extent; rowBlock += step) {
+            int rowLimit = Math.min(rowBlock + step, extent);
+            rowLimit = rowLimit - 1;
+            for (int depthBlock = 0; depthBlock < extent; depthBlock += step) {
+                int depthLimit = Math.min(depthBlock + step, extent);
+                for (int columnBlock = 0; columnBlock < extent; columnBlock += step) {
+                    int columnLimit = Math.min(columnBlock + step, extent);
+                    for (int row = rowBlock; row < rowLimit; row++) {
+                        for (int depth = depthBlock; depth < depthLimit; depth++) {
+                            for (int column = columnBlock; column < columnLimit; column++) {
+                                int value = source.get(depth, column);
+                                int current = target.get(row, column);
+                                target.set(row, column, current + value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+
+    public static int mismatchedStep(WholeRangeGrid source, WholeRangeGrid target,
+                                     int extent, int step, int otherStep) {
+        for (int rowBlock = 0; rowBlock < extent; rowBlock += step) {
+            int rowLimit = Math.min(rowBlock + step, extent);
+            for (int depthBlock = 0; depthBlock < extent; depthBlock += otherStep) {
+                int depthLimit = Math.min(depthBlock + otherStep, extent);
+                for (int columnBlock = 0; columnBlock < extent; columnBlock += step) {
+                    int columnLimit = Math.min(columnBlock + step, extent);
+                    for (int row = rowBlock; row < rowLimit; row++) {
+                        for (int depth = depthBlock; depth < depthLimit; depth++) {
+                            for (int column = columnBlock; column < columnLimit; column++) {
+                                int value = source.get(depth, column);
+                                int current = target.get(row, column);
+                                target.set(row, column, current + value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+}
+`
+
+func TestAffineArrayRowLoop_WholeRangeHoistingShapeAndRuntime(t *testing.T) {
+	out := renderGoFileFromJava(t, affineWholeRangeProgramSource)
+	blocked := generatedFunctionText(out, "Blocked")
+	flat := normalizeSpaces(blocked)
+	for _, fragment := range []string{
+		"WholeProduct64",
+		"LastRow64",
+		"Extent > 0",
+		"Step > 0",
+		"for rowBlock := int32(0)",
+		"Slice0 :=",
+		"Slice1 :=",
+	} {
+		if !strings.Contains(flat, fragment) {
+			t.Fatalf("whole-range affine lowering is missing %q:\n%s", fragment, blocked)
+		}
+	}
+	wholeProof := strings.Index(blocked, "WholeProduct64")
+	ownerLoop := strings.Index(blocked, "for rowBlock :=")
+	resultSlice := strings.Index(blocked, "Slice1 :=")
+	rowLoop := strings.Index(blocked, "for row :=")
+	rightSlice := strings.Index(blocked, "Slice0 :=")
+	depthLoop := strings.Index(blocked, "for depth :=")
+	if wholeProof < 0 || ownerLoop < 0 || wholeProof > ownerLoop || resultSlice < rowLoop || rightSlice < depthLoop {
+		t.Fatalf("whole-range/result-row/right-row preambles were not hoisted to their expected scopes:\n%s", blocked)
+	}
+	if strings.Contains(generatedFunctionText(out, "MutatedLimit"), "WholeProduct64") {
+		t.Fatalf("mutated block limit unexpectedly received a whole-range proof:\n%s", generatedFunctionText(out, "MutatedLimit"))
+	}
+	if strings.Contains(generatedFunctionText(out, "MismatchedStep"), "WholeProduct64") {
+		t.Fatalf("mismatched block steps unexpectedly received a whole-range proof:\n%s", generatedFunctionText(out, "MismatchedStep"))
+	}
+	mutatedCounterSource := strings.Replace(affineWholeRangeProgramSource,
+		"int rowLimit = Math.min(rowBlock + step, extent);",
+		"int rowLimit = Math.min(rowBlock + step, extent); rowBlock = rowBlock;", 1)
+	mutatedCounter := renderGoFileFromJava(t, mutatedCounterSource)
+	if strings.Contains(generatedFunctionText(mutatedCounter, "Blocked"), "WholeProduct64") {
+		t.Fatalf("a mutated block counter unexpectedly received a whole-range proof:\n%s", generatedFunctionText(mutatedCounter, "Blocked"))
+	}
+	shadowedSource := strings.Replace(affineWholeRangeProgramSource,
+		"public class AffineWholeRangeProgram {",
+		"final class Math { static int min(int a, int b) { return a < b ? a : b; } }\npublic class AffineWholeRangeProgram {", 1)
+	shadowed := renderGoFileFromJava(t, shadowedSource)
+	if strings.Contains(generatedFunctionText(shadowed, "Blocked"), "WholeProduct64") {
+		t.Fatalf("a user-defined Math.min unexpectedly received the java.lang.Math whole-range proof:\n%s", generatedFunctionText(shadowed, "Blocked"))
+	}
+	inheritedMathSource := strings.Replace(affineWholeRangeProgramSource,
+		"public class AffineWholeRangeProgram {",
+		`final class NonstandardMath {
+    int min(int a, int b) { return a < b ? a : b; }
+}
+class WholeRangeBase {
+    protected static final NonstandardMath Math = new NonstandardMath();
+}
+public class AffineWholeRangeProgram extends WholeRangeBase {`, 1)
+	inheritedMath := renderGoFileFromJava(t, inheritedMathSource)
+	if strings.Contains(generatedFunctionText(inheritedMath, "Blocked"), "WholeProduct64") {
+		t.Fatalf("an inherited field named Math unexpectedly received the java.lang.Math whole-range proof:\n%s", generatedFunctionText(inheritedMath, "Blocked"))
+	}
+	ambiguousLimitSource := strings.Replace(affineWholeRangeProgramSource,
+		"for (int rowBlock = 0; rowBlock < extent; rowBlock += step) {",
+		`{
+            int columnLimit = 0;
+            if (columnLimit < 0) return columnLimit;
+        }
+        for (int rowBlock = 0; rowBlock < extent; rowBlock += step) {`, 1)
+	ambiguousLimit := renderGoFileFromJava(t, ambiguousLimitSource)
+	if strings.Contains(generatedFunctionText(ambiguousLimit, "Blocked"), "WholeProduct64") {
+		t.Fatalf("an ambiguous disjoint block-limit name unexpectedly received a whole-range proof:\n%s", generatedFunctionText(ambiguousLimit, "Blocked"))
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import (
+    "testing"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
+
+func wholeRangeRecovered(call func()) (got interface{}) {
+    defer func() { got = recover() }()
+    call()
+    return nil
+}
+
+func wholeRangeReference(source, target *wholeRangeGrid, extent, step int32) int32 {
+    for rowBlock := int32(0); rowBlock < extent; rowBlock += step {
+        rowLimit := rowBlock + step
+        if extent < rowLimit { rowLimit = extent }
+        for depthBlock := int32(0); depthBlock < extent; depthBlock += step {
+            depthLimit := depthBlock + step
+            if extent < depthLimit { depthLimit = extent }
+            for columnBlock := int32(0); columnBlock < extent; columnBlock += step {
+                columnLimit := columnBlock + step
+                if extent < columnLimit { columnLimit = extent }
+                for row := rowBlock; row < rowLimit; row++ {
+                    for depth := depthBlock; depth < depthLimit; depth++ {
+                        for column := columnBlock; column < columnLimit; column++ {
+                            value := source.get(depth, column)
+                            current := target.get(row, column)
+                            target.set(row, column, current + value)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if extent == 0 { return 7 }
+    return target.get(0, 0) + target.get(extent - 1, extent - 1)
+}
+
+func TestAffineWholeRangeRuntime(t *testing.T) {
+    if got := Blocked(newWholeRangeGrid(16, 256, 1), newWholeRangeGrid(16, 256, 0), 16, 16); got != 4367 {
+        t.Fatalf("Blocked(valid) = %d, want 4367", got)
+    }
+    if got := Blocked(newWholeRangeGrid(16, 256, 1), newWholeRangeGrid(16, 256, 0), 16, 2147483647); got != 4367 {
+        t.Fatalf("Blocked(step-overflow fallback) = %d, want 4367", got)
+    }
+    if got := Blocked(nil, nil, 0, 16); got != 7 {
+        t.Fatalf("Blocked(zero trip, nil) = %d, want 7", got)
+    }
+
+    actualAlias := newWholeRangeGrid(16, 256, 1)
+    referenceAlias := newWholeRangeGrid(16, 256, 1)
+    gotAlias := Blocked(actualAlias, actualAlias, 16, 16)
+    wantAlias := wholeRangeReference(referenceAlias, referenceAlias, 16, 16)
+    if gotAlias != wantAlias {
+        t.Fatalf("Blocked(alias) = %d, reference %d", gotAlias, wantAlias)
+    }
+    for index := range actualAlias.values {
+        if actualAlias.values[index] != referenceAlias.values[index] {
+            t.Fatalf("Blocked(alias) values[%d] = %d, reference %d", index, actualAlias.values[index], referenceAlias.values[index])
+        }
+    }
+
+    recovered := stdjava.NormalizePanic(wholeRangeRecovered(func() {
+        Blocked(newWholeRangeGrid(16, 255, 1), newWholeRangeGrid(16, 256, 0), 16, 16)
+    }))
+    if !stdjava.CaughtAs(recovered, "ArrayIndexOutOfBoundsException") || stdjava.CaughtAs(recovered, "NullPointerException") {
+        t.Fatalf("short backing normalized as %T (%v), want only ArrayIndexOutOfBoundsException", recovered, recovered)
+    }
+
+    overflowed := stdjava.NormalizePanic(wholeRangeRecovered(func() {
+        Blocked(newWholeRangeGrid(1073741824, 256, 1), newWholeRangeGrid(16, 256, 0), 16, 16)
+    }))
+    if !stdjava.CaughtAs(overflowed, "ArrayIndexOutOfBoundsException") || stdjava.CaughtAs(overflowed, "NullPointerException") {
+        t.Fatalf("overflowing stride normalized as %T (%v), want only ArrayIndexOutOfBoundsException", overflowed, overflowed)
+    }
+
+    nullReceiver := stdjava.NormalizePanic(wholeRangeRecovered(func() {
+        Blocked(nil, newWholeRangeGrid(16, 256, 0), 16, 16)
+    }))
+    if !stdjava.CaughtAs(nullReceiver, "NullPointerException") || stdjava.CaughtAs(nullReceiver, "ArrayIndexOutOfBoundsException") {
+        t.Fatalf("null receiver normalized as %T (%v), want only NullPointerException", nullReceiver, nullReceiver)
+    }
+}
+`)
+}
+
+func TestAffineArrayRowLoop_SiblingMethodLocalsDoNotDisableSpecialization(t *testing.T) {
+	sourceRoot := t.TempDir()
+	writeAffineRowLocalHelper(t, sourceRoot)
 	writeJavaTestSource(t, sourceRoot, "rowlocals/Grid.java", `
 package rowlocals;
 public final class Grid {

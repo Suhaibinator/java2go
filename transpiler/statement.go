@@ -490,6 +490,13 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "method_invocation":
 		return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
 	case "constructor_body", "block":
+		// Row-loop LICM plans are discovered while recursively rendering an inner
+		// loop, then consumed as the recursion unwinds through these lexical
+		// blocks. Initialize the shared map before descending so cloned contexts
+		// observe registrations made by their children.
+		if ctx.affineArrayRowHoists == nil {
+			ctx.affineArrayRowHoists = make(map[affineArrayCallSiteKey][]*affineArrayRowHoist)
+		}
 		body := &ast.BlockStmt{}
 		for _, line := range nodeutil.NamedChildrenOf(node) {
 			if line.Type() == "comment" || line.Type() == "line_comment" || line.Type() == "block_comment" {
@@ -501,7 +508,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				if empty, ok := stmt.(*ast.EmptyStmt); ok && empty.Implicit {
 					continue
 				}
-				body.List = append(body.List, stmt)
+				body.List = append(body.List, applyAffineArrayRowHoists(line, stmt, ctx)...)
 				if line.Type() == "local_variable_declaration" {
 					body.List = append(body.List, unusedLocalDiscardStatements(stmt, node, source)...)
 				}
@@ -788,7 +795,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// all selected bindings were proven non-null by an enclosing loop version.
 		// Loops that create their own view caches first take the normal versioning
 		// path; a later nested loop may consume those proofs.
-		if len(affineBindings) == 0 {
+		if len(affineBindings) == 0 && !loopCtx.disableAffineArrayRowSpecialization {
 			if rowCtx, rowPlan := prepareAffineArrayRowLoop(node, source, loopCtx); rowPlan != nil {
 				return lowerAffineArrayRowLoop(node, source, loopCtx, rowCtx, rowPlan, init, cond, post)
 			}
@@ -810,6 +817,12 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		guardedCtx := loopCtx.Clone()
 		guardedCtx.localScope = cloneLocalScopeDefinition(loopCtx.localScope)
 		guardedCtx.suppressUnsupportedDiagnostics = true
+		// The guarded copy is rendered from the same Java source spans as the fast
+		// copy. Keep its cold-path row planning isolated: otherwise a specialization
+		// using only inherited non-null bindings can register an identical hoist in
+		// the shared method map, which the fast copy then consumes twice.
+		guardedCtx.disableAffineArrayRowSpecialization = true
+		guardedCtx.affineArrayRowHoists = make(map[affineArrayCallSiteKey][]*affineArrayRowHoist)
 
 		body := ParseStmt(node.ChildByFieldName("body"), source, fastCtx).(*ast.BlockStmt)
 		if initNode != nil && initNode.Type() == "local_variable_declaration" {
@@ -843,7 +856,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 		versionedLoop := &ast.IfStmt{
 			Cond: validity,
-			Body: &ast.BlockStmt{List: []ast.Stmt{loop}},
+			Body: &ast.BlockStmt{List: applyAffineArrayRowHoists(node, loop, fastCtx)},
 			Else: &ast.BlockStmt{List: []ast.Stmt{guardedLoop}},
 		}
 		return &ast.BlockStmt{List: append(cacheStatements, versionedLoop)}

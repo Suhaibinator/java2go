@@ -28,6 +28,7 @@ type affineArrayLoopBinding struct {
 	receiverClass    *symbol.ClassScope
 	arrayName        string
 	strideName       string
+	ownerLoopStart   uint32
 	used             bool
 }
 
@@ -96,6 +97,7 @@ func prepareAffineArrayLoop(node *sitter.Node, source []byte, ctx Ctx) (Ctx, []*
 				receiverClass:    candidate.receiverClass,
 				arrayName:        affineUniqueLocalName(prefix+"Values", usedNames),
 				strideName:       affineUniqueLocalName(prefix+"Stride", usedNames),
+				ownerLoopStart:   node.StartByte(),
 			}
 			loopCtx.affineArrayBindings[key] = binding
 			created = append(created, binding)
