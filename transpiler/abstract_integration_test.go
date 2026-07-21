@@ -96,7 +96,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "*BaseThing) Describe() string") {
 		t.Fatalf("expected BaseThing.Describe concrete method in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return bg.Id() + \":\" + bg.value") && !strings.Contains(flat, "return fmt.Sprint(bg.Id(), \":\", bg.value)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", bg.Id(), \":\", bg.value)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", bg.Java2goBaseThingSelf.Id(), \":\", bg.value)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", stdjava.StringValueOf(bg.Java2goBaseThingSelf.Id()), \":\", bg.value)") {
+	if !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", stdjava.StringValueOf(bg.Java2goBaseThingSelf.IdJava2goExecution(__java2goExecution)), \":\", bg.value)") {
 		t.Fatalf("expected BaseThing.Describe to use Id() and value field, got:\n%s", out)
 	}
 
@@ -113,7 +113,8 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "*LeafThing) Describe() string") {
 		t.Fatalf("expected LeafThing.Describe override in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return \"leaf-\" + lg.MidThing.Describe()") && !strings.Contains(flat, "return fmt.Sprint(\"leaf-\", lg.MidThing.Describe())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"leaf-\", lg.MidThing.Describe())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"leaf-\", stdjava.StringValueOf(lg.MidThing.Describe()))") {
+	if !strings.Contains(flat, "__java2goInvocationReceiver := lg.MidThing") ||
+		!strings.Contains(flat, "return __java2goExecutionReceiver.DescribeJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected LeafThing.Describe to call super.describe(), got:\n%s", out)
 	}
 	if strings.Contains(flat, "*LeafThing) Id() string") {
@@ -141,13 +142,14 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "total := first + second + third") {
 		t.Fatalf("expected ConcreteThing.Combine to declare total, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return total + cg.Compute(total, cg.Value())") && !strings.Contains(flat, "return total + cg.Compute(total, float64(cg.Java2goBaseThingSelf.Value()))") {
+	if !strings.Contains(flat, "return total + cg.ComputeJava2goExecution(__java2goExecution, total, float64(cg.Java2goBaseThingSelf.ValueJava2goExecution(__java2goExecution)))") {
 		t.Fatalf("expected ConcreteThing.Combine to call compute/value, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "\"override-\"") {
 		t.Fatalf("expected ConcreteThing.Label to include override marker, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return \"override-\" + cg.LeafThing.Label()") && !strings.Contains(flat, "return fmt.Sprint(\"override-\", cg.LeafThing.Label())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"override-\", cg.LeafThing.Label())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"override-\", stdjava.StringValueOf(cg.LeafThing.Label()))") {
+	if !strings.Contains(flat, "__java2goInvocationReceiver := cg.LeafThing") ||
+		!strings.Contains(flat, "return __java2goExecutionReceiver.LabelJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected ConcreteThing.Label to call super.label(), got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*AltConcreteThing) Id() string") {
@@ -165,7 +167,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "func NewMidThing(value int32, name string) *MidThing") {
 		t.Fatalf("expected MidThing constructor to be emitted, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "mg.BaseThing = NewBaseThingJava2goWithSelf(__java2goMostDerived, value)") {
+	if !strings.Contains(flat, "mg.BaseThing = NewBaseThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value)") {
 		t.Fatalf("expected MidThing constructor to call BaseThing constructor, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "mg.name = name") {
@@ -174,19 +176,19 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "func NewLeafThing(value int32, name string) *LeafThing") {
 		t.Fatalf("expected LeafThing constructor to be emitted, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "lg.MidThing = NewMidThingJava2goWithSelf(__java2goMostDerived, value, name)") {
+	if !strings.Contains(flat, "lg.MidThing = NewMidThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value, name)") {
 		t.Fatalf("expected LeafThing constructor to call MidThing constructor, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "func NewConcreteThing(value int32, name string) *ConcreteThing") {
 		t.Fatalf("expected ConcreteThing constructor to be emitted, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "cg.LeafThing = NewLeafThingJava2goWithSelf(__java2goMostDerived, value, name)") {
+	if !strings.Contains(flat, "cg.LeafThing = NewLeafThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value, name)") {
 		t.Fatalf("expected ConcreteThing constructor to call LeafThing constructor, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "func NewAltConcreteThing(value int32, name string) *AltConcreteThing") {
 		t.Fatalf("expected AltConcreteThing constructor to be emitted, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "ag.MidThing = NewMidThingJava2goWithSelf(__java2goMostDerived, value, name)") {
+	if !strings.Contains(flat, "ag.MidThing = NewMidThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value, name)") {
 		t.Fatalf("expected AltConcreteThing constructor to call MidThing constructor, got:\n%s", out)
 	}
 }

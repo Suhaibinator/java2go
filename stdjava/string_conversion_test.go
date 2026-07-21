@@ -9,6 +9,32 @@ type namedStringValue string
 
 func (v namedStringValue) String() string { return string(v) }
 
+type executionStringValueProbe struct {
+	seen *Execution
+}
+
+func (p *executionStringValueProbe) String() string {
+	panic("public String must not be used by execution-aware conversion")
+}
+
+func (p *executionStringValueProbe) StringJava2goExecution(execution *Execution) string {
+	p.seen = execution
+	return "execution"
+}
+
+type suffixedExecutionStringValueProbe struct {
+	seen *Execution
+}
+
+func (p *suffixedExecutionStringValueProbe) String() string {
+	panic("public String must not be used for a collision-renamed execution method")
+}
+
+func (p *suffixedExecutionStringValueProbe) StringJava2goExecution1(execution *Execution) string {
+	p.seen = execution
+	return "suffixed"
+}
+
 func TestDoubleToStringMatchesJavaFormatting(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -66,6 +92,25 @@ func TestStringValueOfUsesJavaFloatingAndStringerSemantics(t *testing.T) {
 				t.Fatalf("StringValueOf(%#v) = %q, want %q", test.value, got, test.want)
 			}
 		})
+	}
+}
+
+func TestStringValueOfExecutionForwardsTokenToGeneratedStringers(t *testing.T) {
+	execution := NewExecution()
+	probe := &executionStringValueProbe{}
+	if got := StringValueOfExecution(execution, probe); got != "execution" {
+		t.Fatalf("StringValueOfExecution() = %q, want execution", got)
+	}
+	if probe.seen != execution {
+		t.Fatal("execution-aware string conversion did not forward the existing token")
+	}
+
+	suffixed := &suffixedExecutionStringValueProbe{}
+	if got := StringValueOfExecution(execution, suffixed); got != "suffixed" {
+		t.Fatalf("collision-renamed StringValueOfExecution() = %q, want suffixed", got)
+	}
+	if suffixed.seen != execution {
+		t.Fatal("collision-renamed string conversion did not forward the existing token")
 	}
 }
 

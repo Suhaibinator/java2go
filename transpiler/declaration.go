@@ -236,6 +236,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						// assignments live in __java2goInitFields, whose receiver is
 						// already wired to the most-derived object.
 						valueCtx.localScope = &symbol.Definition{OriginalName: fieldInitMethodName}
+						valueCtx.executionContextName = executionNameForClass(ctx.currentClass)
 						valueCtx.expectedType = fieldDef.OriginalType
 						valueCtx.expectedTypeRoot = fieldValueNode
 						value := ParseExpr(fieldValueNode, source, valueCtx)
@@ -276,8 +277,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 		declarations = append(declarations, generateAffineArrayViewDecls(ctx)...)
 
-		if helperDecl := buildInstanceFieldInitializerMethodDecl(ctx, instanceFieldInitializers); helperDecl != nil {
-			declarations = append(declarations, helperDecl)
+		if helperDecls := buildInstanceFieldInitializerMethodDecl(ctx, instanceFieldInitializers); len(helperDecls) > 0 {
+			declarations = append(declarations, helperDecls...)
 		}
 
 		// Java provides an implicit no-arg constructor for any class that does not
@@ -292,6 +293,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if ctx.currentClass.IsAbstract {
 			if ifaceDecl := generateAbstractClassInterface(ctx); ifaceDecl != nil {
 				declarations = append(declarations, ifaceDecl)
+			}
+			if companion := generateExecutionCompanionInterface(ctx.currentClass, ctx); companion != nil {
+				declarations = append(declarations, companion)
 			}
 		}
 
@@ -393,6 +397,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		declarations := []ast.Decl{genInterfaceInContext(interfaceName, methods, classTypeParams, ctx)}
+		if companion := generateExecutionCompanionInterface(ctx.currentClass, ctx); companion != nil {
+			declarations = append(declarations, companion)
+		}
 		declarations = append(declarations, generateInterfaceDefaultMethodDecls(node, source, ctx)...)
 		declarations = append(declarations, genFunctionalInterfaceAdapterDecls(interfaceName, methods, classTypeParams, ctx.currentClass, ctx)...)
 		return declarations
@@ -539,13 +546,17 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			receiverBase := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
 			receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBase}}}}
 			receiverName := ShortName(ctx.className)
+			stringExecutionName := executionNameForClass(ctx.currentClass)
+			stringCtx := ctx.Clone()
+			stringCtx.executionContextName = stringExecutionName
 			enumStringResult := ast.Expr(&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: enumMetaNameField}})
 			if toString := findEnumToStringMethod(ctx.currentClass); toString != nil {
 				enumStringResult = &ast.CallExpr{
 					Fun: &ast.SelectorExpr{
 						X:   &ast.Ident{Name: receiverName},
-						Sel: &ast.Ident{Name: toString.Name},
+						Sel: &ast.Ident{Name: executionMethodCallName(toString, ctx.currentClass, stringCtx)},
 					},
+					Args: prependExecutionMethodArgument(stringCtx, toString, nil),
 				}
 			}
 
@@ -560,7 +571,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			// String implements fmt.Stringer so every Go formatting path used for
 			// println, string concatenation, and String.valueOf observes Java's
 			// default Enum.toString() result instead of the backing Go struct.
-			declarations = append(declarations, &ast.FuncDecl{
+			stringDecl := &ast.FuncDecl{
 				Name: &ast.Ident{Name: "String"},
 				Recv: receiver,
 				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "string"}}}}},
@@ -571,7 +582,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					},
 					&ast.ReturnStmt{Results: []ast.Expr{enumStringResult}},
 				}},
-			})
+			}
+			declarations = append(declarations, buildExecutionAwareFuncDecls(
+				stringDecl,
+				enumExecutionStringMethodName(ctx.currentClass),
+				stringExecutionName,
+				stringCtx,
+			)...)
 
 			// ordinal() accessor
 			declarations = append(declarations, &ast.FuncDecl{
@@ -685,6 +702,7 @@ func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx 
 		return nil
 	}
 
+	executionName := executionParameterName(body, source, ctx)
 	statements := []ast.Stmt{}
 	for _, child := range nodeutil.NamedChildrenOf(body) {
 		switch child.Type() {
@@ -708,6 +726,7 @@ func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx 
 			fieldDefinition := fieldDefinitions[0]
 			valueCtx := ctx.Clone()
 			valueCtx.localScope = &symbol.Definition{IsStatic: true}
+			valueCtx.executionContextName = executionName
 			valueCtx.expectedType = fieldDefinition.OriginalType
 			valueCtx.expectedTypeRoot = valueNode
 			value := ParseExpr(valueNode, source, valueCtx)
@@ -720,6 +739,7 @@ func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx 
 		case "static_initializer":
 			staticCtx := ctx.Clone()
 			staticCtx.localScope = &symbol.Definition{IsStatic: true}
+			staticCtx.executionContextName = executionName
 			block, ok := ParseStmt(child.NamedChild(0), source, staticCtx).(*ast.BlockStmt)
 			if ok && block != nil {
 				statements = append(statements, block.List...)
@@ -730,6 +750,15 @@ func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx 
 	if len(statements) == 0 {
 		return nil
 	}
+	statements = append([]ast.Stmt{&ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: executionName}},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{newExecutionExpr(ctx)},
+	}, &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
+		Tok: token.ASSIGN,
+		Rhs: []ast.Expr{&ast.Ident{Name: executionName}},
+	}}, statements...)
 	return &ast.FuncDecl{
 		Name: &ast.Ident{Name: "init"},
 		Type: &ast.FuncType{Params: &ast.FieldList{}},
@@ -737,14 +766,15 @@ func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx 
 	}
 }
 
-func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) ast.Decl {
+func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) []ast.Decl {
 	if len(initializers) == 0 || ctx.currentClass == nil {
 		return nil
 	}
 
 	receiverBaseType := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
+	executionName := executionNameForClass(ctx.currentClass)
 
-	return &ast.FuncDecl{
+	declaration := &ast.FuncDecl{
 		Name: &ast.Ident{Name: fieldInitMethodName},
 		Recv: &ast.FieldList{
 			List: []*ast.Field{
@@ -759,6 +789,12 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) a
 		},
 		Body: &ast.BlockStmt{List: initializers},
 	}
+	return buildExecutionAwareFuncDecls(
+		declaration,
+		executionFieldInitializerMethodName(),
+		executionName,
+		ctx,
+	)
 }
 
 // implementedInterfaceTypeExpr lowers the type named in an implements clause
@@ -912,7 +948,7 @@ func buildInheritedInterfaceDefaultForwarder(
 	def *symbol.Definition,
 	childScope *symbol.ClassScope,
 	ctx Ctx,
-) ast.Decl {
+) []ast.Decl {
 	if def == nil || parentScope == nil || childScope == nil || def.RequiresHelper {
 		return nil
 	}
@@ -930,10 +966,14 @@ func buildInheritedInterfaceDefaultForwarder(
 
 	params := &ast.FieldList{}
 	args := []ast.Expr{}
-	for _, param := range def.Parameters {
+	for index, param := range def.Parameters {
+		paramType := mapType(param.OriginalType)
+		if executionParameterIsVariadic(def, index) {
+			paramType = &ast.Ellipsis{Elt: paramType}
+		}
 		params.List = append(params.List, &ast.Field{
 			Names: []*ast.Ident{{Name: param.Name}},
-			Type:  mapType(param.OriginalType),
+			Type:  paramType,
 		})
 		args = append(args, &ast.Ident{Name: param.Name})
 	}
@@ -942,15 +982,21 @@ func buildInheritedInterfaceDefaultForwarder(
 		results = &ast.FieldList{List: []*ast.Field{{Type: mapType(def.OriginalType)}}}
 	}
 	recvName := ShortName(carrierName)
+	executionName := executionNameForParams(params, childScope.TypeParameterNames()...)
 	call := &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X: &ast.SelectorExpr{
 				X:   &ast.Ident{Name: recvName},
 				Sel: &ast.Ident{Name: interfaceDefaultCarrierName(parentScope)},
 			},
-			Sel: &ast.Ident{Name: def.Name},
+			Sel: &ast.Ident{Name: executionImplementationName(def, parentScope)},
 		},
-		Args: args,
+		Args: append([]ast.Expr{&ast.Ident{Name: executionName}}, args...),
+	}
+	if len(params.List) > 0 {
+		if _, variadic := params.List[len(params.List)-1].Type.(*ast.Ellipsis); variadic {
+			call.Ellipsis = token.Pos(1)
+		}
 	}
 	body := &ast.BlockStmt{}
 	if results != nil {
@@ -959,7 +1005,7 @@ func buildInheritedInterfaceDefaultForwarder(
 		body.List = []ast.Stmt{&ast.ExprStmt{X: call}}
 	}
 	recvType := instantiateGenericType(carrierName, typeParamExprs(childScope.TypeParameterNames()))
-	return &ast.FuncDecl{
+	declaration := &ast.FuncDecl{
 		Name: &ast.Ident{Name: def.Name},
 		Recv: &ast.FieldList{List: []*ast.Field{{
 			Names: []*ast.Ident{{Name: recvName}},
@@ -968,6 +1014,117 @@ func buildInheritedInterfaceDefaultForwarder(
 		Type: &ast.FuncType{Params: params, Results: results},
 		Body: body,
 	}
+	return buildExecutionAwareFuncDecls(
+		declaration,
+		executionImplementationName(def, parentScope),
+		executionName,
+		ctx,
+	)
+}
+
+// buildInterfaceAbstractExecutionBridge gives a default-method carrier an
+// explicit execution-aware method for each abstract interface member. The
+// public interface remains unchanged: generated implementations receive the
+// current token through the companion interface, while handwritten Go values
+// continue to work through the original public method.
+func buildInterfaceAbstractExecutionBridge(
+	carrierName string,
+	def *symbol.Definition,
+	scope *symbol.ClassScope,
+	ctx Ctx,
+) []ast.Decl {
+	if def == nil || scope == nil || scope.Class == nil || def.HasBody || def.IsStatic || def.IsPrivate || def.Constructor || def.RequiresHelper {
+		return nil
+	}
+	params := &ast.FieldList{}
+	for index, parameter := range def.Parameters {
+		params.List = append(params.List, &ast.Field{
+			Names: []*ast.Ident{{Name: parameter.Name}},
+			Type:  executionParameterTypeExpr(def, index, parameter.OriginalType, scope.TypeParameterNames(), ctx),
+		})
+	}
+	var results *ast.FieldList
+	if strings.TrimSpace(def.OriginalType) != "" && strings.TrimSpace(def.OriginalType) != "void" {
+		results = &ast.FieldList{List: []*ast.Field{{
+			Type: javaTypeStringToGoTypeExpr(def.OriginalType, scope.TypeParameterNames(), ctx),
+		}}}
+	}
+
+	executionName := executionNameForParams(params, scope.TypeParameterNames()...)
+	usedNames := map[string]struct{}{executionName: {}}
+	for _, argument := range methodCallArgs(params) {
+		if ident, ok := argument.(*ast.Ident); ok {
+			usedNames[ident.Name] = struct{}{}
+		}
+	}
+	companionName := synchronizedUniqueLocalName("__java2goExecutionReceiver", usedNames)
+	okName := synchronizedUniqueLocalName("__java2goHasExecutionReceiver", usedNames)
+	recvName := synchronizedUniqueLocalName(ShortName(carrierName), usedNames)
+	typeArgs := typeParamExprs(scope.TypeParameterNames())
+	interfaceField := &ast.SelectorExpr{
+		X:   &ast.Ident{Name: recvName},
+		Sel: &ast.Ident{Name: scope.Class.Name},
+	}
+	companionType := instantiateGenericType(executionCompanionInterfaceName(scope), typeArgs)
+	body := []ast.Stmt{&ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: companionName}, &ast.Ident{Name: okName}},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{&ast.TypeAssertExpr{
+			X: &ast.CallExpr{
+				Fun:  &ast.InterfaceType{Methods: &ast.FieldList{}},
+				Args: []ast.Expr{interfaceField},
+			},
+			Type: companionType,
+		}},
+	}}
+	args := methodCallArgs(params)
+	hiddenCall := &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: companionName},
+			Sel: &ast.Ident{Name: executionImplementationName(def, scope)},
+		},
+		Args: append([]ast.Expr{&ast.Ident{Name: executionName}}, args...),
+	}
+	if len(params.List) > 0 {
+		if _, variadic := params.List[len(params.List)-1].Type.(*ast.Ellipsis); variadic {
+			hiddenCall.Ellipsis = token.Pos(1)
+		}
+	}
+	hiddenBody := []ast.Stmt{invocationClosureCallStatement(hiddenCall, results)}
+	if results == nil || len(results.List) == 0 {
+		hiddenBody = append(hiddenBody, &ast.ReturnStmt{})
+	}
+	body = append(body, &ast.IfStmt{
+		Cond: &ast.Ident{Name: okName},
+		Body: &ast.BlockStmt{List: hiddenBody},
+	})
+	publicCall := &ast.CallExpr{
+		Fun:  &ast.SelectorExpr{X: interfaceField, Sel: &ast.Ident{Name: def.Name}},
+		Args: args,
+	}
+	if len(params.List) > 0 {
+		if _, variadic := params.List[len(params.List)-1].Type.(*ast.Ellipsis); variadic {
+			publicCall.Ellipsis = token.Pos(1)
+		}
+	}
+	body = append(body, invocationClosureCallStatement(publicCall, results))
+
+	carrierType := instantiateGenericType(carrierName, typeArgs)
+	declaration := &ast.FuncDecl{
+		Name: &ast.Ident{Name: def.Name},
+		Recv: &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: recvName}},
+			Type:  &ast.StarExpr{X: carrierType},
+		}}},
+		Type: &ast.FuncType{Params: params, Results: results},
+		Body: &ast.BlockStmt{List: body},
+	}
+	return buildExecutionAwareFuncDecls(
+		declaration,
+		executionImplementationName(def, scope),
+		executionName,
+		ctx,
+	)
 }
 
 // generateInterfaceDefaultMethodDecls materializes Java interface default
@@ -1038,6 +1195,9 @@ func generateInterfaceDefaultMethodDecls(node *sitter.Node, source []byte, ctx C
 		methodCtx.className = carrierName
 		decls = append(decls, ParseDecl(child, source, methodCtx)...)
 	}
+	for _, method := range scope.Methods {
+		decls = append(decls, buildInterfaceAbstractExecutionBridge(carrierName, method, scope, ctx)...)
+	}
 	forwarded := map[string]struct{}{}
 	for _, parentType := range parentDefaultTypes {
 		base, _ := parseJavaTypeString(parentType)
@@ -1051,8 +1211,8 @@ func generateInterfaceDefaultMethodDecls(node *sitter.Node, source []byte, ctx C
 				continue
 			}
 			forwarded[key] = struct{}{}
-			if forwarder := buildInheritedInterfaceDefaultForwarder(carrierName, parentType, parentScope, method, scope, ctx); forwarder != nil {
-				decls = append(decls, forwarder)
+			if forwarders := buildInheritedInterfaceDefaultForwarder(carrierName, parentType, parentScope, method, scope, ctx); len(forwarders) > 0 {
+				decls = append(decls, forwarders...)
 			}
 		}
 	}
@@ -1177,10 +1337,10 @@ func generateClassDispatchInterface(ctx Ctx) ast.Decl {
 			continue
 		}
 		params := &ast.FieldList{}
-		for _, param := range method.Parameters {
+		for index, param := range method.Parameters {
 			params.List = append(params.List, &ast.Field{
 				Names: []*ast.Ident{{Name: param.Name}},
-				Type:  javaTypeStringToGoTypeExpr(param.OriginalType, typeParams, ctx),
+				Type:  executionParameterTypeExpr(method, index, param.OriginalType, typeParams, ctx),
 			})
 		}
 		var results *ast.FieldList
@@ -1189,10 +1349,14 @@ func generateClassDispatchInterface(ctx Ctx) ast.Decl {
 				Type: javaTypeStringToGoTypeExpr(method.OriginalType, typeParams, ctx),
 			}}}
 		}
-		methods.List = append(methods.List, &ast.Field{
+		publicMethod := &ast.Field{
 			Names: []*ast.Ident{{Name: method.Name}},
 			Type:  &ast.FuncType{Params: params, Results: results},
-		})
+		}
+		methods.List = append(methods.List, publicMethod)
+		if executionField := executionMethodField(publicMethod, method, scope, ctx); executionField != nil {
+			methods.List = append(methods.List, executionField)
+		}
 	}
 	return genInterfaceInContext(classDispatchTypeName(scope), methods, scope.TypeParameters, ctx)
 }
@@ -1703,6 +1867,9 @@ func explicitThisConstructorAssignment(
 	if usesMostDerived {
 		constructorName = constructorWithSelfName(constructorName)
 	}
+	if executionExpr(ctx) != nil {
+		constructorName += executionMethodSuffix
+	}
 
 	constructor := ast.Expr(&ast.Ident{Name: constructorName})
 	typeArgs := typeParamExprs(ctx.currentClass.TypeParameterNames())
@@ -1712,6 +1879,9 @@ func explicitThisConstructorAssignment(
 	}
 
 	args := make([]ast.Expr, 0, len(invocation.parsedArgs)+2)
+	if execution := executionExpr(ctx); execution != nil {
+		args = append(args, execution)
+	}
 	if usesMostDerived {
 		args = append(args, &ast.Ident{Name: constructorSelfParam})
 	}
@@ -1773,6 +1943,9 @@ func explicitSuperConstructorAssignment(
 		if mostDerived != nil && parent != nil && classHasSelfSetter(parent, ctx) {
 			constructorName = constructorWithSelfName(constructorName)
 		}
+		if executionExpr(ctx) != nil {
+			constructorName += executionMethodSuffix
+		}
 		constructor = qualifiedNameExpr(constructorName, resolveJavaPackageForType(ctx, base, parent), ctx)
 		if len(args) > 0 {
 			constructor = applyTypeArguments(constructor, args)
@@ -1782,6 +1955,9 @@ func explicitSuperConstructorAssignment(
 	callArgs := append([]ast.Expr(nil), invocation.parsedArgs...)
 	if mostDerived != nil && parent != nil && classHasSelfSetter(parent, ctx) {
 		callArgs = append([]ast.Expr{mostDerived}, callArgs...)
+	}
+	if execution := executionExpr(ctx); execution != nil && parent != nil {
+		callArgs = append([]ast.Expr{execution}, callArgs...)
 	}
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.SelectorExpr{
@@ -1810,6 +1986,10 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 	if mostDerived != nil && classHasSelfSetter(parent, ctx) {
 		constructorName = constructorWithSelfName(constructorName)
 		args = append(args, mostDerived)
+	}
+	if execution := executionExpr(ctx); execution != nil {
+		constructorName += executionMethodSuffix
+		args = append([]ast.Expr{execution}, args...)
 	}
 
 	base, typeArgs := parseJavaTypeString(scope.Superclass)
@@ -1844,37 +2024,85 @@ func buildConstructorDeclarations(
 	usesMostDerived bool,
 	ctx Ctx,
 ) []ast.Decl {
-	if !usesMostDerived {
-		return []ast.Decl{genFuncDeclWithTypeParamsInContext(
-			constructorName, typeParams, params, returnType, body, ctx,
-		)}
+	executionName := ctx.executionContextName
+	if executionName == "" {
+		executionName = executionNameForParams(params)
+		ctx.executionContextName = executionName
 	}
 
-	wrapperParams := cloneFieldList(params)
-	internalParams := cloneFieldList(params)
-	internalParams.List = append([]*ast.Field{{
+	if !usesMostDerived {
+		declaration := genFuncDeclWithTypeParamsInContext(
+			constructorName, typeParams, params, returnType, body, ctx,
+		)
+		return buildExecutionAwareFuncDecls(
+			declaration,
+			executionConstructorImplementationName(constructorName, ctx.currentClass),
+			executionName,
+			ctx,
+		)
+	}
+
+	withSelfParams := cloneFieldList(params)
+	if withSelfParams == nil {
+		withSelfParams = &ast.FieldList{}
+	}
+	withSelfParams.List = append([]*ast.Field{{
 		Names: []*ast.Ident{{Name: constructorSelfParam}},
 		Type:  &ast.Ident{Name: "any"},
-	}}, internalParams.List...)
+	}}, withSelfParams.List...)
 
-	internalName := constructorWithSelfName(constructorName)
-	internalFun := ast.Expr(&ast.Ident{Name: internalName})
+	// The ordinary constructor's execution-aware implementation delegates to
+	// the most-derived-aware implementation. Both public entry points remain as
+	// compatibility wrappers that start a fresh logical Java execution, while
+	// constructor chaining uses the hidden forms to preserve reentrancy.
+	internalWithSelfName := executionConstructorWithSelfImplementationName(constructorName, ctx.currentClass)
+	internalWithSelfFun := ast.Expr(&ast.Ident{Name: internalWithSelfName})
 	if len(typeParams) > 0 {
-		internalFun = applyTypeArguments(internalFun, typeParamExprs(symbol.TypeParamNames(typeParams)))
+		internalWithSelfFun = applyTypeArguments(internalWithSelfFun, typeParamExprs(symbol.TypeParamNames(typeParams)))
 	}
-	args := append([]ast.Expr{&ast.Ident{Name: "nil"}}, methodCallArgs(wrapperParams)...)
-	call := &ast.CallExpr{Fun: internalFun, Args: args}
-	if wrapperParams != nil && len(wrapperParams.List) > 0 {
-		if _, variadic := wrapperParams.List[len(wrapperParams.List)-1].Type.(*ast.Ellipsis); variadic {
-			call.Ellipsis = token.Pos(1)
+	forwardArgs := []ast.Expr{
+		&ast.Ident{Name: executionName},
+		&ast.Ident{Name: "nil"},
+	}
+	forwardArgs = append(forwardArgs, methodCallArgs(params)...)
+	forwardCall := &ast.CallExpr{Fun: internalWithSelfFun, Args: forwardArgs}
+	if params != nil && len(params.List) > 0 {
+		if _, variadic := params.List[len(params.List)-1].Type.(*ast.Ellipsis); variadic {
+			forwardCall.Ellipsis = token.Pos(1)
 		}
 	}
-	wrapperBody := &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}}
+	forwardBody := &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{forwardCall}}}}
 
-	return []ast.Decl{
-		genFuncDeclWithTypeParamsInContext(constructorName, typeParams, wrapperParams, returnType, wrapperBody, ctx),
-		genFuncDeclWithTypeParamsInContext(internalName, typeParams, internalParams, returnType, body, ctx),
-	}
+	ordinaryDecl := genFuncDeclWithTypeParamsInContext(
+		constructorName,
+		typeParams,
+		cloneFieldList(params),
+		cloneFieldList(returnType),
+		forwardBody,
+		ctx,
+	)
+	withSelfDecl := genFuncDeclWithTypeParamsInContext(
+		constructorWithSelfName(constructorName),
+		typeParams,
+		withSelfParams,
+		cloneFieldList(returnType),
+		body,
+		ctx,
+	)
+
+	declarations := buildExecutionAwareFuncDecls(
+		ordinaryDecl,
+		executionConstructorImplementationName(constructorName, ctx.currentClass),
+		executionName,
+		ctx,
+	)
+	declarations = append(declarations, buildExecutionAwareFuncDecls(
+		withSelfDecl,
+		internalWithSelfName,
+		executionName,
+		ctx,
+	)...)
+	return declarations
 }
 
 // buildDefaultConstructorDecls synthesizes an implicit no-arg constructor for a
@@ -1890,6 +2118,8 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 	if classHasExplicitConstructor(scope) {
 		return nil
 	}
+	executionName := executionNameForClass(scope)
+	ctx.executionContextName = executionName
 
 	typeParams := scope.TypeParameters
 	var structType ast.Expr = &ast.Ident{Name: ctx.className}
@@ -1949,8 +2179,9 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 			X: &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X:   &ast.Ident{Name: recvName},
-					Sel: &ast.Ident{Name: fieldInitMethodName},
+					Sel: &ast.Ident{Name: executionFieldInitializerMethodName()},
 				},
+				Args: []ast.Expr{&ast.Ident{Name: executionName}},
 			},
 		})
 	}
@@ -2012,10 +2243,10 @@ func generateAbstractClassInterface(ctx Ctx) ast.Decl {
 
 		// Build parameter list
 		params := &ast.FieldList{}
-		for _, param := range method.Parameters {
+		for index, param := range method.Parameters {
 			params.List = append(params.List, &ast.Field{
 				Names: []*ast.Ident{{Name: param.Name}},
-				Type:  javaTypeStringToGoTypeExpr(param.OriginalType, typeParams, ctx),
+				Type:  executionParameterTypeExpr(method, index, param.OriginalType, typeParams, ctx),
 			})
 		}
 
@@ -2029,13 +2260,14 @@ func generateAbstractClassInterface(ctx Ctx) ast.Decl {
 			}
 		}
 
-		methods.List = append(methods.List, &ast.Field{
+		publicMethod := &ast.Field{
 			Names: []*ast.Ident{{Name: method.Name}},
 			Type: &ast.FuncType{
 				Params:  params,
 				Results: results,
 			},
-		})
+		}
+		methods.List = append(methods.List, publicMethod)
 	}
 
 	return genInterfaceInContext(ctx.className+"I", methods, scope.TypeParameters, ctx)
@@ -2139,12 +2371,32 @@ func enumConstantMethodDeclarations(body *sitter.Node) []*sitter.Node {
 	return methods
 }
 
+func declarationHasModifier(node *sitter.Node, modifierName string) bool {
+	if node == nil || node.NamedChildCount() == 0 || node.NamedChild(0).Type() != "modifiers" {
+		return false
+	}
+	for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
+		if modifier.Type() == modifierName {
+			return true
+		}
+	}
+	return false
+}
+
 func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symbol.Definition, ctx Ctx, source []byte, receiverBaseType ast.Expr) *ast.FuncDecl {
 	ctx.localScope = def
+	executionName := executionParameterName(node, source, ctx)
+	ctx.executionContextName = executionName
 	params := ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList)
-	params.List = append([]*ast.Field{{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBaseType}}}, params.List...)
+	params.List = append([]*ast.Field{
+		executionParameterField(executionName, ctx),
+		{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBaseType}},
+	}, params.List...)
 
 	body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
+	if declarationHasModifier(node, "synchronized") {
+		body.List = append(synchronizedMethodPrologue(ctx, false, node, source), body.List...)
+	}
 
 	var results *ast.FieldList
 	if def != nil && strings.TrimSpace(def.OriginalType) != "" && strings.TrimSpace(def.OriginalType) != "void" {
@@ -2153,6 +2405,9 @@ func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symb
 				{Type: javaTypeStringToGoTypeExpr(def.OriginalType, inScopeTypeParameters(ctx), ctx)},
 			},
 		}
+	}
+	if results != nil && bodyNeedsFallbackReturn(body) {
+		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{zeroValueForType(results.List[0].Type)}})
 	}
 
 	return &ast.FuncDecl{
@@ -2164,7 +2419,7 @@ func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symb
 
 func buildEnumMethodWrapper(def *symbol.Definition, overrides map[string]string, defaultImpl string, params *ast.FieldList, results *ast.FieldList, receiver *ast.FieldList, ctx Ctx) *ast.FuncDecl {
 	recvName := ShortName(ctx.className)
-	args := []ast.Expr{&ast.Ident{Name: recvName}}
+	args := []ast.Expr{executionExpr(ctx), &ast.Ident{Name: recvName}}
 	if params != nil {
 		for _, field := range params.List {
 			for _, name := range field.Names {
@@ -2175,15 +2430,19 @@ func buildEnumMethodWrapper(def *symbol.Definition, overrides map[string]string,
 
 	clauses := []ast.Stmt{}
 	for constName, implName := range overrides {
+		call := &ast.CallExpr{Fun: &ast.Ident{Name: implName}, Args: args}
+		markVariadicForwardCall(call, def)
 		clauses = append(clauses, &ast.CaseClause{
 			List: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + constName + "\""}},
-			Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: implName}, Args: args}}}},
+			Body: []ast.Stmt{invocationClosureCallStatement(call, results)},
 		})
 	}
 
 	defaultBody := []ast.Stmt{}
 	if defaultImpl != "" {
-		defaultBody = []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: defaultImpl}, Args: args}}}}
+		call := &ast.CallExpr{Fun: &ast.Ident{Name: defaultImpl}, Args: args}
+		markVariadicForwardCall(call, def)
+		defaultBody = []ast.Stmt{invocationClosureCallStatement(call, results)}
 	} else {
 		panicStmt := &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.Ident{Name: "panic"}, Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"abstract enum method not implemented\""}}}}
 		defaultBody = append(defaultBody, panicStmt)
@@ -2360,12 +2619,21 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 	adapterName := interfaceName + "FuncAdapter"
 	typeParamNames := symbol.TypeParamNames(typeParams)
 	typeArgs := typeParamExprs(typeParamNames)
+	executionName := executionNameForParams(methodType.Params, typeParamNames...)
+	executionFunctionType := cloneFuncType(methodType)
+	if executionFunctionType.Params == nil {
+		executionFunctionType.Params = &ast.FieldList{}
+	}
+	executionFunctionType.Params.List = append(
+		[]*ast.Field{executionParameterField(executionName, ctx)},
+		executionFunctionType.Params.List...,
+	)
 
 	structFields := &ast.FieldList{
 		List: []*ast.Field{
 			{
 				Names: []*ast.Ident{{Name: "fn"}},
-				Type:  cloneFuncType(methodType),
+				Type:  executionFunctionType,
 			},
 		},
 	}
@@ -2392,7 +2660,12 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 			X:   &ast.Ident{Name: receiverName},
 			Sel: &ast.Ident{Name: "fn"},
 		},
-		Args: methodCallArgs(methodParams),
+		Args: append([]ast.Expr{&ast.Ident{Name: executionName}}, methodCallArgs(methodParams)...),
+	}
+	if methodParams != nil && len(methodParams.List) > 0 {
+		if _, variadic := methodParams.List[len(methodParams.List)-1].Type.(*ast.Ellipsis); variadic {
+			call.Ellipsis = token.Pos(1)
+		}
 	}
 
 	body := &ast.BlockStmt{}
@@ -2411,6 +2684,12 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 		},
 		Body: body,
 	}
+	implMethods := buildExecutionAwareFuncDecls(
+		implMethod,
+		executionImplementationName(samDef, scope),
+		executionName,
+		ctx,
+	)
 
 	constructorName := "New" + adapterName
 	constructorParams := &ast.FieldList{
@@ -2428,6 +2707,25 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 		},
 	}
 
+	legacyCall := &ast.CallExpr{
+		Fun:  &ast.Ident{Name: "fn"},
+		Args: methodCallArgs(cloneFieldList(methodType.Params)),
+	}
+	if methodType.Params != nil && len(methodType.Params.List) > 0 {
+		if _, variadic := methodType.Params.List[len(methodType.Params.List)-1].Type.(*ast.Ellipsis); variadic {
+			legacyCall.Ellipsis = token.Pos(1)
+		}
+	}
+	legacyBody := &ast.BlockStmt{}
+	if methodType.Results != nil && len(methodType.Results.List) > 0 {
+		legacyBody.List = []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{legacyCall}}}
+	} else {
+		legacyBody.List = []ast.Stmt{&ast.ExprStmt{X: legacyCall}}
+	}
+	legacyAdapter := &ast.FuncLit{
+		Type: cloneFuncType(executionFunctionType),
+		Body: legacyBody,
+	}
 	constructorBody := &ast.BlockStmt{
 		List: []ast.Stmt{
 			&ast.ReturnStmt{
@@ -2439,7 +2737,7 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 							Elts: []ast.Expr{
 								&ast.KeyValueExpr{
 									Key:   &ast.Ident{Name: "fn"},
-									Value: &ast.Ident{Name: "fn"},
+									Value: legacyAdapter,
 								},
 							},
 						},
@@ -2450,8 +2748,32 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 	}
 
 	constructor := genFuncDeclWithTypeParamsInContext(constructorName, typeParams, constructorParams, constructorResults, constructorBody, ctx)
+	executionConstructorParams := &ast.FieldList{List: []*ast.Field{{
+		Names: []*ast.Ident{{Name: "fn"}},
+		Type:  cloneFuncType(executionFunctionType),
+	}}}
+	executionConstructorBody := &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
+		&ast.UnaryExpr{Op: token.AND, X: &ast.CompositeLit{
+			Type: adapterTypeExpr,
+			Elts: []ast.Expr{&ast.KeyValueExpr{
+				Key:   &ast.Ident{Name: "fn"},
+				Value: &ast.Ident{Name: "fn"},
+			}},
+		}},
+	}}}}
+	executionConstructor := genFuncDeclWithTypeParamsInContext(
+		constructorName+executionMethodSuffix,
+		typeParams,
+		executionConstructorParams,
+		cloneFieldList(constructorResults),
+		executionConstructorBody,
+		ctx,
+	)
 
-	return []ast.Decl{adapterStruct, implMethod, constructor}
+	declarations := []ast.Decl{adapterStruct}
+	declarations = append(declarations, implMethods...)
+	declarations = append(declarations, constructor, executionConstructor)
+	return declarations
 }
 
 // buildEnumConstantInitializer constructs the Go expression used to initialize a single enum constant.
@@ -2596,7 +2918,13 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 		Body: modifiedBody,
 	}
 
-	return []ast.Decl{helperStruct, constructor, funcDecl}
+	methodDecls := buildExecutionAwareFuncDecls(
+		funcDecl,
+		executionImplementationName(def, ctx.currentClass),
+		ctx.executionContextName,
+		ctx,
+	)
+	return append([]ast.Decl{helperStruct, constructor}, methodDecls...)
 }
 
 // synthesizeRawGenericFunctionParameters models Java raw generic parameters on
@@ -2719,6 +3047,8 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		// Search through the current class for the constructor, which is simply labeled as a method
 		ctx.localScope = ctx.currentClass.FindMethod().By(comparison)[0]
+		executionName := executionParameterName(node, source, ctx)
+		ctx.executionContextName = executionName
 
 		bodyNode := node.ChildByFieldName("body")
 		constructorInvocation := constructorInvocationFromBody(bodyNode, source, ctx)
@@ -2800,8 +3130,8 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			if ctx.currentClass.HasInstanceFieldInitializers {
 				body.List = append(body.List, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{
 					X:   &ast.Ident{Name: receiverName},
-					Sel: &ast.Ident{Name: fieldInitMethodName},
-				}}})
+					Sel: &ast.Ident{Name: executionFieldInitializerMethodName()},
+				}, Args: []ast.Expr{&ast.Ident{Name: executionName}}}})
 			}
 		}
 		body.List = append(body.List, userBody...)
@@ -2918,6 +3248,8 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if static {
 			ctx.syntheticTypeParameters, ctx.rawGenericParameterTypes = synthesizeRawGenericFunctionParameters(ctx.localScope, ctx)
 		}
+		executionName := executionParameterName(node, source, ctx)
+		ctx.executionContextName = executionName
 
 		if ctx.currentClass.IsEnum && !static {
 			params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
@@ -2954,7 +3286,12 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 
 			wrapper := buildEnumMethodWrapper(ctx.localScope, overrides, defaultImpl, params, results, receiver, ctx)
-			return append(implDecls, wrapper)
+			return append(implDecls, buildExecutionAwareFuncDecls(
+				wrapper,
+				executionImplementationName(ctx.localScope, ctx.currentClass),
+				executionName,
+				ctx,
+			)...)
 		}
 
 		bodyNode := node.ChildByFieldName("body")
@@ -2997,7 +3334,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// receiver instance for an instance method, or a class-level token for a
 		// static method. Prepend monitor enter + deferred exit.
 		if synchronizedMethod && bodyNode != nil {
-			body.List = append(synchronizedMethodPrologue(ctx, static), body.List...)
+			body.List = append(synchronizedMethodPrologue(ctx, static, node, source), body.List...)
 		}
 
 		// A Go pointer-receiver method may legally execute with a nil receiver,
@@ -3053,10 +3390,27 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				"method": ctx.localScope.Name,
 			}).Warn("Instance methods with type parameters are not supported in Go; type parameters ignored")
 		}
-		return []ast.Decl{funcDecl}
+		return buildExecutionAwareFuncDecls(
+			funcDecl,
+			executionImplementationName(ctx.localScope, ctx.currentClass),
+			executionName,
+			ctx,
+		)
 	case "static_initializer":
 
 		ctx.localScope = &symbol.Definition{}
+		executionName := executionParameterName(node, source, ctx)
+		ctx.executionContextName = executionName
+		body := ParseStmt(node.NamedChild(0), source, ctx).(*ast.BlockStmt)
+		body.List = append([]ast.Stmt{&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: executionName}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{newExecutionExpr(ctx)},
+		}, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: executionName}},
+		}}, body.List...)
 
 		// A block of `static`, which is run before the main function
 		return []ast.Decl{&ast.FuncDecl{
@@ -3064,7 +3418,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			Type: &ast.FuncType{
 				Params: &ast.FieldList{List: []*ast.Field{}},
 			},
-			Body: ParseStmt(node.NamedChild(0), source, ctx).(*ast.BlockStmt),
+			Body: body,
 		}}
 	}
 

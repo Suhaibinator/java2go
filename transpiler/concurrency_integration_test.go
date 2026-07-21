@@ -10,7 +10,8 @@ func TestConcurrency_AnonymousRunnableTranspile(t *testing.T) {
 	// It does NOT embed stdjava.Runnable: Go interface satisfaction is structural,
 	// so the Run() method alone makes the struct a Runnable, and embedding a
 	// stdjava interface as a field is unnecessary (and was a source of bad/bare
-	// embeds). A Runnable-typed call dispatches through the exported Run().
+	// embeds). Java-to-Java Runnable dispatch uses the execution-aware runtime
+	// bridge so monitor ownership follows the logical Java call chain.
 	src := `
 public class R {
     public static void run() {
@@ -29,11 +30,14 @@ public class R {
 	if strings.Contains(flat, "r.run()") {
 		t.Errorf("Runnable.run() should dispatch to exported Run(), got:\n%s", out)
 	}
-	if !strings.Contains(out, ".Run()") {
-		t.Errorf("expected a Run() call, got:\n%s", out)
+	if !strings.Contains(flat, "stdjava.RunRunnableExecution(__java2goExecution, r)") {
+		t.Errorf("expected execution-aware Runnable dispatch, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "func (r1 *RAnon1) Run()") {
 		t.Errorf("expected the synthesized struct to implement Run(), got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func (r1 *RAnon1) RunJava2goExecution(__java2goExecution *stdjava.Execution)") {
+		t.Errorf("expected the synthesized struct to propagate Java execution identity, got:\n%s", out)
 	}
 }
 
@@ -76,13 +80,13 @@ public class Counter {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.MonitorEnter(") {
+	if !strings.Contains(out, "stdjava.MonitorEnterExecution(") {
 		t.Errorf("instance synchronized method should enter a monitor, got:\n%s", out)
 	}
-	if !strings.Contains(out, "stdjava.ClassMonitorEnter(") {
+	if !strings.Contains(out, "stdjava.ClassMonitorEnterExecution(") {
 		t.Errorf("static synchronized method should enter a class monitor, got:\n%s", out)
 	}
-	if !strings.Contains(out, "defer stdjava.MonitorExit(") {
+	if !strings.Contains(out, "defer stdjava.MonitorExitExecution(") {
 		t.Errorf("synchronized method should defer monitor exit, got:\n%s", out)
 	}
 }
@@ -109,9 +113,9 @@ public class Box {
 `
 	out := renderGoFileFromJava(t, src)
 	for _, want := range []string{
-		"stdjava.MonitorNotifyAll(",
-		"stdjava.MonitorWait(",
-		"stdjava.MonitorEnter(",
+		"stdjava.MonitorNotifyAllExecution(",
+		"stdjava.MonitorWaitExecution(",
+		"stdjava.MonitorEnterExecution(",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("expected wait/notify lowering to contain %q, got:\n%s", want, out)

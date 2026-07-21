@@ -84,13 +84,13 @@ func TestFullProgram_MethodReferencesAndNestedConstructors(t *testing.T) {
 	outputs := convertJavaProjectDir(t, root)
 	outer := normalizeSpaces(outputs["com/acme/refs/Outer.go"])
 
-	if !strings.Contains(outer, "NewMapperFuncAdapter[string, string](Id)") {
+	if !strings.Contains(outer, "NewMapperFuncAdapterJava2goExecution[string, string](IdJava2goExecution)") {
 		t.Fatalf("expected static method reference to map through SAM adapter:\n%s", outputs["com/acme/refs/Outer.go"])
 	}
 	// Inner (non-static) class: `this.new Inner(in)` lowers to the renamed
 	// nested-class constructor and threads the enclosing instance as the leading
 	// argument, e.g. NewOuterInner(or, in).
-	if !strings.Contains(outer, "NewOuterInner(or, in)") {
+	if !strings.Contains(outer, "NewOuterInnerJava2goExecution(__java2goExecution, or, in)") {
 		t.Fatalf("expected inner-class constructor call to thread the enclosing instance, got:\n%s", outputs["com/acme/refs/Outer.go"])
 	}
 }

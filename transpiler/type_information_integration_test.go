@@ -43,13 +43,13 @@ public class Demo {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "func(v string)") {
+	if !strings.Contains(out, "func(__java2goExecution *stdjava.Execution, v string)") {
 		t.Fatalf("expected lambda parameter type to be inferred from declaration type, got:\n%s", out)
 	}
-	if !strings.Contains(out, "func(v string) string") {
+	if !strings.Contains(out, "func(__java2goExecution *stdjava.Execution, v string) string") {
 		t.Fatalf("expected lambda return type to be inferred from declaration type, got:\n%s", out)
 	}
-	if !strings.Contains(out, "NewMapperFuncAdapter[string, string]") {
+	if !strings.Contains(out, "NewMapperFuncAdapterJava2goExecution[string, string]") {
 		t.Fatalf("expected lambda to be wrapped in functional interface adapter, got:\n%s", out)
 	}
 }
@@ -67,13 +67,13 @@ public class Demo {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "func(v string) string") {
+	if !strings.Contains(out, "func(__java2goExecution *stdjava.Execution, v string) string") {
 		t.Fatalf("expected lambda parameter type to be inferred from method argument type, got:\n%s", out)
 	}
 	if !strings.Contains(out, "func Accept(mapper Mapper[string, string])") {
 		t.Fatalf("expected interface-typed parameter without pointer, got:\n%s", out)
 	}
-	if !strings.Contains(out, "Accept(NewMapperFuncAdapter[string, string]") {
+	if !strings.Contains(out, "AcceptJava2goExecution(__java2goExecution, NewMapperFuncAdapterJava2goExecution[string, string]") {
 		t.Fatalf("expected lambda argument to be wrapped in functional interface adapter, got:\n%s", out)
 	}
 	if !strings.Contains(out, "type MapperFuncAdapter[T any, R any] struct") {

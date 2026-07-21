@@ -131,7 +131,7 @@ public class FieldInitProgram {
 	if !strings.Contains(flat, "var ( seed int32 total int32 )") {
 		t.Fatalf("expected all static fields to receive Java defaults before initialization, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func init() { seed = 7 total = seed + 3 }") {
+	if !strings.Contains(flat, "func init() { __java2goExecution := stdjava.NewExecution() _ = __java2goExecution seed = 7 total = seed + 3 }") {
 		t.Fatalf("expected source-ordered static field initialization after defaults, got:\n%s", out)
 	}
 	if !strings.Contains(out, "__java2goInitFields") {

@@ -22,8 +22,9 @@ public class T {
 	if !strings.Contains(out, "func() int32") || !strings.Contains(out, "if b") {
 		t.Errorf("expected typed lazy ternary IIFE, got:\n%s", out)
 	}
-	if strings.Contains(out, `stdjava "github.com/NickyBoy89/java2go/stdjava"`) {
-		t.Errorf("ternary alone must not retain a stdjava import, got:\n%s", out)
+	if !strings.Contains(out, `stdjava "github.com/NickyBoy89/java2go/stdjava"`) ||
+		!strings.Contains(out, "PickJava2goExecution(stdjava.NewExecution(), b)") {
+		t.Errorf("expected the public ABI wrapper to create a Java execution, got:\n%s", out)
 	}
 }
 
@@ -247,7 +248,7 @@ public class AnimalMain {
 	if !strings.Contains(flat, "type dog struct { *animal") {
 		t.Errorf("expected embed of `*animal` (lowercased), got:\n%s", out)
 	}
-	if !strings.Contains(flat, "dg.animal = newAnimalJava2goWithSelf(__java2goMostDerived, name)") {
+	if !strings.Contains(flat, "dg.animal = newAnimalJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, name)") {
 		t.Errorf("expected the super constructor call to preserve the most-derived receiver, got:\n%s", out)
 	}
 	if strings.Contains(out, "Newanimal") {
@@ -357,8 +358,8 @@ public class Maker {
 	if strings.Contains(out, "Newrectangle") {
 		t.Errorf("constructor call should be `newRectangle`, not miscased `Newrectangle`:\n%s", out)
 	}
-	if !strings.Contains(out, "newRectangle(2.0, 3.0)") {
-		t.Errorf("expected `newRectangle(2.0, 3.0)`, got:\n%s", out)
+	if !strings.Contains(out, "newRectangleJava2goExecution(__java2goExecution, 2.0, 3.0)") {
+		t.Errorf("expected execution-aware `newRectangle(2.0, 3.0)`, got:\n%s", out)
 	}
 }
 
@@ -390,7 +391,7 @@ public class App {
 		t.Errorf("expected struct to embed `greeter`, got:\n%s", out)
 	}
 	// Interface element type is by value, not a pointer.
-	if !strings.Contains(flat, "stdjava.ArrayLiteral[greeter](newFormal())") {
+	if !strings.Contains(flat, "stdjava.ArrayLiteral[greeter](newFormalJava2goExecution(__java2goExecution))") {
 		t.Errorf("expected identity-preserving ArrayLiteral[greeter] with an interface value element, got:\n%s", out)
 	}
 }

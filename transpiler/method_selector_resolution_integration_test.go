@@ -29,10 +29,10 @@ public class Report {
 
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["example/report/Report.go"]
-	if !strings.Contains(out, "ranker.Sort(values)") {
+	if !strings.Contains(out, "ranker.SortJava2goExecution(__java2goExecution, values)") {
 		t.Fatalf("expected a parameterized method call to use its resolved exported Go name, got:\n%s", out)
 	}
-	if strings.Contains(out, "ranker.sort(values)") {
+	if strings.Contains(out, "ranker.sortJava2goExecution(") {
 		t.Fatalf("parameterized method call retained Java casing:\n%s", out)
 	}
 }
@@ -72,10 +72,10 @@ public class Application {
 
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["example/app/Application.go"]
-	if !strings.Contains(out, "engine.AddRule(rules.NewTextRule())") {
+	if !strings.Contains(out, "engine.AddRuleJava2goExecution(__java2goExecution, rules.NewTextRuleJava2goExecution(__java2goExecution))") {
 		t.Fatalf("expected a cross-package generic receiver call to use its resolved exported Go name, got:\n%s", out)
 	}
-	if strings.Contains(out, "engine.addRule(") {
+	if strings.Contains(out, "engine.addRuleJava2goExecution(") {
 		t.Fatalf("cross-package generic receiver call retained Java casing:\n%s", out)
 	}
 }
@@ -106,10 +106,10 @@ public class Application {
 
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["example/app/Application.go"]
-	if !strings.Contains(out, ".InheritedLabel()") {
+	if !strings.Contains(out, ".InheritedLabelJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected a child receiver to use the inherited method's resolved exported name, got:\n%s", out)
 	}
-	if strings.Contains(out, ".inheritedLabel()") {
+	if strings.Contains(out, ".inheritedLabelJava2goExecution(") {
 		t.Fatalf("cross-package superclass traversal retained Java casing:\n%s", out)
 	}
 }

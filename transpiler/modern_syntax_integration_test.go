@@ -324,7 +324,7 @@ public class App {
 	if !strings.Contains(flat, "func init0(name string, value int32) int32") {
 		t.Fatalf("expected init method renamed to init0, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "init0(\"a\", 5)") {
+	if !strings.Contains(flat, "init0Java2goExecution(__java2goExecution, \"a\", 5)") {
 		t.Fatalf("expected call site to use the renamed init0, got:\n%s", out)
 	}
 }

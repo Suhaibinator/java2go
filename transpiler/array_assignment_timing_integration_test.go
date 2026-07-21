@@ -141,12 +141,13 @@ public class ArrayAssignmentTimingProgram {
 	out := renderGoFileFromJava(t, src)
 	for _, functionName := range []string{"NullOrder", "ExpressionNullOrder"} {
 		function := generatedFunctionText(out, functionName)
-		if !strings.Contains(function, "stdjava.ArraySet(array(") {
+		if !strings.Contains(function, "stdjava.ArraySet(arrayJava2goExecution(__java2goExecution,") {
 			t.Fatalf("%s must stage its simple array store through ArraySet:\n%s", functionName, function)
 		}
 	}
 	compound := generatedFunctionText(out, "CompoundStillUsesItsExistingPath")
-	if strings.Contains(compound, "ArraySet(array(3)") || !strings.Contains(compound, "func(dst *int32)") {
+	if strings.Contains(compound, "ArraySet(arrayJava2goExecution(__java2goExecution, 3)") ||
+		!strings.Contains(compound, "func(dst *int32)") {
 		t.Fatalf("compound array assignment must retain its existing lowering:\n%s", compound)
 	}
 

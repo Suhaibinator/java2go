@@ -106,7 +106,7 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	}
 
 	parseTaskOut := normalizeSpaces(outputs["com/acme/domain/ParseTask.go"])
-	if !strings.Contains(parseTaskOut, "common.NewMapperFuncAdapter[string, string]") {
+	if !strings.Contains(parseTaskOut, "common.NewMapperFuncAdapterJava2goExecution[string, string]") {
 		t.Fatalf("expected package-qualified lambda wrapper call in ParseTask:\n%s", outputs["com/acme/domain/ParseTask.go"])
 	}
 	if !strings.Contains(parseTaskOut, "any(normalized).(string)") {
@@ -155,7 +155,7 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	}
 
 	mainOut := normalizeSpaces(outputs["com/acme/app/MainApp.go"])
-	if !strings.Contains(mainOut, "domain.NewParseTask(\"alpha\")") {
+	if !strings.Contains(mainOut, "domain.NewParseTaskJava2goExecution(__java2goExecution, \"alpha\")") {
 		t.Fatalf("expected package-qualified constructor call in MainApp:\n%s", outputs["com/acme/app/MainApp.go"])
 	}
 	if !strings.Contains(mainOut, "common.ModeValueOf(\"FAST\")") {
@@ -167,7 +167,8 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	if !strings.Contains(mainOut, "common \"com/acme/common\"") || !strings.Contains(mainOut, "domain \"com/acme/domain\"") {
 		t.Fatalf("expected generated imports for referenced packages in MainApp:\n%s", outputs["com/acme/app/MainApp.go"])
 	}
-	if !strings.Contains(mainOut, "Pipeline.Execute") && !strings.Contains(mainOut, "Execute(") {
+	if !strings.Contains(mainOut, "Pipeline.ExecuteJava2goExecution") &&
+		!strings.Contains(mainOut, "ExecuteJava2goExecution(__java2goExecution,") {
 		t.Fatalf("expected pipeline execution call in MainApp:\n%s", outputs["com/acme/app/MainApp.go"])
 	}
 }

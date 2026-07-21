@@ -58,7 +58,7 @@ public class EnumText {
 	if !strings.Contains(flat, "return dy.enumName") {
 		t.Fatalf("expected enum String method to return its Java name, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.StringValueOf(selected)") {
+	if !strings.Contains(flat, "stdjava.StringValueOf(selected.StringJava2goExecution(__java2goExecution))") {
 		t.Fatalf("expected String.valueOf(enum) to use Java conversion semantics, got:\n%s", out)
 	}
 }
@@ -78,7 +78,8 @@ public class CustomEnumText {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "func (cl *CustomLabel) String() string") || !strings.Contains(flat, "return cl.ToString()") {
+	if !strings.Contains(flat, "func (cl *CustomLabel) String() string") ||
+		!strings.Contains(flat, "return cl.ToStringJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected fmt.Stringer bridge to delegate to enum toString override, got:\n%s", out)
 	}
 

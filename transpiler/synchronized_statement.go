@@ -33,6 +33,16 @@ func lowerSynchronizedStatement(node *sitter.Node, source []byte, ctx Ctx) []ast
 	}
 	usedNames := affineLoopUsedNames(usedNameRoot, source, ctx)
 	monitorName := synchronizedUniqueLocalName("__java2goMonitor"+suffix, usedNames)
+	executionName := ctx.executionContextName
+	var executionInit ast.Stmt
+	if executionName == "" {
+		executionName = synchronizedUniqueLocalName(executionParamBase+suffix, usedNames)
+		executionInit = &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: executionName}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{newExecutionExpr(ctx)},
+		}
+	}
 	shouldReturnName := synchronizedUniqueLocalName("__java2goSyncShouldReturn"+suffix, usedNames)
 	returnValueName := synchronizedUniqueLocalName("__java2goSyncReturnValue"+suffix, usedNames)
 	controlName := synchronizedUniqueLocalName("__java2goSyncControl"+suffix, usedNames)
@@ -54,6 +64,9 @@ func lowerSynchronizedStatement(node *sitter.Node, source []byte, ctx Ctx) []ast
 		ControlName: controlName,
 	}
 	bodyCtx := ctx.Clone()
+	bodyCtx.executionContextName = executionName
+	lockCtx := ctx.Clone()
+	lockCtx.executionContextName = executionName
 	bodyCtx.tryReturnTarget = returnTarget
 	bodyCtx.tryControlBoundary = blockNode
 	body := ParseStmt(blockNode, source, bodyCtx).(*ast.BlockStmt)
@@ -79,20 +92,25 @@ func lowerSynchronizedStatement(node *sitter.Node, source []byte, ctx Ctx) []ast
 		&ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.Ident{Name: monitorName}},
 			Tok: token.DEFINE,
-			Rhs: []ast.Expr{stdjavaCall(ctx, "MonitorEnter", ParseExpr(lockNode, source, ctx))},
+			Rhs: []ast.Expr{stdjavaCall(ctx, "MonitorEnterExecution",
+				&ast.Ident{Name: executionName}, ParseExpr(lockNode, source, lockCtx))},
 		},
 		&ast.DeferStmt{
-			Call: stdjavaCall(ctx, "MonitorExit", &ast.Ident{Name: monitorName}),
+			Call: stdjavaCall(ctx, "MonitorExitExecution", &ast.Ident{Name: monitorName}),
 		},
 	}, body.List...)
 
-	statements := []ast.Stmt{
+	statements := []ast.Stmt{}
+	if executionInit != nil {
+		statements = append(statements, executionInit)
+	}
+	statements = append(statements,
 		&ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: varSpecs}},
 		&ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.FuncLit{
 			Type: &ast.FuncType{},
 			Body: &ast.BlockStmt{List: guarded},
 		}}},
-	}
+	)
 	statements = append(statements, synchronizedReturnReplay(returnTarget, ctx))
 	statements = append(statements, synchronizedControlReplay(returnTarget, ctx)...)
 	return statements

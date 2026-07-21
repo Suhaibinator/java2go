@@ -75,7 +75,7 @@ public class DeclaredTypeProgram {
 `
 
 	out := normalizeSpaces(renderGoFileFromJava(t, src))
-	if !strings.Contains(out, "return Choose0(value)") {
+	if !strings.Contains(out, "return Choose0Java2goExecution(__java2goExecution, value)") {
 		t.Fatalf("expected overload selection to use Object, the local's declared Java type, got:\n%s", out)
 	}
 }

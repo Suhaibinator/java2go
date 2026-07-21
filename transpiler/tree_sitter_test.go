@@ -131,9 +131,10 @@ public class TestProgram {}
 		t.Errorf("Expected package name 'example', got '%s'", file.Name.Name)
 	}
 
-	// Imports are only emitted when imported types are used in generated declarations.
-	if len(file.Imports) != 0 {
-		t.Errorf("Expected 0 imports for unused import declarations, got %d", len(file.Imports))
+	// The unused Java import is omitted; only the execution-ABI runtime import remains.
+	if len(file.Imports) != 1 || file.Imports[0].Name == nil || file.Imports[0].Name.Name != "stdjava" ||
+		file.Imports[0].Path.Value != `"github.com/NickyBoy89/java2go/stdjava"` {
+		t.Errorf("Expected only the stdjava execution-ABI import, got %#v", file.Imports)
 	}
 }
 
@@ -604,7 +605,10 @@ public class Pair<K, V> {
 		}
 		output := buf.String()
 
-		if !strings.Contains(output, "NewPair[String, Integer]") && !strings.Contains(output, "NewPair[string, *Integer]") && !strings.Contains(output, "NewPair[string,*Integer]") && !strings.Contains(output, "NewPair[string, int32]") {
+		if !strings.Contains(output, "NewPairJava2goExecution[String, Integer]") &&
+			!strings.Contains(output, "NewPairJava2goExecution[string, *Integer]") &&
+			!strings.Contains(output, "NewPairJava2goExecution[string,*Integer]") &&
+			!strings.Contains(output, "NewPairJava2goExecution[string, int32]") {
 			t.Errorf("Diamond operator should infer multiple type arguments, got:\n%s", output)
 		}
 	})
@@ -773,7 +777,7 @@ public class Box<T> {
 	if !strings.Contains(output, "func NewBoxIdentityHelper") {
 		t.Errorf("Expected helper constructor for instance generic method, got:\n%s", output)
 	}
-	if !strings.Contains(output, "NewBoxIdentityHelper") || !strings.Contains(output, ".Identity(") {
+	if !strings.Contains(output, "NewBoxIdentityHelper") || !strings.Contains(output, ".IdentityJava2goExecution(") {
 		t.Errorf("Expected call sites to use helper, got:\n%s", output)
 	}
 }
@@ -954,9 +958,9 @@ public class LinkedList<E> {
 	// collision-safe LinkedListnode, and its constructor follows that name so the
 	// call binds to the actual generated struct, e.g. newLinkedListnode[E](e).
 	if !strings.Contains(output, "[E]") ||
-		(!strings.Contains(output, "newLinkedListnode[E]") &&
-			!strings.Contains(output, "NewLinkedListnode[E]") &&
-			!strings.Contains(output, "ConstructNode[E]")) {
+		(!strings.Contains(output, "newLinkedListnodeJava2goExecution[E]") &&
+			!strings.Contains(output, "NewLinkedListnodeJava2goExecution[E]") &&
+			!strings.Contains(output, "ConstructNodeJava2goExecution[E]")) {
 		t.Errorf("Inner class constructor should use parent type param [E] and the renamed nested-class name, got:\n%s", output)
 	}
 }

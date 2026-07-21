@@ -929,7 +929,10 @@ class __java2goAffineRow123ColumnStart {}
 }
 
 func generatedFunctionText(out, name string) string {
-	start := strings.Index(out, "func "+name+"(")
+	start := strings.Index(out, "func "+name+"Java2goExecution(")
+	if start < 0 {
+		start = strings.Index(out, "func "+name+"(")
+	}
 	if start < 0 {
 		return ""
 	}

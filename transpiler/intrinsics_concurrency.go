@@ -111,6 +111,9 @@ func registerObjectMonitorIntrinsics() {
 			if recv == nil || len(args) != 0 {
 				return nil
 			}
+			if execution := executionExpr(ctx); execution != nil {
+				return stdjavaCall(ctx, runtimeFn+"Execution", execution, recv)
+			}
 			return stdjavaCall(ctx, runtimeFn, recv)
 		})
 	}
@@ -181,25 +184,69 @@ func threadBaseWiringStmt(ctx Ctx) ast.Stmt {
 // receiver; a static method locks a class-level token keyed by the generated
 // type name. The acquired mutex is stored in a uniquely-named local so the
 // deferred MonitorExit can release it.
-func synchronizedMethodPrologue(ctx Ctx, static bool) []ast.Stmt {
-	monName := "__java2goMethodMonitor"
+func synchronizedMethodPrologue(ctx Ctx, static bool, node *sitter.Node, source []byte) []ast.Stmt {
+	usedNames := affineLoopUsedNames(node, source, ctx)
+	monName := synchronizedUniqueLocalName("__java2goMethodMonitor", usedNames)
+	execution := executionExpr(ctx)
+	var setup []ast.Stmt
+	if execution == nil {
+		executionName := synchronizedUniqueLocalName(executionParamBase, usedNames)
+		execution = &ast.Ident{Name: executionName}
+		setup = append(setup, &ast.AssignStmt{
+			Lhs: []ast.Expr{execution},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{newExecutionExpr(ctx)},
+		})
+	}
 	var enter ast.Expr
 	if static {
-		enter = stdjavaCall(ctx, "ClassMonitorEnter",
-			&ast.BasicLit{Kind: token.STRING, Value: `"` + ctx.className + `"`})
+		enter = stdjavaCall(ctx, "ClassMonitorEnterExecution", execution,
+			&ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(javaBinaryClassName(ctx))})
 	} else {
-		enter = stdjavaCall(ctx, "MonitorEnter", &ast.Ident{Name: ShortName(ctx.className)})
+		enter = stdjavaCall(ctx, "MonitorEnterExecution", execution, &ast.Ident{Name: ShortName(ctx.className)})
 	}
-	return []ast.Stmt{
+	return append(setup,
 		&ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.Ident{Name: monName}},
 			Tok: token.DEFINE,
 			Rhs: []ast.Expr{enter},
 		},
 		&ast.DeferStmt{
-			Call: stdjavaCall(ctx, "MonitorExit", &ast.Ident{Name: monName}),
+			Call: stdjavaCall(ctx, "MonitorExitExecution", &ast.Ident{Name: monName}),
 		},
+	)
+}
+
+// javaBinaryClassName returns the identity used by a Java class literal and by
+// static synchronized methods. Java distinguishes equal simple names in
+// different packages and uses '$' between an enclosing class and a nested
+// declaration, so the generated monitor key must retain both pieces.
+func javaBinaryClassName(ctx Ctx) string {
+	var reversed []string
+	for scope := ctx.currentClass; scope != nil; scope = scope.Enclosing {
+		if scope.Class == nil {
+			continue
+		}
+		name := scope.Class.OriginalName
+		if name == "" {
+			name = scope.Class.Name
+		}
+		if name != "" {
+			reversed = append(reversed, name)
+		}
 	}
+	names := make([]string, len(reversed))
+	for index := range reversed {
+		names[len(reversed)-1-index] = reversed[index]
+	}
+	name := strings.Join(names, "$")
+	if name == "" {
+		name = ctx.className
+	}
+	if ctx.currentFile != nil && ctx.currentFile.Package != "" {
+		return ctx.currentFile.Package + "." + name
+	}
+	return name
 }
 
 // selectorCall builds recv.MethodName(args...), used to map a Java instance
@@ -293,11 +340,15 @@ func registerThreadIntrinsics() {
 		})
 	}
 
-	// runnable.run() -> runnable.Run(): a value typed Runnable (e.g. a captured
-	// anonymous Runnable) invokes the exported method on the stdjava interface.
+	// runnable.run() stays inside the caller's logical Java execution. Generated
+	// adapters receive that token; handwritten Go Runnable values fall back to
+	// their public Run method inside the runtime helper.
 	registerInstanceIntrinsic("Runnable", "run", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if recv == nil || len(args) != 0 {
 			return nil
+		}
+		if execution := executionExpr(ctx); execution != nil {
+			return stdjavaCall(ctx, "RunRunnableExecution", execution, recv)
 		}
 		return selectorCall(recv, "Run", nil)
 	})

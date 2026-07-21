@@ -217,7 +217,7 @@ public class Holder {
 	if strings.Contains(out, "int32(len(") {
 		t.Fatalf("user method length() was incorrectly rewritten as a String intrinsic:\n%s", out)
 	}
-	assertContains(t, out, "h.Length()")
+	assertContains(t, out, "h.LengthJava2goExecution(__java2goExecution)")
 }
 
 func TestIntrinsics_StringLiteralReceiver(t *testing.T) {
@@ -284,7 +284,7 @@ public class Boxes<T> {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "NewBoxes[int32](42)")
+	assertContains(t, out, "NewBoxesJava2goExecution[int32](__java2goExecution, 42)")
 	if strings.Contains(out, "*Integer") || strings.Contains(out, "*Long") || strings.Contains(out, "*Double") || strings.Contains(out, "*Boolean") {
 		t.Fatalf("boxed type leaked as an undefined pointer type:\n%s", out)
 	}

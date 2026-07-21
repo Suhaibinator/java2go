@@ -60,8 +60,8 @@ public class RawGenericProgram<T> {
 		"next *RawGenericProgramNode[T]",
 		"return *new(T)",
 		"func assertValue[ListT any](list *RawGenericProgram[ListT], expected int32)",
-		"any(list.get()).(int32)",
-		"stdjava.StringValueOf(rhs)",
+		"any(list.getJava2goExecution(__java2goExecution)).(int32)",
+		"stdjava.StringValueOfExecution(__java2goExecution, rhs)",
 	} {
 		if !strings.Contains(flat, expected) {
 			t.Fatalf("expected generated generic program to contain %q, got:\n%s", expected, out)

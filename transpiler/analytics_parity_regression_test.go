@@ -46,8 +46,9 @@ public class FieldBackedCalls {
 
 	out := renderGoFileFromJava(t, src)
 	checks := []string{
-		".parser.Parse()",
-		".worker.Name()",
+		"__java2goInvocationReceiver := fs.parser",
+		".ParseJava2goExecution(__java2goExecution)",
+		".worker.NameJava2goExecution(__java2goExecution)",
 		".values.Add(",
 		".values.Get(0)",
 		".values.Size()",
@@ -98,7 +99,8 @@ public class Engine {
 	if !strings.Contains(flat, "func NewEngine(policy ScorePolicyI)") {
 		t.Fatalf("expected constructor parameter to use the same companion interface:\n%s", flat)
 	}
-	if !strings.Contains(flat, ".policy.Score(6)") {
+	if !strings.Contains(flat, "__java2goInvocationReceiver := ee.policy") ||
+		!strings.Contains(flat, "ScoreJava2goExecution(__java2goExecution, __java2goInvocationArg0)") {
 		t.Fatalf("expected method resolution through the abstract-class field:\n%s", flat)
 	}
 }
@@ -133,10 +135,11 @@ public class StableRanker<T extends Ranked> {
 	if strings.Contains(flat, "T *Ranked") {
 		t.Fatalf("interface upper bound must not be pointer-wrapped:\n%s", out)
 	}
-	if !strings.Contains(flat, "left.PrimaryScore()") || !strings.Contains(flat, "right.PrimaryScore()") {
+	if strings.Count(flat, ".PrimaryScoreJava2goExecution(__java2goExecution)") != 4 {
 		t.Fatalf("expected type-parameter receiver calls to use Ranked's generated method names:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.StringCompareTo(stdjava.StringRequireNonNull(left.StableKey()), right.StableKey())") {
+	if !strings.Contains(flat, "stdjava.StringCompareTo(stdjava.StringRequireNonNull(func() string") ||
+		strings.Count(flat, ".StableKeyJava2goExecution(__java2goExecution)") != 2 {
 		t.Fatalf("expected String return from the bound method to drive compareTo intrinsic lowering:\n%s", out)
 	}
 }

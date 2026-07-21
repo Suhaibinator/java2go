@@ -4,6 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestAtomicInteger_ConcurrentIncrement(t *testing.T) {
@@ -171,6 +172,25 @@ func TestThread_JoinWithoutStartDoesNotBlock(t *testing.T) {
 	th.Join()
 }
 
+func TestThread_ExecutionAwareRunnableReceivesFreshExecution(t *testing.T) {
+	tokens := make(chan *Execution, 2)
+	first := NewThread(func(execution *Execution) { tokens <- execution })
+	second := NewThread(func(execution *Execution) { tokens <- execution })
+	first.Start()
+	second.Start()
+	first.Join()
+	second.Join()
+
+	firstExecution := <-tokens
+	secondExecution := <-tokens
+	if firstExecution == nil || secondExecution == nil {
+		t.Fatal("Thread.Start passed a nil Java execution token")
+	}
+	if firstExecution == secondExecution {
+		t.Fatal("independent Java threads shared one execution token")
+	}
+}
+
 func TestMonitor_MutualExclusion(t *testing.T) {
 	lock := NewObject()
 	counter := 0
@@ -219,7 +239,11 @@ func TestMonitor_ArrayAliasHasStableIdentity(t *testing.T) {
 	}
 
 	arrayMonitor.Lock()
+	array[0] = 9
 	arrayMonitor.Unlock()
+	if alias[0] != 9 {
+		t.Fatal("array alias did not observe mutation performed under its shared monitor")
+	}
 }
 
 func TestMonitor_DistinctArraysHaveDistinctIdentity(t *testing.T) {
@@ -390,6 +414,228 @@ func TestMonitor_WaitNotify(t *testing.T) {
 	}
 }
 
+func TestMonitor_ReentrantEntryUsesExecutionIdentity(t *testing.T) {
+	lock := NewObject()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		execution := NewExecution()
+		outer := MonitorEnterExecution(execution, lock)
+		inner := MonitorEnterExecution(execution, lock)
+		MonitorExitExecution(inner)
+		MonitorExitExecution(outer)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("same Java execution deadlocked on reentrant monitor entry")
+	}
+}
+
+func TestMonitor_ReentrantDepthStillExcludesCompetingExecution(t *testing.T) {
+	lock := NewObject()
+	owner := NewExecution()
+	outer := MonitorEnterExecution(owner, lock)
+	inner := MonitorEnterExecution(owner, lock)
+
+	started := make(chan struct{})
+	acquired := make(chan struct{})
+	releaseCompetitor := make(chan struct{})
+	go func() {
+		close(started)
+		guard := MonitorEnterExecution(NewExecution(), lock)
+		close(acquired)
+		<-releaseCompetitor
+		MonitorExitExecution(guard)
+	}()
+	<-started
+
+	assertBlocked := func(stage string) {
+		t.Helper()
+		select {
+		case <-acquired:
+			t.Fatalf("competing execution acquired monitor %s", stage)
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+	assertBlocked("while depth was two")
+	MonitorExitExecution(inner)
+	assertBlocked("after only the inner entry exited")
+	MonitorExitExecution(outer)
+
+	select {
+	case <-acquired:
+		close(releaseCompetitor)
+	case <-time.After(2 * time.Second):
+		t.Fatal("competing execution did not acquire after final monitor exit")
+	}
+}
+
+func TestMonitor_ExecutionAndLegacyEntriesShareExclusion(t *testing.T) {
+	lock := NewObject()
+	legacy := MonitorEnter(lock)
+	explicitAcquired := make(chan struct{})
+	go func() {
+		guard := MonitorEnterExecution(NewExecution(), lock)
+		close(explicitAcquired)
+		MonitorExitExecution(guard)
+	}()
+	select {
+	case <-explicitAcquired:
+		t.Fatal("explicit execution bypassed a legacy monitor owner")
+	case <-time.After(50 * time.Millisecond):
+	}
+	MonitorExit(legacy)
+	select {
+	case <-explicitAcquired:
+	case <-time.After(2 * time.Second):
+		t.Fatal("explicit execution did not acquire after legacy monitor exit")
+	}
+
+	explicit := MonitorEnterExecution(NewExecution(), lock)
+	legacyAcquired := make(chan struct{})
+	go func() {
+		guard := MonitorEnter(lock)
+		close(legacyAcquired)
+		MonitorExit(guard)
+	}()
+	select {
+	case <-legacyAcquired:
+		t.Fatal("legacy caller bypassed an explicit execution owner")
+	case <-time.After(50 * time.Millisecond):
+	}
+	MonitorExitExecution(explicit)
+	select {
+	case <-legacyAcquired:
+	case <-time.After(2 * time.Second):
+		t.Fatal("legacy caller did not acquire after explicit monitor exit")
+	}
+}
+
+func TestMonitor_WaitReleasesAndRestoresReentrantDepth(t *testing.T) {
+	lock := NewObject()
+	waiterExecution := NewExecution()
+	waiting := make(chan struct{})
+	waitReturned := make(chan struct{})
+	innerExited := make(chan struct{})
+	allowFinalExit := make(chan struct{})
+	waiterDone := make(chan struct{})
+
+	go func() {
+		defer close(waiterDone)
+		outer := MonitorEnterExecution(waiterExecution, lock)
+		inner := MonitorEnterExecution(waiterExecution, lock)
+		close(waiting)
+		MonitorWaitExecution(waiterExecution, lock)
+		close(waitReturned)
+		MonitorExitExecution(inner)
+		close(innerExited)
+		<-allowFinalExit
+		MonitorExitExecution(outer)
+	}()
+	<-waiting
+
+	notified := make(chan struct{})
+	allowNotifierExit := make(chan struct{})
+	go func() {
+		notifierExecution := NewExecution()
+		notifier := MonitorEnterExecution(notifierExecution, lock)
+		MonitorNotifyAllExecution(notifierExecution, lock)
+		close(notified)
+		<-allowNotifierExit
+		MonitorExitExecution(notifier)
+	}()
+	<-notified
+	select {
+	case <-waitReturned:
+		t.Fatal("notified waiter bypassed the notifier before it exited the monitor")
+	case <-time.After(50 * time.Millisecond):
+	}
+	close(allowNotifierExit)
+	select {
+	case <-waitReturned:
+	case <-time.After(2 * time.Second):
+		t.Fatal("waiter did not reacquire its monitor after notification")
+	}
+	<-innerExited
+
+	competitorAcquired := make(chan struct{})
+	go func() {
+		guard := MonitorEnterExecution(NewExecution(), lock)
+		close(competitorAcquired)
+		MonitorExitExecution(guard)
+	}()
+	select {
+	case <-competitorAcquired:
+		t.Fatal("wait() restored only one entry instead of the full reentrant depth")
+	case <-time.After(50 * time.Millisecond):
+	}
+	close(allowFinalExit)
+	select {
+	case <-competitorAcquired:
+	case <-time.After(2 * time.Second):
+		t.Fatal("competitor did not acquire after restored outer entry exited")
+	}
+	<-waiterDone
+}
+
+func TestMonitor_NotifyRequiresOwningExecution(t *testing.T) {
+	lock := NewObject()
+	owner := NewExecution()
+	guard := MonitorEnterExecution(owner, lock)
+	defer MonitorExitExecution(guard)
+
+	var recovered interface{}
+	func() {
+		defer func() { recovered = recover() }()
+		MonitorNotifyExecution(NewExecution(), lock)
+	}()
+	if !CaughtAs(recovered, "IllegalMonitorStateException") {
+		t.Fatalf("notify by non-owner panicked with %T (%v), want IllegalMonitorStateException", recovered, recovered)
+	}
+}
+
+func TestMonitor_DeferredExitReleasesAfterPanic(t *testing.T) {
+	lock := NewObject()
+	func() {
+		defer func() { _ = recover() }()
+		func() {
+			guard := MonitorEnterExecution(NewExecution(), lock)
+			defer MonitorExitExecution(guard)
+			panic("boom")
+		}()
+	}()
+
+	acquired := make(chan struct{})
+	go func() {
+		guard := MonitorEnterExecution(NewExecution(), lock)
+		close(acquired)
+		MonitorExitExecution(guard)
+	}()
+	select {
+	case <-acquired:
+	case <-time.After(2 * time.Second):
+		t.Fatal("deferred monitor exit did not release ownership after panic")
+	}
+}
+
+func TestMonitor_WaitRequiresOwningExecution(t *testing.T) {
+	lock := NewObject()
+	owner := NewExecution()
+	guard := MonitorEnterExecution(owner, lock)
+	defer MonitorExitExecution(guard)
+
+	var recovered interface{}
+	func() {
+		defer func() { recovered = recover() }()
+		MonitorWaitExecution(NewExecution(), lock)
+	}()
+	if !CaughtAs(recovered, "IllegalMonitorStateException") {
+		t.Fatalf("wait by non-owner panicked with %T (%v), want IllegalMonitorStateException", recovered, recovered)
+	}
+}
+
 func TestExecutorService_RunsAllSubmittedTasks(t *testing.T) {
 	pool := NewFixedThreadPool(4)
 	var counter AtomicInteger
@@ -401,5 +647,23 @@ func TestExecutorService_RunsAllSubmittedTasks(t *testing.T) {
 	pool.AwaitTermination()
 	if got := counter.Get(); got != tasks {
 		t.Fatalf("executor ran %d tasks, want %d", got, tasks)
+	}
+}
+
+func TestExecutorService_ReusesExecutionPerWorker(t *testing.T) {
+	pool := NewFixedThreadPool(1)
+	tokens := make(chan *Execution, 2)
+	pool.Submit(func(execution *Execution) { tokens <- execution })
+	pool.Submit(func(execution *Execution) { tokens <- execution })
+	pool.Shutdown()
+	pool.AwaitTermination()
+
+	first := <-tokens
+	second := <-tokens
+	if first == nil || second == nil {
+		t.Fatal("executor passed a nil Java execution token")
+	}
+	if first != second {
+		t.Fatal("one fixed-pool worker did not retain its logical Java thread token")
 	}
 }

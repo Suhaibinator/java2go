@@ -63,7 +63,7 @@ public class App {
 	if !strings.Contains(flat, "type MapperFuncAdapter[T any, R any] struct") {
 		t.Fatalf("expected functional interface adapter generation, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "NewMapperFuncAdapter[string, string](func(v string) string") {
+	if !strings.Contains(flat, "NewMapperFuncAdapterJava2goExecution[string, string](func(__java2goExecution *stdjava.Execution, v string) string") {
 		t.Fatalf("expected lambda in main to be wrapped and typed, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "any(task).(*ParseTask)") {
@@ -107,7 +107,7 @@ public class Logger {
 	if !strings.Contains(flat, "type HandlerFuncAdapter[T any] struct") {
 		t.Fatalf("expected functional adapter type for Handler<T>, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "WriteAll(NewHandlerFuncAdapter[string](func(v string)") {
+	if !strings.Contains(flat, "WriteAllJava2goExecution(__java2goExecution, NewHandlerFuncAdapterJava2goExecution[string](func(__java2goExecution *stdjava.Execution, v string)") {
 		t.Fatalf("expected void lambda to be wrapped with typed adapter in main(), got:\n%s", out)
 	}
 }
@@ -142,10 +142,12 @@ public class FactoryApp {
 	if !strings.Contains(flat, "func Build(factory Factory[*Box[string]]) *Box[string]") {
 		t.Fatalf("expected nested generic interface + return types in build(), got:\n%s", out)
 	}
-	if !strings.Contains(flat, "Build(NewFactoryFuncAdapter[*Box[string]](func(seed string) *Box[string]") {
+	if !strings.Contains(flat, "BuildJava2goExecution(__java2goExecution, NewFactoryFuncAdapterJava2goExecution[*Box[string]](func(__java2goExecution *stdjava.Execution, seed string) *Box[string]") {
 		t.Fatalf("expected lambda to infer generic return type and use adapter, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "NewBox[string](seed)") && !strings.Contains(flat, "NewBox[*Box[string]](seed)") && !strings.Contains(flat, "ConstructBox[*Box[string]](seed)") {
+	if !strings.Contains(flat, "NewBoxJava2goExecution[string](__java2goExecution, seed)") &&
+		!strings.Contains(flat, "NewBoxJava2goExecution[*Box[string]](__java2goExecution, seed)") &&
+		!strings.Contains(flat, "ConstructBoxJava2goExecution[*Box[string]](__java2goExecution, seed)") {
 		t.Fatalf("expected constructor call with inferred generic type inside lambda body, got:\n%s", out)
 	}
 }

@@ -28,7 +28,7 @@ public class Outer {
 	if !strings.Contains(flat, "func NewOuterInner() *OuterInner") {
 		t.Fatalf("expected a synthesized default constructor NewOuterInner, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return NewOuterInner()") {
+	if !strings.Contains(flat, "return NewOuterInnerJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected `new Inner()` to resolve to the renamed nested-class constructor, got:\n%s", out)
 	}
 }
@@ -51,7 +51,7 @@ public class Container {
 	if !strings.Contains(flat, "func NewContainerItem(id int32) *ContainerItem") {
 		t.Fatalf("expected explicit nested-class constructor to be renamed NewContainerItem, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return NewContainerItem(n)") {
+	if !strings.Contains(flat, "return NewContainerItemJava2goExecution(__java2goExecution, n)") {
 		t.Fatalf("expected `new Item(n)` to call the renamed nested-class constructor, got:\n%s", out)
 	}
 }
@@ -157,7 +157,7 @@ public class Outer {
 	if !strings.Contains(flat, "or.outer.base + or.Delta") {
 		t.Fatalf("expected unqualified outer-field access to route through the enclosing instance, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return NewOuterInner(or)") {
+	if !strings.Contains(flat, "return NewOuterInnerJava2goExecution(__java2goExecution, or)") {
 		t.Fatalf("expected implicit `new Inner()` to pass the current receiver as enclosing instance, got:\n%s", out)
 	}
 }
@@ -176,7 +176,7 @@ public class Outer {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "return NewOuterInner(o)") {
+	if !strings.Contains(flat, "return NewOuterInnerJava2goExecution(__java2goExecution, o)") {
 		t.Fatalf("expected `o.new Inner()` to pass the qualifier as enclosing instance, got:\n%s", out)
 	}
 }
@@ -278,7 +278,7 @@ public class App {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "return NewGreeterFuncAdapter(func(name string) string") {
+	if !strings.Contains(flat, "return NewGreeterFuncAdapterJava2goExecution(func(__java2goExecution *stdjava.Execution, name string) string") {
 		t.Fatalf("expected anonymous SAM class to lower to the functional-interface adapter with a closure, got:\n%s", out)
 	}
 }

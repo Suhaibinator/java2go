@@ -350,6 +350,26 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 	if !ok {
 		return nil, false
 	}
+	if className == "String" && methodName == "valueOf" && executionExpr(ctx) != nil {
+		if parent := objectNode.Parent(); parent != nil {
+			if arguments := parent.ChildByFieldName("arguments"); arguments != nil && arguments.NamedChildCount() == 1 {
+				argumentNode := arguments.NamedChild(0)
+				if javaType, inferred := inferExprJavaType(argumentNode, ctx, source); inferred {
+					base, _ := parseJavaTypeString(javaType)
+					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.IsEnum {
+						return &ast.CallExpr{
+							Fun: &ast.SelectorExpr{
+								X:   ParseExpr(argumentNode, source, ctx),
+								Sel: &ast.Ident{Name: enumExecutionStringMethodName(scope)},
+							},
+							Args: []ast.Expr{executionExpr(ctx)},
+						}, true
+					}
+					return javaStringValueOfForType(javaType, ParseExpr(argumentNode, source, ctx), ctx), true
+				}
+			}
+		}
+	}
 
 	gen, ok := staticIntrinsics[intrinsicKey{className, methodName}]
 	if !ok {
@@ -388,7 +408,16 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 		return nil
 	}
 	argListNode := parent.ChildByFieldName("arguments")
-	return parseArgumentListWithExpectedTypes(argListNode, source, ctx, nil)
+	var expectedTypes []string
+	if (methodName == "submit" || methodName == "execute") && argListNode != nil && argListNode.NamedChildCount() == 1 {
+		if javaType, ok := inferExprJavaType(objectNode, ctx, source); ok {
+			base, _ := parseJavaTypeString(javaType)
+			if stripJavaQualifier(base) == "ExecutorService" && resolveClassScopeByQualifiedName(ctx, base) == nil {
+				expectedTypes = []string{"Runnable"}
+			}
+		}
+	}
+	return parseArgumentListWithExpectedTypes(argListNode, source, ctx, expectedTypes)
 }
 
 // intrinsicReceiverTypeName resolves the unqualified Java type of a receiver

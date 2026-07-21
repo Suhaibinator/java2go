@@ -330,13 +330,9 @@ public class VersionedLoopProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	start := strings.Index(out, "func Versioned(")
-	if start < 0 {
+	versioned := generatedFunctionText(out, "Versioned")
+	if versioned == "" {
 		t.Fatalf("generated Versioned function not found:\n%s", out)
-	}
-	versioned := out[start:]
-	if next := strings.Index(versioned[1:], "\nfunc "); next >= 0 {
-		versioned = versioned[:next+1]
 	}
 	flat := normalizeSpaces(versioned)
 	elseIndex := strings.Index(flat, "} else {")
@@ -489,7 +485,7 @@ public class LabeledBodyLoopProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if strings.Contains(flat, ":= grid.Java2goAffineView") || !strings.Contains(flat, "grid.get(0, 0)") {
+	if strings.Contains(flat, ":= grid.Java2goAffineView") || !strings.Contains(flat, "grid.getJava2goExecution(__java2goExecution, 0, 0)") {
 		t.Fatalf("loop containing an unrelated label was duplicated instead of retaining ordinary dispatch:\n%s", out)
 	}
 	runGoTestInTempModule(t, out, `
@@ -535,13 +531,13 @@ public class DiagnosticVersionLoopProgram {
 func TestAffineArrayLoopFastPath_ConservativeFallbackShape(t *testing.T) {
 	out := normalizeSpaces(renderGoFileFromJava(t, affineLoopProgramSource))
 	for _, fragment := range []string{
-		"current = replacement return current.get(0, 0)",
-		"grid.set(next(), next(), 1.0)",
-		"grid.set(markIndex(1), markIndex(2), markValue(3))",
-		"return grid.get(1/zero, 0)",
+		"current = replacement return current.getJava2goExecution(__java2goExecution, 0, 0)",
+		"grid.setJava2goExecution(__java2goExecution, nextJava2goExecution(__java2goExecution), nextJava2goExecution(__java2goExecution), 1.0)",
+		"grid.setJava2goExecution(__java2goExecution, markIndexJava2goExecution(__java2goExecution, 1), markIndexJava2goExecution(__java2goExecution, 2), markValueJava2goExecution(__java2goExecution, 3))",
+		"return grid.getJava2goExecution(__java2goExecution, 1/zero, 0)",
 		"for once := int32(0); once < 1; once++ { func(dst *float64)",
-		"(&total)(grid.get(0, 0)) continue __java2goLabel_",
-		"for once := int32(0); once < 1; once++ { total = grid.get(0, 0) break __java2goLabel_",
+		"(&total)(grid.getJava2goExecution(__java2goExecution, 0, 0)) continue __java2goLabel_",
+		"for once := int32(0); once < 1; once++ { total = grid.getJava2goExecution(__java2goExecution, 0, 0) break __java2goLabel_",
 	} {
 		if !strings.Contains(out, fragment) {
 			t.Fatalf("expected conservative fallback fragment %q:\n%s", fragment, out)
@@ -616,7 +612,11 @@ public class ScopedLoopProgram {
 	if strings.Contains(out, ":= grid.Java2goAffineView") || strings.Contains(out, ":= current.Java2goAffineView") {
 		t.Fatalf("header/captured/shadowed/field receiver unexpectedly received a loop cache:\n%s", out)
 	}
-	for _, ordinary := range []string{"grid.get(0, 0)", "grid.get(index, 0)", "current.get(0, 0)"} {
+	for _, ordinary := range []string{
+		"grid.getJava2goExecution(__java2goExecution, 0, 0)",
+		"grid.getJava2goExecution(__java2goExecution, index, 0)",
+		"current.getJava2goExecution(__java2goExecution, 0, 0)",
+	} {
 		if !strings.Contains(out, ordinary) {
 			t.Fatalf("expected ordinary fallback call %q:\n%s", ordinary, out)
 		}
@@ -676,7 +676,7 @@ public class KeywordLoopProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "map_ := newKeywordGrid()") || !strings.Contains(flat, ":= map_.Java2goAffineView") {
+	if !strings.Contains(flat, "map_ := newKeywordGridJava2goExecution(__java2goExecution)") || !strings.Contains(flat, ":= map_.Java2goAffineView") {
 		t.Fatalf("keyword receiver cache did not use its sanitized Go identifier:\n%s", out)
 	}
 	if strings.Contains(flat, ":= map.Java2goAffineView") {
@@ -715,7 +715,7 @@ public class CollisionLoopProgram {
 	if strings.Contains(flat, ":= grid.Java2goAffineView") || strings.Contains(flat, "NewNullPointerException") {
 		t.Fatalf("shadowed injected runtime identifiers unexpectedly used the fast path:\n%s", out)
 	}
-	if !strings.Contains(flat, "return grid.get(panic+nil+stdjava, 0)") {
+	if !strings.Contains(flat, "return grid.getJava2goExecution(__java2goExecution, panic+nil+stdjava, 0)") {
 		t.Fatalf("runtime-name collision did not retain ordinary dispatch:\n%s", out)
 	}
 	runGoTestInTempModule(t, out, `
@@ -751,7 +751,7 @@ public class TypeShadowLoopProgram {
 	if strings.Contains(flat, "Java2goAffineView0Values() for") || strings.Contains(flat, "NewNullPointerException") {
 		t.Fatalf("shadowed nested-signature type unexpectedly used the fast path:\n%s", out)
 	}
-	for _, ordinary := range []string{"typeShadowGrid.get(0, 0)"} {
+	for _, ordinary := range []string{"typeShadowGrid.getJava2goExecution(__java2goExecution, 0, 0)"} {
 		if !strings.Contains(flat, ordinary) {
 			t.Fatalf("type-name collision did not retain ordinary call %q:\n%s", ordinary, out)
 		}
@@ -793,7 +793,7 @@ public class BinderLoopProgram {
 	if strings.Contains(flat, "NewNullPointerException") || strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("nested binder shadowing nil unexpectedly used the fast path:\n%s", out)
 	}
-	if !strings.Contains(flat, "grid.get(0, 0)") {
+	if !strings.Contains(flat, "grid.getJava2goExecution(__java2goExecution, 0, 0)") {
 		t.Fatalf("nested binder collision did not retain ordinary dispatch:\n%s", out)
 	}
 	runGoTestInTempModule(t, out, `
@@ -840,7 +840,7 @@ public class App {
 	if strings.Contains(flat, "NewNullPointerException") || strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("cross-package alias shadowed by nested binder unexpectedly used the fast path:\n%s", appOut)
 	}
-	if !strings.Contains(flat, "for _, p := range source") || !strings.Contains(flat, "grid.Get(0, 0)") {
+	if !strings.Contains(flat, "for _, p := range source") || !strings.Contains(flat, "grid.GetJava2goExecution(__java2goExecution, 0, 0)") {
 		t.Fatalf("cross-package alias collision did not retain ordinary dispatch:\n%s", appOut)
 	}
 
@@ -927,7 +927,8 @@ public class TypeParameterLoopProgram<panic> {
 	if strings.Contains(flat, "NewNullPointerException") || strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("type-parameter identifier collision unexpectedly used the fast path:\n%s", out)
 	}
-	if strings.Count(flat, "grid.get(0, 0)") != 2 || !strings.Contains(flat, "grid.set(0, 0, 1.0)") {
+	if strings.Count(flat, "grid.getJava2goExecution(__java2goExecution, 0, 0)") != 2 ||
+		!strings.Contains(flat, "grid.setJava2goExecution(__java2goExecution, 0, 0, 1.0)") {
 		t.Fatalf("type-parameter collisions did not retain all ordinary calls:\n%s", out)
 	}
 	runGoTestInTempModule(t, out, `
@@ -970,7 +971,7 @@ public class StaticInitLoopProgram {
 	if strings.Contains(flat, "NewNullPointerException") || strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("synthetic static-initializer scope unexpectedly used the fast path:\n%s", out)
 	}
-	if !strings.Contains(flat, "grid.get(0, 0)") {
+	if !strings.Contains(flat, "grid.getJava2goExecution(__java2goExecution, 0, 0)") {
 		t.Fatalf("static initializer did not retain ordinary dispatch:\n%s", out)
 	}
 	runGoTestInTempModule(t, out, `

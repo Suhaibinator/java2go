@@ -152,6 +152,14 @@ type Runnable interface {
 	Run()
 }
 
+// executionRunnable is implemented by generated Runnable adapters. Public
+// Run remains the Go-facing entry point, while calls already inside generated
+// Java code use RunJava2goExecution to preserve monitor reentrancy through the
+// callback boundary.
+type executionRunnable interface {
+	RunJava2goExecution(*Execution)
+}
+
 // runnableFunc adapts a plain func() (a lambda or method reference) to Runnable.
 type runnableFunc func()
 
@@ -159,6 +167,79 @@ func (f runnableFunc) Run() {
 	if f != nil {
 		f()
 	}
+}
+
+type executionRunnableFunc func(*Execution)
+
+func (f executionRunnableFunc) Run() {
+	if f != nil {
+		f(NewExecution())
+	}
+}
+
+func (f executionRunnableFunc) RunJava2goExecution(execution *Execution) {
+	if f != nil {
+		f(execution)
+	}
+}
+
+// RunRunnableExecution invokes a Runnable inside an existing logical Java
+// execution. It accepts any because a target-typed Java Runnable lambda lowers
+// to func(*Execution); asRunnable supplies the Go interface adapter without
+// discarding the caller's token. Generated object callbacks normally expose the
+// fixed hidden method below. If a Java member occupied that generated name, the
+// transpiler appends a numeric suffix, which invokeSuffixedExecutionRunnable
+// discovers before falling back to the public Go entry point.
+func RunRunnableExecution(execution *Execution, value any) {
+	r := asRunnable(value)
+	if r == nil {
+		return
+	}
+	if generated, ok := r.(executionRunnable); ok {
+		generated.RunJava2goExecution(execution)
+		return
+	}
+	if invokeSuffixedExecutionRunnable(execution, r) {
+		return
+	}
+	r.Run()
+}
+
+// invokeSuffixedExecutionRunnable handles the collision-safe names emitted when
+// user Java source already declares RunJava2goExecution. Only the transpiler's
+// exact hidden signature is eligible: one *Execution argument, no results, and
+// a name consisting of RunJava2goExecution followed solely by decimal digits.
+func invokeSuffixedExecutionRunnable(execution *Execution, r Runnable) bool {
+	const prefix = "RunJava2goExecution"
+	executionType := reflect.TypeOf((*Execution)(nil))
+	value := reflect.ValueOf(r)
+	typeOfValue := value.Type()
+	for index := 0; index < typeOfValue.NumMethod(); index++ {
+		method := typeOfValue.Method(index)
+		if !decimalSuffix(method.Name, prefix) {
+			continue
+		}
+		bound := value.Method(index)
+		methodType := bound.Type()
+		if methodType.NumIn() != 1 || methodType.In(0) != executionType || methodType.NumOut() != 0 {
+			continue
+		}
+		bound.Call([]reflect.Value{reflect.ValueOf(execution)})
+		return true
+	}
+	return false
+}
+
+func decimalSuffix(name, prefix string) bool {
+	if len(name) <= len(prefix) || name[:len(prefix)] != prefix {
+		return false
+	}
+	for _, digit := range name[len(prefix):] {
+		if digit < '0' || digit > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // Thread mirrors the subset of java.lang.Thread used by transpiled code: it holds
@@ -188,6 +269,8 @@ func asRunnable(runnable any) Runnable {
 		return r
 	case func():
 		return runnableFunc(r)
+	case func(*Execution):
+		return executionRunnableFunc(r)
 	default:
 		return nil
 	}
@@ -208,9 +291,7 @@ func (t *Thread) Start() {
 	t.once.Do(func() {
 		go func() {
 			defer close(t.done)
-			if t.run != nil {
-				t.run.Run()
-			}
+			RunRunnableExecution(NewExecution(), t.run)
 		}()
 	})
 }
@@ -239,10 +320,10 @@ func NewObject() any {
 // --- intrinsic object monitors (synchronized) ------------------------------
 
 // Every Java object has an intrinsic monitor that `synchronized` acquires. Go
-// has no per-object lock, so we maintain a registry that associates a
-// *sync.Mutex with each object identity (its pointer). monitorFor returns the
-// same mutex for the same object across calls, giving `synchronized (obj) {}`
-// true mutual exclusion on that object.
+// has no per-object reentrant lock, so we maintain a registry that associates a
+// monitor record with each object identity. The record's owner is an explicit
+// Execution token: entering again with the same token increments its depth,
+// while every different token waits until the depth returns to zero.
 //
 // LIMITATION: monitors are keyed by the runtime pointer of the value passed in,
 // so the synchronized argument must be a reference type (the common case:
@@ -250,18 +331,34 @@ func NewObject() any {
 // transient boxed copy and not exclude correctly; such uses are rare and not
 // modelled. The registry never releases monitors, matching the fact that an
 // object's monitor lives as long as the object.
-// monitor pairs an object's lock with the condition variable that backs
-// wait/notify/notifyAll. The cond is lazily created over the same mutex so that
-// waiting atomically releases the lock and re-acquires it on wake, matching Java.
 type monitor struct {
-	mu   sync.Mutex
-	cond *sync.Cond
+	// mu protects explicit logical ownership. The outermost explicit entry also
+	// holds legacyMu across the generated body; reentrant entries by the same
+	// execution only increase depth. Sharing that physical mutex with the legacy
+	// API keeps old and newly generated callers mutually exclusive.
+	mu    sync.Mutex
+	owner *Execution
+	depth int
+
+	// legacyMu and legacyCond retain the original one-argument monitor API until
+	// generated code is migrated atomically to the explicit Execution protocol.
+	// New generated code must use the *Execution entry points below.
+	legacyMu   sync.Mutex
+	legacyCond *sync.Cond
 
 	// anchor keeps identity-bearing reference storage alive for as long as its
 	// monitor is registered. In particular, a slice monitor is keyed by its
 	// backing-storage address; retaining the slice prevents that address from
 	// being recycled for an unrelated Java array.
 	anchor interface{}
+}
+
+// MonitorGuard represents one successful monitor entry. Every entry, including
+// a reentrant one, receives its own guard and must be paired with MonitorExit.
+type MonitorGuard struct {
+	monitor   *monitor
+	execution *Execution
+	released  bool
 }
 
 // monitorIdentity is a comparable description of a Java reference. Most
@@ -318,7 +415,7 @@ func monitorRecord(obj interface{}) *monitor {
 	m, ok := monitors[identity]
 	if !ok {
 		m = &monitor{anchor: obj}
-		m.cond = sync.NewCond(&m.mu)
+		m.legacyCond = sync.NewCond(&m.legacyMu)
 		monitors[identity] = m
 	}
 	return m
@@ -327,7 +424,7 @@ func monitorRecord(obj interface{}) *monitor {
 // monitorFor returns the lock for obj. Retained for callers (and tests) that
 // only need the mutex.
 func monitorFor(obj interface{}) *sync.Mutex {
-	return &monitorRecord(obj).mu
+	return &monitorRecord(obj).legacyMu
 }
 
 // nilMonitorReference reports whether obj represents Java null. Transpiled
@@ -355,9 +452,15 @@ func requireNonNullMonitorReference(obj interface{}, operation string) {
 	}
 }
 
-// MonitorEnter acquires the intrinsic monitor for obj and returns it, mirroring
-// the entry of a `synchronized (obj)` block. The returned mutex is passed to
-// MonitorExit (typically via defer) to release it.
+func requireExecution(execution *Execution) {
+	if execution == nil {
+		panic(NewIllegalArgumentException("nil Java execution context"))
+	}
+}
+
+// MonitorEnter retains the original non-reentrant monitor entry point for Go
+// callers and generated code produced before explicit Execution propagation.
+// Newly generated Java code uses MonitorEnterExecution.
 func MonitorEnter(obj interface{}) *sync.Mutex {
 	requireNonNullMonitorReference(obj, "monitor operation")
 	m := monitorFor(obj)
@@ -365,51 +468,173 @@ func MonitorEnter(obj interface{}) *sync.Mutex {
 	return m
 }
 
-// MonitorExit releases a monitor previously acquired with MonitorEnter.
+// MonitorExit releases a legacy monitor previously acquired with MonitorEnter.
 func MonitorExit(m *sync.Mutex) {
 	if m != nil {
 		m.Unlock()
 	}
 }
 
-// MonitorWait implements Object.wait(): the caller must hold obj's monitor; it
-// atomically releases the lock and blocks until notified, then re-acquires the
-// lock before returning.
-//
-// LIMITATION: Java's wait can wake spuriously and is always used in a loop that
-// rechecks a condition; sync.Cond.Wait has the same contract, so transpiled code
-// that follows the `while (!cond) obj.wait();` idiom behaves correctly. Timed
-// wait(millis) is not modelled and falls back to an untimed wait.
+// MonitorEnterExecution acquires obj's intrinsic monitor for execution. A
+// second entry by the same execution is reentrant; entries by different
+// executions remain mutually exclusive. The returned guard is normally
+// released with defer.
+func MonitorEnterExecution(execution *Execution, obj interface{}) *MonitorGuard {
+	requireExecution(execution)
+	requireNonNullMonitorReference(obj, "monitor operation")
+	m := monitorRecord(obj)
+	m.mu.Lock()
+	if m.owner == execution {
+		m.depth++
+		m.mu.Unlock()
+		return &MonitorGuard{monitor: m, execution: execution}
+	}
+	m.mu.Unlock()
+
+	// Every different execution, as well as every legacy caller, competes for
+	// the same physical mutex. The previous explicit owner clears its logical
+	// state before releasing this mutex, so ownership is empty once acquired.
+	m.legacyMu.Lock()
+	m.mu.Lock()
+	m.owner = execution
+	m.depth = 1
+	m.mu.Unlock()
+	return &MonitorGuard{monitor: m, execution: execution}
+}
+
+// MonitorExitExecution releases a monitor previously acquired with
+// MonitorEnterExecution.
+func MonitorExitExecution(guard *MonitorGuard) {
+	if guard == nil {
+		return
+	}
+	m := guard.monitor
+	if m == nil {
+		panic(NewIllegalStateException("invalid monitor guard"))
+	}
+
+	m.mu.Lock()
+	if guard.released || m.owner != guard.execution || m.depth == 0 {
+		m.mu.Unlock()
+		panic(NewIllegalStateException("monitor exit without ownership"))
+	}
+	guard.released = true
+	m.depth--
+	releasePhysical := false
+	if m.depth == 0 {
+		m.owner = nil
+		releasePhysical = true
+	}
+	m.mu.Unlock()
+	if releasePhysical {
+		m.legacyMu.Unlock()
+	}
+}
+
+// MonitorWait retains the original wait implementation for legacy generated
+// code. The caller must hold the mutex returned by MonitorEnter.
 func MonitorWait(obj interface{}) {
 	requireNonNullMonitorReference(obj, "wait")
-	monitorRecord(obj).cond.Wait()
+	monitorRecord(obj).legacyCond.Wait()
 }
 
-// MonitorNotify implements Object.notify(): wake one waiter on obj's monitor.
+// MonitorNotify retains the original notify implementation for legacy
+// generated code.
 func MonitorNotify(obj interface{}) {
 	requireNonNullMonitorReference(obj, "notify")
-	monitorRecord(obj).cond.Signal()
+	monitorRecord(obj).legacyCond.Signal()
 }
 
-// MonitorNotifyAll implements Object.notifyAll(): wake all waiters on obj's
-// monitor.
+// MonitorNotifyAll retains the original notifyAll implementation for legacy
+// generated code.
 func MonitorNotifyAll(obj interface{}) {
 	requireNonNullMonitorReference(obj, "notifyAll")
-	monitorRecord(obj).cond.Broadcast()
+	monitorRecord(obj).legacyCond.Broadcast()
 }
 
-// ClassMonitorEnter acquires the class-level monitor named by className, used to
+// MonitorWaitExecution implements Object.wait(): the caller must hold obj's
+// monitor for execution; it
+// atomically releases every reentrant acquisition, blocks until notified, then
+// re-acquires the monitor and restores the original recursion depth. Timed
+// wait(millis) is not modelled and falls back to an untimed wait.
+func MonitorWaitExecution(execution *Execution, obj interface{}) {
+	requireExecution(execution)
+	requireNonNullMonitorReference(obj, "wait")
+	m := monitorRecord(obj)
+
+	m.mu.Lock()
+	if m.owner != execution || m.depth == 0 {
+		m.mu.Unlock()
+		panic(NewIllegalMonitorStateException("wait without monitor ownership"))
+	}
+	savedDepth := m.depth
+	m.owner = nil
+	m.depth = 0
+	m.mu.Unlock()
+
+	// The outermost explicit entry owns legacyMu, so Cond.Wait atomically makes
+	// the monitor available to legacy and explicit competitors and re-acquires it
+	// before returning after notification.
+	m.legacyCond.Wait()
+
+	m.mu.Lock()
+	m.owner = execution
+	m.depth = savedDepth
+	m.mu.Unlock()
+}
+
+// MonitorNotifyExecution implements Object.notify(): wake one waiter on obj's
+// monitor.
+func MonitorNotifyExecution(execution *Execution, obj interface{}) {
+	requireExecution(execution)
+	requireNonNullMonitorReference(obj, "notify")
+	m := monitorRecord(obj)
+	m.mu.Lock()
+	if m.owner != execution || m.depth == 0 {
+		m.mu.Unlock()
+		panic(NewIllegalMonitorStateException("notify without monitor ownership"))
+	}
+	m.legacyCond.Signal()
+	m.mu.Unlock()
+}
+
+// MonitorNotifyAllExecution implements Object.notifyAll(): wake all waiters on
+// obj's monitor.
+func MonitorNotifyAllExecution(execution *Execution, obj interface{}) {
+	requireExecution(execution)
+	requireNonNullMonitorReference(obj, "notifyAll")
+	m := monitorRecord(obj)
+	m.mu.Lock()
+	if m.owner != execution || m.depth == 0 {
+		m.mu.Unlock()
+		panic(NewIllegalMonitorStateException("notifyAll without monitor ownership"))
+	}
+	m.legacyCond.Broadcast()
+	m.mu.Unlock()
+}
+
+type classMonitorReference struct {
+	name string
+}
+
+// ClassMonitorEnter retains the original class-level monitor entry point.
+func ClassMonitorEnter(className string) *sync.Mutex {
+	return MonitorEnter(classMonitorReference{name: className})
+}
+
+// ClassMonitorEnterExecution acquires the class-level monitor named by
+// className, used to
 // lower a `static synchronized` method (which in Java locks the Class object).
 // The name is the generated Go type name, unique per class within the program.
-func ClassMonitorEnter(className string) *sync.Mutex {
-	return MonitorEnter(className)
+func ClassMonitorEnterExecution(execution *Execution, className string) *MonitorGuard {
+	return MonitorEnterExecution(execution, classMonitorReference{name: className})
 }
 
 // ExecutorService is a minimal fixed-size worker pool mirroring the
 // ExecutorService methods transpiled code commonly uses: submit a Runnable,
 // shutdown, and awaitTermination. Tasks are plain func() values.
 type ExecutorService struct {
-	tasks   chan func()
+	tasks   chan Runnable
 	wg      sync.WaitGroup
 	workers sync.WaitGroup
 	once    sync.Once
@@ -421,17 +646,16 @@ func NewFixedThreadPool(n int32) *ExecutorService {
 	if n < 1 {
 		n = 1
 	}
-	e := &ExecutorService{tasks: make(chan func(), 64)}
+	e := &ExecutorService{tasks: make(chan Runnable, 64)}
 	for i := int32(0); i < n; i++ {
 		e.workers.Add(1)
 		go func() {
 			defer e.workers.Done()
+			execution := NewExecution()
 			for task := range e.tasks {
 				func() {
 					defer e.wg.Done()
-					if task != nil {
-						task()
-					}
+					RunRunnableExecution(execution, task)
 				}()
 			}
 		}()
@@ -445,11 +669,7 @@ func NewFixedThreadPool(n int32) *ExecutorService {
 func (e *ExecutorService) Submit(task any) {
 	r := asRunnable(task)
 	e.wg.Add(1)
-	e.tasks <- func() {
-		if r != nil {
-			r.Run()
-		}
-	}
+	e.tasks <- r
 }
 
 // Shutdown stops accepting new tasks and lets the workers drain the queue.

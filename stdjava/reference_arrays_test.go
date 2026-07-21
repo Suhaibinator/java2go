@@ -129,6 +129,13 @@ func TestReferenceArrayCheckedStoreUsesGeneratedObjectViews(t *testing.T) {
 		t.Fatal("rejected store mutated the array")
 	}
 
+	baseArray := NewReferenceArray(1, testBaseType)
+	sibling := newReferenceArraySibling(6)
+	ReferenceArraySet(baseArray, 0, sibling)
+	if got := ReferenceArrayGet[*referenceArrayBaseView](baseArray, 0, testBaseType); got != sibling.referenceArrayBaseView {
+		t.Fatal("Base[] did not preserve an assignable sibling object's superclass view")
+	}
+
 	recovered = nil
 	func() {
 		defer func() { recovered = recover() }()

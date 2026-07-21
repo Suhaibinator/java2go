@@ -32,7 +32,7 @@ public class Planner {
 
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["parity/chain/engine/Planner.go"]
-	if !strings.Contains(out, "task.GetPriority().GetWeight()") {
+	if !strings.Contains(out, "task.GetPriorityJava2goExecution(__java2goExecution).GetWeightJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected a chained return type to resolve in the declaring method's package, got:\n%s", out)
 	}
 }
@@ -51,7 +51,7 @@ public class Plan {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "items.Get(0).GetId()") {
+	if !strings.Contains(out, "items.Get(0).GetIdJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected List.get to retain its element type for the chained call, got:\n%s", out)
 	}
 }
@@ -77,7 +77,8 @@ public class Lambdas {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "task.GetPayload()") || !strings.Contains(out, "task.GetAttempts()") {
+	if !strings.Contains(out, "task.GetPayloadJava2goExecution(__java2goExecution)") ||
+		!strings.Contains(out, "task.GetAttemptsJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected inferred SAM parameters to resolve method calls while parsing the lambda body, got:\n%s", out)
 	}
 }
@@ -115,8 +116,8 @@ public class Application {
 	flat := normalizeSpaces(out)
 	for _, want := range []string{
 		`enginepkg "parity/alias/engine"`,
-		"enginepkg.NewWorkflowEngine[string]()",
-		"enginepkg.NewTaskActionFuncAdapter[string]",
+		"enginepkg.NewWorkflowEngineJava2goExecution[string](__java2goExecution)",
+		"enginepkg.NewTaskActionFuncAdapterJava2goExecution[string]",
 	} {
 		if !strings.Contains(flat, normalizeSpaces(want)) {
 			t.Fatalf("expected collision-safe package qualification %q, got:\n%s", want, out)

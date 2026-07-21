@@ -58,7 +58,7 @@ func TestSuperclassMethodResolution(t *testing.T) {
 	if !strings.Contains(flat, "__java2goInvocationReceiver := ct") {
 		t.Fatalf("expected inherited method call to stage its receiver before Java's null check, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "__java2goInvocationReceiver.Java2goAnimalSelf.Speak()") {
+	if !strings.Contains(flat, "__java2goInvocationReceiver.Java2goAnimalSelf.SpeakJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected staged inherited call to retain Animal's dynamic receiver and exported Go name, got:\n%s", out)
 	}
 }

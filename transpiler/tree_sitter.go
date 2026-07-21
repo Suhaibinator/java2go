@@ -52,6 +52,12 @@ type Ctx struct {
 	// The symbols of the current
 	localScope *symbol.Definition
 
+	// executionContextName is the hidden *stdjava.Execution parameter active
+	// while lowering one generated Java method, constructor, or callback. Calls
+	// made within that body propagate the same token so Java monitor reentrancy
+	// follows logical Java-thread identity rather than goroutine internals.
+	executionContextName string
+
 	// Used when generating arrays, because in Java, these are defined as
 	// arrType[] varName = {item, item, item}, and no class name data is defined
 	// Can either be of type `*ast.Ident` or `*ast.StarExpr`
@@ -340,6 +346,7 @@ func (c Ctx) Clone() Ctx {
 		currentFile:                         c.currentFile,
 		currentClass:                        c.currentClass,
 		localScope:                          c.localScope,
+		executionContextName:                c.executionContextName,
 		lastType:                            c.lastType,
 		expectedType:                        c.expectedType,
 		expectedTypeRoot:                    c.expectedTypeRoot,
@@ -729,7 +736,7 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		resourceCtx.tryReturnTarget = returnTarget
 		resourceCtx.tryControlBoundary = bodyNode
 		tryBodyStmts = append(tryBodyStmts, ParseStmt(decl.node, source, resourceCtx))
-		tryBodyStmts = append(tryBodyStmts, buildResourceCloseDeferStmt(decl.name, ctx))
+		tryBodyStmts = append(tryBodyStmts, buildResourceCloseDeferStmt(decl.name, decl.node, source, ctx))
 	}
 	tryCtx := ctx.Clone()
 	tryCtx.tryReturnTarget = returnTarget
@@ -1212,7 +1219,71 @@ func parseResourceDecls(resourcesNode *sitter.Node, source []byte, ctx Ctx) []re
 	return decls
 }
 
-func buildResourceCloseDeferStmt(resourceName string, ctx Ctx) ast.Stmt {
+func buildResourceCloseDeferStmt(resourceName string, resourceNode *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
+	closeBody := []ast.Stmt{}
+	closeExecutionName := ""
+	if resourceNode != nil {
+		if typeNode := resourceNode.ChildByFieldName("type"); typeNode != nil {
+			if scope := resolveClassScopeByQualifiedName(ctx, typeNode.Content(source)); scope != nil {
+				if resolution := findInstanceMethodInHierarchy(scope, "close", 0, ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
+					closeExecutionName = executionImplementationName(resolution.def, resolution.owner)
+				}
+			}
+		}
+	}
+	// AutoCloseable and other unresolved interface-typed resources hide the
+	// concrete source class from static lookup. Generated close methods still use
+	// one globally collision-safe execution name, so probe that structural method
+	// before falling back to the public Close ABI.
+	if closeExecutionName == "" {
+		closeExecutionName = executionImplementationName(&symbol.Definition{Name: "Close"}, ctx.currentClass)
+	}
+	if execution := executionExpr(ctx); execution != nil && closeExecutionName != "" {
+		usedNames := map[string]struct{}{resourceName: {}}
+		if ctx.executionContextName != "" {
+			usedNames[ctx.executionContextName] = struct{}{}
+		}
+		executionReceiverName := synchronizedUniqueLocalName("__java2goCloseExecutionReceiver", usedNames)
+		hasExecutionReceiverName := synchronizedUniqueLocalName("__java2goHasCloseExecutionReceiver", usedNames)
+		executionCloseInterface := &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: closeExecutionName}},
+			Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
+				Type: &ast.StarExpr{X: stdjavaQualifiedExpr("Execution", ctx)},
+			}}}},
+		}}}}
+		closeBody = append(closeBody,
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: executionReceiverName}, &ast.Ident{Name: hasExecutionReceiverName}},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{&ast.TypeAssertExpr{
+					X: &ast.CallExpr{
+						Fun:  &ast.InterfaceType{Methods: &ast.FieldList{}},
+						Args: []ast.Expr{&ast.Ident{Name: resourceName}},
+					},
+					Type: executionCloseInterface,
+				}},
+			},
+			&ast.IfStmt{
+				Cond: &ast.Ident{Name: hasExecutionReceiverName},
+				Body: &ast.BlockStmt{List: []ast.Stmt{
+					&ast.ExprStmt{X: &ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   &ast.Ident{Name: executionReceiverName},
+							Sel: &ast.Ident{Name: closeExecutionName},
+						},
+						Args: []ast.Expr{execution},
+					}},
+					&ast.ReturnStmt{},
+				}},
+			},
+		)
+	}
+	closeBody = append(closeBody, &ast.ExprStmt{X: &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: resourceName},
+			Sel: &ast.Ident{Name: "Close"},
+		},
+	}})
 	return &ast.DeferStmt{
 		Call: &ast.CallExpr{
 			Fun: stdjavaQualifiedExpr("CloseResource", ctx),
@@ -1225,14 +1296,7 @@ func buildResourceCloseDeferStmt(resourceName string, ctx Ctx) ast.Stmt {
 							Op: token.NEQ,
 							Y:  &ast.Ident{Name: "nil"},
 						},
-						Body: &ast.BlockStmt{List: []ast.Stmt{
-							&ast.ExprStmt{X: &ast.CallExpr{
-								Fun: &ast.SelectorExpr{
-									X:   &ast.Ident{Name: resourceName},
-									Sel: &ast.Ident{Name: "Close"},
-								},
-							}},
-						}},
+						Body: &ast.BlockStmt{List: closeBody},
 					},
 				}},
 			}},

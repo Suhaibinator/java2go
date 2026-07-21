@@ -3,6 +3,7 @@ package stdjava
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -64,6 +65,72 @@ func StringValueOf(value any) string {
 	default:
 		return fmt.Sprint(value)
 	}
+}
+
+type executionStringer interface {
+	StringJava2goExecution(*Execution) string
+}
+
+// StringValueOfExecution is StringValueOf for generated Java code that is
+// already running inside a logical execution. Generated enum String methods
+// can acquire Java monitors, so forwarding the execution token is required when
+// an enum has been erased to Object (or another interface type) before text
+// conversion. Collision-renamed hidden methods are discovered structurally.
+func StringValueOfExecution(execution *Execution, value any) string {
+	if StringIsNull(value) {
+		return "null"
+	}
+
+	switch value := value.(type) {
+	case float32:
+		return FloatToString(value)
+	case float64:
+		return DoubleToString(value)
+	case executionStringer:
+		return value.StringJava2goExecution(execution)
+	}
+
+	if rendered, ok := callCollisionSafeExecutionStringer(execution, value); ok {
+		return rendered
+	}
+	return fmt.Sprint(value)
+}
+
+func callCollisionSafeExecutionStringer(execution *Execution, value any) (string, bool) {
+	reflected := reflect.ValueOf(value)
+	if !reflected.IsValid() {
+		return "", false
+	}
+	executionType := reflect.TypeOf((*Execution)(nil))
+	stringType := reflect.TypeOf("")
+	typeOfValue := reflected.Type()
+	for index := 0; index < typeOfValue.NumMethod(); index++ {
+		method := typeOfValue.Method(index)
+		if !isCollisionSafeExecutionMethodName(method.Name, "StringJava2goExecution") ||
+			method.Type.NumIn() != 2 || method.Type.In(1) != executionType ||
+			method.Type.NumOut() != 1 || method.Type.Out(0) != stringType {
+			continue
+		}
+		results := reflected.Method(index).Call([]reflect.Value{reflect.ValueOf(execution)})
+		return results[0].String(), true
+	}
+	return "", false
+}
+
+func isCollisionSafeExecutionMethodName(name, base string) bool {
+	if name == base {
+		return true
+	}
+	suffix := strings.TrimPrefix(name, base)
+	if suffix == name || suffix == "" {
+		return false
+	}
+	for _, digit := range suffix {
+		if digit < '0' || digit > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // StringRequireNonNull converts the two generated representations of a Java

@@ -203,6 +203,11 @@ func definitionDeclaresGoIdent(def *symbol.Definition, name string) bool {
 	if sanitizeGoIdent(def.OriginalName) == name || sanitizeGoIdent(def.Name) == name {
 		return true
 	}
+	for _, typeParameter := range def.TypeParameters {
+		if sanitizeGoIdent(typeParameter.Name) == name {
+			return true
+		}
+	}
 	for _, param := range def.Parameters {
 		if definitionDeclaresGoIdent(param, name) {
 			return true
@@ -219,6 +224,11 @@ func definitionDeclaresGoIdent(def *symbol.Definition, name string) bool {
 func classScopeDeclaresGoIdent(scope *symbol.ClassScope, name string) bool {
 	if scope == nil {
 		return false
+	}
+	for _, typeParameter := range scope.TypeParameters {
+		if sanitizeGoIdent(typeParameter.Name) == name {
+			return true
+		}
 	}
 	if definitionDeclaresGoIdent(scope.Class, name) {
 		return true

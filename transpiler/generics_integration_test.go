@@ -89,14 +89,16 @@ public class Box<T> {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "NewBox[string]") {
+	if !strings.Contains(out, "NewBoxJava2goExecution[string](__java2goExecution)") {
 		t.Errorf("Expected diamond operator to infer 'string' type arg, got:\n%s", out)
 	}
 	// Integer is a boxed type and maps to its Go primitive (int32).
-	if !strings.Contains(out, "NewBox[*Integer]") && !strings.Contains(out, "NewBox[Integer]") && !strings.Contains(out, "NewBox[int32]") {
+	if !strings.Contains(out, "NewBoxJava2goExecution[*Integer](__java2goExecution)") &&
+		!strings.Contains(out, "NewBoxJava2goExecution[Integer](__java2goExecution)") &&
+		!strings.Contains(out, "NewBoxJava2goExecution[int32](__java2goExecution)") {
 		t.Errorf("Expected explicit type args on constructor call, got:\n%s", out)
 	}
-	if strings.Contains(out, "raw := NewBox[") || strings.Contains(out, "raw = NewBox[") {
+	if strings.Contains(out, "raw := NewBoxJava2goExecution[") || strings.Contains(out, "raw = NewBoxJava2goExecution[") {
 		t.Errorf("Expected raw 'new Box()' to omit type args, got:\n%s", out)
 	}
 }
@@ -162,7 +164,8 @@ public class Utils {
 	if !strings.Contains(out, "func id[T any]") {
 		t.Errorf("Expected generic function declaration for id, got:\n%s", out)
 	}
-	if !strings.Contains(out, "id[*Foo]") && !strings.Contains(out, "id[Foo]") {
+	if !strings.Contains(out, "idJava2goExecution[*Foo](__java2goExecution, f)") &&
+		!strings.Contains(out, "idJava2goExecution[Foo](__java2goExecution, f)") {
 		t.Errorf("Expected explicit type args to be applied at call site, got:\n%s", out)
 	}
 }

@@ -150,13 +150,13 @@ public class MultidimensionalArrayEvaluationProgram {
 
 	out := renderGoFileFromJava(t, src)
 	function := generatedFunctionText(out, "NegativeOrder")
-	if strings.Count(function, "dimension(") != 3 {
+	if strings.Count(function, "dimensionJava2goExecution(") != 3 {
 		t.Fatalf("each source dimension call must occur exactly once in generated code:\n%s", function)
 	}
 	if !strings.Contains(function, "stdjava.NewNegativeArraySizeException") {
 		t.Fatalf("negative dimensions must raise the Java exception type:\n%s", function)
 	}
-	typeParameterStart := strings.Index(out, "func TypeParameterBindersCompile")
+	typeParameterStart := strings.Index(out, "func TypeParameterBindersCompileJava2goExecution")
 	if typeParameterStart < 0 {
 		t.Fatalf("missing generated generic collision method:\n%s", out)
 	}

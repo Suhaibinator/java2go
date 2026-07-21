@@ -161,6 +161,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		inferredParamJavaTypes := inferLambdaParameterJavaTypes(ctx, paramCount)
 		inferredParamTypes := inferLambdaParameterTypeExprs(ctx, paramCount)
 		lambdaCtx := contextWithLambdaParameters(ctx, paramNode, inferredParamJavaTypes, lambdaReturnType, source)
+		expectedBase, _ := parseJavaTypeString(ctx.expectedType)
+		expectedScope := resolveClassScopeByQualifiedName(ctx, expectedBase)
+		executionAwareSAM := samMethod != nil && expectedScope != nil && expectedScope.IsInterface
+		executionAwareRunnable := samMethod == nil && expectedScope == nil && stripJavaQualifier(expectedBase) == "Runnable"
 
 		var lambdaParameters *ast.FieldList
 		switch paramNode.Type() {
@@ -194,6 +198,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				},
 			}
 		}
+		if executionAwareSAM || executionAwareRunnable {
+			executionName := executionParameterName(node, source, lambdaCtx)
+			lambdaCtx.executionContextName = executionName
+			lambdaParameters.List = append(
+				[]*ast.Field{executionParameterField(executionName, ctx)},
+				lambdaParameters.List...,
+			)
+		}
 
 		// Parse the body only after the inferred SAM parameters have been added to
 		// the local symbol context. The generated signature alone is not enough:
@@ -226,7 +238,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			Body: lambdaBody,
 		}
 
-		if adapted := wrapLambdaWithFunctionalInterfaceAdapter(lambdaFunc, ctx.expectedType, ctx); adapted != nil {
+		if adapted := wrapLambdaWithFunctionalInterfaceAdapter(lambdaFunc, ctx.expectedType, executionAwareSAM, ctx); adapted != nil {
 			return adapted
 		}
 
@@ -235,13 +247,48 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// This refers to manually selecting a function from a specific class and
 		// passing it in as an argument in the `func(className::methodName)` style
 
-		// For class constructors such as `Class::new`, you only get one node
+		samMethod, samBindings := resolveFunctionalInterfaceMethod(ctx, ctx.expectedType)
+		if samMethod == nil && isExternalRunnableType(ctx.expectedType, ctx) {
+			// java.lang.Runnable is supplied by stdjava rather than the parsed
+			// symbol graph. Model its zero-argument void SAM here so bound method
+			// references select the execution-aware implementation just like
+			// source-declared functional interfaces do.
+			samMethod = &symbol.Definition{OriginalName: "run", Name: "Run", OriginalType: "void"}
+		}
+		samType, samExecutionName := executionAwareSAMFuncType(node, samMethod, samBindings, source, ctx)
+
+		// For class constructors such as `Class::new`, you only get one node.
 		if node.NamedChildCount() < 2 {
-			constructorRef := ast.Expr(&ast.SelectorExpr{
-				X:   ParseExpr(node.NamedChild(0), source, ctx),
-				Sel: &ast.Ident{Name: "new"},
-			})
-			if adapted := wrapLambdaWithFunctionalInterfaceAdapter(constructorRef, ctx.expectedType, ctx); adapted != nil {
+			targetNode := node.NamedChild(0)
+			if targetNode != nil && samMethod != nil {
+				if targetScope := resolveClassScopeByQualifiedName(ctx, targetNode.Content(source)); targetScope != nil && targetScope.Class != nil {
+					constructorName := constructorFuncName(targetScope)
+					var constructor *symbol.Definition
+					for _, candidate := range targetScope.Methods {
+						if candidate != nil && candidate.Constructor && len(candidate.Parameters) == len(samMethod.Parameters) {
+							constructor = candidate
+							constructorName = candidate.Name
+							break
+						}
+					}
+					if constructorName == "" {
+						constructorName = defaultConstructorName(targetScope.Class.Name)
+					}
+					// A missing constructor definition selects the synthesized default
+					// constructor, which is execution-aware. A present synthetic
+					// definition (notably a record canonical constructor) is public-only.
+					executionAware := constructorHasExecutionImplementation(constructor, targetScope)
+					if executionAware {
+						constructorName = executionConstructorImplementationName(constructorName, targetScope)
+					}
+					constructorRef := qualifiedNameExpr(constructorName, findJavaPackageForClassScope(targetScope), ctx)
+					if adapted := wrapLambdaWithFunctionalInterfaceAdapter(constructorRef, ctx.expectedType, executionAware, ctx); adapted != nil {
+						return adapted
+					}
+				}
+			}
+			constructorRef := ParseExpr(targetNode, source, ctx)
+			if adapted := wrapLambdaWithFunctionalInterfaceAdapter(constructorRef, ctx.expectedType, false, ctx); adapted != nil {
 				return adapted
 			}
 			return constructorRef
@@ -250,19 +297,52 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		targetNode := node.NamedChild(0)
 		methodName := node.NamedChild(1).Content(source)
 
-		methodExpr := ast.Expr(&ast.SelectorExpr{
-			X:   ParseExpr(targetNode, source, ctx),
-			Sel: identFromNode(node.NamedChild(1), source),
-		})
-
 		if classScope := resolveClassScopeByIdentifier(ctx, source, targetNode); classScope != nil {
 			if staticDef := findStaticMethodByName(classScope, methodName); staticDef != nil {
 				staticPkg := resolveJavaPackageForType(ctx, targetNode.Content(source), classScope)
-				methodExpr = qualifiedNameExpr(staticDef.Name, staticPkg, ctx)
+				methodName := staticDef.Name
+				executionAware := staticDef.DeclarationNode != nil
+				if executionAware {
+					methodName = executionImplementationName(staticDef, classScope)
+				}
+				methodExpr := qualifiedNameExpr(methodName, staticPkg, ctx)
+				if adapted := wrapLambdaWithFunctionalInterfaceAdapter(methodExpr, ctx.expectedType, executionAware, ctx); adapted != nil {
+					return adapted
+				}
+				return methodExpr
+			}
+			if samMethod != nil && samType != nil && len(samMethod.Parameters) > 0 {
+				if resolution := findInstanceMethodInHierarchy(classScope, methodName, len(samMethod.Parameters)-1, ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
+					methodExpr := executionAwareMethodReferenceForwarder(nil, resolution, &invocationTargetInfo{classScope: classScope}, samType, samExecutionName, true, node, source, ctx)
+					if adapted := wrapLambdaWithFunctionalInterfaceAdapter(methodExpr, ctx.expectedType, true, ctx); adapted != nil {
+						return adapted
+					}
+				}
 			}
 		}
 
-		if adapted := wrapLambdaWithFunctionalInterfaceAdapter(methodExpr, ctx.expectedType, ctx); adapted != nil {
+		methodExpr := ast.Expr(&ast.SelectorExpr{X: ParseExpr(targetNode, source, ctx), Sel: identFromNode(node.NamedChild(1), source)})
+		if samMethod != nil && samType != nil {
+			if target := resolveInvocationTarget(targetNode, ctx, source); target != nil && target.classScope != nil {
+				if resolution := findInstanceMethodInHierarchy(target.classScope, methodName, len(samMethod.Parameters), ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
+					receiver := ParseExpr(targetNode, source, ctx)
+					if target.classScope.IsInterface || target.classScope.IsAbstract {
+						methodExpr = executionAwareMethodReferenceForwarder(receiver, resolution, target, samType, samExecutionName, false, node, source, ctx)
+					} else {
+						selectorBase := receiver
+						if classNeedsVirtualDispatch(resolution.owner, ctx) {
+							selectorBase = &ast.SelectorExpr{X: receiver, Sel: &ast.Ident{Name: classDispatchFieldName(resolution.owner)}}
+						}
+						methodExpr = &ast.SelectorExpr{X: selectorBase, Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner)}}
+					}
+					if adapted := wrapLambdaWithFunctionalInterfaceAdapter(methodExpr, ctx.expectedType, true, ctx); adapted != nil {
+						return adapted
+					}
+				}
+			}
+		}
+
+		if adapted := wrapLambdaWithFunctionalInterfaceAdapter(methodExpr, ctx.expectedType, false, ctx); adapted != nil {
 			return adapted
 		}
 
@@ -432,9 +512,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// rewrite it to a plain function call to match how static methods are emitted.
 			if classScope != nil && staticResolution != nil {
 				staticPkg := findJavaPackageForClassScope(staticResolution.owner)
-				fun := qualifiedNameExpr(staticResolution.def.Name, staticPkg, ctx)
+				fun := qualifiedNameExpr(executionMethodCallName(staticResolution.def, staticResolution.owner, ctx), staticPkg, ctx)
 				fun = applyTypeArguments(fun, typeArgs)
-				return &ast.CallExpr{Fun: fun, Args: args}
+				return &ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, staticResolution.def, args)}
 			}
 
 			if rewritten := rewriteAffineArrayAccessorInvocation(node, objectNode, objectExpr, target, instanceResolution, args, ctx, source); rewritten != nil {
@@ -447,14 +527,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 			if target != nil {
 				if instanceResolution != nil {
-					methodIdent = &ast.Ident{Name: instanceResolution.def.Name}
+					methodIdent = &ast.Ident{Name: executionMethodCallName(instanceResolution.def, instanceResolution.owner, ctx)}
 				} else if staticResolution != nil {
 					// Java permits calling static methods via an instance expression; rewrite
 					// to a plain function call to match codegen. The qualifying expression is
 					// still evaluated before the arguments, even though its value is ignored.
-					fun := qualifiedNameExpr(staticResolution.def.Name, findJavaPackageForClassScope(staticResolution.owner), ctx)
+					fun := qualifiedNameExpr(executionMethodCallName(staticResolution.def, staticResolution.owner, ctx), findJavaPackageForClassScope(staticResolution.owner), ctx)
 					fun = applyTypeArguments(fun, typeArgs)
-					call := &ast.CallExpr{Fun: fun, Args: args}
+					call := &ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, staticResolution.def, args)}
 					if staged := stageStaticInvocationQualifier(node, objectExpr, staticResolution, call, ctx, source); staged != nil {
 						return staged
 					}
@@ -466,6 +546,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// Calling through that interface already performs dynamic dispatch and it
 			// has no concrete class dispatch field to select.
 			abstractInterfaceReceiver := target != nil && target.classScope != nil && target.classScope.IsAbstract
+			companionInterfaceReceiver := target != nil && target.classScope != nil &&
+				(target.classScope.IsInterface || target.classScope.IsAbstract)
+			if companionInterfaceReceiver && instanceResolution != nil && executionExpr(ctx) != nil {
+				if dispatched := executionCompanionDispatchInvocation(
+					node, objectNode, objectExpr, target, instanceResolution, args, ctx, source,
+				); dispatched != nil {
+					return dispatched
+				}
+			}
 			if objectNode.Type() != "super" && !abstractInterfaceReceiver {
 				if dispatched := virtualDispatchMethodCall(objectExpr, instanceResolution, args, ctx); dispatched != nil {
 					buildDispatch := func(receiver ast.Expr, callArgs []ast.Expr) ast.Expr {
@@ -478,9 +567,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 
+			callArgs := args
+			if instanceResolution != nil && !companionInterfaceReceiver {
+				callArgs = prependExecutionMethodArgument(ctx, instanceResolution.def, callArgs)
+			}
+			if instanceResolution != nil && companionInterfaceReceiver {
+				methodIdent = &ast.Ident{Name: instanceResolution.def.Name}
+			}
 			return &ast.CallExpr{
 				Fun:  &ast.SelectorExpr{X: objectExpr, Sel: methodIdent},
-				Args: args,
+				Args: callArgs,
 			}
 		}
 		methodName := node.ChildByFieldName("name").Content(source)
@@ -502,6 +598,22 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			if selected != nil {
 				expectedArgTypes = definitionParameterOriginalTypes(selected.def)
+			}
+
+			// A nested class may invoke a static member of any lexically enclosing
+			// class without qualification. Static nested classes do not carry an
+			// enclosing-instance field, but the lexical lookup still applies. Resolve
+			// that owner here so execution-aware calls can forward the current token
+			// instead of falling through to the public fresh-token wrapper.
+			if implicitInstanceResolution == nil && implicitStaticResolution == nil {
+				for enclosing := ctx.currentClass.Enclosing; enclosing != nil; enclosing = enclosing.Enclosing {
+					selected = findBestMethodInHierarchy(enclosing, methodName, argListNode, false, true, ctx, source)
+					if selected != nil && selected.def != nil && selected.def.IsStatic {
+						implicitStaticResolution = selected
+						expectedArgTypes = definitionParameterOriginalTypes(selected.def)
+						break
+					}
+				}
 			}
 		}
 		args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, expectedArgTypes)
@@ -526,16 +638,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return &ast.CallExpr{
 					Fun: &ast.SelectorExpr{
 						X:   recv,
-						Sel: &ast.Ident{Name: implicitInstanceResolution.def.Name},
+						Sel: &ast.Ident{Name: executionMethodCallName(implicitInstanceResolution.def, implicitInstanceResolution.owner, ctx)},
 					},
-					Args: args,
+					Args: prependExecutionMethodArgument(ctx, implicitInstanceResolution.def, args),
 				}
 			}
 			// Unqualified call to an enclosing class's instance method from inside
 			// an inner class: route it through the enclosing-instance field, e.g.
 			// foo() -> or.outer.Foo().
-			if enclSel := enclosingMemberMethodSelector(methodName, argCount, ctx); enclSel != nil {
-				return &ast.CallExpr{Fun: enclSel, Args: args}
+			if enclSel, resolution := enclosingMemberMethodSelector(methodName, argCount, ctx); enclSel != nil {
+				return &ast.CallExpr{Fun: enclSel, Args: prependExecutionMethodArgument(ctx, resolution.def, args)}
 			}
 		}
 
@@ -543,9 +655,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// functions).
 		if ctx.currentClass != nil {
 			if implicitStaticResolution != nil {
-				fun := qualifiedNameExpr(implicitStaticResolution.def.Name, findJavaPackageForClassScope(implicitStaticResolution.owner), ctx)
+				fun := qualifiedNameExpr(executionMethodCallName(implicitStaticResolution.def, implicitStaticResolution.owner, ctx), findJavaPackageForClassScope(implicitStaticResolution.owner), ctx)
 				fun = applyTypeArguments(fun, typeArgs)
-				return &ast.CallExpr{Fun: fun, Args: args}
+				return &ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, implicitStaticResolution.def, args)}
 			}
 		}
 
@@ -605,6 +717,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				// arguments and bodies are still intentionally untouched here. The
 				// Java instance-field phase, however, runs for every allocation.
 				instanceName := "__java2goLocalInstance"
+				initializerName := info.fieldInitializerMethodName
+				var initializerArgs []ast.Expr
+				if execution := executionExpr(ctx); execution != nil {
+					initializerName += executionMethodSuffix
+					initializerArgs = append(initializerArgs, execution)
+				}
 				return &ast.CallExpr{Fun: &ast.FuncLit{
 					Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{
 						Type: &ast.StarExpr{X: &ast.Ident{Name: info.structName}},
@@ -617,8 +735,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 						},
 						&ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{
 							X:   &ast.Ident{Name: instanceName},
-							Sel: &ast.Ident{Name: info.fieldInitializerMethodName},
-						}}},
+							Sel: &ast.Ident{Name: initializerName},
+						}, Args: initializerArgs}},
 						&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: instanceName}}},
 					}},
 				}}
@@ -670,6 +788,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		var expectedArgumentTypes []string
 		if constructor != nil {
 			expectedArgumentTypes = definitionParameterOriginalTypes(constructor)
+		} else if stripJavaQualifier(className) == "Thread" && resolveClassScopeByQualifiedName(ctx, className) == nil {
+			expectedArgumentTypes = []string{"Runnable"}
 		}
 		arguments := parseArgumentListWithExpectedTypes(objectArguments, source, ctx, expectedArgumentTypes)
 
@@ -737,10 +857,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 
 		if constructor != nil {
-			funExpr := addTypeArgs(qualifiedNameExpr(constructor.Name, targetPkg, ctx), effectiveTypeArgs)
+			constructorName := constructor.Name
+			callArgs := arguments
+			if executionExpr(ctx) != nil && constructorHasExecutionImplementation(constructor, targetScope) {
+				constructorName = executionConstructorImplementationName(constructorName, targetScope)
+				callArgs = prependExecutionArgument(ctx, callArgs)
+			}
+			funExpr := addTypeArgs(qualifiedNameExpr(constructorName, targetPkg, ctx), effectiveTypeArgs)
 			return &ast.CallExpr{
 				Fun:  funExpr,
-				Args: arguments,
+				Args: callArgs,
 			}
 		}
 
@@ -754,10 +880,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if ctorName == "" {
 				ctorName = defaultConstructorName(targetScope.Class.Name)
 			}
+			callArgs := arguments
+			if executionExpr(ctx) != nil && constructorHasExecutionImplementation(nil, targetScope) {
+				ctorName = executionConstructorImplementationName(ctorName, targetScope)
+				callArgs = prependExecutionArgument(ctx, callArgs)
+			}
 			funExpr := addTypeArgs(qualifiedNameExpr(ctorName, targetPkg, ctx), effectiveTypeArgs)
 			return &ast.CallExpr{
 				Fun:  funExpr,
-				Args: arguments,
+				Args: callArgs,
 			}
 		}
 
@@ -2080,7 +2211,7 @@ func compoundAssignmentValue(operator string, old, rhs ast.Expr, lhsJavaType, rh
 		case "char", "Character":
 			rhsString = &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{rhs}}
 		default:
-			rhsString = stdjavaCall(ctx, "StringValueOf", rhs)
+			rhsString = javaStringValueOfForType(rhsJavaType, rhs, ctx)
 		}
 		return &ast.BinaryExpr{X: stdjavaCall(ctx, "StringValueOf", old), Op: token.ADD, Y: rhsString}, true
 	}
@@ -2231,6 +2362,17 @@ func javaStringConversionExpr(node *sitter.Node, expr ast.Expr, ctx Ctx, source 
 	if isCharTypedExprNode(node, ctx, source) {
 		return &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{expr}}
 	}
+	if execution := executionExpr(ctx); execution != nil && node != nil {
+		if javaType, ok := inferExprJavaType(node, ctx, source); ok {
+			base, _ := parseJavaTypeString(javaType)
+			if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.IsEnum {
+				return &ast.CallExpr{
+					Fun:  &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: enumExecutionStringMethodName(scope)}},
+					Args: []ast.Expr{execution},
+				}
+			}
+		}
+	}
 	if isNullableStringStorageExpression(node, ctx, source) {
 		return stdjavaCall(ctx, "StringValueOf", expr)
 	}
@@ -2251,6 +2393,32 @@ func javaStringConversionExpr(node *sitter.Node, expr ast.Expr, ctx Ctx, source 
 				return expr
 			}
 		}
+	}
+	if node != nil {
+		if javaType, ok := inferExprJavaType(node, ctx, source); ok {
+			return javaStringValueOfForType(javaType, expr, ctx)
+		}
+	}
+	return stdjavaCall(ctx, "StringValueOf", expr)
+}
+
+// javaStringValueOfForType preserves the current execution when the static
+// type can erase an enum value. Generated enum String methods may synchronize,
+// so calling their public fmt.Stringer wrapper from inside an already-held
+// monitor would otherwise create a fresh token and deadlock.
+func javaStringValueOfForType(javaType string, expr ast.Expr, ctx Ctx) ast.Expr {
+	execution := executionExpr(ctx)
+	if execution == nil {
+		return stdjavaCall(ctx, "StringValueOf", expr)
+	}
+	base, _ := parseJavaTypeString(javaType)
+	base = stripJavaQualifier(base)
+	needsExecution := base == "Object" || base == "Enum"
+	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
+		needsExecution = needsExecution || scope.IsEnum || scope.IsInterface || scope.IsAbstract
+	}
+	if needsExecution {
+		return stdjavaCall(ctx, "StringValueOfExecution", execution, expr)
 	}
 	return stdjavaCall(ctx, "StringValueOf", expr)
 }
@@ -2359,20 +2527,20 @@ func enclosingMemberFieldAccess(identName string, ctx Ctx) ast.Expr {
 // an enclosing class's instance method from inside an inner class, returning the
 // selector to invoke (e.g. or.outer.Foo). Returns nil if no enclosing method
 // matches or the current scope is static.
-func enclosingMemberMethodSelector(methodName string, argCount int, ctx Ctx) ast.Expr {
+func enclosingMemberMethodSelector(methodName string, argCount int, ctx Ctx) (ast.Expr, *methodResolution) {
 	scope := ctx.currentClass
 	if scope == nil || !scope.IsInner {
-		return nil
+		return nil, nil
 	}
 	if ctx.localScope != nil && ctx.localScope.IsStatic {
-		return nil
+		return nil, nil
 	}
 	recvName := ctx.className
 	if recvName == "" && scope.Class != nil {
 		recvName = scope.Class.Name
 	}
 	if recvName == "" {
-		return nil
+		return nil, nil
 	}
 
 	var expr ast.Expr = &ast.Ident{Name: ShortName(recvName)}
@@ -2383,10 +2551,10 @@ func enclosingMemberMethodSelector(methodName string, argCount int, ctx Ctx) ast
 			break
 		}
 		if resolved := findInstanceMethodInHierarchy(encl, methodName, argCount, ctx); resolved != nil && resolved.def != nil {
-			return &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: resolved.def.Name}}
+			return &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: executionMethodCallName(resolved.def, resolved.owner, ctx)}}, resolved
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // enclosingInstanceArgument computes the enclosing-instance expression passed to
@@ -2537,9 +2705,9 @@ func virtualDispatchMethodCall(receiver ast.Expr, resolution *methodResolution, 
 				X:   receiver,
 				Sel: &ast.Ident{Name: classDispatchFieldName(resolution.owner)},
 			},
-			Sel: &ast.Ident{Name: resolution.def.Name},
+			Sel: &ast.Ident{Name: executionMethodCallName(resolution.def, resolution.owner, ctx)},
 		},
-		Args: args,
+		Args: prependExecutionMethodArgument(ctx, resolution.def, args),
 	}
 }
 
@@ -2599,12 +2767,13 @@ func stageVirtualDispatchInvocation(
 		return nil
 	}
 
-	const receiverName = "__java2goInvocationReceiver"
+	usedNames := affineLoopUsedNames(invocationNode, source, ctx)
+	receiverName := synchronizedUniqueLocalName("__java2goInvocationReceiver", usedNames)
 	body := []ast.Stmt{stagedInvocationLocal(receiverName, receiver)}
 	stagedArgs := make([]ast.Expr, len(args))
 	argumentNodes := nodeutil.NamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
 	for index, argument := range args {
-		name := "__java2goInvocationArg" + strconv.Itoa(index)
+		name := synchronizedUniqueLocalName("__java2goInvocationArg"+strconv.Itoa(index), usedNames)
 		javaType := ""
 		if index < len(resolution.def.Parameters) && resolution.def.Parameters[index] != nil {
 			javaType = resolution.def.Parameters[index].OriginalType
@@ -2631,6 +2800,119 @@ func stageVirtualDispatchInvocation(
 		Type: &ast.FuncType{Results: results},
 		Body: &ast.BlockStmt{List: body},
 	}}
+}
+
+func executionCompanionDispatchInvocation(
+	invocationNode, receiverNode *sitter.Node,
+	receiver ast.Expr,
+	target *invocationTargetInfo,
+	resolution *methodResolution,
+	args []ast.Expr,
+	ctx Ctx,
+	source []byte,
+) ast.Expr {
+	if invocationNode == nil || receiverNode == nil || receiver == nil || target == nil ||
+		resolution == nil || resolution.def == nil || resolution.owner == nil || executionExpr(ctx) == nil {
+		return nil
+	}
+	if resolution.def.DeclarationNode == nil {
+		return nil
+	}
+	results, ok := invocationClosureResults(invocationNode, resolution, ctx, source)
+	if !ok {
+		return nil
+	}
+	companionType := executionCompanionTypeExpr(target, resolution, ctx)
+	if companionType == nil {
+		return nil
+	}
+
+	usedNames := affineLoopUsedNames(invocationNode, source, ctx)
+	receiverName := synchronizedUniqueLocalName("__java2goInvocationReceiver", usedNames)
+	companionName := synchronizedUniqueLocalName("__java2goExecutionReceiver", usedNames)
+	okName := synchronizedUniqueLocalName("__java2goHasExecutionReceiver", usedNames)
+	body := []ast.Stmt{stagedInvocationLocal(receiverName, receiver)}
+	stagedArgs := make([]ast.Expr, len(args))
+	argumentNodes := nodeutil.NamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
+	for index, argument := range args {
+		name := synchronizedUniqueLocalName("__java2goInvocationArg"+strconv.Itoa(index), usedNames)
+		javaType := ""
+		if index < len(resolution.def.Parameters) && resolution.def.Parameters[index] != nil {
+			javaType = resolution.def.Parameters[index].OriginalType
+		}
+		var argumentNode *sitter.Node
+		if index < len(argumentNodes) {
+			argumentNode = argumentNodes[index]
+		}
+		statement, staged := stagedInvocationArgumentLocal(name, argument, argumentNode, javaType, resolution, ctx, source)
+		if !staged {
+			return nil
+		}
+		body = append(body, statement)
+		stagedArgs[index] = &ast.Ident{Name: name}
+	}
+
+	body = append(body, &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: companionName}, &ast.Ident{Name: okName}},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{&ast.TypeAssertExpr{
+			X: &ast.CallExpr{
+				Fun:  &ast.InterfaceType{Methods: &ast.FieldList{}},
+				Args: []ast.Expr{&ast.Ident{Name: receiverName}},
+			},
+			Type: companionType,
+		}},
+	})
+	hiddenCall := &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: companionName},
+			Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner)},
+		},
+		Args: prependExecutionMethodArgument(ctx, resolution.def, stagedArgs),
+	}
+	hiddenBody := []ast.Stmt{invocationClosureCallStatement(hiddenCall, results)}
+	if results == nil || len(results.List) == 0 {
+		hiddenBody = append(hiddenBody, &ast.ReturnStmt{})
+	}
+	body = append(body, &ast.IfStmt{
+		Cond: &ast.Ident{Name: okName},
+		Body: &ast.BlockStmt{List: hiddenBody},
+	})
+	publicCall := &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: receiverName},
+			Sel: &ast.Ident{Name: resolution.def.Name},
+		},
+		Args: stagedArgs,
+	}
+	body = append(body, invocationClosureCallStatement(publicCall, results))
+	return &ast.CallExpr{Fun: &ast.FuncLit{
+		Type: &ast.FuncType{Results: results},
+		Body: &ast.BlockStmt{List: body},
+	}}
+}
+
+func executionCompanionTypeExpr(target *invocationTargetInfo, resolution *methodResolution, ctx Ctx) ast.Expr {
+	if target == nil || target.classScope == nil || resolution == nil || resolution.owner == nil {
+		return nil
+	}
+	owner := resolution.owner
+	typeArgs := target.classTypeArgs
+	if owner != target.classScope {
+		typeArgs = mapClassTypeArgsToAncestor(target.classScope, target.classTypeArgs, owner, ctx)
+	}
+	if len(owner.TypeParameters) > 0 && len(typeArgs) != len(owner.TypeParameters) {
+		return nil
+	}
+	typeExpr := qualifiedNameExpr(
+		executionCompanionInterfaceName(owner),
+		findJavaPackageForClassScope(owner),
+		ctx,
+	)
+	if len(typeArgs) > 0 {
+		typeExpr = applyTypeArguments(typeExpr, typeArgs)
+	}
+	return typeExpr
 }
 
 func stagedInvocationLocal(name string, value ast.Expr) ast.Stmt {
@@ -3633,6 +3915,11 @@ func goPrimitiveConversionName(javaType string) string {
 	}
 }
 
+func isExternalRunnableType(javaType string, ctx Ctx) bool {
+	baseType, _ := parseJavaTypeString(strings.TrimSpace(javaType))
+	return stripJavaQualifier(baseType) == "Runnable" && resolveClassScopeByQualifiedName(ctx, baseType) == nil
+}
+
 func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Definition, map[string]string) {
 	expectedType = strings.TrimSpace(expectedType)
 	if expectedType == "" {
@@ -4190,6 +4477,12 @@ func lowerAnonymousClass(node, objectType, classBody *sitter.Node, source []byte
 	if implMethod.ChildByFieldName("name").Content(source) != method.OriginalName {
 		return nil
 	}
+	// A synchronized anonymous implementation needs a stable Java object as its
+	// monitor. The closure adapter has no anonymous-object identity of its own,
+	// so let the synthesized-struct lowering below model this case instead.
+	if declarationHasModifier(implMethod, "synchronized") {
+		return nil
+	}
 
 	// Build a function literal from the implementing method's signature and body.
 	// The body is parsed in a scope that knows the method's parameters so captured
@@ -4197,8 +4490,11 @@ func lowerAnonymousClass(node, objectType, classBody *sitter.Node, source []byte
 	implScope := scopeForAnonymousMethod(implMethod, method, source)
 	methodCtx := ctx.Clone()
 	methodCtx.localScope = implScope
+	executionName := executionParameterName(implMethod, source, methodCtx)
+	methodCtx.executionContextName = executionName
 
 	params := ParseNode(implMethod.ChildByFieldName("parameters"), source, methodCtx).(*ast.FieldList)
+	params.List = append([]*ast.Field{executionParameterField(executionName, ctx)}, params.List...)
 
 	var results *ast.FieldList
 	if strings.TrimSpace(method.OriginalType) != "" && strings.TrimSpace(method.OriginalType) != "void" {
@@ -4214,13 +4510,12 @@ func lowerAnonymousClass(node, objectType, classBody *sitter.Node, source []byte
 		return nil
 	}
 	body := ParseStmt(bodyNode, source, methodCtx).(*ast.BlockStmt)
-
 	funcLit := &ast.FuncLit{
 		Type: &ast.FuncType{Params: params, Results: results},
 		Body: body,
 	}
 
-	return wrapLambdaWithFunctionalInterfaceAdapter(funcLit, supertype, ctx)
+	return wrapLambdaWithFunctionalInterfaceAdapter(funcLit, supertype, true, ctx)
 }
 
 // scopeForAnonymousMethod builds a local scope describing the parameters of an
@@ -4320,8 +4615,8 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	bodyMethods := anonymousClassMethods(classBody)
 	syntheticScope := synthAnonClassScope(structName, declaredFieldDefs, captured, bodyMethods, source, false)
 	for _, methodNode := range bodyMethods {
-		methodDecl := buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx)
-		if methodDecl != nil {
+		methodDecls := buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx)
+		for _, methodDecl := range methodDecls {
 			ctx.addHoistedDecl(methodDecl)
 		}
 	}
@@ -4410,6 +4705,10 @@ func anonymousSuperclassConstructorExpr(node, objectType *sitter.Node, superScop
 		constructorName = defaultConstructorName(superScope.Class.Name)
 	}
 	args := parseArgumentListWithExpectedTypes(argsNode, source, ctx, expectedTypes)
+	if executionExpr(ctx) != nil && constructorHasExecutionImplementation(constructor, superScope) {
+		constructorName = executionConstructorImplementationName(constructorName, superScope)
+		args = prependExecutionArgument(ctx, args)
+	}
 
 	baseType, typeArgs := parseJavaTypeString(objectType.Content(source))
 	constructorExpr := qualifiedNameExpr(
@@ -4560,7 +4859,7 @@ func synthAnonClassMethodDefinition(methodNode *sitter.Node, source []byte, keep
 // kept so `m.method()` call sites match. declaredFields are the class's own
 // instance fields; together with captures they form the synthetic class scope
 // used to resolve field references inside the body.
-func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, syntheticScope *symbol.ClassScope, source []byte, ctx Ctx) *ast.FuncDecl {
+func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, syntheticScope *symbol.ClassScope, source []byte, ctx Ctx) []ast.Decl {
 	nameNode := methodNode.ChildByFieldName("name")
 	bodyNode := methodNode.ChildByFieldName("body")
 	if nameNode == nil || bodyNode == nil {
@@ -4587,6 +4886,8 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 	methodCtx.localScope = methodScope
 	methodCtx.currentClass = syntheticScope
 	methodCtx.className = structName
+	executionName := executionParameterName(methodNode, source, methodCtx)
+	methodCtx.executionContextName = executionName
 
 	params := ParseNode(methodNode.ChildByFieldName("parameters"), source, methodCtx).(*ast.FieldList)
 
@@ -4601,6 +4902,9 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 	}
 
 	body := ParseStmt(bodyNode, source, methodCtx).(*ast.BlockStmt)
+	if declarationHasModifier(methodNode, "synchronized") {
+		body.List = append(synchronizedMethodPrologue(methodCtx, methodScope.IsStatic, methodNode, source), body.List...)
+	}
 	// Synthetic local/anonymous methods bypass ParseDecl, where ordinary
 	// source-backed instance methods receive their Java nil-invocation boundary.
 	// Mirror that entry guard here: Go evaluates the receiver and arguments before
@@ -4608,6 +4912,11 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 	// executing a body that happens not to dereference it.
 	if !methodScope.IsStatic {
 		body.List = append([]ast.Stmt{instanceMethodNilReceiverGuard(recvName)}, body.List...)
+	}
+	if results != nil && bodyNeedsFallbackReturn(body) {
+		body.List = append(body.List, &ast.ReturnStmt{
+			Results: []ast.Expr{zeroValueForType(results.List[0].Type)},
+		})
 	}
 
 	decl := &ast.FuncDecl{
@@ -4621,7 +4930,12 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 			Type:  &ast.StarExpr{X: &ast.Ident{Name: structName}},
 		}}}
 	}
-	return decl
+	return buildExecutionAwareFuncDecls(
+		decl,
+		executionImplementationName(methodScope, syntheticScope),
+		executionName,
+		methodCtx,
+	)
 }
 
 func localClassHasInstanceFieldInitializers(classBody *sitter.Node) bool {
@@ -4668,7 +4982,7 @@ func buildLocalClassFieldInitializerMethod(
 	syntheticScope *symbol.ClassScope,
 	source []byte,
 	ctx Ctx,
-) *ast.FuncDecl {
+) []ast.Decl {
 	if classBody == nil || syntheticScope == nil || methodName == "" {
 		return nil
 	}
@@ -4679,6 +4993,8 @@ func buildLocalClassFieldInitializerMethod(
 	initializerCtx.currentClass = syntheticScope
 	initializerCtx.className = structName
 	initializerCtx.localScope = initializerScope
+	executionName := executionParameterName(classBody, source, initializerCtx)
+	initializerCtx.executionContextName = executionName
 
 	var statements []ast.Stmt
 	for _, member := range nodeutil.NamedChildrenOf(classBody) {
@@ -4712,7 +5028,7 @@ func buildLocalClassFieldInitializerMethod(
 		return nil
 	}
 
-	return &ast.FuncDecl{
+	declaration := &ast.FuncDecl{
 		Name: &ast.Ident{Name: methodName},
 		Recv: &ast.FieldList{List: []*ast.Field{{
 			Names: []*ast.Ident{{Name: receiverName}},
@@ -4721,6 +5037,12 @@ func buildLocalClassFieldInitializerMethod(
 		Type: &ast.FuncType{Params: &ast.FieldList{}},
 		Body: &ast.BlockStmt{List: statements},
 	}
+	return buildExecutionAwareFuncDecls(
+		declaration,
+		methodName+executionMethodSuffix,
+		executionName,
+		initializerCtx,
+	)
 }
 
 // hoistLocalClass lifts a class declared inside a method body to file scope.
@@ -4791,7 +5113,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		fieldInitializerMethodName: fieldInitializerMethod,
 	}
 	if fieldInitializerMethod != "" {
-		initializerDecl := buildLocalClassFieldInitializerMethod(
+		initializerDecls := buildLocalClassFieldInitializerMethod(
 			structName,
 			fieldInitializerMethod,
 			classBody,
@@ -4799,20 +5121,178 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 			source,
 			ctx,
 		)
-		if initializerDecl != nil {
-			ctx.addHoistedDecl(initializerDecl)
+		if len(initializerDecls) > 0 {
+			for _, initializerDecl := range initializerDecls {
+				ctx.addHoistedDecl(initializerDecl)
+			}
 		} else {
 			ctx.localClasses[javaName].fieldInitializerMethodName = ""
 		}
 	}
 	for _, methodNode := range bodyMethods {
-		if methodDecl := buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx); methodDecl != nil {
+		for _, methodDecl := range buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx) {
 			ctx.addHoistedDecl(methodDecl)
 		}
 	}
 }
 
-func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType string, ctx Ctx) ast.Expr {
+func executionAwareSAMFuncType(
+	node *sitter.Node,
+	method *symbol.Definition,
+	bindings map[string]string,
+	source []byte,
+	ctx Ctx,
+) (*ast.FuncType, string) {
+	if method == nil {
+		return nil, ""
+	}
+	params := &ast.FieldList{}
+	for index, parameter := range method.Parameters {
+		javaType := substituteJavaTypeParams(parameter.OriginalType, bindings)
+		params.List = append(params.List, &ast.Field{
+			Names: []*ast.Ident{{Name: parameter.Name}},
+			Type:  executionParameterTypeExpr(method, index, javaType, inScopeTypeParameters(ctx), ctx),
+		})
+	}
+	executionName := executionParameterName(node, source, ctx)
+	if executionName == "" {
+		executionName = executionNameForParams(params)
+	}
+	params.List = append([]*ast.Field{executionParameterField(executionName, ctx)}, params.List...)
+	var results *ast.FieldList
+	if strings.TrimSpace(method.OriginalType) != "" && strings.TrimSpace(method.OriginalType) != "void" {
+		javaType := substituteJavaTypeParams(method.OriginalType, bindings)
+		results = &ast.FieldList{List: []*ast.Field{{
+			Type: javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx),
+		}}}
+	}
+	return &ast.FuncType{Params: params, Results: results}, executionName
+}
+
+func executionAwareMethodReferenceForwarder(
+	boundReceiver ast.Expr,
+	resolution *methodResolution,
+	target *invocationTargetInfo,
+	functionType *ast.FuncType,
+	executionName string,
+	unbound bool,
+	node *sitter.Node,
+	source []byte,
+	ctx Ctx,
+) ast.Expr {
+	if resolution == nil || resolution.def == nil || resolution.owner == nil || target == nil || target.classScope == nil || functionType == nil || functionType.Params == nil {
+		return nil
+	}
+	targetScope := target.classScope
+	params := cloneFieldList(functionType.Params)
+	args := methodCallArgs(params)
+	if len(args) == 0 {
+		return nil
+	}
+	execution := args[0]
+	javaArgs := args[1:]
+	usedNames := affineLoopUsedNames(node, source, ctx)
+	originalBoundReceiver := boundReceiver
+	boundReceiverName := ""
+	receiver := boundReceiver
+	if !unbound {
+		boundReceiverName = synchronizedUniqueLocalName("__java2goMethodReferenceReceiver", usedNames)
+		receiver = &ast.Ident{Name: boundReceiverName}
+	}
+	if unbound {
+		if len(javaArgs) == 0 {
+			return nil
+		}
+		receiver = javaArgs[0]
+		javaArgs = javaArgs[1:]
+	}
+	if receiver == nil {
+		return nil
+	}
+
+	executionReceiverName := synchronizedUniqueLocalName("__java2goExecutionReceiver", usedNames)
+	hasExecutionReceiverName := synchronizedUniqueLocalName("__java2goHasExecutionReceiver", usedNames)
+	body := []ast.Stmt{}
+	callReceiver := receiver
+	if targetScope.IsInterface || targetScope.IsAbstract {
+		companionType := executionCompanionTypeExpr(target, resolution, ctx)
+		if companionType == nil {
+			return nil
+		}
+		body = append(body, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: executionReceiverName}, &ast.Ident{Name: hasExecutionReceiverName}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{&ast.TypeAssertExpr{
+				X: &ast.CallExpr{
+					Fun:  &ast.InterfaceType{Methods: &ast.FieldList{}},
+					Args: []ast.Expr{receiver},
+				},
+				Type: companionType,
+			}},
+		})
+		hiddenCall := &ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X:   &ast.Ident{Name: executionReceiverName},
+				Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner)},
+			},
+			Args: append([]ast.Expr{execution}, javaArgs...),
+		}
+		markVariadicForwardCall(hiddenCall, resolution.def)
+		hiddenBody := []ast.Stmt{invocationClosureCallStatement(hiddenCall, functionType.Results)}
+		if functionType.Results == nil || len(functionType.Results.List) == 0 {
+			hiddenBody = append(hiddenBody, &ast.ReturnStmt{})
+		}
+		body = append(body, &ast.IfStmt{
+			Cond: &ast.Ident{Name: hasExecutionReceiverName},
+			Body: &ast.BlockStmt{List: hiddenBody},
+		})
+		publicCall := &ast.CallExpr{
+			Fun:  &ast.SelectorExpr{X: receiver, Sel: &ast.Ident{Name: resolution.def.Name}},
+			Args: javaArgs,
+		}
+		markVariadicForwardCall(publicCall, resolution.def)
+		body = append(body, invocationClosureCallStatement(publicCall, functionType.Results))
+	} else {
+		if classNeedsVirtualDispatch(resolution.owner, ctx) {
+			callReceiver = &ast.SelectorExpr{X: receiver, Sel: &ast.Ident{Name: classDispatchFieldName(resolution.owner)}}
+		}
+		call := &ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X:   callReceiver,
+				Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner)},
+			},
+			Args: append([]ast.Expr{execution}, javaArgs...),
+		}
+		markVariadicForwardCall(call, resolution.def)
+		body = append(body, invocationClosureCallStatement(call, functionType.Results))
+	}
+
+	innerType := &ast.FuncType{Params: params, Results: cloneFieldList(functionType.Results)}
+	inner := &ast.FuncLit{Type: innerType, Body: &ast.BlockStmt{List: body}}
+	if unbound {
+		return inner
+	}
+
+	receiverJavaType, ok := inferExprJavaType(node.NamedChild(0), ctx, source)
+	if !ok {
+		return inner
+	}
+	receiverType := javaTypeStringToGoTypeExpr(receiverJavaType, inScopeTypeParameters(ctx), ctx)
+	if targetScope.IsAbstract {
+		receiverType = abstractClassToInterface(receiverType, receiverJavaType, ctx)
+	}
+	// Rebuild the inner closure against the staged receiver so a bound primary is
+	// evaluated exactly once when the Java method reference is created.
+	return &ast.CallExpr{Fun: &ast.FuncLit{
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: boundReceiverName}}, Type: receiverType}}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: innerType}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{inner}}}},
+	}, Args: []ast.Expr{originalBoundReceiver}}
+}
+
+func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType string, executionAware bool, ctx Ctx) ast.Expr {
 	method, _ := resolveFunctionalInterfaceMethod(ctx, expectedType)
 	if method == nil {
 		return nil
@@ -4824,7 +5304,11 @@ func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType 
 		return nil
 	}
 
-	constructor := qualifiedNameExpr("New"+interfaceScope.Class.Name+"FuncAdapter", findJavaPackageForClassScope(interfaceScope), ctx)
+	constructorName := "New" + interfaceScope.Class.Name + "FuncAdapter"
+	if executionAware {
+		constructorName += executionMethodSuffix
+	}
+	constructor := qualifiedNameExpr(constructorName, findJavaPackageForClassScope(interfaceScope), ctx)
 	if len(typeArgs) > 0 {
 		typeArgExprs := make([]ast.Expr, 0, len(typeArgs))
 		for _, arg := range typeArgs {
@@ -6233,8 +6717,8 @@ func maybeRewriteInstanceGenericMethodInvocationWithTarget(target *invocationTar
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X:   helperCall,
-			Sel: &ast.Ident{Name: helperDef.Name},
+			Sel: &ast.Ident{Name: executionMethodCallName(helperDef, ownerScope, ctx)},
 		},
-		Args: args,
+		Args: prependExecutionMethodArgument(ctx, helperDef, args),
 	}
 }

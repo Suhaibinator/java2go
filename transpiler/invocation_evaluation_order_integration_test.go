@@ -55,13 +55,13 @@ public class InvocationOrderProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := strings.Join(strings.Fields(out), " ")
-	if !strings.Contains(flat, "receiver().instanceCall(argument())") {
+	if !strings.Contains(flat, "receiverJava2goExecution(__java2goExecution).instanceCallJava2goExecution(__java2goExecution, argumentJava2goExecution(__java2goExecution))") {
 		t.Fatalf("ordinary instance invocation should retain Go's natural receiver-then-arguments order:\n%s", out)
 	}
 	if !strings.Contains(flat, "if it == nil { _ = *it }") {
 		t.Fatalf("source-backed instance method must reject nil before its Java body:\n%s", out)
 	}
-	if !strings.Contains(flat, "_ = receiver() return staticCall(argument())") {
+	if !strings.Contains(flat, "_ = receiverJava2goExecution(__java2goExecution) return staticCallJava2goExecution(__java2goExecution, argumentJava2goExecution(__java2goExecution))") {
 		t.Fatalf("static invocation must evaluate its qualifying expression before arguments:\n%s", out)
 	}
 

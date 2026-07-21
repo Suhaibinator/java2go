@@ -39,7 +39,13 @@ public class StaticOrderProgram {
 		t.Fatalf("expected one consolidated package initializer, got:\n%s", out)
 	}
 	lastPosition := -1
-	for _, marker := range []string{`mark("a", 1)`, `"block1,"`, `mark("b", 2)`, `mark("c", 3)`, `"block2,"`} {
+	for _, marker := range []string{
+		`markJava2goExecution(__java2goExecution, "a", 1)`,
+		`"block1,"`,
+		`markJava2goExecution(__java2goExecution, "b", 2)`,
+		`markJava2goExecution(__java2goExecution, "c", 3)`,
+		`"block2,"`,
+	} {
 		position := strings.Index(out, marker)
 		if position <= lastPosition {
 			t.Fatalf("expected %q after the preceding Java initializer in generated output, got:\n%s", marker, out)
