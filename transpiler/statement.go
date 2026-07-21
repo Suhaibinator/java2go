@@ -710,9 +710,19 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 		return &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(node.NamedChild(0), source, returnCtx)}}
 	case "labeled_statement":
+		labelCtx := ctx.Clone()
+		labelCtx.javaLabelTargets = cloneJavaLabelTargets(ctx.javaLabelTargets)
+		labelTarget := &javaLabelTarget{}
+		if key, ok := javaControlKey(node); ok {
+			labelCtx.javaLabelTargets[key] = labelTarget
+		}
+		stmt := ParseStmt(node.NamedChild(1), source, labelCtx)
+		if !labelTarget.NeedsGoLabel {
+			return stmt
+		}
 		return &ast.LabeledStmt{
 			Label: identFromNode(node.NamedChild(0), source),
-			Stmt:  ParseStmt(node.NamedChild(1), source, ctx),
+			Stmt:  stmt,
 		}
 	case "break_statement":
 		return lowerTryControlBranch(node, source, ctx, token.BREAK)
@@ -922,11 +932,23 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			Body: ParseStmt(node.NamedChild(1), source, ctx).(*ast.BlockStmt),
 		}
 	case "do_statement":
-		// A do statement is handled as a blank for loop with the condition
-		// inserted as a break condition in the final part of the loop
-		body := ParseStmt(node.NamedChild(0), source, ctx).(*ast.BlockStmt)
+		// Java continue in a do-while evaluates the condition before deciding
+		// whether to start another iteration. Native Go continue would skip a
+		// guard appended to the loop body, so continues targeting this exact Java
+		// node are rewritten to a synthetic condition-phase label. Keep the Java
+		// body in its own block so a forward goto exits local-variable scopes
+		// instead of illegally jumping over their declarations.
+		doCtx := ctx.Clone()
+		doCtx.doWhileContinueTargets = cloneDoWhileContinueTargets(ctx.doWhileContinueTargets)
+		continueTarget := &doWhileContinueTarget{
+			Label: fmt.Sprintf("__java2goDoCondition_%d_%d", node.StartByte(), ctx.nextControlLabelIndex()),
+		}
+		if key, ok := javaControlKey(node); ok {
+			doCtx.doWhileContinueTargets[key] = continueTarget
+		}
+		body := ParseStmt(node.NamedChild(0), source, doCtx).(*ast.BlockStmt)
 
-		body.List = append(body.List, &ast.IfStmt{
+		conditionGuard := &ast.IfStmt{
 			Cond: &ast.UnaryExpr{
 				Op: token.NOT,
 				X: &ast.ParenExpr{
@@ -934,10 +956,19 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				},
 			},
 			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.BranchStmt{Tok: token.BREAK}}},
-		})
+		}
+		loopBody := &ast.BlockStmt{List: []ast.Stmt{body}}
+		if continueTarget.Used {
+			loopBody.List = append(loopBody.List, &ast.LabeledStmt{
+				Label: &ast.Ident{Name: continueTarget.Label},
+				Stmt:  conditionGuard,
+			})
+		} else {
+			loopBody.List = append(loopBody.List, conditionGuard)
+		}
 
 		return &ast.ForStmt{
-			Body: body,
+			Body: loopBody,
 		}
 	case "switch_statement", "switch_expression":
 		// A classic switch statement parses as `switch_expression` in tree-sitter.
@@ -1398,15 +1429,12 @@ func parseSwitchGroupBody(bodyNodes []*sitter.Node, source []byte, ctx Ctx) (bod
 }
 
 func lowerTryControlBranch(node *sitter.Node, source []byte, ctx Ctx, tok token.Token) ast.Stmt {
-	direct := &ast.BranchStmt{Tok: tok}
-	if node != nil && node.NamedChildCount() > 0 {
-		direct.Label = identFromNode(node.NamedChild(0), source)
-	}
+	javaTarget, label := javaBranchTarget(node, source, tok)
+	direct := lowerJavaControlTransferStmt(tok, label, javaTarget, ctx)
 	if ctx.tryReturnTarget == nil || ctx.tryControlBoundary == nil {
 		return direct
 	}
 
-	javaTarget, label := javaBranchTarget(node, source, tok)
 	if javaTarget == nil || javaTargetInsideBoundary(javaTarget, ctx.tryControlBoundary) {
 		return direct
 	}
@@ -1431,6 +1459,64 @@ func lowerTryControlBranch(node *sitter.Node, source []byte, ctx Ctx, tok token.
 		},
 		&ast.ReturnStmt{},
 	}}
+}
+
+func lowerJavaControlTransferStmt(tok token.Token, label string, javaTarget *sitter.Node, ctx Ctx) ast.Stmt {
+	if tok == token.CONTINUE {
+		if target := activeDoWhileContinueTarget(javaTarget, ctx); target != nil {
+			target.Used = true
+			return &ast.BranchStmt{
+				Tok:   token.GOTO,
+				Label: &ast.Ident{Name: target.Label},
+			}
+		}
+	}
+
+	if label != "" && javaTarget != nil {
+		if key, ok := javaControlKey(javaTarget); ok {
+			if target := ctx.javaLabelTargets[key]; target != nil {
+				target.NeedsGoLabel = true
+			}
+		}
+	}
+	branch := &ast.BranchStmt{Tok: tok}
+	if label != "" {
+		branch.Label = &ast.Ident{Name: label}
+	}
+	return branch
+}
+
+func activeDoWhileContinueTarget(javaTarget *sitter.Node, ctx Ctx) *doWhileContinueTarget {
+	for javaTarget != nil && javaTarget.Type() == "labeled_statement" {
+		if javaTarget.NamedChildCount() < 2 {
+			return nil
+		}
+		javaTarget = javaTarget.NamedChild(1)
+	}
+	if javaTarget == nil || javaTarget.Type() != "do_statement" {
+		return nil
+	}
+	key, ok := javaControlKey(javaTarget)
+	if !ok {
+		return nil
+	}
+	return ctx.doWhileContinueTargets[key]
+}
+
+func cloneDoWhileContinueTargets(source map[javaControlTargetKey]*doWhileContinueTarget) map[javaControlTargetKey]*doWhileContinueTarget {
+	cloned := make(map[javaControlTargetKey]*doWhileContinueTarget, len(source)+1)
+	for key, target := range source {
+		cloned[key] = target
+	}
+	return cloned
+}
+
+func cloneJavaLabelTargets(source map[javaControlTargetKey]*javaLabelTarget) map[javaControlTargetKey]*javaLabelTarget {
+	cloned := make(map[javaControlTargetKey]*javaLabelTarget, len(source)+1)
+	for key, target := range source {
+		cloned[key] = target
+	}
+	return cloned
 }
 
 func recordLocalVariableDefinition(ctx Ctx, name, originalType, parsedType string) {

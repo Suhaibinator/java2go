@@ -93,6 +93,15 @@ type Ctx struct {
 	// transfer is recorded on tryReturnTarget and replayed after the closure has
 	// run (and, importantly, after finally has had a chance to override it).
 	tryControlBoundary *sitter.Node
+	// doWhileContinueTargets maps active Java do-while statements to their
+	// generated condition-phase labels. Java continue targets this phase, while
+	// native Go continue would incorrectly skip a trailing condition guard.
+	doWhileContinueTargets map[javaControlTargetKey]*doWhileContinueTarget
+	// javaLabelTargets tracks whether a Java label still needs a corresponding
+	// Go loop label after target-specific rewrites. A labeled continue to a
+	// do-while uses the internal condition label instead, and Java permits labels
+	// that are never referenced whereas Go rejects unused labels.
+	javaLabelTargets map[javaControlTargetKey]*javaLabelTarget
 	// suppressUnsupportedDiagnostics is used only while rendering the guarded
 	// copy of a versioned affine loop. The first copy already reported (or, in
 	// strict mode, failed on) the same source node; the second must still emit its
@@ -111,6 +120,11 @@ type Ctx struct {
 	// Monotonic counter used to give synthesized anonymous/local classes unique
 	// names within a file. Shared via pointer across cloned contexts.
 	anonClassCounter *int
+	// Monotonic counter used for function-scoped control labels whose source node
+	// may be rendered more than once (for example affine fast/guarded loop
+	// versions). Shared across cloned contexts so every emitted declaration in a
+	// generated file receives a distinct name.
+	controlLabelCounter *int
 
 	// Maps a local class's Java name to the synthesized file-scope struct it was
 	// hoisted into, so `new LocalClass(...)` in the same method body resolves to
@@ -142,9 +156,10 @@ type Ctx struct {
 
 // localClassInfo records how a local class was hoisted to file scope.
 type localClassInfo struct {
-	structName string
-	captured   []capturedLocal
-	scope      *symbol.ClassScope
+	structName                 string
+	captured                   []capturedLocal
+	scope                      *symbol.ClassScope
+	fieldInitializerMethodName string
 }
 
 // addHoistedDecl appends a synthesized top-level declaration to be emitted at
@@ -165,6 +180,14 @@ func (ctx Ctx) nextAnonClassIndex() int {
 	return *ctx.anonClassCounter
 }
 
+func (ctx Ctx) nextControlLabelIndex() int {
+	if ctx.controlLabelCounter == nil {
+		return 0
+	}
+	*ctx.controlLabelCounter++
+	return *ctx.controlLabelCounter
+}
+
 type tryReturnTarget struct {
 	FlagName    string
 	ValueName   string
@@ -172,6 +195,32 @@ type tryReturnTarget struct {
 	ControlName string
 	controls    map[tryControlTransferKey]*tryControlTransfer
 	controlList []*tryControlTransfer
+}
+
+type javaControlTargetKey struct {
+	TargetType  string
+	TargetStart uint32
+	TargetEnd   uint32
+}
+
+type doWhileContinueTarget struct {
+	Label string
+	Used  bool
+}
+
+type javaLabelTarget struct {
+	NeedsGoLabel bool
+}
+
+func javaControlKey(node *sitter.Node) (javaControlTargetKey, bool) {
+	if node == nil {
+		return javaControlTargetKey{}, false
+	}
+	return javaControlTargetKey{
+		TargetType:  node.Type(),
+		TargetStart: node.StartByte(),
+		TargetEnd:   node.EndByte(),
+	}, true
 }
 
 type tryControlTransferKey struct {
@@ -281,10 +330,13 @@ func (c Ctx) Clone() Ctx {
 		usedImports:                         c.usedImports,
 		tryReturnTarget:                     c.tryReturnTarget,
 		tryControlBoundary:                  c.tryControlBoundary,
+		doWhileContinueTargets:              c.doWhileContinueTargets,
+		javaLabelTargets:                    c.javaLabelTargets,
 		suppressUnsupportedDiagnostics:      c.suppressUnsupportedDiagnostics,
 		disableAffineArrayRowSpecialization: c.disableAffineArrayRowSpecialization,
 		hoistedDecls:                        c.hoistedDecls,
 		anonClassCounter:                    c.anonClassCounter,
+		controlLabelCounter:                 c.controlLabelCounter,
 		localClasses:                        c.localClasses,
 		affineArrayBindings:                 c.affineArrayBindings,
 		affineArrayCallSites:                c.affineArrayCallSites,
@@ -320,6 +372,9 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 		if ctx.anonClassCounter == nil {
 			ctx.anonClassCounter = new(int)
+		}
+		if ctx.controlLabelCounter == nil {
+			ctx.controlLabelCounter = new(int)
 		}
 		if ctx.localClasses == nil {
 			ctx.localClasses = make(map[string]*localClassInfo)
@@ -837,11 +892,7 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		if transfer == nil {
 			continue
 		}
-		branch := &ast.BranchStmt{Tok: transfer.Tok}
-		if transfer.Label != "" {
-			branch.Label = &ast.Ident{Name: transfer.Label}
-		}
-
+		branch := lowerJavaControlTransferStmt(transfer.Tok, transfer.Label, transfer.JavaTarget, ctx)
 		body := []ast.Stmt{branch}
 		if enclosing := ctx.tryReturnTarget; enclosing != nil && !transferTargetInsideBoundary(transfer, ctx.tryControlBoundary) {
 			enclosingTransfer := enclosing.registerControlTransfer(transfer.Tok, transfer.Label, transfer.JavaTarget)

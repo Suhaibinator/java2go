@@ -1,10 +1,9 @@
-# Do-while continue known gap
+# Do-while continue parity
 
 A Java `continue` in a do-while loop jumps to the condition check. The current
-lowering appends that check to a Go `for` body, so a native Go `continue` skips
-it and starts another iteration. Routing the transfer through `finally` does not
-change that underlying target mismatch.
+lowering gives that phase an explicit generated label, so ordinary and labeled
+continues evaluate the condition before deciding whether to iterate again.
 
-This fixture remains `known_gap` until do-while lowering gives continues an
-explicit condition-check target. Other loop kinds remain covered by passing
-runtime parity tests.
+This fixture verifies byte-exact parity when the transfer crosses `finally`.
+Focused runtime tests additionally cover condition side effects, labeled
+continues, nested loops, break, and return.
