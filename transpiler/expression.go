@@ -829,7 +829,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			panic("Array had zero dimensions")
 		}
 
-		return GenMultiDimArray(symbol.NodeToStr(elementType), dimensions)
+		return GenMultiDimArray(elementType, dimensions, arrayDimensions, ctx)
 	case "instanceof_expression":
 		left := node.ChildByFieldName("left")
 		if left == nil && node.NamedChildCount() > 0 {
@@ -915,6 +915,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// at transpile time so e.g. `1 << 32` stays 1.
 		if operator == "<<" || operator == ">>" {
 			rightExpr = maskedShiftAmount(leftNode, rightNode, source, ctx)
+			leftExpr = promoteJavaUnaryNumericOperand(leftNode, leftExpr, ctx, source)
 		}
 		leftExpr, rightExpr = promoteJavaBinaryNumericOperands(
 			operator, leftNode, rightNode, leftExpr, rightExpr, source, ctx,
@@ -925,9 +926,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			Y:  rightExpr,
 		}
 	case "unary_expression":
+		operator := node.Child(0).Content(source)
+		operandNode := node.Child(1)
+		operand := ParseExpr(operandNode, source, ctx)
+		if operator == "+" || operator == "-" || operator == "~" {
+			operand = promoteJavaUnaryNumericOperand(operandNode, operand, ctx, source)
+		}
 		return &ast.UnaryExpr{
-			Op: StrToToken(node.Child(0).Content(source)),
-			X:  ParseExpr(node.Child(1), source, ctx),
+			Op: StrToToken(operator),
+			X:  operand,
 		}
 	case "parenthesized_expression":
 		return &ast.ParenExpr{
@@ -5100,6 +5107,27 @@ func convertJavaNumericOperand(expr ast.Expr, sourceType, targetType string) ast
 	return &ast.CallExpr{Fun: &ast.Ident{Name: conversion}, Args: []ast.Expr{expr}}
 }
 
+// promoteJavaUnaryNumericOperand applies JLS unary numeric promotion before an
+// operation is evaluated. Go otherwise keeps -byteValue and byteValue << n in
+// int8, so values such as -Byte.MIN_VALUE or 64 << 2 overflow before a later
+// conversion can repair them. Java widens byte, short, and char to int first.
+func promoteJavaUnaryNumericOperand(node *sitter.Node, expr ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	javaType, ok := inferExprJavaType(node, ctx, source)
+	if !ok {
+		return expr
+	}
+	canonical, numeric := canonicalJavaNumericType(javaType)
+	if !numeric {
+		return expr
+	}
+	switch canonical {
+	case "byte", "short", "char":
+		return convertJavaNumericOperand(expr, javaType, "int")
+	default:
+		return expr
+	}
+}
+
 // goIndexExpr parses a Java array/slice index expression and coerces it to Go's
 // required `int` index type. Java int indices are emitted as int32 now that int
 // locals are pinned (K1), so a variable or compound index must be wrapped in
@@ -5578,12 +5606,25 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 	case "true", "false":
 		return "boolean", true
 	case "unary_expression":
-		// A sign or bitwise complement preserves the unary-promoted operand type.
+		// A sign or bitwise complement has the unary-promoted operand type.
 		// This is especially important for overloads invoked with negative numeric
 		// literals, which tree-sitter represents as a unary expression around the
 		// literal node.
 		if count := int(node.NamedChildCount()); count > 0 {
-			return inferExprJavaType(node.NamedChild(count-1), ctx, source)
+			operandType, ok := inferExprJavaType(node.NamedChild(count-1), ctx, source)
+			if !ok {
+				return "", false
+			}
+			operator := node.Child(0).Content(source)
+			if operator == "+" || operator == "-" || operator == "~" {
+				if canonical, numeric := canonicalJavaNumericType(operandType); numeric {
+					switch canonical {
+					case "byte", "short", "char":
+						return "int", true
+					}
+				}
+			}
+			return operandType, true
 		}
 	case "parenthesized_expression":
 		if inner := node.NamedChild(0); inner != nil {

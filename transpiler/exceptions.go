@@ -23,6 +23,7 @@ var builtinExceptionTypes = map[string]struct{}{
 	"IllegalArgumentException":       {},
 	"IllegalStateException":          {},
 	"NullPointerException":           {},
+	"NegativeArraySizeException":     {},
 	"IndexOutOfBoundsException":      {},
 	"ArrayIndexOutOfBoundsException": {},
 	"NumberFormatException":          {},

@@ -1,8 +1,5 @@
 {
   "main_class": "parity.multidimorder.MultidimensionalArrayEvaluationApplication",
   "module_path": "parity/multidimorder",
-  "status": "known_gap",
-  "known_gap": "Java evaluates every explicit multidimensional-array dimension expression from left to right before checking any dimension for negativity; generated Go allocates each level as it goes and throws before evaluating later dimensions.",
-  "expected_failure_stage": "output",
-  "expected_failure_contains": "--- quoted go stdout ---\n\"128\\n\""
+  "status": "passing"
 }

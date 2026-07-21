@@ -50,6 +50,19 @@ func TestNormalizePanic_IndexOutOfRange(t *testing.T) {
 	}
 }
 
+func TestNormalizePanic_NegativeSliceLength(t *testing.T) {
+	got := recoverNormalized(func() {
+		n := int32(-1)
+		_ = make([]int, n)
+	})
+	if !CaughtAs(got, "NegativeArraySizeException") {
+		t.Fatalf("negative make length should normalize to NegativeArraySizeException, got %T (%v)", got, got)
+	}
+	if !CaughtAs(got, "RuntimeException") {
+		t.Fatal("normalized negative array size should be catchable by RuntimeException")
+	}
+}
+
 func TestNormalizePanic_FailedTypeAssertion(t *testing.T) {
 	got := recoverNormalized(func() {
 		var v interface{} = "a string"
@@ -157,6 +170,18 @@ func TestCaughtAs_DeepHierarchy(t *testing.T) {
 		if !CaughtAs(e, super) {
 			t.Fatalf("ArrayIndexOutOfBoundsException should be caught by %s", super)
 		}
+	}
+}
+
+func TestCaughtAs_NegativeArraySizeException(t *testing.T) {
+	e := NewNegativeArraySizeException("negative dimension")
+	for _, super := range []string{"NegativeArraySizeException", "RuntimeException", "Exception", "Throwable"} {
+		if !CaughtAs(e, super) {
+			t.Fatalf("NegativeArraySizeException should be caught by %s", super)
+		}
+	}
+	if CaughtAs(e, "IllegalArgumentException") {
+		t.Fatal("NegativeArraySizeException must not match an unrelated sibling type")
 	}
 }
 

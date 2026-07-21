@@ -11,8 +11,19 @@ only then performs the negative-size check. Catching
 
 The original generated Go allocation built one nesting level at a time. It
 recorded `12`, panicked while allocating the negative second dimension, and
-skipped the third expression, producing `128`. The pinned output mismatch is a
-TDD target for staging all explicit dimensions before allocation.
+skipped the third expression, producing `128`. The fixture entered the suite as
+a pinned known gap.
+
+Generated multidimensional allocations now pass all explicit dimensions as
+arguments to a synthetic allocator function. Go evaluates those arguments once
+and left to right; the function then checks all staged values before allocating
+any level and raises the modelled `NegativeArraySizeException` when needed. The
+fixture is therefore promoted to passing byte-exact parity.
 
 The dimensions are tiny and allocation never begins in the negative case, so
 the fixture has a negligible and deterministic memory footprint.
+
+The oracle deliberately observes exception identity and timing rather than the
+detail returned by `getMessage()`. Java specifies `NegativeArraySizeException`
+for this case but does not specify that implementation-dependent message;
+synthetic multidimensional checks therefore use a stable empty detail string.

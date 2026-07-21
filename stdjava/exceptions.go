@@ -42,6 +42,7 @@ var (
 		"IllegalArgumentException":       "RuntimeException",
 		"IllegalStateException":          "RuntimeException",
 		"NullPointerException":           "RuntimeException",
+		"NegativeArraySizeException":     "RuntimeException",
 		"IndexOutOfBoundsException":      "RuntimeException",
 		"ArrayIndexOutOfBoundsException": "IndexOutOfBoundsException",
 		"NumberFormatException":          "IllegalArgumentException",
@@ -133,6 +134,7 @@ func throwableTypeName(recovered interface{}) string {
 //	integer divide by zero  -> ArithmeticException
 //	nil pointer dereference  -> NullPointerException
 //	slice/array index range  -> ArrayIndexOutOfBoundsException
+//	negative slice length    -> NegativeArraySizeException
 //	failed type assertion    -> ClassCastException
 //
 // The Go runtime does not expose distinct exported types for most of these
@@ -173,6 +175,8 @@ func NormalizePanic(recovered interface{}) interface{} {
 	case strings.Contains(msg, "index out of range"),
 		strings.Contains(msg, "slice bounds out of range"):
 		return NewArrayIndexOutOfBoundsException(msg)
+	case strings.Contains(msg, "makeslice: len out of range"):
+		return NewNegativeArraySizeException(msg)
 	case strings.Contains(msg, "nil pointer dereference"),
 		strings.Contains(msg, "invalid memory address"):
 		return NewNullPointerException(msg)
@@ -273,6 +277,7 @@ type RuntimeException struct{ ThrowableBase }
 type IllegalArgumentException struct{ ThrowableBase }
 type IllegalStateException struct{ ThrowableBase }
 type NullPointerException struct{ ThrowableBase }
+type NegativeArraySizeException struct{ ThrowableBase }
 type IndexOutOfBoundsException struct{ ThrowableBase }
 type ArrayIndexOutOfBoundsException struct{ ThrowableBase }
 type NumberFormatException struct{ ThrowableBase }
@@ -310,6 +315,10 @@ func NewIllegalStateException(message string) IllegalStateException {
 
 func NewNullPointerException(message string) NullPointerException {
 	return NullPointerException{newThrowableBase("NullPointerException", message)}
+}
+
+func NewNegativeArraySizeException(message string) NegativeArraySizeException {
+	return NegativeArraySizeException{newThrowableBase("NegativeArraySizeException", message)}
 }
 
 func NewIndexOutOfBoundsException(message string) IndexOutOfBoundsException {

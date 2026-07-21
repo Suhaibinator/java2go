@@ -225,40 +225,91 @@ func genInterfaceInContext(name string, methods *ast.FieldList, typeParams []sym
 	}
 }
 
-func GenMultiDimArray(arrayType string, dimensions []ast.Expr) ast.Expr {
+func GenMultiDimArray(elementType ast.Expr, dimensions []ast.Expr, totalRank int, ctx Ctx) ast.Expr {
+	if totalRank < len(dimensions) {
+		totalRank = len(dimensions)
+	}
 	if len(dimensions) == 1 {
-		// `new T[n]` becomes `make([]T, n)`; the make target must be the slice
-		// type, not the bare element type.
+		// Go accepts every integer type as make's length, so this also implements
+		// Java's byte/short/char numeric promotion without a conversion. A negative
+		// length is mapped to NegativeArraySizeException by NormalizePanic at a
+		// generated catch boundary. Keeping this direct shape avoids imposing the
+		// stdjava dependency on every otherwise standalone array allocation.
 		return &ast.CallExpr{
 			Fun:  &ast.Ident{Name: "make"},
-			Args: append([]ast.Expr{genArrayType(arrayType, 1)}, dimensions...),
+			Args: append([]ast.Expr{genArrayType(elementType, totalRank)}, dimensions...),
 		}
+	}
+
+	// Java evaluates every explicit dimension expression exactly once, from
+	// left to right, before it checks any result for negativity or allocates any
+	// part of the array. Passing the expressions as arguments to the generated
+	// function literal gives them that ordering without letting the synthetic
+	// names shadow identifiers used by later expressions.
+	usedNames := arrayAllocationReservedNames(elementType, ctx)
+	dimensionNames := make([]string, len(dimensions))
+	dimensionArgs := make([]ast.Expr, len(dimensions))
+	callArgs := make([]ast.Expr, len(dimensions))
+	for i := range dimensions {
+		dimensionNames[i] = uniqueArrayAllocationName("__java2goDimension"+strconv.Itoa(i), usedNames)
+		dimensionArgs[i] = &ast.Ident{Name: dimensionNames[i]}
+		// JLS 15.10.1 applies unary numeric promotion to each dimension. An
+		// explicit conversion is needed for byte, short, and char expressions,
+		// because Go does not implicitly widen those values to int32 at a call.
+		callArgs[i] = &ast.CallExpr{
+			Fun:  &ast.Ident{Name: "int32"},
+			Args: []ast.Expr{dimensions[i]},
+		}
+	}
+	arrayName := uniqueArrayAllocationName("__java2goArray", usedNames)
+	indexNames := make([]string, len(dimensions)-1)
+	for i := range indexNames {
+		indexNames[i] = uniqueArrayAllocationName("__java2goIndex"+strconv.Itoa(i), usedNames)
+	}
+
+	allocationStatements := make([]ast.Stmt, 0, len(dimensions)+3)
+	for _, dimension := range dimensionArgs {
+		allocationStatements = append(allocationStatements, &ast.IfStmt{
+			Cond: &ast.BinaryExpr{
+				X:  dimension,
+				Op: token.LSS,
+				Y:  &ast.BasicLit{Kind: token.INT, Value: "0"},
+			},
+			Body: &ast.BlockStmt{List: []ast.Stmt{
+				&ast.ExprStmt{X: &ast.CallExpr{
+					Fun: &ast.Ident{Name: "panic"},
+					// JLS specifies the exception type and timing, but not its
+					// implementation-dependent detail message. Keep the synthetic
+					// multidimensional path deterministic with an empty detail.
+					Args: []ast.Expr{stdjavaCall(ctx, "NewNegativeArraySizeException",
+						&ast.BasicLit{Kind: token.STRING, Value: `""`})},
+				}},
+			}},
+		})
 	}
 
 	// arr := make([][][]int, 2)
 	base := &ast.AssignStmt{
 		Tok: token.DEFINE,
-		Lhs: []ast.Expr{&ast.Ident{Name: "arr"}},
+		Lhs: []ast.Expr{&ast.Ident{Name: arrayName}},
 		Rhs: []ast.Expr{
-			makeExpression(genArrayType(arrayType, len(dimensions)), dimensions[0]),
+			makeExpression(genArrayType(elementType, totalRank), dimensionArgs[0]),
 		},
 	}
-
-	indexes := []string{"ind"}
 
 	var body, currentDimension *ast.RangeStmt
 
 	for offset := range dimensions[1:] {
 		nextDim := &ast.RangeStmt{
-			Key: &ast.Ident{Name: indexes[len(indexes)-1]},
+			Key: &ast.Ident{Name: indexNames[offset]},
 			Tok: token.DEFINE,
-			X:   multiArrayAccess("arr", indexes[:len(indexes)-1]),
+			X:   multiArrayAccess(arrayName, indexNames[:offset]),
 			Body: &ast.BlockStmt{
 				List: []ast.Stmt{
 					&ast.AssignStmt{
 						Tok: token.ASSIGN,
-						Lhs: []ast.Expr{multiArrayAccess("arr", indexes)},
-						Rhs: []ast.Expr{makeExpression(genArrayType(arrayType, len(dimensions)-(offset+1)), dimensions[offset+1])},
+						Lhs: []ast.Expr{multiArrayAccess(arrayName, indexNames[:offset+1])},
+						Rhs: []ast.Expr{makeExpression(genArrayType(elementType, totalRank-(offset+1)), dimensionArgs[offset+1])},
 					},
 				},
 			},
@@ -271,29 +322,38 @@ func GenMultiDimArray(arrayType string, dimensions []ast.Expr) ast.Expr {
 			currentDimension.Body.List = append(currentDimension.Body.List, nextDim)
 			currentDimension = currentDimension.Body.List[len(currentDimension.Body.List)-1].(*ast.RangeStmt)
 		}
-
-		indexes = append(indexes, indexes[len(indexes)-1]+strconv.Itoa(offset))
 	}
+	allocationStatements = append(allocationStatements, base)
+	if body != nil {
+		allocationStatements = append(allocationStatements, body)
+	}
+	allocationStatements = append(allocationStatements,
+		&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: arrayName}}})
 
 	return &ast.CallExpr{
 		Fun: &ast.FuncLit{
 			Type: &ast.FuncType{
+				Params: &ast.FieldList{List: []*ast.Field{{
+					Names: func() []*ast.Ident {
+						names := make([]*ast.Ident, len(dimensionNames))
+						for i, name := range dimensionNames {
+							names[i] = &ast.Ident{Name: name}
+						}
+						return names
+					}(),
+					Type: &ast.Ident{Name: "int32"},
+				}}},
 				Results: &ast.FieldList{
 					List: []*ast.Field{
 						&ast.Field{
-							Type: genArrayType(arrayType, len(dimensions)),
+							Type: genArrayType(elementType, totalRank),
 						},
 					},
 				},
 			},
-			Body: &ast.BlockStmt{
-				List: []ast.Stmt{
-					base,
-					body,
-					&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "arr"}}},
-				},
-			},
+			Body: &ast.BlockStmt{List: allocationStatements},
 		},
+		Args: callArgs,
 	}
 }
 
@@ -305,12 +365,58 @@ func multiArrayAccess(arrName string, dims []string) ast.Expr {
 	return arr
 }
 
-func genArrayType(arrayType string, depth int) ast.Expr {
-	var arrayDims ast.Expr = &ast.Ident{Name: arrayType}
+func genArrayType(elementType ast.Expr, depth int) ast.Expr {
+	arrayDims := elementType
 	for i := 0; i < depth; i++ {
 		arrayDims = &ast.ArrayType{Elt: arrayDims}
 	}
 	return arrayDims
+}
+
+func arrayAllocationReservedNames(elementType ast.Expr, ctx Ctx) map[string]struct{} {
+	reserved := map[string]struct{}{
+		"int32":   {},
+		"make":    {},
+		"panic":   {},
+		"stdjava": {},
+	}
+	ast.Inspect(elementType, func(node ast.Node) bool {
+		if identifier, ok := node.(*ast.Ident); ok && identifier.Name != "" {
+			reserved[identifier.Name] = struct{}{}
+		}
+		return true
+	})
+	for _, typeParameter := range inScopeTypeParameters(ctx) {
+		reserved[typeParameter] = struct{}{}
+		reserved[sanitizeGoIdent(typeParameter)] = struct{}{}
+	}
+	for _, alias := range ctx.importAliases {
+		if alias != "" {
+			reserved[alias] = struct{}{}
+		}
+	}
+	if ctx.currentFile != nil {
+		for _, javaPackage := range ctx.currentFile.Imports {
+			if alias := packageAliasFromJavaPackage(javaPackage); alias != "" {
+				reserved[alias] = struct{}{}
+			}
+		}
+	}
+	return reserved
+}
+
+func uniqueArrayAllocationName(base string, used map[string]struct{}) string {
+	for suffix := 0; ; suffix++ {
+		candidate := base
+		if suffix > 0 {
+			candidate += "_" + strconv.Itoa(suffix)
+		}
+		if _, collision := used[candidate]; collision {
+			continue
+		}
+		used[candidate] = struct{}{}
+		return candidate
+	}
 }
 
 // makeExpression constructs an array with the `make` keyword
