@@ -35,7 +35,7 @@ func boxedPrimitiveType(name string) (ast.Expr, bool) {
 	case "Short":
 		return &ast.Ident{Name: "int16"}, true
 	case "Byte":
-		return &ast.Ident{Name: "byte"}, true
+		return &ast.Ident{Name: "int8"}, true
 	case "Character":
 		return &ast.Ident{Name: "rune"}, true
 	case "Float":
@@ -79,7 +79,8 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		case "char":
 			return &ast.Ident{Name: "rune"}
 		case "byte":
-			return &ast.Ident{Name: node.Content(source)}
+			// Java byte is signed; Go's predeclared byte is an alias for uint8.
+			return &ast.Ident{Name: "int8"}
 		}
 
 		panic(fmt.Errorf("unknown integral type: %v", node.Child(0).Type()))

@@ -72,7 +72,7 @@ func TestIntrinsics_StringStatics(t *testing.T) {
 		expr string
 		want string
 	}{
-		{"valueOf", "String.valueOf(5)", "fmt.Sprint(5)"},
+		{"valueOf", "String.valueOf(5)", "stdjava.StringValueOf(5)"},
 		{"format", "String.format(\"%d\", 5)", "fmt.Sprintf(\"%d\", 5)"},
 		{"join", "String.join(\",\", parts)", "strings.Join(parts, \",\")"},
 	}

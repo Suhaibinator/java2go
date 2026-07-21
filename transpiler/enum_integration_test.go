@@ -23,11 +23,101 @@ public enum State {
 	if !strings.Contains(flat, "State) Name() string") {
 		t.Fatalf("expected name() accessor to be generated, got:\n%s", out)
 	}
+	if !strings.Contains(flat, "State) String() string") {
+		t.Fatalf("expected fmt.Stringer bridge for Java enum text conversion, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "== nil { return \"null\" }") {
+		t.Fatalf("expected nil enum text conversion to match Java null, got:\n%s", out)
+	}
 	if !strings.Contains(flat, "State) Ordinal() int32") {
 		t.Fatalf("expected ordinal() accessor to be generated, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "State) CompareTo(other *State) int32") {
 		t.Fatalf("expected compareTo helper to be generated, got:\n%s", out)
+	}
+}
+
+func TestEnumIntegration_StringConversionUsesEnumName(t *testing.T) {
+	src := `
+public enum Day { MON, FRI }
+public class EnumText {
+    public static void printAll() {
+        Day selected = Day.valueOf("FRI");
+        System.out.println(selected);
+        System.out.println("day=" + selected);
+        System.out.println(String.valueOf(selected));
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	if !strings.Contains(flat, "func (dy *Day) String() string") {
+		t.Fatalf("expected Day to implement fmt.Stringer, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "return dy.enumName") {
+		t.Fatalf("expected enum String method to return its Java name, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "stdjava.StringValueOf(selected)") {
+		t.Fatalf("expected String.valueOf(enum) to use Java conversion semantics, got:\n%s", out)
+	}
+}
+
+func TestEnumIntegration_StringConversionHonorsToStringOverride(t *testing.T) {
+	src := `
+public enum CustomLabel {
+    ALPHA;
+    public String toString() { return "custom-" + name(); }
+}
+public class CustomEnumText {
+    public static String run() {
+        CustomLabel value = CustomLabel.ALPHA;
+        return value + "|" + String.valueOf(value) + "|" + value.toString();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+	if !strings.Contains(flat, "func (cl *CustomLabel) String() string") || !strings.Contains(flat, "return cl.ToString()") {
+		t.Fatalf("expected fmt.Stringer bridge to delegate to enum toString override, got:\n%s", out)
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestCustomEnumTextRuntime(t *testing.T) {
+    if got := Run(); got != "custom-ALPHA|custom-ALPHA|custom-ALPHA" {
+        t.Fatalf("Run() = %q", got)
+    }
+}
+`)
+}
+
+func TestEnumIntegration_FloatingOutputUsesJavaFormatting(t *testing.T) {
+	src := `
+public class FloatingText {
+    public static void print(double d, float f) {
+        System.out.println(d);
+        System.out.println("double=" + d);
+        System.out.println(f);
+        System.out.println(String.valueOf(d));
+        System.out.println(Double.toString(d));
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+
+	if strings.Count(flat, "stdjava.StringValueOf(d)") < 3 {
+		t.Fatalf("expected println, concatenation, and String.valueOf to use Java double formatting, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "stdjava.StringValueOf(f)") {
+		t.Fatalf("expected println(float) to use Java float formatting, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "stdjava.DoubleToString(d)") {
+		t.Fatalf("expected Double.toString to use Java double formatting, got:\n%s", out)
 	}
 }
 

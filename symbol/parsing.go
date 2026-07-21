@@ -221,8 +221,22 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	// class Outer<T> { class Inner<T> { } } where Inner's T shadows Outer's T.
 	scope.TypeParameters = MergeTypeParams(parentTypeParams, ownTypeParams)
 
-	// Track implemented interfaces (for enums this is not handled elsewhere)
-	if interfacesNode := root.ChildByFieldName("interfaces"); interfacesNode != nil {
+	// Track implemented or extended interfaces. Tree-sitter uses
+	// `extends_interfaces` for interface inheritance and `interfaces` for class /
+	// enum implements clauses; both feed the same Java superinterface graph.
+	interfacesNode := root.ChildByFieldName("interfaces")
+	if interfacesNode == nil {
+		interfacesNode = root.ChildByFieldName("extends_interfaces")
+	}
+	if interfacesNode == nil {
+		for _, child := range nodeutil.NamedChildrenOf(root) {
+			if child.Type() == "interfaces" || child.Type() == "extends_interfaces" {
+				interfacesNode = child
+				break
+			}
+		}
+	}
+	if interfacesNode != nil {
 		for _, t := range collectTypeNodes(interfacesNode) {
 			scope.ImplementedInterfaces = append(scope.ImplementedInterfaces, t.Content(source))
 		}
@@ -357,6 +371,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
 		var public bool
 		var isStatic bool
+		var isPrivate bool
 		// Java interface methods are implicitly public.
 		if scope.IsInterface && node.Type() != "constructor_declaration" {
 			public = true
@@ -369,6 +384,9 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 				}
 				if modifier.Type() == "static" {
 					isStatic = true
+				}
+				if modifier.Type() == "private" {
+					isPrivate = true
 				}
 			}
 		}
@@ -386,6 +404,8 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			Parameters:     []*Definition{},
 			TypeParameters: methodTypeParams,
 			IsStatic:       isStatic,
+			IsPrivate:      isPrivate,
+			HasBody:        node.ChildByFieldName("body") != nil,
 		}
 
 		if node.Type() == "method_declaration" {

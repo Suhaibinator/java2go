@@ -157,8 +157,8 @@ public class A {
 	if !strings.Contains(flat, `[]string{"x", "y"}`) {
 		t.Errorf("expected []string{...}, got:\n%s", out)
 	}
-	if !strings.Contains(flat, `[]any{1, "z"}`) {
-		t.Errorf("expected []any{...} for Object[], got:\n%s", out)
+	if !strings.Contains(flat, `[]any{int32(1), "z"}`) {
+		t.Errorf("expected Java Integer-width boxing in Object[], got:\n%s", out)
 	}
 }
 
@@ -246,8 +246,8 @@ public class AnimalMain {
 	if !strings.Contains(flat, "type dog struct { *animal") {
 		t.Errorf("expected embed of `*animal` (lowercased), got:\n%s", out)
 	}
-	if !strings.Contains(out, "newAnimal(name)") {
-		t.Errorf("expected super constructor call `newAnimal(name)`, got:\n%s", out)
+	if !strings.Contains(flat, "dg.animal = newAnimalJava2goWithSelf(__java2goMostDerived, name)") {
+		t.Errorf("expected the super constructor call to preserve the most-derived receiver, got:\n%s", out)
 	}
 	if strings.Contains(out, "Newanimal") {
 		t.Errorf("super constructor call should be `newAnimal`, not `Newanimal`, got:\n%s", out)

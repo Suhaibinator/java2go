@@ -55,7 +55,7 @@ func TestNumericPromotionBehavior(t *testing.T) {
     if got := Combine(7, []int32{5}); got != 163 {
         t.Fatalf("Combine() = %d, want 163", got)
     }
-    if got := Narrow(byte(1), int16(2), rune(3), int32(4), int64(5)); got != 15 {
+	if got := Narrow(int8(1), int16(2), rune(3), int32(4), int64(5)); got != 15 {
         t.Fatalf("Narrow() = %d, want 15", got)
     }
     if got := Blend(float32(1.5), int32(2), int64(3), float64(4.25)); got != 10.75 {

@@ -14,6 +14,14 @@ type Definition struct {
 	TypeParameters []TypeParam
 	// Whether this definition is static (applies to methods/fields)
 	IsStatic bool
+	// IsPrivate marks members whose Java dispatch is statically bound to the
+	// declaring class and which are not inherited by subclasses.
+	IsPrivate bool
+	// HasBody distinguishes concrete/default methods from abstract declarations.
+	// It is primarily used for Java interface default methods, whose executable
+	// body must be inherited by implementing classes rather than represented as a
+	// nil embedded Go interface.
+	HasBody bool
 	// Indicates that this definition requires a helper to model method-level type parameters
 	RequiresHelper bool
 	// Name of the helper type to use (if RequiresHelper)

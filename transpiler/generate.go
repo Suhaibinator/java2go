@@ -137,10 +137,6 @@ func genFuncDeclWithTypeParamsInContext(name string, typeParams []symbol.TypePar
 	return funcDecl
 }
 
-func makeTypeParamFields(typeParams []symbol.TypeParam) []*ast.Field {
-	return makeTypeParamFieldsInContext(typeParams, Ctx{})
-}
-
 func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast.Field {
 	if len(typeParams) == 0 {
 		return nil
@@ -155,10 +151,6 @@ func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast
 		}
 	}
 	return fields
-}
-
-func constraintExpr(bounds []symbol.JavaType, typeParams []string) ast.Expr {
-	return constraintExprInContext(bounds, typeParams, Ctx{})
 }
 
 func constraintExprInContext(bounds []symbol.JavaType, typeParams []string, ctx Ctx) ast.Expr {

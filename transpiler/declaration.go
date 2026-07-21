@@ -26,9 +26,13 @@ var javaTypeNodeKinds = map[string]struct{}{
 }
 
 const (
-	enumMetaNameField    = "enumName"
-	enumMetaOrdinalField = "enumOrdinal"
-	fieldInitMethodName  = "__java2goInitFields"
+	enumMetaNameField       = "enumName"
+	enumMetaOrdinalField    = "enumOrdinal"
+	fieldInitMethodName     = "__java2goInitFields"
+	interfaceDefaultsSuffix = "Java2goDefaults"
+	classDispatchSuffix     = "Java2goDispatch"
+	constructorSelfSuffix   = "Java2goWithSelf"
+	constructorSelfParam    = "__java2goMostDerived"
 )
 
 func collectTypeNodes(node *sitter.Node) []*sitter.Node {
@@ -85,7 +89,11 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				// is generated as `animal`.
 				if base, _ := parseJavaTypeString(t.Content(source)); base != "" {
 					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
-						fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: &ast.Ident{Name: scope.Class.Name}}})
+						fields.List = append(fields.List, &ast.Field{Type: javaTypeStringToGoTypeExpr(
+							t.Content(source),
+							typeParams,
+							ctx,
+						)})
 						continue
 					}
 				}
@@ -103,6 +111,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				}
 				fields.List = append(fields.List, &ast.Field{Type: embedType})
 			}
+		}
+
+		if classNeedsVirtualDispatch(ctx.currentClass, ctx) {
+			fields.List = append(fields.List, &ast.Field{
+				Names: []*ast.Ident{{Name: classDispatchFieldName(ctx.currentClass)}},
+				Type:  classDispatchTypeExpr(ctx.currentClass),
+			})
 		}
 
 		// Global variables
@@ -218,8 +233,18 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			declarations = append(declarations, globalVariables)
 		}
 
+		// Add the class's virtual-dispatch contract before the struct. Go permits
+		// either declaration order, but keeping the pair adjacent makes generated
+		// inheritance machinery easier to inspect.
+		if dispatchDecl := generateClassDispatchInterface(ctx); dispatchDecl != nil {
+			declarations = append(declarations, dispatchDecl)
+		}
+
 		// Add the struct for the class (with type parameters if present)
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
+		if setterDecl := generateClassSelfSetter(ctx); setterDecl != nil {
+			declarations = append(declarations, setterDecl)
+		}
 
 		if helperDecl := buildInstanceFieldInitializerMethodDecl(ctx, instanceFieldInitializers); helperDecl != nil {
 			declarations = append(declarations, helperDecl)
@@ -230,9 +255,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// to `new Class()` have nothing to bind to, so synthesize one. This is
 		// especially important for nested classes, which frequently omit
 		// constructors.
-		if ctorDecl := buildDefaultConstructorDecl(ctx); ctorDecl != nil {
-			declarations = append(declarations, ctorDecl)
-		}
+		declarations = append(declarations, buildDefaultConstructorDecls(ctx)...)
 
 		// Generate companion interface for abstract classes so that method
 		// parameters typed as the abstract class preserve runtime type identity.
@@ -310,7 +333,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Embed any extended interfaces directly into the generated interface
 		if interfacesNode != nil {
 			for _, t := range collectTypeNodes(interfacesNode) {
-				embedType := astutil.ParseTypeWithTypeParams(t, source, typeParams)
+				embedType := javaTypeStringToGoTypeExpr(t.Content(source), typeParams, ctx)
 				if star, ok := embedType.(*ast.StarExpr); ok {
 					embedType = star.X
 				}
@@ -341,6 +364,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		declarations := []ast.Decl{genInterfaceInContext(interfaceName, methods, classTypeParams, ctx)}
+		declarations = append(declarations, generateInterfaceDefaultMethodDecls(node, source, ctx)...)
 		declarations = append(declarations, genFunctionalInterfaceAdapterDecls(interfaceName, methods, classTypeParams, ctx.currentClass, ctx)...)
 		return declarations
 	case "enum_declaration":
@@ -485,6 +509,16 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 			receiverBase := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
 			receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBase}}}}
+			receiverName := ShortName(ctx.className)
+			enumStringResult := ast.Expr(&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: enumMetaNameField}})
+			if toString := findEnumToStringMethod(ctx.currentClass); toString != nil {
+				enumStringResult = &ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   &ast.Ident{Name: receiverName},
+						Sel: &ast.Ident{Name: toString.Name},
+					},
+				}
+			}
 
 			// name() accessor
 			declarations = append(declarations, &ast.FuncDecl{
@@ -492,6 +526,22 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				Recv: receiver,
 				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "string"}}}}},
 				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: enumMetaNameField}}}}}},
+			})
+
+			// String implements fmt.Stringer so every Go formatting path used for
+			// println, string concatenation, and String.valueOf observes Java's
+			// default Enum.toString() result instead of the backing Go struct.
+			declarations = append(declarations, &ast.FuncDecl{
+				Name: &ast.Ident{Name: "String"},
+				Recv: receiver,
+				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "string"}}}}},
+				Body: &ast.BlockStmt{List: []ast.Stmt{
+					&ast.IfStmt{
+						Cond: &ast.BinaryExpr{X: &ast.Ident{Name: receiverName}, Op: token.EQL, Y: &ast.Ident{Name: "nil"}},
+						Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: `"null"`}}}}},
+					},
+					&ast.ReturnStmt{Results: []ast.Expr{enumStringResult}},
+				}},
 			})
 
 			// ordinal() accessor
@@ -686,6 +736,9 @@ func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx)
 	if stripJavaQualifier(base) == "Runnable" && resolveClassScopeByQualifiedName(ctx, base) == nil {
 		return nil
 	}
+	if scope := resolveClassScopeByQualifiedName(ctx, base); interfaceHasDefaultMethods(scope, ctx) {
+		return interfaceDefaultCarrierTypeExpr(javaType, typeParams, ctx)
+	}
 
 	embedType := javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)
 	if star, ok := embedType.(*ast.StarExpr); ok {
@@ -700,6 +753,545 @@ func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx)
 		return nil
 	}
 	return embedType
+}
+
+// interfaceHasDefaultMethods reports whether an interface contributes concrete
+// instance methods. Go interfaces only describe a method set, so Java default
+// bodies are carried by a generated embedded implementation instead of a nil
+// interface field.
+func interfaceHasDefaultMethods(scope *symbol.ClassScope, ctx Ctx) bool {
+	seen := map[*symbol.ClassScope]struct{}{}
+	var hasDefaults func(*symbol.ClassScope, Ctx) bool
+	hasDefaults = func(current *symbol.ClassScope, currentCtx Ctx) bool {
+		if current == nil || !current.IsInterface {
+			return false
+		}
+		if _, duplicate := seen[current]; duplicate {
+			return false
+		}
+		seen[current] = struct{}{}
+		for _, method := range current.Methods {
+			if method != nil && !method.IsStatic && !method.IsPrivate && !method.Constructor && method.HasBody {
+				return true
+			}
+		}
+		if ownerFile := findFileScopeForClassScope(current); ownerFile != nil {
+			currentCtx.currentFile = ownerFile
+			currentCtx.currentClass = current
+		}
+		for _, parentType := range current.ImplementedInterfaces {
+			base, _ := parseJavaTypeString(parentType)
+			if hasDefaults(resolveClassScopeByQualifiedName(currentCtx, base), currentCtx) {
+				return true
+			}
+		}
+		return false
+	}
+	return hasDefaults(scope, ctx)
+}
+
+func interfaceDefaultCarrierName(scope *symbol.ClassScope) string {
+	if scope == nil || scope.Class == nil {
+		return ""
+	}
+	return scope.Class.Name + interfaceDefaultsSuffix
+}
+
+// interfaceDefaultCarrierTypeExpr preserves the interface's generic arguments
+// while replacing its name with the generated default-method carrier type.
+func interfaceDefaultCarrierTypeExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
+	base, typeArgs := parseJavaTypeString(javaType)
+	scope := resolveClassScopeByQualifiedName(ctx, base)
+	if !interfaceHasDefaultMethods(scope, ctx) {
+		return nil
+	}
+	carrier := qualifiedNameExpr(
+		interfaceDefaultCarrierName(scope),
+		resolveJavaPackageForType(ctx, base, scope),
+		ctx,
+	)
+	if len(typeArgs) > 0 {
+		args := make([]ast.Expr, 0, len(typeArgs))
+		for _, arg := range typeArgs {
+			args = append(args, javaTypeStringToGoTypeExpr(arg, typeParams, ctx))
+		}
+		carrier = applyTypeArguments(carrier, args)
+	}
+	return &ast.StarExpr{X: carrier}
+}
+
+func interfaceMethodSignature(def *symbol.Definition) string {
+	if def == nil {
+		return ""
+	}
+	parts := make([]string, 0, len(def.Parameters)+1)
+	parts = append(parts, def.OriginalName)
+	for _, param := range def.Parameters {
+		parts = append(parts, param.OriginalType)
+	}
+	return strings.Join(parts, "\x00")
+}
+
+func collectInterfaceDefaultMethods(scope *symbol.ClassScope, ctx Ctx, seen map[*symbol.ClassScope]struct{}) []*symbol.Definition {
+	if scope == nil || !scope.IsInterface {
+		return nil
+	}
+	if _, duplicate := seen[scope]; duplicate {
+		return nil
+	}
+	seen[scope] = struct{}{}
+	methods := []*symbol.Definition{}
+	known := map[string]struct{}{}
+	for _, method := range scope.Methods {
+		if method == nil || method.IsStatic || method.IsPrivate || method.Constructor || !method.HasBody {
+			continue
+		}
+		methods = append(methods, method)
+		known[interfaceMethodSignature(method)] = struct{}{}
+	}
+	if ownerFile := findFileScopeForClassScope(scope); ownerFile != nil {
+		ctx.currentFile = ownerFile
+		ctx.currentClass = scope
+	}
+	for _, parentType := range scope.ImplementedInterfaces {
+		base, _ := parseJavaTypeString(parentType)
+		for _, inherited := range collectInterfaceDefaultMethods(resolveClassScopeByQualifiedName(ctx, base), ctx, seen) {
+			key := interfaceMethodSignature(inherited)
+			if _, exists := known[key]; exists {
+				continue
+			}
+			known[key] = struct{}{}
+			methods = append(methods, inherited)
+		}
+	}
+	return methods
+}
+
+func buildInheritedInterfaceDefaultForwarder(
+	carrierName string,
+	parentType string,
+	parentScope *symbol.ClassScope,
+	def *symbol.Definition,
+	childScope *symbol.ClassScope,
+	ctx Ctx,
+) ast.Decl {
+	if def == nil || parentScope == nil || childScope == nil || def.RequiresHelper {
+		return nil
+	}
+	typeBindings := map[string]string{}
+	_, parentArgs := parseJavaTypeString(parentType)
+	for i, paramName := range parentScope.TypeParameterNames() {
+		if i < len(parentArgs) {
+			typeBindings[paramName] = parentArgs[i]
+		}
+	}
+	mapType := func(javaType string) ast.Expr {
+		javaType = substituteJavaTypeParameters(javaType, typeBindings)
+		return javaTypeStringToGoTypeExpr(javaType, childScope.TypeParameterNames(), ctx)
+	}
+
+	params := &ast.FieldList{}
+	args := []ast.Expr{}
+	for _, param := range def.Parameters {
+		params.List = append(params.List, &ast.Field{
+			Names: []*ast.Ident{{Name: param.Name}},
+			Type:  mapType(param.OriginalType),
+		})
+		args = append(args, &ast.Ident{Name: param.Name})
+	}
+	var results *ast.FieldList
+	if strings.TrimSpace(def.OriginalType) != "" && strings.TrimSpace(def.OriginalType) != "void" {
+		results = &ast.FieldList{List: []*ast.Field{{Type: mapType(def.OriginalType)}}}
+	}
+	recvName := ShortName(carrierName)
+	call := &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X: &ast.SelectorExpr{
+				X:   &ast.Ident{Name: recvName},
+				Sel: &ast.Ident{Name: interfaceDefaultCarrierName(parentScope)},
+			},
+			Sel: &ast.Ident{Name: def.Name},
+		},
+		Args: args,
+	}
+	body := &ast.BlockStmt{}
+	if results != nil {
+		body.List = []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}
+	} else {
+		body.List = []ast.Stmt{&ast.ExprStmt{X: call}}
+	}
+	recvType := instantiateGenericType(carrierName, typeParamExprs(childScope.TypeParameterNames()))
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: def.Name},
+		Recv: &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: recvName}},
+			Type:  &ast.StarExpr{X: recvType},
+		}}},
+		Type: &ast.FuncType{Params: params, Results: results},
+		Body: body,
+	}
+}
+
+// generateInterfaceDefaultMethodDecls materializes Java interface default
+// methods in a small carrier struct. Implementing classes embed an initialized
+// carrier, while its embedded interface value points back at the concrete Java
+// object. Calls made by a default body therefore retain normal virtual dispatch
+// (for example, default shout() calling an overridden greet()).
+func generateInterfaceDefaultMethodDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
+	scope := ctx.currentClass
+	if node == nil || !interfaceHasDefaultMethods(scope, ctx) || scope.Class == nil {
+		return nil
+	}
+
+	carrierName := interfaceDefaultCarrierName(scope)
+	typeParamNames := scope.TypeParameterNames()
+	interfaceType := instantiateGenericType(scope.Class.Name, typeParamExprs(typeParamNames))
+	carrierType := instantiateGenericType(carrierName, typeParamExprs(typeParamNames))
+
+	fields := &ast.FieldList{List: []*ast.Field{{Type: interfaceType}}}
+	parentDefaultTypes := defaultInterfaceTypes(scope, ctx)
+	for _, parentType := range parentDefaultTypes {
+		if carrierType := interfaceDefaultCarrierTypeExpr(parentType, typeParamNames, ctx); carrierType != nil {
+			fields.List = append(fields.List, &ast.Field{Type: carrierType})
+		}
+	}
+	decls := []ast.Decl{genStructWithTypeParamsInContext(carrierName, fields, scope.TypeParameters, ctx)}
+
+	selfName := "self"
+	constructorValues := []ast.Expr{&ast.Ident{Name: selfName}}
+	for _, parentType := range parentDefaultTypes {
+		if constructor := interfaceDefaultCarrierConstructorExpr(parentType, typeParamNames, ctx); constructor != nil {
+			constructorValues = append(constructorValues, &ast.CallExpr{
+				Fun:  constructor,
+				Args: []ast.Expr{&ast.Ident{Name: selfName}},
+			})
+		}
+	}
+	constructorBody := &ast.BlockStmt{List: []ast.Stmt{
+		&ast.ReturnStmt{Results: []ast.Expr{
+			&ast.UnaryExpr{
+				Op: token.AND,
+				X: &ast.CompositeLit{
+					Type: carrierType,
+					Elts: constructorValues,
+				},
+			},
+		}},
+	}}
+	decls = append(decls, genFuncDeclWithTypeParamsInContext(
+		defaultConstructorName(carrierName),
+		scope.TypeParameters,
+		&ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: selfName}}, Type: interfaceType}}},
+		&ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: carrierType}}}},
+		constructorBody,
+		ctx,
+	))
+
+	body := node.ChildByFieldName("body")
+	directMethods := map[string]struct{}{}
+	for _, method := range scope.Methods {
+		directMethods[interfaceMethodSignature(method)] = struct{}{}
+	}
+	for _, child := range nodeutil.NamedChildrenOf(body) {
+		if child.Type() != "method_declaration" || child.ChildByFieldName("body") == nil {
+			continue
+		}
+		methodCtx := ctx.Clone()
+		methodCtx.className = carrierName
+		decls = append(decls, ParseDecl(child, source, methodCtx)...)
+	}
+	forwarded := map[string]struct{}{}
+	for _, parentType := range parentDefaultTypes {
+		base, _ := parseJavaTypeString(parentType)
+		parentScope := resolveClassScopeByQualifiedName(ctx, base)
+		for _, method := range collectInterfaceDefaultMethods(parentScope, ctx, map[*symbol.ClassScope]struct{}{}) {
+			key := interfaceMethodSignature(method)
+			if _, overridden := directMethods[key]; overridden {
+				continue
+			}
+			if _, duplicate := forwarded[key]; duplicate {
+				continue
+			}
+			forwarded[key] = struct{}{}
+			if forwarder := buildInheritedInterfaceDefaultForwarder(carrierName, parentType, parentScope, method, scope, ctx); forwarder != nil {
+				decls = append(decls, forwarder)
+			}
+		}
+	}
+	return decls
+}
+
+func classDispatchTypeName(scope *symbol.ClassScope) string {
+	if scope == nil || scope.Class == nil {
+		return ""
+	}
+	return scope.Class.Name + classDispatchSuffix
+}
+
+func classDispatchFieldName(scope *symbol.ClassScope) string {
+	if scope == nil || scope.Class == nil {
+		return ""
+	}
+	name := "java2go" + symbol.Uppercase(scope.Class.Name) + "Self"
+	if scope.Class.Name == symbol.Uppercase(scope.Class.Name) {
+		return symbol.Uppercase(name)
+	}
+	return "__" + name
+}
+
+func classSelfSetterName(scope *symbol.ClassScope) string {
+	if scope == nil || scope.Class == nil {
+		return ""
+	}
+	name := "java2goSet" + symbol.Uppercase(scope.Class.Name) + "Self"
+	if scope.Class.Name == symbol.Uppercase(scope.Class.Name) {
+		name = symbol.Uppercase(name)
+	}
+	return name
+}
+
+func classDispatchTypeExpr(scope *symbol.ClassScope) ast.Expr {
+	if scope == nil {
+		return &ast.InterfaceType{Methods: &ast.FieldList{}}
+	}
+	return instantiateGenericType(classDispatchTypeName(scope), typeParamExprs(scope.TypeParameterNames()))
+}
+
+func visitClassScopes(scope *symbol.ClassScope, visit func(*symbol.ClassScope) bool) bool {
+	if scope == nil {
+		return false
+	}
+	if visit(scope) {
+		return true
+	}
+	for _, nested := range scope.Subclasses {
+		if visitClassScopes(nested, visit) {
+			return true
+		}
+	}
+	return false
+}
+
+// classHasKnownSubclass uses the complete symbol graph for the conversion run,
+// rather than just lexical nested classes. Java subclasses are normally sibling
+// or cross-file declarations, and each one must be able to replace the dynamic
+// receiver stored by its ancestors.
+func classHasKnownSubclass(target *symbol.ClassScope) bool {
+	if target == nil {
+		return false
+	}
+	for _, pkg := range symbol.GlobalScope.Packages {
+		for _, file := range pkg.Files {
+			if file == nil {
+				continue
+			}
+			for _, top := range file.TopLevelClasses {
+				found := visitClassScopes(top, func(candidate *symbol.ClassScope) bool {
+					if candidate == nil || candidate == target {
+						return false
+					}
+					candidateCtx := Ctx{currentFile: file, currentClass: candidate}
+					seen := map[*symbol.ClassScope]struct{}{}
+					for parent := resolveSuperclassScope(candidateCtx, candidate); parent != nil; parent = resolveSuperclassScope(candidateCtx, parent) {
+						if _, duplicate := seen[parent]; duplicate {
+							break
+						}
+						seen[parent] = struct{}{}
+						if parent == target {
+							return true
+						}
+					}
+					return false
+				})
+				if found {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func classNeedsVirtualDispatch(scope *symbol.ClassScope, _ Ctx) bool {
+	if scope == nil || scope.IsInterface || scope.IsEnum {
+		return false
+	}
+	hasDispatchableMethod := false
+	for _, method := range scope.Methods {
+		if method != nil && !method.Constructor && !method.IsStatic && !method.IsPrivate && !method.RequiresHelper {
+			hasDispatchableMethod = true
+			break
+		}
+	}
+	return hasDispatchableMethod && (scope.IsAbstract || classHasKnownSubclass(scope))
+}
+
+func generateClassDispatchInterface(ctx Ctx) ast.Decl {
+	scope := ctx.currentClass
+	if !classNeedsVirtualDispatch(scope, ctx) {
+		return nil
+	}
+
+	methods := &ast.FieldList{}
+	typeParams := scope.TypeParameterNames()
+	for _, method := range scope.Methods {
+		if method == nil || method.Constructor || method.IsStatic || method.IsPrivate || method.RequiresHelper {
+			continue
+		}
+		params := &ast.FieldList{}
+		for _, param := range method.Parameters {
+			params.List = append(params.List, &ast.Field{
+				Names: []*ast.Ident{{Name: param.Name}},
+				Type:  javaTypeStringToGoTypeExpr(param.OriginalType, typeParams, ctx),
+			})
+		}
+		var results *ast.FieldList
+		if strings.TrimSpace(method.OriginalType) != "" && strings.TrimSpace(method.OriginalType) != "void" {
+			results = &ast.FieldList{List: []*ast.Field{{
+				Type: javaTypeStringToGoTypeExpr(method.OriginalType, typeParams, ctx),
+			}}}
+		}
+		methods.List = append(methods.List, &ast.Field{
+			Names: []*ast.Ident{{Name: method.Name}},
+			Type:  &ast.FuncType{Params: params, Results: results},
+		})
+	}
+	return genInterfaceInContext(classDispatchTypeName(scope), methods, scope.TypeParameters, ctx)
+}
+
+func defaultInterfaceTypes(scope *symbol.ClassScope, ctx Ctx) []string {
+	if scope == nil {
+		return nil
+	}
+	var defaults []string
+	for _, implemented := range scope.ImplementedInterfaces {
+		base, _ := parseJavaTypeString(implemented)
+		if interfaceHasDefaultMethods(resolveClassScopeByQualifiedName(ctx, base), ctx) {
+			defaults = append(defaults, implemented)
+		}
+	}
+	return defaults
+}
+
+func classHasSelfSetter(scope *symbol.ClassScope, ctx Ctx) bool {
+	seen := map[*symbol.ClassScope]struct{}{}
+	for current := scope; current != nil; current = resolveSuperclassScope(ctx, current) {
+		if _, duplicate := seen[current]; duplicate {
+			return false
+		}
+		seen[current] = struct{}{}
+		if classNeedsVirtualDispatch(current, ctx) || len(defaultInterfaceTypes(current, ctx)) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func interfaceDefaultCarrierConstructorExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
+	base, typeArgs := parseJavaTypeString(javaType)
+	scope := resolveClassScopeByQualifiedName(ctx, base)
+	if !interfaceHasDefaultMethods(scope, ctx) {
+		return nil
+	}
+	constructor := qualifiedNameExpr(
+		defaultConstructorName(interfaceDefaultCarrierName(scope)),
+		resolveJavaPackageForType(ctx, base, scope),
+		ctx,
+	)
+	if len(typeArgs) > 0 {
+		args := make([]ast.Expr, 0, len(typeArgs))
+		for _, arg := range typeArgs {
+			args = append(args, javaTypeStringToGoTypeExpr(arg, typeParams, ctx))
+		}
+		constructor = applyTypeArguments(constructor, args)
+	}
+	return constructor
+}
+
+// generateClassSelfSetter wires all dispatch layers after construction. A
+// subclass replaces each ancestor's dynamic receiver with itself, and inherited
+// interface-default carriers are rebuilt around that same concrete value.
+func generateClassSelfSetter(ctx Ctx) ast.Decl {
+	scope := ctx.currentClass
+	if scope == nil || scope.IsInterface || scope.IsEnum || !classHasSelfSetter(scope, ctx) {
+		return nil
+	}
+
+	recvName := ShortName(scope.Class.Name)
+	recvType := instantiateGenericType(scope.Class.Name, typeParamExprs(scope.TypeParameterNames()))
+	selfName := "self"
+	body := []ast.Stmt{}
+
+	if classNeedsVirtualDispatch(scope, ctx) {
+		body = append(body, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: classDispatchFieldName(scope)}}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.TypeAssertExpr{X: &ast.Ident{Name: selfName}, Type: classDispatchTypeExpr(scope)}},
+		})
+	}
+
+	for _, implemented := range defaultInterfaceTypes(scope, ctx) {
+		base, _ := parseJavaTypeString(implemented)
+		interfaceScope := resolveClassScopeByQualifiedName(ctx, base)
+		carrierConstructor := interfaceDefaultCarrierConstructorExpr(implemented, scope.TypeParameterNames(), ctx)
+		interfaceType := javaTypeStringToGoTypeExpr(implemented, scope.TypeParameterNames(), ctx)
+		body = append(body, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.SelectorExpr{
+				X:   &ast.Ident{Name: recvName},
+				Sel: &ast.Ident{Name: interfaceDefaultCarrierName(interfaceScope)},
+			}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.CallExpr{
+				Fun: carrierConstructor,
+				Args: []ast.Expr{&ast.TypeAssertExpr{
+					X:    &ast.Ident{Name: selfName},
+					Type: interfaceType,
+				}},
+			}},
+		})
+	}
+
+	if parent := resolveSuperclassScope(ctx, scope); parent != nil && classHasSelfSetter(parent, ctx) {
+		body = append(body, &ast.ExprStmt{X: &ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: recvName},
+					Sel: &ast.Ident{Name: parent.Class.Name},
+				},
+				Sel: &ast.Ident{Name: classSelfSetterName(parent)},
+			},
+			Args: []ast.Expr{&ast.Ident{Name: selfName}},
+		}})
+	}
+
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: classSelfSetterName(scope)},
+		Recv: &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: recvName}},
+			Type:  &ast.StarExpr{X: recvType},
+		}}},
+		Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: selfName}},
+			Type:  &ast.Ident{Name: "any"},
+		}}}},
+		Body: &ast.BlockStmt{List: body},
+	}
+}
+
+func classSelfSetterCallStmtWithValue(ctx Ctx, receiverName string, self ast.Expr) ast.Stmt {
+	if ctx.currentClass == nil || !classHasSelfSetter(ctx.currentClass, ctx) {
+		return nil
+	}
+	if self == nil {
+		self = &ast.Ident{Name: receiverName}
+	}
+	return &ast.ExprStmt{X: &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: receiverName},
+			Sel: &ast.Ident{Name: classSelfSetterName(ctx.currentClass)},
+		},
+		Args: []ast.Expr{self},
+	}}
 }
 
 // enclosingInstanceType returns the Go type expression (*Outer or *Outer[T,...])
@@ -878,12 +1470,179 @@ func classHasExplicitConstructor(scope *symbol.ClassScope) bool {
 	return false
 }
 
-// buildDefaultConstructorDecl synthesizes an implicit no-arg constructor for a
+func noArgConstructorName(scope *symbol.ClassScope) string {
+	if scope == nil || scope.Class == nil {
+		return ""
+	}
+	foundExplicit := false
+	for _, method := range scope.Methods {
+		if method == nil || !method.Constructor {
+			continue
+		}
+		foundExplicit = true
+		if len(method.Parameters) == 0 {
+			return method.Name
+		}
+	}
+	if foundExplicit {
+		return ""
+	}
+	return defaultConstructorName(scope.Class.Name)
+}
+
+func constructorWithSelfName(name string) string {
+	return name + constructorSelfSuffix
+}
+
+func constructorMostDerivedInitStmt(receiverName string) ast.Stmt {
+	return &ast.IfStmt{
+		Cond: &ast.BinaryExpr{
+			X:  &ast.Ident{Name: constructorSelfParam},
+			Op: token.EQL,
+			Y:  &ast.Ident{Name: "nil"},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: constructorSelfParam}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: receiverName}},
+		}}},
+	}
+}
+
+func renameConstructorCallForSelf(fun ast.Expr) ast.Expr {
+	switch typed := fun.(type) {
+	case *ast.Ident:
+		return &ast.Ident{Name: constructorWithSelfName(typed.Name)}
+	case *ast.SelectorExpr:
+		return &ast.SelectorExpr{X: typed.X, Sel: &ast.Ident{Name: constructorWithSelfName(typed.Sel.Name)}}
+	case *ast.IndexExpr:
+		return &ast.IndexExpr{X: renameConstructorCallForSelf(typed.X), Index: typed.Index}
+	case *ast.IndexListExpr:
+		return &ast.IndexListExpr{X: renameConstructorCallForSelf(typed.X), Indices: typed.Indices}
+	default:
+		return fun
+	}
+}
+
+// rewriteConstructorChainForSelf threads the most-derived receiver through an
+// explicit super(...) or this(...) constructor invocation. The callee installs
+// that receiver before executing any of its Java constructor body.
+func rewriteConstructorChainForSelf(stmt ast.Stmt, ctx Ctx) ast.Stmt {
+	if stmt == nil || ctx.currentClass == nil {
+		return stmt
+	}
+	var call *ast.CallExpr
+	if isExplicitSuperConstructorAssignment(stmt, ctx) {
+		parent := resolveSuperclassScope(ctx, ctx.currentClass)
+		if parent == nil || !classHasSelfSetter(parent, ctx) {
+			return stmt
+		}
+		assignment := stmt.(*ast.AssignStmt)
+		if len(assignment.Rhs) == 1 {
+			call, _ = assignment.Rhs[0].(*ast.CallExpr)
+		}
+	} else if isThisConstructorInvocation(stmt, ctx.className) {
+		exprStmt := stmt.(*ast.ExprStmt)
+		call, _ = exprStmt.X.(*ast.CallExpr)
+	}
+	if call == nil {
+		return stmt
+	}
+	call.Fun = renameConstructorCallForSelf(call.Fun)
+	call.Args = append([]ast.Expr{&ast.Ident{Name: constructorSelfParam}}, call.Args...)
+	return stmt
+}
+
+// implicitSuperConstructorAssignmentWithSelf emits Java's implicit leading
+// super() call. It is used both by synthesized default constructors and by
+// explicit constructors whose source body omits a this(...)/super(...) call.
+func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mostDerived ast.Expr) ast.Stmt {
+	scope := ctx.currentClass
+	parent := resolveSuperclassScope(ctx, scope)
+	if scope == nil || parent == nil || parent.Class == nil {
+		return nil
+	}
+	constructorName := noArgConstructorName(parent)
+	if constructorName == "" {
+		return nil
+	}
+	args := []ast.Expr{}
+	if mostDerived != nil && classHasSelfSetter(parent, ctx) {
+		constructorName = constructorWithSelfName(constructorName)
+		args = append(args, mostDerived)
+	}
+
+	base, typeArgs := parseJavaTypeString(scope.Superclass)
+	constructor := qualifiedNameExpr(
+		constructorName,
+		resolveJavaPackageForType(ctx, base, parent),
+		ctx,
+	)
+	if len(typeArgs) > 0 {
+		goTypeArgs := make([]ast.Expr, 0, len(typeArgs))
+		for _, typeArg := range typeArgs {
+			goTypeArgs = append(goTypeArgs, javaTypeStringToGoTypeExpr(typeArg, scope.TypeParameterNames(), ctx))
+		}
+		constructor = applyTypeArguments(constructor, goTypeArgs)
+	}
+	return &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.SelectorExpr{
+			X:   &ast.Ident{Name: receiverName},
+			Sel: &ast.Ident{Name: parent.Class.Name},
+		}},
+		Tok: token.ASSIGN,
+		Rhs: []ast.Expr{&ast.CallExpr{Fun: constructor, Args: args}},
+	}
+}
+
+func buildConstructorDeclarations(
+	constructorName string,
+	typeParams []symbol.TypeParam,
+	params *ast.FieldList,
+	returnType *ast.FieldList,
+	body *ast.BlockStmt,
+	usesMostDerived bool,
+	ctx Ctx,
+) []ast.Decl {
+	if !usesMostDerived {
+		return []ast.Decl{genFuncDeclWithTypeParamsInContext(
+			constructorName, typeParams, params, returnType, body, ctx,
+		)}
+	}
+
+	wrapperParams := cloneFieldList(params)
+	internalParams := cloneFieldList(params)
+	internalParams.List = append([]*ast.Field{{
+		Names: []*ast.Ident{{Name: constructorSelfParam}},
+		Type:  &ast.Ident{Name: "any"},
+	}}, internalParams.List...)
+
+	internalName := constructorWithSelfName(constructorName)
+	internalFun := ast.Expr(&ast.Ident{Name: internalName})
+	if len(typeParams) > 0 {
+		internalFun = applyTypeArguments(internalFun, typeParamExprs(symbol.TypeParamNames(typeParams)))
+	}
+	args := append([]ast.Expr{&ast.Ident{Name: "nil"}}, methodCallArgs(wrapperParams)...)
+	call := &ast.CallExpr{Fun: internalFun, Args: args}
+	if wrapperParams != nil && len(wrapperParams.List) > 0 {
+		if _, variadic := wrapperParams.List[len(wrapperParams.List)-1].Type.(*ast.Ellipsis); variadic {
+			call.Ellipsis = token.Pos(1)
+		}
+	}
+	wrapperBody := &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}}
+
+	return []ast.Decl{
+		genFuncDeclWithTypeParamsInContext(constructorName, typeParams, wrapperParams, returnType, wrapperBody, ctx),
+		genFuncDeclWithTypeParamsInContext(internalName, typeParams, internalParams, returnType, body, ctx),
+	}
+}
+
+// buildDefaultConstructorDecls synthesizes an implicit no-arg constructor for a
 // class that declares none. The generated function mirrors the shape produced
 // for explicit constructors: allocate the struct, run instance-field
 // initializers, and return the pointer. Interfaces and enums are skipped since
 // they are never instantiated through a `New<Class>` function.
-func buildDefaultConstructorDecl(ctx Ctx) ast.Decl {
+func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 	scope := ctx.currentClass
 	if scope == nil || scope.IsInterface || scope.IsEnum {
 		return nil
@@ -899,12 +1658,23 @@ func buildDefaultConstructorDecl(ctx Ctx) ast.Decl {
 	}
 
 	recvName := ShortName(ctx.className)
+	usesMostDerived := classHasSelfSetter(scope, ctx)
 	body := []ast.Stmt{
 		&ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.Ident{Name: recvName}},
 			Tok: token.DEFINE,
 			Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
 		},
+	}
+	if usesMostDerived {
+		body = append(body, constructorMostDerivedInitStmt(recvName))
+	}
+	var mostDerived ast.Expr
+	if usesMostDerived {
+		mostDerived = &ast.Ident{Name: constructorSelfParam}
+	}
+	if superInit := implicitSuperConstructorAssignmentWithSelf(ctx, recvName, mostDerived); superInit != nil {
+		body = append(body, superInit)
 	}
 
 	// A Thread subclass with no explicit constructor still needs its embedded
@@ -929,6 +1699,10 @@ func buildDefaultConstructorDecl(ctx Ctx) ast.Decl {
 		})
 	}
 
+	if setterCall := classSelfSetterCallStmtWithValue(ctx, recvName, mostDerived); setterCall != nil {
+		body = append(body, setterCall)
+	}
+
 	if scope.HasInstanceFieldInitializers {
 		body = append(body, &ast.ExprStmt{
 			X: &ast.CallExpr{
@@ -947,7 +1721,7 @@ func buildDefaultConstructorDecl(ctx Ctx) ast.Decl {
 	constructorName := defaultConstructorName(ctx.className)
 	returnType := &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: structType}}}}
 
-	return genFuncDeclWithTypeParamsInContext(constructorName, typeParams, params, returnType, &ast.BlockStmt{List: body}, ctx)
+	return buildConstructorDeclarations(constructorName, typeParams, params, returnType, &ast.BlockStmt{List: body}, usesMostDerived, ctx)
 }
 
 func zeroValueForType(expr ast.Expr) ast.Expr {
@@ -960,7 +1734,7 @@ func zeroValueForType(expr ast.Expr) ast.Expr {
 			return &ast.BasicLit{Kind: token.STRING, Value: "\"\""}
 		case "bool":
 			return &ast.Ident{Name: "false"}
-		case "int", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "float32", "float64", "byte", "rune":
+		case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "float32", "float64", "byte", "rune":
 			return &ast.BasicLit{Kind: token.INT, Value: "0"}
 		default:
 			return &ast.Ident{Name: "nil"}
@@ -986,7 +1760,7 @@ func generateAbstractClassInterface(ctx Ctx) ast.Decl {
 	methods := &ast.FieldList{}
 
 	for _, method := range scope.Methods {
-		if method.Constructor {
+		if method.Constructor || method.IsStatic || method.IsPrivate {
 			continue
 		}
 
@@ -1475,6 +2249,21 @@ func findEnumConstructor(ctx Ctx, argumentCount int) *symbol.Definition {
 	return nil
 }
 
+func findEnumToStringMethod(scope *symbol.ClassScope) *symbol.Definition {
+	if scope == nil {
+		return nil
+	}
+	for _, def := range scope.Methods {
+		if def == nil || def.IsStatic || def.Constructor || len(def.Parameters) != 0 {
+			continue
+		}
+		if def.OriginalName == "toString" && stripJavaQualifier(def.OriginalType) == "String" {
+			return def
+		}
+	}
+	return nil
+}
+
 func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {
 	combinedTypeParams := symbol.MergeTypeParams(ctx.currentClass.TypeParameters, def.TypeParameters)
 	combinedTypeParamNames := symbol.TypeParamNames(combinedTypeParams)
@@ -1681,6 +2470,10 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
 			},
 		}
+		usesMostDerived := classHasSelfSetter(ctx.currentClass, ctx)
+		if usesMostDerived {
+			prelude = append(prelude, constructorMostDerivedInitStmt(ShortName(ctx.className)))
+		}
 		// For an inner class, store the captured enclosing instance into its field
 		// immediately after allocation so the rest of the constructor body can use
 		// it.
@@ -1697,30 +2490,41 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if stmt := threadBaseWiringStmt(ctx); stmt != nil {
 			prelude = append(prelude, stmt)
 		}
-		preludeLen := len(prelude)
 		userBody := body.List
-		body.List = append(prelude, body.List...)
-
-		if shouldCallFieldInitializerMethodForBody(userBody, ctx) {
-			initCall := &ast.ExprStmt{
-				X: &ast.CallExpr{
-					Fun: &ast.SelectorExpr{
-						X:   &ast.Ident{Name: ShortName(ctx.className)},
-						Sel: &ast.Ident{Name: fieldInitMethodName},
-					},
-				},
+		remainingBody := userBody
+		var constructorChain ast.Stmt
+		if len(userBody) > 0 && (isExplicitSuperConstructorAssignment(userBody[0], ctx) || isThisConstructorInvocation(userBody[0], ctx.className)) {
+			constructorChain = userBody[0]
+			remainingBody = userBody[1:]
+			if usesMostDerived {
+				constructorChain = rewriteConstructorChainForSelf(constructorChain, ctx)
 			}
-
-			// Insert right after the prelude (allocation + enclosing-instance
-			// capture), unless the first user statement is an explicit super(...)
-			// call, which must run before instance-field initializers.
-			insertIndex := preludeLen
-			if insertIndex < len(body.List) && isExplicitSuperConstructorAssignment(body.List[insertIndex], ctx) {
-				insertIndex++
+		} else {
+			var mostDerived ast.Expr
+			if usesMostDerived {
+				mostDerived = &ast.Ident{Name: constructorSelfParam}
 			}
-			body.List = append(body.List[:insertIndex], append([]ast.Stmt{initCall}, body.List[insertIndex:]...)...)
+			constructorChain = implicitSuperConstructorAssignmentWithSelf(ctx, ShortName(ctx.className), mostDerived)
 		}
 
+		body.List = prelude
+		if constructorChain != nil {
+			body.List = append(body.List, constructorChain)
+		}
+		var mostDerived ast.Expr
+		if usesMostDerived {
+			mostDerived = &ast.Ident{Name: constructorSelfParam}
+		}
+		if setterCall := classSelfSetterCallStmtWithValue(ctx, ShortName(ctx.className), mostDerived); setterCall != nil {
+			body.List = append(body.List, setterCall)
+		}
+		if shouldCallFieldInitializerMethodForBody(userBody, ctx) {
+			body.List = append(body.List, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{
+				X:   &ast.Ident{Name: ShortName(ctx.className)},
+				Sel: &ast.Ident{Name: fieldInitMethodName},
+			}}})
+		}
+		body.List = append(body.List, remainingBody...)
 		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: ShortName(ctx.className)}}})
 
 		// Build the return type: *ClassName or *ClassName[T, U, ...]
@@ -1739,14 +2543,15 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			constructorParams.List = append([]*ast.Field{enclParam}, constructorParams.List...)
 		}
 
-		return []ast.Decl{genFuncDeclWithTypeParamsInContext(
+		return buildConstructorDeclarations(
 			ctx.localScope.Name,
 			constructorTypeParams,
 			constructorParams,
 			&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
 			body,
+			usesMostDerived,
 			ctx,
-		)}
+		)
 	case "method_declaration", "abstract_method_declaration":
 		var static bool
 		var synchronizedMethod bool

@@ -55,7 +55,7 @@ func TestSuperclassMethodResolution(t *testing.T) {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "ct.Speak()") {
-		t.Fatalf("expected inherited method call to resolve to exported Go name, got:\n%s", out)
+	if !strings.Contains(flat, "ct.Java2goAnimalSelf.Speak()") {
+		t.Fatalf("expected inherited method call to use Animal's dynamic receiver and exported Go name, got:\n%s", out)
 	}
 }

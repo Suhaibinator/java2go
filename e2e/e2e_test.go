@@ -32,17 +32,7 @@ func TestMain(m *testing.M) {
 // The reason references the ROADMAP section that, once implemented, should let the
 // test pass. Remove an entry here to turn its program into an enforced regression
 // test. Keep this list in sync as features land.
-var skipReasons = map[string]string{
-	"inheritance/Inheritance": "package-private class casing: undefined Shape / Newrectangle / Newsquare (superclass embed + super-ctor refs miscased). Array-literal part fixed (task #10 item 5) (ROADMAP §6/#7 casing item 13)",
-	"interfaces/Interfaces":   "package-private interface name casing: undefined Greeter. Array-literal part fixed (ROADMAP §6/#7 casing item 13)",
-	"enums/Enums":             "enum METHOD-name casing: call site emits .ordinal() but generated method is .Ordinal() (WED.ordinal undefined). Enum-constant access fixed (task #10 item 8) (ROADMAP §6/#7 casing item 13)",
-
-	"instanceof_pattern/InstanceofPattern": "instanceof pattern works for reference types (String matches), but a boxed primitive (21 as Integer) doesn't match `instanceof Integer` -> falls to 'unknown'. Autoboxing gap (ROADMAP §6 autoboxing)",
-	"io/FileRoundTrip":                     "java.io (File/FileWriter/PrintWriter/BufferedReader/FileReader) not implemented yet (stdlib-dev task #13 item 3) (ROADMAP §2 java.io)",
-
-	"nested/AnonLocal":        "SAM anon + local class now work; remaining: anon class extending an ABSTRACT class doesn't dispatch its override — calling describe() hits the abstract base stub ('abstract method describe not implemented'), so shout() panics (ROADMAP §4 M4 anon-extends-abstract dispatch)",
-	"overloading/Overloading": "overload resolution collapses all calls to the first overload (describe0/int32); long/double/String/arity dispatch by arg type not implemented (ROADMAP §6/§7)",
-}
+var skipReasons = map[string]string{}
 
 func moduleRoot(t testing.TB) string {
 	t.Helper()

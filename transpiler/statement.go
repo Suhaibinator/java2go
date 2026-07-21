@@ -16,7 +16,7 @@ import (
 // needsExplicitPrimitiveType reports whether a Java primitive local declaration
 // must be emitted with an explicit Go type rather than `:=` inference. It covers
 // the primitives whose Go type is narrower than the type an untyped constant
-// would infer: int->int32, long->int64, short->int16, byte->byte, char->rune,
+// would infer: int->int32, long->int64, short->int16, byte->int8, char->rune,
 // float->float32. double/boolean already infer to the right Go type (float64,
 // bool), so they are left to `:=`. The original Java type may carry array
 // brackets or qualifiers; only the bare primitive name is matched.
@@ -142,9 +142,10 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			ident := decl.(*ast.Ident)
 			names[ind] = ident
 			recordedOriginalType := originalType
-			// When assigning from object creation, preserve the concrete type for later
-			// call-site coercions (e.g. subclass value passed where superclass is expected).
-			if variableDeclarator.NamedChildCount() == 2 {
+			// Java overload resolution uses a local's declared static type, not the
+			// concrete type of its initializer. Only `var` declarations derive their
+			// static type from the initializer.
+			if isVarKeywordType(strings.TrimSpace(originalType)) && variableDeclarator.NamedChildCount() == 2 {
 				if inferredType, ok := inferExprJavaType(variableDeclarator.NamedChild(1), ctx, source); ok && strings.TrimSpace(inferredType) != "" {
 					recordedOriginalType = inferredType
 				}
@@ -192,6 +193,18 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			}
 		}
 
+		// A primitive stored in Object undergoes Java boxing. Pin integer literals
+		// to Java's 32-bit Integer representation before Go infers a host-sized int.
+		if expectedBase, _ := parseJavaTypeString(originalType); stripJavaQualifier(expectedBase) == "Object" {
+			initializers := nodeutil.NamedChildrenOf(variableDeclarator)
+			for ind, rhs := range declaration.Rhs {
+				initializerIndex := ind*2 + 1
+				if initializerIndex < len(initializers) {
+					declaration.Rhs[ind] = boxPrimitiveForObject(rhs, initializers[initializerIndex], originalType, ctx, source)
+				}
+			}
+		}
+
 		return declaration
 	case "variable_declarator":
 		var names, values []ast.Expr
@@ -209,16 +222,15 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		return &ast.AssignStmt{Lhs: names, Tok: token.DEFINE, Rhs: values}
 	case "assignment_expression":
+		// Go has no >>>= operator. Reuse the value-producing assignment lowering
+		// so the target is addressed once, the shift count is Java-masked, and the
+		// unsigned result is stored back with the target's declared width.
+		if node.Child(1).Content(source) == ">>>=" {
+			return &ast.ExprStmt{X: lowerAssignmentExpression(node, source, ctx)}
+		}
+
 		assignVar := ParseExpr(node.Child(0), source, ctx)
 		assignVal := ParseExpr(node.Child(2), source, ctx)
-
-		// Unsigned right shift
-		if node.Child(1).Content(source) == ">>>=" {
-			return &ast.ExprStmt{X: &ast.CallExpr{
-				Fun:  &ast.Ident{Name: "UnsignedRightShiftAssignment"},
-				Args: []ast.Expr{assignVar, assignVal},
-			}}
-		}
 
 		return &ast.AssignStmt{
 			Lhs: []ast.Expr{assignVar},
@@ -533,6 +545,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			Body: ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt),
 		}
 	case "while_statement":
+		if readLineLoop, ok := lowerBufferedReaderReadLineWhile(node, source, ctx); ok {
+			return readLineLoop
+		}
 		return &ast.ForStmt{
 			Cond: ParseExpr(node.NamedChild(0), source, ctx),
 			Body: ParseStmt(node.NamedChild(1), source, ctx).(*ast.BlockStmt),
@@ -580,6 +595,79 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		return parseSwitchBlock(node, source, ctx)
 	}
 	return nil
+}
+
+// lowerBufferedReaderReadLineWhile recognizes Java's canonical nullable line
+// loop and uses the runtime's (string, presence) bridge:
+//
+//	while ((line = reader.readLine()) != null) { ... }
+//	for reader.ReadLineInto(&line) { ... }
+//
+// Java String is represented as a Go string, so a direct translation cannot
+// compare the read result with nil. Keeping the rewrite at the loop boundary
+// preserves empty-line versus EOF behavior and evaluates the reader once per
+// condition check.
+func lowerBufferedReaderReadLineWhile(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt, bool) {
+	if node == nil || node.Type() != "while_statement" || node.NamedChildCount() < 2 {
+		return nil, false
+	}
+
+	condition := unwrapParenthesizedExpressionNode(node.NamedChild(0))
+	if condition == nil || condition.Type() != "binary_expression" || condition.ChildCount() < 3 {
+		return nil, false
+	}
+	if operator := condition.Child(1); operator == nil || operator.Content(source) != "!=" {
+		return nil, false
+	}
+
+	left := unwrapParenthesizedExpressionNode(condition.Child(0))
+	right := unwrapParenthesizedExpressionNode(condition.Child(2))
+	var assignment *sitter.Node
+	switch {
+	case left != nil && left.Type() == "assignment_expression" && right != nil && right.Type() == "null_literal":
+		assignment = left
+	case right != nil && right.Type() == "assignment_expression" && left != nil && left.Type() == "null_literal":
+		assignment = right
+	default:
+		return nil, false
+	}
+	if assignment.ChildCount() < 3 || assignment.Child(1).Content(source) != "=" {
+		return nil, false
+	}
+
+	targetNode := assignment.Child(0)
+	readCall := unwrapParenthesizedExpressionNode(assignment.Child(2))
+	if targetNode == nil || readCall == nil || readCall.Type() != "method_invocation" {
+		return nil, false
+	}
+	nameNode := readCall.ChildByFieldName("name")
+	receiverNode := readCall.ChildByFieldName("object")
+	if nameNode == nil || nameNode.Content(source) != "readLine" || receiverNode == nil {
+		return nil, false
+	}
+	receiverType, ok := inferExprJavaType(receiverNode, ctx, source)
+	if !ok || stripJavaQualifier(receiverType) != "BufferedReader" {
+		return nil, false
+	}
+
+	conditionExpr := &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   ParseExpr(receiverNode, source, ctx),
+			Sel: &ast.Ident{Name: "ReadLineInto"},
+		},
+		Args: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: ParseExpr(targetNode, source, ctx)}},
+	}
+	return &ast.ForStmt{
+		Cond: conditionExpr,
+		Body: ParseStmt(node.NamedChild(1), source, ctx).(*ast.BlockStmt),
+	}, true
+}
+
+func unwrapParenthesizedExpressionNode(node *sitter.Node) *sitter.Node {
+	for node != nil && node.Type() == "parenthesized_expression" && node.NamedChildCount() > 0 {
+		node = node.NamedChild(0)
+	}
+	return node
 }
 
 // explicitLocalVariableType performs symbol-aware lowering only when a local's
@@ -698,7 +786,7 @@ func lowerInstanceofPattern(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt
 		Tok: token.DEFINE,
 		Rhs: []ast.Expr{
 			&ast.TypeAssertExpr{
-				X:    &ast.CallExpr{Fun: &ast.Ident{Name: "any"}, Args: []ast.Expr{ParseExpr(left, source, ctx)}},
+				X:    &ast.CallExpr{Fun: &ast.Ident{Name: "any"}, Args: []ast.Expr{instanceofSubjectExpr(left, right.Content(source), source, ctx)}},
 				Type: assertType,
 			},
 		},

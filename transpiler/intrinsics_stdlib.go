@@ -190,13 +190,14 @@ func registerStringIntrinsics() {
 
 	// --- static String methods ---
 
-	// String.valueOf(x) -> fmt.Sprint(x). For the common boolean/number/char
-	// cases this matches Java's textual form.
+	// String.valueOf(x) uses the stdjava conversion bridge so floating-point
+	// values, null, and generated fmt.Stringer implementations (notably enums)
+	// retain Java's textual form.
 	registerStaticIntrinsic("String", "valueOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return pkgCall(ctx, "fmt", "Sprint", args[0])
+		return stdjavaCall(ctx, "StringValueOf", args[0])
 	})
 
 	// String.format(fmt, args...) -> fmt.Sprintf(convertedFmt, args...). The Java
@@ -426,7 +427,15 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return pkgCall(ctx, "fmt", "Sprint", args[0])
+		return stdjavaCall(ctx, "DoubleToString", args[0])
+	})
+
+	// Float
+	registerStaticIntrinsic("Float", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "FloatToString", args[0])
 	})
 
 	// Boolean
