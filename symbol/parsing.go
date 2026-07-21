@@ -162,6 +162,7 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 	}
 
 	return &FileScope{
+		Source:          source,
 		Imports:         imports,
 		Package:         filePackage,
 		TopLevelClasses: classScopes,
@@ -356,6 +357,11 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 				}
 			}
 		}
+		if scope.IsInterface {
+			public = true
+			isStatic = true
+			isFinal = true
+		}
 
 		fieldNameNode := node.ChildByFieldName("declarator").ChildByFieldName("name")
 
@@ -377,6 +383,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		fieldName := fieldNameNode.Content(source)
 		fieldType := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, scope.TypeParameterNames()))
 
+		initializer := node.ChildByFieldName("declarator").ChildByFieldName("value")
 		scope.Fields = append(scope.Fields, &Definition{
 			Name:         HandleExportStatus(public, fieldName),
 			OriginalName: fieldName,
@@ -385,6 +392,10 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			IsStatic:     isStatic,
 			IsFinal:      isFinal,
 			IsPrivate:    isPrivate,
+			IsCompileTimeConstant: isStatic && isFinal &&
+				javaConstantVariableType(typeNode.Content(source)) &&
+				javaConstantExpression(initializer, source, scope),
+			DeclarationNode: node,
 		})
 	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
 		var public bool

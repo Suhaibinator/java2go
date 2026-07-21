@@ -534,7 +534,7 @@ func TestAffineArrayLoopFastPath_ConservativeFallbackShape(t *testing.T) {
 		"current = replacement return current.getJava2goExecution(__java2goExecution, 0, 0)",
 		"grid.setJava2goExecution(__java2goExecution, nextJava2goExecution(__java2goExecution), nextJava2goExecution(__java2goExecution), 1.0)",
 		"grid.setJava2goExecution(__java2goExecution, markIndexJava2goExecution(__java2goExecution, 1), markIndexJava2goExecution(__java2goExecution, 2), markValueJava2goExecution(__java2goExecution, 3))",
-		"return grid.getJava2goExecution(__java2goExecution, 1/zero, 0)",
+		"return grid.getJava2goExecution(__java2goExecution, 1/func() int32 { AffineLoopProgramJava2goEnsureInitialized(__java2goExecution) return zero }(), 0)",
 		"for once := int32(0); once < 1; once++ { func(dst *float64)",
 		"(&total)(grid.getJava2goExecution(__java2goExecution, 0, 0)) continue __java2goLabel_",
 		"for once := int32(0); once < 1; once++ { total = grid.getJava2goExecution(__java2goExecution, 0, 0) break __java2goLabel_",
@@ -614,8 +614,8 @@ public class ScopedLoopProgram {
 	}
 	for _, ordinary := range []string{
 		"grid.getJava2goExecution(__java2goExecution, 0, 0)",
-		"grid.getJava2goExecution(__java2goExecution, index, 0)",
-		"current.getJava2goExecution(__java2goExecution, 0, 0)",
+		"grid.getJava2goExecution(__java2goExecution, func() int32 { ScopedLoopProgramJava2goEnsureInitialized(__java2goExecution) return index }(), 0)",
+		"func() *scopedGrid { ScopedLoopProgramJava2goEnsureInitialized(__java2goExecution) return current }().getJava2goExecution(__java2goExecution, 0, 0)",
 	} {
 		if !strings.Contains(out, ordinary) {
 			t.Fatalf("expected ordinary fallback call %q:\n%s", ordinary, out)

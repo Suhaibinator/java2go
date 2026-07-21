@@ -543,6 +543,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		return &ast.AssignStmt{Lhs: names, Tok: token.DEFINE, Rhs: values}
 	case "assignment_expression":
+		if lowered, ok := lowerStaticFieldAssignment(node, source, ctx); ok {
+			return &ast.ExprStmt{X: lowered}
+		}
 		operator := node.Child(1).Content(source)
 		// Compound assignment in Java is not just Go's corresponding assignment
 		// token: String += converts arbitrary operands, arithmetic narrows back to
@@ -578,6 +581,15 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			Rhs: []ast.Expr{assignVal},
 		}
 	case "update_expression":
+		var operandNode *sitter.Node
+		if node.Child(0).IsNamed() {
+			operandNode = node.Child(0)
+		} else {
+			operandNode = node.Child(1)
+		}
+		if _, ok := resolveStaticFieldAccess(operandNode, source, ctx); ok {
+			return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
+		}
 		if node.Child(0).IsNamed() {
 			return &ast.IncDecStmt{
 				X:   ParseExpr(node.Child(0), source, ctx),

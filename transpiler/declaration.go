@@ -136,7 +136,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		globalVariables := &ast.GenDecl{Tok: token.VAR}
 		instanceFieldInitializers := []ast.Stmt{}
 		classBody := node.ChildByFieldName("body")
-		consolidateStaticInitialization := classBodyNeedsOrderedStaticInitialization(classBody)
+		resolveCompileTimeConstantsForClass(ctx.currentClass, source, ctx)
+		consolidateStaticInitialization := classBodyNeedsOrderedStaticInitialization(classBody, ctx.currentClass)
 
 		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
 
@@ -151,7 +152,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		for _, child := range nodeutil.NamedChildrenOf(classBody) {
 			if child.Type() == "field_declaration" {
 
-				var staticField bool
+				staticField := ctx.currentClass.IsInterface
 				var skipField bool
 
 				comments := []*ast.Comment{}
@@ -215,7 +216,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						// overwrites it.
 						spec.Values = []ast.Expr{javaNullStringExpr()}
 					}
-					if fieldValueNode != nil && !consolidateStaticInitialization {
+					if fieldValueNode != nil && (!consolidateStaticInitialization || fieldDef.IsCompileTimeConstant) {
 						valueCtx := ctx.Clone()
 						valueCtx.localScope = &symbol.Definition{IsStatic: true}
 						valueCtx.expectedType = fieldDef.OriginalType
@@ -302,13 +303,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Go resolves package-variable initializer dependencies before evaluating
 		// them, which can expose a later field's initialized value too early. Java
 		// first gives every static field its default and only then executes explicit
-		// field initializers and static blocks in source order. Always consolidate a
-		// class that has either kind of initialization work into one ordered init.
-		if consolidateStaticInitialization {
-			if initDecl := buildOrderedStaticInitializationDecl(classBody, source, ctx); initDecl != nil {
-				declarations = append(declarations, initDecl)
-			}
-		}
+		// Coordinate this class's source-ordered static work lazily. An otherwise
+		// empty subclass also receives its own state when initializing it can run a
+		// superclass initializer, preserving Java's per-class erroneous state.
+		declarations = append(declarations, buildLazyClassInitializationDecls(classBody, source, ctx)...)
 
 		// Add all the declarations that appear in the class
 		declarations = append(declarations, parseClassBodyDeclarations(classBody, source, ctx, consolidateStaticInitialization)...)
@@ -663,7 +661,23 @@ func appendValidDeclarations(dst []ast.Decl, declarations []ast.Decl) []ast.Decl
 	return dst
 }
 
-func classBodyNeedsOrderedStaticInitialization(body *sitter.Node) bool {
+func fieldDefinitionForDeclaration(scope *symbol.ClassScope, declaration *sitter.Node) *symbol.Definition {
+	if scope == nil || declaration == nil {
+		return nil
+	}
+	for _, field := range scope.Fields {
+		if field == nil || field.DeclarationNode == nil {
+			continue
+		}
+		if field.DeclarationNode.StartByte() == declaration.StartByte() &&
+			field.DeclarationNode.EndByte() == declaration.EndByte() {
+			return field
+		}
+	}
+	return nil
+}
+
+func classBodyNeedsOrderedStaticInitialization(body *sitter.Node, scope *symbol.ClassScope) bool {
 	if body == nil {
 		return false
 	}
@@ -671,9 +685,20 @@ func classBodyNeedsOrderedStaticInitialization(body *sitter.Node) bool {
 		if child.Type() == "static_initializer" {
 			return true
 		}
-		if child.Type() == "field_declaration" && fieldDeclarationIsStatic(child) {
+		if child.Type() == "field_declaration" {
+			field := fieldDefinitionForDeclaration(scope, child)
+			if field == nil {
+				if !fieldDeclarationIsStatic(child) {
+					continue
+				}
+			} else if !field.IsStatic {
+				continue
+			}
 			declarator := child.ChildByFieldName("declarator")
 			if declarator != nil && declarator.ChildByFieldName("value") != nil {
+				if field != nil && field.IsCompileTimeConstant {
+					continue
+				}
 				return true
 			}
 		}
@@ -695,75 +720,6 @@ func fieldDeclarationIsStatic(node *sitter.Node) bool {
 		}
 	}
 	return false
-}
-
-func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx Ctx) ast.Decl {
-	if body == nil || ctx.currentClass == nil {
-		return nil
-	}
-
-	executionName := executionParameterName(body, source, ctx)
-	statements := []ast.Stmt{}
-	for _, child := range nodeutil.NamedChildrenOf(body) {
-		switch child.Type() {
-		case "field_declaration":
-			if !fieldDeclarationIsStatic(child) {
-				continue
-			}
-			declarator := child.ChildByFieldName("declarator")
-			if declarator == nil {
-				continue
-			}
-			valueNode := declarator.ChildByFieldName("value")
-			nameNode := declarator.ChildByFieldName("name")
-			if valueNode == nil || nameNode == nil {
-				continue
-			}
-			fieldDefinitions := ctx.currentClass.FindField().ByOriginalName(nameNode.Content(source))
-			if len(fieldDefinitions) == 0 {
-				continue
-			}
-			fieldDefinition := fieldDefinitions[0]
-			valueCtx := ctx.Clone()
-			valueCtx.localScope = &symbol.Definition{IsStatic: true}
-			valueCtx.executionContextName = executionName
-			valueCtx.expectedType = fieldDefinition.OriginalType
-			valueCtx.expectedTypeRoot = valueNode
-			value := ParseExpr(valueNode, source, valueCtx)
-			value = coerceArgumentToExpectedType(value, valueNode, fieldDefinition.OriginalType, valueCtx, source)
-			statements = append(statements, &ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.Ident{Name: fieldDefinition.Name}},
-				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{value},
-			})
-		case "static_initializer":
-			staticCtx := ctx.Clone()
-			staticCtx.localScope = &symbol.Definition{IsStatic: true}
-			staticCtx.executionContextName = executionName
-			block, ok := ParseStmt(child.NamedChild(0), source, staticCtx).(*ast.BlockStmt)
-			if ok && block != nil {
-				statements = append(statements, block.List...)
-			}
-		}
-	}
-
-	if len(statements) == 0 {
-		return nil
-	}
-	statements = append([]ast.Stmt{&ast.AssignStmt{
-		Lhs: []ast.Expr{&ast.Ident{Name: executionName}},
-		Tok: token.DEFINE,
-		Rhs: []ast.Expr{newExecutionExpr(ctx)},
-	}, &ast.AssignStmt{
-		Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
-		Tok: token.ASSIGN,
-		Rhs: []ast.Expr{&ast.Ident{Name: executionName}},
-	}}, statements...)
-	return &ast.FuncDecl{
-		Name: &ast.Ident{Name: "init"},
-		Type: &ast.FuncType{Params: &ast.FieldList{}},
-		Body: &ast.BlockStmt{List: statements},
-	}
 }
 
 func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) []ast.Decl {
@@ -2186,6 +2142,9 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 		})
 	}
 
+	if ensure := classInitializationEnsureStmt(scope, &ast.Ident{Name: executionName}, ctx); ensure != nil {
+		body = append([]ast.Stmt{ensure}, body...)
+	}
 	body = append(body, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: recvName}}})
 
 	// Match the casing of the call-site reference (defaultConstructorName): a
@@ -3134,6 +3093,9 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				}, Args: []ast.Expr{&ast.Ident{Name: executionName}}}})
 			}
 		}
+		if ensure := classInitializationEnsureStmt(ctx.currentClass, &ast.Ident{Name: executionName}, ctx); ensure != nil {
+			body.List = append([]ast.Stmt{ensure}, body.List...)
+		}
 		body.List = append(body.List, userBody...)
 		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: receiverName}}})
 
@@ -3335,6 +3297,11 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// static method. Prepend monitor enter + deferred exit.
 		if synchronizedMethod && bodyNode != nil {
 			body.List = append(synchronizedMethodPrologue(ctx, static, node, source), body.List...)
+		}
+		if static && bodyNode != nil {
+			if ensure := classInitializationEnsureStmt(ctx.currentClass, &ast.Ident{Name: executionName}, ctx); ensure != nil {
+				body.List = append([]ast.Stmt{ensure}, body.List...)
+			}
 		}
 
 		// A Go pointer-receiver method may legally execute with a nil receiver,

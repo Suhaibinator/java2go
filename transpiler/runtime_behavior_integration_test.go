@@ -131,8 +131,11 @@ public class FieldInitProgram {
 	if !strings.Contains(flat, "var ( seed int32 total int32 )") {
 		t.Fatalf("expected all static fields to receive Java defaults before initialization, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func init() { __java2goExecution := stdjava.NewExecution() _ = __java2goExecution seed = 7 total = seed + 3 }") {
-		t.Fatalf("expected source-ordered static field initialization after defaults, got:\n%s", out)
+	if !strings.Contains(flat, `var __java2goClassInitializationFieldInitProgram = stdjava.NewClassInitialization("FieldInitProgram")`) {
+		t.Fatalf("expected lazy class-initialization state, got:\n%s", out)
+	}
+	if !strings.Contains(flat, "func FieldInitProgramJava2goEnsureInitialized(__java2goExecution *stdjava.Execution) { __java2goClassInitializationFieldInitProgram.Ensure(__java2goExecution, func(__java2goExecution *stdjava.Execution) { _ = __java2goExecution seed = 7 total = func() int32 { FieldInitProgramJava2goEnsureInitialized(__java2goExecution) return seed }() + 3 }) }") {
+		t.Fatalf("expected source-ordered lazy static field initialization, including guarded static-field reads, got:\n%s", out)
 	}
 	if !strings.Contains(out, "__java2goInitFields") {
 		t.Fatalf("expected synthetic field initializer method in output, got:\n%s", out)

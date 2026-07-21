@@ -114,6 +114,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		default:
 			helper = "PreDecrement"
 		}
+		if lowered, ok := lowerStaticFieldUpdate(node, operandNode, helper, source, ctx); ok {
+			return lowered
+		}
 
 		return stdjavaCall(ctx, helper, &ast.UnaryExpr{
 			Op: token.AND,
@@ -864,10 +867,18 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				callArgs = prependExecutionArgument(ctx, callArgs)
 			}
 			funExpr := addTypeArgs(qualifiedNameExpr(constructorName, targetPkg, ctx), effectiveTypeArgs)
-			return &ast.CallExpr{
+			call := &ast.CallExpr{
 				Fun:  funExpr,
 				Args: callArgs,
 			}
+			if targetScope == nil || targetScope.Class == nil {
+				return call
+			}
+			resultType := &ast.StarExpr{X: addTypeArgs(
+				qualifiedNameExpr(targetScope.Class.Name, targetPkg, ctx),
+				effectiveTypeArgs,
+			)}
+			return guardClassInitializationBeforeExpr(targetScope, call, resultType, ctx)
 		}
 
 		// No explicit constructor matched by argument types. If we resolved the
@@ -886,10 +897,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				callArgs = prependExecutionArgument(ctx, callArgs)
 			}
 			funExpr := addTypeArgs(qualifiedNameExpr(ctorName, targetPkg, ctx), effectiveTypeArgs)
-			return &ast.CallExpr{
+			call := &ast.CallExpr{
 				Fun:  funExpr,
 				Args: callArgs,
 			}
+			resultType := &ast.StarExpr{X: addTypeArgs(
+				qualifiedNameExpr(targetScope.Class.Name, targetPkg, ctx),
+				effectiveTypeArgs,
+			)}
+			return guardClassInitializationBeforeExpr(targetScope, call, resultType, ctx)
 		}
 
 		// Otherwise the constructor is genuinely unresolved (external type with no
@@ -1166,6 +1182,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return qualifiedNameExpr(constName, enumPkg, ctx)
 			}
 		}
+		if access, ok := resolveStaticFieldAccess(node, source, ctx); ok {
+			return lowerStaticFieldRead(access, source, ctx)
+		}
 
 		fieldName := node.ChildByFieldName("field").Content(source)
 		var owner *symbol.ClassScope
@@ -1215,6 +1234,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if local := ctx.localScope.FindVariable(identName); local != nil {
 				return &ast.Ident{Name: sanitizeGoIdent(local.Name)}
 			}
+		}
+		if access, ok := resolveStaticFieldAccess(node, source, ctx); ok {
+			return lowerStaticFieldRead(access, source, ctx)
 		}
 		if ctx.currentClass != nil {
 			if field := findFieldInHierarchy(ctx.currentClass, identName, ctx); field != nil {
@@ -2066,6 +2088,9 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	rhsNode := node.Child(2)
 	if lhsNode == nil || opNode == nil || rhsNode == nil {
 		return &ast.BadExpr{}
+	}
+	if lowered, ok := lowerStaticFieldAssignment(node, source, ctx); ok {
+		return lowered
 	}
 
 	lhsJavaType, lhsTypeKnown := inferExprJavaType(lhsNode, ctx, source)
@@ -3616,17 +3641,11 @@ func findInstanceMethodInHierarchy(start *symbol.ClassScope, methodName string, 
 }
 
 func findFieldInHierarchy(start *symbol.ClassScope, fieldName string, ctx Ctx) *symbol.Definition {
-	seen := map[*symbol.ClassScope]struct{}{}
-	for scope := start; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
-		if _, ok := seen[scope]; ok {
-			return nil
-		}
-		seen[scope] = struct{}{}
-		if field := scope.FindFieldByName(fieldName); field != nil {
-			return field
-		}
+	resolution := findFieldResolutionInHierarchy(start, fieldName, ctx)
+	if resolution == nil {
+		return nil
 	}
-	return nil
+	return resolution.def
 }
 
 func mapClassTypeArgsToAncestor(child *symbol.ClassScope, childTypeArgs []ast.Expr, ancestor *symbol.ClassScope, ctx Ctx) []ast.Expr {
@@ -4723,7 +4742,9 @@ func anonymousSuperclassConstructorExpr(node, objectType *sitter.Node, superScop
 		}
 		constructorExpr = applyTypeArguments(constructorExpr, goTypeArgs)
 	}
-	return &ast.CallExpr{Fun: constructorExpr, Args: args}
+	call := &ast.CallExpr{Fun: constructorExpr, Args: args}
+	resultType := javaTypeStringToGoTypeExpr(objectType.Content(source), inScopeTypeParameters(ctx), ctx)
+	return guardClassInitializationBeforeExpr(superScope, call, resultType, ctx)
 }
 
 // buildAnonymousStructMethod builds a method declaration on a synthesized

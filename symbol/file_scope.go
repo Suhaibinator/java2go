@@ -3,6 +3,9 @@ package symbol
 // FileScope represents the scope in a single source file, that can contain one
 // or more source classes
 type FileScope struct {
+	// Source retains the parsed Java bytes so later whole-program symbol passes
+	// can classify declarations that refer to members in another source file.
+	Source []byte
 	// The global package that the file is located in
 	Package string
 	// Every external package that is imported into the file

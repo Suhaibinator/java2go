@@ -35,8 +35,14 @@ public class StaticOrderProgram {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if strings.Count(out, "func init()") != 1 {
-		t.Fatalf("expected one consolidated package initializer, got:\n%s", out)
+	if !strings.Contains(out, `stdjava.NewClassInitialization("StaticOrderProgram")`) {
+		t.Fatalf("expected lazy class-initialization state, got:\n%s", out)
+	}
+	if strings.Count(out, "func StaticOrderProgramJava2goEnsureInitialized(") != 1 {
+		t.Fatalf("expected one lazy class-initialization entry point, got:\n%s", out)
+	}
+	if strings.Contains(out, "func init()") {
+		t.Fatalf("static initialization should be lazy rather than run from a package initializer, got:\n%s", out)
 	}
 	lastPosition := -1
 	for _, marker := range []string{

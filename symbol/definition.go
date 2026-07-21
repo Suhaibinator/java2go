@@ -23,6 +23,10 @@ type Definition struct {
 	// Optimizations may rely on it only together with the relevant Java dispatch
 	// and mutation rules; it is metadata, not permission to drop checks by itself.
 	IsFinal bool
+	// IsCompileTimeConstant marks Java constant variables: final primitive or
+	// String fields initialized by a constant expression. Reading one does not
+	// trigger initialization of its declaring class.
+	IsCompileTimeConstant bool
 	// IsPrivate marks members whose Java dispatch is statically bound to the
 	// declaring class and which are not inherited by subclasses.
 	IsPrivate bool
