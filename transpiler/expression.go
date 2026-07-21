@@ -628,25 +628,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// The `outer.new Inner()` / `this.new Inner()` qualifier form is handled
 		// below by threading the leading expression as the enclosing instance.
 
-		// Look up raw argument types before constructor selection. The expressions
-		// themselves are parsed only after a constructor is known, because lambdas,
-		// method references, and poly conditional arguments require that selected
-		// parameter type as their exact target context.
+		// Keep the source argument nodes intact until constructor selection. Lambdas,
+		// method references, null, numeric widening, and poly conditionals all need
+		// Java invocation-conversion scoring before their target parameter type is
+		// known.
 		objectArguments := node.ChildByFieldName("arguments")
-		argumentTypes := make([]string, objectArguments.NamedChildCount())
-		for ind, argument := range nodeutil.NamedChildrenOf(objectArguments) {
-			// Look up each argument and find its type
-			if argument.Type() != "identifier" {
-				argumentTypes[ind] = symbol.TypeOfLiteral(argument, source)
-			} else {
-				if localDef := ctx.localScope.FindVariable(argument.Content(source)); localDef != nil {
-					argumentTypes[ind] = localDef.OriginalType
-					// Otherwise, a variable may exist as a global variable
-				} else if def := ctx.currentFile.FindField().ByOriginalName(argument.Content(source)); len(def) > 0 {
-					argumentTypes[ind] = def[0].OriginalType
-				}
-			}
-		}
 
 		// Extract base class name and type arguments
 		var className string
@@ -677,7 +663,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// Find the respective constructor (if we have symbol info for that class).
 		var constructor *symbol.Definition
 		targetScope := resolveClassScopeByQualifiedName(ctx, className)
-		constructor = findMatchingConstructor(targetScope, stripJavaQualifier(className), argumentTypes)
+		if resolution := findBestConstructor(targetScope, objectArguments, ctx, source); resolution != nil {
+			constructor = resolution.def
+		}
 		targetPkg := resolveJavaPackageForType(ctx, className, targetScope)
 		var expectedArgumentTypes []string
 		if constructor != nil {
@@ -2768,6 +2756,45 @@ func invocationClosureCallStatement(call ast.Expr, results *ast.FieldList) ast.S
 type methodCandidateScore struct {
 	totalCost  int
 	exactCount int
+}
+
+// findBestConstructor selects one constructor declared by scope using the same
+// strict Java invocation conversions as ordinary overload resolution. Unlike a
+// method lookup, constructors are never inherited: a this(...) invocation
+// searches exactly the current class and super(...) searches exactly the direct
+// superclass. Keeping this selector source-node based also lets null choose the
+// most-specific reference overload and numeric arguments choose the closest
+// legal widening before their generated Go expressions are coerced.
+func findBestConstructor(scope *symbol.ClassScope, argsNode *sitter.Node, ctx Ctx, source []byte) *methodResolution {
+	if scope == nil {
+		return nil
+	}
+
+	var argNodes []*sitter.Node
+	if argsNode != nil {
+		argNodes = nodeutil.NamedChildrenOf(argsNode)
+	}
+	var best *methodResolution
+	var bestScore methodCandidateScore
+	for _, def := range scope.Methods {
+		if def == nil || !def.Constructor || len(def.Parameters) != len(argNodes) {
+			continue
+		}
+		candidateTypeParams := append([]string{}, scope.TypeParameterNames()...)
+		candidateTypeParams = append(candidateTypeParams, def.TypeParameterNames()...)
+		score, applicable := scoreMethodCandidate(def, scope, candidateTypeParams, argNodes, ctx, source)
+		if !applicable {
+			continue
+		}
+		candidate := &methodResolution{def: def, owner: scope}
+		if best == nil || score.totalCost < bestScore.totalCost ||
+			(score.totalCost == bestScore.totalCost && score.exactCount > bestScore.exactCount) ||
+			(score.totalCost == bestScore.totalCost && score.exactCount == bestScore.exactCount && methodResolutionMoreSpecific(candidate, best, ctx)) {
+			best = candidate
+			bestScore = score
+		}
+	}
+	return best
 }
 
 // findBestMethodInHierarchy selects the applicable user-defined overload for a

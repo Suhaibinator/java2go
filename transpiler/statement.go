@@ -82,6 +82,51 @@ func ParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	}
 }
 
+// parseStatementBlock renders one Java block while optionally omitting an
+// already-structured source statement. Constructor lowering uses the omission
+// for its leading this(...)/super(...) invocation: that invocation controls the
+// allocation/initialization phase and must not first be flattened into an
+// ordinary Go statement (or parsed twice, which could duplicate hoisted
+// declarations in its arguments).
+func parseStatementBlock(node, omitted *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+	// Row-loop LICM plans are discovered while recursively rendering an inner
+	// loop, then consumed as the recursion unwinds through these lexical blocks.
+	// Initialize the shared map before descending so cloned contexts observe
+	// registrations made by their children.
+	if ctx.affineArrayRowHoists == nil {
+		ctx.affineArrayRowHoists = make(map[affineArrayCallSiteKey][]*affineArrayRowHoist)
+	}
+
+	body := &ast.BlockStmt{}
+	for _, line := range nodeutil.NamedChildrenOf(node) {
+		if line.Type() == "comment" || line.Type() == "line_comment" || line.Type() == "block_comment" {
+			continue
+		}
+		if omitted != nil && line.Type() == omitted.Type() && line.StartByte() == omitted.StartByte() && line.EndByte() == omitted.EndByte() {
+			continue
+		}
+		if stmt := TryParseStmt(line, source, ctx); stmt != nil {
+			// A hoisted local class leaves behind an implicit empty statement;
+			// skip it so no stray semicolon is emitted.
+			if empty, ok := stmt.(*ast.EmptyStmt); ok && empty.Implicit {
+				continue
+			}
+			body.List = append(body.List, applyAffineArrayRowHoists(line, stmt, ctx)...)
+			if line.Type() == "local_variable_declaration" {
+				body.List = append(body.List, unusedLocalDiscardStatements(stmt, node, source)...)
+			}
+		} else if isStmtListNode(line.Type()) {
+			// Try and synchronized statements are lowered into a list of statements.
+			body.List = append(body.List, ParseNode(line, source, ctx).([]ast.Stmt)...)
+		} else {
+			// Anything else (including unsupported constructs) is converted via
+			// ParseStmt, which emits an UNSUPPORTED placeholder rather than crashing.
+			body.List = append(body.List, ParseStmt(line, source, ctx))
+		}
+	}
+	return body
+}
+
 func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	if node != nil && node.Type() == "null_literal" && strings.TrimSpace(ctx.expectedType) != "" {
 		if isJavaStringType(ctx.expectedType) {
@@ -559,38 +604,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "method_invocation":
 		return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
 	case "constructor_body", "block":
-		// Row-loop LICM plans are discovered while recursively rendering an inner
-		// loop, then consumed as the recursion unwinds through these lexical
-		// blocks. Initialize the shared map before descending so cloned contexts
-		// observe registrations made by their children.
-		if ctx.affineArrayRowHoists == nil {
-			ctx.affineArrayRowHoists = make(map[affineArrayCallSiteKey][]*affineArrayRowHoist)
-		}
-		body := &ast.BlockStmt{}
-		for _, line := range nodeutil.NamedChildrenOf(node) {
-			if line.Type() == "comment" || line.Type() == "line_comment" || line.Type() == "block_comment" {
-				continue
-			}
-			if stmt := TryParseStmt(line, source, ctx); stmt != nil {
-				// A hoisted local class leaves behind an implicit empty statement;
-				// skip it so no stray semicolon is emitted.
-				if empty, ok := stmt.(*ast.EmptyStmt); ok && empty.Implicit {
-					continue
-				}
-				body.List = append(body.List, applyAffineArrayRowHoists(line, stmt, ctx)...)
-				if line.Type() == "local_variable_declaration" {
-					body.List = append(body.List, unusedLocalDiscardStatements(stmt, node, source)...)
-				}
-			} else if isStmtListNode(line.Type()) {
-				// Try and synchronized statements are lowered into a list of statements
-				body.List = append(body.List, ParseNode(line, source, ctx).([]ast.Stmt)...)
-			} else {
-				// Anything else (including unsupported constructs) is converted via
-				// ParseStmt, which emits an UNSUPPORTED placeholder rather than crashing.
-				body.List = append(body.List, ParseStmt(line, source, ctx))
-			}
-		}
-		return body
+		return parseStatementBlock(node, nil, source, ctx)
 	case "expression_statement":
 		if stmt := TryParseStmt(node.NamedChild(0), source, ctx); stmt != nil {
 			return stmt

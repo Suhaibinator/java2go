@@ -1579,48 +1579,218 @@ func constructorMostDerivedInitStmt(receiverName string) ast.Stmt {
 	}
 }
 
-func renameConstructorCallForSelf(fun ast.Expr) ast.Expr {
-	switch typed := fun.(type) {
-	case *ast.Ident:
-		return &ast.Ident{Name: constructorWithSelfName(typed.Name)}
-	case *ast.SelectorExpr:
-		return &ast.SelectorExpr{X: typed.X, Sel: &ast.Ident{Name: constructorWithSelfName(typed.Sel.Name)}}
-	case *ast.IndexExpr:
-		return &ast.IndexExpr{X: renameConstructorCallForSelf(typed.X), Index: typed.Index}
-	case *ast.IndexListExpr:
-		return &ast.IndexListExpr{X: renameConstructorCallForSelf(typed.X), Indices: typed.Indices}
+type explicitConstructorInvocationKind uint8
+
+const (
+	explicitThisConstructorInvocation explicitConstructorInvocationKind = iota + 1
+	explicitSuperConstructorInvocation
+)
+
+// explicitConstructorInvocation retains the Java meaning of the first source
+// statement in a constructor until declaration lowering decides which phase it
+// belongs to. Flattening this(...) into an ExprStmt loses both its exact overload
+// and the fact that it delegates allocation; flattening super(...) loses exact
+// overload selection and its initialization boundary.
+type explicitConstructorInvocation struct {
+	kind        explicitConstructorInvocationKind
+	node        *sitter.Node
+	arguments   *sitter.Node
+	targetScope *symbol.ClassScope
+	target      *symbol.Definition
+	parsedArgs  []ast.Expr
+}
+
+func constructorInvocationFromBody(body *sitter.Node, source []byte, ctx Ctx) *explicitConstructorInvocation {
+	if body == nil || ctx.currentClass == nil {
+		return nil
+	}
+	var invocationNode *sitter.Node
+	for _, child := range nodeutil.NamedChildrenOf(body) {
+		switch child.Type() {
+		case "comment", "line_comment", "block_comment":
+			continue
+		case "explicit_constructor_invocation":
+			invocationNode = child
+		}
+		break
+	}
+	if invocationNode == nil {
+		return nil
+	}
+
+	constructorNode := invocationNode.ChildByFieldName("constructor")
+	if constructorNode == nil {
+		for _, child := range nodeutil.NamedChildrenOf(invocationNode) {
+			if child.Type() == "this" || child.Type() == "super" {
+				constructorNode = child
+				break
+			}
+		}
+	}
+	if constructorNode == nil {
+		return nil
+	}
+
+	invocation := &explicitConstructorInvocation{node: invocationNode}
+	switch constructorNode.Type() {
+	case "this":
+		invocation.kind = explicitThisConstructorInvocation
+		invocation.targetScope = ctx.currentClass
+	case "super":
+		invocation.kind = explicitSuperConstructorInvocation
+		invocation.targetScope = resolveSuperclassScope(ctx, ctx.currentClass)
 	default:
-		return fun
+		return nil
+	}
+	invocation.arguments = invocationNode.ChildByFieldName("arguments")
+	if invocation.arguments == nil {
+		for _, child := range nodeutil.NamedChildrenOf(invocationNode) {
+			if child.Type() == "argument_list" {
+				invocation.arguments = child
+				break
+			}
+		}
+	}
+	if resolution := findBestConstructor(invocation.targetScope, invocation.arguments, ctx, source); resolution != nil {
+		invocation.target = resolution.def
+	}
+	invocation.parsedArgs = parseArgumentListWithExpectedTypes(
+		invocation.arguments,
+		source,
+		ctx,
+		definitionParameterOriginalTypes(invocation.target),
+	)
+	return invocation
+}
+
+func constructorInvocationMethodTypeArgs(invocation *explicitConstructorInvocation, source []byte, ctx Ctx) []ast.Expr {
+	if invocation == nil || invocation.target == nil || len(invocation.target.TypeParameters) == 0 {
+		return nil
+	}
+	if explicit := explicitTypeArgumentExprs(invocation.node, source, inScopeTypeParameters(ctx), ctx); len(explicit) == len(invocation.target.TypeParameters) {
+		return explicit
+	}
+	inferred := inferMethodTypeArguments(invocation.target, invocation.node, ctx, source)
+	if len(inferred) == len(invocation.target.TypeParameters) {
+		return inferred
+	}
+	// Go permits a prefix of explicit function type arguments and infers the
+	// remainder. Returning nil leaves constructor-only type parameters to that
+	// inference after the class type arguments have been supplied.
+	return nil
+}
+
+func explicitThisConstructorAssignment(
+	invocation *explicitConstructorInvocation,
+	receiverName string,
+	usesMostDerived bool,
+	source []byte,
+	ctx Ctx,
+) ast.Stmt {
+	if invocation == nil || invocation.kind != explicitThisConstructorInvocation || ctx.currentClass == nil {
+		return nil
+	}
+	constructorName := ""
+	if invocation.target != nil {
+		constructorName = invocation.target.Name
+	}
+	if constructorName == "" {
+		constructorName = constructorFuncName(ctx.currentClass)
+	}
+	if constructorName == "" {
+		constructorName = defaultConstructorName(ctx.currentClass.Class.Name)
+	}
+	if usesMostDerived {
+		constructorName = constructorWithSelfName(constructorName)
+	}
+
+	constructor := ast.Expr(&ast.Ident{Name: constructorName})
+	typeArgs := typeParamExprs(ctx.currentClass.TypeParameterNames())
+	typeArgs = append(typeArgs, constructorInvocationMethodTypeArgs(invocation, source, ctx)...)
+	if len(typeArgs) > 0 {
+		constructor = applyTypeArguments(constructor, typeArgs)
+	}
+
+	args := make([]ast.Expr, 0, len(invocation.parsedArgs)+2)
+	if usesMostDerived {
+		args = append(args, &ast.Ident{Name: constructorSelfParam})
+	}
+	if enclosingInstanceType(ctx.currentClass) != nil {
+		args = append(args, &ast.Ident{Name: ctx.currentClass.EnclosingFieldName()})
+	}
+	args = append(args, invocation.parsedArgs...)
+	return &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: receiverName}},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{&ast.CallExpr{Fun: constructor, Args: args}},
 	}
 }
 
-// rewriteConstructorChainForSelf threads the most-derived receiver through an
-// explicit super(...) or this(...) constructor invocation. The callee installs
-// that receiver before executing any of its Java constructor body.
-func rewriteConstructorChainForSelf(stmt ast.Stmt, ctx Ctx) ast.Stmt {
-	if stmt == nil || ctx.currentClass == nil {
-		return stmt
+func explicitSuperConstructorAssignment(
+	invocation *explicitConstructorInvocation,
+	receiverName string,
+	mostDerived ast.Expr,
+	source []byte,
+	ctx Ctx,
+) ast.Stmt {
+	if invocation == nil || invocation.kind != explicitSuperConstructorInvocation || ctx.currentClass == nil {
+		return nil
 	}
-	var call *ast.CallExpr
-	if isExplicitSuperConstructorAssignment(stmt, ctx) {
-		parent := resolveSuperclassScope(ctx, ctx.currentClass)
-		if parent == nil || !classHasSelfSetter(parent, ctx) {
-			return stmt
+	superType := strings.TrimSpace(ctx.currentClass.Superclass)
+	if superType == "" {
+		return nil
+	}
+	base, superArgStrs := parseJavaTypeString(superType)
+	superName := stripJavaQualifier(base)
+	parent := invocation.targetScope
+	if parent != nil && parent.Class != nil && parent.Class.Name != "" {
+		superName = parent.Class.Name
+	}
+
+	constructorName := "New" + superName
+	constructor := ast.Expr(nil)
+	if isBuiltinExceptionType(stripJavaQualifier(base)) && parent == nil {
+		constructor = stdjavaQualifiedExpr(constructorName, ctx)
+	} else {
+		if invocation.target != nil && invocation.target.Name != "" {
+			constructorName = invocation.target.Name
+		} else if parent != nil {
+			if name := constructorFuncName(parent); name != "" {
+				constructorName = name
+			} else {
+				constructorName = defaultConstructorName(parent.Class.Name)
+			}
 		}
-		assignment := stmt.(*ast.AssignStmt)
-		if len(assignment.Rhs) == 1 {
-			call, _ = assignment.Rhs[0].(*ast.CallExpr)
+		methodTypeArgCapacity := 0
+		if invocation.target != nil {
+			methodTypeArgCapacity = len(invocation.target.TypeParameters)
 		}
-	} else if isThisConstructorInvocation(stmt, ctx.className) {
-		exprStmt := stmt.(*ast.ExprStmt)
-		call, _ = exprStmt.X.(*ast.CallExpr)
+		args := make([]ast.Expr, 0, len(superArgStrs)+methodTypeArgCapacity)
+		for _, arg := range superArgStrs {
+			args = append(args, javaTypeStringToGoTypeExpr(arg, inScopeTypeParameters(ctx), ctx))
+		}
+		args = append(args, constructorInvocationMethodTypeArgs(invocation, source, ctx)...)
+		if mostDerived != nil && parent != nil && classHasSelfSetter(parent, ctx) {
+			constructorName = constructorWithSelfName(constructorName)
+		}
+		constructor = qualifiedNameExpr(constructorName, resolveJavaPackageForType(ctx, base, parent), ctx)
+		if len(args) > 0 {
+			constructor = applyTypeArguments(constructor, args)
+		}
 	}
-	if call == nil {
-		return stmt
+
+	callArgs := append([]ast.Expr(nil), invocation.parsedArgs...)
+	if mostDerived != nil && parent != nil && classHasSelfSetter(parent, ctx) {
+		callArgs = append([]ast.Expr{mostDerived}, callArgs...)
 	}
-	call.Fun = renameConstructorCallForSelf(call.Fun)
-	call.Args = append([]ast.Expr{&ast.Ident{Name: constructorSelfParam}}, call.Args...)
-	return stmt
+	return &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.SelectorExpr{
+			X:   &ast.Ident{Name: receiverName},
+			Sel: &ast.Ident{Name: superName},
+		}},
+		Tok: token.ASSIGN,
+		Rhs: []ast.Expr{&ast.CallExpr{Fun: constructor, Args: callArgs}},
+	}
 }
 
 // implicitSuperConstructorAssignmentWithSelf emits Java's implicit leading
@@ -2429,69 +2599,6 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 	return []ast.Decl{helperStruct, constructor, funcDecl}
 }
 
-// shouldCallFieldInitializerMethodForBody is like shouldCallFieldInitializerMethod
-// but operates on the raw, parsed constructor body (before the synthesized
-// allocation prelude is prepended), where a delegating this(...) call appears as
-// the first statement.
-func shouldCallFieldInitializerMethodForBody(userBody []ast.Stmt, ctx Ctx) bool {
-	if ctx.currentClass == nil || !ctx.currentClass.HasInstanceFieldInitializers {
-		return false
-	}
-	if len(userBody) == 0 {
-		return true
-	}
-	return !isThisConstructorInvocation(userBody[0], ctx.className)
-}
-
-// isThisConstructorInvocation reports whether a statement is a delegating
-// this(...) constructor call lowered to New<Class>(...).
-func isThisConstructorInvocation(stmt ast.Stmt, className string) bool {
-	exprStmt, ok := stmt.(*ast.ExprStmt)
-	if !ok {
-		return false
-	}
-	callExpr, ok := exprStmt.X.(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-	funIdent, ok := callExpr.Fun.(*ast.Ident)
-	if !ok {
-		return false
-	}
-	return funIdent.Name == "New"+className
-}
-
-func isExplicitSuperConstructorAssignment(stmt ast.Stmt, ctx Ctx) bool {
-	if ctx.currentClass == nil {
-		return false
-	}
-	assignStmt, ok := stmt.(*ast.AssignStmt)
-	if !ok || len(assignStmt.Lhs) != 1 {
-		return false
-	}
-
-	lhsSelector, ok := assignStmt.Lhs[0].(*ast.SelectorExpr)
-	if !ok {
-		return false
-	}
-	recvIdent, ok := lhsSelector.X.(*ast.Ident)
-	if !ok || recvIdent.Name != ShortName(ctx.className) {
-		return false
-	}
-
-	superType := strings.TrimSpace(ctx.currentClass.Superclass)
-	if superType == "" {
-		return false
-	}
-	base, _ := parseJavaTypeString(superType)
-	superName := stripJavaQualifier(base)
-	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
-		superName = scope.Class.Name
-	}
-
-	return lhsSelector.Sel.Name == superName
-}
-
 // synthesizeRawGenericFunctionParameters models Java raw generic parameters on
 // static methods. A raw `Box box` accepts Box<String>, Box<Integer>, and every
 // other instantiation, but Go requires an explicit argument and its generic
@@ -2613,7 +2720,13 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Search through the current class for the constructor, which is simply labeled as a method
 		ctx.localScope = ctx.currentClass.FindMethod().By(comparison)[0]
 
-		body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
+		bodyNode := node.ChildByFieldName("body")
+		constructorInvocation := constructorInvocationFromBody(bodyNode, source, ctx)
+		var omittedInvocation *sitter.Node
+		if constructorInvocation != nil {
+			omittedInvocation = constructorInvocation.node
+		}
+		body := parseStatementBlock(bodyNode, omittedInvocation, source, ctx)
 
 		// Generate the struct type for `new` call - if generic, include type params
 		var structType ast.Expr = &ast.Ident{Name: ctx.className}
@@ -2621,70 +2734,78 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			structType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
 		}
 
-		prelude := []ast.Stmt{
-			&ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.Ident{Name: ShortName(ctx.className)}},
-				Tok: token.DEFINE,
-				Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
-			},
-		}
-		prelude = append(prelude, defaultStringFieldInitializationStmts(ctx.currentClass, ShortName(ctx.className), ctx)...)
+		receiverName := ShortName(ctx.className)
 		usesMostDerived := classHasSelfSetter(ctx.currentClass, ctx)
-		if usesMostDerived {
-			prelude = append(prelude, constructorMostDerivedInitStmt(ShortName(ctx.className)))
-		}
-		// For an inner class, store the captured enclosing instance into its field
-		// immediately after allocation so the rest of the constructor body can use
-		// it.
-		if enclosingInstanceType(ctx.currentClass) != nil {
-			enclFieldName := ctx.currentClass.EnclosingFieldName()
-			prelude = append(prelude, &ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: enclFieldName}}},
-				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{&ast.Ident{Name: enclFieldName}},
-			})
-		}
-		// For a `class X extends Thread` subclass, wire the embedded *stdjava.Thread
-		// to dispatch Start() to this instance's Run() override.
-		if stmt := threadBaseWiringStmt(ctx); stmt != nil {
-			prelude = append(prelude, stmt)
-		}
-		userBody := body.List
-		remainingBody := userBody
-		var constructorChain ast.Stmt
-		if len(userBody) > 0 && (isExplicitSuperConstructorAssignment(userBody[0], ctx) || isThisConstructorInvocation(userBody[0], ctx.className)) {
-			constructorChain = userBody[0]
-			remainingBody = userBody[1:]
-			if usesMostDerived {
-				constructorChain = rewriteConstructorChainForSelf(constructorChain, ctx)
-			}
-		} else {
-			var mostDerived ast.Expr
-			if usesMostDerived {
-				mostDerived = &ast.Ident{Name: constructorSelfParam}
-			}
-			constructorChain = implicitSuperConstructorAssignmentWithSelf(ctx, ShortName(ctx.className), mostDerived)
-		}
-
-		body.List = prelude
-		if constructorChain != nil {
-			body.List = append(body.List, constructorChain)
-		}
 		var mostDerived ast.Expr
 		if usesMostDerived {
 			mostDerived = &ast.Ident{Name: constructorSelfParam}
 		}
-		if setterCall := classSelfSetterCallStmtWithValue(ctx, ShortName(ctx.className), mostDerived); setterCall != nil {
-			body.List = append(body.List, setterCall)
+
+		userBody := body.List
+		body.List = nil
+		if constructorInvocation != nil && constructorInvocation.kind == explicitThisConstructorInvocation {
+			// A this(...) constructor contributes no allocation or initialization
+			// phase of its own. Its target constructor returns the one initialized
+			// receiver; bind that receiver before executing this constructor's suffix.
+			if delegation := explicitThisConstructorAssignment(
+				constructorInvocation,
+				receiverName,
+				usesMostDerived,
+				source,
+				ctx,
+			); delegation != nil {
+				body.List = append(body.List, delegation)
+			}
+		} else {
+			// Only the terminal constructor in a this(...) chain performs Java's
+			// allocation/default/superclass/field-initializer phases.
+			body.List = append(body.List, &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: receiverName}},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
+			})
+			body.List = append(body.List, defaultStringFieldInitializationStmts(ctx.currentClass, receiverName, ctx)...)
+			if usesMostDerived {
+				body.List = append(body.List, constructorMostDerivedInitStmt(receiverName))
+			}
+			// An inner-class allocation captures its enclosing receiver once, at the
+			// same terminal boundary as its ordinary Java instance fields.
+			if enclosingInstanceType(ctx.currentClass) != nil {
+				enclFieldName := ctx.currentClass.EnclosingFieldName()
+				body.List = append(body.List, &ast.AssignStmt{
+					Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: enclFieldName}}},
+					Tok: token.ASSIGN,
+					Rhs: []ast.Expr{&ast.Ident{Name: enclFieldName}},
+				})
+			}
+
+			var superInit ast.Stmt
+			if constructorInvocation != nil && constructorInvocation.kind == explicitSuperConstructorInvocation {
+				superInit = explicitSuperConstructorAssignment(constructorInvocation, receiverName, mostDerived, source, ctx)
+			} else {
+				superInit = implicitSuperConstructorAssignmentWithSelf(ctx, receiverName, mostDerived)
+			}
+			if superInit != nil {
+				body.List = append(body.List, superInit)
+			}
+
+			// For a `class X extends Thread` subclass, wire the embedded runtime
+			// Thread after its superclass storage exists and before Java body code.
+			if stmt := threadBaseWiringStmt(ctx); stmt != nil {
+				body.List = append(body.List, stmt)
+			}
+			if setterCall := classSelfSetterCallStmtWithValue(ctx, receiverName, mostDerived); setterCall != nil {
+				body.List = append(body.List, setterCall)
+			}
+			if ctx.currentClass.HasInstanceFieldInitializers {
+				body.List = append(body.List, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{
+					X:   &ast.Ident{Name: receiverName},
+					Sel: &ast.Ident{Name: fieldInitMethodName},
+				}}})
+			}
 		}
-		if shouldCallFieldInitializerMethodForBody(userBody, ctx) {
-			body.List = append(body.List, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{
-				X:   &ast.Ident{Name: ShortName(ctx.className)},
-				Sel: &ast.Ident{Name: fieldInitMethodName},
-			}}})
-		}
-		body.List = append(body.List, remainingBody...)
-		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: ShortName(ctx.className)}}})
+		body.List = append(body.List, userBody...)
+		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: receiverName}}})
 
 		// Build the return type: *ClassName or *ClassName[T, U, ...]
 		returnType := &ast.StarExpr{X: structType}
