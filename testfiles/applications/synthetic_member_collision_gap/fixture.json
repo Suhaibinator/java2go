@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.syntheticcollision.SyntheticMemberCollisionApplication",
+  "module_path": "parity/syntheticcollision",
+  "status": "known_gap",
+  "known_gap": "Java fields and methods use separate member namespaces, but the synthesized Go local-class type emits the same selector name for both.",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "field and method with the same name value"
+}

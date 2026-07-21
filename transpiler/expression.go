@@ -2271,6 +2271,14 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 	if name == "" {
 		return nil
 	}
+	// Method-local classes are synthesized while rendering a method body rather
+	// than registered in the file's ordinary symbol tree. Keep their real scope
+	// reachable by the Java source name so type-qualified static calls and values
+	// declared with the local type use the same overload/member resolution as
+	// ordinary classes.
+	if info := ctx.localClasses[name]; info != nil && info.scope != nil {
+		return info.scope
+	}
 
 	// Try fully-qualified lookup first: "pkg.path.Class".
 	if idx := strings.LastIndex(name, "."); idx >= 0 {
@@ -4246,6 +4254,12 @@ func synthAnonClassScope(
 			method.Name = baseName + strconv.Itoa(suffix)
 		}
 		usedMethodNames[method.Name] = struct{}{}
+		// Static Java methods have no receiver and are emitted into Go's package
+		// namespace. Prefix them with the already-unique synthetic type name so
+		// separate local/anonymous classes may use the same Java method spelling.
+		if method.IsStatic {
+			method.Name = structName + "_" + method.Name
+		}
 		scope.Methods = append(scope.Methods, method)
 	}
 	return scope
@@ -4370,15 +4384,18 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 		body.List = append([]ast.Stmt{instanceMethodNilReceiverGuard(recvName)}, body.List...)
 	}
 
-	return &ast.FuncDecl{
+	decl := &ast.FuncDecl{
 		Name: &ast.Ident{Name: methodScope.Name},
-		Recv: &ast.FieldList{List: []*ast.Field{{
-			Names: []*ast.Ident{{Name: recvName}},
-			Type:  &ast.StarExpr{X: &ast.Ident{Name: structName}},
-		}}},
 		Type: &ast.FuncType{Params: params, Results: results},
 		Body: body,
 	}
+	if !methodScope.IsStatic {
+		decl.Recv = &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: recvName}},
+			Type:  &ast.StarExpr{X: &ast.Ident{Name: structName}},
+		}}}
+	}
+	return decl
 }
 
 // hoistLocalClass lifts a class declared inside a method body to file scope.
@@ -4434,15 +4451,18 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 
 	bodyMethods := anonymousClassMethods(classBody)
 	syntheticScope := synthAnonClassScope(structName, declaredFieldDefs, captured, bodyMethods, source, true)
+	// Register before rendering method bodies: a static member may use a
+	// class-qualified call to a sibling (`LocalType.helper()`), while later code
+	// in the enclosing method uses the same entry for `LocalType.method()`.
+	ctx.localClasses[javaName] = &localClassInfo{
+		structName: structName,
+		captured:   captured,
+		scope:      syntheticScope,
+	}
 	for _, methodNode := range bodyMethods {
 		if methodDecl := buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx); methodDecl != nil {
 			ctx.addHoistedDecl(methodDecl)
 		}
-	}
-
-	ctx.localClasses[javaName] = &localClassInfo{
-		structName: structName,
-		captured:   captured,
 	}
 }
 

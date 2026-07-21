@@ -137,6 +137,7 @@ type Ctx struct {
 type localClassInfo struct {
 	structName string
 	captured   []capturedLocal
+	scope      *symbol.ClassScope
 }
 
 // addHoistedDecl appends a synthesized top-level declaration to be emitted at

@@ -515,6 +515,48 @@ func TestLocalMutualRecursion(t *testing.T) {
 `)
 }
 
+func TestLocalClass_StaticOverloadsAndQualifiedSiblingCall_RuntimeBehavior(t *testing.T) {
+	src := `
+public class LocalStaticProgram {
+    public static int run() {
+        class LocalMath {
+            static int offset() {
+                return 5;
+            }
+            static int combine(int value) {
+                return value * 2 + LocalMath.offset();
+            }
+            static int combine(int left, int right) {
+                return left + right + offset();
+            }
+        }
+        return LocalMath.combine(6) + LocalMath.combine(-2, 2);
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+	if strings.Contains(flat, "LocalMath.combine") || strings.Contains(flat, "LocalMath.offset") {
+		t.Fatalf("local-class-qualified static call was left unresolved:\n%s", out)
+	}
+	if !strings.Contains(flat, "func LocalStaticProgramLocalLocalMath1_combine(value int32) int32") {
+		t.Fatalf("local static method was not emitted as a collision-safe package function:\n%s", out)
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestLocalStaticRuntime(t *testing.T) {
+	if got := Run(); got != 22 {
+		t.Fatalf("Run() = %d, want 22", got)
+	}
+}
+`)
+}
+
 func TestLocalClass_NullReceiverEvaluatesArgumentsBeforeNPE(t *testing.T) {
 	src := `
 public class LocalNullReceiverProgram {

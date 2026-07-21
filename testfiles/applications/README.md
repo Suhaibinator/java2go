@@ -42,6 +42,8 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `static_method_hiding_gap` | Parent/child static-method hiding and declaring-class selection | Passing |
 | `local_class_recursion_gap` | Capturing local class with a recursive instance method | Passing |
 | `anonymous_class_recursion_gap` | Recursive override in a synthesized anonymous subclass | Passing |
+| `synthetic_member_collision_gap` | Local-class field and method sharing one Java identifier | Known gap (`go_compile`) |
+| `local_static_method_gap` | Type-qualified static overloads declared by a method-local class | Passing |
 
 Known-gap fixtures are not skipped. In normal mode they must still have valid
 Java behavior and must fail at the exact declared stage for a pinned diagnostic
