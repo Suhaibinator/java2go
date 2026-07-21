@@ -2,6 +2,61 @@ package stdjava
 
 import "testing"
 
+func TestNewArrayPreservesJavaLengthAndEmptyIdentityStorage(t *testing.T) {
+	empty := NewArray[int32](int8(0))
+	if len(empty) != 0 {
+		t.Fatalf("NewArray length = %d, want 0", len(empty))
+	}
+	if cap(empty) != 1 {
+		t.Fatalf("NewArray capacity = %d, want retained identity capacity 1", cap(empty))
+	}
+
+	values := NewArray[int32](int32(3))
+	if len(values) != 3 || cap(values) != 3 {
+		t.Fatalf("NewArray shape = len %d cap %d, want len 3 cap 3", len(values), cap(values))
+	}
+}
+
+func TestNewStringArrayUsesJavaNullDefaults(t *testing.T) {
+	values := NewArray[string](int32(3))
+	for index, value := range values {
+		if !StringIsNull(value) {
+			t.Fatalf("NewArray[string](3)[%d] = %q, want Java null String", index, value)
+		}
+	}
+	if len(NewArray[string](0)) != 0 {
+		t.Fatal("empty String array must retain zero visible elements")
+	}
+
+	rows := NewArray[[]string](2)
+	if rows[0] != nil || rows[1] != nil {
+		t.Fatalf("partially allocated multidimensional rows = %#v, want nil references", rows)
+	}
+}
+
+func TestArrayLiteralPreservesElementsAndEmptyIdentityStorage(t *testing.T) {
+	empty := ArrayLiteral[int32]()
+	if len(empty) != 0 || cap(empty) != 1 {
+		t.Fatalf("empty ArrayLiteral shape = len %d cap %d, want len 0 cap 1", len(empty), cap(empty))
+	}
+
+	values := ArrayLiteral[int32](1, 2, 3)
+	if len(values) != 3 || values[0] != 1 || values[2] != 3 {
+		t.Fatalf("ArrayLiteral values = %v, want [1 2 3]", values)
+	}
+}
+
+func TestNewArrayNegativeLengthThrowsJavaException(t *testing.T) {
+	var recovered interface{}
+	func() {
+		defer func() { recovered = recover() }()
+		NewArray[int32](int16(-1))
+	}()
+	if !CaughtAs(recovered, "NegativeArraySizeException") {
+		t.Fatalf("negative NewArray panic = %T (%v), want NegativeArraySizeException", recovered, recovered)
+	}
+}
+
 var arraySetBenchmarkSink int32
 
 func TestArraySetChecksAndReturnsStoredValue(t *testing.T) {

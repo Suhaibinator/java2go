@@ -230,15 +230,10 @@ func GenMultiDimArray(elementType ast.Expr, dimensions []ast.Expr, totalRank int
 		totalRank = len(dimensions)
 	}
 	if len(dimensions) == 1 {
-		// Go accepts every integer type as make's length, so this also implements
-		// Java's byte/short/char numeric promotion without a conversion. A negative
-		// length is mapped to NegativeArraySizeException by NormalizePanic at a
-		// generated catch boundary. Keeping this direct shape avoids imposing the
-		// stdjava dependency on every otherwise standalone array allocation.
-		return &ast.CallExpr{
-			Fun:  &ast.Ident{Name: "make"},
-			Args: append([]ast.Expr{genArrayType(elementType, totalRank)}, dimensions...),
-		}
+		// NewArray preserves Java object identity even when the requested length
+		// is zero. Its generic length parameter also accepts byte/short/char before
+		// unary numeric promotion and raises NegativeArraySizeException directly.
+		return javaArrayAllocation(genArrayType(elementType, totalRank), dimensions[0], ctx)
 	}
 
 	// Java evaluates every explicit dimension expression exactly once, from
@@ -288,12 +283,12 @@ func GenMultiDimArray(elementType ast.Expr, dimensions []ast.Expr, totalRank int
 		})
 	}
 
-	// arr := make([][][]int, 2)
+	// arr := stdjava.NewArray[[][]int](2)
 	base := &ast.AssignStmt{
 		Tok: token.DEFINE,
 		Lhs: []ast.Expr{&ast.Ident{Name: arrayName}},
 		Rhs: []ast.Expr{
-			makeExpression(genArrayType(elementType, totalRank), dimensionArgs[0]),
+			javaArrayAllocation(genArrayType(elementType, totalRank), dimensionArgs[0], ctx),
 		},
 	}
 
@@ -309,7 +304,7 @@ func GenMultiDimArray(elementType ast.Expr, dimensions []ast.Expr, totalRank int
 					&ast.AssignStmt{
 						Tok: token.ASSIGN,
 						Lhs: []ast.Expr{multiArrayAccess(arrayName, indexNames[:offset+1])},
-						Rhs: []ast.Expr{makeExpression(genArrayType(elementType, totalRank-(offset+1)), dimensionArgs[offset+1])},
+						Rhs: []ast.Expr{javaArrayAllocation(genArrayType(elementType, totalRank-(offset+1)), dimensionArgs[offset+1], ctx)},
 					},
 				},
 			},
@@ -419,13 +414,13 @@ func uniqueArrayAllocationName(base string, used map[string]struct{}) string {
 	}
 }
 
-// makeExpression constructs an array with the `make` keyword
-func makeExpression(dims, expr ast.Expr) *ast.CallExpr {
-	return &ast.CallExpr{
-		Fun: &ast.Ident{Name: "make"},
-		Args: []ast.Expr{
-			dims,
-			expr,
-		},
+// javaArrayAllocation constructs a Java-identity-preserving slice allocation.
+// arrayType is the complete slice type; NewArray's type argument is its element
+// type so `new int[4][][]` becomes NewArray[[][]int32](4).
+func javaArrayAllocation(arrayType ast.Expr, length ast.Expr, ctx Ctx) *ast.CallExpr {
+	typedArray, ok := arrayType.(*ast.ArrayType)
+	if !ok {
+		panic("Java array allocation requires an array type")
 	}
+	return stdjavaGenericCall(ctx, "NewArray", []ast.Expr{typedArray.Elt}, []ast.Expr{length})
 }

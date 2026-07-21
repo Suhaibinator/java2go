@@ -51,6 +51,7 @@ func TestStringValueOfUsesJavaFloatingAndStringerSemantics(t *testing.T) {
 		want  string
 	}{
 		{name: "null", value: nil, want: "null"},
+		{name: "null String reference", value: NullString(), want: "null"},
 		{name: "double", value: float64(98), want: "98.0"},
 		{name: "float", value: float32(37), want: "37.0"},
 		{name: "integer", value: int32(2), want: "2"},
@@ -68,6 +69,21 @@ func TestStringValueOfUsesJavaFloatingAndStringerSemantics(t *testing.T) {
 	}
 }
 
+func TestNullStringReferenceRepresentation(t *testing.T) {
+	if StringIsNull("") {
+		t.Fatal("empty Java String must remain distinct from null")
+	}
+	if !StringIsNull(NullString()) || !StringIsNull(nil) {
+		t.Fatal("StringIsNull must recognize sentinel and interface nil")
+	}
+	if got := StringReferenceValue(nil); got != NullString() {
+		t.Fatalf("StringReferenceValue(nil) = %q, want null sentinel", got)
+	}
+	if got := StringReferenceValue("ready"); got != "ready" {
+		t.Fatalf("StringReferenceValue(ready) = %q, want ready", got)
+	}
+}
+
 func TestStringRequireNonNullSupportsNullableStringSlots(t *testing.T) {
 	if got := StringRequireNonNull(any("ready")); got != "ready" {
 		t.Fatalf("StringRequireNonNull() = %q, want ready", got)
@@ -80,4 +96,14 @@ func TestStringRequireNonNullSupportsNullableStringSlots(t *testing.T) {
 		}
 	}()
 	StringRequireNonNull(nil)
+}
+
+func TestStringRequireNonNullRejectsConcreteNullReference(t *testing.T) {
+	defer func() {
+		recovered := recover()
+		if !CaughtAs(recovered, "NullPointerException") {
+			t.Fatalf("null String sentinel should panic with NullPointerException, got %T (%v)", recovered, recovered)
+		}
+	}()
+	StringRequireNonNull(NullString())
 }

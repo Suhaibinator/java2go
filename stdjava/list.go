@@ -1,9 +1,6 @@
 package stdjava
 
-import (
-	"fmt"
-	"strings"
-)
+import "strings"
 
 // This file implements the slice-backed list type that java.util.List
 // implementations (ArrayList, LinkedList) are mapped onto. The Java List
@@ -87,7 +84,7 @@ func (l *List[T]) AddAll(other *List[T]) bool {
 
 // ToArray returns a copy of the backing slice, matching List.toArray.
 func (l *List[T]) ToArray() []T {
-	cp := make([]T, len(l.elements))
+	cp := NewArray[T](len(l.elements))
 	copy(cp, l.elements)
 	return cp
 }
@@ -121,7 +118,7 @@ func (l *List[T]) Slice() []T {
 func (l *List[T]) String() string {
 	parts := make([]string, len(l.elements))
 	for i, e := range l.elements {
-		parts[i] = fmt.Sprintf("%v", e)
+		parts[i] = StringValueOf(e)
 	}
 	return "[" + strings.Join(parts, ", ") + "]"
 }

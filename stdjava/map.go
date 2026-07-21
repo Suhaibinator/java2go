@@ -1,9 +1,6 @@
 package stdjava
 
-import (
-	"fmt"
-	"strings"
-)
+import "strings"
 
 // This file implements the map type that java.util.Map implementations
 // (HashMap, TreeMap) are mapped onto. HashMap and TreeMap share one Go type;
@@ -140,7 +137,7 @@ func (m *Map[K, V]) EntrySet() []MapEntry[K, V] {
 func (m *Map[K, V]) String() string {
 	parts := make([]string, len(m.keys))
 	for i, k := range m.keys {
-		parts[i] = fmt.Sprintf("%v=%v", k, m.backing[k])
+		parts[i] = StringValueOf(k) + "=" + StringValueOf(m.backing[k])
 	}
 	return "{" + strings.Join(parts, ", ") + "}"
 }

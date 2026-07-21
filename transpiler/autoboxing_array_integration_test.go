@@ -35,7 +35,7 @@ public class ObjectArrayBoxingProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	for _, boxed := range []string{"[]any{int32(21), int64(9), float32(1.5), 2.5}", ".(int32)", ".(int64)", ".(float32)", ".(float64)"} {
+	for _, boxed := range []string{"stdjava.ArrayLiteral[any](int32(21), int64(9), float32(1.5), 2.5)", ".(int32)", ".(int64)", ".(float32)", ".(float64)"} {
 		if !strings.Contains(flat, boxed) {
 			t.Fatalf("expected Object[] autoboxing output to contain %q, got:\n%s", boxed, out)
 		}

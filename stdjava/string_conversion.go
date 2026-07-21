@@ -7,6 +7,44 @@ import (
 	"strings"
 )
 
+// nullStringSentinel preserves Java's null String reference while keeping the
+// generated String ABI as Go string. The invalid UTF-8 byte cannot be produced
+// by Java's UTF-16 String model, so it remains distinct from every Java String,
+// including the empty string. Generated constructors install this value in
+// String fields before any Java field initializer or superclass constructor can
+// observe them.
+const nullStringSentinel = "\xffjava2go:null-string\x00"
+
+// NullString returns the generated representation of a null Java String
+// reference. It is intentionally exposed as a function rather than a constant
+// so generated code does not depend on the sentinel's spelling.
+func NullString() string { return nullStringSentinel }
+
+// StringIsNull recognizes both generated String representations that can carry
+// Java null: the sentinel used at concrete-string ABI boundaries and nil in an
+// interface-backed nullable local.
+func StringIsNull(value any) bool {
+	if value == nil {
+		return true
+	}
+	stringValue, ok := value.(string)
+	return ok && stringValue == nullStringSentinel
+}
+
+// StringReferenceValue converts an interface-backed nullable String to the
+// concrete representation used by generated fields, parameters, and method
+// results. Unlike StringRequireNonNull, this is a representation boundary, not
+// a dereference, so Java null must pass through rather than throw.
+func StringReferenceValue(value any) string {
+	if StringIsNull(value) {
+		return nullStringSentinel
+	}
+	if stringValue, ok := value.(string); ok {
+		return stringValue
+	}
+	panic(NewClassCastException(fmt.Sprintf("cannot use %T as String", value)))
+}
+
 // StringValueOf implements the text conversion shared by Java's
 // String.valueOf(Object) and the primitive print/concatenation operations.
 // In particular, Java keeps a decimal point for whole floating-point values,
@@ -14,7 +52,7 @@ import (
 // fmt.Stringer is intentionally honored so generated enums can expose Java's
 // Enum.toString default without leaking their Go struct representation.
 func StringValueOf(value any) string {
-	if value == nil {
+	if StringIsNull(value) {
 		return "null"
 	}
 
@@ -33,7 +71,7 @@ func StringValueOf(value any) string {
 // concrete string required by String intrinsics. Calling an instance method on
 // a null Java reference throws NullPointerException.
 func StringRequireNonNull(value any) string {
-	if value == nil {
+	if StringIsNull(value) {
 		panic(NewNullPointerException("String method called on null"))
 	}
 	if stringValue, ok := value.(string); ok {

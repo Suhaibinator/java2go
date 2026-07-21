@@ -256,21 +256,70 @@ func NewObject() any {
 type monitor struct {
 	mu   sync.Mutex
 	cond *sync.Cond
+
+	// anchor keeps identity-bearing reference storage alive for as long as its
+	// monitor is registered. In particular, a slice monitor is keyed by its
+	// backing-storage address; retaining the slice prevents that address from
+	// being recycled for an unrelated Java array.
+	anchor interface{}
+}
+
+// monitorIdentity is a comparable description of a Java reference. Most
+// generated references are already comparable Go values and use comparable
+// directly. Java arrays are represented as Go slices, which cannot be map
+// keys, so their identity is the typed address of their first backing-storage
+// element together with the slice shape. An aliased Java array carries the
+// same slice header and therefore resolves to the same monitor.
+type monitorIdentity struct {
+	comparable interface{}
+	reference  reflect.Type
+	data       uintptr
+	length     int
+	capacity   int
 }
 
 var (
 	monitorsMu sync.Mutex
-	monitors   = map[interface{}]*monitor{}
+	monitors   = map[monitorIdentity]*monitor{}
 )
 
+func monitorIdentityFor(obj interface{}) monitorIdentity {
+	value := reflect.ValueOf(obj)
+	if value.Type().Comparable() {
+		return monitorIdentity{comparable: obj}
+	}
+
+	switch value.Kind() {
+	case reflect.Slice:
+		return monitorIdentity{
+			reference: value.Type(),
+			data:      value.Pointer(),
+			length:    value.Len(),
+			capacity:  value.Cap(),
+		}
+	case reflect.Map:
+		// Maps are not emitted as Java object representations, but accepting a
+		// map-backed external reference is safe: reflect exposes its stable
+		// runtime identity and the monitor anchor keeps it alive.
+		return monitorIdentity{reference: value.Type(), data: value.Pointer()}
+	default:
+		// Do not let an unexpected backend representation reach Go's map hash
+		// operation and panic with "hash of unhashable type". Such a value is not
+		// a Java reference representation for which this runtime can promise
+		// stable identity.
+		panic(NewIllegalArgumentException("unsupported non-comparable monitor reference"))
+	}
+}
+
 func monitorRecord(obj interface{}) *monitor {
+	identity := monitorIdentityFor(obj)
 	monitorsMu.Lock()
 	defer monitorsMu.Unlock()
-	m, ok := monitors[obj]
+	m, ok := monitors[identity]
 	if !ok {
-		m = &monitor{}
+		m = &monitor{anchor: obj}
 		m.cond = sync.NewCond(&m.mu)
-		monitors[obj] = m
+		monitors[identity] = m
 	}
 	return m
 }
@@ -300,13 +349,17 @@ func nilMonitorReference(obj interface{}) bool {
 	}
 }
 
+func requireNonNullMonitorReference(obj interface{}, operation string) {
+	if nilMonitorReference(obj) {
+		panic(NewNullPointerException(operation + " on null"))
+	}
+}
+
 // MonitorEnter acquires the intrinsic monitor for obj and returns it, mirroring
 // the entry of a `synchronized (obj)` block. The returned mutex is passed to
 // MonitorExit (typically via defer) to release it.
 func MonitorEnter(obj interface{}) *sync.Mutex {
-	if nilMonitorReference(obj) {
-		panic(NewNullPointerException("cannot synchronize on null"))
-	}
+	requireNonNullMonitorReference(obj, "monitor operation")
 	m := monitorFor(obj)
 	m.Lock()
 	return m
@@ -328,17 +381,20 @@ func MonitorExit(m *sync.Mutex) {
 // that follows the `while (!cond) obj.wait();` idiom behaves correctly. Timed
 // wait(millis) is not modelled and falls back to an untimed wait.
 func MonitorWait(obj interface{}) {
+	requireNonNullMonitorReference(obj, "wait")
 	monitorRecord(obj).cond.Wait()
 }
 
 // MonitorNotify implements Object.notify(): wake one waiter on obj's monitor.
 func MonitorNotify(obj interface{}) {
+	requireNonNullMonitorReference(obj, "notify")
 	monitorRecord(obj).cond.Signal()
 }
 
 // MonitorNotifyAll implements Object.notifyAll(): wake all waiters on obj's
 // monitor.
 func MonitorNotifyAll(obj interface{}) {
+	requireNonNullMonitorReference(obj, "notifyAll")
 	monitorRecord(obj).cond.Broadcast()
 }
 

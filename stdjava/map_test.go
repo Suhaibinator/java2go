@@ -72,3 +72,20 @@ func TestMapString(t *testing.T) {
 		t.Fatalf("Map.String() = %q, want {a=1, b=2}", got)
 	}
 }
+
+func TestMapStringRendersNullStringKeysAndValuesWithoutCollapsingThem(t *testing.T) {
+	m := NewMap[string, string]()
+	m.Put(NullString(), NullString())
+	m.Put("null", "")
+	m.Put("", "null")
+
+	if m.Size() != 3 || !m.ContainsKey(NullString()) || !m.ContainsKey("null") || !m.ContainsKey("") {
+		t.Fatalf("Map lost distinct null/literal-null/empty keys: %#v", m.KeySet())
+	}
+	if !StringIsNull(m.Get(NullString())) || m.Get("null") != "" || m.Get("") != "null" {
+		t.Fatalf("Map lost distinct null/literal-null/empty values: %#v", m.Values())
+	}
+	if got := m.String(); got != "{null=null, null=, =null}" {
+		t.Fatalf("Map.String(nullable Strings) = %q, want {null=null, null=, =null}", got)
+	}
+}

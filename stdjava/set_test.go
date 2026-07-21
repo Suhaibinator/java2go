@@ -47,3 +47,17 @@ func TestSetString(t *testing.T) {
 		t.Fatalf("Set.String() = %q, want [1, 2]", got)
 	}
 }
+
+func TestSetStringRendersNullStringWithoutCollapsingStringValues(t *testing.T) {
+	set := NewSet[string]()
+	set.Add(NullString())
+	set.Add("null")
+	set.Add("")
+
+	if set.Size() != 3 || !set.Contains(NullString()) || !set.Contains("null") || !set.Contains("") {
+		t.Fatalf("Set lost distinct null/literal-null/empty elements: %#v", set.Slice())
+	}
+	if got := set.String(); got != "[null, null, ]" {
+		t.Fatalf("Set.String(nullable Strings) = %q, want [null, null, ]", got)
+	}
+}

@@ -71,3 +71,32 @@ func TestListString(t *testing.T) {
 		t.Fatalf("empty List.String() = %q, want []", got)
 	}
 }
+
+func TestListStringRendersNullStringWithoutCollapsingStringValues(t *testing.T) {
+	list := NewListFrom(NullString(), "null", "")
+	if list.Size() != 3 || !StringIsNull(list.Get(0)) || StringIsNull(list.Get(1)) || StringIsNull(list.Get(2)) {
+		t.Fatalf("List lost null/literal-null/empty distinction: %#v", list.Slice())
+	}
+	if got := list.String(); got != "[null, null, ]" {
+		t.Fatalf("List.String(nullable Strings) = %q, want [null, null, ]", got)
+	}
+}
+
+func TestListToArrayReturnsDistinctIdentityPreservingCopies(t *testing.T) {
+	empty := NewList[int32]()
+	first := empty.ToArray()
+	second := empty.ToArray()
+	if len(first) != 0 || cap(first) != 1 || len(second) != 0 || cap(second) != 1 {
+		t.Fatalf("empty ToArray shapes = (%d,%d) and (%d,%d), want len 0 cap 1", len(first), cap(first), len(second), cap(second))
+	}
+	if monitorFor(first) == monitorFor(second) {
+		t.Fatal("separate empty List.toArray calls must return distinct Java array objects")
+	}
+
+	values := NewListFrom[int32](1, 2, 3)
+	copy := values.ToArray()
+	copy[0] = 9
+	if values.Get(0) != 1 {
+		t.Fatalf("ToArray result aliases List backing storage: list[0] = %d, want 1", values.Get(0))
+	}
+}

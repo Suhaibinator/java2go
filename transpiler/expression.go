@@ -270,12 +270,23 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "array_initializer":
 		// A literal that initilzes an array, such as `{1, 2, 3}`
 		items := []ast.Expr{}
+		arrayType, hasArrayType := ctx.lastType.(*ast.ArrayType)
+		if !hasArrayType && strings.HasSuffix(strings.TrimSpace(ctx.expectedType), "[]") {
+			inferredType := javaTypeStringToGoTypeExpr(ctx.expectedType, inScopeTypeParameters(ctx), ctx)
+			arrayType, hasArrayType = inferredType.(*ast.ArrayType)
+		}
 		expectedElementType := strings.TrimSpace(ctx.expectedType)
 		if strings.HasSuffix(expectedElementType, "[]") {
 			expectedElementType = strings.TrimSpace(strings.TrimSuffix(expectedElementType, "[]"))
 		}
 		for _, c := range nodeutil.NamedChildrenOf(node) {
 			itemCtx := ctx.Clone()
+			if hasArrayType {
+				// Nested Java initializers omit their inner type. Carry the outer
+				// component type down so each row is allocated through ArrayLiteral
+				// with the correct generic element type.
+				itemCtx.lastType = arrayType.Elt
+			}
 			itemCtx.expectedType = expectedElementType
 			itemCtx.expectedTypeRoot = c
 			item := ParseExpr(c, source, itemCtx)
@@ -284,12 +295,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			items = append(items, item)
 		}
 
-		// If there wasn't a type for the array specified, then use the one that has been defined
-		if _, ok := ctx.lastType.(*ast.ArrayType); ctx.lastType != nil && ok {
-			return &ast.CompositeLit{
-				Type: ctx.lastType.(*ast.ArrayType),
-				Elts: items,
-			}
+		// ArrayLiteral retains allocation identity for an empty initializer while
+		// preserving left-to-right item evaluation and the exact inferred type.
+		if hasArrayType {
+			return stdjavaGenericCall(ctx, "ArrayLiteral", []ast.Expr{arrayType.Elt}, items)
 		}
 		return &ast.CompositeLit{
 			Elts: items,
@@ -817,7 +826,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				dimensions = append(dimensions, ParseExpr(child, source, ctx))
 			} else if child.Type() == "array_initializer" {
 				initCtx := ctx.Clone()
-				initCtx.lastType = &ast.ArrayType{Elt: elementType}
+				initCtx.lastType = genArrayType(elementType, arrayDimensions)
 				if typeNode != nil {
 					initCtx.expectedType = elementJavaType
 					initCtx.expectedTypeRoot = child

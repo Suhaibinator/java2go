@@ -2,7 +2,6 @@ package stdjava
 
 import (
 	"cmp"
-	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -92,16 +91,9 @@ func SortSlice[T cmp.Ordered](elements []T) {
 func SliceToString[T any](elements []T) string {
 	parts := make([]string, len(elements))
 	for i, e := range elements {
-		parts[i] = fmt.Sprintf("%v", e)
+		parts[i] = StringValueOf(e)
 	}
-	out := "["
-	for i, p := range parts {
-		if i > 0 {
-			out += ", "
-		}
-		out += p
-	}
-	return out + "]"
+	return "[" + strings.Join(parts, ", ") + "]"
 }
 
 // ArrayDeepToString returns the recursive Java Arrays.deepToString form of a

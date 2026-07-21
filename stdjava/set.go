@@ -1,9 +1,6 @@
 package stdjava
 
-import (
-	"fmt"
-	"strings"
-)
+import "strings"
 
 // This file implements the set type that java.util.Set implementations
 // (HashSet, TreeSet) are mapped onto. HashSet and TreeSet share one Go type;
@@ -86,7 +83,7 @@ func (s *Set[T]) Slice() []T {
 func (s *Set[T]) String() string {
 	parts := make([]string, len(s.order))
 	for i, e := range s.order {
-		parts[i] = fmt.Sprintf("%v", e)
+		parts[i] = StringValueOf(e)
 	}
 	return "[" + strings.Join(parts, ", ") + "]"
 }

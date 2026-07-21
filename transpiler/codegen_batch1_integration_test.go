@@ -138,7 +138,8 @@ public class U {
 }
 
 // TestCodegen_ArrayCreationWithInitializerKeepsType verifies that
-// `new T[]{...}` emits a typed composite literal instead of a bare `{...}`.
+// `new T[]{...}` preserves its concrete element type through the Java array
+// identity allocator.
 func TestCodegen_ArrayCreationWithInitializerKeepsType(t *testing.T) {
 	src := `
 public class A {
@@ -151,20 +152,20 @@ public class A {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "[]int32{1, 2, 3}") {
-		t.Errorf("expected []int32{1, 2, 3}, got:\n%s", out)
+	if !strings.Contains(flat, "stdjava.ArrayLiteral[int32](1, 2, 3)") {
+		t.Errorf("expected typed int32 ArrayLiteral, got:\n%s", out)
 	}
-	if !strings.Contains(flat, `[]string{"x", "y"}`) {
-		t.Errorf("expected []string{...}, got:\n%s", out)
+	if !strings.Contains(flat, `stdjava.ArrayLiteral[string]("x", "y")`) {
+		t.Errorf("expected typed string ArrayLiteral, got:\n%s", out)
 	}
-	if !strings.Contains(flat, `[]any{int32(1), "z"}`) {
+	if !strings.Contains(flat, `stdjava.ArrayLiteral[any](int32(1), "z")`) {
 		t.Errorf("expected Java Integer-width boxing in Object[], got:\n%s", out)
 	}
 }
 
 // TestCodegen_SizedArrayAllocationKeepsSliceType verifies `new T[n]` emits
-// `make([]T, n)` rather than `make(T, n)`, for primitive, string, and
-// user-defined (package-private) element types.
+// `NewArray[T](n)` with the component type, for primitive, string, and
+// user-defined (package-private) elements.
 func TestCodegen_SizedArrayAllocationKeepsSliceType(t *testing.T) {
 	src := `
 class Worker { int id; }
@@ -177,16 +178,16 @@ public class Alloc {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "make([]int32, n)") {
-		t.Errorf("expected make([]int32, n), got:\n%s", out)
+	if !strings.Contains(out, "stdjava.NewArray[int32](n)") {
+		t.Errorf("expected NewArray[int32](n), got:\n%s", out)
 	}
-	if !strings.Contains(out, "make([]string, n)") {
-		t.Errorf("expected make([]string, n), got:\n%s", out)
+	if !strings.Contains(out, "stdjava.NewArray[string](n)") {
+		t.Errorf("expected NewArray[string](n), got:\n%s", out)
 	}
 	// Worker is package-private, so its struct is lowercased to `worker`; the
 	// element type must match.
-	if !strings.Contains(out, "make([]*worker, n)") {
-		t.Errorf("expected make([]*worker, n) with lowercased element type, got:\n%s", out)
+	if !strings.Contains(out, "stdjava.NewArray[*worker](n)") {
+		t.Errorf("expected NewArray[*worker](n) with lowercased element type, got:\n%s", out)
 	}
 }
 
@@ -389,8 +390,8 @@ public class App {
 		t.Errorf("expected struct to embed `greeter`, got:\n%s", out)
 	}
 	// Interface element type is by value, not a pointer.
-	if !strings.Contains(out, "[]greeter{") {
-		t.Errorf("expected `[]greeter{...}` (interface element by value), got:\n%s", out)
+	if !strings.Contains(flat, "stdjava.ArrayLiteral[greeter](newFormal())") {
+		t.Errorf("expected identity-preserving ArrayLiteral[greeter] with an interface value element, got:\n%s", out)
 	}
 }
 

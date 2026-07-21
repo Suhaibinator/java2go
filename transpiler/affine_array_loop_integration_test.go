@@ -845,7 +845,8 @@ public class App {
 	}
 
 	moduleRoot := t.TempDir()
-	if err := os.WriteFile(filepath.Join(moduleRoot, "go.mod"), []byte("module affinecross\n\ngo 1.25.0\n"), 0o644); err != nil {
+	goMod := "module affinecross\n\ngo 1.25.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => " + repoRootDir(t) + "\n"
+	if err := os.WriteFile(filepath.Join(moduleRoot, "go.mod"), []byte(goMod), 0o644); err != nil {
 		t.Fatalf("write go.mod: %v", err)
 	}
 	for relative, generated := range outputs {
@@ -868,6 +869,11 @@ func TestAliasCollisionFallback(t *testing.T) {
 }
 `), 0o644); err != nil {
 		t.Fatalf("write runtime test: %v", err)
+	}
+	tidy := exec.Command("go", "mod", "tidy")
+	tidy.Dir = moduleRoot
+	if output, err := tidy.CombinedOutput(); err != nil {
+		t.Fatalf("tidy cross-package alias collision module:\n%s", output)
 	}
 	command := exec.Command("go", "test", "./...")
 	command.Dir = moduleRoot

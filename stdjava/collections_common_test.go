@@ -46,6 +46,19 @@ func TestArraysHelpers(t *testing.T) {
 	}
 }
 
+func TestSliceToStringRendersNullStringWithoutCollapsingStringValues(t *testing.T) {
+	values := NewArray[string](3)
+	values[1] = "null"
+	values[2] = ""
+
+	if !StringIsNull(values[0]) || StringIsNull(values[1]) || StringIsNull(values[2]) {
+		t.Fatalf("String array values lost null/literal-null/empty distinction: %#v", values)
+	}
+	if got := SliceToString(values); got != "[null, null, ]" {
+		t.Fatalf("SliceToString(nullable Strings) = %q, want [null, null, ]", got)
+	}
+}
+
 func TestSingletonAndEmptyList(t *testing.T) {
 	if SingletonList("x").Size() != 1 {
 		t.Fatalf("SingletonList size wrong")

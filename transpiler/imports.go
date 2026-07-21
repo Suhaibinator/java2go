@@ -109,22 +109,41 @@ func javaPackageToGoImportPath(javaPkg string) string {
 // stdjavaQualifiedExpr returns a selector expression referencing name within the
 // stdjava runtime package (e.g. stdjava.StringCharAt) and registers the import.
 func stdjavaQualifiedExpr(name string, ctx Ctx) ast.Expr {
-	markStdjavaUsage(ctx)
+	alias := markStdjavaUsage(ctx)
 	return &ast.SelectorExpr{
-		X:   &ast.Ident{Name: "stdjava"},
+		X:   &ast.Ident{Name: alias},
 		Sel: &ast.Ident{Name: name},
 	}
 }
 
-// markStdjavaUsage registers the stdjava runtime package import under a fixed
-// "stdjava" alias so generated references resolve.
-func markStdjavaUsage(ctx Ctx) {
+// markStdjavaUsage registers the stdjava runtime package under a collision-free
+// alias. Java permits classes, fields, parameters, and locals named `stdjava`,
+// so a fixed alias can be shadowed exactly where a generated runtime call is
+// needed. Reuse the file-wide alias reservation machinery used for generated
+// Java-package imports and keep `stdjava` for the common collision-free case.
+func markStdjavaUsage(ctx Ctx) string {
+	if alias := ctx.importAliases[stdjavaImportPath]; alias != "" {
+		if ctx.usedImports != nil {
+			ctx.usedImports[stdjavaImportPath] = true
+		}
+		return alias
+	}
+
+	baseAlias := "stdjava"
+	alias := baseAlias
+	if packageAliasUnavailable(ctx, alias) {
+		alias = baseAlias + "pkg"
+	}
+	for suffix := 2; packageAliasUnavailable(ctx, alias); suffix++ {
+		alias = baseAlias + strconv.Itoa(suffix)
+	}
 	if ctx.importAliases != nil {
-		ctx.importAliases[stdjavaImportPath] = "stdjava"
+		ctx.importAliases[stdjavaImportPath] = alias
 	}
 	if ctx.usedImports != nil {
 		ctx.usedImports[stdjavaImportPath] = true
 	}
+	return alias
 }
 
 func packageAliasFromJavaPackage(javaPkg string) string {

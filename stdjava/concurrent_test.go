@@ -209,6 +209,100 @@ func TestMonitor_DistinctObjectsHaveDistinctIdentity(t *testing.T) {
 	}
 }
 
+func TestMonitor_ArrayAliasHasStableIdentity(t *testing.T) {
+	array := []int32{1, 2, 3}
+	alias := array
+
+	arrayMonitor := monitorFor(array)
+	if aliasMonitor := monitorFor(alias); aliasMonitor != arrayMonitor {
+		t.Fatal("aliases of one Java array must resolve to the same monitor")
+	}
+
+	arrayMonitor.Lock()
+	arrayMonitor.Unlock()
+}
+
+func TestMonitor_DistinctArraysHaveDistinctIdentity(t *testing.T) {
+	first := []int32{1, 2, 3}
+	second := []int32{1, 2, 3}
+	if monitorFor(first) == monitorFor(second) {
+		t.Fatal("distinct Java arrays with equal elements must have distinct monitors")
+	}
+}
+
+func TestMonitor_DistinctEmptyJavaArraysHaveDistinctIdentity(t *testing.T) {
+	first := NewArray[int32](0)
+	second := NewArray[int32](0)
+	if monitorFor(first) == monitorFor(second) {
+		t.Fatal("distinct zero-length Java arrays must have distinct monitors")
+	}
+
+	alias := first
+	if monitorFor(first) != monitorFor(alias) {
+		t.Fatal("aliases of a zero-length Java array must retain one monitor")
+	}
+}
+
+func TestMonitor_ArrayIdentityIncludesElementType(t *testing.T) {
+	ints := NewArray[int32](0)
+	bytes := NewArray[byte](0)
+	intIdentity := monitorIdentityFor(ints)
+	byteIdentity := monitorIdentityFor(bytes)
+	if intIdentity.reference == byteIdentity.reference {
+		t.Fatalf("array identity types = %v and %v, want distinct element types", intIdentity.reference, byteIdentity.reference)
+	}
+	if monitorFor(ints) == monitorFor(bytes) {
+		t.Fatal("Java arrays with different element types must have distinct monitors")
+	}
+}
+
+func TestMonitor_NonComparableMapUsesStableIdentity(t *testing.T) {
+	value := map[string]int32{"answer": 42}
+	alias := value
+	if monitorFor(value) != monitorFor(alias) {
+		t.Fatal("aliases of a non-comparable map reference must retain one monitor")
+	}
+	if monitorFor(value) == monitorFor(map[string]int32{"answer": 42}) {
+		t.Fatal("distinct map references with equal contents must have distinct monitors")
+	}
+}
+
+func TestMonitor_UnsupportedNonComparableValueThrowsJavaException(t *testing.T) {
+	value := struct{ values []int32 }{values: []int32{1}}
+	var recovered interface{}
+	func() {
+		defer func() { recovered = recover() }()
+		MonitorEnter(value)
+	}()
+	if !CaughtAs(recovered, "IllegalArgumentException") {
+		t.Fatalf("unsupported monitor value panic = %T (%v), want IllegalArgumentException", recovered, recovered)
+	}
+}
+
+func TestMonitor_ArrayMutualExclusionThroughAliases(t *testing.T) {
+	array := []int32{0}
+	alias := array
+	var wg sync.WaitGroup
+	const goroutines, perG = 40, 100
+
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func(lock []int32) {
+			defer wg.Done()
+			for j := 0; j < perG; j++ {
+				m := MonitorEnter(lock)
+				array[0]++
+				MonitorExit(m)
+			}
+		}(alias)
+	}
+
+	wg.Wait()
+	if got := array[0]; got != goroutines*perG {
+		t.Fatalf("array monitor failed to serialize aliases: got %d, want %d", got, goroutines*perG)
+	}
+}
+
 func TestMonitorEnter_NullReferenceThrowsNullPointerException(t *testing.T) {
 	var (
 		nilPointer *byte
@@ -240,6 +334,31 @@ func TestMonitorEnter_NullReferenceThrowsNullPointerException(t *testing.T) {
 
 			if !CaughtAs(recovered, "NullPointerException") {
 				t.Fatalf("MonitorEnter(%s) panicked with %T (%v), want NullPointerException", test.name, recovered, recovered)
+			}
+		})
+	}
+}
+
+func TestMonitorOperations_TypedNilArrayThrowsNullPointerException(t *testing.T) {
+	var nilArray []int32
+	tests := []struct {
+		name      string
+		operation func()
+	}{
+		{name: "wait", operation: func() { MonitorWait(nilArray) }},
+		{name: "notify", operation: func() { MonitorNotify(nilArray) }},
+		{name: "notifyAll", operation: func() { MonitorNotifyAll(nilArray) }},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var recovered interface{}
+			func() {
+				defer func() { recovered = recover() }()
+				test.operation()
+			}()
+			if !CaughtAs(recovered, "NullPointerException") {
+				t.Fatalf("%s on typed nil array panicked with %T (%v), want NullPointerException", test.name, recovered, recovered)
 			}
 		})
 	}
