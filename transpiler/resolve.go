@@ -102,6 +102,45 @@ func packageHasOtherStaticFieldName(packageScope *symbol.PackageScope, current *
 	return false
 }
 
+// packageHasOtherStaticMethodName reports collisions in the namespace where
+// Java static methods are emitted. Java qualifies a static method by its
+// declaring class, but generated Go represents it as a package-level function;
+// consequently methods from different classes (including parent/child hiding)
+// must have distinct generated names even when their Java signatures match.
+func packageHasOtherStaticMethodName(packageScope *symbol.PackageScope, current *symbol.Definition, name string) bool {
+	if packageScope == nil {
+		return false
+	}
+	for _, fileScope := range packageScope.Files {
+		if fileScope == nil {
+			continue
+		}
+		for _, top := range fileScope.TopLevelClasses {
+			found := false
+			var visit func(*symbol.ClassScope)
+			visit = func(class *symbol.ClassScope) {
+				if class == nil || found {
+					return
+				}
+				for _, method := range class.Methods {
+					if method != nil && method != current && method.IsStatic && method.Name == name {
+						found = true
+						return
+					}
+				}
+				for _, nested := range class.Subclasses {
+					visit(nested)
+				}
+			}
+			visit(top)
+			if found {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func classHasOtherFieldName(class *symbol.ClassScope, current *symbol.Definition, name string) bool {
 	if class == nil {
 		return false
@@ -115,13 +154,13 @@ func classHasOtherFieldName(class *symbol.ClassScope, current *symbol.Definition
 }
 
 func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
+	packageScope := symbol.GlobalScope.FindPackage(file.Symbols.Package)
+
 	// Resolve all the fields in that respective class
 	for _, field := range class.Fields {
 
 		// Since a private global variable is able to be accessed in the package, it must be renamed
 		// to avoid conflicts with other global variables
-
-		packageScope := symbol.GlobalScope.FindPackage(file.Symbols.Package)
 
 		symbol.ResolveDefinition(field, file.Symbols)
 
@@ -164,7 +203,10 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 			return false
 		}
 
-		for i := 0; symbol.IsReserved(method.Name) || collidesWithGoFuncName(method) || len(class.FindMethod().By(comparison)) > 0; i++ {
+		for i := 0; symbol.IsReserved(method.Name) ||
+			collidesWithGoFuncName(method) ||
+			(method.IsStatic && packageHasOtherStaticMethodName(packageScope, method, method.Name)) ||
+			len(class.FindMethod().By(comparison)) > 0; i++ {
 			method.Rename(method.Name + strconv.Itoa(i))
 		}
 		// Resolve all the paramters of the method

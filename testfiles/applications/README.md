@@ -37,8 +37,8 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `finally_loop_control_gap` | `break`/`continue` through `finally`, observable side-effect order, and loop-transfer resumption | Known gap (`go_compile`) |
 | `array_assignment_timing_gap` | Null-array assignment evaluation order, index/RHS side effects, and exception identity | Known gap (`go_run`) |
 | `constructor_nullable_field_gap` | Constructor-time virtual dispatch observing Java's pre-initializer null field value | Known gap (`output`) |
-| `recursive_object_model` | Mutual recursion, recursive generic graphs, constructor dispatch, hiding, and inherited interface defaults | Known gap (`go_compile`) |
-| `static_method_hiding_gap` | Parent/child static-method hiding and declaring-class selection | Known gap (`go_compile`) |
+| `recursive_object_model` | Mutual recursion, recursive generic graphs, constructor dispatch, hiding, and inherited interface defaults | Passing |
+| `static_method_hiding_gap` | Parent/child static-method hiding and declaring-class selection | Passing |
 | `local_class_recursion_gap` | Capturing local class with a recursive instance method | Known gap (`go_compile`) |
 | `anonymous_class_recursion_gap` | Recursive override in a synthesized anonymous subclass | Known gap (`go_compile`) |
 

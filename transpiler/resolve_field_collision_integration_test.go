@@ -49,3 +49,48 @@ func TestResolvedFieldsCompile(t *testing.T) {
 }
 `)
 }
+
+func TestResolveFile_StaticMethodHidingGetsPackageUniqueNames(t *testing.T) {
+	src := `
+class StaticParent {
+    static String kind() { return "parent"; }
+}
+class StaticChild extends StaticParent {
+    static String kind() { return "child"; }
+}
+class InstanceOne {
+    String kind() { return "one"; }
+}
+class InstanceTwo {
+    String kind() { return "two"; }
+}
+public class StaticHidingProgram {
+    static String run() {
+        return StaticParent.kind() + ":" + StaticChild.kind() + ":"
+            + new InstanceOne().kind() + ":" + new InstanceTwo().kind();
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+	if !strings.Contains(flat, "func kind0() string") || !strings.Contains(flat, "func kind() string") {
+		t.Fatalf("hidden static methods did not receive distinct package names:\n%s", out)
+	}
+	if strings.Count(flat, "func (ie *instanceOne) kind() string") != 1 ||
+		strings.Count(flat, "func (io *instanceTwo) kind() string") != 1 {
+		t.Fatalf("instance methods in distinct method sets were unnecessarily renamed:\n%s", out)
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestStaticHidingRuntime(t *testing.T) {
+	if got := run(); got != "parent:child:one:two" {
+		t.Fatalf("run() = %q", got)
+	}
+}
+`)
+}
