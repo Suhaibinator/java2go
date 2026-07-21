@@ -429,10 +429,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					methodIdent = &ast.Ident{Name: instanceResolution.def.Name}
 				} else if staticResolution != nil {
 					// Java permits calling static methods via an instance expression; rewrite
-					// to a plain function call to match codegen.
+					// to a plain function call to match codegen. The qualifying expression is
+					// still evaluated before the arguments, even though its value is ignored.
 					fun := qualifiedNameExpr(staticResolution.def.Name, findJavaPackageForClassScope(staticResolution.owner), ctx)
 					fun = applyTypeArguments(fun, typeArgs)
-					return &ast.CallExpr{Fun: fun, Args: args}
+					call := &ast.CallExpr{Fun: fun, Args: args}
+					if staged := stageStaticInvocationQualifier(node, objectExpr, staticResolution, call, ctx, source); staged != nil {
+						return staged
+					}
+					return call
 				}
 			}
 
@@ -442,15 +447,18 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			abstractInterfaceReceiver := target != nil && target.classScope != nil && target.classScope.IsAbstract
 			if objectNode.Type() != "super" && !abstractInterfaceReceiver {
 				if dispatched := virtualDispatchMethodCall(objectExpr, instanceResolution, args, ctx); dispatched != nil {
+					buildDispatch := func(receiver ast.Expr, callArgs []ast.Expr) ast.Expr {
+						return virtualDispatchMethodCall(receiver, instanceResolution, callArgs, ctx)
+					}
+					if staged := stageVirtualDispatchInvocation(node, objectNode, objectExpr, instanceResolution, args, buildDispatch, ctx, source); staged != nil {
+						return staged
+					}
 					return dispatched
 				}
 			}
 
 			return &ast.CallExpr{
-				Fun: &ast.SelectorExpr{
-					X:   objectExpr,
-					Sel: methodIdent,
-				},
+				Fun:  &ast.SelectorExpr{X: objectExpr, Sel: methodIdent},
 				Args: args,
 			}
 		}
@@ -2343,6 +2351,216 @@ func virtualDispatchMethodCall(receiver ast.Expr, resolution *methodResolution, 
 		},
 		Args: args,
 	}
+}
+
+// stageStaticInvocationQualifier preserves the otherwise-surprising Java rule
+// that the primary expression in `value.staticMethod(args)` is evaluated even
+// though static dispatch ignores its resulting value. The primary must run once
+// before any argument. A zero-argument IIFE gives Go that sequence without
+// inventing parameter types for the arguments.
+func stageStaticInvocationQualifier(
+	invocationNode *sitter.Node,
+	qualifier ast.Expr,
+	resolution *methodResolution,
+	call ast.Expr,
+	ctx Ctx,
+	source []byte,
+) ast.Expr {
+	if qualifier == nil || resolution == nil || resolution.def == nil || !resolution.def.IsStatic || call == nil {
+		return nil
+	}
+	results, ok := invocationClosureResults(invocationNode, resolution, ctx, source)
+	if !ok {
+		return nil
+	}
+	body := []ast.Stmt{&ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
+		Tok: token.ASSIGN,
+		Rhs: []ast.Expr{qualifier},
+	}}
+	body = append(body, invocationClosureCallStatement(call, results))
+	return &ast.CallExpr{Fun: &ast.FuncLit{
+		Type: &ast.FuncType{Results: results},
+		Body: &ast.BlockStmt{List: body},
+	}}
+}
+
+// stageVirtualDispatchInvocation models Java's invocation sequence around the
+// synthetic self field used for inherited virtual dispatch. Selecting that Go
+// field would otherwise dereference a null receiver before evaluating the Java
+// arguments. The staged IIFE evaluates receiver and arguments first; selecting
+// the dispatch field then naturally raises the null failure at Java's point.
+// Ordinary direct calls remain direct and rely on the source method's entry
+// guard to prevent Go pointer methods from executing on a null Java receiver.
+func stageVirtualDispatchInvocation(
+	invocationNode, receiverNode *sitter.Node,
+	receiver ast.Expr,
+	resolution *methodResolution,
+	args []ast.Expr,
+	buildCall func(ast.Expr, []ast.Expr) ast.Expr,
+	ctx Ctx,
+	source []byte,
+) ast.Expr {
+	if invocationNode == nil || receiverNode == nil || receiver == nil || resolution == nil || resolution.def == nil || resolution.def.IsStatic || buildCall == nil {
+		return nil
+	}
+	results, ok := invocationClosureResults(invocationNode, resolution, ctx, source)
+	if !ok {
+		return nil
+	}
+
+	const receiverName = "__java2goInvocationReceiver"
+	body := []ast.Stmt{stagedInvocationLocal(receiverName, receiver)}
+	stagedArgs := make([]ast.Expr, len(args))
+	argumentNodes := nodeutil.NamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
+	for index, argument := range args {
+		name := "__java2goInvocationArg" + strconv.Itoa(index)
+		javaType := ""
+		if index < len(resolution.def.Parameters) && resolution.def.Parameters[index] != nil {
+			javaType = resolution.def.Parameters[index].OriginalType
+		}
+		var argumentNode *sitter.Node
+		if index < len(argumentNodes) {
+			argumentNode = argumentNodes[index]
+		}
+		statement, ok := stagedInvocationArgumentLocal(name, argument, argumentNode, javaType, resolution, ctx, source)
+		if !ok {
+			return nil
+		}
+		body = append(body, statement)
+		stagedArgs[index] = &ast.Ident{Name: name}
+	}
+
+	receiverIdent := &ast.Ident{Name: receiverName}
+	call := buildCall(receiverIdent, stagedArgs)
+	if call == nil {
+		return nil
+	}
+	body = append(body, invocationClosureCallStatement(call, results))
+	return &ast.CallExpr{Fun: &ast.FuncLit{
+		Type: &ast.FuncType{Results: results},
+		Body: &ast.BlockStmt{List: body},
+	}}
+}
+
+func stagedInvocationLocal(name string, value ast.Expr) ast.Stmt {
+	return &ast.AssignStmt{
+		Lhs: []ast.Expr{&ast.Ident{Name: name}},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{value},
+	}
+}
+
+func stagedInvocationArgumentLocal(
+	name string,
+	value ast.Expr,
+	valueNode *sitter.Node,
+	parameterJavaType string,
+	resolution *methodResolution,
+	ctx Ctx,
+	source []byte,
+) (ast.Stmt, bool) {
+	if !invocationArgumentNeedsContextualType(value, valueNode) {
+		return stagedInvocationLocal(name, value), true
+	}
+	javaType := strings.TrimSpace(parameterJavaType)
+	if javaType == "" || invocationTypeUsesMethodParameter(javaType, resolution) {
+		return nil, false
+	}
+	if valueNode != nil && valueNode.Type() == "null_literal" {
+		base, _ := parseJavaTypeString(javaType)
+		if _, primitive := canonicalJavaNumericType(base); primitive || stripJavaQualifier(base) == "boolean" || stripJavaQualifier(base) == "char" {
+			return nil, false
+		}
+	}
+	return &ast.DeclStmt{Decl: &ast.GenDecl{
+		Tok: token.VAR,
+		Specs: []ast.Spec{&ast.ValueSpec{
+			Names:  []*ast.Ident{{Name: name}},
+			Type:   javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx),
+			Values: []ast.Expr{value},
+		}},
+	}}, true
+}
+
+func invocationArgumentNeedsContextualType(value ast.Expr, valueNode *sitter.Node) bool {
+	if valueNode != nil {
+		switch valueNode.Type() {
+		case "null_literal", "decimal_integer_literal", "decimal_floating_point_literal":
+			return true
+		case "parenthesized_expression", "unary_expression":
+			if valueNode.NamedChildCount() > 0 {
+				return invocationArgumentNeedsContextualType(value, valueNode.NamedChild(int(valueNode.NamedChildCount())-1))
+			}
+		}
+	}
+	switch expr := value.(type) {
+	case *ast.BasicLit:
+		return expr.Kind == token.INT || expr.Kind == token.FLOAT
+	case *ast.Ident:
+		return expr.Name == "nil"
+	case *ast.ParenExpr:
+		return invocationArgumentNeedsContextualType(expr.X, nil)
+	case *ast.UnaryExpr:
+		return invocationArgumentNeedsContextualType(expr.X, nil)
+	case *ast.BinaryExpr:
+		return invocationArgumentNeedsContextualType(expr.X, nil) && invocationArgumentNeedsContextualType(expr.Y, nil)
+	default:
+		return false
+	}
+}
+
+func invocationTypeUsesMethodParameter(javaType string, resolution *methodResolution) bool {
+	if resolution == nil || resolution.def == nil {
+		return true
+	}
+	typeParameters := resolution.def.TypeParameterNames()
+	if resolution.owner != nil {
+		typeParameters = append(typeParameters, resolution.owner.TypeParameterNames()...)
+	}
+	var uses func(string) bool
+	uses = func(candidate string) bool {
+		base, args := parseJavaTypeString(candidate)
+		for _, typeParam := range typeParameters {
+			if base == typeParam {
+				return true
+			}
+		}
+		for _, arg := range args {
+			if uses(arg) {
+				return true
+			}
+		}
+		return false
+	}
+	return uses(javaType)
+}
+
+func invocationClosureResults(invocationNode *sitter.Node, resolution *methodResolution, ctx Ctx, source []byte) (*ast.FieldList, bool) {
+	if resolution == nil || resolution.def == nil {
+		return nil, false
+	}
+	declared := strings.TrimSpace(resolution.def.OriginalType)
+	if declared == "" || declared == "void" {
+		return nil, true
+	}
+	javaType := declared
+	if inferred, ok := inferExprJavaType(invocationNode, ctx, source); ok && inferred != ternaryNullJavaType {
+		javaType = inferred
+	}
+	if invocationTypeUsesMethodParameter(javaType, resolution) {
+		return nil, false
+	}
+	return &ast.FieldList{List: []*ast.Field{{
+		Type: javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx),
+	}}}, true
+}
+
+func invocationClosureCallStatement(call ast.Expr, results *ast.FieldList) ast.Stmt {
+	if results == nil || len(results.List) == 0 {
+		return &ast.ExprStmt{X: call}
+	}
+	return &ast.ReturnStmt{Results: []ast.Expr{call}}
 }
 
 type methodCandidateScore struct {

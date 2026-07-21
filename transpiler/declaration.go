@@ -35,6 +35,18 @@ const (
 	constructorSelfParam    = "__java2goMostDerived"
 )
 
+func instanceMethodNilReceiverGuard(receiverName string) ast.Stmt {
+	receiver := &ast.Ident{Name: receiverName}
+	return &ast.IfStmt{
+		Cond: &ast.BinaryExpr{X: receiver, Op: token.EQL, Y: &ast.Ident{Name: "nil"}},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.StarExpr{X: receiver}},
+		}}},
+	}
+}
+
 func collectTypeNodes(node *sitter.Node) []*sitter.Node {
 	if node == nil {
 		return nil
@@ -2816,6 +2828,16 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// static method. Prepend monitor enter + deferred exit.
 		if synchronizedMethod && bodyNode != nil {
 			body.List = append(synchronizedMethodPrologue(ctx, static), body.List...)
+		}
+
+		// A Go pointer-receiver method may legally execute with a nil receiver,
+		// whereas Java checks the invocation target after evaluating all arguments
+		// and before entering the method body. Keep ordinary calls in their natural
+		// shape and enforce that boundary at every source-backed instance method.
+		// Dereferencing only on the nil path produces Go's native nil-pointer panic,
+		// which the exception bridge normalizes to NullPointerException when caught.
+		if !static && bodyNode != nil {
+			body.List = append([]ast.Stmt{instanceMethodNilReceiverGuard(ShortName(ctx.className))}, body.List...)
 		}
 
 		if results != nil && bodyNeedsFallbackReturn(body) {
