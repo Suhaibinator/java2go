@@ -41,10 +41,12 @@ var (
 		"IOException":                    "Exception",
 		"IllegalArgumentException":       "RuntimeException",
 		"IllegalStateException":          "RuntimeException",
+		"IllegalMonitorStateException":   "RuntimeException",
 		"NullPointerException":           "RuntimeException",
 		"NegativeArraySizeException":     "RuntimeException",
 		"IndexOutOfBoundsException":      "RuntimeException",
 		"ArrayIndexOutOfBoundsException": "IndexOutOfBoundsException",
+		"ArrayStoreException":            "RuntimeException",
 		"NumberFormatException":          "IllegalArgumentException",
 		"ArithmeticException":            "RuntimeException",
 		"ClassCastException":             "RuntimeException",
@@ -419,10 +421,12 @@ type Exception struct{ ThrowableBase }
 type RuntimeException struct{ ThrowableBase }
 type IllegalArgumentException struct{ ThrowableBase }
 type IllegalStateException struct{ ThrowableBase }
+type IllegalMonitorStateException struct{ ThrowableBase }
 type NullPointerException struct{ ThrowableBase }
 type NegativeArraySizeException struct{ ThrowableBase }
 type IndexOutOfBoundsException struct{ ThrowableBase }
 type ArrayIndexOutOfBoundsException struct{ ThrowableBase }
+type ArrayStoreException struct{ ThrowableBase }
 type NumberFormatException struct{ ThrowableBase }
 type ArithmeticException struct{ ThrowableBase }
 type ClassCastException struct{ ThrowableBase }
@@ -465,6 +469,10 @@ func NewIllegalStateException(message string) IllegalStateException {
 	return IllegalStateException{newThrowableBase("IllegalStateException", message)}
 }
 
+func NewIllegalMonitorStateException(message string) IllegalMonitorStateException {
+	return IllegalMonitorStateException{newThrowableBase("IllegalMonitorStateException", message)}
+}
+
 func NewNullPointerException(message string) NullPointerException {
 	return NullPointerException{newThrowableBase("NullPointerException", message)}
 }
@@ -479,6 +487,10 @@ func NewIndexOutOfBoundsException(message string) IndexOutOfBoundsException {
 
 func NewArrayIndexOutOfBoundsException(message string) ArrayIndexOutOfBoundsException {
 	return ArrayIndexOutOfBoundsException{newThrowableBase("ArrayIndexOutOfBoundsException", message)}
+}
+
+func NewArrayStoreException(message string) ArrayStoreException {
+	return ArrayStoreException{newThrowableBase("ArrayStoreException", message)}
 }
 
 func NewNumberFormatException(message string) NumberFormatException {
