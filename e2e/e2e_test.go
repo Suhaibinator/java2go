@@ -1,23 +1,23 @@
 // Package e2e contains end-to-end tests that take a self-contained Java program,
-// transpile it with java2go, compile the generated Go inside this module (so the
-// stdjava runtime import resolves), run it, and compare stdout against a recorded
-// .expected file produced by a real `java` binary.
+// compile and run it with the real JDK, transpile it with java2go, compile and run
+// the generated Go, and require byte-for-byte parity of exit code, stdout, and
+// stderr. The checked-in .expected file is also verified against the live Java
+// oracle so a stale snapshot cannot mask a Java/Go mismatch.
 //
 // Each program lives in testfiles/e2e/<feature>/<Name>.java with a sibling
-// <Name>.expected. Programs that currently fail because of a known transpiler gap
-// are listed in skipReasons with a ROADMAP reference; they stay in the suite as
-// skipped tests and become regression tests the moment the gap is closed.
+// <Name>.expected. Every discovered program is mandatory; the suite has no skip
+// list or output normalization.
 package e2e
 
 import (
+	"bytes"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
-	java2go "github.com/NickyBoy89/java2go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,12 +27,6 @@ func TestMain(m *testing.M) {
 	log.SetOutput(io.Discard)
 	os.Exit(m.Run())
 }
-
-// skipReasons maps a fixture key ("<feature>/<Name>") to the reason it is skipped.
-// The reason references the ROADMAP section that, once implemented, should let the
-// test pass. Remove an entry here to turn its program into an enforced regression
-// test. Keep this list in sync as features land.
-var skipReasons = map[string]string{}
 
 func moduleRoot(t testing.TB) string {
 	t.Helper()
@@ -72,32 +66,36 @@ func findPrograms(t *testing.T, root string) map[string]string {
 func TestE2EPrograms(t *testing.T) {
 	root := moduleRoot(t)
 	programs := findPrograms(t, root)
-	strictParity := os.Getenv("JAVA2GO_PARITY_STRICT") == "1"
 	if len(programs) == 0 {
 		t.Fatal("no e2e Java programs found under testfiles/e2e")
 	}
+	requireApplicationTool(t, "javac")
+	requireApplicationTool(t, "java")
+	requireApplicationTool(t, "go")
 
-	// All generated Go lands under this dot-prefixed dir inside the module, so the
-	// stdjava import resolves and `go test ./...` ignores it. Cleared per run.
-	buildRoot := filepath.Join(root, "e2e", ".e2ebuild")
-	if err := os.RemoveAll(buildRoot); err != nil {
-		t.Fatalf("clearing build root: %v", err)
+	buildRoot := t.TempDir()
+	goCache := filepath.Join(buildRoot, "go-cache")
+	if err := os.MkdirAll(goCache, 0o755); err != nil {
+		t.Fatalf("creating shared Go build cache: %v", err)
 	}
-	t.Cleanup(func() { _ = os.RemoveAll(buildRoot) })
 
-	for key, javaPath := range programs {
+	keys := make([]string, 0, len(programs))
+	for key := range programs {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	// The transpiler keeps a process-global symbol table. Keep these subtests
+	// sequential; runApplicationTranspiler resets that table for every program.
+	for _, key := range keys {
+		javaPath := programs[key]
 		t.Run(key, func(t *testing.T) {
-			if reason, skip := skipReasons[key]; skip && !strictParity {
-				t.Skip(reason)
-			} else if skip {
-				t.Logf("strict parity: exercising known gap: %s", reason)
-			}
-			runProgram(t, root, buildRoot, key, javaPath)
+			runProgram(t, root, goCache, key, javaPath)
 		})
 	}
 }
 
-func runProgram(t *testing.T, root, buildRoot, key, javaPath string) {
+func runProgram(t *testing.T, root, goCache, key, javaPath string) {
 	t.Helper()
 
 	expectedPath := strings.TrimSuffix(javaPath, ".java") + ".expected"
@@ -105,50 +103,88 @@ func runProgram(t *testing.T, root, buildRoot, key, javaPath string) {
 	if err != nil {
 		t.Fatalf("reading expected output %s: %v", expectedPath, err)
 	}
-	expected := string(expectedBytes)
 
-	outDir := filepath.Join(buildRoot, strings.ReplaceAll(key, "/", "_"))
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		t.Fatalf("creating build dir: %v", err)
+	programRoot := t.TempDir()
+	javaClasses := filepath.Join(programRoot, "java-classes")
+	javaWork := filepath.Join(programRoot, "java-work")
+	goOutput := filepath.Join(programRoot, "go-output")
+	goWork := filepath.Join(programRoot, "go-work")
+	for _, directory := range []string{javaClasses, javaWork, goWork} {
+		if err := os.MkdirAll(directory, 0o755); err != nil {
+			t.Fatalf("creating program build directory %s: %v", directory, err)
+		}
 	}
 
-	// Transpile through the public library API, exactly as the CLI would.
-	if err := java2go.Run([]string{"-w", "-output", outDir, javaPath}); err != nil {
+	javaCompile := runApplicationCommand(applicationFixtureTimeout, filepath.Dir(javaPath), deterministicApplicationEnv(nil),
+		"javac", "--release", applicationJavaRelease, "-encoding", "UTF-8", "-d", javaClasses, javaPath)
+	requireApplicationCommandStarted(t, "javac", javaCompile)
+	if javaCompile.timedOut || javaCompile.exitCode != 0 {
+		t.Fatalf("Java oracle for %s did not compile (exit %d, timeout=%t)\nstdout:\n%s\nstderr:\n%s",
+			key, javaCompile.exitCode, javaCompile.timedOut, javaCompile.stdout, javaCompile.stderr)
+	}
+
+	mainClass := strings.TrimSuffix(filepath.Base(javaPath), filepath.Ext(javaPath))
+	javaResult := runApplicationCommand(applicationFixtureTimeout, javaWork, deterministicApplicationEnv(nil),
+		"java", "-Dfile.encoding=UTF-8", "-Duser.language=en", "-Duser.country=US", "-Duser.timezone=UTC", "-cp", javaClasses, mainClass)
+	requireApplicationCommandStarted(t, "java", javaResult)
+	if javaResult.timedOut || javaResult.exitCode != 0 {
+		t.Fatalf("Java oracle for %s did not exit successfully (exit %d, timeout=%t)\nstdout:\n%s\nstderr:\n%s",
+			key, javaResult.exitCode, javaResult.timedOut, javaResult.stdout, javaResult.stderr)
+	}
+	if !bytes.Equal(javaResult.stdout, expectedBytes) {
+		t.Fatalf("checked-in oracle for %s does not exactly match live Java output\n%s",
+			key, formatApplicationOutputDifference("expected", expectedBytes, "java stdout", javaResult.stdout))
+	}
+	if len(javaResult.stderr) != 0 {
+		t.Fatalf("Java oracle for %s wrote unexpected stderr\n%s",
+			key, formatApplicationOutputDifference("expected stderr", nil, "java stderr", javaResult.stderr))
+	}
+
+	fixture := applicationFixture{
+		name:       key,
+		sourceRoot: javaPath,
+		config: applicationFixtureConfig{
+			ModulePath: "parity/e2e",
+		},
+	}
+	if err := runApplicationTranspiler(fixture, goOutput); err != nil {
 		t.Fatalf("transpiling %s failed: %v", javaPath, err)
+	}
+	if err := configureGeneratedApplicationModule(root, goOutput); err != nil {
+		t.Fatalf("configuring generated module for %s: %v", key, err)
 	}
 
 	// The transpiler renames Java's main() to an exported Main(); add a driver so
 	// the generated package is runnable.
 	driver := "package main\n\nfunc main() { Main() }\n"
-	if err := os.WriteFile(filepath.Join(outDir, "zz_e2e_driver.go"), []byte(driver), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(goOutput, "zz_e2e_driver.go"), []byte(driver), 0o644); err != nil {
 		t.Fatalf("writing driver: %v", err)
 	}
 
-	pkgPath := "./" + filepath.ToSlash(mustRel(t, root, outDir)) + "/"
-	cmd := exec.Command("go", "run", pkgPath)
-	cmd.Dir = root
-	out, runErr := cmd.CombinedOutput()
-	if runErr != nil {
-		t.Fatalf("compiling/running generated Go for %s failed: %v\n%s", key, runErr, string(out))
+	goEnv := deterministicApplicationEnv(map[string]string{
+		"GOCACHE": goCache,
+		"GOWORK":  "off",
+		"GOFLAGS": "",
+	})
+	goBinary := filepath.Join(programRoot, "generated-program")
+	goCompile := runApplicationCommand(applicationFixtureTimeout, goOutput, goEnv, "go", "build", "-mod=mod", "-o", goBinary, ".")
+	requireApplicationCommandStarted(t, "go build", goCompile)
+	if goCompile.timedOut || goCompile.exitCode != 0 {
+		t.Fatalf("generated Go for %s did not compile (exit %d, timeout=%t)\nstdout:\n%s\nstderr:\n%s",
+			key, goCompile.exitCode, goCompile.timedOut, goCompile.stdout, goCompile.stderr)
 	}
 
-	got := string(out)
-	if normalizeOutput(got) != normalizeOutput(expected) {
-		t.Fatalf("output mismatch for %s\n--- expected ---\n%s\n--- got ---\n%s", key, expected, got)
+	goResult := runApplicationCommand(applicationFixtureTimeout, goWork, deterministicApplicationEnv(nil), goBinary)
+	requireApplicationCommandStarted(t, "generated Go program", goResult)
+	if goResult.timedOut || goResult.exitCode != javaResult.exitCode {
+		t.Fatalf("runtime exit mismatch for %s (Java=%d, Go=%d, Go timeout=%t)\nGo stdout:\n%s\nGo stderr:\n%s",
+			key, javaResult.exitCode, goResult.exitCode, goResult.timedOut, goResult.stdout, goResult.stderr)
 	}
-}
-
-func mustRel(t *testing.T, base, target string) string {
-	t.Helper()
-	rel, err := filepath.Rel(base, target)
-	if err != nil {
-		t.Fatalf("rel path: %v", err)
+	if !bytes.Equal(goResult.stdout, javaResult.stdout) || !bytes.Equal(goResult.stderr, javaResult.stderr) {
+		detail := formatApplicationOutputDifference("java stdout", javaResult.stdout, "go stdout", goResult.stdout)
+		if !bytes.Equal(goResult.stderr, javaResult.stderr) {
+			detail += "\n" + formatApplicationOutputDifference("java stderr", javaResult.stderr, "go stderr", goResult.stderr)
+		}
+		t.Fatalf("Java/Go output mismatch for %s\n%s", key, detail)
 	}
-	return rel
-}
-
-// normalizeOutput trims a single trailing newline so a fixture's .expected file
-// (which always ends in a newline) compares equal to program stdout.
-func normalizeOutput(s string) string {
-	return strings.TrimRight(s, "\n")
 }
