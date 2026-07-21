@@ -23,8 +23,8 @@ public class EnhancedForVarProgram {
 	if strings.Contains(out, "BadExpr") {
 		t.Fatalf("enhanced-for var element type must be available to compound assignment, got:\n%s", out)
 	}
-	if !strings.Contains(normalizeSpaces(out), "func(rhs int32) int32") {
-		t.Fatalf("expected the inferred int array element to type the compound assignment RHS, got:\n%s", out)
+	if !strings.Contains(out, "total += value") {
+		t.Fatalf("expected inferred int locals to use the direct compound-assignment statement, got:\n%s", out)
 	}
 
 	runGoTestInTempModule(t, out, `

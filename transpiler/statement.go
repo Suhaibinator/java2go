@@ -124,6 +124,143 @@ func inferEnhancedForElementJavaType(valueNode *sitter.Node, source []byte, ctx 
 	return typeArgs[0], true
 }
 
+// lowerSimpleLocalNumericCompoundAssignmentStmt handles the statement-only
+// subset of Java compound assignment that does not need the value-producing
+// closure used by lowerAssignmentExpression. The target must be a primitive
+// numeric local (or parameter), and the RHS must be free of observable side
+// effects. Complex storage locations and effectful RHS expressions retain the
+// staged fallback so their address, old value, and RHS keep Java evaluation
+// order.
+func lowerSimpleLocalNumericCompoundAssignmentStmt(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt, bool) {
+	if node == nil || node.Type() != "assignment_expression" || node.ChildCount() < 3 || ctx.localScope == nil {
+		return nil, false
+	}
+
+	lhsNode := node.Child(0)
+	opNode := node.Child(1)
+	rhsNode := node.Child(2)
+	if lhsNode == nil || lhsNode.Type() != "identifier" || opNode == nil || rhsNode == nil {
+		return nil, false
+	}
+	operator := opNode.Content(source)
+	if operator == "=" {
+		return nil, false
+	}
+
+	local := ctx.localScope.FindVariable(lhsNode.Content(source))
+	if local == nil || local.Nullable {
+		return nil, false
+	}
+	lhsNumeric, lhsPrimitive := primitiveJavaNumericType(local.OriginalType)
+	if !lhsPrimitive || !isSideEffectFreeCompoundAssignmentRHS(rhsNode) {
+		return nil, false
+	}
+
+	rhsJavaType, rhsTypeKnown := inferExprJavaType(rhsNode, ctx, source)
+	rhsNumeric, rhsPrimitive := primitiveJavaNumericType(rhsJavaType)
+	if !rhsTypeKnown || !rhsPrimitive {
+		return nil, false
+	}
+
+	lhs := ParseExpr(lhsNode, source, ctx)
+	rhs := ParseExpr(rhsNode, source, ctx)
+	if canUseNativeGoNumericCompoundAssignment(operator, lhsNumeric, rhsNumeric) {
+		return &ast.AssignStmt{
+			Lhs: []ast.Expr{lhs},
+			Tok: StrToToken(operator),
+			Rhs: []ast.Expr{rhs},
+		}, true
+	}
+
+	value, ok := compoundAssignmentValue(operator, lhs, rhs, local.OriginalType, rhsJavaType, ctx)
+	if !ok {
+		return nil, false
+	}
+	return &ast.AssignStmt{
+		Lhs: []ast.Expr{lhs},
+		Tok: token.ASSIGN,
+		Rhs: []ast.Expr{value},
+	}, true
+}
+
+// primitiveJavaNumericType deliberately excludes boxed numeric types. Their
+// unboxing/null behavior is observable and remains on the staged fallback.
+func primitiveJavaNumericType(javaType string) (string, bool) {
+	base, _ := parseJavaTypeString(javaType)
+	switch stripJavaQualifier(base) {
+	case "byte", "short", "char", "int", "long", "float", "double":
+		return stripJavaQualifier(base), true
+	default:
+		return "", false
+	}
+}
+
+// canUseNativeGoNumericCompoundAssignment identifies operations for which Go's
+// typed compound statement has the same result as Java's promotion followed by
+// narrowing. Mixed types need explicit conversions; char needs uint16
+// narrowing; and shifts need Java's 5/6-bit distance mask.
+func canUseNativeGoNumericCompoundAssignment(operator, lhsType, rhsType string) bool {
+	if lhsType != rhsType || lhsType == "char" {
+		return false
+	}
+	if lhsType == "float" || lhsType == "double" {
+		switch operator {
+		case "+=", "-=", "*=", "/=":
+			return true
+		default:
+			return false
+		}
+	}
+	switch operator {
+	case "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=":
+		return true
+	default:
+		return false
+	}
+}
+
+// isSideEffectFreeCompoundAssignmentRHS is intentionally conservative. A
+// statement fast path is an optimization, so unfamiliar expression forms use
+// the existing staged lowering. Reads, arithmetic, casts, and indexing are
+// safe; calls, updates, assignments, allocation, and ternaries are not admitted.
+func isSideEffectFreeCompoundAssignmentRHS(node *sitter.Node) bool {
+	if node == nil {
+		return false
+	}
+	switch node.Type() {
+	case "identifier", "this", "super",
+		"decimal_integer_literal", "hex_integer_literal", "octal_integer_literal", "binary_integer_literal",
+		"decimal_floating_point_literal", "hex_floating_point_literal", "character_literal":
+		return true
+	case "parenthesized_expression":
+		return node.NamedChildCount() == 1 && isSideEffectFreeCompoundAssignmentRHS(node.NamedChild(0))
+	case "unary_expression":
+		count := node.NamedChildCount()
+		return count > 0 && isSideEffectFreeCompoundAssignmentRHS(node.NamedChild(int(count)-1))
+	case "cast_expression":
+		return node.NamedChildCount() == 2 && isSideEffectFreeCompoundAssignmentRHS(node.NamedChild(1))
+	case "binary_expression":
+		return node.ChildCount() >= 3 &&
+			isSideEffectFreeCompoundAssignmentRHS(node.Child(0)) &&
+			isSideEffectFreeCompoundAssignmentRHS(node.Child(2))
+	case "field_access":
+		object := node.ChildByFieldName("object")
+		return object != nil && isSideEffectFreeCompoundAssignmentRHS(object)
+	case "array_access":
+		array := node.ChildByFieldName("array")
+		index := node.ChildByFieldName("index")
+		if array == nil && node.NamedChildCount() > 0 {
+			array = node.NamedChild(0)
+		}
+		if index == nil && node.NamedChildCount() > 1 {
+			index = node.NamedChild(1)
+		}
+		return isSideEffectFreeCompoundAssignmentRHS(array) && isSideEffectFreeCompoundAssignmentRHS(index)
+	default:
+		return false
+	}
+}
+
 func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	switch node.Type() {
 	case "ERROR":
@@ -276,6 +413,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// value-producing lowering for every compound operator and discard the
 		// resulting value when the assignment appears as a statement.
 		if operator != "=" {
+			if stmt, ok := lowerSimpleLocalNumericCompoundAssignmentStmt(node, source, ctx); ok {
+				return stmt
+			}
 			return &ast.ExprStmt{X: lowerAssignmentExpression(node, source, ctx)}
 		}
 
