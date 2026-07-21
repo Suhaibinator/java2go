@@ -72,6 +72,41 @@ diagnostics confirmed that specialized matrix and stencil accesses have no
 per-element bounds checks; only one-time slice checks and the stencil's dynamic
 west/east accesses remain checked.
 
+Tier 2 at commit `373128a` hoists those affine preambles to their least-changing
+lexical scopes. A blocked matrix multiply now proves the whole visited interval
+once, prepares the result slice once per result row, and prepares the right-hand
+slice once per depth row. The floating-point expression and iteration order are
+unchanged. The pass conservatively falls back for Java-int overflow, zero/negative
+dimensions or steps, mutated bounds, custom `Math` resolution (including
+inherited fields), null storage, and invalid backing lengths. Regression tests
+also cover aliased matrices, enforce proof dependency order, and isolate the
+duplicated guarded loop from fast-branch hoist registration.
+
+The final fixed tree was measured with:
+
+```sh
+GOCACHE=/tmp/java2go-gocache go test ./e2e -run '^$' \
+  -bench '^BenchmarkApplicationPerformance$/numerical_kernels' \
+  -benchtime=1x -count=3
+```
+
+Every warm-up and measured process passed the byte-exact Java oracle.
+
+| Implementation | Three samples | Mean |
+| --- | ---: | ---: |
+| Java | 10.558–10.588 s | 10.576 s |
+| Generated Go | 9.791–11.180 s | 10.571 s |
+
+The means are effectively tied: generated Go was 0.05% faster in this run, but
+its wider sample range makes a stable runtime advantage unsupported. Relative to
+the earlier checked-in generated-Go mean of 12.474 seconds, this sample is 15.3%
+lower; because Java also ran faster on the later host session, the controlled
+component A/B is the stronger optimization signal. On identical generated code,
+enabling only Tier 2 reduced the matrix workload from 5.08 seconds to 4.48
+seconds (11.8%) with the same checksum. Bounds diagnostics retained only the
+one-time result/right slice checks and the unrelated left scalar check in the hot
+matrix loop; no per-element result/right slice checks remained.
+
 During profiling, observed peak RSS was about 1,249 MiB for Java and 24–31 MiB
 for generated Go. Both are comfortably below 8 GiB. These measurements describe
 the reference host rather than imposing machine-specific performance or memory
