@@ -59,6 +59,12 @@ type Ctx struct {
 
 	// Expected type from variable declaration, used for diamond operator inference
 	expectedType string
+	// expectedTypeRoot records the expression that is actually in the target-typed
+	// assignment, invocation, or return context. Java only treats a poly
+	// conditional as target-typed when the conditional itself is that expression
+	// (parentheses aside); carrying expectedType alone through enclosing binary
+	// expressions can otherwise change the conditional's standalone type.
+	expectedTypeRoot *sitter.Node
 
 	// Additional type parameters synthesized for a generated top-level function.
 	// Java raw generic parameters can accept every instantiation, while Go has no
@@ -136,6 +142,7 @@ func (c Ctx) Clone() Ctx {
 		localScope:               c.localScope,
 		lastType:                 c.lastType,
 		expectedType:             c.expectedType,
+		expectedTypeRoot:         c.expectedTypeRoot,
 		syntheticTypeParameters:  c.syntheticTypeParameters,
 		rawGenericParameterTypes: c.rawGenericParameterTypes,
 		importAliases:            c.importAliases,

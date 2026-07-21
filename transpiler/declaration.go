@@ -201,6 +201,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						valueCtx := ctx.Clone()
 						valueCtx.localScope = &symbol.Definition{IsStatic: true}
 						valueCtx.expectedType = fieldDef.OriginalType
+						valueCtx.expectedTypeRoot = fieldValueNode
 						spec.Values = []ast.Expr{ParseExpr(fieldValueNode, source, valueCtx)}
 					}
 					globalVariables.Specs = append(globalVariables.Specs, spec)
@@ -209,6 +210,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					if fieldValueNode != nil {
 						valueCtx := ctx.Clone()
 						valueCtx.expectedType = fieldDef.OriginalType
+						valueCtx.expectedTypeRoot = fieldValueNode
 						instanceFieldInitializers = append(instanceFieldInitializers, &ast.AssignStmt{
 							Lhs: []ast.Expr{
 								&ast.SelectorExpr{
@@ -674,6 +676,7 @@ func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx 
 			valueCtx := ctx.Clone()
 			valueCtx.localScope = &symbol.Definition{IsStatic: true}
 			valueCtx.expectedType = fieldDefinition.OriginalType
+			valueCtx.expectedTypeRoot = valueNode
 			statements = append(statements, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: fieldDefinition.Name}},
 				Tok: token.ASSIGN,

@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-// TestCodegen_TernaryQualifiedWithImport verifies a ternary lowers to a
-// stdjava-qualified Ternary call and pulls in the stdjava import.
-func TestCodegen_TernaryQualifiedWithImport(t *testing.T) {
+// TestCodegen_TernaryUsesTypedLazyIIFE verifies a ternary lowers to a typed
+// branch-local IIFE rather than an eager helper call.
+func TestCodegen_TernaryUsesTypedLazyIIFE(t *testing.T) {
 	src := `
 public class T {
     public int pick(boolean b) {
@@ -16,14 +16,14 @@ public class T {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.Ternary(") {
-		t.Errorf("expected stdjava.Ternary call, got:\n%s", out)
+	if strings.Contains(out, "stdjava.Ternary(") {
+		t.Errorf("ternary must not eagerly evaluate helper arguments, got:\n%s", out)
 	}
-	if strings.Contains(out, "ternary(") && !strings.Contains(out, "stdjava.Ternary(") {
-		t.Errorf("expected qualified ternary, got unqualified:\n%s", out)
+	if !strings.Contains(out, "func() int32") || !strings.Contains(out, "if b") {
+		t.Errorf("expected typed lazy ternary IIFE, got:\n%s", out)
 	}
-	if !strings.Contains(out, "stdjava") || !strings.Contains(out, "import") {
-		t.Errorf("expected stdjava import to be added, got:\n%s", out)
+	if strings.Contains(out, `stdjava "github.com/NickyBoy89/java2go/stdjava"`) {
+		t.Errorf("ternary alone must not retain a stdjava import, got:\n%s", out)
 	}
 }
 

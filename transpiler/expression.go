@@ -268,7 +268,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			expectedElementType = strings.TrimSpace(strings.TrimSuffix(expectedElementType, "[]"))
 		}
 		for _, c := range nodeutil.NamedChildrenOf(node) {
-			item := ParseExpr(c, source, ctx)
+			itemCtx := ctx.Clone()
+			itemCtx.expectedType = expectedElementType
+			itemCtx.expectedTypeRoot = c
+			item := ParseExpr(c, source, itemCtx)
 			item = coerceArgumentToExpectedType(item, c, expectedElementType, ctx, source)
 			item = boxPrimitiveForObject(item, c, expectedElementType, ctx, source)
 			items = append(items, item)
@@ -557,13 +560,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// The `outer.new Inner()` / `this.new Inner()` qualifier form is handled
 		// below by threading the leading expression as the enclosing instance.
 
-		// Get all the arguments, and look up their types
+		// Look up raw argument types before constructor selection. The expressions
+		// themselves are parsed only after a constructor is known, because lambdas,
+		// method references, and poly conditional arguments require that selected
+		// parameter type as their exact target context.
 		objectArguments := node.ChildByFieldName("arguments")
-		arguments := make([]ast.Expr, objectArguments.NamedChildCount())
 		argumentTypes := make([]string, objectArguments.NamedChildCount())
 		for ind, argument := range nodeutil.NamedChildrenOf(objectArguments) {
-			arguments[ind] = ParseExpr(argument, source, ctx)
-
 			// Look up each argument and find its type
 			if argument.Type() != "identifier" {
 				argumentTypes[ind] = symbol.TypeOfLiteral(argument, source)
@@ -599,6 +602,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// runtime, so `new IllegalArgumentException("msg")` becomes a call to the
 		// corresponding stdjava constructor, preserving the detail message.
 		if isBuiltinExceptionType(className) && resolveClassScopeByQualifiedName(ctx, className) == nil {
+			arguments := parseArgumentListWithExpectedTypes(objectArguments, source, ctx, nil)
 			return builtinExceptionConstructorExpr(className, arguments, ctx)
 		}
 
@@ -607,6 +611,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		targetScope := resolveClassScopeByQualifiedName(ctx, className)
 		constructor = findMatchingConstructor(targetScope, stripJavaQualifier(className), argumentTypes)
 		targetPkg := resolveJavaPackageForType(ctx, className, targetScope)
+		var expectedArgumentTypes []string
+		if constructor != nil {
+			expectedArgumentTypes = definitionParameterOriginalTypes(constructor)
+		}
+		arguments := parseArgumentListWithExpectedTypes(objectArguments, source, ctx, expectedArgumentTypes)
 
 		// Inner-class instantiation captures an enclosing instance. For the
 		// explicit `outer.new Inner()` form, the qualifier expression precedes the
@@ -709,6 +718,21 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// not the array type, so wrap it so the initializer can emit a typed
 		// composite literal like `[]int32{...}` instead of a bare `{...}`.
 		typeNode := node.ChildByFieldName("type")
+		elementJavaType := ""
+		if typeNode != nil {
+			elementJavaType = typeNode.Content(source)
+		}
+		arrayJavaType, arrayDimensions := javaArrayCreationJavaType(node, source)
+		if expectedTypeTargetsExpression(ctx, node) && arrayDimensions > 0 &&
+			javaTernaryAssignmentCompatible(arrayJavaType, ctx.expectedType, ctx) {
+			targetElement := strings.TrimSpace(ctx.expectedType)
+			for dimension := 0; dimension < arrayDimensions && strings.HasSuffix(targetElement, "[]"); dimension++ {
+				targetElement = strings.TrimSpace(strings.TrimSuffix(targetElement, "[]"))
+			}
+			if targetElement != "" && !strings.HasSuffix(targetElement, "[]") {
+				elementJavaType = targetElement
+			}
+		}
 		elementType := astutil.ParseType(typeNode, source)
 		// Use the symbol-aware converter for the element type so imported generated
 		// classes are package-qualified (`new Cohort[n]` ->
@@ -716,14 +740,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// consistent with declarations and constructor calls.
 		if typeNode != nil {
 			elementType = javaTypeStringToGoTypeExpr(
-				typeNode.Content(source),
+				elementJavaType,
 				inScopeTypeParameters(ctx),
 				ctx,
 			)
 			// A stdjava-backed runtime element type (e.g. Thread in `new Thread[n]`)
 			// must resolve to its stdjava Go type (*stdjava.Thread), not a bare and
 			// undefined *Thread.
-			if rt, ok := stdjavaRuntimeTypeExpr(stripJavaQualifier(typeNode.Content(source)), nil, inScopeTypeParameters(ctx), ctx); ok {
+			if rt, ok := stdjavaRuntimeTypeExpr(stripJavaQualifier(elementJavaType), nil, inScopeTypeParameters(ctx), ctx); ok {
 				elementType = rt
 			}
 		}
@@ -736,7 +760,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				initCtx := ctx.Clone()
 				initCtx.lastType = &ast.ArrayType{Elt: elementType}
 				if typeNode != nil {
-					initCtx.expectedType = typeNode.Content(source)
+					initCtx.expectedType = elementJavaType
+					initCtx.expectedTypeRoot = child
 				}
 				initializer = ParseExpr(child, source, initCtx)
 			}
@@ -855,14 +880,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			X: ParseExpr(node.NamedChild(0), source, ctx),
 		}
 	case "ternary_expression":
-		// Ternary expressions are replaced with a function that takes in the
-		// condition, and returns one of the two values, depending on the condition
-
-		args := []ast.Expr{}
-		for _, c := range nodeutil.NamedChildrenOf(node) {
-			args = append(args, ParseExpr(c, source, ctx))
-		}
-		return stdjavaCall(ctx, "Ternary", args...)
+		return buildTernaryExpressionIIFE(node, source, ctx)
 	case "cast_expression":
 		targetJavaType := node.NamedChild(0).Content(source)
 		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
@@ -1080,6 +1098,624 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	}
 }
 
+// buildTernaryExpressionIIFE lowers Java's conditional operator to a typed,
+// immediately-invoked function. A normal Go function call evaluates all of its
+// arguments before entering the callee, so the former
+// stdjava.Ternary(condition, consequence, alternative) representation eagerly
+// evaluated both branches. The branch-local returns below retain Java's lazy
+// evaluation, including side effects and exceptions in the unselected branch.
+func buildTernaryExpressionIIFE(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	conditionNode, consequenceNode, alternativeNode := ternaryExpressionParts(node)
+	if conditionNode == nil || consequenceNode == nil || alternativeNode == nil {
+		diag := reportUnsupported("expression", node, source, ctx)
+		return &ast.CallExpr{
+			Fun: &ast.Ident{Name: "panic"},
+			Args: []ast.Expr{&ast.BasicLit{
+				Kind:  token.STRING,
+				Value: fmt.Sprintf("%q", strings.TrimPrefix(unsupportedComment(diag), "// ")),
+			}},
+		}
+	}
+
+	resultJavaType, known := inferTernaryResultJavaType(node, ctx, source)
+	if !known {
+		resultJavaType = "Object"
+	}
+	resultGoType := ternaryResultGoType(resultJavaType, consequenceNode, alternativeNode, ctx)
+
+	conditionCtx := ctx.Clone()
+	conditionCtx.expectedType = "boolean"
+	conditionCtx.expectedTypeRoot = conditionNode
+	condition := ParseExpr(conditionNode, source, conditionCtx)
+	consequence := parseTernaryBranch(consequenceNode, resultJavaType, source, ctx)
+	alternative := parseTernaryBranch(alternativeNode, resultJavaType, source, ctx)
+
+	return &ast.CallExpr{Fun: &ast.FuncLit{
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: resultGoType}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			&ast.IfStmt{
+				Cond: condition,
+				Body: &ast.BlockStmt{List: []ast.Stmt{
+					&ast.ReturnStmt{Results: []ast.Expr{consequence}},
+				}},
+			},
+			&ast.ReturnStmt{Results: []ast.Expr{alternative}},
+		}},
+	}}
+}
+
+func ternaryExpressionParts(node *sitter.Node) (condition, consequence, alternative *sitter.Node) {
+	if node == nil || node.Type() != "ternary_expression" {
+		return nil, nil, nil
+	}
+	condition = node.ChildByFieldName("condition")
+	consequence = node.ChildByFieldName("consequence")
+	alternative = node.ChildByFieldName("alternative")
+	if condition != nil && consequence != nil && alternative != nil {
+		return condition, consequence, alternative
+	}
+	children := nodeutil.NamedChildrenOf(node)
+	if len(children) == 3 {
+		return children[0], children[1], children[2]
+	}
+	return nil, nil, nil
+}
+
+func parseTernaryBranch(node *sitter.Node, resultJavaType string, source []byte, ctx Ctx) ast.Expr {
+	if unwrapped := unwrapParenthesizedExpressionNode(node); unwrapped != nil && unwrapped.Type() == "null_literal" {
+		return &ast.Ident{Name: "nil"}
+	}
+
+	branchCtx := ctx.Clone()
+	branchCtx.expectedType = resultJavaType
+	branchCtx.expectedTypeRoot = node
+	expr := ParseExpr(node, source, branchCtx)
+
+	// A primitive entering Object must retain its Java runtime width. In
+	// particular, an untyped Go integer literal would otherwise become host int
+	// rather than Java Integer/int32.
+	if base, _ := parseJavaTypeString(resultJavaType); stripJavaQualifier(base) == "Object" {
+		expr = boxPrimitiveForObject(expr, node, resultJavaType, ctx, source)
+	}
+	if boxedPrimitive, boxed := ternaryBoxedPrimitive(resultJavaType); boxed {
+		if actualType, actualKnown := inferExprJavaType(node, ctx, source); actualKnown {
+			if _, actualPrimitive := javaPrimitiveType(actualType); actualPrimitive {
+				if conversion := goPrimitiveConversionName(boxedPrimitive); conversion != "" {
+					expr = &ast.CallExpr{Fun: &ast.Ident{Name: conversion}, Args: []ast.Expr{expr}}
+				}
+			}
+		}
+	}
+
+	if targetNumeric, ok := canonicalJavaNumericType(resultJavaType); ok {
+		if actualType, actualKnown := inferExprJavaType(node, ctx, source); actualKnown {
+			expr = convertJavaNumericOperand(expr, actualType, targetNumeric)
+		}
+	}
+	return coerceArgumentToExpectedType(expr, node, resultJavaType, ctx, source)
+}
+
+func ternaryResultGoType(resultJavaType string, consequence, alternative *sitter.Node, ctx Ctx) ast.Expr {
+	// String and boxed primitives normally use Go value types, but a selected
+	// Java null must remain distinguishable from their zero values. Use an
+	// interface result when any nested conditional arm can produce literal null;
+	// pointer/slice/interface reference representations can use nil directly.
+	if usesNullableValueStorage(resultJavaType) &&
+		(expressionCanProduceNull(consequence) || expressionCanProduceNull(alternative)) {
+		return &ast.Ident{Name: "any"}
+	}
+	return abstractClassToInterface(
+		javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx),
+		resultJavaType,
+		ctx,
+	)
+}
+
+func expressionCanProduceNull(node *sitter.Node) bool {
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil {
+		return false
+	}
+	if node.Type() == "null_literal" {
+		return true
+	}
+	if node.Type() != "ternary_expression" {
+		return false
+	}
+	_, consequence, alternative := ternaryExpressionParts(node)
+	return expressionCanProduceNull(consequence) || expressionCanProduceNull(alternative)
+}
+
+func expressionAlwaysProducesNull(node *sitter.Node) bool {
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil {
+		return false
+	}
+	if node.Type() == "null_literal" {
+		return true
+	}
+	if node.Type() != "ternary_expression" {
+		return false
+	}
+	_, consequence, alternative := ternaryExpressionParts(node)
+	return expressionAlwaysProducesNull(consequence) && expressionAlwaysProducesNull(alternative)
+}
+
+const ternaryNullJavaType = "<java-null>"
+
+type ternaryExpressionKind uint8
+
+const (
+	ternaryReferenceExpression ternaryExpressionKind = iota
+	ternaryBooleanExpression
+	ternaryNumericExpression
+)
+
+func classifyTernaryExpression(node *sitter.Node, ctx Ctx, source []byte) ternaryExpressionKind {
+	_, consequence, alternative := ternaryExpressionParts(node)
+	left := unwrapParenthesizedExpressionNode(consequence)
+	right := unwrapParenthesizedExpressionNode(alternative)
+	if left == nil || right == nil || left.Type() == "null_literal" || right.Type() == "null_literal" {
+		return ternaryReferenceExpression
+	}
+	leftType, leftKnown := inferExprJavaType(left, ctx, source)
+	rightType, rightKnown := inferExprJavaType(right, ctx, source)
+	if !leftKnown || !rightKnown {
+		return ternaryReferenceExpression
+	}
+	if ternaryBooleanType(leftType) && ternaryBooleanType(rightType) {
+		return ternaryBooleanExpression
+	}
+	if _, leftNumeric := canonicalJavaNumericType(leftType); leftNumeric {
+		if _, rightNumeric := canonicalJavaNumericType(rightType); rightNumeric {
+			return ternaryNumericExpression
+		}
+	}
+	return ternaryReferenceExpression
+}
+
+func expectedTypeTargetsExpression(ctx Ctx, node *sitter.Node) bool {
+	target := unwrapParenthesizedExpressionNode(ctx.expectedTypeRoot)
+	node = unwrapParenthesizedExpressionNode(node)
+	if target == nil || node == nil {
+		return false
+	}
+	return target.Type() == node.Type() && target.StartByte() == node.StartByte() && target.EndByte() == node.EndByte()
+}
+
+func inferTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+	expected := strings.TrimSpace(ctx.expectedType)
+	if isVarKeywordType(expected) || !expectedTypeTargetsExpression(ctx, node) {
+		expected = ""
+	}
+
+	// Boolean and numeric conditionals are standalone expressions under the JLS:
+	// assignment/invocation context converts their already-determined result. Only
+	// reference conditionals are poly expressions that can take their target type.
+	// Keeping the target root in Ctx prevents an enclosing return/assignment type
+	// from leaking through a binary expression into a nested conditional.
+	inferenceCtx := ctx.Clone()
+	inferenceCtx.expectedType = ""
+	inferenceCtx.expectedTypeRoot = nil
+	standaloneType, standaloneKnown := inferStandaloneTernaryResultJavaType(node, inferenceCtx, source)
+	if classifyTernaryExpression(node, inferenceCtx, source) != ternaryReferenceExpression {
+		return standaloneType, standaloneKnown
+	}
+	if expected != "" && (!standaloneKnown || ternaryCanTargetJavaType(node, standaloneType, expected, inferenceCtx, source)) {
+		return expected, true
+	}
+	if standaloneType == ternaryNullJavaType {
+		return "Object", true
+	}
+	return standaloneType, standaloneKnown
+}
+
+func inferStandaloneTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+
+	_, consequence, alternative := ternaryExpressionParts(node)
+	if consequence == nil || alternative == nil {
+		return "", false
+	}
+	leftNode := unwrapParenthesizedExpressionNode(consequence)
+	rightNode := unwrapParenthesizedExpressionNode(alternative)
+	leftNull := leftNode != nil && leftNode.Type() == "null_literal"
+	rightNull := rightNode != nil && rightNode.Type() == "null_literal"
+	leftType, leftKnown := inferExprJavaType(consequence, ctx, source)
+	rightType, rightKnown := inferExprJavaType(alternative, ctx, source)
+
+	switch {
+	case leftNull && rightNull:
+		return ternaryNullJavaType, true
+	case leftNull && rightKnown:
+		if boxed := ternaryBoxedJavaType(rightType); boxed != "" {
+			return boxed, true
+		}
+		return rightType, true
+	case rightNull && leftKnown:
+		if boxed := ternaryBoxedJavaType(leftType); boxed != "" {
+			return boxed, true
+		}
+		return leftType, true
+	case !leftKnown || !rightKnown:
+		return "", false
+	}
+
+	if normalizeJavaReferenceType(leftType) == normalizeJavaReferenceType(rightType) {
+		return leftType, true
+	}
+	if ternaryBooleanType(leftType) && ternaryBooleanType(rightType) {
+		return "boolean", true
+	}
+	if numericType, ok := ternaryNumericResultJavaType(consequence, leftType, alternative, rightType, source); ok {
+		return numericType, true
+	}
+	return ternaryCommonReferenceJavaType(leftType, rightType, ctx)
+}
+
+func ternaryCanTargetJavaType(node *sitter.Node, standaloneType, expectedType string, ctx Ctx, source []byte) bool {
+	if javaTernaryAssignmentCompatible(standaloneType, expectedType, ctx) {
+		return true
+	}
+
+	// A poly reference conditional can have a broad standalone LUB while each arm
+	// is individually compatible with the target. Check both arms as a fallback,
+	// keeping null compatible only with reference targets.
+	_, consequence, alternative := ternaryExpressionParts(node)
+	for _, branch := range []*sitter.Node{consequence, alternative} {
+		branch = unwrapParenthesizedExpressionNode(branch)
+		if branch == nil {
+			return false
+		}
+		if branch.Type() == "null_literal" {
+			if _, primitive := javaPrimitiveType(expectedType); primitive {
+				return false
+			}
+			continue
+		}
+		branchType, known := inferExprJavaType(branch, ctx, source)
+		if !known {
+			// Lambdas and method references need the target type to become typed.
+			continue
+		}
+		if !javaTernaryAssignmentCompatible(branchType, expectedType, ctx) {
+			return false
+		}
+	}
+	return true
+}
+
+func javaTernaryAssignmentCompatible(actualType, expectedType string, ctx Ctx) bool {
+	actualType = strings.TrimSpace(actualType)
+	expectedType = strings.TrimSpace(expectedType)
+	if actualType == "" || expectedType == "" {
+		return false
+	}
+	if normalizeJavaReferenceType(actualType) == normalizeJavaReferenceType(expectedType) {
+		return true
+	}
+	if actualType == ternaryNullJavaType {
+		_, expectedPrimitive := javaPrimitiveType(expectedType)
+		return !expectedPrimitive
+	}
+
+	actualPrimitive, actualIsPrimitive := javaPrimitiveType(actualType)
+	expectedPrimitive, expectedIsPrimitive := javaPrimitiveType(expectedType)
+	if actualIsPrimitive && expectedIsPrimitive {
+		if actualPrimitive == expectedPrimitive {
+			return true
+		}
+		_, widening := javaPrimitiveWideningDistance(actualPrimitive, expectedPrimitive)
+		return widening
+	}
+
+	expectedBase, _ := parseJavaTypeString(expectedType)
+	if stripJavaQualifier(expectedBase) == "Object" {
+		return true
+	}
+	actualComponent, actualArray := javaArrayComponentType(actualType)
+	expectedComponent, expectedArray := javaArrayComponentType(expectedType)
+	if actualArray || expectedArray {
+		if !actualArray || !expectedArray {
+			return false
+		}
+		actualComponentPrimitive, actualPrimitiveArray := javaPrimitiveType(actualComponent)
+		expectedComponentPrimitive, expectedPrimitiveArray := javaPrimitiveType(expectedComponent)
+		if actualPrimitiveArray || expectedPrimitiveArray {
+			return actualPrimitiveArray && expectedPrimitiveArray && actualComponentPrimitive == expectedComponentPrimitive
+		}
+		return javaTernaryAssignmentCompatible(actualComponent, expectedComponent, ctx)
+	}
+	if actualIsPrimitive {
+		boxedPrimitive, boxed := ternaryBoxedPrimitive(expectedType)
+		return boxed && boxedPrimitive == actualPrimitive
+	}
+	if expectedIsPrimitive {
+		boxedPrimitive, boxed := ternaryBoxedPrimitive(actualType)
+		if !boxed {
+			return false
+		}
+		if boxedPrimitive == expectedPrimitive {
+			return true
+		}
+		_, widening := javaPrimitiveWideningDistance(boxedPrimitive, expectedPrimitive)
+		return widening
+	}
+
+	actualBase, actualArgs := parseJavaTypeString(actualType)
+	if sameJavaRawType(actualBase, expectedBase) {
+		_, expectedArgs := parseJavaTypeString(expectedType)
+		return javaGenericArgumentsApplicable(actualArgs, expectedArgs, nil)
+	}
+	actualScope := resolveClassScopeByQualifiedName(ctx, actualBase)
+	expectedScope := resolveClassScopeByQualifiedName(ctx, expectedBase)
+	_, assignable := javaReferenceTypeDistance(actualScope, expectedScope, ctx)
+	return assignable
+}
+
+func ternaryBoxedJavaType(javaType string) string {
+	primitive, ok := javaPrimitiveType(javaType)
+	if !ok {
+		return ""
+	}
+	switch primitive {
+	case "byte":
+		return "Byte"
+	case "short":
+		return "Short"
+	case "char":
+		return "Character"
+	case "int":
+		return "Integer"
+	case "long":
+		return "Long"
+	case "float":
+		return "Float"
+	case "double":
+		return "Double"
+	case "boolean":
+		return "Boolean"
+	default:
+		return ""
+	}
+}
+
+func ternaryBoxedPrimitive(javaType string) (string, bool) {
+	base, _ := parseJavaTypeString(javaType)
+	switch stripJavaQualifier(base) {
+	case "Byte":
+		return "byte", true
+	case "Short":
+		return "short", true
+	case "Character":
+		return "char", true
+	case "Integer":
+		return "int", true
+	case "Long":
+		return "long", true
+	case "Float":
+		return "float", true
+	case "Double":
+		return "double", true
+	case "Boolean":
+		return "boolean", true
+	default:
+		return "", false
+	}
+}
+
+func ternaryBooleanType(javaType string) bool {
+	base, _ := parseJavaTypeString(javaType)
+	switch stripJavaQualifier(base) {
+	case "boolean", "Boolean":
+		return true
+	default:
+		return false
+	}
+}
+
+func ternaryNumericResultJavaType(leftNode *sitter.Node, leftType string, rightNode *sitter.Node, rightType string, source []byte) (string, bool) {
+	left, leftNumeric := canonicalJavaNumericType(leftType)
+	right, rightNumeric := canonicalJavaNumericType(rightType)
+	if !leftNumeric || !rightNumeric {
+		return "", false
+	}
+	if left == right {
+		return left, true
+	}
+	if (left == "byte" && right == "short") || (left == "short" && right == "byte") {
+		return "short", true
+	}
+	if ternaryIntConstantFits(rightNode, right, left, source) {
+		return left, true
+	}
+	if ternaryIntConstantFits(leftNode, left, right, source) {
+		return right, true
+	}
+	return javaNumericPromotionType(left, right)
+}
+
+func ternaryIntConstantFits(node *sitter.Node, sourceType, targetType string, source []byte) bool {
+	if sourceType != "int" {
+		return false
+	}
+	var minimum, maximum int64
+	switch targetType {
+	case "byte":
+		minimum, maximum = -128, 127
+	case "short":
+		minimum, maximum = -32768, 32767
+	case "char":
+		minimum, maximum = 0, 65535
+	default:
+		return false
+	}
+	value, ok := javaIntConstantExpression(node, source)
+	return ok && value >= minimum && value <= maximum
+}
+
+// javaIntConstantExpression evaluates the side-effect-free integral constant
+// subset needed by the conditional operator's byte/short/char narrowing rule.
+// Values use Java int32 wraparound, including hexadecimal, octal, and binary
+// spellings whose high bit denotes a negative int.
+func javaIntConstantExpression(node *sitter.Node, source []byte) (int64, bool) {
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil {
+		return 0, false
+	}
+	if node.Type() == "unary_expression" && node.NamedChildCount() > 0 {
+		value, ok := javaIntConstantExpression(node.NamedChild(int(node.NamedChildCount())-1), source)
+		if !ok {
+			return 0, false
+		}
+		intValue := int32(value)
+		switch node.Child(0).Content(source) {
+		case "-":
+			return int64(-intValue), true
+		case "+":
+			return int64(intValue), true
+		case "~":
+			return int64(^intValue), true
+		default:
+			return 0, false
+		}
+	}
+	if node.Type() == "binary_expression" && node.ChildCount() >= 3 {
+		left, leftOK := javaIntConstantExpression(node.Child(0), source)
+		right, rightOK := javaIntConstantExpression(node.Child(2), source)
+		if !leftOK || !rightOK {
+			return 0, false
+		}
+		a, b := int32(left), int32(right)
+		var result int32
+		switch node.Child(1).Content(source) {
+		case "+":
+			result = a + b
+		case "-":
+			result = a - b
+		case "*":
+			result = a * b
+		case "/":
+			if b == 0 {
+				return 0, false
+			}
+			result = int32(int64(a) / int64(b))
+		case "%":
+			if b == 0 {
+				return 0, false
+			}
+			result = int32(int64(a) % int64(b))
+		case "<<":
+			result = a << (uint32(b) & 31)
+		case ">>":
+			result = a >> (uint32(b) & 31)
+		case ">>>":
+			result = int32(uint32(a) >> (uint32(b) & 31))
+		case "&":
+			result = a & b
+		case "|":
+			result = a | b
+		case "^":
+			result = a ^ b
+		default:
+			return 0, false
+		}
+		return int64(result), true
+	}
+
+	literalKind := node.Type()
+	if literalKind != "decimal_integer_literal" && literalKind != "hex_integer_literal" &&
+		literalKind != "octal_integer_literal" && literalKind != "binary_integer_literal" {
+		return 0, false
+	}
+	literal := strings.ReplaceAll(node.Content(source), "_", "")
+	if strings.HasSuffix(literal, "l") || strings.HasSuffix(literal, "L") {
+		return 0, false
+	}
+	base := 10
+	digits := literal
+	switch literalKind {
+	case "hex_integer_literal":
+		base, digits = 16, strings.TrimPrefix(strings.TrimPrefix(literal, "0x"), "0X")
+	case "binary_integer_literal":
+		base, digits = 2, strings.TrimPrefix(strings.TrimPrefix(literal, "0b"), "0B")
+	case "octal_integer_literal":
+		base, digits = 8, strings.TrimPrefix(literal, "0")
+		if digits == "" {
+			digits = "0"
+		}
+	}
+	value, err := strconv.ParseUint(digits, base, 32)
+	if err != nil {
+		return 0, false
+	}
+	return int64(int32(uint32(value))), true
+}
+
+func ternaryCommonReferenceJavaType(leftType, rightType string, ctx Ctx) (string, bool) {
+	leftComponent, leftArray := javaArrayComponentType(leftType)
+	rightComponent, rightArray := javaArrayComponentType(rightType)
+	if leftArray || rightArray {
+		if !leftArray || !rightArray {
+			return "Object", true
+		}
+		leftPrimitive, leftPrimitiveArray := javaPrimitiveType(leftComponent)
+		rightPrimitive, rightPrimitiveArray := javaPrimitiveType(rightComponent)
+		if leftPrimitiveArray || rightPrimitiveArray {
+			if leftPrimitiveArray && rightPrimitiveArray && leftPrimitive == rightPrimitive {
+				return leftType, true
+			}
+			return "Object", true
+		}
+		componentType, known := ternaryCommonReferenceJavaType(leftComponent, rightComponent, ctx)
+		if !known {
+			return "Object", true
+		}
+		return componentType + "[]", true
+	}
+
+	leftScope := resolveClassScopeByQualifiedName(ctx, leftType)
+	rightScope := resolveClassScopeByQualifiedName(ctx, rightType)
+	if leftScope == nil || rightScope == nil {
+		return "Object", true
+	}
+	if _, assignable := javaReferenceTypeDistance(leftScope, rightScope, ctx); assignable {
+		return rightType, true
+	}
+	if _, assignable := javaReferenceTypeDistance(rightScope, leftScope, ctx); assignable {
+		return leftType, true
+	}
+
+	for candidate := leftScope; candidate != nil; candidate = ternarySuperclassScope(candidate, ctx) {
+		if _, assignable := javaReferenceTypeDistance(rightScope, candidate, ctx); assignable {
+			return ternaryClassJavaType(candidate, ctx), true
+		}
+	}
+	return "Object", true
+}
+
+func ternarySuperclassScope(scope *symbol.ClassScope, ctx Ctx) *symbol.ClassScope {
+	declarationCtx := ctx.Clone()
+	if file := findFileScopeForClassScope(scope); file != nil {
+		declarationCtx.currentFile = file
+	}
+	return resolveSuperclassScope(declarationCtx, scope)
+}
+
+func ternaryClassJavaType(scope *symbol.ClassScope, ctx Ctx) string {
+	if scope == nil || scope.Class == nil {
+		return "Object"
+	}
+	name := scope.Class.OriginalName
+	file := findFileScopeForClassScope(scope)
+	if file == nil || ctx.currentFile == nil || file.Package == "" || file.Package == ctx.currentFile.Package {
+		return name
+	}
+	return file.Package + "." + name
+}
+
 // javaNonDecimalIntegerLiteral preserves Java's signed, fixed-width meaning for
 // hexadecimal, octal, and binary literals. Unlike decimal notation, Java allows
 // the full unsigned bit pattern in these bases: 0xffffffff is the int value -1
@@ -1170,6 +1806,7 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	if operator == "=" {
 		rhsCtx := ctx.Clone()
 		rhsCtx.expectedType = lhsJavaType
+		rhsCtx.expectedTypeRoot = rhsNode
 		rhs := ParseExpr(rhsNode, source, rhsCtx)
 		rhs = coerceArgumentToExpectedType(rhs, rhsNode, lhsJavaType, ctx, source)
 		return assignmentValueCall(targetStorageType, targetValueType, targetAddress, rhs)
@@ -1877,6 +2514,29 @@ func javaArrayComponentType(javaType string) (string, bool) {
 	return strings.TrimSpace(strings.TrimSuffix(javaType, "[]")), true
 }
 
+func javaArrayCreationJavaType(node *sitter.Node, source []byte) (string, int) {
+	if node == nil || node.Type() != "array_creation_expression" {
+		return "", 0
+	}
+	typeNode := node.ChildByFieldName("type")
+	if typeNode == nil {
+		return "", 0
+	}
+	dimensions := 0
+	for _, child := range nodeutil.NamedChildrenOf(node) {
+		switch child.Type() {
+		case "dimensions_expr":
+			dimensions++
+		case "dimensions":
+			dimensions += strings.Count(child.Content(source), "[")
+		}
+	}
+	if dimensions == 0 {
+		return "", 0
+	}
+	return typeNode.Content(source) + strings.Repeat("[]", dimensions), dimensions
+}
+
 // javaInvocationConversionCost models the strict (non-varargs) portion of Java
 // method-invocation conversion. Exact primitive/reference matches cost zero;
 // legal primitive widening follows Java's byte/short/char/int/long/float/double
@@ -1889,14 +2549,43 @@ func javaInvocationConversionCost(argNode *sitter.Node, expectedType string, can
 		return 0, false, true
 	}
 
-	if argNode != nil && argNode.Type() == "null_literal" {
+	unwrappedArg := unwrapParenthesizedExpressionNode(argNode)
+	if unwrappedArg != nil && unwrappedArg.Type() == "null_literal" {
 		if _, primitive := javaPrimitiveType(expectedType); primitive {
 			return 0, false, false
 		}
 		return 32, false, true
 	}
 
-	actualType, known := inferExprJavaType(argNode, ctx, source)
+	// Overload selection happens before a parameter target is chosen. Inherited
+	// context from the invocation's enclosing return/assignment must not affect an
+	// argument's standalone type. Reference conditionals whose every arm is null
+	// retain the null type here so the normal most-specific tie-break can choose
+	// String over Object, just as it does for a direct null argument.
+	inferenceCtx := ctx.Clone()
+	inferenceCtx.expectedType = ""
+	inferenceCtx.expectedTypeRoot = nil
+	actualType, known := "", false
+	if unwrappedArg != nil && unwrappedArg.Type() == "ternary_expression" {
+		actualType, known = inferStandaloneTernaryResultJavaType(unwrappedArg, inferenceCtx, source)
+		if actualType == ternaryNullJavaType {
+			if _, primitive := javaPrimitiveType(expectedType); primitive {
+				return 0, false, false
+			}
+			return 32, false, true
+		}
+		if classifyTernaryExpression(unwrappedArg, inferenceCtx, source) == ternaryReferenceExpression &&
+			ternaryCanTargetJavaType(unwrappedArg, actualType, expectedType, inferenceCtx, source) {
+			// Continue with the standalone type when it already describes the
+			// branches; this preserves exact String and normal reference-upcast costs.
+			// A currently unknown poly expression remains eligible for the target.
+			if !known || strings.TrimSpace(actualType) == "" {
+				return 48, false, true
+			}
+		}
+	} else {
+		actualType, known = inferExprJavaType(argNode, inferenceCtx, source)
+	}
 	if !known || strings.TrimSpace(actualType) == "" {
 		// Lambdas, method references, and currently-unmodelled expressions need the
 		// selected parameter type as parsing context. Keep them eligible and let an
@@ -2331,8 +3020,17 @@ func parseArgumentListWithExpectedTypes(argsNode *sitter.Node, source []byte, ct
 		if ind < len(expectedTypes) && strings.TrimSpace(expectedTypes[ind]) != "" {
 			expectedType = expectedTypes[ind]
 			argCtx.expectedType = expectedType
+			argCtx.expectedTypeRoot = argNode
 		}
 		parsed := ParseExpr(argNode, source, argCtx)
+		// Generated String and boxed parameters use Go value types. Once overload
+		// resolution has selected such a parameter for an all-null reference
+		// conditional, use its zero value at this representation boundary so the
+		// selected call remains compilable. Local nullable storage still retains nil;
+		// preserving null through value-backed parameters requires a broader ABI.
+		if expectedType != "" && usesNullableValueStorage(expectedType) && expressionAlwaysProducesNull(argNode) {
+			parsed = zeroValueForType(javaTypeStringToGoTypeExpr(expectedType, inScopeTypeParameters(ctx), ctx))
+		}
 		args = append(args, coerceArgumentToExpectedType(parsed, argNode, expectedType, ctx, source))
 	}
 	return args
@@ -2364,6 +3062,13 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	actualType, actualKnown := inferExprJavaType(argNode, ctx, source)
 	actualPrimitive, actualIsPrimitive := javaPrimitiveType(actualType)
 	expectedPrimitive, expectedIsPrimitive := javaPrimitiveType(expectedType)
+	if actualKnown && actualIsPrimitive && !expectedIsPrimitive {
+		if boxedPrimitive, boxed := ternaryBoxedPrimitive(expectedType); boxed && boxedPrimitive == actualPrimitive {
+			if conversion := goPrimitiveConversionName(boxedPrimitive); conversion != "" {
+				return &ast.CallExpr{Fun: &ast.Ident{Name: conversion}, Args: []ast.Expr{argExpr}}
+			}
+		}
+	}
 	if actualKnown && actualIsPrimitive && expectedIsPrimitive && actualPrimitive != expectedPrimitive {
 		if _, widening := javaPrimitiveWideningDistance(actualPrimitive, expectedPrimitive); widening {
 			if conversion := goPrimitiveConversionName(expectedPrimitive); conversion != "" {
@@ -3790,6 +4495,12 @@ func convertJavaNumericOperand(expr ast.Expr, sourceType, targetType string) ast
 
 	var conversion string
 	switch targetType {
+	case "byte":
+		conversion = "int8"
+	case "short":
+		conversion = "int16"
+	case "char":
+		conversion = "rune"
 	case "int":
 		conversion = "int32"
 	case "long":
@@ -4234,6 +4945,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			return target.Content(source), true
 		}
 		return "", false
+	case "array_creation_expression":
+		javaType, dimensions := javaArrayCreationJavaType(node, source)
+		return javaType, dimensions > 0
 	case "array_access":
 		// The element type of an array access is the array's type with one
 		// dimension removed (e.g. Worker[] indexed -> Worker).
@@ -4290,6 +5004,8 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		if inner := node.NamedChild(0); inner != nil {
 			return inferExprJavaType(inner, ctx, source)
 		}
+	case "ternary_expression":
+		return inferTernaryResultJavaType(node, ctx, source)
 	case "binary_expression":
 		// Java's `+` is String concatenation when either operand is a String, so
 		// the whole expression is a String (e.g. `var g = "a" + n;` makes g a

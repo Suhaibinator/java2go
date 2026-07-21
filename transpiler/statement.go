@@ -86,7 +86,29 @@ func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	if node != nil && node.Type() == "null_literal" && strings.TrimSpace(ctx.expectedType) != "" {
 		return zeroValueForType(javaTypeStringToGoTypeExpr(ctx.expectedType, inScopeTypeParameters(ctx), ctx))
 	}
-	return ParseExpr(node, source, ctx)
+	value := ParseExpr(node, source, ctx)
+	value = coerceArgumentToExpectedType(value, node, ctx.expectedType, ctx, source)
+	return requireNullableValueBackedExpression(value, node, ctx.expectedType, ctx, source)
+}
+
+// requireNullableValueBackedExpression converts an interface-backed nullable
+// String/boxed local back to the concrete Go value used at a method boundary.
+// A selected null consequently raises the same kind of failure as Java
+// unboxing/dereferencing; modelling nullable boxed return values themselves
+// requires a repository-wide representation change beyond local storage.
+func requireNullableValueBackedExpression(value ast.Expr, node *sitter.Node, expectedType string, ctx Ctx, source []byte) ast.Expr {
+	if !usesNullableValueStorage(expectedType) ||
+		(!isNullableValueBackedLocal(node, ctx, source) && !expressionCanProduceNull(node)) {
+		return value
+	}
+	base, _ := parseJavaTypeString(expectedType)
+	if stripJavaQualifier(base) == "String" {
+		return stdjavaCall(ctx, "StringRequireNonNull", value)
+	}
+	return &ast.TypeAssertExpr{
+		X:    value,
+		Type: javaTypeStringToGoTypeExpr(expectedType, inScopeTypeParameters(ctx), ctx),
+	}
 }
 
 // inferEnhancedForElementJavaType resolves the Java type inferred by `var` in
@@ -301,20 +323,18 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		ctx.lastType = variableType
 		// Set expected type for diamond operator inference
 		ctx.expectedType = node.ChildByFieldName("type").Content(source)
+		initializerNode := variableDeclarator.ChildByFieldName("value")
+		if initializerNode == nil && variableDeclarator.NamedChildCount() > 1 {
+			initializerNode = variableDeclarator.NamedChild(1)
+		}
+		ctx.expectedTypeRoot = initializerNode
 
 		declaration := ParseStmt(variableDeclarator, source, ctx).(*ast.AssignStmt)
 
-		// Now, if a variable is assigned to `null`, we can't infer its type, so
-		// don't throw out the type information associated with it
-		var containsNull bool
-
-		// Go through the values and see if there is a `null_literal`
-		for _, child := range nodeutil.NamedChildrenOf(variableDeclarator) {
-			if child.Type() == "null_literal" {
-				containsNull = true
-				break
-			}
-		}
+		// A nullable String or boxed primitive needs an interface-backed local even
+		// when null is nested inside a conditional initializer rather than appearing
+		// as the declarator's direct value.
+		containsNull := expressionCanProduceNull(initializerNode)
 
 		names := make([]*ast.Ident, len(declaration.Lhs))
 		for ind, decl := range declaration.Lhs {
@@ -335,10 +355,16 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// If the declaration contains null, declare it with the `var` keyword instead
 		// of implicitly
 		if containsNull {
-			if usesNullableValueStorage(originalType) {
-				for _, name := range names {
+			for _, name := range names {
+				if local := ctx.localScope.FindVariable(name.Name); local != nil && usesNullableValueStorage(local.OriginalType) {
 					markLocalVariableNullable(ctx, name.Name)
 				}
+			}
+			// Java `var` derives its static type from the conditional. Its generated
+			// IIFE already has the necessary pointer/interface result type, so retain
+			// the short declaration rather than trying to spell `var` as a Go type.
+			if isVarKeywordType(strings.TrimSpace(originalType)) {
+				return declaration
 			}
 			return &ast.DeclStmt{
 				Decl: &ast.GenDecl{
@@ -425,6 +451,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		rhsCtx := ctx.Clone()
 		if lhsJavaType, ok := inferExprJavaType(lhsNode, ctx, source); ok {
 			rhsCtx.expectedType = lhsJavaType
+			rhsCtx.expectedTypeRoot = rhsNode
 		}
 		assignVal := ParseExpr(rhsNode, source, rhsCtx)
 		if lhsJavaType := strings.TrimSpace(rhsCtx.expectedType); lhsJavaType != "" {
@@ -590,6 +617,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				returnCtx := ctx.Clone()
 				if ctx.localScope != nil && strings.TrimSpace(ctx.localScope.OriginalType) != "" {
 					returnCtx.expectedType = ctx.localScope.OriginalType
+					returnCtx.expectedTypeRoot = node.NamedChild(0)
 				}
 				stmts = append(stmts, &ast.AssignStmt{
 					Lhs: []ast.Expr{&ast.Ident{Name: ctx.tryReturnTarget.ValueName}},
@@ -612,6 +640,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		returnCtx := ctx.Clone()
 		if ctx.localScope != nil && strings.TrimSpace(ctx.localScope.OriginalType) != "" {
 			returnCtx.expectedType = ctx.localScope.OriginalType
+			returnCtx.expectedTypeRoot = node.NamedChild(0)
 		}
 		return &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(node.NamedChild(0), source, returnCtx)}}
 	case "labeled_statement":

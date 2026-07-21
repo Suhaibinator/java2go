@@ -51,11 +51,6 @@ var knownSignatureMarkers = []struct {
 	{"overflows:int64", "K16(new) negative long-min literal mis-emitted (ROADMAP §6, task #14)"},
 	// K17(proposed): explicit upcast (Super) sub emits a failing Go type assertion.
 	{"interface conversion", "K17(new) upcast emits failing type assertion (ROADMAP §4/§6, task #14)"},
-	// K19(proposed): ternary ?: lowered to stdjava.Ternary(cond,a,b) call, which
-	// eagerly evaluates BOTH branches (Java short-circuits). Surfaces as the
-	// untaken branch panicking (slice/index out of range, NPE, etc.).
-	{"slice V out of range", "K19(new) ternary eagerly evaluates both branches (ROADMAP §6, task #14)"},
-	{"index out of range", "K19(new) ternary eagerly evaluates both branches (ROADMAP §6, task #14)"},
 }
 
 // IsKnown reports whether a divergence signature matches an already-tracked open
