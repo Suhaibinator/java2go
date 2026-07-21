@@ -4,7 +4,7 @@ import parity.allocation.kernel.AllocationGcKernel;
 import parity.allocation.kernel.AllocationReport;
 
 public class AllocationGcApplication {
-    private static final int PHASES = 72;
+    private static final int PHASES = 3456;
     private static final int EPHEMERAL_BATCHES = 10;
     private static final int BATCH_SIZE = 1024;
     private static final int SCRATCH_WORDS = 28;

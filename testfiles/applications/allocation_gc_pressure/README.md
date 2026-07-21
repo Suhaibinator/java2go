@@ -15,7 +15,7 @@ APIs, so the same source can be transpiled and compared fairly.
   a flat collection of unrelated objects.
 - Traverse and mutate every live cohort after each phase, ensuring the retained
   graph is semantically observable and cannot be discarded as dead allocation.
-- Rotate six retained slots over 72 phases. Replacing a slot releases an older
+- Rotate six retained slots over 3,456 phases. Replacing a slot releases an older
   cyclic graph while newer generations remain live, exercising mixed object
   lifetimes and repeated collector reclamation.
 - Traverse every retained node and payload at the end, reducing all live state
@@ -26,7 +26,16 @@ checksums only. It never reads clocks, random sources, files, stdin, the
 environment, the network, or implementation-specific garbage-collector data.
 There is no explicit `System.gc()` call and no timing output.
 
+At the configured scale, 35,389,440 short-lived records pass through the
+bounded batch window while only six cyclic cohorts remain retained. Three
+calibration runs on an Apple M4 Max took 11.92–12.28 seconds for Java and
+11.40–11.61 seconds for generated Go. Observed peak RSS stayed below 1.28 GiB
+for Java and 15 MiB for generated Go. These measurements document workload
+scale; they are not machine-specific pass/fail thresholds.
+
 `expected.stdout` is the exact Java 21 oracle. The application parity harness
 also requires the generated Go program to compile and match it byte for byte.
 The external benchmark harness compiles first, runs an untimed validation pass,
-then measures three fresh Java or generated-Go processes per benchmark sample.
+then measures one fresh Java or generated-Go process per benchmark sample. The
+long-running payload makes each `-count` sample an independent process-level
+measurement without multiplying a single benchmark operation unnecessarily.
