@@ -4361,6 +4361,14 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 	}
 
 	body := ParseStmt(bodyNode, source, methodCtx).(*ast.BlockStmt)
+	// Synthetic local/anonymous methods bypass ParseDecl, where ordinary
+	// source-backed instance methods receive their Java nil-invocation boundary.
+	// Mirror that entry guard here: Go evaluates the receiver and arguments before
+	// entering the method, then the guard prevents a nil pointer receiver from
+	// executing a body that happens not to dereference it.
+	if !methodScope.IsStatic {
+		body.List = append([]ast.Stmt{instanceMethodNilReceiverGuard(recvName)}, body.List...)
+	}
 
 	return &ast.FuncDecl{
 		Name: &ast.Ident{Name: methodScope.Name},

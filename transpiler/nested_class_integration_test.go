@@ -515,6 +515,81 @@ func TestLocalMutualRecursion(t *testing.T) {
 `)
 }
 
+func TestLocalClass_NullReceiverEvaluatesArgumentsBeforeNPE(t *testing.T) {
+	src := `
+public class LocalNullReceiverProgram {
+    static int effects;
+    static int mark() {
+        effects = effects * 10 + 2;
+        return 7;
+    }
+    public static String run() {
+        class LocalValue {
+            String ping(int ignored) { return "body"; }
+        }
+        LocalValue value = new LocalValue();
+        value = null;
+        effects = 0;
+        try {
+            return value.ping(mark()) + ":" + effects;
+        } catch (NullPointerException expected) {
+            return "npe:" + effects;
+        }
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestLocalNullReceiverOrder(t *testing.T) {
+	if got := Run(); got != "npe:2" {
+		t.Fatalf("Run() = %q, want npe:2", got)
+	}
+}
+`)
+}
+
+func TestAnonymousClass_NullReceiverEvaluatesArgumentsBeforeNPE(t *testing.T) {
+	src := `
+public class AnonymousNullReceiverProgram {
+    static int effects;
+    static int mark() {
+        effects = effects * 10 + 2;
+        return 7;
+    }
+    public static String run() {
+        var value = new Object() {
+            String ping(int ignored) { return "body"; }
+        };
+        value = null;
+        effects = 0;
+        try {
+            return value.ping(mark()) + ":" + effects;
+        } catch (NullPointerException expected) {
+            return "npe:" + effects;
+        }
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestAnonymousNullReceiverOrder(t *testing.T) {
+	if got := Run(); got != "npe:2" {
+		t.Fatalf("Run() = %q, want npe:2", got)
+	}
+}
+`)
+}
+
 // A top-level class whose name collides with a nested class's concatenated name
 // (Outer + Inner == OuterInner) must be disambiguated so the generated Go has no
 // duplicate type/constructor declarations.

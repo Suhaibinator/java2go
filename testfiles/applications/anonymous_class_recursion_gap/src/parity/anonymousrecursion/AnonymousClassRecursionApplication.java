@@ -5,6 +5,13 @@ abstract class RecursiveAction {
 }
 
 public final class AnonymousClassRecursionApplication {
+    static int effects;
+
+    static int mark() {
+        effects = effects * 10 + 2;
+        return 7;
+    }
+
     static int factorial(int value) {
         RecursiveAction action = new RecursiveAction() {
             int apply(int current) {
@@ -14,7 +21,23 @@ public final class AnonymousClassRecursionApplication {
         return action.apply(value);
     }
 
+    static String nullReceiverOrder() {
+        var value = new Object() {
+            String ping(int ignored) {
+                return "body";
+            }
+        };
+        value = null;
+        effects = 0;
+        try {
+            return value.ping(mark()) + ":" + effects;
+        } catch (NullPointerException expected) {
+            return "npe:" + effects;
+        }
+    }
+
     public static void main(String[] args) {
         System.out.println(factorial(6));
+        System.out.println(nullReceiverOrder());
     }
 }

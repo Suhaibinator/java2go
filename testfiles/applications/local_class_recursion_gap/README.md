@@ -7,4 +7,8 @@ as bare `down()` and generated Go did not compile. Synthesized methods now carry
 their Java method identity, return type, parameters, and complete class method
 table, so the same application matches Java byte for byte.
 
+The application also nulls a constructed local-class receiver, passes a
+side-effecting argument, and verifies that the argument runs before
+`NullPointerException` while the synthetic method body does not execute.
+
 The fixture is deterministic and has no external inputs or dependencies.
