@@ -45,10 +45,73 @@ func collidesWithGoFuncName(method *symbol.Definition) bool {
 }
 
 func ResolveFile(file parsing.SourceFile) {
-	ResolveClass(file.Symbols.BaseClass, file)
-	for _, subclass := range file.Symbols.BaseClass.Subclasses {
-		ResolveClass(subclass, file)
+	if file.Symbols == nil {
+		return
 	}
+	// Complete ordinary member resolution for the entire file before allocating
+	// synthesized names. A Java source may contain multiple top-level classes and
+	// arbitrarily deep nested classes; helper naming must observe their final Go
+	// member names, not the pre-resolution spellings.
+	for _, top := range file.Symbols.TopLevelClasses {
+		resolveClassTree(top, file)
+	}
+	resolveAffineArrayViewHelperNames(file)
+}
+
+func resolveClassTree(class *symbol.ClassScope, file parsing.SourceFile) {
+	if class == nil {
+		return
+	}
+	ResolveClass(class, file)
+	for _, nested := range class.Subclasses {
+		resolveClassTree(nested, file)
+	}
+}
+
+func packageHasOtherStaticFieldName(packageScope *symbol.PackageScope, current *symbol.Definition, name string) bool {
+	if packageScope == nil {
+		return false
+	}
+	for _, fileScope := range packageScope.Files {
+		if fileScope == nil {
+			continue
+		}
+		for _, top := range fileScope.TopLevelClasses {
+			found := false
+			var visit func(*symbol.ClassScope)
+			visit = func(class *symbol.ClassScope) {
+				if class == nil || found {
+					return
+				}
+				for _, field := range class.Fields {
+					if field != nil && field != current && field.IsStatic && field.Name == name {
+						found = true
+						return
+					}
+				}
+				for _, nested := range class.Subclasses {
+					visit(nested)
+				}
+			}
+			visit(top)
+			if found {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func classHasOtherFieldName(class *symbol.ClassScope, current *symbol.Definition, name string) bool {
+	if class == nil {
+		return false
+	}
+	for _, field := range class.Fields {
+		if field != nil && field != current && field.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
@@ -64,7 +127,8 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 
 		// Rename the field if its name conflits with any keyword
 		for i := 0; symbol.IsReserved(field.Name) ||
-			len(packageScope.ExcludeFile(class.Class.Name).FindStaticField().ByName(field.Name)) > 0; i++ {
+			classHasOtherFieldName(class, field, field.Name) ||
+			(field.IsStatic && packageHasOtherStaticFieldName(packageScope, field, field.Name)); i++ {
 			field.Rename(field.Name + strconv.Itoa(i))
 		}
 	}

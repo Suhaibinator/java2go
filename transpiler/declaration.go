@@ -247,6 +247,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if setterDecl := generateClassSelfSetter(ctx); setterDecl != nil {
 			declarations = append(declarations, setterDecl)
 		}
+		declarations = append(declarations, generateAffineArrayViewDecls(ctx)...)
 
 		if helperDecl := buildInstanceFieldInitializerMethodDecl(ctx, instanceFieldInitializers); helperDecl != nil {
 			declarations = append(declarations, helperDecl)
