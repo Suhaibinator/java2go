@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.statichiding.StaticMethodHidingApplication",
+  "module_path": "parity/statichiding",
+  "status": "known_gap",
+  "known_gap": "Static methods hidden by two Java classes share one generated Go package-level function name and are redeclared.",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "kind redeclared in this block"
+}

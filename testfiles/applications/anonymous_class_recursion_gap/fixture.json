@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.anonymousrecursion.AnonymousClassRecursionApplication",
+  "module_path": "parity/anonymousrecursion",
+  "status": "known_gap",
+  "known_gap": "A recursively invoked override in a synthesized anonymous Java subclass loses its receiver and is emitted as an undefined package function.",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "undefined: apply"
+}
