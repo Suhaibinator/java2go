@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
+	"strings"
 	"testing"
 )
 
@@ -80,6 +82,35 @@ func TestApplicationBenchmarkMetadata(t *testing.T) {
 	fixtures := discoverApplicationFixtures(t, moduleRoot(t))
 	if benchmarks := discoverApplicationBenchmarks(t, fixtures); len(benchmarks) == 0 {
 		t.Fatal("no benchmark.json files found under testfiles/applications")
+	}
+}
+
+func TestDeterministicApplicationEnvStripsRuntimeTuning(t *testing.T) {
+	for key, value := range map[string]string{
+		"GOGC":       "off",
+		"GOMEMLIMIT": "64MiB",
+		"GODEBUG":    "gctrace=1",
+		"GOMAXPROCS": "1",
+	} {
+		t.Setenv(key, value)
+	}
+
+	got := make(map[string]string)
+	for _, pair := range deterministicApplicationEnv(nil) {
+		key, value, ok := strings.Cut(pair, "=")
+		if ok {
+			got[key] = value
+		}
+	}
+	for _, key := range []string{"GOGC", "GOMEMLIMIT", "GODEBUG", "GOMAXPROCS"} {
+		if _, inherited := got[key]; inherited {
+			t.Fatalf("deterministic environment inherited %s", key)
+		}
+	}
+
+	overridden := deterministicApplicationEnv(map[string]string{"GOGC": "50"})
+	if !slices.Contains(overridden, "GOGC=50") {
+		t.Fatalf("explicit runtime override missing from %v", overridden)
 	}
 }
 

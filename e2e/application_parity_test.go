@@ -504,6 +504,14 @@ func deterministicApplicationEnv(overrides map[string]string) []string {
 	delete(values, "JDK_JAVAC_OPTIONS")
 	delete(values, "_JAVA_OPTIONS")
 	delete(values, "CLASSPATH")
+	// Host-level Go runtime tuning would make parity runs and comparative
+	// benchmarks depend on the invoking shell. Both generated binaries therefore
+	// run with Go's documented defaults unless a benchmark explicitly overrides a
+	// setting here.
+	delete(values, "GOGC")
+	delete(values, "GOMEMLIMIT")
+	delete(values, "GODEBUG")
+	delete(values, "GOMAXPROCS")
 	values["LANG"] = "C"
 	values["LC_ALL"] = "C"
 	values["TZ"] = "UTC"
