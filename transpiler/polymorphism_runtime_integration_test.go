@@ -147,6 +147,40 @@ func TestConstructorVirtualDispatch(t *testing.T) {
 `)
 }
 
+func TestPolymorphismRuntime_InstanceFieldInitializerCallsMostDerivedOverride(t *testing.T) {
+	src := `
+class InitializerDispatchBase {
+    int observed = read();
+    InitializerDispatchBase() {}
+    int read() { return -1; }
+}
+class InitializerDispatchChild extends InitializerDispatchBase {
+    int ready = 41;
+    InitializerDispatchChild() { super(); }
+    int read() { return ready; }
+}
+public class InitializerDispatchProgram {
+    public static String run() {
+        InitializerDispatchChild value = new InitializerDispatchChild();
+        return value.observed + ":" + value.ready;
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestInstanceFieldInitializerDispatch(t *testing.T) {
+	if got := Run(); got != "0:41" {
+		t.Fatalf("Run() = %q, want %q", got, "0:41")
+	}
+}
+`)
+}
+
 func TestPolymorphismRuntime_InheritedInterfaceDefaultIsInitialized(t *testing.T) {
 	src := `
 interface ParentDefault {

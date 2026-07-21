@@ -209,6 +209,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fields.List = append(fields.List, field)
 					if fieldValueNode != nil {
 						valueCtx := ctx.Clone()
+						// Instance field initializers execute as if they were part of an
+						// instance method. They can therefore make unqualified instance
+						// calls, and those calls use normal Java virtual dispatch even
+						// while a superclass constructor is still running. The generated
+						// assignments live in __java2goInitFields, whose receiver is
+						// already wired to the most-derived object.
+						valueCtx.localScope = &symbol.Definition{OriginalName: fieldInitMethodName}
 						valueCtx.expectedType = fieldDef.OriginalType
 						valueCtx.expectedTypeRoot = fieldValueNode
 						instanceFieldInitializers = append(instanceFieldInitializers, &ast.AssignStmt{
