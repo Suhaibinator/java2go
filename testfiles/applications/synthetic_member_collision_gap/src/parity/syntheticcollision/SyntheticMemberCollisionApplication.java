@@ -3,7 +3,7 @@ package parity.syntheticcollision;
 public final class SyntheticMemberCollisionApplication {
     static int evaluate() {
         class LocalValue {
-            int value = 7;
+            int value;
 
             int value() {
                 return value;
@@ -11,7 +11,8 @@ public final class SyntheticMemberCollisionApplication {
         }
 
         LocalValue local = new LocalValue();
-        return local.value();
+        local.value = 7;
+        return local.value * 10 + local.value();
     }
 
     public static void main(String[] args) {

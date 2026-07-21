@@ -322,11 +322,13 @@ func findJavaPackageForClassScope(scope *symbol.ClassScope) string {
 			continue
 		}
 		for _, file := range pkg.Files {
-			if file == nil || file.BaseClass == nil {
+			if file == nil {
 				continue
 			}
-			if classScopeContains(file.BaseClass, scope) {
-				return pkgName
+			for _, top := range file.TopLevelClasses {
+				if classScopeContains(top, scope) {
+					return pkgName
+				}
 			}
 		}
 	}
@@ -342,8 +344,13 @@ func findFileScopeForClassScope(scope *symbol.ClassScope) *symbol.FileScope {
 			continue
 		}
 		for _, file := range pkg.Files {
-			if file != nil && file.BaseClass != nil && classScopeContains(file.BaseClass, scope) {
-				return file
+			if file == nil {
+				continue
+			}
+			for _, top := range file.TopLevelClasses {
+				if classScopeContains(top, scope) {
+					return file
+				}
 			}
 		}
 	}

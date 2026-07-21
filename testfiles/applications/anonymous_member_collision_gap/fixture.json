@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.anonymouscollision.AnonymousMemberCollisionApplication",
+  "module_path": "parity/anonymouscollision",
+  "status": "known_gap",
+  "known_gap": "An exact anonymous class type may expose a field and method with the same Java name, but generated Go puts both in one selector namespace without retaining the synthetic type at use sites for renaming.",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "field and method with the same name score"
+}

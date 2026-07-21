@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.localfieldinit.LocalClassFieldInitializerApplication",
+  "module_path": "parity/localfieldinit",
+  "status": "known_gap",
+  "known_gap": "Declared field initializers on a method-local class are omitted instead of running in declaration order during construction.",
+  "expected_failure_stage": "output",
+  "expected_failure_contains": "--- quoted go stdout ---\n\"0:0:0:14\\n\""
+}

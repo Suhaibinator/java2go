@@ -94,3 +94,178 @@ func TestStaticHidingRuntime(t *testing.T) {
 }
 `)
 }
+
+func TestResolveFile_FieldMethodNamespacesRemainDistinctAtRuntime(t *testing.T) {
+	src := `
+class InstanceMemberCollision {
+    int value;
+
+    InstanceMemberCollision(int value) {
+        this.value = value;
+    }
+
+    int value() {
+        return value;
+    }
+
+    int value(int increment) {
+        return value + increment;
+    }
+}
+
+class StaticSameClassCollision {
+    static int score = 5;
+
+    static int score() {
+        return score + 1;
+    }
+
+    static int evaluate() {
+        return score * 10 + score();
+    }
+}
+
+class StaticFieldOwner {
+    static int token = 3;
+
+    static int read() {
+        return token;
+    }
+}
+
+class StaticMethodOwner {
+    static int token() {
+        return 4;
+    }
+}
+
+public class MemberCollisionProgram {
+    public static String run() {
+        InstanceMemberCollision value = new InstanceMemberCollision(7);
+        return value.value + ":" + value.value() + ":" + value.value(1)
+            + ":" + StaticSameClassCollision.evaluate()
+            + ":" + StaticFieldOwner.read() + ":" + StaticMethodOwner.token();
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestMemberNamespaceRuntime(t *testing.T) {
+	if got := Run(); got != "7:7:8:56:3:4" {
+		t.Fatalf("Run() = %q, want 7:7:8:56:3:4", got)
+	}
+}
+`)
+}
+
+func TestResolveFile_PromotedFieldMethodNamespacesRemainDistinctAtRuntime(t *testing.T) {
+	src := `
+class MethodChild extends FieldBase {
+    int value() {
+        return 4;
+    }
+
+    int observe() {
+        return value * 10 + value();
+    }
+}
+
+class FieldChild extends MethodBase {
+    int score = 6;
+
+    int observe() {
+        return score * 10 + score();
+    }
+}
+
+class FieldBase {
+    int value = 3;
+}
+
+class MethodBase {
+    int score() {
+        return 5;
+    }
+}
+
+public class PromotedMemberCollisionProgram {
+    public static String run() {
+        return new MethodChild().observe() + ":" + new FieldChild().observe();
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestPromotedMemberNamespaceRuntime(t *testing.T) {
+	if got := Run(); got != "34:65" {
+		t.Fatalf("Run() = %q, want 34:65", got)
+	}
+}
+`)
+}
+
+func TestResolveFile_InterfaceDefaultsAndCarriersRemainDistinctAtRuntime(t *testing.T) {
+	src := `
+interface DefaultValue {
+    default int value() {
+        return 4;
+    }
+}
+
+class DefaultFieldCollision implements DefaultValue {
+    int value = 3;
+
+    int observe() {
+        return value * 10 + value();
+    }
+}
+
+interface Token {
+    default int read() {
+        return 2;
+    }
+}
+
+class CarrierNameCollision implements Token {
+    int tokenDefaults = 3;
+
+    int tokenDefaults() {
+        return 4;
+    }
+
+    String observe() {
+        return tokenDefaults + ":" + tokenDefaults() + ":" + read();
+    }
+}
+
+public class InterfaceMemberCollisionProgram {
+    public static String run() {
+        return new DefaultFieldCollision().observe() + ":"
+            + new CarrierNameCollision().observe();
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestInterfaceMemberNamespaceRuntime(t *testing.T) {
+	if got := Run(); got != "34:3:4:2" {
+		t.Fatalf("Run() = %q, want 34:3:4:2", got)
+	}
+}
+`)
+}

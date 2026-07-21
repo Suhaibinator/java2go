@@ -557,6 +557,43 @@ func TestLocalStaticRuntime(t *testing.T) {
 `)
 }
 
+func TestLocalClass_FieldAndOverloadedMethodsMayShareJavaName(t *testing.T) {
+	src := `
+public class LocalMemberCollisionProgram {
+    public static int run() {
+        class LocalValue {
+            int value;
+
+            int value() {
+                return value;
+            }
+
+            int value(int increment) {
+                return value + increment;
+            }
+        }
+
+        LocalValue local = new LocalValue();
+        local.value = 7;
+        return local.value * 100 + local.value() * 10 + local.value(1);
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestLocalMemberNamespaceRuntime(t *testing.T) {
+	if got := Run(); got != 778 {
+		t.Fatalf("Run() = %d, want 778", got)
+	}
+}
+`)
+}
+
 func TestLocalClass_NullReceiverEvaluatesArgumentsBeforeNPE(t *testing.T) {
 	src := `
 public class LocalNullReceiverProgram {

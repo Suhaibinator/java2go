@@ -4245,6 +4245,19 @@ func synthAnonClassScope(
 		}
 	}
 	usedMethodNames := map[string]struct{}{}
+	if keepOriginalMethodNames {
+		// Local-class instance members share one selector namespace after lowering
+		// to Go even though Java fields and methods do not. Reserve every generated
+		// field spelling before allocating method overloads. Local-class call sites
+		// resolve through this synthetic scope, so they follow any renamed method.
+		// Anonymous-class call sites still require separate exact-type tracking and
+		// intentionally retain their previous spellings here.
+		for _, field := range scope.Fields {
+			if field != nil && field.Name != "" {
+				usedMethodNames[field.Name] = struct{}{}
+			}
+		}
+	}
 	for _, methodNode := range methodNodes {
 		method := synthAnonClassMethodDefinition(methodNode, source, keepOriginalMethodNames)
 		if method == nil {

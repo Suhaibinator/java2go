@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.localconstructor.LocalClassConstructorApplication",
+  "module_path": "parity/localconstructor",
+  "status": "known_gap",
+  "known_gap": "Method-local class constructor declarations and construction arguments are omitted, dropping argument evaluation, constructor effects, and field assignments.",
+  "expected_failure_stage": "output",
+  "expected_failure_contains": "--- quoted go stdout ---\n\"0:0\\n\""
+}
