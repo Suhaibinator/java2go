@@ -917,6 +917,28 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		leftNode := node.Child(0)
 		rightNode := node.Child(2)
+		leftNull := isStaticallyNullReference(leftNode)
+		rightNull := isStaticallyNullReference(rightNode)
+		if (operator == "==" || operator == "!=") && leftNull && rightNull {
+			result := "false"
+			if operator == "==" {
+				result = "true"
+			}
+			return &ast.Ident{Name: result}
+		}
+		if (operator == "==" || operator == "!=") && (leftNull || rightNull) {
+			otherNode := rightNode
+			if rightNull {
+				otherNode = leftNode
+			}
+			if javaType, ok := inferExprJavaType(otherNode, ctx, source); ok && isJavaStringType(javaType) {
+				comparison := ast.Expr(stdjavaCall(ctx, "StringIsNull", ParseExpr(otherNode, source, ctx)))
+				if operator == "!=" {
+					comparison = &ast.UnaryExpr{Op: token.NOT, X: comparison}
+				}
+				return comparison
+			}
+		}
 		leftExpr := ParseExpr(leftNode, source, ctx)
 		rightExpr := ParseExpr(rightNode, source, ctx)
 		if operator == "+" && (isStringLikeExprNode(leftNode, ctx, source) || isStringLikeExprNode(rightNode, ctx, source) || isFmtSprintfCall(leftExpr)) {
@@ -960,6 +982,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		targetJavaType := node.NamedChild(0).Content(source)
 		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
 		valueNode := node.NamedChild(1)
+		if isJavaStringType(targetJavaType) && isStaticallyNullReference(valueNode) {
+			return javaNullStringExpr()
+		}
 		valueExpr := ParseExpr(valueNode, source, ctx)
 		typeAssert := func() ast.Expr {
 			return &ast.TypeAssertExpr{
@@ -1124,6 +1149,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			X: &ast.Ident{Name: node.Content(source)},
 		}
 	case "null_literal":
+		if isJavaStringType(ctx.expectedType) {
+			return javaNullStringExpr()
+		}
 		return &ast.Ident{Name: "nil"}
 	case "decimal_integer_literal":
 		literal := node.Content(source)
@@ -1241,6 +1269,9 @@ func ternaryExpressionParts(node *sitter.Node) (condition, consequence, alternat
 
 func parseTernaryBranch(node *sitter.Node, resultJavaType string, source []byte, ctx Ctx) ast.Expr {
 	if unwrapped := unwrapParenthesizedExpressionNode(node); unwrapped != nil && unwrapped.Type() == "null_literal" {
+		if isJavaStringType(resultJavaType) {
+			return javaNullStringExpr()
+		}
 		return &ast.Ident{Name: "nil"}
 	}
 
@@ -1274,6 +1305,11 @@ func parseTernaryBranch(node *sitter.Node, resultJavaType string, source []byte,
 }
 
 func ternaryResultGoType(resultJavaType string, consequence, alternative *sitter.Node, ctx Ctx) ast.Expr {
+	// String null is carried by the concrete sentinel, so every String arm is
+	// coerced to the ordinary string ABI rather than widening the IIFE to any.
+	if isJavaStringType(resultJavaType) {
+		return javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx)
+	}
 	// String and boxed primitives normally use Go value types, but a selected
 	// Java null must remain distinguishable from their zero values. Use an
 	// interface result when any nested conditional arm can produce literal null;
@@ -1297,6 +1333,9 @@ func expressionCanProduceNull(node *sitter.Node) bool {
 	if node.Type() == "null_literal" {
 		return true
 	}
+	if node.Type() == "cast_expression" && node.NamedChildCount() > 1 {
+		return expressionCanProduceNull(node.NamedChild(1))
+	}
 	if node.Type() != "ternary_expression" {
 		return false
 	}
@@ -1312,11 +1351,49 @@ func expressionAlwaysProducesNull(node *sitter.Node) bool {
 	if node.Type() == "null_literal" {
 		return true
 	}
+	if node.Type() == "cast_expression" && node.NamedChildCount() > 1 {
+		return expressionAlwaysProducesNull(node.NamedChild(1))
+	}
 	if node.Type() != "ternary_expression" {
 		return false
 	}
 	_, consequence, alternative := ternaryExpressionParts(node)
 	return expressionAlwaysProducesNull(consequence) && expressionAlwaysProducesNull(alternative)
+}
+
+// isStaticallyNullReference recognizes syntax that denotes the null reference
+// without evaluating any user code. It intentionally excludes conditionals:
+// even when both branches are null, their condition can have side effects and
+// must not be folded away by equality lowering.
+func isStaticallyNullReference(node *sitter.Node) bool {
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil {
+		return false
+	}
+	if node.Type() == "null_literal" {
+		return true
+	}
+	return node.Type() == "cast_expression" && node.NamedChildCount() > 1 && isStaticallyNullReference(node.NamedChild(1))
+}
+
+// expressionUsesNullableValueStorage tracks interface-backed nullable locals
+// through parentheses and conditional selection. String ABI boundaries coerce
+// these values to the concrete null sentinel; boxed primitives retain their
+// existing assertion/unboxing behavior.
+func expressionUsesNullableValueStorage(node *sitter.Node, ctx Ctx, source []byte) bool {
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil {
+		return false
+	}
+	if expressionCanProduceNull(node) || isNullableValueBackedLocal(node, ctx, source) {
+		return true
+	}
+	if node.Type() != "ternary_expression" {
+		return false
+	}
+	_, consequence, alternative := ternaryExpressionParts(node)
+	return expressionUsesNullableValueStorage(consequence, ctx, source) ||
+		expressionUsesNullableValueStorage(alternative, ctx, source)
 }
 
 const ternaryNullJavaType = "<java-null>"
@@ -1842,6 +1919,14 @@ func signedIntegerConstant(value int64) ast.Expr {
 	}
 }
 
+// javaNullStringExpr is the concrete-string representation shared with
+// stdjava.NullString. Keeping the literal at allocation/ABI boundaries avoids
+// adding a runtime import to classes that merely declare a String field and
+// never perform an operation that observes null.
+func javaNullStringExpr() ast.Expr {
+	return &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote("\xffjava2go:null-string\x00")}
+}
+
 // lowerAssignmentExpression implements Java assignments that occur in value
 // position. Go assignments are statements, so the generated expression uses a
 // small immediately-invoked closure and returns the stored value.
@@ -1904,9 +1989,7 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	oldValue := ast.Expr(&ast.Ident{Name: "old"})
 	if nullableValueStorage {
 		lhsBase, _ := parseJavaTypeString(lhsJavaType)
-		if stripJavaQualifier(lhsBase) == "String" {
-			oldValue = stdjavaCall(ctx, "StringRequireNonNull", oldValue)
-		} else {
+		if stripJavaQualifier(lhsBase) != "String" {
 			oldValue = &ast.TypeAssertExpr{X: oldValue, Type: targetValueType}
 		}
 	}
@@ -2005,13 +2088,13 @@ func compoundAssignmentValue(operator string, old, rhs ast.Expr, lhsJavaType, rh
 		var rhsString ast.Expr
 		switch rhsBase {
 		case "String":
-			rhsString = rhs
+			rhsString = stdjavaCall(ctx, "StringValueOf", rhs)
 		case "char", "Character":
 			rhsString = &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{rhs}}
 		default:
 			rhsString = stdjavaCall(ctx, "StringValueOf", rhs)
 		}
-		return &ast.BinaryExpr{X: old, Op: token.ADD, Y: rhsString}, true
+		return &ast.BinaryExpr{X: stdjavaCall(ctx, "StringValueOf", old), Op: token.ADD, Y: rhsString}, true
 	}
 
 	if lhsBase == "boolean" || lhsBase == "Boolean" {
@@ -2160,11 +2243,22 @@ func javaStringConversionExpr(node *sitter.Node, expr ast.Expr, ctx Ctx, source 
 	if isCharTypedExprNode(node, ctx, source) {
 		return &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{expr}}
 	}
+	if isNullableStringStorageExpression(node, ctx, source) {
+		return stdjavaCall(ctx, "StringValueOf", expr)
+	}
 	if node != nil && node.Type() != "null_literal" && !isNullableValueBackedLocal(node, ctx, source) {
 		if javaType, ok := inferExprJavaType(node, ctx, source); ok {
 			base, _ := parseJavaTypeString(javaType)
 			switch stripJavaQualifier(base) {
-			case "String", "byte", "Byte", "short", "Short", "int", "Integer", "long", "Long", "boolean", "Boolean":
+			case "String":
+				// Any String reference can carry the concrete null sentinel after a
+				// field read, method return, or parameter pass. Literals are the one
+				// representation that is statically known non-null.
+				if node.Type() == "string_literal" {
+					return expr
+				}
+				return stdjavaCall(ctx, "StringValueOf", expr)
+			case "byte", "Byte", "short", "Short", "int", "Integer", "long", "Long", "boolean", "Boolean":
 				// fmt uses Java-compatible spelling for these concrete values.
 				return expr
 			}
@@ -3386,13 +3480,14 @@ func parseArgumentListWithExpectedTypes(argsNode *sitter.Node, source []byte, ct
 			argCtx.expectedTypeRoot = argNode
 		}
 		parsed := ParseExpr(argNode, source, argCtx)
-		// Generated String and boxed parameters use Go value types. Once overload
-		// resolution has selected such a parameter for an all-null reference
-		// conditional, use its zero value at this representation boundary so the
-		// selected call remains compilable. Local nullable storage still retains nil;
-		// preserving null through value-backed parameters requires a broader ABI.
+		// Generated boxed parameters still use Go value types. String parameters
+		// instead preserve null with the concrete-string sentinel.
 		if expectedType != "" && usesNullableValueStorage(expectedType) && expressionAlwaysProducesNull(argNode) {
-			parsed = zeroValueForType(javaTypeStringToGoTypeExpr(expectedType, inScopeTypeParameters(ctx), ctx))
+			if isJavaStringType(expectedType) {
+				parsed = javaNullStringExpr()
+			} else {
+				parsed = zeroValueForType(javaTypeStringToGoTypeExpr(expectedType, inScopeTypeParameters(ctx), ctx))
+			}
 		}
 		args = append(args, coerceArgumentToExpectedType(parsed, argNode, expectedType, ctx, source))
 	}
@@ -3420,6 +3515,9 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	expectedType = strings.TrimSpace(expectedType)
 	if expectedType == "" || argNode == nil {
 		return argExpr
+	}
+	if isJavaStringType(expectedType) && expressionUsesNullableValueStorage(argNode, ctx, source) {
+		return stdjavaCall(ctx, "StringReferenceValue", argExpr)
 	}
 
 	actualType, actualKnown := inferExprJavaType(argNode, ctx, source)

@@ -162,6 +162,6 @@ public class ConcatProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.StringLength(g)")
-	assertContains(t, out, "stdjava.StringLength(h)")
+	assertContains(t, out, "stdjava.StringLength(stdjava.StringRequireNonNull(g))")
+	assertContains(t, out, "stdjava.StringLength(stdjava.StringRequireNonNull(h))")
 }

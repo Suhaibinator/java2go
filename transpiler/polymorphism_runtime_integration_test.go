@@ -303,7 +303,8 @@ public class App {
 
 	outputs := convertJavaProjectDir(t, sourceRoot)
 	moduleRoot := t.TempDir()
-	if err := os.WriteFile(filepath.Join(moduleRoot, "go.mod"), []byte("module cross\n\ngo 1.25.0\n"), 0o644); err != nil {
+	goMod := "module cross\n\ngo 1.25.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => " + repoRootDir(t) + "\n"
+	if err := os.WriteFile(filepath.Join(moduleRoot, "go.mod"), []byte(goMod), 0o644); err != nil {
 		t.Fatalf("write go.mod: %v", err)
 	}
 	for relative, generated := range outputs {
@@ -325,7 +326,7 @@ func TestCrossPackageDispatch(t *testing.T) {
 `), 0o644); err != nil {
 		t.Fatalf("write generated runtime test: %v", err)
 	}
-	cmd := exec.Command("go", "test", "./...")
+	cmd := exec.Command("go", "test", "-mod=mod", "./...")
 	cmd.Dir = moduleRoot
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("cross-package generated code failed:\n%s", output)

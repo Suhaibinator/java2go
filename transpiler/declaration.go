@@ -136,7 +136,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		globalVariables := &ast.GenDecl{Tok: token.VAR}
 		instanceFieldInitializers := []ast.Stmt{}
 		classBody := node.ChildByFieldName("body")
-		consolidateStaticInitialization := classBodyHasStaticInitializer(classBody)
+		consolidateStaticInitialization := classBodyNeedsOrderedStaticInitialization(classBody)
 
 		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
 
@@ -209,12 +209,20 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 				if staticField {
 					spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}
+					if isJavaStringType(fieldDef.OriginalType) {
+						// A Java String field starts as null, not Go's empty-string zero.
+						// Keep that state observable even when a later static initializer
+						// overwrites it.
+						spec.Values = []ast.Expr{javaNullStringExpr()}
+					}
 					if fieldValueNode != nil && !consolidateStaticInitialization {
 						valueCtx := ctx.Clone()
 						valueCtx.localScope = &symbol.Definition{IsStatic: true}
 						valueCtx.expectedType = fieldDef.OriginalType
 						valueCtx.expectedTypeRoot = fieldValueNode
-						spec.Values = []ast.Expr{ParseExpr(fieldValueNode, source, valueCtx)}
+						value := ParseExpr(fieldValueNode, source, valueCtx)
+						value = coerceArgumentToExpectedType(value, fieldValueNode, fieldDef.OriginalType, valueCtx, source)
+						spec.Values = []ast.Expr{value}
 					}
 					globalVariables.Specs = append(globalVariables.Specs, spec)
 				} else {
@@ -230,6 +238,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						valueCtx.localScope = &symbol.Definition{OriginalName: fieldInitMethodName}
 						valueCtx.expectedType = fieldDef.OriginalType
 						valueCtx.expectedTypeRoot = fieldValueNode
+						value := ParseExpr(fieldValueNode, source, valueCtx)
+						value = coerceArgumentToExpectedType(value, fieldValueNode, fieldDef.OriginalType, valueCtx, source)
 						instanceFieldInitializers = append(instanceFieldInitializers, &ast.AssignStmt{
 							Lhs: []ast.Expr{
 								&ast.SelectorExpr{
@@ -238,9 +248,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 								},
 							},
 							Tok: token.ASSIGN,
-							Rhs: []ast.Expr{
-								ParseExpr(fieldValueNode, source, valueCtx),
-							},
+							Rhs: []ast.Expr{value},
 						})
 					}
 				}
@@ -287,12 +295,11 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 		}
 
-		// Go evaluates every package variable before any init function. Java instead
-		// executes static field initializers and static blocks in their exact source
-		// order. When a class contains a static block, move all of that class's
-		// explicit static field values into one ordered init function. Classes with
-		// fields only retain direct Go initializers, preserving compact output and
-		// compile-time dependency handling.
+		// Go resolves package-variable initializer dependencies before evaluating
+		// them, which can expose a later field's initialized value too early. Java
+		// first gives every static field its default and only then executes explicit
+		// field initializers and static blocks in source order. Always consolidate a
+		// class that has either kind of initialization work into one ordered init.
 		if consolidateStaticInitialization {
 			if initDecl := buildOrderedStaticInitializationDecl(classBody, source, ctx); initDecl != nil {
 				declarations = append(declarations, initDecl)
@@ -639,13 +646,19 @@ func appendValidDeclarations(dst []ast.Decl, declarations []ast.Decl) []ast.Decl
 	return dst
 }
 
-func classBodyHasStaticInitializer(body *sitter.Node) bool {
+func classBodyNeedsOrderedStaticInitialization(body *sitter.Node) bool {
 	if body == nil {
 		return false
 	}
 	for _, child := range nodeutil.NamedChildrenOf(body) {
 		if child.Type() == "static_initializer" {
 			return true
+		}
+		if child.Type() == "field_declaration" && fieldDeclarationIsStatic(child) {
+			declarator := child.ChildByFieldName("declarator")
+			if declarator != nil && declarator.ChildByFieldName("value") != nil {
+				return true
+			}
 		}
 	}
 	return false
@@ -697,10 +710,12 @@ func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx 
 			valueCtx.localScope = &symbol.Definition{IsStatic: true}
 			valueCtx.expectedType = fieldDefinition.OriginalType
 			valueCtx.expectedTypeRoot = valueNode
+			value := ParseExpr(valueNode, source, valueCtx)
+			value = coerceArgumentToExpectedType(value, valueNode, fieldDefinition.OriginalType, valueCtx, source)
 			statements = append(statements, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: fieldDefinition.Name}},
 				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{ParseExpr(valueNode, source, valueCtx)},
+				Rhs: []ast.Expr{value},
 			})
 		case "static_initializer":
 			staticCtx := ctx.Clone()
@@ -1517,6 +1532,38 @@ func constructorWithSelfName(name string) string {
 	return name + constructorSelfSuffix
 }
 
+func isJavaStringType(javaType string) bool {
+	base, _ := parseJavaTypeString(javaType)
+	return stripJavaQualifier(base) == "String" && !strings.HasSuffix(strings.TrimSpace(javaType), "[]")
+}
+
+// defaultStringFieldInitializationStmts installs Java's null default for every
+// String field declared directly by the allocated class. It runs immediately
+// after allocation—before a superclass constructor can make a virtual call into
+// the most-derived object—and before explicit field initializers overwrite it.
+// Superclass constructors initialize their own separately allocated embedded
+// storage in the same way.
+func defaultStringFieldInitializationStmts(scope *symbol.ClassScope, receiverName string, ctx Ctx) []ast.Stmt {
+	if scope == nil || receiverName == "" {
+		return nil
+	}
+	var statements []ast.Stmt
+	for _, field := range scope.Fields {
+		if field == nil || field.IsStatic || !isJavaStringType(field.OriginalType) {
+			continue
+		}
+		statements = append(statements, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.SelectorExpr{
+				X:   &ast.Ident{Name: receiverName},
+				Sel: &ast.Ident{Name: field.Name},
+			}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{javaNullStringExpr()},
+		})
+	}
+	return statements
+}
+
 func constructorMostDerivedInitStmt(receiverName string) ast.Stmt {
 	return &ast.IfStmt{
 		Cond: &ast.BinaryExpr{
@@ -1689,6 +1736,7 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 			Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
 		},
 	}
+	body = append(body, defaultStringFieldInitializationStmts(scope, recvName, ctx)...)
 	if usesMostDerived {
 		body = append(body, constructorMostDerivedInitStmt(recvName))
 	}
@@ -2580,6 +2628,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
 			},
 		}
+		prelude = append(prelude, defaultStringFieldInitializationStmts(ctx.currentClass, ShortName(ctx.className), ctx)...)
 		usesMostDerived := classHasSelfSetter(ctx.currentClass, ctx)
 		if usesMostDerived {
 			prelude = append(prelude, constructorMostDerivedInitStmt(ShortName(ctx.className)))

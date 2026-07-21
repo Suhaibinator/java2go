@@ -84,6 +84,9 @@ func ParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	if node != nil && node.Type() == "null_literal" && strings.TrimSpace(ctx.expectedType) != "" {
+		if isJavaStringType(ctx.expectedType) {
+			return javaNullStringExpr()
+		}
 		return zeroValueForType(javaTypeStringToGoTypeExpr(ctx.expectedType, inScopeTypeParameters(ctx), ctx))
 	}
 	value := ParseExpr(node, source, ctx)
@@ -159,12 +162,14 @@ func lowerSimpleArrayAssignmentCall(node *sitter.Node, source []byte, ctx Ctx) (
 // requires a repository-wide representation change beyond local storage.
 func requireNullableValueBackedExpression(value ast.Expr, node *sitter.Node, expectedType string, ctx Ctx, source []byte) ast.Expr {
 	if !usesNullableValueStorage(expectedType) ||
-		(!isNullableValueBackedLocal(node, ctx, source) && !expressionCanProduceNull(node)) {
+		!expressionUsesNullableValueStorage(node, ctx, source) {
 		return value
 	}
 	base, _ := parseJavaTypeString(expectedType)
 	if stripJavaQualifier(base) == "String" {
-		return stdjavaCall(ctx, "StringRequireNonNull", value)
+		// Returning or passing a String reference is not a dereference. Preserve
+		// null through the concrete-string ABI using the runtime sentinel.
+		return stdjavaCall(ctx, "StringReferenceValue", value)
 	}
 	return &ast.TypeAssertExpr{
 		X:    value,
@@ -395,7 +400,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// A nullable String or boxed primitive needs an interface-backed local even
 		// when null is nested inside a conditional initializer rather than appearing
 		// as the declarator's direct value.
-		containsNull := expressionCanProduceNull(initializerNode)
+		containsNull := expressionUsesNullableValueStorage(initializerNode, ctx, source)
 
 		names := make([]*ast.Ident, len(declaration.Lhs))
 		for ind, decl := range declaration.Lhs {

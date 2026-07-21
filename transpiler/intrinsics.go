@@ -116,12 +116,11 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 	}
 
 	recv := ParseExpr(objectNode, source, ctx)
-	// A Java String reference can be null even though ordinary generated strings
-	// use Go's value-backed string type. Null-initialized locals are represented
-	// through an interface slot; normalize those nullable local receivers through
-	// the runtime bridge so both representations compile and invoking a method on
-	// null retains Java's NullPointerException behavior.
-	if receiverType == "String" && isNullableValueBackedLocal(objectNode, ctx, source) {
+	// Fields, parameters, and method results can carry the concrete null String
+	// sentinel, while explicitly nullable locals can carry interface nil.
+	// Normalize every String receiver through the runtime bridge so dereferencing
+	// either representation throws NullPointerException.
+	if receiverType == "String" && !isDefinitelyNonNullStringExpression(objectNode, ctx, source) {
 		recv = stdjavaCall(ctx, "StringRequireNonNull", recv)
 	}
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
@@ -154,6 +153,76 @@ func isNullableValueBackedLocal(node *sitter.Node, ctx Ctx, source []byte) bool 
 	}
 	local := ctx.localScope.FindVariable(node.Content(source))
 	return local != nil && local.Nullable
+}
+
+// isNullableStringStorageExpression identifies String reads whose generated
+// storage can directly contain Java null. Fields receive the concrete sentinel
+// at allocation time; explicitly nullable locals use an interface slot. Plain
+// parameters and non-null expressions retain the existing direct-string fast
+// path, avoiding unnecessary runtime calls and imports.
+func isNullableStringStorageExpression(node *sitter.Node, ctx Ctx, source []byte) bool {
+	for node != nil && node.Type() == "parenthesized_expression" && node.NamedChildCount() > 0 {
+		node = node.NamedChild(0)
+	}
+	if node == nil {
+		return false
+	}
+	if isNullableValueBackedLocal(node, ctx, source) {
+		return true
+	}
+	if node.Type() == "field_access" {
+		javaType, ok := inferExprJavaType(node, ctx, source)
+		return ok && isJavaStringType(javaType)
+	}
+	if node.Type() != "identifier" || ctx.currentClass == nil {
+		return false
+	}
+	name := node.Content(source)
+	if ctx.localScope != nil {
+		if ctx.localScope.ParameterByName(name) != nil || ctx.localScope.FindVariable(name) != nil {
+			return false
+		}
+	}
+	field := findFieldInHierarchy(ctx.currentClass, name, ctx)
+	return field != nil && isJavaStringType(field.OriginalType)
+}
+
+func isDefinitelyNonNullStringExpression(node *sitter.Node, ctx Ctx, source []byte) bool {
+	for node != nil && node.Type() == "parenthesized_expression" && node.NamedChildCount() > 0 {
+		node = node.NamedChild(0)
+	}
+	if node == nil {
+		return false
+	}
+	switch node.Type() {
+	case "string_literal":
+		return true
+	case "binary_expression":
+		return node.Child(1) != nil && node.Child(1).Content(source) == "+" && isStringLikeExprNode(node, ctx, source)
+	case "method_invocation":
+		nameNode := node.ChildByFieldName("name")
+		if nameNode == nil {
+			return false
+		}
+		methodName := nameNode.Content(source)
+		objectNode := node.ChildByFieldName("object")
+		if objectNode == nil {
+			return false
+		}
+		if receiverType, ok := inferExprJavaType(objectNode, ctx, source); ok {
+			base, _ := parseJavaTypeString(receiverType)
+			if stripJavaQualifier(base) == "String" && stringReturningStringMethods[methodName] {
+				return true
+			}
+		}
+		if objectNode.Type() == "identifier" && objectNode.Content(source) == "String" {
+			switch methodName {
+			case "valueOf", "format", "join":
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // lambdaResultKind describes the result type a re-typed element lambda must have.

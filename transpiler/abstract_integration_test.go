@@ -96,7 +96,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "*BaseThing) Describe() string") {
 		t.Fatalf("expected BaseThing.Describe concrete method in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return bg.Id() + \":\" + bg.value") && !strings.Contains(flat, "return fmt.Sprint(bg.Id(), \":\", bg.value)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", bg.Id(), \":\", bg.value)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", bg.Java2goBaseThingSelf.Id(), \":\", bg.value)") {
+	if !strings.Contains(flat, "return bg.Id() + \":\" + bg.value") && !strings.Contains(flat, "return fmt.Sprint(bg.Id(), \":\", bg.value)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", bg.Id(), \":\", bg.value)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", bg.Java2goBaseThingSelf.Id(), \":\", bg.value)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", stdjava.StringValueOf(bg.Java2goBaseThingSelf.Id()), \":\", bg.value)") {
 		t.Fatalf("expected BaseThing.Describe to use Id() and value field, got:\n%s", out)
 	}
 
@@ -113,7 +113,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "*LeafThing) Describe() string") {
 		t.Fatalf("expected LeafThing.Describe override in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return \"leaf-\" + lg.MidThing.Describe()") && !strings.Contains(flat, "return fmt.Sprint(\"leaf-\", lg.MidThing.Describe())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"leaf-\", lg.MidThing.Describe())") {
+	if !strings.Contains(flat, "return \"leaf-\" + lg.MidThing.Describe()") && !strings.Contains(flat, "return fmt.Sprint(\"leaf-\", lg.MidThing.Describe())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"leaf-\", lg.MidThing.Describe())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"leaf-\", stdjava.StringValueOf(lg.MidThing.Describe()))") {
 		t.Fatalf("expected LeafThing.Describe to call super.describe(), got:\n%s", out)
 	}
 	if strings.Contains(flat, "*LeafThing) Id() string") {
@@ -129,7 +129,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "*ConcreteThing) Id() string") {
 		t.Fatalf("expected ConcreteThing.Id concrete override in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return \"concrete-\" + cg.name") && !strings.Contains(flat, "return fmt.Sprint(\"concrete-\", cg.name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", cg.name)") {
+	if !strings.Contains(flat, "return \"concrete-\" + cg.name") && !strings.Contains(flat, "return fmt.Sprint(\"concrete-\", cg.name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", cg.name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", stdjava.StringValueOf(cg.name))") {
 		t.Fatalf("expected ConcreteThing.Id to return the name field, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*ConcreteThing) Compute(a float64, b float64) float64") {
@@ -147,7 +147,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "\"override-\"") {
 		t.Fatalf("expected ConcreteThing.Label to include override marker, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return \"override-\" + cg.LeafThing.Label()") && !strings.Contains(flat, "return fmt.Sprint(\"override-\", cg.LeafThing.Label())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"override-\", cg.LeafThing.Label())") {
+	if !strings.Contains(flat, "return \"override-\" + cg.LeafThing.Label()") && !strings.Contains(flat, "return fmt.Sprint(\"override-\", cg.LeafThing.Label())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"override-\", cg.LeafThing.Label())") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"override-\", stdjava.StringValueOf(cg.LeafThing.Label()))") {
 		t.Fatalf("expected ConcreteThing.Label to call super.label(), got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*AltConcreteThing) Id() string") {

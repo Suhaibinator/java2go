@@ -136,7 +136,7 @@ public class StableRanker<T extends Ranked> {
 	if !strings.Contains(flat, "left.PrimaryScore()") || !strings.Contains(flat, "right.PrimaryScore()") {
 		t.Fatalf("expected type-parameter receiver calls to use Ranked's generated method names:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.StringCompareTo(left.StableKey(), right.StableKey())") {
+	if !strings.Contains(flat, "stdjava.StringCompareTo(stdjava.StringRequireNonNull(left.StableKey()), right.StableKey())") {
 		t.Fatalf("expected String return from the bound method to drive compareTo intrinsic lowering:\n%s", out)
 	}
 }

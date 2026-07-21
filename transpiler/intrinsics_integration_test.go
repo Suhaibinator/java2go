@@ -29,27 +29,27 @@ func TestIntrinsics_StringMethods(t *testing.T) {
 		expr string
 		want string
 	}{
-		{"length", "s.length()", "stdjava.StringLength(s)"},
-		{"isEmpty", "s.isEmpty()", "len(s) == 0"},
-		{"isBlank", "s.isBlank()", "stdjava.StringIsBlank(s)"},
-		{"charAt", "s.charAt(2)", "stdjava.StringCharAt(s, 2)"},
-		{"substring1", "s.substring(1)", "stdjava.StringSubstring(s, 1)"},
-		{"substring2", "s.substring(1, 3)", "stdjava.StringSubstringRange(s, 1, 3)"},
-		{"indexOf", "s.indexOf(\"x\")", "stdjava.StringIndexOf(s, \"x\")"},
-		{"lastIndexOf", "s.lastIndexOf(\"x\")", "stdjava.StringLastIndexOf(s, \"x\")"},
-		{"contains", "s.contains(\"x\")", "strings.Contains(s, \"x\")"},
-		{"startsWith", "s.startsWith(\"x\")", "strings.HasPrefix(s, \"x\")"},
-		{"endsWith", "s.endsWith(\"x\")", "strings.HasSuffix(s, \"x\")"},
-		{"equals", "s.equals(\"x\")", "s == \"x\""},
-		{"equalsIgnoreCase", "s.equalsIgnoreCase(\"x\")", "stdjava.StringEqualsIgnoreCase(s, \"x\")"},
-		{"compareTo", "s.compareTo(\"x\")", "stdjava.StringCompareTo(s, \"x\")"},
-		{"toUpperCase", "s.toUpperCase()", "strings.ToUpper(s)"},
-		{"toLowerCase", "s.toLowerCase()", "strings.ToLower(s)"},
-		{"trim", "s.trim()", "strings.TrimSpace(s)"},
-		{"strip", "s.strip()", "strings.TrimSpace(s)"},
-		{"replace", "s.replace(\"a\", \"b\")", "stdjava.StringReplace(s, \"a\", \"b\")"},
-		{"split", "s.split(\",\")", "stdjava.StringSplit(s, \",\")"},
-		{"chars", "s.chars()", "stdjava.StringChars(s)"},
+		{"length", "s.length()", "stdjava.StringLength(stdjava.StringRequireNonNull(s))"},
+		{"isEmpty", "s.isEmpty()", "len(stdjava.StringRequireNonNull(s)) == 0"},
+		{"isBlank", "s.isBlank()", "stdjava.StringIsBlank(stdjava.StringRequireNonNull(s))"},
+		{"charAt", "s.charAt(2)", "stdjava.StringCharAt(stdjava.StringRequireNonNull(s), 2)"},
+		{"substring1", "s.substring(1)", "stdjava.StringSubstring(stdjava.StringRequireNonNull(s), 1)"},
+		{"substring2", "s.substring(1, 3)", "stdjava.StringSubstringRange(stdjava.StringRequireNonNull(s), 1, 3)"},
+		{"indexOf", "s.indexOf(\"x\")", "stdjava.StringIndexOf(stdjava.StringRequireNonNull(s), \"x\")"},
+		{"lastIndexOf", "s.lastIndexOf(\"x\")", "stdjava.StringLastIndexOf(stdjava.StringRequireNonNull(s), \"x\")"},
+		{"contains", "s.contains(\"x\")", "strings.Contains(stdjava.StringRequireNonNull(s), \"x\")"},
+		{"startsWith", "s.startsWith(\"x\")", "strings.HasPrefix(stdjava.StringRequireNonNull(s), \"x\")"},
+		{"endsWith", "s.endsWith(\"x\")", "strings.HasSuffix(stdjava.StringRequireNonNull(s), \"x\")"},
+		{"equals", "s.equals(\"x\")", "stdjava.StringRequireNonNull(s) == \"x\""},
+		{"equalsIgnoreCase", "s.equalsIgnoreCase(\"x\")", "stdjava.StringEqualsIgnoreCase(stdjava.StringRequireNonNull(s), \"x\")"},
+		{"compareTo", "s.compareTo(\"x\")", "stdjava.StringCompareTo(stdjava.StringRequireNonNull(s), \"x\")"},
+		{"toUpperCase", "s.toUpperCase()", "strings.ToUpper(stdjava.StringRequireNonNull(s))"},
+		{"toLowerCase", "s.toLowerCase()", "strings.ToLower(stdjava.StringRequireNonNull(s))"},
+		{"trim", "s.trim()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
+		{"strip", "s.strip()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
+		{"replace", "s.replace(\"a\", \"b\")", "stdjava.StringReplace(stdjava.StringRequireNonNull(s), \"a\", \"b\")"},
+		{"split", "s.split(\",\")", "stdjava.StringSplit(stdjava.StringRequireNonNull(s), \",\")"},
+		{"chars", "s.chars()", "stdjava.StringChars(stdjava.StringRequireNonNull(s))"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -247,7 +247,7 @@ public class Chained {
 }
 `
 	out := renderIntrinsicProgram(t, src)
-	assertContains(t, out, "strings.ToUpper(strings.TrimSpace(s))")
+	assertContains(t, out, "strings.ToUpper(strings.TrimSpace(stdjava.StringRequireNonNull(s)))")
 }
 
 func TestJavaStdlibImportsStripped(t *testing.T) {

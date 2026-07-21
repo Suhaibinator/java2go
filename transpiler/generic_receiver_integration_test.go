@@ -21,7 +21,7 @@ public class App {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, `strings.HasPrefix(box.Value(), "BLOCK:")`) {
+	if !strings.Contains(out, `strings.HasPrefix(stdjava.StringRequireNonNull(box.Value()), "BLOCK:")`) {
 		t.Fatalf("expected a class type-parameter return to resolve to String for the chained intrinsic, got:\n%s", out)
 	}
 }

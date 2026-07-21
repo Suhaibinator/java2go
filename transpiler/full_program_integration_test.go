@@ -98,7 +98,7 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	}
 
 	loggerOut := normalizeSpaces(outputs["com/acme/common/Logger.go"])
-	if !strings.Contains(loggerOut, "fmt.Println(msg)") {
+	if !strings.Contains(loggerOut, "fmt.Println(stdjava.StringValueOf(msg))") {
 		t.Fatalf("expected System.out.println lowering to fmt.Println in Logger:\n%s", outputs["com/acme/common/Logger.go"])
 	}
 	if !strings.Contains(loggerOut, "fmt \"fmt\"") {
@@ -112,7 +112,7 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	if !strings.Contains(parseTaskOut, "any(normalized).(string)") {
 		t.Fatalf("expected instanceof conversion in ParseTask:\n%s", outputs["com/acme/domain/ParseTask.go"])
 	}
-	if !strings.Contains(parseTaskOut, "stdjava.StringLength(normalized)") {
+	if !strings.Contains(parseTaskOut, "stdjava.StringLength(stdjava.StringRequireNonNull(normalized))") {
 		t.Fatalf("expected String.length() lowering in ParseTask:\n%s", outputs["com/acme/domain/ParseTask.go"])
 	}
 	if !strings.Contains(parseTaskOut, "common \"com/acme/common\"") {
@@ -126,7 +126,7 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	if !strings.Contains(pipelineOut, "any(task).(*domain.ParseTask)") {
 		t.Fatalf("expected package-qualified class instanceof conversion in Pipeline:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
-	if !strings.Contains(pipelineOut, "stdjava.StringLength(out)") {
+	if !strings.Contains(pipelineOut, "stdjava.StringLength(stdjava.StringRequireNonNull(out))") {
 		t.Fatalf("expected String.length() lowering in Pipeline:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
 	if !strings.Contains(pipelineOut, "common \"com/acme/common\"") || !strings.Contains(pipelineOut, "domain \"com/acme/domain\"") {
