@@ -117,6 +117,10 @@ type Ctx struct {
 	// inner fast branch may prove its own receiver while an inherited binding is
 	// still on an outer guarded path.
 	affineArrayNonNullBindings map[*affineArrayLoopBinding]struct{}
+	// affineArrayRowCallSites is installed only while rendering the proven
+	// bounds-specialized copy of a canonical column loop. Calls absent from this
+	// exact source-span map retain the ordinary flat affine index.
+	affineArrayRowCallSites map[affineArrayCallSiteKey]*affineArrayRowCallSite
 }
 
 // localClassInfo records how a local class was hoisted to file scope.
@@ -172,6 +176,7 @@ func (c Ctx) Clone() Ctx {
 		affineArrayBindings:            c.affineArrayBindings,
 		affineArrayCallSites:           c.affineArrayCallSites,
 		affineArrayNonNullBindings:     c.affineArrayNonNullBindings,
+		affineArrayRowCallSites:        c.affineArrayRowCallSites,
 	}
 }
 

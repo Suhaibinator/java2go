@@ -784,6 +784,15 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if node.ChildByFieldName("condition") != nil {
 			cond = ParseExpr(node.ChildByFieldName("condition"), source, ctx)
 		}
+		// A canonical inner column loop can reuse equal-span row slices only when
+		// all selected bindings were proven non-null by an enclosing loop version.
+		// Loops that create their own view caches first take the normal versioning
+		// path; a later nested loop may consume those proofs.
+		if len(affineBindings) == 0 {
+			if rowCtx, rowPlan := prepareAffineArrayRowLoop(node, source, loopCtx); rowPlan != nil {
+				return lowerAffineArrayRowLoop(node, source, loopCtx, rowCtx, rowPlan, init, cond, post)
+			}
+		}
 
 		fastCtx := loopCtx.Clone()
 		// A nested loop may only inherit call sites owned by an enclosing

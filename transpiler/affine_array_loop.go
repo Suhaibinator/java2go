@@ -623,7 +623,7 @@ func affineLoopUsedNames(loop *sitter.Node, source []byte, ctx Ctx) map[string]s
 		if node == nil {
 			return
 		}
-		if node.Type() == "identifier" {
+		if node.Type() == "identifier" || node.Type() == "type_identifier" {
 			used[sanitizeGoIdent(node.Content(source))] = struct{}{}
 		}
 		for _, child := range nodeutil.NamedChildrenOf(node) {
@@ -710,7 +710,8 @@ func rewriteAffineArrayAccessorInvocation(
 	if node == nil || objectNode == nil || objectNode.Type() != "identifier" || target == nil || resolution == nil || resolution.def == nil {
 		return nil
 	}
-	binding := ctx.affineArrayCallSites[affineArrayCallSiteKey{start: node.StartByte(), end: node.EndByte()}]
+	callSiteKey := affineArrayCallSiteKey{start: node.StartByte(), end: node.EndByte()}
+	binding := ctx.affineArrayCallSites[callSiteKey]
 	accessor := resolution.def.TrivialArrayAccessor
 	if binding == nil || accessor == nil || accessor.View != binding.key.view || target.classScope != binding.receiverClass || resolution.owner != binding.receiverClass {
 		return nil
@@ -758,6 +759,12 @@ func rewriteAffineArrayAccessorInvocation(
 		return &ast.CallExpr{Fun: &ast.Ident{Name: "int"}, Args: []ast.Expr{javaIndex}}
 	}
 	arrayIndex := func() *ast.IndexExpr {
+		if rowCallSite := ctx.affineArrayRowCallSites[callSiteKey]; rowCallSite != nil && rowCallSite.binding == binding && rowCallSite.rowSlice != nil {
+			return &ast.IndexExpr{
+				X:     &ast.Ident{Name: rowCallSite.rowSlice.sliceName},
+				Index: &ast.Ident{Name: rowCallSite.offsetName},
+			}
+		}
 		return &ast.IndexExpr{X: &ast.Ident{Name: binding.arrayName}, Index: indexExpr()}
 	}
 
