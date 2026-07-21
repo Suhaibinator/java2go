@@ -1,5 +1,5 @@
 {
   "category": "floating_point_matrix",
-  "description": "Blocked dense matrix multiplication, iterative stencil transforms, and dependent floating-point vector arithmetic",
-  "iterations": 3
+  "description": "Sustained blocked dense matrix multiplication, iterative stencil transforms, and dependent floating-point vector arithmetic",
+  "iterations": 1
 }
