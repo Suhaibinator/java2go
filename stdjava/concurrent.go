@@ -1,6 +1,7 @@
 package stdjava
 
 import (
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -280,10 +281,32 @@ func monitorFor(obj interface{}) *sync.Mutex {
 	return &monitorRecord(obj).mu
 }
 
+// nilMonitorReference reports whether obj represents Java null. Transpiled
+// references are commonly pointers, but Java arrays are Go slices and an
+// interface can carry a typed nil of either kind. Checking those forms before
+// consulting the monitor registry both preserves Java's exception and avoids a
+// raw Go panic for unhashable nil slices.
+func nilMonitorReference(obj interface{}) bool {
+	if obj == nil {
+		return true
+	}
+
+	value := reflect.ValueOf(obj)
+	switch value.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return value.IsNil()
+	default:
+		return false
+	}
+}
+
 // MonitorEnter acquires the intrinsic monitor for obj and returns it, mirroring
 // the entry of a `synchronized (obj)` block. The returned mutex is passed to
 // MonitorExit (typically via defer) to release it.
 func MonitorEnter(obj interface{}) *sync.Mutex {
+	if nilMonitorReference(obj) {
+		panic(NewNullPointerException("cannot synchronize on null"))
+	}
 	m := monitorFor(obj)
 	m.Lock()
 	return m

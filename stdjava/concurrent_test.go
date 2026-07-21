@@ -209,6 +209,42 @@ func TestMonitor_DistinctObjectsHaveDistinctIdentity(t *testing.T) {
 	}
 }
 
+func TestMonitorEnter_NullReferenceThrowsNullPointerException(t *testing.T) {
+	var (
+		nilPointer *byte
+		nilSlice   []int32
+		nilMap     map[string]int32
+		nilFunc    func()
+		nilChan    chan int32
+	)
+
+	tests := []struct {
+		name string
+		lock interface{}
+	}{
+		{name: "nil interface", lock: nil},
+		{name: "typed nil pointer", lock: nilPointer},
+		{name: "typed nil slice", lock: nilSlice},
+		{name: "typed nil map", lock: nilMap},
+		{name: "typed nil function", lock: nilFunc},
+		{name: "typed nil channel", lock: nilChan},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var recovered interface{}
+			func() {
+				defer func() { recovered = recover() }()
+				MonitorEnter(test.lock)
+			}()
+
+			if !CaughtAs(recovered, "NullPointerException") {
+				t.Fatalf("MonitorEnter(%s) panicked with %T (%v), want NullPointerException", test.name, recovered, recovered)
+			}
+		})
+	}
+}
+
 func TestMonitor_WaitNotify(t *testing.T) {
 	lock := NewObject()
 	ready := false

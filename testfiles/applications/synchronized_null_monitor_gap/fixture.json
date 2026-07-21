@@ -1,8 +1,5 @@
 {
   "main_class": "parity.synchronizednull.SynchronizedNullMonitorApplication",
   "module_path": "parity/synchronizednull",
-  "status": "known_gap",
-  "known_gap": "Java evaluates a synchronized lock expression exactly once and throws NullPointerException before entering the body when it yields null, but generated Go treats nil as a valid monitor identity and executes the body.",
-  "expected_failure_stage": "output",
-  "expected_failure_contains": "--- quoted go stdout ---\n\"TRACE=1235\\n\""
+  "status": "passing"
 }

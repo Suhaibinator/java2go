@@ -1,4 +1,4 @@
-# Null synchronized-monitor known gap
+# Null synchronized-monitor parity
 
 Java evaluates the expression in `synchronized (expression)` exactly once. If
 that expression produces `null`, monitor entry throws `NullPointerException`
@@ -9,7 +9,7 @@ The trace makes each phase observable: `1` is appended by the lock expression,
 `4` is appended by the Java `NullPointerException` handler, and `5` follows the
 try/catch. Java therefore prints `TRACE=145`.
 
-Generated Go currently accepts `nil` as a monitor-map key, executes the body,
-and completes normally, printing `TRACE=1235`. The fixture pins that exact
-output mismatch until monitor entry rejects null after evaluating the lock
-expression and before executing the synchronized body.
+Generated Go now rejects both an untyped `nil` interface and interface-wrapped
+typed nil references at monitor entry. It raises the modeled Java
+`NullPointerException` after evaluating the lock expression and before executing
+the synchronized body, so the generated program also prints `TRACE=145`.
