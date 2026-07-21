@@ -107,6 +107,27 @@ seconds (11.8%) with the same checksum. Bounds diagnostics retained only the
 one-time result/right slice checks and the unrelated left scalar check in the hot
 matrix loop; no per-element result/right slice checks remained.
 
+## Tier 3 boundary-peeling experiments
+
+Several torus-boundary variants were evaluated but deliberately not added to
+the transpiler. A direct first/interior/last stencil peel reduced a small
+component from about 24.5 milliseconds to 17.5–18.3 milliseconds, but separate
+floating-point loop bodies changed a few result bits as Go's generated
+FMADD/FMSUB contraction shapes changed. Keeping one expression body inside a
+closure preserved arithmetic identity but regressed the same component to about
+34 milliseconds. Precomputed neighbor-index maps were also bit-identical but
+made the vector 0.2–0.5 seconds slower and the stencil about 3% slower.
+
+The final single-body experiment specialized the power-of-two vector length
+with masked previous/next indices. Its output matched both the quantized oracle
+and the SHA-256 of all 262,144 `Float64bits`
+(`d4a61681beb0ca652879c6deb05382e55fa143f11aada42771082254362bcc52`).
+Across eight alternating samples, however, the ordinary version averaged 1.809
+seconds and the masked version averaged 2.349 seconds (29.9% slower). Compiler
+diagnostics showed that both retained three hot bounds checks, while masking
+added a dependency chain. Since no tested variant was both bit-identical and
+faster, Tier 3 remains intentionally unimplemented.
+
 During profiling, observed peak RSS was about 1,249 MiB for Java and 24–31 MiB
 for generated Go. Both are comfortably below 8 GiB. These measurements describe
 the reference host rather than imposing machine-specific performance or memory
