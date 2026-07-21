@@ -39,9 +39,11 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `labeled_block_break_gap` | `break` through `finally` targeting a Java labeled block rather than a loop/switch | Passing |
 | `do_while_continue_gap` | `continue` through `finally` targeting the condition phase of a Java do-while loop | Passing |
 | `synchronized_loop_control_gap` | Monitor cleanup plus abrupt control crossing the generated synchronized closure boundary | Passing |
-| `synchronized_null_monitor_gap` | Null monitor evaluation, exception identity, and proof that the synchronized body does not run | Known gap (`output`) |
+| `synchronized_null_monitor_gap` | Null monitor evaluation, exception identity, and proof that the synchronized body does not run | Passing |
+| `synchronized_array_monitor_gap` | Non-null Java array monitor identity, aliasing, single lock-expression evaluation, and mutation visibility | Known gap (`go_run`) |
 | `synchronized_reentrant_monitor_gap` | Nested synchronization on the same object and Java monitor reentrancy | Known gap (`go_run`) |
-| `resource_suppressed_exception_gap` | Competing body/close exceptions in try-with-resources and Java suppressed-exception precedence | Known gap (`output`) |
+| `resource_suppressed_exception_gap` | Competing body/close exceptions in try-with-resources and Java suppressed-exception precedence | Passing |
+| `resource_suppression_semantics` | Multiple-resource close order, suppression order, close-only failure, return override, and throwable identity | Passing |
 | `array_assignment_timing_gap` | Null-array assignment evaluation order, index/RHS side effects, and exception identity | Passing |
 | `multidimensional_array_evaluation_gap` | Left-to-right, exactly-once dimension evaluation before negative-size checks and nested allocation | Passing |
 | `covariant_array_store_gap` | Reified reference-array component checks, covariant aliases, store side effects, recursion, and mutation | Known gap (`output`) |
@@ -51,6 +53,7 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `constructor_delegation_gap` | Same-object `this(...)` delegation, initializer count, and constructor order | Known gap (`go_compile`) |
 | `recursive_object_model` | Mutual recursion, recursive generic graphs, constructor dispatch, hiding, and inherited interface defaults | Passing |
 | `static_method_hiding_gap` | Parent/child static-method hiding and declaring-class selection | Passing |
+| `lazy_class_initialization_gap` | Java first-active-use class initialization versus eager generated-Go package initialization | Known gap (`output`) |
 | `local_class_recursion_gap` | Capturing local class with a recursive instance method | Passing |
 | `anonymous_class_recursion_gap` | Recursive override in a synthesized anonymous subclass | Passing |
 | `synthetic_member_collision_gap` | Local-class field and method sharing one Java identifier | Passing |
