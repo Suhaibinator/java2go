@@ -776,6 +776,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if initNode != nil {
 			init = ParseStmt(initNode, source, ctx)
 		}
+		loopCtx, affineBindings := prepareAffineArrayLoop(node, source, ctx)
 		if node.ChildByFieldName("update") != nil {
 			post = ParseStmt(node.ChildByFieldName("update"), source, ctx)
 		}
@@ -784,17 +785,22 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			cond = ParseExpr(node.ChildByFieldName("condition"), source, ctx)
 		}
 
-		body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
+		body := ParseStmt(node.ChildByFieldName("body"), source, loopCtx).(*ast.BlockStmt)
 		if initNode != nil && initNode.Type() == "local_variable_declaration" {
 			body.List = append(unusedLocalDiscardStatements(init, node, source), body.List...)
 		}
 
-		return &ast.ForStmt{
+		loop := &ast.ForStmt{
 			Init: init,
 			Cond: cond,
 			Post: post,
 			Body: body,
 		}
+		cacheStatements := affineArrayLoopCacheStatements(affineBindings)
+		if len(cacheStatements) == 0 {
+			return loop
+		}
+		return &ast.BlockStmt{List: append(cacheStatements, loop)}
 	case "while_statement":
 		if readLineLoop, ok := lowerBufferedReaderReadLineWhile(node, source, ctx); ok {
 			return readLineLoop

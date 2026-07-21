@@ -100,6 +100,13 @@ type Ctx struct {
 	// hoisted into, so `new LocalClass(...)` in the same method body resolves to
 	// the hoisted struct and threads captured locals. Shared via pointer.
 	localClasses map[string]*localClassInfo
+
+	// Affine array bindings are installed only while parsing approved ordinary
+	// for-loop bodies. Call sites are keyed by their exact source span so a
+	// same-spelled selector in a header, closure, or shadowing scope cannot be
+	// rewritten accidentally.
+	affineArrayBindings  map[affineArrayBindingKey]*affineArrayLoopBinding
+	affineArrayCallSites map[affineArrayCallSiteKey]*affineArrayLoopBinding
 }
 
 // localClassInfo records how a local class was hoisted to file scope.
@@ -151,6 +158,8 @@ func (c Ctx) Clone() Ctx {
 		hoistedDecls:             c.hoistedDecls,
 		anonClassCounter:         c.anonClassCounter,
 		localClasses:             c.localClasses,
+		affineArrayBindings:      c.affineArrayBindings,
+		affineArrayCallSites:     c.affineArrayCallSites,
 	}
 }
 

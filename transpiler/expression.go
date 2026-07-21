@@ -416,6 +416,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return &ast.CallExpr{Fun: fun, Args: args}
 			}
 
+			if rewritten := rewriteAffineArrayAccessorInvocation(node, objectNode, objectExpr, target, instanceResolution, args, ctx, source); rewritten != nil {
+				return rewritten
+			}
+
 			if rewritten := maybeRewriteInstanceGenericMethodInvocationWithTarget(target, instanceResolution, objectExpr, methodName, args, node, ctx, source); rewritten != nil {
 				return rewritten
 			}
