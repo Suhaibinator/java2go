@@ -38,9 +38,12 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `finally_loop_control_gap` | `break`/`continue` through `finally`, observable side-effect order, and loop-transfer resumption | Passing |
 | `labeled_block_break_gap` | `break` through `finally` targeting a Java labeled block rather than a loop/switch | Passing |
 | `do_while_continue_gap` | `continue` through `finally` targeting the condition phase of a Java do-while loop | Passing |
-| `synchronized_loop_control_gap` | Monitor cleanup plus `continue` crossing the generated synchronized closure boundary | Known gap (`go_compile`) |
+| `synchronized_loop_control_gap` | Monitor cleanup plus abrupt control crossing the generated synchronized closure boundary | Passing |
+| `synchronized_null_monitor_gap` | Null monitor evaluation, exception identity, and proof that the synchronized body does not run | Known gap (`output`) |
+| `synchronized_reentrant_monitor_gap` | Nested synchronization on the same object and Java monitor reentrancy | Known gap (`go_run`) |
 | `resource_suppressed_exception_gap` | Competing body/close exceptions in try-with-resources and Java suppressed-exception precedence | Known gap (`output`) |
 | `array_assignment_timing_gap` | Null-array assignment evaluation order, index/RHS side effects, and exception identity | Passing |
+| `multidimensional_array_evaluation_gap` | Left-to-right, exactly-once dimension evaluation before negative-size checks and nested allocation | Passing |
 | `covariant_array_store_gap` | Reified reference-array component checks, covariant aliases, store side effects, recursion, and mutation | Known gap (`output`) |
 | `constructor_nullable_field_gap` | Constructor-time virtual dispatch observing Java's pre-initializer null field value | Known gap (`output`) |
 | `string_field_null_comparison_gap` | Comparing an uninitialized Java String field with `null` | Known gap (`go_compile`) |
