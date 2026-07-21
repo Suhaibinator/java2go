@@ -1,1 +1,5 @@
-null:ready
+base-initializer=null/null
+base-constructor=null/null
+child-initializer=ready/ready
+child-constructor=ready/ready
+ready/ready

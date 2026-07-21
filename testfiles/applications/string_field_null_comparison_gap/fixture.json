@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.stringfieldnull.StringFieldNullComparisonApplication",
+  "module_path": "parity/stringfieldnull",
+  "status": "known_gap",
+  "known_gap": "Java String fields are nullable references, but generated Go stores them as non-nullable strings, so comparing an uninitialized field with null does not compile.",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "mismatched types string and untyped nil"
+}
