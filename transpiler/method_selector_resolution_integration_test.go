@@ -80,6 +80,40 @@ public class Application {
 	}
 }
 
+func TestMethodSelectorResolution_CrossPackageChildFindsInheritedConcreteMethod(t *testing.T) {
+	root := t.TempDir()
+	writeJavaSource(t, root, "example/base/Base.java", `
+package example.base;
+public class Base {
+    public String inheritedLabel() { return "base"; }
+}
+`)
+	writeJavaSource(t, root, "example/child/Child.java", `
+package example.child;
+import example.base.Base;
+public class Child extends Base {}
+`)
+	writeJavaSource(t, root, "example/app/Application.java", `
+package example.app;
+import example.child.Child;
+public class Application {
+    public static String run() {
+        Child child = new Child();
+        return child.inheritedLabel();
+    }
+}
+`)
+
+	outputs := convertJavaProjectDir(t, root)
+	out := outputs["example/app/Application.go"]
+	if !strings.Contains(out, ".InheritedLabel()") {
+		t.Fatalf("expected a child receiver to use the inherited method's resolved exported name, got:\n%s", out)
+	}
+	if strings.Contains(out, ".inheritedLabel()") {
+		t.Fatalf("cross-package superclass traversal retained Java casing:\n%s", out)
+	}
+}
+
 func TestOverloadResolution_PrefersMostSpecificReferenceType(t *testing.T) {
 	src := `
 public class ReferenceSpecificityProgram {

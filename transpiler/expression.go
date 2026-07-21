@@ -2324,6 +2324,39 @@ func resolveSuperclassScope(ctx Ctx, scope *symbol.ClassScope) *symbol.ClassScop
 	return resolveClassScopeByQualifiedName(ctx, base)
 }
 
+// resolveSuperclassScopeInDeclaringContext resolves an extends clause where it
+// was written. Hierarchy walks often start from a receiver used in an unrelated
+// package; resolving an unqualified superclass name against that call site's
+// imports silently truncates the walk and leaves inherited selectors with their
+// original Java casing.
+func resolveSuperclassScopeInDeclaringContext(ctx Ctx, scope *symbol.ClassScope) *symbol.ClassScope {
+	declarationCtx := ctx.Clone()
+	if file := findFileScopeForClassScope(scope); file != nil {
+		declarationCtx.currentFile = file
+		declarationCtx.currentClass = scope
+	}
+	return resolveSuperclassScope(declarationCtx, scope)
+}
+
+func resolveImplementedInterfaceScopesInDeclaringContext(ctx Ctx, scope *symbol.ClassScope) []*symbol.ClassScope {
+	if scope == nil {
+		return nil
+	}
+	declarationCtx := ctx.Clone()
+	if file := findFileScopeForClassScope(scope); file != nil {
+		declarationCtx.currentFile = file
+		declarationCtx.currentClass = scope
+	}
+	interfaces := make([]*symbol.ClassScope, 0, len(scope.ImplementedInterfaces))
+	for _, implemented := range scope.ImplementedInterfaces {
+		base, _ := parseJavaTypeString(implemented)
+		if resolved := resolveClassScopeByQualifiedName(declarationCtx, base); resolved != nil {
+			interfaces = append(interfaces, resolved)
+		}
+	}
+	return interfaces
+}
+
 type methodResolution struct {
 	def   *symbol.Definition
 	owner *symbol.ClassScope
@@ -2594,16 +2627,15 @@ func findBestMethodInHierarchy(
 	}
 	var best *methodResolution
 	var bestScore methodCandidateScore
-	seen := map[*symbol.ClassScope]struct{}{}
-
-	for scope := start; scope != nil; scope = resolveSuperclassScope(ctx, scope) {
-		if _, ok := seen[scope]; ok {
-			break
-		}
-		seen[scope] = struct{}{}
-
+	considerScope := func(scope *symbol.ClassScope, inheritedInterface bool) {
 		for _, def := range scope.Methods {
 			if def == nil || def.Constructor || def.OriginalName != methodName || len(def.Parameters) != len(argNodes) {
+				continue
+			}
+			// Java interface static methods are not inherited by implementing
+			// classes or child interfaces. A direct Interface.method() lookup still
+			// considers the starting interface in the ordinary hierarchy pass.
+			if inheritedInterface && def.IsStatic {
 				continue
 			}
 			if (def.IsStatic && !allowStatic) || (!def.IsStatic && !allowInstance) {
@@ -2624,6 +2656,40 @@ func findBestMethodInHierarchy(
 				bestScore = score
 			}
 		}
+	}
+
+	classHierarchy := []*symbol.ClassScope{}
+	seenClasses := map[*symbol.ClassScope]struct{}{}
+	for scope := start; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
+		if _, duplicate := seenClasses[scope]; duplicate {
+			break
+		}
+		seenClasses[scope] = struct{}{}
+		classHierarchy = append(classHierarchy, scope)
+		considerScope(scope, false)
+	}
+
+	// Methods inherited from implemented/extended interfaces are members of the
+	// receiver's Java type too. Their generated Go names carry export casing and,
+	// for defaults, their implementations are promoted from the initialized
+	// carrier embedded in the concrete class.
+	interfaceQueue := []*symbol.ClassScope{}
+	for _, scope := range classHierarchy {
+		interfaceQueue = append(interfaceQueue, resolveImplementedInterfaceScopesInDeclaringContext(ctx, scope)...)
+	}
+	seenInterfaces := map[*symbol.ClassScope]struct{}{}
+	for len(interfaceQueue) > 0 {
+		current := interfaceQueue[0]
+		interfaceQueue = interfaceQueue[1:]
+		if current == nil {
+			continue
+		}
+		if _, duplicate := seenInterfaces[current]; duplicate {
+			continue
+		}
+		seenInterfaces[current] = struct{}{}
+		considerScope(current, true)
+		interfaceQueue = append(interfaceQueue, resolveImplementedInterfaceScopesInDeclaringContext(ctx, current)...)
 	}
 
 	return best
@@ -3050,7 +3116,7 @@ func javaReferenceTypeDistance(actual, expected *symbol.ClassScope, ctx Ctx) (in
 
 func findInstanceMethodInHierarchy(start *symbol.ClassScope, methodName string, argCount int, ctx Ctx) *methodResolution {
 	seen := map[*symbol.ClassScope]struct{}{}
-	for scope := start; scope != nil; scope = resolveSuperclassScope(ctx, scope) {
+	for scope := start; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
 		if _, ok := seen[scope]; ok {
 			return nil
 		}
@@ -3073,7 +3139,7 @@ func findInstanceMethodInHierarchy(start *symbol.ClassScope, methodName string, 
 
 func findFieldInHierarchy(start *symbol.ClassScope, fieldName string, ctx Ctx) *symbol.Definition {
 	seen := map[*symbol.ClassScope]struct{}{}
-	for scope := start; scope != nil; scope = resolveSuperclassScope(ctx, scope) {
+	for scope := start; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
 		if _, ok := seen[scope]; ok {
 			return nil
 		}
@@ -3263,7 +3329,7 @@ func classInheritsFrom(child *symbol.ClassScope, expected *symbol.ClassScope, ct
 		return false
 	}
 	seen := map[*symbol.ClassScope]struct{}{}
-	for scope := child; scope != nil; scope = resolveSuperclassScope(ctx, scope) {
+	for scope := child; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
 		if _, ok := seen[scope]; ok {
 			return false
 		}

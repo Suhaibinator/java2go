@@ -65,6 +65,15 @@ type ParseHelper struct {
 }
 
 func setupParseHelper(t *testing.T, source string) *ParseHelper {
+	// The production entry point resets the project-wide symbol graph for each
+	// conversion. Mirror that boundary here so package-level collision and
+	// hierarchy analyses cannot see classes parsed by an earlier unit test.
+	previousGlobal := symbol.GlobalScope
+	symbol.GlobalScope = &symbol.GlobalSymbols{Packages: make(map[string]*symbol.PackageScope)}
+	t.Cleanup(func() {
+		symbol.GlobalScope = previousGlobal
+	})
+
 	file := parsing.SourceFile{
 		Name:   "Test.java",
 		Source: []byte(source),

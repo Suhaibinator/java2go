@@ -22,8 +22,10 @@ generic recursive chain, and verifies several Java class-selection rules.
 
 The fixture entered the corpus as a pinned `known_gap`: a direct call to an
 inherited default method through a concrete class was emitted with unresolved
-Java casing and failed generated-Go compilation. It is promoted to `passing`
-only after that same application compiles and its output matches Java exactly.
+Java casing and failed generated-Go compilation. Correct hierarchy resolution
+now finds both inherited interface defaults and cross-package superclass
+methods in their declaring contexts. The same application is promoted to
+`passing` after its generated output matched Java byte for byte.
 
 Follow-up adversarial targets discovered alongside this fixture include static
 method hiding and recursive methods declared in local or anonymous classes.

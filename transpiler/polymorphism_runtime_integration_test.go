@@ -210,6 +210,39 @@ func TestInheritedInterfaceDefault(t *testing.T) {
 `)
 }
 
+func TestPolymorphismRuntime_ConcreteClassSelectsInheritedInterfaceDefault(t *testing.T) {
+	src := `
+interface ConcreteDefaultGreeting {
+    String label();
+    default String greet(int repeat) {
+        return label() + ":" + repeat;
+    }
+}
+class ConcreteDefaultGreeter implements ConcreteDefaultGreeting {
+    public String label() { return "concrete"; }
+}
+public class ConcreteDefaultProgram {
+    public static String run() {
+        ConcreteDefaultGreeter value = new ConcreteDefaultGreeter();
+        return value.greet(3);
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestConcreteDefaultSelection(t *testing.T) {
+	if got := Run(); got != "concrete:3" {
+		t.Fatalf("Run() = %q", got)
+	}
+}
+`)
+}
+
 func TestPolymorphismRuntime_PrivateBaseMethodIsNotOverridden(t *testing.T) {
 	src := `
 class PrivateDispatchBase {
