@@ -1,8 +1,5 @@
 {
   "main_class": "parity.finallyloop.FinallyLoopApplication",
   "module_path": "parity/finallyloop",
-  "status": "known_gap",
-  "known_gap": "break and continue inside try/finally are emitted inside a closure, outside the generated Go loop",
-  "expected_failure_stage": "go_compile",
-  "expected_failure_contains": "continue is not in a loop"
+  "status": "passing"
 }

@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.dowhilecontinue.DoWhileContinueApplication",
+  "module_path": "parity/dowhilecontinue",
+  "status": "known_gap",
+  "known_gap": "Java continue in a do-while evaluates the loop condition before the next iteration, while the current Go for-loop lowering skips the synthesized trailing condition guard.",
+  "expected_failure_stage": "output",
+  "expected_failure_contains": "--- quoted go stdout ---\n\"2:12\\n\""
+}

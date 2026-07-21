@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.resourcesuppressed.ResourceSuppressedExceptionApplication",
+  "module_path": "parity/resourcesuppressed",
+  "status": "known_gap",
+  "known_gap": "When both a try-with-resources body and close() throw, Java preserves the body exception and suppresses the close exception, while Go defer panic replacement currently exposes the close exception.",
+  "expected_failure_stage": "output",
+  "expected_failure_contains": "--- quoted go stdout ---\n\"close\\n\""
+}

@@ -681,6 +681,16 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					Rhs: []ast.Expr{parseReturnValue(node.NamedChild(0), source, returnCtx)},
 				})
 			}
+			// A return in a finally block supersedes any break/continue that was
+			// pending from the try or catch. Clear the other abrupt-completion
+			// channel only after the return expression has evaluated successfully.
+			if len(ctx.tryReturnTarget.controlList) > 0 {
+				stmts = append(stmts, &ast.AssignStmt{
+					Lhs: []ast.Expr{&ast.Ident{Name: ctx.tryReturnTarget.ControlName}},
+					Tok: token.ASSIGN,
+					Rhs: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: "0"}},
+				})
+			}
 			stmts = append(stmts, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: ctx.tryReturnTarget.FlagName}},
 				Tok: token.ASSIGN,
@@ -705,15 +715,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			Stmt:  ParseStmt(node.NamedChild(1), source, ctx),
 		}
 	case "break_statement":
-		if node.NamedChildCount() > 0 {
-			return &ast.BranchStmt{Tok: token.BREAK, Label: identFromNode(node.NamedChild(0), source)}
-		}
-		return &ast.BranchStmt{Tok: token.BREAK}
+		return lowerTryControlBranch(node, source, ctx, token.BREAK)
 	case "continue_statement":
-		if node.NamedChildCount() > 0 {
-			return &ast.BranchStmt{Tok: token.CONTINUE, Label: identFromNode(node.NamedChild(0), source)}
-		}
-		return &ast.BranchStmt{Tok: token.CONTINUE}
+		return lowerTryControlBranch(node, source, ctx, token.CONTINUE)
 	case "throw_statement":
 		return &ast.ExprStmt{X: &ast.CallExpr{
 			Fun:  &ast.Ident{Name: "panic"},
@@ -1391,6 +1395,42 @@ func parseSwitchGroupBody(bodyNodes []*sitter.Node, source []byte, ctx Ctx) (bod
 		}
 	}
 	return body, terminatedByBreak
+}
+
+func lowerTryControlBranch(node *sitter.Node, source []byte, ctx Ctx, tok token.Token) ast.Stmt {
+	direct := &ast.BranchStmt{Tok: tok}
+	if node != nil && node.NamedChildCount() > 0 {
+		direct.Label = identFromNode(node.NamedChild(0), source)
+	}
+	if ctx.tryReturnTarget == nil || ctx.tryControlBoundary == nil {
+		return direct
+	}
+
+	javaTarget, label := javaBranchTarget(node, source, tok)
+	if javaTarget == nil || javaTargetInsideBoundary(javaTarget, ctx.tryControlBoundary) {
+		return direct
+	}
+	transfer := ctx.tryReturnTarget.registerControlTransfer(tok, label, javaTarget)
+	if transfer == nil {
+		return direct
+	}
+
+	// The generated func literal cannot cross the Java target directly. Record
+	// the transfer and return from the closure so resource/finally defers run.
+	// Clearing a pending method return lets a branch in finally supersede it.
+	return &ast.BlockStmt{List: []ast.Stmt{
+		&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: ctx.tryReturnTarget.FlagName}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: "false"}},
+		},
+		&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: ctx.tryReturnTarget.ControlName}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", transfer.Code)}},
+		},
+		&ast.ReturnStmt{},
+	}}
 }
 
 func recordLocalVariableDefinition(ctx Ctx, name, originalType, parsedType string) {

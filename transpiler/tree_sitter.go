@@ -86,6 +86,13 @@ type Ctx struct {
 	// When set, return statements are rewritten into assignments + bare return
 	// for lowered try/catch/finally closures.
 	tryReturnTarget *tryReturnTarget
+	// tryControlBoundary is the Java source block represented by the current
+	// lowered try/catch/finally func literal. A break or continue whose target is
+	// outside this block cannot be emitted directly in Go: func literals are a
+	// control-flow boundary even when they are lexically nested in a loop. Such a
+	// transfer is recorded on tryReturnTarget and replayed after the closure has
+	// run (and, importantly, after finally has had a chance to override it).
+	tryControlBoundary *sitter.Node
 	// suppressUnsupportedDiagnostics is used only while rendering the guarded
 	// copy of a versioned affine loop. The first copy already reported (or, in
 	// strict mode, failed on) the same source node; the second must still emit its
@@ -159,9 +166,102 @@ func (ctx Ctx) nextAnonClassIndex() int {
 }
 
 type tryReturnTarget struct {
-	FlagName  string
-	ValueName string
-	HasValue  bool
+	FlagName    string
+	ValueName   string
+	HasValue    bool
+	ControlName string
+	controls    map[tryControlTransferKey]*tryControlTransfer
+	controlList []*tryControlTransfer
+}
+
+type tryControlTransferKey struct {
+	Tok         token.Token
+	Label       string
+	TargetType  string
+	TargetStart uint32
+	TargetEnd   uint32
+}
+
+type tryControlTransfer struct {
+	tryControlTransferKey
+	Code       int
+	JavaTarget *sitter.Node
+}
+
+func (target *tryReturnTarget) registerControlTransfer(tok token.Token, label string, javaTarget *sitter.Node) *tryControlTransfer {
+	if target == nil || javaTarget == nil {
+		return nil
+	}
+	if target.controls == nil {
+		target.controls = make(map[tryControlTransferKey]*tryControlTransfer)
+	}
+	key := tryControlTransferKey{
+		Tok:         tok,
+		Label:       label,
+		TargetType:  javaTarget.Type(),
+		TargetStart: javaTarget.StartByte(),
+		TargetEnd:   javaTarget.EndByte(),
+	}
+	if existing := target.controls[key]; existing != nil {
+		return existing
+	}
+	transfer := &tryControlTransfer{
+		tryControlTransferKey: key,
+		Code:                  len(target.controlList) + 1,
+		JavaTarget:            javaTarget,
+	}
+	target.controls[key] = transfer
+	target.controlList = append(target.controlList, transfer)
+	return transfer
+}
+
+func javaBranchTarget(node *sitter.Node, source []byte, tok token.Token) (*sitter.Node, string) {
+	if node == nil {
+		return nil, ""
+	}
+
+	rawLabel := ""
+	goLabel := ""
+	if node.NamedChildCount() > 0 {
+		rawLabel = node.NamedChild(0).Content(source)
+		goLabel = sanitizeGoIdent(rawLabel)
+	}
+
+	for ancestor := node.Parent(); ancestor != nil; ancestor = ancestor.Parent() {
+		if rawLabel != "" {
+			if ancestor.Type() != "labeled_statement" || ancestor.NamedChildCount() == 0 {
+				continue
+			}
+			if ancestor.NamedChild(0).Content(source) == rawLabel {
+				return ancestor, goLabel
+			}
+			continue
+		}
+
+		switch ancestor.Type() {
+		case "for_statement", "enhanced_for_statement", "while_statement", "do_statement":
+			return ancestor, ""
+		case "switch_statement", "switch_expression":
+			if tok == token.BREAK {
+				return ancestor, ""
+			}
+		}
+	}
+	return nil, goLabel
+}
+
+func javaTargetInsideBoundary(target *sitter.Node, boundary *sitter.Node) bool {
+	if target == nil || boundary == nil {
+		return false
+	}
+	return target.StartByte() >= boundary.StartByte() && target.EndByte() <= boundary.EndByte()
+}
+
+func transferTargetInsideBoundary(transfer *tryControlTransfer, boundary *sitter.Node) bool {
+	if transfer == nil || boundary == nil {
+		return false
+	}
+	return transfer.TargetStart >= boundary.StartByte() && transfer.TargetEnd <= boundary.EndByte()
 }
 
 // Clone performs a shallow copy on a `Ctx`, returning a new Ctx with its pointers
@@ -180,6 +280,7 @@ func (c Ctx) Clone() Ctx {
 		importAliases:                       c.importAliases,
 		usedImports:                         c.usedImports,
 		tryReturnTarget:                     c.tryReturnTarget,
+		tryControlBoundary:                  c.tryControlBoundary,
 		suppressUnsupportedDiagnostics:      c.suppressUnsupportedDiagnostics,
 		disableAffineArrayRowSpecialization: c.disableAffineArrayRowSpecialization,
 		hoistedDecls:                        c.hoistedDecls,
@@ -535,6 +636,7 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 	handledName := "__java2goCatchHandled" + suffix
 	shouldReturnName := "__java2goShouldReturn" + suffix
 	returnValueName := "__java2goReturnValue" + suffix
+	controlName := "__java2goControl" + suffix
 	hasReturnValue := false
 	var returnValueType ast.Expr
 	if ctx.localScope != nil {
@@ -545,9 +647,10 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		}
 	}
 	returnTarget := &tryReturnTarget{
-		FlagName:  shouldReturnName,
-		ValueName: returnValueName,
-		HasValue:  hasReturnValue,
+		FlagName:    shouldReturnName,
+		ValueName:   returnValueName,
+		HasValue:    hasReturnValue,
+		ControlName: controlName,
 	}
 
 	varSpecs := []ast.Spec{
@@ -575,9 +678,10 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		})
 	}
 
+	varDecl := &ast.GenDecl{Tok: token.VAR, Specs: varSpecs}
 	stmts := []ast.Stmt{
 		&ast.DeclStmt{
-			Decl: &ast.GenDecl{Tok: token.VAR, Specs: varSpecs},
+			Decl: varDecl,
 		},
 	}
 
@@ -585,47 +689,16 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 	for _, decl := range resourceDecls {
 		resourceCtx := ctx.Clone()
 		resourceCtx.tryReturnTarget = returnTarget
+		resourceCtx.tryControlBoundary = bodyNode
 		tryBodyStmts = append(tryBodyStmts, ParseStmt(decl.node, source, resourceCtx))
 		tryBodyStmts = append(tryBodyStmts, buildResourceCloseDeferStmt(decl.name))
 	}
 	tryCtx := ctx.Clone()
 	tryCtx.tryReturnTarget = returnTarget
+	tryCtx.tryControlBoundary = bodyNode
 	tryBodyStmts = append(tryBodyStmts, ParseStmt(bodyNode, source, tryCtx).(*ast.BlockStmt).List...)
 
-	recoverStmt := &ast.IfStmt{
-		Init: &ast.AssignStmt{
-			Lhs: []ast.Expr{&ast.Ident{Name: "r"}},
-			Tok: token.DEFINE,
-			Rhs: []ast.Expr{
-				&ast.CallExpr{Fun: &ast.Ident{Name: "recover"}},
-			},
-		},
-		Cond: &ast.BinaryExpr{
-			X:  &ast.Ident{Name: "r"},
-			Op: token.NEQ,
-			Y:  &ast.Ident{Name: "nil"},
-		},
-		Body: &ast.BlockStmt{
-			List: []ast.Stmt{
-				// Normalize native Go runtime panics (divide by zero, nil
-				// dereference, index out of range, failed type assertion) into the
-				// matching Java exception so catch dispatch can handle them.
-				&ast.AssignStmt{
-					Lhs: []ast.Expr{&ast.Ident{Name: recoveredName}},
-					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{&ast.CallExpr{
-						Fun:  stdjavaQualifiedExpr("NormalizePanic", ctx),
-						Args: []ast.Expr{&ast.Ident{Name: "r"}},
-					}},
-				},
-				&ast.AssignStmt{
-					Lhs: []ast.Expr{&ast.Ident{Name: didPanicName}},
-					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{&ast.Ident{Name: "true"}},
-				},
-			},
-		},
-	}
+	recoverStmt := buildTryRecoverStmt(recoveredName, didPanicName, "", "r", returnTarget, ctx)
 
 	tryBody := &ast.BlockStmt{
 		List: append(
@@ -663,38 +736,40 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		if finallyBody != nil {
 			finallyCtx := ctx.Clone()
 			finallyCtx.tryReturnTarget = returnTarget
+			finallyCtx.tryControlBoundary = finallyBody
 			parsedFinally = ParseStmt(finallyBody, source, finallyCtx).(*ast.BlockStmt)
 		}
 	}
+	if len(returnTarget.controlList) > 0 {
+		varDecl.Specs = append(varDecl.Specs, &ast.ValueSpec{
+			Names: []*ast.Ident{{Name: controlName}},
+			Type:  &ast.Ident{Name: "int"},
+		})
+	}
 
 	if parsedFinally != nil {
-		// The finally block must run on every exit path from the catch dispatch,
-		// including when a catch clause rethrows. Registering it as a deferred
-		// call inside the closure that runs the catch dispatch guarantees it
-		// executes before any rethrown panic propagates, matching Java semantics.
-		dispatchBody := &ast.BlockStmt{
-			List: []ast.Stmt{
-				&ast.DeferStmt{
-					Call: &ast.CallExpr{
-						Fun: &ast.FuncLit{
-							Type: &ast.FuncType{},
-							Body: parsedFinally,
-						},
-					},
-				},
-			},
-		}
+		// Catch bodies are another possible abrupt-completion source. Capture a
+		// panic from a catch as pending state before running finally, instead of
+		// running finally while Go is actively unwinding. This is what lets a
+		// return/break/continue from finally supersede a catch throw, while a
+		// normally completing finally still rethrows it below.
 		if catchDispatch != nil {
-			dispatchBody.List = append(dispatchBody.List, catchDispatch)
+			catchRecoverStmt := buildTryRecoverStmt(recoveredName, didPanicName, handledName, "catchPanic", returnTarget, ctx)
+			stmts = append(stmts, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.FuncLit{
+				Type: &ast.FuncType{},
+				Body: &ast.BlockStmt{List: []ast.Stmt{
+					&ast.DeferStmt{Call: &ast.CallExpr{Fun: &ast.FuncLit{
+						Type: &ast.FuncType{},
+						Body: &ast.BlockStmt{List: []ast.Stmt{catchRecoverStmt}},
+					}}},
+					catchDispatch,
+				}},
+			}}})
 		}
-		stmts = append(stmts, &ast.ExprStmt{
-			X: &ast.CallExpr{
-				Fun: &ast.FuncLit{
-					Type: &ast.FuncType{},
-					Body: dispatchBody,
-				},
-			},
-		})
+		stmts = append(stmts, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.FuncLit{
+			Type: &ast.FuncType{},
+			Body: parsedFinally,
+		}}})
 	} else if catchDispatch != nil {
 		stmts = append(stmts, catchDispatch)
 	}
@@ -712,6 +787,13 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 				Lhs: []ast.Expr{&ast.Ident{Name: enclosing.ValueName}},
 				Tok: token.ASSIGN,
 				Rhs: []ast.Expr{&ast.Ident{Name: returnValueName}},
+			})
+		}
+		if len(enclosing.controlList) > 0 {
+			propagation = append(propagation, &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: enclosing.ControlName}},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: "0"}},
 			})
 		}
 		propagation = append(propagation, &ast.AssignStmt{
@@ -746,6 +828,49 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		})
 	}
 
+	// Replay loop control only after catch/finally completion. An enclosing try
+	// introduces another func-literal boundary, so a transfer that also crosses
+	// that boundary is propagated one level at a time. If its Java target lives
+	// inside the enclosing closure (for example an inner try inside a loop in an
+	// outer try), it is safe to emit the real branch at this level.
+	for _, transfer := range returnTarget.controlList {
+		if transfer == nil {
+			continue
+		}
+		branch := &ast.BranchStmt{Tok: transfer.Tok}
+		if transfer.Label != "" {
+			branch.Label = &ast.Ident{Name: transfer.Label}
+		}
+
+		body := []ast.Stmt{branch}
+		if enclosing := ctx.tryReturnTarget; enclosing != nil && !transferTargetInsideBoundary(transfer, ctx.tryControlBoundary) {
+			enclosingTransfer := enclosing.registerControlTransfer(transfer.Tok, transfer.Label, transfer.JavaTarget)
+			if enclosingTransfer != nil {
+				body = []ast.Stmt{
+					&ast.AssignStmt{
+						Lhs: []ast.Expr{&ast.Ident{Name: enclosing.FlagName}},
+						Tok: token.ASSIGN,
+						Rhs: []ast.Expr{&ast.Ident{Name: "false"}},
+					},
+					&ast.AssignStmt{
+						Lhs: []ast.Expr{&ast.Ident{Name: enclosing.ControlName}},
+						Tok: token.ASSIGN,
+						Rhs: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", enclosingTransfer.Code)}},
+					},
+					&ast.ReturnStmt{},
+				}
+			}
+		}
+		stmts = append(stmts, &ast.IfStmt{
+			Cond: &ast.BinaryExpr{
+				X:  &ast.Ident{Name: controlName},
+				Op: token.EQL,
+				Y:  &ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", transfer.Code)},
+			},
+			Body: &ast.BlockStmt{List: body},
+		})
+	}
+
 	stmts = append(stmts, &ast.IfStmt{
 		Cond: &ast.BinaryExpr{
 			X:  &ast.Ident{Name: didPanicName},
@@ -767,6 +892,66 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 	return stmts
 }
 
+func buildTryRecoverStmt(recoveredName, didPanicName, handledName, recoverVar string, returnTarget *tryReturnTarget, ctx Ctx) ast.Stmt {
+	body := []ast.Stmt{
+		// Normalize native Go runtime panics (divide by zero, nil
+		// dereference, index out of range, failed type assertion) into the
+		// matching Java exception so catch dispatch can handle them.
+		&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: recoveredName}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.CallExpr{
+				Fun:  stdjavaQualifiedExpr("NormalizePanic", ctx),
+				Args: []ast.Expr{&ast.Ident{Name: recoverVar}},
+			}},
+		},
+		&ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: didPanicName}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: "true"}},
+		},
+	}
+	// A panic raised while deferred resource cleanup is unwinding supersedes a
+	// pending return/break/continue from the try or catch body. Ordinary source
+	// statements cannot reach this state, but try-with-resources close calls can.
+	if returnTarget != nil {
+		body = append(body, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: returnTarget.FlagName}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: "false"}},
+		})
+		if len(returnTarget.controlList) > 0 {
+			body = append(body, &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: returnTarget.ControlName}},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: "0"}},
+			})
+		}
+	}
+	if handledName != "" {
+		body = append(body, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: handledName}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: "false"}},
+		})
+	}
+	return &ast.IfStmt{
+		Init: &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: recoverVar}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{
+				&ast.CallExpr{Fun: &ast.Ident{Name: "recover"}},
+			},
+		},
+		Cond: &ast.BinaryExpr{
+			X:  &ast.Ident{Name: recoverVar},
+			Op: token.NEQ,
+			Y:  &ast.Ident{Name: "nil"},
+		},
+		Body: &ast.BlockStmt{List: body},
+	}
+}
+
 func buildCatchDispatchStmt(catches []*sitter.Node, recoveredName, didPanicName, handledName string, returnTarget *tryReturnTarget, source []byte, ctx Ctx) ast.Stmt {
 	if len(catches) == 0 {
 		return nil
@@ -785,6 +970,7 @@ func buildCatchDispatchStmt(catches []*sitter.Node, recoveredName, didPanicName,
 		if catchBlock == nil {
 			continue
 		}
+		catchCtx.tryControlBoundary = catchBlock
 
 		bodyStmts := []ast.Stmt{
 			&ast.AssignStmt{

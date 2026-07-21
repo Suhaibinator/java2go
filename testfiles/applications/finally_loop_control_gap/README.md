@@ -1,11 +1,10 @@
-# Try/finally loop-control known gap
+# Try/finally loop-control parity
 
 Java routes `continue` and `break` through the active `finally` block and then
-resumes the surrounding loop transfer. The current try/finally lowering places
-those statements in a generated Go closure, where they are not lexically inside
-the loop and therefore do not compile.
+resumes the surrounding loop transfer. This fixture proves that the generated
+Go executes the same `t0f0t1f1e` trace byte-for-byte: both transfers leave the
+try body, `finally` runs, and only then does loop control resume.
 
-This fixture intentionally remains `known_gap`. The ordinary application parity
-suite must reproduce the exact compiler failure. Running with
-`JAVA2GO_PARITY_STRICT=1` turns it into a failing TDD target until the lowering
-is corrected and the fixture can be promoted to `passing`.
+The lowering records transfers that cross a generated try/catch/finally closure
+and replays them at the nearest Go scope containing their Java target. Transfers
+to loops or switches inside the closure remain ordinary Go branches.

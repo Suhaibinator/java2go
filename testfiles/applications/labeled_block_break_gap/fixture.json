@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.labeledblock.LabeledBlockBreakApplication",
+  "module_path": "parity/labeledblock",
+  "status": "known_gap",
+  "known_gap": "Java permits labeled break to a non-loop statement, while Go break labels may target only for, switch, or select statements",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "invalid break label outer"
+}
