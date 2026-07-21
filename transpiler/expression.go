@@ -1035,12 +1035,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "decimal_integer_literal":
 		literal := node.Content(source)
 		switch literal[len(literal)-1] {
-		case 'L':
+		case 'L', 'l':
 			return &ast.CallExpr{Fun: &ast.Ident{Name: "int64"}, Args: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: literal[:len(literal)-1]}}}
 		}
 		return &ast.Ident{Name: literal}
 	case "hex_integer_literal":
-		return &ast.Ident{Name: node.Content(source)}
+		return javaNonDecimalIntegerLiteral(node.Content(source), 16, 2)
+	case "octal_integer_literal":
+		return javaNonDecimalIntegerLiteral(node.Content(source), 8, 1)
+	case "binary_integer_literal":
+		return javaNonDecimalIntegerLiteral(node.Content(source), 2, 2)
 	case "decimal_floating_point_literal":
 		// This is something like 1.3D or 1.3F
 		literal := node.Content(source)
@@ -1073,6 +1077,57 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		Args: []ast.Expr{
 			&ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("%q", strings.TrimPrefix(unsupportedComment(diag), "// "))},
 		},
+	}
+}
+
+// javaNonDecimalIntegerLiteral preserves Java's signed, fixed-width meaning for
+// hexadecimal, octal, and binary literals. Unlike decimal notation, Java allows
+// the full unsigned bit pattern in these bases: 0xffffffff is the int value -1
+// and 0xffffffffffffffffL is the long value -1. Go otherwise treats those same
+// spellings as positive arbitrary-precision constants.
+func javaNonDecimalIntegerLiteral(literal string, base, prefixLength int) ast.Expr {
+	original := literal
+	literal = strings.ReplaceAll(literal, "_", "")
+	isLong := strings.HasSuffix(literal, "L") || strings.HasSuffix(literal, "l")
+	if isLong {
+		literal = literal[:len(literal)-1]
+	}
+	if prefixLength < 0 || prefixLength >= len(literal) {
+		return &ast.Ident{Name: original}
+	}
+
+	bitSize := 32
+	typeName := "int32"
+	if isLong {
+		bitSize = 64
+		typeName = "int64"
+	}
+	unsigned, err := strconv.ParseUint(literal[prefixLength:], base, bitSize)
+	if err != nil {
+		return &ast.Ident{Name: original}
+	}
+
+	var signed int64
+	if bitSize == 32 {
+		signed = int64(int32(uint32(unsigned)))
+	} else {
+		signed = int64(unsigned)
+	}
+	return &ast.CallExpr{
+		Fun:  &ast.Ident{Name: typeName},
+		Args: []ast.Expr{signedIntegerConstant(signed)},
+	}
+}
+
+func signedIntegerConstant(value int64) ast.Expr {
+	if value >= 0 {
+		return &ast.BasicLit{Kind: token.INT, Value: strconv.FormatInt(value, 10)}
+	}
+	// Avoid overflowing while taking the magnitude of math.MinInt64.
+	magnitude := uint64(-(value + 1)) + 1
+	return &ast.UnaryExpr{
+		Op: token.SUB,
+		X:  &ast.BasicLit{Kind: token.INT, Value: strconv.FormatUint(magnitude, 10)},
 	}
 }
 
