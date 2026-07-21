@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.sideeffects.app.SideEffectApplication",
+  "module_path": "parity/sideeffects",
+  "status": "passing"
+}

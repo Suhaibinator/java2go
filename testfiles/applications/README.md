@@ -31,6 +31,7 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `routing_engine` | Cross-package graph model, relaxation algorithm, interface dispatch, arrays, stable tie-breaking, unreachable routes, checksum | Passing |
 | `analytics_pipeline` | Parsing, validation, bounded generics, collections, scoring, aggregation, stable ranking, rejections, checksum | Passing |
 | `workflow_engine` | Generic workflow scheduler, rules, enums, collections, sorting, retries, failures, dependency cycles, histories, overflow | Passing |
+| `side_effect_semantics` | Short-circuiting, nested ternaries, receiver/argument order, null invocation timing, static qualifiers, compound assignment, `finally`, and recursive side effects | Passing |
 | `numerical_kernels` | Floating-point recurrences, blocked dense matrices, iterative stencils, cache locality, allocation, numerical checksums | Passing + benchmark |
 | `allocation_gc_pressure` | Short-lived object/array churn, retained cyclic graphs, cohort rotation, traversal, mutation, reclamation pressure | Passing + benchmark |
 | `integer_branch_search` | Constraint search, prime sieve, branch-skewed pointer chase, bit operations, recursion, large integer arrays | Passing + benchmark |
