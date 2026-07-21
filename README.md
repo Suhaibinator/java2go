@@ -79,6 +79,19 @@ must reproduce a pinned failure and become strict TDD targets with:
 JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 ```
 
+Two additional live-oracle suites protect the existing corpus. The first runs
+all programs below `testfiles/e2e`; the second automatically discovers older
+runnable Java programs elsewhere under `testfiles`. Both compile and run Java
+and generated Go in isolated directories, then compare exit status, stdout, and
+stderr exactly:
+
+```sh
+go test ./e2e -run '^(TestE2EPrograms|TestLegacyApplicationParity)$' -v
+```
+
+CI sets `JAVA2GO_PARITY_STRICT=1`, so a known-gap application cannot be accepted
+on the protected test path.
+
 See [`testfiles/applications/README.md`](testfiles/applications/README.md) for
 the fixture contract, current application matrix, and promotion workflow.
 
