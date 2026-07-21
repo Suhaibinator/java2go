@@ -85,6 +85,14 @@ func GenStruct(structName string, structFields *ast.FieldList) ast.Decl {
 // Each type parameter can optionally include bounds, which are converted into
 // Go constraints. Missing bounds default to the "any" constraint.
 func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typeParams []symbol.TypeParam) ast.Decl {
+	return genStructWithTypeParamsInContext(structName, structFields, typeParams, Ctx{})
+}
+
+// genStructWithTypeParamsInContext is the symbol-aware form used by the
+// transpiler. The context is required to distinguish an interface upper bound
+// (T extends Ranked -> T Ranked) from a class upper bound (T extends Base ->
+// T *Base), and to qualify bounds declared in another generated package.
+func genStructWithTypeParamsInContext(structName string, structFields *ast.FieldList, typeParams []symbol.TypeParam, ctx Ctx) ast.Decl {
 	typeSpec := &ast.TypeSpec{
 		Name: &ast.Ident{
 			Name: structName,
@@ -96,7 +104,7 @@ func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typ
 
 	// Add type parameters if present
 	if len(typeParams) > 0 {
-		typeSpec.TypeParams = &ast.FieldList{List: makeTypeParamFields(typeParams)}
+		typeSpec.TypeParams = &ast.FieldList{List: makeTypeParamFieldsInContext(typeParams, ctx)}
 	}
 
 	return &ast.GenDecl{
@@ -108,6 +116,10 @@ func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typ
 // GenFuncDeclWithTypeParams creates a function declaration with type parameters.
 // This is used for constructors and static methods of generic classes.
 func GenFuncDeclWithTypeParams(name string, typeParams []symbol.TypeParam, params, results *ast.FieldList, body *ast.BlockStmt) *ast.FuncDecl {
+	return genFuncDeclWithTypeParamsInContext(name, typeParams, params, results, body, Ctx{})
+}
+
+func genFuncDeclWithTypeParamsInContext(name string, typeParams []symbol.TypeParam, params, results *ast.FieldList, body *ast.BlockStmt, ctx Ctx) *ast.FuncDecl {
 	funcDecl := &ast.FuncDecl{
 		Name: &ast.Ident{Name: name},
 		Type: &ast.FuncType{
@@ -119,13 +131,17 @@ func GenFuncDeclWithTypeParams(name string, typeParams []symbol.TypeParam, param
 
 	// Add type parameters if present
 	if len(typeParams) > 0 {
-		funcDecl.Type.TypeParams = &ast.FieldList{List: makeTypeParamFields(typeParams)}
+		funcDecl.Type.TypeParams = &ast.FieldList{List: makeTypeParamFieldsInContext(typeParams, ctx)}
 	}
 
 	return funcDecl
 }
 
 func makeTypeParamFields(typeParams []symbol.TypeParam) []*ast.Field {
+	return makeTypeParamFieldsInContext(typeParams, Ctx{})
+}
+
+func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast.Field {
 	if len(typeParams) == 0 {
 		return nil
 	}
@@ -135,24 +151,28 @@ func makeTypeParamFields(typeParams []symbol.TypeParam) []*ast.Field {
 	for i, tp := range typeParams {
 		fields[i] = &ast.Field{
 			Names: []*ast.Ident{{Name: tp.Name}},
-			Type:  constraintExpr(tp.Bounds, paramNames),
+			Type:  constraintExprInContext(tp.Bounds, paramNames, ctx),
 		}
 	}
 	return fields
 }
 
 func constraintExpr(bounds []symbol.JavaType, typeParams []string) ast.Expr {
+	return constraintExprInContext(bounds, typeParams, Ctx{})
+}
+
+func constraintExprInContext(bounds []symbol.JavaType, typeParams []string, ctx Ctx) ast.Expr {
 	if len(bounds) == 0 {
 		return &ast.Ident{Name: "any"}
 	}
 
 	if len(bounds) == 1 {
-		return javaTypeStringToGoTypeExpr(bounds[0].Original, typeParams, Ctx{})
+		return javaTypeStringToGoTypeExpr(bounds[0].Original, typeParams, ctx)
 	}
 
 	fields := make([]*ast.Field, len(bounds))
 	for i, b := range bounds {
-		fields[i] = &ast.Field{Type: javaTypeStringToGoTypeExpr(b.Original, typeParams, Ctx{})}
+		fields[i] = &ast.Field{Type: javaTypeStringToGoTypeExpr(b.Original, typeParams, ctx)}
 	}
 
 	return &ast.InterfaceType{Methods: &ast.FieldList{List: fields}}
@@ -193,6 +213,10 @@ func GenTypeInterface(name string, types []string) ast.Decl {
 }
 
 func GenInterface(name string, methods *ast.FieldList, typeParams []symbol.TypeParam) ast.Decl {
+	return genInterfaceInContext(name, methods, typeParams, Ctx{})
+}
+
+func genInterfaceInContext(name string, methods *ast.FieldList, typeParams []symbol.TypeParam, ctx Ctx) ast.Decl {
 	typeSpec := &ast.TypeSpec{
 		Name: &ast.Ident{Name: name},
 		Type: &ast.InterfaceType{
@@ -200,7 +224,7 @@ func GenInterface(name string, methods *ast.FieldList, typeParams []symbol.TypeP
 		},
 	}
 	if len(typeParams) > 0 {
-		typeSpec.TypeParams = &ast.FieldList{List: makeTypeParamFields(typeParams)}
+		typeSpec.TypeParams = &ast.FieldList{List: makeTypeParamFieldsInContext(typeParams, ctx)}
 	}
 
 	return &ast.GenDecl{

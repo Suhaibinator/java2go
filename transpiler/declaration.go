@@ -95,21 +95,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
 			for _, t := range collectTypeNodes(interfacesNode) {
-				// A user-defined interface may have been generated under a different
-				// name (e.g. a package-private `Greeter` becomes `greeter`); embed the
-				// resolved interface name so the struct satisfies it. Interfaces embed
-				// by value (no pointer).
-				if base, _ := parseJavaTypeString(t.Content(source)); base != "" {
-					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.IsInterface && scope.Class != nil && scope.Class.Name != "" {
-						fields.List = append(fields.List, &ast.Field{Type: &ast.Ident{Name: scope.Class.Name}})
-						continue
-					}
-				}
-				embedType := astutil.ParseTypeWithTypeParams(t, source, typeParams)
-				if star, ok := embedType.(*ast.StarExpr); ok {
-					embedType = star.X
-				}
-				if _, ok := embedType.(*ast.InterfaceType); ok {
+				embedType := implementedInterfaceTypeExpr(t.Content(source), typeParams, ctx)
+				if embedType == nil {
 					// Interface literals are not valid anonymous struct embeds in Go.
 					// For well-known external interfaces (e.g. AutoCloseable), skip embed.
 					continue
@@ -121,6 +108,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Global variables
 		globalVariables := &ast.GenDecl{Tok: token.VAR}
 		instanceFieldInitializers := []ast.Stmt{}
+		classBody := node.ChildByFieldName("body")
+		consolidateStaticInitialization := classBodyHasStaticInitializer(classBody)
 
 		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
 
@@ -132,7 +121,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		// First, look through the class's body for field declarations
-		for _, child := range nodeutil.NamedChildrenOf(node.ChildByFieldName("body")) {
+		for _, child := range nodeutil.NamedChildrenOf(classBody) {
 			if child.Type() == "field_declaration" {
 
 				var staticField bool
@@ -185,11 +174,15 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				fieldDef := ctx.currentClass.FindField().ByOriginalName(fieldName)[0]
 
 				field.Names = []*ast.Ident{{Name: fieldDef.Name}}
-				field.Type = javaTypeStringToGoTypeExpr(fieldDef.OriginalType, typeParams, ctx)
+				field.Type = abstractClassToInterface(
+					javaTypeStringToGoTypeExpr(fieldDef.OriginalType, typeParams, ctx),
+					fieldDef.OriginalType,
+					ctx,
+				)
 
 				if staticField {
 					spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}
-					if fieldValueNode != nil {
+					if fieldValueNode != nil && !consolidateStaticInitialization {
 						valueCtx := ctx.Clone()
 						valueCtx.localScope = &symbol.Definition{IsStatic: true}
 						valueCtx.expectedType = fieldDef.OriginalType
@@ -226,7 +219,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		// Add the struct for the class (with type parameters if present)
-		declarations = append(declarations, GenStructWithTypeParams(ctx.className, fields, ctx.currentClass.TypeParameters))
+		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
 
 		if helperDecl := buildInstanceFieldInitializerMethodDecl(ctx, instanceFieldInitializers); helperDecl != nil {
 			declarations = append(declarations, helperDecl)
@@ -249,8 +242,20 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 		}
 
+		// Go evaluates every package variable before any init function. Java instead
+		// executes static field initializers and static blocks in their exact source
+		// order. When a class contains a static block, move all of that class's
+		// explicit static field values into one ordered init function. Classes with
+		// fields only retain direct Go initializers, preserving compact output and
+		// compile-time dependency handling.
+		if consolidateStaticInitialization {
+			if initDecl := buildOrderedStaticInitializationDecl(classBody, source, ctx); initDecl != nil {
+				declarations = append(declarations, initDecl)
+			}
+		}
+
 		// Add all the declarations that appear in the class
-		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
+		declarations = append(declarations, parseClassBodyDeclarations(classBody, source, ctx, consolidateStaticInitialization)...)
 
 		// User-defined exception classes are wired into the stdjava hierarchy: a
 		// ThrowableTypeName() override reports the class's own Java name (the
@@ -266,48 +271,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		return declarations
 	case "class_body", "enum_body": // The body of the currently parsed class or enum
-		decls := []ast.Decl{}
-
-		// To switch to parsing the subclasses of a class, since we assume that
-		// all the class's subclass definitions are in-order, if we find some number
-		// of subclasses in a class, we can refer to them by index
-		var subclassIndex int
-
-		for _, child := range nodeutil.NamedChildrenOf(node) {
-			switch child.Type() {
-			// Skip fields, comments, and enum constants (already processed)
-			case "field_declaration", "comment", "enum_constant":
-			case "constructor_declaration", "method_declaration", "abstract_method_declaration", "static_initializer":
-				for _, d := range ParseDecl(child, source, ctx) {
-					// If the declaration is bad, skip it
-					_, bad := d.(*ast.BadDecl)
-					if !bad {
-						decls = append(decls, d)
-					}
-				}
-			case "enum_body_declarations":
-				// Process methods and constructors inside enum body declarations
-				for _, declChild := range nodeutil.NamedChildrenOf(child) {
-					switch declChild.Type() {
-					case "constructor_declaration", "method_declaration", "abstract_method_declaration", "static_initializer":
-						for _, d := range ParseDecl(declChild, source, ctx) {
-							_, bad := d.(*ast.BadDecl)
-							if !bad {
-								decls = append(decls, d)
-							}
-						}
-					}
-				}
-			// Subclasses
-			case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
-				newCtx := ctx.Clone()
-				newCtx.currentClass = ctx.currentClass.Subclasses[subclassIndex]
-				subclassIndex++
-				decls = append(decls, ParseDecls(child, source, newCtx)...)
-			}
-		}
-
-		return decls
+		return parseClassBodyDeclarations(node, source, ctx, false)
 	case "interface_declaration":
 		nameNode := node.ChildByFieldName("name")
 		interfaceName := nameNode.Content(source)
@@ -376,8 +340,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			classTypeParams = ctx.currentClass.TypeParameters
 		}
 
-		declarations := []ast.Decl{GenInterface(interfaceName, methods, classTypeParams)}
-		declarations = append(declarations, genFunctionalInterfaceAdapterDecls(interfaceName, methods, classTypeParams, ctx.currentClass)...)
+		declarations := []ast.Decl{genInterfaceInContext(interfaceName, methods, classTypeParams, ctx)}
+		declarations = append(declarations, genFunctionalInterfaceAdapterDecls(interfaceName, methods, classTypeParams, ctx.currentClass, ctx)...)
 		return declarations
 	case "enum_declaration":
 		// Enums are modeled as structs with named singleton instances rather than integer constants.
@@ -397,7 +361,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		fields := &ast.FieldList{
 			List: []*ast.Field{
 				{Names: []*ast.Ident{{Name: enumMetaNameField}}, Type: &ast.Ident{Name: "string"}},
-				{Names: []*ast.Ident{{Name: enumMetaOrdinalField}}, Type: &ast.Ident{Name: "int"}},
+				{Names: []*ast.Ident{{Name: enumMetaOrdinalField}}, Type: &ast.Ident{Name: "int32"}},
 			},
 		}
 
@@ -405,11 +369,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		typeParams := ctx.currentClass.TypeParameterNames()
 		if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
 			for _, t := range collectTypeNodes(interfacesNode) {
-				embedType := astutil.ParseTypeWithTypeParams(t, source, typeParams)
-				if star, ok := embedType.(*ast.StarExpr); ok {
-					embedType = star.X
-				}
-				if _, ok := embedType.(*ast.InterfaceType); ok {
+				embedType := implementedInterfaceTypeExpr(t.Content(source), typeParams, ctx)
+				if embedType == nil {
 					continue
 				}
 				fields.List = append(fields.List, &ast.Field{Type: embedType})
@@ -435,7 +396,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		// Declare the enum struct type
-		declarations = append(declarations, GenStructWithTypeParams(ctx.className, fields, ctx.currentClass.TypeParameters))
+		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
 
 		// Generate ordinal constants to preserve declaration order
 		if len(ctx.currentClass.EnumConstants) > 0 {
@@ -537,7 +498,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			declarations = append(declarations, &ast.FuncDecl{
 				Name: &ast.Ident{Name: symbol.HandleExportStatus(true, "ordinal")},
 				Recv: receiver,
-				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "int"}}}}},
+				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "int32"}}}}},
 				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: enumMetaOrdinalField}}}}}},
 			})
 
@@ -547,7 +508,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				Recv: receiver,
 				Type: &ast.FuncType{
 					Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: "other"}}, Type: &ast.StarExpr{X: receiverBase}}}},
-					Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "int"}}}},
+					Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "int32"}}}},
 				},
 				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.BinaryExpr{X: &ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: enumMetaOrdinalField}}, Op: token.SUB, Y: &ast.SelectorExpr{X: &ast.Ident{Name: "other"}, Sel: &ast.Ident{Name: enumMetaOrdinalField}}}}}}},
 			})
@@ -559,6 +520,133 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		return declarations
 	}
 	panic("Unknown type to parse for decls: " + node.Type())
+}
+
+func parseClassBodyDeclarations(node *sitter.Node, source []byte, ctx Ctx, skipStaticInitializers bool) []ast.Decl {
+	decls := []ast.Decl{}
+
+	// Nested class scopes are stored in the same source order as their syntax.
+	var subclassIndex int
+	for _, child := range nodeutil.NamedChildrenOf(node) {
+		switch child.Type() {
+		// Fields and enum constants are handled by their enclosing declaration.
+		case "field_declaration", "comment", "enum_constant":
+		case "constructor_declaration", "method_declaration", "abstract_method_declaration":
+			decls = appendValidDeclarations(decls, ParseDecl(child, source, ctx))
+		case "static_initializer":
+			if !skipStaticInitializers {
+				decls = appendValidDeclarations(decls, ParseDecl(child, source, ctx))
+			}
+		case "enum_body_declarations":
+			for _, declChild := range nodeutil.NamedChildrenOf(child) {
+				switch declChild.Type() {
+				case "constructor_declaration", "method_declaration", "abstract_method_declaration":
+					decls = appendValidDeclarations(decls, ParseDecl(declChild, source, ctx))
+				case "static_initializer":
+					if !skipStaticInitializers {
+						decls = appendValidDeclarations(decls, ParseDecl(declChild, source, ctx))
+					}
+				}
+			}
+		case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
+			newCtx := ctx.Clone()
+			newCtx.currentClass = ctx.currentClass.Subclasses[subclassIndex]
+			subclassIndex++
+			decls = append(decls, ParseDecls(child, source, newCtx)...)
+		}
+	}
+	return decls
+}
+
+func appendValidDeclarations(dst []ast.Decl, declarations []ast.Decl) []ast.Decl {
+	for _, declaration := range declarations {
+		if _, bad := declaration.(*ast.BadDecl); !bad {
+			dst = append(dst, declaration)
+		}
+	}
+	return dst
+}
+
+func classBodyHasStaticInitializer(body *sitter.Node) bool {
+	if body == nil {
+		return false
+	}
+	for _, child := range nodeutil.NamedChildrenOf(body) {
+		if child.Type() == "static_initializer" {
+			return true
+		}
+	}
+	return false
+}
+
+func fieldDeclarationIsStatic(node *sitter.Node) bool {
+	if node == nil || node.Type() != "field_declaration" || node.NamedChildCount() == 0 {
+		return false
+	}
+	modifiers := node.NamedChild(0)
+	if modifiers == nil || modifiers.Type() != "modifiers" {
+		return false
+	}
+	for _, modifier := range nodeutil.UnnamedChildrenOf(modifiers) {
+		if modifier.Type() == "static" {
+			return true
+		}
+	}
+	return false
+}
+
+func buildOrderedStaticInitializationDecl(body *sitter.Node, source []byte, ctx Ctx) ast.Decl {
+	if body == nil || ctx.currentClass == nil {
+		return nil
+	}
+
+	statements := []ast.Stmt{}
+	for _, child := range nodeutil.NamedChildrenOf(body) {
+		switch child.Type() {
+		case "field_declaration":
+			if !fieldDeclarationIsStatic(child) {
+				continue
+			}
+			declarator := child.ChildByFieldName("declarator")
+			if declarator == nil {
+				continue
+			}
+			valueNode := declarator.ChildByFieldName("value")
+			nameNode := declarator.ChildByFieldName("name")
+			if valueNode == nil || nameNode == nil {
+				continue
+			}
+			fieldDefinitions := ctx.currentClass.FindField().ByOriginalName(nameNode.Content(source))
+			if len(fieldDefinitions) == 0 {
+				continue
+			}
+			fieldDefinition := fieldDefinitions[0]
+			valueCtx := ctx.Clone()
+			valueCtx.localScope = &symbol.Definition{IsStatic: true}
+			valueCtx.expectedType = fieldDefinition.OriginalType
+			statements = append(statements, &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: fieldDefinition.Name}},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{ParseExpr(valueNode, source, valueCtx)},
+			})
+		case "static_initializer":
+			staticCtx := ctx.Clone()
+			staticCtx.localScope = &symbol.Definition{IsStatic: true}
+			block, ok := ParseStmt(child.NamedChild(0), source, staticCtx).(*ast.BlockStmt)
+			if ok && block != nil {
+				statements = append(statements, block.List...)
+			}
+		}
+	}
+
+	if len(statements) == 0 {
+		return nil
+	}
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: "init"},
+		Type: &ast.FuncType{Params: &ast.FieldList{}},
+		Body: &ast.BlockStmt{List: statements},
+	}
 }
 
 func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) ast.Decl {
@@ -583,6 +671,35 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) a
 		},
 		Body: &ast.BlockStmt{List: initializers},
 	}
+}
+
+// implementedInterfaceTypeExpr lowers the type named in an implements clause
+// to an embeddable Go interface type. Using the string-based, symbol-aware type
+// converter is important here: it preserves generic arguments, recognizes type
+// parameters from the implementing class, applies generated name casing, and
+// qualifies types that live in another generated package.
+func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
+	base, _ := parseJavaTypeString(javaType)
+	// Runtime interfaces are satisfied structurally by the generated methods.
+	// Embedding stdjava.Runnable would add an unnecessary interface field to every
+	// anonymous Runnable implementation and changes its zero-value behavior.
+	if stripJavaQualifier(base) == "Runnable" && resolveClassScopeByQualifiedName(ctx, base) == nil {
+		return nil
+	}
+
+	embedType := javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)
+	if star, ok := embedType.(*ast.StarExpr); ok {
+		// Interfaces are embedded by value. The converter only leaves a pointer
+		// here when the interface could not be resolved, matching the historical
+		// fallback for an implements clause.
+		embedType = star.X
+	}
+	if _, ok := embedType.(*ast.InterfaceType); ok {
+		// Interface literals cannot be anonymous struct fields. This is how
+		// well-known external interfaces such as AutoCloseable are represented.
+		return nil
+	}
+	return embedType
 }
 
 // enclosingInstanceType returns the Go type expression (*Outer or *Outer[T,...])
@@ -633,7 +750,7 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			Type:  javaTypeStringToGoTypeExpr(f.OriginalType, typeParams, ctx),
 		})
 	}
-	declarations = append(declarations, GenStructWithTypeParams(ctx.className, fields, scope.TypeParameters))
+	declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, scope.TypeParameters, ctx))
 
 	recvBase := instantiateGenericType(ctx.className, typeParamExprs(typeParams))
 	recvName := ShortName(ctx.className)
@@ -659,12 +776,13 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		})
 	}
 	ctorBody = append(ctorBody, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: recvName}}})
-	declarations = append(declarations, GenFuncDeclWithTypeParams(
+	declarations = append(declarations, genFuncDeclWithTypeParamsInContext(
 		"New"+ctx.className,
 		scope.TypeParameters,
 		ctorParams,
 		&ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: recvBase}}}},
 		&ast.BlockStmt{List: ctorBody},
+		ctx,
 	))
 
 	// Accessor method per component: func (r *Name) X() T { return r.x }. The
@@ -829,7 +947,7 @@ func buildDefaultConstructorDecl(ctx Ctx) ast.Decl {
 	constructorName := defaultConstructorName(ctx.className)
 	returnType := &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: structType}}}}
 
-	return GenFuncDeclWithTypeParams(constructorName, typeParams, params, returnType, &ast.BlockStmt{List: body})
+	return genFuncDeclWithTypeParamsInContext(constructorName, typeParams, params, returnType, &ast.BlockStmt{List: body}, ctx)
 }
 
 func zeroValueForType(expr ast.Expr) ast.Expr {
@@ -900,7 +1018,7 @@ func generateAbstractClassInterface(ctx Ctx) ast.Decl {
 		})
 	}
 
-	return GenInterface(ctx.className+"I", methods, scope.TypeParameters)
+	return genInterfaceInContext(ctx.className+"I", methods, scope.TypeParameters, ctx)
 }
 
 func buildAbstractMethodBody(methodName string, results *ast.FieldList) *ast.BlockStmt {
@@ -1171,7 +1289,7 @@ func methodCallArgs(params *ast.FieldList) []ast.Expr {
 	return args
 }
 
-func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.FieldList, typeParams []symbol.TypeParam, scope *symbol.ClassScope) []ast.Decl {
+func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.FieldList, typeParams []symbol.TypeParam, scope *symbol.ClassScope, ctx Ctx) []ast.Decl {
 	if scope == nil {
 		return nil
 	}
@@ -1232,7 +1350,7 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 		},
 	}
 
-	adapterStruct := GenStructWithTypeParams(adapterName, structFields, typeParams)
+	adapterStruct := genStructWithTypeParamsInContext(adapterName, structFields, typeParams, ctx)
 
 	adapterTypeExpr := instantiateGenericType(adapterName, typeArgs)
 	interfaceTypeExpr := instantiateGenericType(interfaceName, typeArgs)
@@ -1311,7 +1429,7 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 		},
 	}
 
-	constructor := GenFuncDeclWithTypeParams(constructorName, typeParams, constructorParams, constructorResults, constructorBody)
+	constructor := genFuncDeclWithTypeParamsInContext(constructorName, typeParams, constructorParams, constructorResults, constructorBody, ctx)
 
 	return []ast.Decl{adapterStruct, implMethod, constructor}
 }
@@ -1370,7 +1488,7 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 			},
 		},
 	}
-	helperStruct := GenStructWithTypeParams(helperName, helperFields, combinedTypeParams)
+	helperStruct := genStructWithTypeParamsInContext(helperName, helperFields, combinedTypeParams, ctx)
 
 	helperTypeArgs := typeParamExprs(combinedTypeParamNames)
 	helperTypeExpr := instantiateGenericType(helperName, helperTypeArgs)
@@ -1406,7 +1524,7 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 			},
 		},
 	}
-	constructor := GenFuncDeclWithTypeParams(constructorName, combinedTypeParams, constructorParams, returnType, constructorBody)
+	constructor := genFuncDeclWithTypeParamsInContext(constructorName, combinedTypeParams, constructorParams, returnType, constructorBody, ctx)
 
 	helperRecvName := receiverShortName + "Helper"
 	helperReceiver := &ast.FieldList{
@@ -1621,12 +1739,13 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			constructorParams.List = append([]*ast.Field{enclParam}, constructorParams.List...)
 		}
 
-		return []ast.Decl{GenFuncDeclWithTypeParams(
+		return []ast.Decl{genFuncDeclWithTypeParamsInContext(
 			ctx.localScope.Name,
 			constructorTypeParams,
 			constructorParams,
 			&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
 			body,
+			ctx,
 		)}
 	case "method_declaration", "abstract_method_declaration":
 		var static bool
@@ -1824,7 +1943,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 		if static {
 			if len(ctx.localScope.TypeParameters) > 0 {
-				funcDecl.Type.TypeParams = &ast.FieldList{List: makeTypeParamFields(ctx.localScope.TypeParameters)}
+				funcDecl.Type.TypeParams = &ast.FieldList{List: makeTypeParamFieldsInContext(ctx.localScope.TypeParameters, ctx)}
 			}
 		} else if len(ctx.localScope.TypeParameters) > 0 {
 			log.WithFields(log.Fields{

@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.allocation.app.AllocationGcApplication",
+  "module_path": "parity/allocation",
+  "status": "passing"
+}

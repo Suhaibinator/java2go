@@ -1,0 +1,17 @@
+application=allocation_gc_pressure
+phases=72
+ephemeral_batches=10
+batch_size=1024
+scratch_words=28
+retained_slots=6
+cohort_nodes=1536
+cohort_payload_words=48
+traversal_steps=12000
+ephemeral_records=737280
+released_cohorts=66
+retained_nodes=9216
+retained_generation_sum=411
+ephemeral_checksum=3705430174914391252
+traversal_checksum=-3472943181631805864
+retained_checksum=4810401015356312091
+combined_checksum=7683050091980177022

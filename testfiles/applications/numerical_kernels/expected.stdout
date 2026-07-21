@@ -1,0 +1,11 @@
+application=numerical_kernels
+matrix_size=224
+block_size=28
+multiply_rounds=16
+stencil_iterations=300
+vector_length=262144
+vector_passes=96
+matrix_checksum=3897892634893624938
+stencil_checksum=-661109087509582112
+floating_checksum=-520451810560879996
+combined_checksum=-7850520785509272470

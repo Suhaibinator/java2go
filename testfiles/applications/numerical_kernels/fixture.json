@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.numerical.app.NumericalKernelsApplication",
+  "module_path": "parity/numerical",
+  "status": "passing"
+}

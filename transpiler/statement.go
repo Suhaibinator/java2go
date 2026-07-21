@@ -99,8 +99,8 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		hoistLocalClass(node, source, ctx)
 		return &ast.EmptyStmt{Implicit: true}
 	case "local_variable_declaration":
-		variableType := astutil.ParseType(node.ChildByFieldName("type"), source)
 		originalType := node.ChildByFieldName("type").Content(source)
+		variableType := astutil.ParseType(node.ChildByFieldName("type"), source)
 		variableDeclarator := node.ChildByFieldName("declarator")
 
 		// If a variable is being declared, but not set to a value
@@ -112,7 +112,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					Specs: []ast.Spec{
 						&ast.ValueSpec{
 							Names: []*ast.Ident{identFromNode(variableDeclarator.ChildByFieldName("name"), source)},
-							Type:  variableType,
+							Type:  explicitLocalVariableType(originalType, ctx),
 						},
 					},
 				},
@@ -161,7 +161,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					Specs: []ast.Spec{
 						&ast.ValueSpec{
 							Names:  names,
-							Type:   variableType,
+							Type:   explicitLocalVariableType(originalType, ctx),
 							Values: declaration.Rhs,
 						},
 					},
@@ -580,6 +580,18 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		return parseSwitchBlock(node, source, ctx)
 	}
 	return nil
+}
+
+// explicitLocalVariableType performs symbol-aware lowering only when a local's
+// Go declaration must carry an explicit type (no initializer, or a null
+// initializer). Short declarations should not call this helper: resolving their
+// source type can register imports that never appear in the emitted Go code.
+func explicitLocalVariableType(originalType string, ctx Ctx) ast.Expr {
+	return abstractClassToInterface(
+		javaTypeStringToGoTypeExpr(originalType, inScopeTypeParameters(ctx), ctx),
+		originalType,
+		ctx,
+	)
 }
 
 // parseSwitchBlock lowers a Java switch body into a Go switch body, translating

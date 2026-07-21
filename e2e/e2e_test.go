@@ -38,16 +38,13 @@ var skipReasons = map[string]string{
 	"enums/Enums":             "enum METHOD-name casing: call site emits .ordinal() but generated method is .Ordinal() (WED.ordinal undefined). Enum-constant access fixed (task #10 item 8) (ROADMAP §6/#7 casing item 13)",
 
 	"instanceof_pattern/InstanceofPattern": "instanceof pattern works for reference types (String matches), but a boxed primitive (21 as Integer) doesn't match `instanceof Integer` -> falls to 'unknown'. Autoboxing gap (ROADMAP §6 autoboxing)",
-	"records/Records":                      "record constructor call emits undefined ConstructPoint() (ROADMAP §5)",
-	"textblocks/TextBlocks":                "text blocks emit a raw multi-line Go string with literal newlines (invalid) (ROADMAP §5)",
 	"io/FileRoundTrip":                     "java.io (File/FileWriter/PrintWriter/BufferedReader/FileReader) not implemented yet (stdlib-dev task #13 item 3) (ROADMAP §2 java.io)",
 
 	"nested/AnonLocal":        "SAM anon + local class now work; remaining: anon class extending an ABSTRACT class doesn't dispatch its override — calling describe() hits the abstract base stub ('abstract method describe not implemented'), so shout() panics (ROADMAP §4 M4 anon-extends-abstract dispatch)",
-	"static_init/StaticInit":  "init reserved-name collision FIXED (renamed init0); compiles+runs now. Remaining: static-init ORDERING — Go runs all var-inits before init() funcs, so field initializer 'init c' runs before earlier static{} blocks instead of interleaved in Java source order (ROADMAP §6 static init order, task #7)",
 	"overloading/Overloading": "overload resolution collapses all calls to the first overload (describe0/int32); long/double/String/arity dispatch by arg type not implemented (ROADMAP §6/§7)",
 }
 
-func moduleRoot(t *testing.T) string {
+func moduleRoot(t testing.TB) string {
 	t.Helper()
 	wd, err := os.Getwd()
 	if err != nil {
@@ -85,6 +82,7 @@ func findPrograms(t *testing.T, root string) map[string]string {
 func TestE2EPrograms(t *testing.T) {
 	root := moduleRoot(t)
 	programs := findPrograms(t, root)
+	strictParity := os.Getenv("JAVA2GO_PARITY_STRICT") == "1"
 	if len(programs) == 0 {
 		t.Fatal("no e2e Java programs found under testfiles/e2e")
 	}
@@ -99,8 +97,10 @@ func TestE2EPrograms(t *testing.T) {
 
 	for key, javaPath := range programs {
 		t.Run(key, func(t *testing.T) {
-			if reason, skip := skipReasons[key]; skip {
+			if reason, skip := skipReasons[key]; skip && !strictParity {
 				t.Skip(reason)
+			} else if skip {
+				t.Logf("strict parity: exercising known gap: %s", reason)
 			}
 			runProgram(t, root, buildRoot, key, javaPath)
 		})

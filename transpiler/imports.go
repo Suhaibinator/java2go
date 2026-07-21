@@ -172,6 +172,75 @@ func packageAliasTaken(ctx Ctx, alias string) bool {
 	return false
 }
 
+// definitionDeclaresGoIdent reports whether a symbol definition or anything in
+// its lexical subtree declares name after Java-to-Go identifier sanitization.
+// Import aliases live in the file block and can be shadowed by parameters or
+// locals at a later qualified use, so package alias allocation must reserve all
+// identifiers in the source file rather than only other import aliases.
+func definitionDeclaresGoIdent(def *symbol.Definition, name string) bool {
+	if def == nil {
+		return false
+	}
+	if sanitizeGoIdent(def.OriginalName) == name || sanitizeGoIdent(def.Name) == name {
+		return true
+	}
+	for _, param := range def.Parameters {
+		if definitionDeclaresGoIdent(param, name) {
+			return true
+		}
+	}
+	for _, child := range def.Children {
+		if definitionDeclaresGoIdent(child, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func classScopeDeclaresGoIdent(scope *symbol.ClassScope, name string) bool {
+	if scope == nil {
+		return false
+	}
+	if definitionDeclaresGoIdent(scope.Class, name) {
+		return true
+	}
+	for _, field := range scope.Fields {
+		if definitionDeclaresGoIdent(field, name) {
+			return true
+		}
+	}
+	for _, method := range scope.Methods {
+		if definitionDeclaresGoIdent(method, name) {
+			return true
+		}
+	}
+	for _, nested := range scope.Subclasses {
+		if classScopeDeclaresGoIdent(nested, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func fileScopeDeclaresGoIdent(file *symbol.FileScope, name string) bool {
+	if file == nil || name == "" {
+		return false
+	}
+	if len(file.TopLevelClasses) == 0 {
+		return classScopeDeclaresGoIdent(file.BaseClass, name)
+	}
+	for _, class := range file.TopLevelClasses {
+		if classScopeDeclaresGoIdent(class, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func packageAliasUnavailable(ctx Ctx, alias string) bool {
+	return packageAliasTaken(ctx, alias) || fileScopeDeclaresGoIdent(ctx.currentFile, alias)
+}
+
 // isJavaStdlibPackage reports whether a Java package belongs to the JDK
 // (java.* / javax.*). These have no Go import path: their types are either
 // modelled by the stdjava runtime / intrinsics table or mapped to Go builtins,
@@ -197,10 +266,10 @@ func markJavaPackageUsage(ctx Ctx, javaPkg string) string {
 	if !exists || alias == "" {
 		baseAlias := packageAliasFromJavaPackage(javaPkg)
 		alias = baseAlias
-		if currentPkgAlias := packageAliasFromJavaPackage(ctx.currentFile.Package); alias == currentPkgAlias {
+		if currentPkgAlias := packageAliasFromJavaPackage(ctx.currentFile.Package); alias == currentPkgAlias || fileScopeDeclaresGoIdent(ctx.currentFile, alias) {
 			alias = baseAlias + "pkg"
 		}
-		for ind := 2; packageAliasTaken(ctx, alias); ind++ {
+		for ind := 2; packageAliasUnavailable(ctx, alias); ind++ {
 			alias = baseAlias + strconv.Itoa(ind)
 		}
 		if ctx.importAliases != nil {
@@ -262,6 +331,23 @@ func findJavaPackageForClassScope(scope *symbol.ClassScope) string {
 		}
 	}
 	return ""
+}
+
+func findFileScopeForClassScope(scope *symbol.ClassScope) *symbol.FileScope {
+	if scope == nil {
+		return nil
+	}
+	for _, pkg := range symbol.GlobalScope.Packages {
+		if pkg == nil {
+			continue
+		}
+		for _, file := range pkg.Files {
+			if file != nil && file.BaseClass != nil && classScopeContains(file.BaseClass, scope) {
+				return file
+			}
+		}
+	}
+	return nil
 }
 
 func resolveJavaPackageForType(ctx Ctx, javaTypeBase string, scope *symbol.ClassScope) string {

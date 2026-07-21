@@ -149,7 +149,7 @@ func TestEnumWithConstructorsAndFields(t *testing.T) {
 		t.Fatalf("expected enum to be generated as a struct, got:\n%s", output)
 	}
 
-	if !strings.Contains(output, "enumName string") || !strings.Contains(output, "enumOrdinal int") {
+	if !strings.Contains(output, "enumName string") || !strings.Contains(output, "enumOrdinal int32") {
 		t.Errorf("expected enum metadata fields enumName and enumOrdinal to be present\n%s", output)
 	}
 

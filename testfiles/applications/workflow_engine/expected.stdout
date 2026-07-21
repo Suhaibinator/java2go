@@ -1,0 +1,60 @@
+=== WORKFLOW PARITY ===
+NAME nightly-sync
+TASKS 11
+PLAN publish>normalize>oversize>quarantine>cycle-a>cycle-b>enrich>orphan>archive>cleanup>fetch
+CONFIG publish priority=CRITICAL effort=2 deps=1
+CONFIG normalize priority=HIGH effort=3 deps=1
+CONFIG oversize priority=HIGH effort=9 deps=1
+CONFIG quarantine priority=HIGH effort=1 deps=1
+CONFIG cycle-a priority=NORMAL effort=1 deps=1
+CONFIG cycle-b priority=NORMAL effort=1 deps=1
+CONFIG enrich priority=NORMAL effort=4 deps=1
+CONFIG orphan priority=NORMAL effort=1 deps=1
+CONFIG archive priority=LOW effort=2 deps=1
+CONFIG cleanup priority=LOW effort=1 deps=2
+CONFIG fetch priority=LOW effort=2 deps=0
+PASS 1
+SKIP orphan reason=missing:absent
+RUN fetch attempt=1
+OK fetch code=200 detail=fetched
+PASS 2
+RUN normalize attempt=1
+RETRY normalize code=503 detail=cache-warming
+SKIP oversize reason=rule:effort-limit:effort-9-exceeds-5
+SKIP quarantine reason=rule:payload-prefix:blocked-prefix-BLOCK:
+PASS 3
+RUN normalize attempt=2
+OK normalize code=200 detail=normalized
+RUN enrich attempt=1
+OK enrich code=200 detail=enriched
+RUN cleanup attempt=1
+OK cleanup code=200 detail=cleaned
+PASS 4
+RUN publish attempt=1
+FAIL publish code=422 detail=remote-rejected
+SKIP archive reason=upstream:publish
+PASS 5
+SKIP cycle-a reason=unresolved-cycle
+SKIP cycle-b reason=unresolved-cycle
+SUMMARY executions=6 retries=1 rejections=2 skipped=6
+STATE REGISTERED=0
+STATE READY=0
+STATE RUNNING=0
+STATE SUCCEEDED=4
+STATE FAILED=1
+STATE SKIPPED=6
+ATTEMPTS 6
+HISTORY publish state=FAILED attempts=1 path=REGISTERED>READY>RUNNING>FAILED
+HISTORY normalize state=SUCCEEDED attempts=2 path=REGISTERED>READY>RUNNING>READY>RUNNING>SUCCEEDED
+HISTORY oversize state=SKIPPED attempts=0 path=REGISTERED>READY>SKIPPED
+HISTORY quarantine state=SKIPPED attempts=0 path=REGISTERED>READY>SKIPPED
+HISTORY cycle-a state=SKIPPED attempts=0 path=REGISTERED>SKIPPED
+HISTORY cycle-b state=SKIPPED attempts=0 path=REGISTERED>SKIPPED
+HISTORY enrich state=SUCCEEDED attempts=1 path=REGISTERED>READY>RUNNING>SUCCEEDED
+HISTORY orphan state=SKIPPED attempts=0 path=REGISTERED>SKIPPED
+HISTORY archive state=SKIPPED attempts=0 path=REGISTERED>SKIPPED
+HISTORY cleanup state=SUCCEEDED attempts=1 path=REGISTERED>READY>RUNNING>SUCCEEDED
+HISTORY fetch state=SUCCEEDED attempts=1 path=REGISTERED>READY>RUNNING>SUCCEEDED
+CHECKSUM -251085524
+REPORT_LINES 57
+=== END WORKFLOW ===

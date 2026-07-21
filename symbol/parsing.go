@@ -270,17 +270,20 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			&Definition{
 				Name:         HandleExportStatus(true, "name"),
 				OriginalName: "name",
+				OriginalType: "String",
 				Type:         "string",
 			},
 			&Definition{
 				Name:         HandleExportStatus(true, "ordinal"),
 				OriginalName: "ordinal",
-				Type:         "int",
+				OriginalType: "int",
+				Type:         "int32",
 			},
 			&Definition{
 				Name:         HandleExportStatus(true, "compareTo"),
 				OriginalName: "compareTo",
-				Type:         "int",
+				OriginalType: "int",
+				Type:         "int32",
 				Parameters: []*Definition{{
 					Name:         "other",
 					OriginalName: "other",

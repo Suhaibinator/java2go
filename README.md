@@ -62,6 +62,38 @@ Current limitations:
 
 * `./java2go <files>` to parse a list of files or directories (or run directly with `go run ./cmd/java2go <files>`)
 
+## Application parity tests
+
+The project includes deterministic, multi-package Java applications that are
+compiled and run with a real JDK, transpiled as complete source trees, compiled
+as Go, and compared byte for byte:
+
+```sh
+go test ./e2e -run '^TestApplicationParity$' -v
+```
+
+Passing applications enforce regressions immediately. Known-gap applications
+must reproduce a pinned failure and become strict TDD targets with:
+
+```sh
+JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
+```
+
+See [`testfiles/applications/README.md`](testfiles/applications/README.md) for
+the fixture contract, current application matrix, and promotion workflow.
+
+CPU-intensive fixtures also carry `benchmark.json`. The benchmark harness
+builds both implementations outside the timer, performs an untimed validation
+run, then verifies the exact parity oracle after every measured process:
+
+```sh
+go test ./e2e -run '^$' -bench '^BenchmarkApplicationPerformance$' -benchtime=1x -count=5
+```
+
+Results include runtime startup and shutdown. The workloads are deliberately
+large enough to keep that overhead from dominating; use the reported `ns/run`
+metric to compare individual executions when a fixture batches multiple runs.
+
 ## Options
 
 * `-w` writes the files directly to their corresponding `.go` files, instead of `stdout`

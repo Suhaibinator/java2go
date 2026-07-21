@@ -23,10 +23,10 @@ public enum State {
 	if !strings.Contains(flat, "State) Name() string") {
 		t.Fatalf("expected name() accessor to be generated, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "State) Ordinal() int") {
+	if !strings.Contains(flat, "State) Ordinal() int32") {
 		t.Fatalf("expected ordinal() accessor to be generated, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "State) CompareTo(other *State) int") {
+	if !strings.Contains(flat, "State) CompareTo(other *State) int32") {
 		t.Fatalf("expected compareTo helper to be generated, got:\n%s", out)
 	}
 }
@@ -61,7 +61,7 @@ public enum Switch implements Flag {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "type Switch struct { enumName string enumOrdinal int Flag }") {
+	if !strings.Contains(flat, "type Switch struct { enumName string enumOrdinal int32 Flag }") {
 		t.Fatalf("expected enum to embed implemented interfaces, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "Switch) IsOn() bool") {
