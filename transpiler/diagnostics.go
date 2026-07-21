@@ -102,6 +102,9 @@ func reportUnsupported(kind string, node *sitter.Node, source []byte, ctx Ctx) D
 		diag.Line = node.StartPoint().Row + 1
 		diag.Message = nodeSnippet(node, source)
 	}
+	if ctx.suppressUnsupportedDiagnostics {
+		return diag
+	}
 
 	diagnostics.mu.Lock()
 	strict := diagnostics.strict

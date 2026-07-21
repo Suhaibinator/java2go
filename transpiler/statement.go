@@ -785,7 +785,24 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			cond = ParseExpr(node.ChildByFieldName("condition"), source, ctx)
 		}
 
-		body := ParseStmt(node.ChildByFieldName("body"), source, loopCtx).(*ast.BlockStmt)
+		fastCtx := loopCtx.Clone()
+		// A nested loop may only inherit call sites owned by an enclosing
+		// versioned loop. Add only this loop's bindings to the binding-specific
+		// proof set; inherited bindings retain the validity state of their own
+		// enclosing branch.
+		if len(affineBindings) > 0 {
+			fastCtx.affineArrayNonNullBindings = cloneAffineArrayNonNullBindings(loopCtx.affineArrayNonNullBindings)
+			for _, binding := range affineBindings {
+				if binding != nil {
+					fastCtx.affineArrayNonNullBindings[binding] = struct{}{}
+				}
+			}
+		}
+		guardedCtx := loopCtx.Clone()
+		guardedCtx.localScope = cloneLocalScopeDefinition(loopCtx.localScope)
+		guardedCtx.suppressUnsupportedDiagnostics = true
+
+		body := ParseStmt(node.ChildByFieldName("body"), source, fastCtx).(*ast.BlockStmt)
 		if initNode != nil && initNode.Type() == "local_variable_declaration" {
 			body.List = append(unusedLocalDiscardStatements(init, node, source), body.List...)
 		}
@@ -800,7 +817,27 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if len(cacheStatements) == 0 {
 			return loop
 		}
-		return &ast.BlockStmt{List: append(cacheStatements, loop)}
+
+		guardedBody := ParseStmt(node.ChildByFieldName("body"), source, guardedCtx).(*ast.BlockStmt)
+		if initNode != nil && initNode.Type() == "local_variable_declaration" {
+			guardedBody.List = append(unusedLocalDiscardStatements(init, node, source), guardedBody.List...)
+		}
+		guardedLoop := &ast.ForStmt{
+			Init: init,
+			Cond: cond,
+			Post: post,
+			Body: guardedBody,
+		}
+		validity := affineArrayLoopValidityCondition(affineBindings)
+		if validity == nil {
+			return loop
+		}
+		versionedLoop := &ast.IfStmt{
+			Cond: validity,
+			Body: &ast.BlockStmt{List: []ast.Stmt{loop}},
+			Else: &ast.BlockStmt{List: []ast.Stmt{guardedLoop}},
+		}
+		return &ast.BlockStmt{List: append(cacheStatements, versionedLoop)}
 	case "while_statement":
 		if readLineLoop, ok := lowerBufferedReaderReadLineWhile(node, source, ctx); ok {
 			return readLineLoop

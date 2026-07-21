@@ -301,6 +301,237 @@ func TestAffineExceptionFidelity(t *testing.T) {
 `)
 }
 
+func TestAffineArrayLoopFastPath_VersionsNonNullFastPathAndGuardedFallback(t *testing.T) {
+	src := `
+final class VersionGrid {
+    private final double[] values;
+    private final int size = 1;
+    VersionGrid(double value) {
+        this.values = new double[1];
+        this.values[0] = value;
+    }
+    VersionGrid() { this.values = null; }
+    double get(int row, int column) {
+        return this.values[row * this.size + column];
+    }
+}
+public class VersionedLoopProgram {
+    public static VersionGrid allocated(double value) { return new VersionGrid(value); }
+    public static VersionGrid nullBacked() { return new VersionGrid(); }
+    public static double versioned(VersionGrid grid, boolean access, int trips) {
+        double total = 7.0;
+        for (int once = 0; once < trips; once++) {
+            if (access) {
+                total += grid.get(0, 0);
+            }
+        }
+        return total;
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	start := strings.Index(out, "func Versioned(")
+	if start < 0 {
+		t.Fatalf("generated Versioned function not found:\n%s", out)
+	}
+	versioned := out[start:]
+	if next := strings.Index(versioned[1:], "\nfunc "); next >= 0 {
+		versioned = versioned[:next+1]
+	}
+	flat := normalizeSpaces(versioned)
+	elseIndex := strings.Index(flat, "} else {")
+	if elseIndex < 0 {
+		t.Fatalf("affine loop was not versioned:\n%s", versioned)
+	}
+	fast, guarded := flat[:elseIndex], flat[elseIndex:]
+	for _, fragment := range []string{"grid != nil", "Values != nil", "for once := int32(0); once < trips; once++"} {
+		if !strings.Contains(fast, fragment) {
+			t.Fatalf("guard-free affine branch is missing %q:\n%s", fragment, versioned)
+		}
+	}
+	if strings.Contains(fast, "NewNullPointerException") {
+		t.Fatalf("non-null affine branch retained per-access null guards:\n%s", versioned)
+	}
+	if strings.Count(guarded, "NewNullPointerException") != 2 {
+		t.Fatalf("invalid affine branch must retain receiver and backing-array guards:\n%s", versioned)
+	}
+
+	runGoTestInTempModule(t, out, `
+package main
+
+import (
+    "testing"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
+
+func versionedRecovered(call func()) (got interface{}) {
+    defer func() { got = recover() }()
+    call()
+    return nil
+}
+
+func TestVersionedAffineRuntime(t *testing.T) {
+    if got := Versioned(Allocated(3), true, 2); got != 13 {
+        t.Fatalf("valid fast branch = %v, want 13", got)
+    }
+    if got := Versioned(nil, false, 1); got != 7 {
+        t.Fatalf("conditional nil receiver = %v, want 7", got)
+    }
+    if got := Versioned(NullBacked(), false, 1); got != 7 {
+        t.Fatalf("conditional null backing = %v, want 7", got)
+    }
+    if got := Versioned(nil, true, 0); got != 7 {
+        t.Fatalf("zero-trip nil receiver = %v, want 7", got)
+    }
+    failures := map[string]func(){
+        "receiver": func() { Versioned(nil, true, 1) },
+        "backing": func() { Versioned(NullBacked(), true, 1) },
+    }
+    for name, call := range failures {
+        recovered := stdjava.NormalizePanic(versionedRecovered(call))
+        if !stdjava.CaughtAs(recovered, "NullPointerException") || stdjava.CaughtAs(recovered, "ArrayIndexOutOfBoundsException") {
+            t.Fatalf("%s failure normalized as %T (%v), want only NullPointerException", name, recovered, recovered)
+        }
+    }
+}
+`)
+}
+
+func TestAffineArrayLoopFastPath_NestedVersionTracksNonNullPerBinding(t *testing.T) {
+	src := `
+final class MixedVersionGrid {
+    private final int[] values;
+    private final int size = 1;
+    MixedVersionGrid(int value) {
+        this.values = new int[1];
+        this.values[0] = value;
+    }
+    MixedVersionGrid() { this.values = null; }
+    int get(int row, int column) {
+        return this.values[row * this.size + column];
+    }
+}
+public class MixedVersionLoopProgram {
+    public static MixedVersionGrid valid(int value) { return new MixedVersionGrid(value); }
+    public static MixedVersionGrid nullBacked() { return new MixedVersionGrid(); }
+    public static int run(MixedVersionGrid inherited, MixedVersionGrid changing,
+                          MixedVersionGrid replacement) {
+        int total = 0;
+        for (int outer = 0; outer < 1; outer++) {
+            changing = replacement;
+            for (int inner = 0; inner < 1; inner++) {
+                total += changing.get(0, 0);
+                total += inherited.get(0, 0);
+            }
+        }
+        return total;
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+	if strings.Count(flat, "Java2goAffineView0Values()") < 2 || !strings.Contains(flat, "NewNullPointerException") {
+		t.Fatalf("mixed nested bindings did not produce nested versioning with guarded paths:\n%s", out)
+	}
+	runGoTestInTempModule(t, out, `
+package main
+
+import (
+    "testing"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
+
+func mixedRecovered(call func()) (got interface{}) {
+    defer func() { got = recover() }()
+    call()
+    return nil
+}
+
+func TestMixedBindingProofs(t *testing.T) {
+    if got := Run(Valid(2), Valid(1), Valid(3)); got != 5 {
+        t.Fatalf("valid mixed branches = %d, want 5", got)
+    }
+    failures := map[string]func(){
+        "receiver": func() { Run(nil, Valid(1), Valid(3)) },
+        "backing": func() { Run(NullBacked(), Valid(1), Valid(3)) },
+    }
+    for name, call := range failures {
+        recovered := stdjava.NormalizePanic(mixedRecovered(call))
+        if !stdjava.CaughtAs(recovered, "NullPointerException") || stdjava.CaughtAs(recovered, "ArrayIndexOutOfBoundsException") {
+            t.Fatalf("inherited %s failure normalized as %T (%v), want only NullPointerException", name, recovered, recovered)
+        }
+    }
+}
+`)
+}
+
+func TestAffineArrayLoopFastPath_LabelElsewhereDisablesVersioning(t *testing.T) {
+	src := `
+final class LabeledBodyGrid {
+    private final int[] values = new int[1];
+    private final int size = 1;
+    int get(int row, int column) { return this.values[row * this.size + column]; }
+}
+public class LabeledBodyLoopProgram {
+    public static LabeledBodyGrid grid() { return new LabeledBodyGrid(); }
+    public static int run(LabeledBodyGrid grid) {
+        int total = 0;
+        for (int outer = 0; outer < 1; outer++) {
+            total += grid.get(0, 0);
+            unrelated: for (int inner = 0; inner < 1; inner++) {
+                total++;
+                break unrelated;
+            }
+        }
+        return total;
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
+	if strings.Contains(flat, ":= grid.Java2goAffineView") || !strings.Contains(flat, "grid.get(0, 0)") {
+		t.Fatalf("loop containing an unrelated label was duplicated instead of retaining ordinary dispatch:\n%s", out)
+	}
+	runGoTestInTempModule(t, out, `
+package main
+import "testing"
+func TestLabeledBodyFallback(t *testing.T) {
+    if got := Run(Grid()); got != 1 {
+        t.Fatalf("Run(Grid()) = %d, want 1", got)
+    }
+}
+`)
+}
+
+func TestAffineArrayLoopFastPath_VersionedLoopReportsUnsupportedOnce(t *testing.T) {
+	withCleanDiagnostics(t)
+	src := `
+final class DiagnosticGrid {
+    private final int[] values = new int[1];
+    private final int size = 1;
+    int get(int row, int column) { return this.values[row * this.size + column]; }
+}
+public class DiagnosticVersionLoopProgram {
+    public static int run(DiagnosticGrid grid) {
+        int total = 0;
+        for (int once = 0; once < 1; once++) {
+            total += grid.get(0, 0);
+            assert total >= 0;
+        }
+        return total;
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	if !strings.Contains(out, "Java2goAffineView") || strings.Count(out, "UNSUPPORTED") != 2 {
+		t.Fatalf("versioned loop should retain an unsupported placeholder in both branches:\n%s", out)
+	}
+	diagnostics := collectedDiagnostics()
+	if len(diagnostics) != 1 || diagnostics[0].Kind != "statement" || diagnostics[0].NodeType != "assert_statement" {
+		t.Fatalf("versioned unsupported construct diagnostics = %#v, want one assert statement", diagnostics)
+	}
+}
+
 func TestAffineArrayLoopFastPath_ConservativeFallbackShape(t *testing.T) {
 	out := normalizeSpaces(renderGoFileFromJava(t, affineLoopProgramSource))
 	for _, fragment := range []string{

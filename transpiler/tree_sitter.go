@@ -86,6 +86,11 @@ type Ctx struct {
 	// When set, return statements are rewritten into assignments + bare return
 	// for lowered try/catch/finally closures.
 	tryReturnTarget *tryReturnTarget
+	// suppressUnsupportedDiagnostics is used only while rendering the guarded
+	// copy of a versioned affine loop. The first copy already reported (or, in
+	// strict mode, failed on) the same source node; the second must still emit its
+	// placeholder AST without recording the diagnostic twice.
+	suppressUnsupportedDiagnostics bool
 
 	// Collects top-level declarations synthesized while parsing nested contexts,
 	// such as anonymous (non-SAM) and local classes that must be hoisted to file
@@ -107,6 +112,11 @@ type Ctx struct {
 	// rewritten accidentally.
 	affineArrayBindings  map[affineArrayBindingKey]*affineArrayLoopBinding
 	affineArrayCallSites map[affineArrayCallSiteKey]*affineArrayLoopBinding
+	// affineArrayNonNullBindings contains only bindings proven non-null by the
+	// currently enclosing versioned-loop branches. This is binding-specific: an
+	// inner fast branch may prove its own receiver while an inherited binding is
+	// still on an outer guarded path.
+	affineArrayNonNullBindings map[*affineArrayLoopBinding]struct{}
 }
 
 // localClassInfo records how a local class was hoisted to file scope.
@@ -143,23 +153,25 @@ type tryReturnTarget struct {
 // pointing at the same things as the previous Ctx
 func (c Ctx) Clone() Ctx {
 	return Ctx{
-		className:                c.className,
-		currentFile:              c.currentFile,
-		currentClass:             c.currentClass,
-		localScope:               c.localScope,
-		lastType:                 c.lastType,
-		expectedType:             c.expectedType,
-		expectedTypeRoot:         c.expectedTypeRoot,
-		syntheticTypeParameters:  c.syntheticTypeParameters,
-		rawGenericParameterTypes: c.rawGenericParameterTypes,
-		importAliases:            c.importAliases,
-		usedImports:              c.usedImports,
-		tryReturnTarget:          c.tryReturnTarget,
-		hoistedDecls:             c.hoistedDecls,
-		anonClassCounter:         c.anonClassCounter,
-		localClasses:             c.localClasses,
-		affineArrayBindings:      c.affineArrayBindings,
-		affineArrayCallSites:     c.affineArrayCallSites,
+		className:                      c.className,
+		currentFile:                    c.currentFile,
+		currentClass:                   c.currentClass,
+		localScope:                     c.localScope,
+		lastType:                       c.lastType,
+		expectedType:                   c.expectedType,
+		expectedTypeRoot:               c.expectedTypeRoot,
+		syntheticTypeParameters:        c.syntheticTypeParameters,
+		rawGenericParameterTypes:       c.rawGenericParameterTypes,
+		importAliases:                  c.importAliases,
+		usedImports:                    c.usedImports,
+		tryReturnTarget:                c.tryReturnTarget,
+		suppressUnsupportedDiagnostics: c.suppressUnsupportedDiagnostics,
+		hoistedDecls:                   c.hoistedDecls,
+		anonClassCounter:               c.anonClassCounter,
+		localClasses:                   c.localClasses,
+		affineArrayBindings:            c.affineArrayBindings,
+		affineArrayCallSites:           c.affineArrayCallSites,
+		affineArrayNonNullBindings:     c.affineArrayNonNullBindings,
 	}
 }
 

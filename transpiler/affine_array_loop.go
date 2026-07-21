@@ -54,7 +54,7 @@ func prepareAffineArrayLoop(node *sitter.Node, source []byte, ctx Ctx) (Ctx, []*
 		return ctx, nil
 	}
 	body := node.ChildByFieldName("body")
-	if body == nil || affineLoopContainsDeferredScope(body) {
+	if body == nil || affineLoopContainsDeferredScope(body) || affineLoopContainsLabel(body) {
 		return ctx, nil
 	}
 
@@ -110,6 +110,24 @@ func prepareAffineArrayLoop(node *sitter.Node, source []byte, ctx Ctx) (Ctx, []*
 	return loopCtx, created
 }
 
+// Go labels are function-scoped. Versioning duplicates the loop body, so even
+// an unrelated nested Java label would otherwise become two declarations of
+// the same Go label and fail compilation.
+func affineLoopContainsLabel(root *sitter.Node) bool {
+	if root == nil {
+		return false
+	}
+	if root.Type() == "labeled_statement" {
+		return true
+	}
+	for _, child := range nodeutil.NamedChildrenOf(root) {
+		if affineLoopContainsLabel(child) {
+			return true
+		}
+	}
+	return false
+}
+
 // The inline guard deliberately uses Go's predeclared panic/nil identifiers and
 // the fixed stdjava runtime alias. Java permits all three as identifiers. Fall
 // back when any source declaration or import could shadow them rather than emit
@@ -161,6 +179,14 @@ func cloneAffineArrayCallSites(source map[affineArrayCallSiteKey]*affineArrayLoo
 	result := make(map[affineArrayCallSiteKey]*affineArrayLoopBinding, len(source))
 	for key, binding := range source {
 		result[key] = binding
+	}
+	return result
+}
+
+func cloneAffineArrayNonNullBindings(source map[*affineArrayLoopBinding]struct{}) map[*affineArrayLoopBinding]struct{} {
+	result := make(map[*affineArrayLoopBinding]struct{}, len(source))
+	for binding := range source {
+		result[binding] = struct{}{}
 	}
 	return result
 }
@@ -643,6 +669,30 @@ func affineArrayLoopCacheStatements(bindings []*affineArrayLoopBinding) []ast.St
 	return statements
 }
 
+// affineArrayLoopValidityCondition selects the guard-free copy of a versioned
+// loop only when every receiver and immutable backing-array view used by that
+// copy is non-null. The helpers themselves are nil-safe, so evaluating this
+// condition before a possibly zero-trip loop cannot introduce an exception.
+func affineArrayLoopValidityCondition(bindings []*affineArrayLoopBinding) ast.Expr {
+	var condition ast.Expr
+	appendNonNil := func(value ast.Expr) {
+		nonNil := &ast.BinaryExpr{X: value, Op: token.NEQ, Y: &ast.Ident{Name: "nil"}}
+		if condition == nil {
+			condition = nonNil
+			return
+		}
+		condition = &ast.BinaryExpr{X: condition, Op: token.LAND, Y: nonNil}
+	}
+	for _, binding := range bindings {
+		if binding == nil || !binding.used {
+			continue
+		}
+		appendNonNil(&ast.Ident{Name: binding.receiverGoName})
+		appendNonNil(&ast.Ident{Name: binding.arrayName})
+	}
+	return condition
+}
+
 // rewriteAffineArrayAccessorInvocation lowers one pre-approved resolved call to
 // an inline typed closure. Supplying receiver and arguments as closure arguments
 // preserves Java's receiver-then-arguments evaluation order and invocation
@@ -686,9 +736,12 @@ func rewriteAffineArrayAccessorInvocation(
 		callArgs = append(callArgs, argument)
 	}
 
-	body := []ast.Stmt{
-		affineNilPanicGuard(&ast.Ident{Name: receiverParam}, "affine accessor called on null", ctx),
-		affineNilPanicGuard(&ast.Ident{Name: binding.arrayName}, "array access on null", ctx),
+	var body []ast.Stmt
+	if _, provenNonNull := ctx.affineArrayNonNullBindings[binding]; !provenNonNull {
+		body = append(body,
+			affineNilPanicGuard(&ast.Ident{Name: receiverParam}, "affine accessor called on null", ctx),
+			affineNilPanicGuard(&ast.Ident{Name: binding.arrayName}, "array access on null", ctx),
+		)
 	}
 	indexExpr := func() ast.Expr {
 		row := &ast.Ident{Name: argumentNames[accessor.RowParameter]}
