@@ -125,6 +125,36 @@ func TestExceptionFidelity_ErrorNotCaughtByException(t *testing.T) {
 	}
 }
 
+func TestClassInitializationErrorsFollowLinkageHierarchyAndRetainCauses(t *testing.T) {
+	initializerCause := NewIllegalStateException("initializer")
+	initializerError := NewExceptionInInitializerError(initializerCause)
+	for _, supertype := range []string{"ExceptionInInitializerError", "LinkageError", "Error", "Throwable"} {
+		if !CaughtAs(initializerError, supertype) {
+			t.Fatalf("ExceptionInInitializerError should be caught by %s", supertype)
+		}
+	}
+	if CaughtAs(initializerError, "Exception") || CaughtAs(initializerError, "RuntimeException") {
+		t.Fatal("ExceptionInInitializerError must not be caught by Exception")
+	}
+	if cause := GetCause(initializerError); !sameThrowableIdentity(cause, initializerCause) {
+		t.Fatalf("initializer error cause = %T (%v), want original throwable", cause, cause)
+	}
+
+	definitionError := NewNoClassDefFoundErrorWithCause("Could not initialize class tests.Broken", initializerError)
+	for _, supertype := range []string{"NoClassDefFoundError", "LinkageError", "Error", "Throwable"} {
+		if !CaughtAs(definitionError, supertype) {
+			t.Fatalf("NoClassDefFoundError should be caught by %s", supertype)
+		}
+	}
+	if cause := GetCause(definitionError); !sameThrowableIdentity(cause, initializerError) {
+		t.Fatalf("NoClassDefFoundError cause = %T (%v), want initializer error", cause, cause)
+	}
+
+	if empty := NewExceptionInInitializerError(""); GetCause(empty) != nil {
+		t.Fatalf("no-arg ExceptionInInitializerError cause = %v, want nil", GetCause(empty))
+	}
+}
+
 func TestRegisterException_ConflictingParentWarns(t *testing.T) {
 	// Registering the same simple name with a different parent should not panic
 	// and should leave the most recent registration in effect (a warning is

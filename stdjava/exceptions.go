@@ -36,6 +36,9 @@ var (
 		"Throwable":                      "",
 		"Error":                          "Throwable",
 		"AssertionError":                 "Error",
+		"LinkageError":                   "Error",
+		"ExceptionInInitializerError":    "LinkageError",
+		"NoClassDefFoundError":           "LinkageError",
 		"Exception":                      "Throwable",
 		"RuntimeException":               "Exception",
 		"IOException":                    "Exception",
@@ -417,6 +420,9 @@ func newThrowableBase(typeName, message string) ThrowableBase {
 
 type Error struct{ ThrowableBase }
 type AssertionError struct{ ThrowableBase }
+type LinkageError struct{ ThrowableBase }
+type ExceptionInInitializerError struct{ ThrowableBase }
+type NoClassDefFoundError struct{ ThrowableBase }
 type Exception struct{ ThrowableBase }
 type RuntimeException struct{ ThrowableBase }
 type IllegalArgumentException struct{ ThrowableBase }
@@ -442,6 +448,36 @@ func NewError(message string) Error {
 
 func NewAssertionError(message string) AssertionError {
 	return AssertionError{newThrowableBase("AssertionError", message)}
+}
+
+func NewLinkageError(message string) LinkageError {
+	return LinkageError{newThrowableBase("LinkageError", message)}
+}
+
+// NewExceptionInInitializerError mirrors Java's no-argument and Throwable
+// constructors through one runtime entry point. Generated ordinary `new`
+// expressions pass an empty string for the no-argument form; class
+// initialization passes the throwable that escaped the initializer.
+func NewExceptionInInitializerError(value interface{}) ExceptionInInitializerError {
+	base := newThrowableBase("ExceptionInInitializerError", "")
+	emptyNoArgMarker := false
+	if stringValue, ok := value.(string); ok {
+		emptyNoArgMarker = stringValue == ""
+	}
+	if value != nil && !emptyNoArgMarker {
+		base.state.cause = value
+	}
+	return ExceptionInInitializerError{base}
+}
+
+func NewNoClassDefFoundError(message string) NoClassDefFoundError {
+	return NoClassDefFoundError{newThrowableBase("NoClassDefFoundError", message)}
+}
+
+func NewNoClassDefFoundErrorWithCause(message string, cause interface{}) NoClassDefFoundError {
+	base := newThrowableBase("NoClassDefFoundError", message)
+	base.state.cause = cause
+	return NoClassDefFoundError{base}
 }
 
 func NewException(message string) Exception {
