@@ -2632,10 +2632,10 @@ func findBestMethodInHierarchy(
 			if def == nil || def.Constructor || def.OriginalName != methodName || len(def.Parameters) != len(argNodes) {
 				continue
 			}
-			// Java interface static methods are not inherited by implementing
-			// classes or child interfaces. A direct Interface.method() lookup still
-			// considers the starting interface in the ordinary hierarchy pass.
-			if inheritedInterface && def.IsStatic {
+			// Java interface static and private methods are not inherited by
+			// implementing classes or child interfaces. A direct lookup in the
+			// declaring interface still uses the ordinary hierarchy pass.
+			if inheritedInterface && (def.IsStatic || def.IsPrivate) {
 				continue
 			}
 			if (def.IsStatic && !allowStatic) || (!def.IsStatic && !allowInstance) {
@@ -4092,10 +4092,14 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 
 	ctx.addHoistedDecl(GenStruct(structName, fields))
 
-	// Emit a method for each declared method in the anonymous body. Methods are
-	// exported so the struct satisfies the embedded interface.
-	for _, methodNode := range anonymousClassMethods(classBody) {
-		methodDecl := buildAnonymousStructMethod(structName, methodNode, declaredFieldDefs, captured, source, ctx, false)
+	// Emit a method for each declared method in the anonymous body. Register the
+	// complete synthetic method table before parsing any body so self-recursion
+	// and calls between sibling methods resolve exactly like ordinary class
+	// methods.
+	bodyMethods := anonymousClassMethods(classBody)
+	syntheticScope := synthAnonClassScope(structName, declaredFieldDefs, captured, bodyMethods, source, false)
+	for _, methodNode := range bodyMethods {
+		methodDecl := buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx)
 		if methodDecl != nil {
 			ctx.addHoistedDecl(methodDecl)
 		}
@@ -4211,7 +4215,14 @@ func anonymousSuperclassConstructorExpr(node, objectType *sitter.Node, superScop
 // bodies resolve through the receiver (recv.field) via the normal field
 // resolution path. This is correct for mutation (e.g. n++ -> recv.n++), unlike
 // unpacking captures into locals.
-func synthAnonClassScope(structName string, declaredFields []*symbol.Definition, captured []capturedLocal) *symbol.ClassScope {
+func synthAnonClassScope(
+	structName string,
+	declaredFields []*symbol.Definition,
+	captured []capturedLocal,
+	methodNodes []*sitter.Node,
+	source []byte,
+	keepOriginalMethodNames bool,
+) *symbol.ClassScope {
 	scope := &symbol.ClassScope{
 		Class: &symbol.Definition{OriginalName: structName, Name: structName},
 	}
@@ -4221,7 +4232,85 @@ func synthAnonClassScope(structName string, declaredFields []*symbol.Definition,
 			scope.Fields = append(scope.Fields, cap.javaDef)
 		}
 	}
+	usedMethodNames := map[string]struct{}{}
+	for _, methodNode := range methodNodes {
+		method := synthAnonClassMethodDefinition(methodNode, source, keepOriginalMethodNames)
+		if method == nil {
+			continue
+		}
+		baseName := method.Name
+		for suffix := 0; ; suffix++ {
+			if _, duplicate := usedMethodNames[method.Name]; !duplicate {
+				break
+			}
+			method.Name = baseName + strconv.Itoa(suffix)
+		}
+		usedMethodNames[method.Name] = struct{}{}
+		scope.Methods = append(scope.Methods, method)
+	}
 	return scope
+}
+
+func synthAnonClassMethodDefinition(methodNode *sitter.Node, source []byte, keepOriginalName bool) *symbol.Definition {
+	if methodNode == nil {
+		return nil
+	}
+	nameNode := methodNode.ChildByFieldName("name")
+	typeNode := methodNode.ChildByFieldName("type")
+	if nameNode == nil || typeNode == nil {
+		return nil
+	}
+
+	originalName := nameNode.Content(source)
+	public := false
+	private := false
+	static := false
+	if mods := methodNode.NamedChild(0); mods != nil && mods.Type() == "modifiers" {
+		for _, modifier := range nodeutil.UnnamedChildrenOf(mods) {
+			switch modifier.Type() {
+			case "public":
+				public = true
+			case "private":
+				private = true
+			case "static":
+				static = true
+			}
+		}
+	}
+	generatedName := symbol.HandleExportStatus(public, originalName)
+	if keepOriginalName {
+		generatedName = originalName
+	}
+	method := &symbol.Definition{
+		OriginalName:    originalName,
+		Name:            generatedName,
+		OriginalType:    typeNode.Content(source),
+		IsStatic:        static,
+		IsPrivate:       private,
+		HasBody:         methodNode.ChildByFieldName("body") != nil,
+		DeclarationNode: methodNode,
+	}
+	for _, param := range nodeutil.NamedChildrenOf(methodNode.ChildByFieldName("parameters")) {
+		var name, javaType *sitter.Node
+		if param.Type() == "spread_parameter" {
+			if param.NamedChildCount() > 1 {
+				name = param.NamedChild(1).ChildByFieldName("name")
+			}
+			javaType = param.NamedChild(0)
+		} else {
+			name = param.ChildByFieldName("name")
+			javaType = param.ChildByFieldName("type")
+		}
+		if name == nil || javaType == nil {
+			continue
+		}
+		method.Parameters = append(method.Parameters, &symbol.Definition{
+			OriginalName: name.Content(source),
+			Name:         name.Content(source),
+			OriginalType: javaType.Content(source),
+		})
+	}
+	return method
 }
 
 // buildAnonymousStructMethod builds a method on a synthesized struct. When
@@ -4231,54 +4320,32 @@ func synthAnonClassScope(structName string, declaredFields []*symbol.Definition,
 // kept so `m.method()` call sites match. declaredFields are the class's own
 // instance fields; together with captures they form the synthetic class scope
 // used to resolve field references inside the body.
-func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, declaredFields []*symbol.Definition, captured []capturedLocal, source []byte, ctx Ctx, keepOriginalName bool) *ast.FuncDecl {
+func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, syntheticScope *symbol.ClassScope, source []byte, ctx Ctx) *ast.FuncDecl {
 	nameNode := methodNode.ChildByFieldName("name")
 	bodyNode := methodNode.ChildByFieldName("body")
 	if nameNode == nil || bodyNode == nil {
 		return nil
 	}
 
-	public := false
-	if mods := methodNode.NamedChild(0); mods != nil && mods.Type() == "modifiers" {
-		for _, modifier := range nodeutil.UnnamedChildrenOf(mods) {
-			if modifier.Type() == "public" {
-				public = true
+	recvName := ShortName(structName)
+	var methodScope *symbol.Definition
+	if syntheticScope != nil {
+		for _, candidate := range syntheticScope.Methods {
+			if candidate != nil && candidate.DeclarationNode == methodNode {
+				methodScope = candidate
+				break
 			}
 		}
 	}
-	methodName := symbol.HandleExportStatus(public, nameNode.Content(source))
-	if keepOriginalName {
-		methodName = nameNode.Content(source)
-	}
-
-	recvName := ShortName(structName)
-
-	// Local scope seeded with this method's parameters so they resolve by name.
-	methodScope := &symbol.Definition{}
-	for _, param := range nodeutil.NamedChildrenOf(methodNode.ChildByFieldName("parameters")) {
-		var pn, pt *sitter.Node
-		if param.Type() == "spread_parameter" {
-			pn = param.NamedChild(1).ChildByFieldName("name")
-			pt = param.NamedChild(0)
-		} else {
-			pn = param.ChildByFieldName("name")
-			pt = param.ChildByFieldName("type")
-		}
-		if pn == nil || pt == nil {
-			continue
-		}
-		methodScope.Parameters = append(methodScope.Parameters, &symbol.Definition{
-			OriginalName: pn.Content(source),
-			Name:         pn.Content(source),
-			OriginalType: pt.Content(source),
-		})
+	if methodScope == nil {
+		return nil
 	}
 
 	// Parse the body with the synthetic class scope in context, so references to
 	// the class's own fields and captured locals resolve to receiver selectors.
 	methodCtx := ctx.Clone()
 	methodCtx.localScope = methodScope
-	methodCtx.currentClass = synthAnonClassScope(structName, declaredFields, captured)
+	methodCtx.currentClass = syntheticScope
 	methodCtx.className = structName
 
 	params := ParseNode(methodNode.ChildByFieldName("parameters"), source, methodCtx).(*ast.FieldList)
@@ -4296,7 +4363,7 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, decl
 	body := ParseStmt(bodyNode, source, methodCtx).(*ast.BlockStmt)
 
 	return &ast.FuncDecl{
-		Name: &ast.Ident{Name: methodName},
+		Name: &ast.Ident{Name: methodScope.Name},
 		Recv: &ast.FieldList{List: []*ast.Field{{
 			Names: []*ast.Ident{{Name: recvName}},
 			Type:  &ast.StarExpr{X: &ast.Ident{Name: structName}},
@@ -4357,8 +4424,10 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 
 	ctx.addHoistedDecl(GenStruct(structName, fields))
 
-	for _, methodNode := range anonymousClassMethods(classBody) {
-		if methodDecl := buildAnonymousStructMethod(structName, methodNode, declaredFieldDefs, captured, source, ctx, true); methodDecl != nil {
+	bodyMethods := anonymousClassMethods(classBody)
+	syntheticScope := synthAnonClassScope(structName, declaredFieldDefs, captured, bodyMethods, source, true)
+	for _, methodNode := range bodyMethods {
+		if methodDecl := buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx); methodDecl != nil {
 			ctx.addHoistedDecl(methodDecl)
 		}
 	}

@@ -40,8 +40,8 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `constructor_nullable_field_gap` | Constructor-time virtual dispatch observing Java's pre-initializer null field value | Known gap (`output`) |
 | `recursive_object_model` | Mutual recursion, recursive generic graphs, constructor dispatch, hiding, and inherited interface defaults | Passing |
 | `static_method_hiding_gap` | Parent/child static-method hiding and declaring-class selection | Passing |
-| `local_class_recursion_gap` | Capturing local class with a recursive instance method | Known gap (`go_compile`) |
-| `anonymous_class_recursion_gap` | Recursive override in a synthesized anonymous subclass | Known gap (`go_compile`) |
+| `local_class_recursion_gap` | Capturing local class with a recursive instance method | Passing |
+| `anonymous_class_recursion_gap` | Recursive override in a synthesized anonymous subclass | Passing |
 
 Known-gap fixtures are not skipped. In normal mode they must still have valid
 Java behavior and must fail at the exact declared stage for a pinned diagnostic

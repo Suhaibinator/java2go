@@ -385,6 +385,40 @@ func TestAnonMultiRuntime(t *testing.T) {
 `)
 }
 
+func TestAnonymousClass_RecursiveSiblingMethods_RuntimeBehavior(t *testing.T) {
+	src := `
+abstract class AnonymousParityBase {
+    abstract int even(int value);
+}
+public class AnonymousParityProgram {
+    public static int run() {
+        AnonymousParityBase parity = new AnonymousParityBase() {
+            int even(int value) {
+                return value == 0 ? 1 : odd(value - 1);
+            }
+            int odd(int value) {
+                return value == 0 ? 0 : even(value - 1);
+            }
+        };
+        return parity.even(10) * 10 + parity.even(9);
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestAnonymousMutualRecursion(t *testing.T) {
+	if got := Run(); got != 10 {
+		t.Fatalf("Run() = %d, want 10", got)
+	}
+}
+`)
+}
+
 // --- Local classes (declared inside a method) ---
 
 func TestLocalClass_HoistedToFileScope(t *testing.T) {
@@ -444,6 +478,38 @@ func TestLocalClassRuntime(t *testing.T) {
 	// times(5) with captured factor(3) = 15
 	if got != 15 {
 		t.Fatalf("Run() = %d, want 15 (local class should capture the enclosing local)", got)
+	}
+}
+`)
+}
+
+func TestLocalClass_RecursiveSiblingMethods_RuntimeBehavior(t *testing.T) {
+	src := `
+public class LocalParityProgram {
+    public static int run(int captured) {
+        class LocalParity {
+            int even(int value) {
+                return value == 0 ? captured : odd(value - 1);
+            }
+            int odd(int value) {
+                return value == 0 ? -1 : even(value - 1);
+            }
+        }
+        LocalParity parity = new LocalParity();
+        return parity.even(10) * 10 + parity.odd(9);
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestLocalMutualRecursion(t *testing.T) {
+	if got := Run(3); got != 33 {
+		t.Fatalf("Run(3) = %d, want 33", got)
 	}
 }
 `)

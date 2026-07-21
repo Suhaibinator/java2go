@@ -1,8 +1,5 @@
 {
   "main_class": "parity.localrecursion.LocalClassRecursionApplication",
   "module_path": "parity/localrecursion",
-  "status": "known_gap",
-  "known_gap": "A recursively invoked method in a hoisted Java local class loses its synthetic receiver and is emitted as an undefined package function.",
-  "expected_failure_stage": "go_compile",
-  "expected_failure_contains": "undefined: down"
+  "status": "passing"
 }
