@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.synchronizedcontrol.SynchronizedLoopControlApplication",
+  "module_path": "parity/synchronizedcontrol",
+  "status": "known_gap",
+  "known_gap": "A continue targeting a loop outside synchronized is emitted inside the generated monitor func literal, where Go cannot transfer to the enclosing loop.",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "continue is not in a loop"
+}
