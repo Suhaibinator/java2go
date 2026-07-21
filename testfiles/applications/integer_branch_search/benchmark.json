@@ -1,5 +1,5 @@
 {
   "category": "integer_branch",
-  "description": "N-queens constraint search, prime sieving, integer overflow, branch-heavy pointer chasing, and irregular memory access",
-  "iterations": 3
+  "description": "Repeated N-queens constraint search, prime sieving, deterministic integer sorting and binary search, overflow arithmetic, branch-heavy pointer chasing, and irregular memory access",
+  "iterations": 1
 }
