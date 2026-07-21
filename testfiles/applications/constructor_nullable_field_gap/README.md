@@ -10,11 +10,11 @@ passes `null` to `String.valueOf` in both early calls, then observes `ready` fro
 the subsequent child initializer and constructor body.
 
 The current generated representation stores ordinary Java `String` fields as
-Go `string` values. Before initialization that storage contains `""`, so the
-generated application prints `:ready`. The fixture is intentionally pinned as
-an output-stage `known_gap`, giving a byte-exact TDD target for a future nullable
-field representation. Keeping the later child-initializer and constructor
-observations in the same oracle also prevents a fix from delaying initialization
-too far or reordering the field initializer.
+Go `string` values. Before initialization that storage contains `""`, so both
+early `field/method` pairs render as `/` instead of `null/null`. The fixture is
+intentionally pinned as an output-stage `known_gap`, giving a byte-exact TDD
+target for a future nullable field and method representation. Keeping the later
+child-initializer and constructor observations in the same oracle also prevents
+a fix from delaying initialization too far or reordering the field initializer.
 
 The program is deterministic and has no external inputs or dependencies.
