@@ -594,6 +594,91 @@ func TestLocalMemberNamespaceRuntime(t *testing.T) {
 `)
 }
 
+func TestLocalClass_FieldInitializersRunInOrderForEveryConstruction(t *testing.T) {
+	src := `
+public class LocalFieldInitializerProgram {
+    static int effects;
+
+    static int mark(int digit, int value) {
+        effects = effects * 10 + digit;
+        return value;
+    }
+
+    public static String run(int captured) {
+        effects = 0;
+
+        class LocalValue {
+            int first = mark(1, captured), second = mark(2, this.first + 1);
+            int third = mark(3, second + captured);
+
+            int sum() {
+                return first + second + third;
+            }
+        }
+
+        LocalValue first = new LocalValue();
+        int afterFirst = effects;
+        LocalValue second = new LocalValue();
+        return first.first + ":" + first.second + ":" + first.third + ":" + first.sum()
+            + ":" + afterFirst + ":" + second.first + ":" + second.second + ":"
+            + second.third + ":" + second.sum() + ":" + effects;
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestLocalFieldInitializers(t *testing.T) {
+	const want = "5:6:11:22:123:5:6:11:22:123123"
+	if got := Run(5); got != want {
+		t.Fatalf("Run(5) = %q, want %q", got, want)
+	}
+}
+`)
+}
+
+func TestLocalClass_RecursiveAllocationForwardsCapturedFields(t *testing.T) {
+	src := `
+public class LocalRecursiveAllocationProgram {
+    static int remaining;
+
+    public static String run(int base) {
+        class LocalValue {
+            int value = remaining-- > 0 ? new LocalValue().value + 1 : base;
+
+            int sum(int depth) {
+                return depth == 0 ? value : value + new LocalValue().sum(depth - 1);
+            }
+        }
+
+        remaining = 2;
+        LocalValue root = new LocalValue();
+        int afterInitializer = remaining;
+        remaining = 0;
+        int recursiveSum = root.sum(2);
+        return root.value + ":" + afterInitializer + ":" + recursiveSum + ":" + remaining;
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestLocalRecursiveAllocation(t *testing.T) {
+	if got := Run(5); got != "7:-1:17:-2" {
+		t.Fatalf("Run(5) = %q, want 7:-1:17:-2", got)
+	}
+}
+`)
+}
+
 func TestLocalClass_NullReceiverEvaluatesArgumentsBeforeNPE(t *testing.T) {
 	src := `
 public class LocalNullReceiverProgram {

@@ -557,15 +557,50 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if info, ok := ctx.localClasses[objectType.Content(source)]; ok {
 				elts := make([]ast.Expr, 0, len(info.captured))
 				for _, cap := range info.captured {
+					captureValue := ast.Expr(&ast.Ident{Name: cap.name})
+					// In the enclosing Java method a captured value is still a local.
+					// Inside a hoisted method/initializer on this same synthetic type,
+					// however, that lexical local no longer exists: recursive allocation
+					// must forward the capture stored on the active receiver.
+					if info.scope != nil && ctx.currentClass == info.scope && ctx.localScope != nil && !ctx.localScope.IsStatic {
+						captureValue = &ast.SelectorExpr{
+							X:   &ast.Ident{Name: ShortName(info.structName)},
+							Sel: &ast.Ident{Name: cap.name},
+						}
+					}
 					elts = append(elts, &ast.KeyValueExpr{
 						Key:   &ast.Ident{Name: cap.name},
-						Value: &ast.Ident{Name: cap.name},
+						Value: captureValue,
 					})
 				}
-				return &ast.UnaryExpr{
+				composite := &ast.UnaryExpr{
 					Op: token.AND,
 					X:  &ast.CompositeLit{Type: &ast.Ident{Name: info.structName}, Elts: elts},
 				}
+				if info.fieldInitializerMethodName == "" {
+					return composite
+				}
+				// Explicit local-class constructors remain a separate gap: their
+				// arguments and bodies are still intentionally untouched here. The
+				// Java instance-field phase, however, runs for every allocation.
+				instanceName := "__java2goLocalInstance"
+				return &ast.CallExpr{Fun: &ast.FuncLit{
+					Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{
+						Type: &ast.StarExpr{X: &ast.Ident{Name: info.structName}},
+					}}}},
+					Body: &ast.BlockStmt{List: []ast.Stmt{
+						&ast.AssignStmt{
+							Lhs: []ast.Expr{&ast.Ident{Name: instanceName}},
+							Tok: token.DEFINE,
+							Rhs: []ast.Expr{composite},
+						},
+						&ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{
+							X:   &ast.Ident{Name: instanceName},
+							Sel: &ast.Ident{Name: info.fieldInitializerMethodName},
+						}}},
+						&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: instanceName}}},
+					}},
+				}}
 			}
 		}
 
@@ -3719,6 +3754,24 @@ func collectDeclaredNames(node *sitter.Node, source []byte) map[string]struct{} 
 // anonymousClassDeclaredFields extracts the instance fields declared directly in
 // an anonymous/local class body, returning both the symbol definitions (for
 // in-body resolution through the receiver) and the Go struct fields to emit.
+func syntheticFieldDeclarators(fieldDeclaration *sitter.Node) []*sitter.Node {
+	if fieldDeclaration == nil {
+		return nil
+	}
+	var declarators []*sitter.Node
+	for _, child := range nodeutil.NamedChildrenOf(fieldDeclaration) {
+		if child.Type() == "variable_declarator" {
+			declarators = append(declarators, child)
+		}
+	}
+	if len(declarators) == 0 {
+		if declarator := fieldDeclaration.ChildByFieldName("declarator"); declarator != nil {
+			declarators = append(declarators, declarator)
+		}
+	}
+	return declarators
+}
+
 func anonymousClassDeclaredFields(classBody *sitter.Node, source []byte, ctx Ctx) ([]*symbol.Definition, []*ast.Field) {
 	var defs []*symbol.Definition
 	var astFields []*ast.Field
@@ -3726,25 +3779,26 @@ func anonymousClassDeclaredFields(classBody *sitter.Node, source []byte, ctx Ctx
 		if member.Type() != "field_declaration" {
 			continue
 		}
-		declarator := member.ChildByFieldName("declarator")
 		typeNode := member.ChildByFieldName("type")
-		if declarator == nil || typeNode == nil {
+		if typeNode == nil {
 			continue
 		}
-		fieldNameNode := declarator.ChildByFieldName("name")
-		if fieldNameNode == nil {
-			continue
+		for _, declarator := range syntheticFieldDeclarators(member) {
+			fieldNameNode := declarator.ChildByFieldName("name")
+			if fieldNameNode == nil {
+				continue
+			}
+			fieldName := fieldNameNode.Content(source)
+			defs = append(defs, &symbol.Definition{
+				OriginalName: fieldName,
+				Name:         fieldName,
+				OriginalType: typeNode.Content(source),
+			})
+			astFields = append(astFields, &ast.Field{
+				Names: []*ast.Ident{{Name: fieldName}},
+				Type:  javaTypeStringToGoTypeExpr(typeNode.Content(source), inScopeTypeParameters(ctx), ctx),
+			})
 		}
-		fieldName := fieldNameNode.Content(source)
-		defs = append(defs, &symbol.Definition{
-			OriginalName: fieldName,
-			Name:         fieldName,
-			OriginalType: typeNode.Content(source),
-		})
-		astFields = append(astFields, &ast.Field{
-			Names: []*ast.Ident{{Name: fieldName}},
-			Type:  javaTypeStringToGoTypeExpr(typeNode.Content(source), inScopeTypeParameters(ctx), ctx),
-		})
 	}
 	return defs, astFields
 }
@@ -4415,6 +4469,105 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 	return decl
 }
 
+func localClassHasInstanceFieldInitializers(classBody *sitter.Node) bool {
+	for _, member := range nodeutil.NamedChildrenOf(classBody) {
+		if member.Type() != "field_declaration" || fieldDeclarationIsStatic(member) {
+			continue
+		}
+		for _, declarator := range syntheticFieldDeclarators(member) {
+			if declarator.ChildByFieldName("value") != nil {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func localClassFieldInitializerMethodName(scope *symbol.ClassScope) string {
+	used := make(map[string]struct{})
+	if scope != nil {
+		for _, field := range scope.Fields {
+			if field != nil {
+				used[field.Name] = struct{}{}
+			}
+		}
+		for _, method := range scope.Methods {
+			if method != nil {
+				used[method.Name] = struct{}{}
+			}
+		}
+	}
+	candidate := fieldInitMethodName
+	for suffix := 0; ; suffix++ {
+		if _, collision := used[candidate]; !collision {
+			return candidate
+		}
+		candidate = fieldInitMethodName + strconv.Itoa(suffix)
+	}
+}
+
+func buildLocalClassFieldInitializerMethod(
+	structName string,
+	methodName string,
+	classBody *sitter.Node,
+	syntheticScope *symbol.ClassScope,
+	source []byte,
+	ctx Ctx,
+) *ast.FuncDecl {
+	if classBody == nil || syntheticScope == nil || methodName == "" {
+		return nil
+	}
+
+	receiverName := ShortName(structName)
+	initializerScope := &symbol.Definition{OriginalName: methodName, Name: methodName}
+	initializerCtx := ctx.Clone()
+	initializerCtx.currentClass = syntheticScope
+	initializerCtx.className = structName
+	initializerCtx.localScope = initializerScope
+
+	var statements []ast.Stmt
+	for _, member := range nodeutil.NamedChildrenOf(classBody) {
+		if member.Type() != "field_declaration" || fieldDeclarationIsStatic(member) {
+			continue
+		}
+		for _, declarator := range syntheticFieldDeclarators(member) {
+			nameNode := declarator.ChildByFieldName("name")
+			valueNode := declarator.ChildByFieldName("value")
+			if nameNode == nil || valueNode == nil {
+				continue
+			}
+			field := syntheticScope.FindFieldByName(nameNode.Content(source))
+			if field == nil {
+				continue
+			}
+			valueCtx := initializerCtx.Clone()
+			valueCtx.expectedType = field.OriginalType
+			valueCtx.expectedTypeRoot = valueNode
+			statements = append(statements, &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.SelectorExpr{
+					X:   &ast.Ident{Name: receiverName},
+					Sel: &ast.Ident{Name: field.Name},
+				}},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{ParseExpr(valueNode, source, valueCtx)},
+			})
+		}
+	}
+	if len(statements) == 0 {
+		return nil
+	}
+
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: methodName},
+		Recv: &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: receiverName}},
+			Type:  &ast.StarExpr{X: &ast.Ident{Name: structName}},
+		}}},
+		Type: &ast.FuncType{Params: &ast.FieldList{}},
+		Body: &ast.BlockStmt{List: statements},
+	}
+}
+
 // hoistLocalClass lifts a class declared inside a method body to file scope.
 // Referenced enclosing locals are captured as struct fields; the class's own
 // instance fields and methods are emitted on the synthesized struct. The local
@@ -4468,13 +4621,34 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 
 	bodyMethods := anonymousClassMethods(classBody)
 	syntheticScope := synthAnonClassScope(structName, declaredFieldDefs, captured, bodyMethods, source, true)
+	fieldInitializerMethod := ""
+	if localClassHasInstanceFieldInitializers(classBody) {
+		fieldInitializerMethod = localClassFieldInitializerMethodName(syntheticScope)
+	}
 	// Register before rendering method bodies: a static member may use a
-	// class-qualified call to a sibling (`LocalType.helper()`), while later code
-	// in the enclosing method uses the same entry for `LocalType.method()`.
+	// class-qualified call to a sibling (`LocalType.helper()`), an initializer may
+	// recursively allocate the same local type, and later code in the enclosing
+	// method uses the same entry for `LocalType.method()`.
 	ctx.localClasses[javaName] = &localClassInfo{
-		structName: structName,
-		captured:   captured,
-		scope:      syntheticScope,
+		structName:                 structName,
+		captured:                   captured,
+		scope:                      syntheticScope,
+		fieldInitializerMethodName: fieldInitializerMethod,
+	}
+	if fieldInitializerMethod != "" {
+		initializerDecl := buildLocalClassFieldInitializerMethod(
+			structName,
+			fieldInitializerMethod,
+			classBody,
+			syntheticScope,
+			source,
+			ctx,
+		)
+		if initializerDecl != nil {
+			ctx.addHoistedDecl(initializerDecl)
+		} else {
+			ctx.localClasses[javaName].fieldInitializerMethodName = ""
+		}
 	}
 	for _, methodNode := range bodyMethods {
 		if methodDecl := buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx); methodDecl != nil {
