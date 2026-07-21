@@ -158,7 +158,7 @@ func TestReferenceArrayAssignPreservesJavaOrderAndStaticResultView(t *testing.T)
 		t.Fatalf("assignment result = %#v after %d RHS calls, want Base view after one call", result, rhsCalls)
 	}
 
-	assertRHSNotEvaluated := func(name string, target *ReferenceArray, index int32, wantException string) {
+	assertRHSEvaluatedBeforeStoreCheck := func(name string, target *ReferenceArray, index int32, wantException string) {
 		t.Helper()
 		calls := 0
 		var recovered any
@@ -172,12 +172,33 @@ func TestReferenceArrayAssignPreservesJavaOrderAndStaticResultView(t *testing.T)
 		if !CaughtAs(recovered, wantException) {
 			t.Fatalf("%s panic = %T (%v), want %s", name, recovered, recovered, wantException)
 		}
-		if calls != 0 {
-			t.Fatalf("%s evaluated RHS %d times, want zero", name, calls)
+		if calls != 1 {
+			t.Fatalf("%s evaluated RHS %d times, want one", name, calls)
 		}
 	}
-	assertRHSNotEvaluated("null target", nil, 0, "NullPointerException")
-	assertRHSNotEvaluated("out-of-bounds target", array, 2, "ArrayIndexOutOfBoundsException")
+	assertRHSEvaluatedBeforeStoreCheck("null target", nil, 0, "NullPointerException")
+	assertRHSEvaluatedBeforeStoreCheck("out-of-bounds target", array, 2, "ArrayIndexOutOfBoundsException")
+
+	rhsPanic := NewIllegalArgumentException("rhs")
+	for _, testCase := range []struct {
+		name   string
+		target *ReferenceArray
+		index  int32
+	}{
+		{name: "null target", target: nil, index: 0},
+		{name: "out-of-bounds target", target: array, index: 2},
+	} {
+		var recovered any
+		func() {
+			defer func() { recovered = recover() }()
+			_ = ReferenceArrayAssign[any](testCase.target, testCase.index, func() any {
+				panic(rhsPanic)
+			}, ObjectTypeID)
+		}()
+		if recovered != rhsPanic {
+			t.Fatalf("%s panic = %T (%v), want RHS panic", testCase.name, recovered, recovered)
+		}
+	}
 
 	base := newReferenceArrayBase(9)
 	storeCalls := 0

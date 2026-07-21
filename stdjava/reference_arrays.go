@@ -477,7 +477,7 @@ func referenceArrayStoreAt(array *ReferenceArray, position int, value any) {
 
 // ReferenceArraySet stores a value that has already been evaluated. It is used
 // by runtime builders; generated Java simple assignments use
-// ReferenceArrayAssign so null/bounds checks happen before RHS evaluation.
+// ReferenceArrayAssign so RHS evaluation happens before null/bounds checks.
 func ReferenceArraySet[T any, I javaArrayLength](array *ReferenceArray, index I, value T) T {
 	position := referenceArrayIndex(array, index)
 	referenceArrayStoreAt(array, position, value)
@@ -485,9 +485,11 @@ func ReferenceArraySet[T any, I javaArrayLength](array *ReferenceArray, index I,
 }
 
 // ReferenceArrayAssign implements Java simple array assignment order and
-// result typing. The array and index are checked before rhs runs. The RHS is
-// then converted to the expression's static component view before the runtime
-// component check/store; a rejected covariant store never mutates the array.
+// result typing. Go evaluates the array and index arguments before entering the
+// helper; the helper then evaluates the RHS before performing Java's null and
+// bounds checks. The assignment result is converted to the expression's static
+// component view before the runtime component check/store; a rejected
+// covariant store never mutates the array.
 // Generated code supplies Result explicitly when its Go view differs from the
 // RHS view (for example Child assigned through a Base[] expression).
 func ReferenceArrayAssign[Result any, Input any, I javaArrayLength](
@@ -496,8 +498,8 @@ func ReferenceArrayAssign[Result any, Input any, I javaArrayLength](
 	rhs func() Input,
 	staticComponentType TypeID,
 ) Result {
-	position := referenceArrayIndex(array, index)
 	value := rhs()
+	position := referenceArrayIndex(array, index)
 	result := ObjectView[Result](value, staticComponentType)
 	referenceArrayStoreAt(array, position, value)
 	return result
