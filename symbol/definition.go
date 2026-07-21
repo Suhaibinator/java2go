@@ -10,6 +10,9 @@ type Definition struct {
 	OriginalType string
 	// Display type of the object
 	Type string
+	// Nullable marks a local whose generated storage must preserve a Java null
+	// value even though its ordinary Go representation is value-backed.
+	Nullable bool
 	// Type parameters declared on this definition (methods/constructors)
 	TypeParameters []TypeParam
 	// Whether this definition is static (applies to methods/fields)

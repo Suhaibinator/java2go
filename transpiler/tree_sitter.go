@@ -60,6 +60,18 @@ type Ctx struct {
 	// Expected type from variable declaration, used for diamond operator inference
 	expectedType string
 
+	// Additional type parameters synthesized for a generated top-level function.
+	// Java raw generic parameters can accept every instantiation, while Go has no
+	// equivalent raw generic type. Static Java methods that receive a raw generic
+	// are therefore emitted as generic Go functions, with these parameters kept
+	// separate from the immutable Java symbol definition.
+	syntheticTypeParameters []symbol.TypeParam
+	// Rewritten Java types for raw generic formal parameters, keyed by both the
+	// Java and generated Go parameter names. Keeping these in the conversion
+	// context lets body type inference observe the same synthesized arguments as
+	// the emitted function signature.
+	rawGenericParameterTypes map[string]string
+
 	// Java package -> Go alias map for generated imports in the current output file
 	importAliases map[string]string
 	// Tracks which imported Java packages are actually used by generated nodes
@@ -118,18 +130,20 @@ type tryReturnTarget struct {
 // pointing at the same things as the previous Ctx
 func (c Ctx) Clone() Ctx {
 	return Ctx{
-		className:        c.className,
-		currentFile:      c.currentFile,
-		currentClass:     c.currentClass,
-		localScope:       c.localScope,
-		lastType:         c.lastType,
-		expectedType:     c.expectedType,
-		importAliases:    c.importAliases,
-		usedImports:      c.usedImports,
-		tryReturnTarget:  c.tryReturnTarget,
-		hoistedDecls:     c.hoistedDecls,
-		anonClassCounter: c.anonClassCounter,
-		localClasses:     c.localClasses,
+		className:                c.className,
+		currentFile:              c.currentFile,
+		currentClass:             c.currentClass,
+		localScope:               c.localScope,
+		lastType:                 c.lastType,
+		expectedType:             c.expectedType,
+		syntheticTypeParameters:  c.syntheticTypeParameters,
+		rawGenericParameterTypes: c.rawGenericParameterTypes,
+		importAliases:            c.importAliases,
+		usedImports:              c.usedImports,
+		tryReturnTarget:          c.tryReturnTarget,
+		hoistedDecls:             c.hoistedDecls,
+		anonClassCounter:         c.anonClassCounter,
+		localClasses:             c.localClasses,
 	}
 }
 
@@ -384,6 +398,11 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			paramType := paramDef.OriginalType
 			if strings.TrimSpace(paramType) == "" {
 				paramType = node.ChildByFieldName("type").Content(source)
+			}
+			if rewritten, ok := ctx.rawGenericParameterTypes[paramDef.OriginalName]; ok {
+				paramType = rewritten
+			} else if rewritten, ok := ctx.rawGenericParameterTypes[paramDef.Name]; ok {
+				paramType = rewritten
 			}
 
 			return &ast.Field{

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 )
 
 // This file holds shared helpers for the collection types and the static
@@ -101,4 +102,66 @@ func SliceToString[T any](elements []T) string {
 		out += p
 	}
 	return out + "]"
+}
+
+// ArrayDeepToString returns the recursive Java Arrays.deepToString form of a
+// nested array. Slices model Java arrays in generated Go, including primitive
+// arrays nested inside an Object-style outer array. Active recursion is tracked
+// so a self-referential array is rendered as "[...]" rather than recursing
+// forever, matching java.util.Arrays.
+func ArrayDeepToString(value any) string {
+	var out strings.Builder
+	appendDeepArrayString(&out, reflect.ValueOf(value), make(map[deepArrayVisit]bool))
+	return out.String()
+}
+
+type deepArrayVisit struct {
+	typeOf  reflect.Type
+	pointer uintptr
+}
+
+func appendDeepArrayString(out *strings.Builder, value reflect.Value, active map[deepArrayVisit]bool) {
+	for value.IsValid() && value.Kind() == reflect.Interface {
+		if value.IsNil() {
+			out.WriteString("null")
+			return
+		}
+		value = value.Elem()
+	}
+	if !value.IsValid() {
+		out.WriteString("null")
+		return
+	}
+
+	if value.Kind() != reflect.Array && value.Kind() != reflect.Slice {
+		if (value.Kind() == reflect.Pointer || value.Kind() == reflect.Map || value.Kind() == reflect.Func) && value.IsNil() {
+			out.WriteString("null")
+			return
+		}
+		out.WriteString(StringValueOf(value.Interface()))
+		return
+	}
+
+	if value.Kind() == reflect.Slice {
+		if value.IsNil() {
+			out.WriteString("null")
+			return
+		}
+		visit := deepArrayVisit{typeOf: value.Type(), pointer: value.Pointer()}
+		if active[visit] {
+			out.WriteString("[...]")
+			return
+		}
+		active[visit] = true
+		defer delete(active, visit)
+	}
+
+	out.WriteByte('[')
+	for index := 0; index < value.Len(); index++ {
+		if index > 0 {
+			out.WriteString(", ")
+		}
+		appendDeepArrayString(out, value.Index(index), active)
+	}
+	out.WriteByte(']')
 }

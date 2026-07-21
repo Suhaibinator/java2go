@@ -1737,7 +1737,12 @@ func zeroValueForType(expr ast.Expr) ast.Expr {
 		case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "float32", "float64", "byte", "rune":
 			return &ast.BasicLit{Kind: token.INT, Value: "0"}
 		default:
-			return &ast.Ident{Name: "nil"}
+			// Named interfaces and type parameters cannot be distinguished from the
+			// identifier alone. Dereferencing a freshly allocated value yields the
+			// valid zero for both (nil for an interface, concrete zero for T), unlike
+			// a literal nil which does not compile when T is instantiated by a value
+			// type such as the project's Integer -> int32 representation.
+			return &ast.StarExpr{X: &ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{t}}}
 		}
 	case *ast.StarExpr, *ast.ArrayType, *ast.MapType, *ast.InterfaceType, *ast.FuncType, *ast.SliceExpr, *ast.ChanType:
 		return &ast.Ident{Name: "nil"}
@@ -2416,6 +2421,88 @@ func isExplicitSuperConstructorAssignment(stmt ast.Stmt, ctx Ctx) bool {
 	return lhsSelector.Sel.Name == superName
 }
 
+// synthesizeRawGenericFunctionParameters models Java raw generic parameters on
+// static methods. A raw `Box box` accepts Box<String>, Box<Integer>, and every
+// other instantiation, but Go requires an explicit argument and its generic
+// types are invariant. Emitting a fresh function type parameter per raw formal
+// (`func Use[BoxT any](box *Box[BoxT])`) preserves that call-site flexibility
+// and lets Go infer the concrete argument without changing the Java symbols.
+func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]symbol.TypeParam, map[string]string) {
+	if def == nil || !def.IsStatic {
+		return nil, nil
+	}
+
+	usedNames := make(map[string]struct{})
+	for _, typeParam := range def.TypeParameters {
+		usedNames[typeParam.Name] = struct{}{}
+	}
+
+	var synthetic []symbol.TypeParam
+	rewrittenTypes := make(map[string]string)
+	for _, param := range def.Parameters {
+		if param == nil {
+			continue
+		}
+
+		javaType := strings.TrimSpace(param.OriginalType)
+		arraySuffix := ""
+		for strings.HasSuffix(javaType, "[]") {
+			arraySuffix += "[]"
+			javaType = strings.TrimSpace(javaType[:len(javaType)-2])
+		}
+		base, explicitArgs := parseJavaTypeString(javaType)
+		if base == "" || len(explicitArgs) > 0 {
+			continue
+		}
+		target := resolveClassScopeByQualifiedName(ctx, base)
+		if target == nil || len(target.TypeParameters) == 0 {
+			continue
+		}
+
+		stem := symbol.Uppercase(sanitizeGoIdent(param.Name))
+		if stem == "" {
+			stem = "Raw"
+		}
+		bindings := make(map[string]string, len(target.TypeParameters))
+		generatedNames := make([]string, 0, len(target.TypeParameters))
+		for _, targetParam := range target.TypeParameters {
+			candidate := stem + targetParam.Name
+			if candidate == "" {
+				candidate = "RawType"
+			}
+			baseCandidate := candidate
+			for suffix := 2; ; suffix++ {
+				if _, exists := usedNames[candidate]; !exists {
+					break
+				}
+				candidate = fmt.Sprintf("%s%d", baseCandidate, suffix)
+			}
+			usedNames[candidate] = struct{}{}
+			bindings[targetParam.Name] = candidate
+			generatedNames = append(generatedNames, candidate)
+		}
+
+		for index, targetParam := range target.TypeParameters {
+			generated := symbol.TypeParam{Name: generatedNames[index]}
+			for _, bound := range targetParam.Bounds {
+				generated.Bounds = append(generated.Bounds, symbol.JavaType{
+					Original: substituteJavaTypeParameters(bound.Original, bindings),
+				})
+			}
+			synthetic = append(synthetic, generated)
+		}
+
+		rewritten := base + "<" + strings.Join(generatedNames, ", ") + ">" + arraySuffix
+		rewrittenTypes[param.OriginalName] = rewritten
+		rewrittenTypes[param.Name] = rewritten
+	}
+
+	if len(rewrittenTypes) == 0 {
+		return nil, nil
+	}
+	return synthetic, rewrittenTypes
+}
+
 // ParseDecl parses a top-level declaration within a source file, including
 // but not limited to fields and methods
 func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
@@ -2599,11 +2686,14 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 		}
 
-		methodName := identFromNode(node.ChildByFieldName("name"), source)
+		// Symbol lookup must use the original Java spelling. identFromNode applies
+		// Go-keyword sanitization (`range` -> `range_`), but symbol definitions keep
+		// OriginalName as `range` and carry their resolved Go name separately.
+		methodName := node.ChildByFieldName("name").Content(source)
 		methodParameters := node.ChildByFieldName("parameters")
 
 		comparison := func(d *symbol.Definition) bool {
-			if d.OriginalName != methodName.Name {
+			if d.OriginalName != methodName {
 				return false
 			}
 			if len(d.Parameters) != int(methodParameters.NamedChildCount()) {
@@ -2627,11 +2717,14 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		if len(methodDefinition) == 0 {
 			log.WithFields(log.Fields{
-				"methodName": methodName.Name,
+				"methodName": methodName,
 			}).Panic("No matching definition found for method")
 		}
 
 		ctx.localScope = methodDefinition[0]
+		if static {
+			ctx.syntheticTypeParameters, ctx.rawGenericParameterTypes = synthesizeRawGenericFunctionParameters(ctx.localScope, ctx)
+		}
 
 		if ctx.currentClass.IsEnum && !static {
 			params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
@@ -2690,7 +2783,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			body = buildAbstractMethodBody(ctx.localScope.OriginalName, results)
 		}
 
-		if methodName.Name == "main" && bodyNode != nil {
+		if methodName == "main" && bodyNode != nil {
 			params = nil
 			argsAccess := qualifiedNameExpr("Args", "os", ctx)
 			body.List = append([]ast.Stmt{
@@ -2747,8 +2840,9 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			Body: body,
 		}
 		if static {
-			if len(ctx.localScope.TypeParameters) > 0 {
-				funcDecl.Type.TypeParams = &ast.FieldList{List: makeTypeParamFieldsInContext(ctx.localScope.TypeParameters, ctx)}
+			effectiveTypeParameters := symbol.MergeTypeParams(ctx.localScope.TypeParameters, ctx.syntheticTypeParameters)
+			if len(effectiveTypeParameters) > 0 {
+				funcDecl.Type.TypeParams = &ast.FieldList{List: makeTypeParamFieldsInContext(effectiveTypeParameters, ctx)}
 			}
 		} else if len(ctx.localScope.TypeParameters) > 0 {
 			log.WithFields(log.Fields{

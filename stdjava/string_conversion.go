@@ -28,6 +28,20 @@ func StringValueOf(value any) string {
 	}
 }
 
+// StringRequireNonNull converts the two generated representations of a Java
+// String reference (a Go string value or a nullable interface slot) into the
+// concrete string required by String intrinsics. Calling an instance method on
+// a null Java reference throws NullPointerException.
+func StringRequireNonNull(value any) string {
+	if value == nil {
+		panic(NewNullPointerException("String method called on null"))
+	}
+	if stringValue, ok := value.(string); ok {
+		return stringValue
+	}
+	panic(NewClassCastException(fmt.Sprintf("cannot use %T as String", value)))
+}
+
 // FloatToString formats a float32 according to Java's Float.toString rules.
 func FloatToString(value float32) string {
 	return javaFloatingPointString(float64(value), 32)

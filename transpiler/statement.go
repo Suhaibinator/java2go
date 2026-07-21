@@ -82,6 +82,13 @@ func ParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	}
 }
 
+func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	if node != nil && node.Type() == "null_literal" && strings.TrimSpace(ctx.expectedType) != "" {
+		return zeroValueForType(javaTypeStringToGoTypeExpr(ctx.expectedType, inScopeTypeParameters(ctx), ctx))
+	}
+	return ParseExpr(node, source, ctx)
+}
+
 func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	switch node.Type() {
 	case "ERROR":
@@ -156,13 +163,18 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// If the declaration contains null, declare it with the `var` keyword instead
 		// of implicitly
 		if containsNull {
+			if usesNullableValueStorage(originalType) {
+				for _, name := range names {
+					markLocalVariableNullable(ctx, name.Name)
+				}
+			}
 			return &ast.DeclStmt{
 				Decl: &ast.GenDecl{
 					Tok: token.VAR,
 					Specs: []ast.Spec{
 						&ast.ValueSpec{
 							Names:  names,
-							Type:   explicitLocalVariableType(originalType, ctx),
+							Type:   nullableLocalVariableType(originalType, ctx),
 							Values: declaration.Rhs,
 						},
 					},
@@ -222,19 +234,31 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		return &ast.AssignStmt{Lhs: names, Tok: token.DEFINE, Rhs: values}
 	case "assignment_expression":
-		// Go has no >>>= operator. Reuse the value-producing assignment lowering
-		// so the target is addressed once, the shift count is Java-masked, and the
-		// unsigned result is stored back with the target's declared width.
-		if node.Child(1).Content(source) == ">>>=" {
+		operator := node.Child(1).Content(source)
+		// Compound assignment in Java is not just Go's corresponding assignment
+		// token: String += converts arbitrary operands, arithmetic narrows back to
+		// the target type, and the target is evaluated exactly once. Reuse the
+		// value-producing lowering for every compound operator and discard the
+		// resulting value when the assignment appears as a statement.
+		if operator != "=" {
 			return &ast.ExprStmt{X: lowerAssignmentExpression(node, source, ctx)}
 		}
 
-		assignVar := ParseExpr(node.Child(0), source, ctx)
-		assignVal := ParseExpr(node.Child(2), source, ctx)
+		lhsNode := node.Child(0)
+		rhsNode := node.Child(2)
+		assignVar := ParseExpr(lhsNode, source, ctx)
+		rhsCtx := ctx.Clone()
+		if lhsJavaType, ok := inferExprJavaType(lhsNode, ctx, source); ok {
+			rhsCtx.expectedType = lhsJavaType
+		}
+		assignVal := ParseExpr(rhsNode, source, rhsCtx)
+		if lhsJavaType := strings.TrimSpace(rhsCtx.expectedType); lhsJavaType != "" {
+			assignVal = coerceArgumentToExpectedType(assignVal, rhsNode, lhsJavaType, ctx, source)
+		}
 
 		return &ast.AssignStmt{
 			Lhs: []ast.Expr{assignVar},
-			Tok: StrToToken(node.Child(1).Content(source)),
+			Tok: token.ASSIGN,
 			Rhs: []ast.Expr{assignVal},
 		}
 	case "update_expression":
@@ -276,6 +300,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					continue
 				}
 				body.List = append(body.List, stmt)
+				if line.Type() == "local_variable_declaration" {
+					body.List = append(body.List, unusedLocalDiscardStatements(stmt, node, source)...)
+				}
 			} else if isStmtListNode(line.Type()) {
 				// Try and synchronized statements are lowered into a list of statements
 				body.List = append(body.List, ParseNode(line, source, ctx).([]ast.Stmt)...)
@@ -392,7 +419,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				stmts = append(stmts, &ast.AssignStmt{
 					Lhs: []ast.Expr{&ast.Ident{Name: ctx.tryReturnTarget.ValueName}},
 					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{ParseExpr(node.NamedChild(0), source, returnCtx)},
+					Rhs: []ast.Expr{parseReturnValue(node.NamedChild(0), source, returnCtx)},
 				})
 			}
 			stmts = append(stmts, &ast.AssignStmt{
@@ -411,7 +438,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if ctx.localScope != nil && strings.TrimSpace(ctx.localScope.OriginalType) != "" {
 			returnCtx.expectedType = ctx.localScope.OriginalType
 		}
-		return &ast.ReturnStmt{Results: []ast.Expr{ParseExpr(node.NamedChild(0), source, returnCtx)}}
+		return &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(node.NamedChild(0), source, returnCtx)}}
 	case "labeled_statement":
 		return &ast.LabeledStmt{
 			Label: identFromNode(node.NamedChild(0), source),
@@ -516,6 +543,12 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if bodyNode != nil {
 			rangeBody = ParseStmt(bodyNode, source, loopCtx).(*ast.BlockStmt)
 		}
+		if ident, ok := rangeValue.(*ast.Ident); ok && ident.Name != "_" {
+			rangeBody.List = append(unusedLocalDiscardStatements(&ast.AssignStmt{
+				Lhs: []ast.Expr{ident},
+				Tok: token.DEFINE,
+			}, node, source), rangeBody.List...)
+		}
 
 		return &ast.RangeStmt{
 			// We don't need the type of the variable for the range expression
@@ -527,8 +560,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 	case "for_statement":
 		var init, post ast.Stmt
-		if node.ChildByFieldName("init") != nil {
-			init = ParseStmt(node.ChildByFieldName("init"), source, ctx)
+		initNode := node.ChildByFieldName("init")
+		if initNode != nil {
+			init = ParseStmt(initNode, source, ctx)
 		}
 		if node.ChildByFieldName("update") != nil {
 			post = ParseStmt(node.ChildByFieldName("update"), source, ctx)
@@ -538,11 +572,16 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			cond = ParseExpr(node.ChildByFieldName("condition"), source, ctx)
 		}
 
+		body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
+		if initNode != nil && initNode.Type() == "local_variable_declaration" {
+			body.List = append(unusedLocalDiscardStatements(init, node, source), body.List...)
+		}
+
 		return &ast.ForStmt{
 			Init: init,
 			Cond: cond,
 			Post: post,
-			Body: ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt),
+			Body: body,
 		}
 	case "while_statement":
 		if readLineLoop, ok := lowerBufferedReaderReadLineWhile(node, source, ctx); ok {
@@ -680,6 +719,145 @@ func explicitLocalVariableType(originalType string, ctx Ctx) ast.Expr {
 		originalType,
 		ctx,
 	)
+}
+
+// nullableLocalVariableType preserves null for Java reference types whose usual
+// Go representation is a non-nullable value. Most Java references already lower
+// to pointers, slices, interfaces, or maps and can therefore use their normal
+// explicit type. String and boxed primitives need an interface slot when their
+// initializer is null so later comparisons and Java text conversion can still
+// observe the distinction between null and a value-type zero.
+func nullableLocalVariableType(originalType string, ctx Ctx) ast.Expr {
+	if usesNullableValueStorage(originalType) {
+		return &ast.Ident{Name: "any"}
+	}
+	return explicitLocalVariableType(originalType, ctx)
+}
+
+func usesNullableValueStorage(originalType string) bool {
+	base, _ := parseJavaTypeString(originalType)
+	switch stripJavaQualifier(base) {
+	case "String", "Integer", "Long", "Short", "Byte", "Character", "Float", "Double", "Boolean":
+		return true
+	default:
+		return false
+	}
+}
+
+// localVariableDiscardStatements marks Java locals as used without dropping
+// their declarations or initializers. Java accepts unused locals while Go does
+// not; emitting `_ = local` immediately after the declaration retains
+// initializer evaluation and ordering while satisfying Go's compile-time rule.
+func localVariableDiscardStatements(stmt ast.Stmt) []ast.Stmt {
+	var names []*ast.Ident
+	switch typed := stmt.(type) {
+	case *ast.AssignStmt:
+		if typed.Tok != token.DEFINE {
+			return nil
+		}
+		for _, lhs := range typed.Lhs {
+			if ident, ok := lhs.(*ast.Ident); ok {
+				names = append(names, ident)
+			}
+		}
+	case *ast.DeclStmt:
+		declaration, ok := typed.Decl.(*ast.GenDecl)
+		if !ok || declaration.Tok != token.VAR {
+			return nil
+		}
+		for _, spec := range declaration.Specs {
+			if valueSpec, ok := spec.(*ast.ValueSpec); ok {
+				names = append(names, valueSpec.Names...)
+			}
+		}
+	}
+
+	discards := make([]ast.Stmt, 0, len(names))
+	for _, name := range names {
+		if name == nil || name.Name == "" || name.Name == "_" {
+			continue
+		}
+		discards = append(discards, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.Ident{Name: name.Name}},
+		})
+	}
+	return discards
+}
+
+func unusedLocalDiscardStatements(stmt ast.Stmt, scopeNode *sitter.Node, source []byte) []ast.Stmt {
+	potential := localVariableDiscardStatements(stmt)
+	discards := potential[:0]
+	for _, discard := range potential {
+		assignment, ok := discard.(*ast.AssignStmt)
+		if !ok || len(assignment.Rhs) != 1 {
+			continue
+		}
+		name, ok := assignment.Rhs[0].(*ast.Ident)
+		if !ok || javaScopeReadsIdentifier(scopeNode, name.Name, source) {
+			continue
+		}
+		discards = append(discards, discard)
+	}
+	return discards
+}
+
+// javaScopeReadsIdentifier distinguishes a real value read from declarations
+// and plain assignment targets. Go rejects a Java local that is only declared
+// or assigned, while adding a discard for every local needlessly perturbs all
+// generated bodies. This lightweight source-tree check emits guards only for
+// locals that otherwise have no read in their lexical statement scope.
+func javaScopeReadsIdentifier(scopeNode *sitter.Node, name string, source []byte) bool {
+	var reads bool
+	var walk func(*sitter.Node)
+	walk = func(node *sitter.Node) {
+		if node == nil || reads {
+			return
+		}
+		if node.Type() == "identifier" && node.Content(source) == name && javaIdentifierIsRead(node, source) {
+			reads = true
+			return
+		}
+		for _, child := range nodeutil.NamedChildrenOf(node) {
+			walk(child)
+		}
+	}
+	walk(scopeNode)
+	return reads
+}
+
+func javaIdentifierIsRead(node *sitter.Node, source []byte) bool {
+	parent := node.Parent()
+	if parent == nil {
+		return true
+	}
+	sameNode := func(other *sitter.Node) bool {
+		return other != nil && other.StartByte() == node.StartByte() && other.EndByte() == node.EndByte()
+	}
+	switch parent.Type() {
+	case "variable_declarator", "formal_parameter", "spread_parameter", "catch_formal_parameter":
+		if sameNode(parent.ChildByFieldName("name")) || (parent.Type() == "variable_declarator" && sameNode(parent.NamedChild(0))) {
+			return false
+		}
+	case "enhanced_for_statement":
+		if sameNode(parent.ChildByFieldName("name")) {
+			return false
+		}
+	case "assignment_expression":
+		if sameNode(parent.Child(0)) && parent.Child(1) != nil && parent.Child(1).Content(source) == "=" {
+			return false
+		}
+	case "field_access":
+		if sameNode(parent.ChildByFieldName("field")) {
+			return false
+		}
+	case "method_invocation":
+		if sameNode(parent.ChildByFieldName("name")) {
+			return false
+		}
+	}
+	return true
 }
 
 // parseSwitchBlock lowers a Java switch body into a Go switch body, translating
@@ -879,7 +1057,11 @@ func parseSwitchGroupBody(bodyNodes []*sitter.Node, source []byte, ctx Ctx) (bod
 		if stmts := TryParseStmts(stmtNode, source, ctx); stmts != nil {
 			body = append(body, stmts...)
 		} else {
-			body = append(body, ParseStmt(stmtNode, source, ctx))
+			stmt := ParseStmt(stmtNode, source, ctx)
+			body = append(body, stmt)
+			if stmtNode.Type() == "local_variable_declaration" {
+				body = append(body, unusedLocalDiscardStatements(stmt, stmtNode.Parent(), source)...)
+			}
 		}
 	}
 	return body, terminatedByBreak
@@ -905,6 +1087,15 @@ func recordLocalVariableDefinition(ctx Ctx, name, originalType, parsedType strin
 		OriginalType: originalType,
 		Type:         parsedType,
 	})
+}
+
+func markLocalVariableNullable(ctx Ctx, name string) {
+	if ctx.localScope == nil || strings.TrimSpace(name) == "" {
+		return
+	}
+	if local := ctx.localScope.FindVariable(name); local != nil {
+		local.Nullable = true
+	}
 }
 
 func ParseStmts(node *sitter.Node, source []byte, ctx Ctx) []ast.Stmt {

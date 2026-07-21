@@ -116,6 +116,14 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 	}
 
 	recv := ParseExpr(objectNode, source, ctx)
+	// A Java String reference can be null even though ordinary generated strings
+	// use Go's value-backed string type. Null-initialized locals are represented
+	// through an interface slot; normalize those nullable local receivers through
+	// the runtime bridge so both representations compile and invoking a method on
+	// null retains Java's NullPointerException behavior.
+	if receiverType == "String" && isNullableValueBackedLocal(objectNode, ctx, source) {
+		recv = stdjavaCall(ctx, "StringRequireNonNull", recv)
+	}
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
 
 	// A lambda argument to one of these stdlib methods is parsed before its
@@ -135,6 +143,17 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 		return result, true
 	}
 	return nil, false
+}
+
+func isNullableValueBackedLocal(node *sitter.Node, ctx Ctx, source []byte) bool {
+	for node != nil && node.Type() == "parenthesized_expression" && node.NamedChildCount() > 0 {
+		node = node.NamedChild(0)
+	}
+	if node == nil || node.Type() != "identifier" || ctx.localScope == nil {
+		return false
+	}
+	local := ctx.localScope.FindVariable(node.Content(source))
+	return local != nil && local.Nullable
 }
 
 // lambdaResultKind describes the result type a re-typed element lambda must have.

@@ -332,4 +332,10 @@ func registerCollectionsStatics() {
 		}
 		return stdjavaCall(ctx, "SliceToString", args[0])
 	})
+	registerStaticIntrinsic("Arrays", "deepToString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "ArrayDeepToString", args[0])
+	})
 }

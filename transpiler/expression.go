@@ -295,15 +295,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if isSystemOutSelector(objectNode, source) && (methodName == "println" || methodName == "print") {
 				argListNode := node.ChildByFieldName("arguments")
 				args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, nil)
-				// Java prints a char as its glyph, but a transpiled char is a Go
-				// rune (int32), which fmt prints as a number. Wrap char-typed
-				// arguments in string(...) so println(c) prints the character.
+				// PrintStream performs Java text conversion before writing. Route
+				// every non-char value through the shared runtime bridge so null and
+				// floating-point values retain their Java spellings; chars need their
+				// static type here because Go represents both char and int as int32.
 				if argListNode != nil {
 					for ind, argNode := range nodeutil.NamedChildrenOf(argListNode) {
-						if ind < len(args) && isCharTypedExprNode(argNode, ctx, source) {
-							args[ind] = &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{args[ind]}}
-						} else if ind < len(args) && isFloatingPointTypedExprNode(argNode, ctx, source) {
-							args[ind] = stdjavaCall(ctx, "StringValueOf", args[ind])
+						if ind < len(args) {
+							args[ind] = javaStringConversionExpr(argNode, args[ind], ctx, source)
 						}
 					}
 				}
@@ -828,12 +827,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		leftExpr := ParseExpr(leftNode, source, ctx)
 		rightExpr := ParseExpr(rightNode, source, ctx)
 		if operator == "+" && (isStringLikeExprNode(leftNode, ctx, source) || isStringLikeExprNode(rightNode, ctx, source) || isFmtSprintfCall(leftExpr)) {
-			if isFloatingPointTypedExprNode(leftNode, ctx, source) {
-				leftExpr = stdjavaCall(ctx, "StringValueOf", leftExpr)
-			}
-			if isFloatingPointTypedExprNode(rightNode, ctx, source) {
-				rightExpr = stdjavaCall(ctx, "StringValueOf", rightExpr)
-			}
+			leftExpr = javaStringConversionExpr(leftNode, leftExpr, ctx, source)
+			rightExpr = javaStringConversionExpr(rightNode, rightExpr, ctx, source)
 			return mergeFmtSprintCall(leftExpr, rightExpr, ctx)
 		}
 		// Java masks shift counts (int: low 5 bits, long: low 6 bits) before
@@ -871,22 +866,37 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "cast_expression":
 		targetJavaType := node.NamedChild(0).Content(source)
 		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
-		valueExpr := ParseExpr(node.NamedChild(1), source, ctx)
+		valueNode := node.NamedChild(1)
+		valueExpr := ParseExpr(valueNode, source, ctx)
+		typeAssert := func() ast.Expr {
+			return &ast.TypeAssertExpr{
+				X: &ast.CallExpr{
+					Fun:  &ast.Ident{Name: "any"},
+					Args: []ast.Expr{valueExpr},
+				},
+				Type: targetType,
+			}
+		}
 
 		if isPrimitiveCastTarget(targetType) {
+			// Boxed Java casts are reference casts followed by unboxing. When the
+			// operand is Object, a raw generic result, or a type parameter, a Go
+			// numeric conversion would either reject generic T at compile time or
+			// silently convert the wrong dynamic type. Preserve the runtime check via
+			// an assertion; known numeric operands still use Java's numeric cast.
+			if isBoxedPrimitiveJavaType(targetJavaType) {
+				valueJavaType, known := inferExprJavaType(valueNode, ctx, source)
+				if _, numeric := canonicalJavaNumericType(valueJavaType); !known || !numeric {
+					return typeAssert()
+				}
+			}
 			return &ast.CallExpr{
 				Fun:  targetType,
 				Args: []ast.Expr{valueExpr},
 			}
 		}
 
-		return &ast.TypeAssertExpr{
-			X: &ast.CallExpr{
-				Fun:  &ast.Ident{Name: "any"},
-				Args: []ast.Expr{valueExpr},
-			},
-			Type: targetType,
-		}
+		return typeAssert()
 	case "field_access":
 		// X.Sel
 		obj := node.ChildByFieldName("object")
@@ -920,22 +930,32 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
-		if obj.Type() == "this" {
-			fieldName := node.ChildByFieldName("field").Content(source)
-			def := findFieldInHierarchy(ctx.currentClass, fieldName, ctx)
-			selName := fieldName
-			if def != nil && def.Name != "" {
-				selName = def.Name
+		fieldName := node.ChildByFieldName("field").Content(source)
+		var owner *symbol.ClassScope
+		switch obj.Type() {
+		case "this":
+			owner = ctx.currentClass
+		case "super":
+			owner = resolveSuperclassScope(ctx, ctx.currentClass)
+		default:
+			if ownerType, ok := inferExprJavaType(obj, ctx, source); ok {
+				base, _ := parseJavaTypeString(ownerType)
+				owner = resolveClassScopeByQualifiedName(ctx, base)
 			}
-
-			return &ast.SelectorExpr{
-				X:   ParseExpr(node.ChildByFieldName("object"), source, ctx),
-				Sel: &ast.Ident{Name: selName},
+			if owner == nil && obj.Type() == "identifier" {
+				owner = resolveClassScopeByIdentifier(ctx, source, obj)
 			}
+		}
+		selName := sanitizeGoIdent(fieldName)
+		if def := findFieldInHierarchy(owner, fieldName, ctx); def != nil && def.Name != "" {
+			// Resolve against the symbol's final display name. Reserved identifiers
+			// can be renamed further than lexical sanitization (`map` -> `map0`) to
+			// avoid collisions, and every receiver form must select that same field.
+			selName = def.Name
 		}
 		return &ast.SelectorExpr{
 			X:   ParseExpr(obj, source, ctx),
-			Sel: identFromNode(node.ChildByFieldName("field"), source),
+			Sel: &ast.Ident{Name: selName},
 		}
 	case "array_access":
 		return &ast.IndexExpr{
@@ -1083,7 +1103,12 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 		return &ast.BadExpr{}
 	}
 
-	targetType := javaTypeStringToGoTypeExpr(lhsJavaType, inScopeTypeParameters(ctx), ctx)
+	targetValueType := javaTypeStringToGoTypeExpr(lhsJavaType, inScopeTypeParameters(ctx), ctx)
+	targetStorageType := targetValueType
+	nullableValueStorage := isNullableValueBackedLocal(lhsNode, ctx, source)
+	if nullableValueStorage {
+		targetStorageType = &ast.Ident{Name: "any"}
+	}
 	targetAddress := &ast.UnaryExpr{Op: token.AND, X: ParseExpr(lhsNode, source, ctx)}
 	operator := opNode.Content(source)
 
@@ -1092,7 +1117,7 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 		rhsCtx.expectedType = lhsJavaType
 		rhs := ParseExpr(rhsNode, source, rhsCtx)
 		rhs = coerceArgumentToExpectedType(rhs, rhsNode, lhsJavaType, ctx, source)
-		return assignmentValueCall(targetType, targetAddress, rhs)
+		return assignmentValueCall(targetStorageType, targetValueType, targetAddress, rhs)
 	}
 
 	rhsJavaType, rhsTypeKnown := inferExprJavaType(rhsNode, ctx, source)
@@ -1105,9 +1130,19 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	rhsType := javaTypeStringToGoTypeExpr(rhsJavaType, inScopeTypeParameters(ctx), ctx)
 	rhs := ParseExpr(rhsNode, source, ctx)
 
+	oldValue := ast.Expr(&ast.Ident{Name: "old"})
+	if nullableValueStorage {
+		lhsBase, _ := parseJavaTypeString(lhsJavaType)
+		if stripJavaQualifier(lhsBase) == "String" {
+			oldValue = stdjavaCall(ctx, "StringRequireNonNull", oldValue)
+		} else {
+			oldValue = &ast.TypeAssertExpr{X: oldValue, Type: targetValueType}
+		}
+	}
+
 	value, ok := compoundAssignmentValue(
 		operator,
-		&ast.Ident{Name: "old"},
+		oldValue,
 		&ast.Ident{Name: "rhs"},
 		lhsJavaType,
 		rhsJavaType,
@@ -1126,7 +1161,7 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 			Params: &ast.FieldList{List: []*ast.Field{
 				{Names: []*ast.Ident{{Name: "rhs"}}, Type: rhsType},
 			}},
-			Results: &ast.FieldList{List: []*ast.Field{{Type: targetType}}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: targetValueType}}},
 		},
 		Body: &ast.BlockStmt{List: []ast.Stmt{
 			&ast.AssignStmt{
@@ -1146,7 +1181,7 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	outer := &ast.FuncLit{
 		Type: &ast.FuncType{
 			Params: &ast.FieldList{List: []*ast.Field{
-				{Names: []*ast.Ident{{Name: "dst"}}, Type: &ast.StarExpr{X: targetType}},
+				{Names: []*ast.Ident{{Name: "dst"}}, Type: &ast.StarExpr{X: targetStorageType}},
 			}},
 			Results: &ast.FieldList{List: []*ast.Field{{Type: inner.Type}}},
 		},
@@ -1166,15 +1201,15 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	}
 }
 
-func assignmentValueCall(targetType ast.Expr, targetAddress, rhs ast.Expr) ast.Expr {
+func assignmentValueCall(storageType, valueType ast.Expr, targetAddress, rhs ast.Expr) ast.Expr {
 	return &ast.CallExpr{
 		Fun: &ast.FuncLit{
 			Type: &ast.FuncType{
 				Params: &ast.FieldList{List: []*ast.Field{
-					{Names: []*ast.Ident{{Name: "dst"}}, Type: &ast.StarExpr{X: targetType}},
-					{Names: []*ast.Ident{{Name: "value"}}, Type: targetType},
+					{Names: []*ast.Ident{{Name: "dst"}}, Type: &ast.StarExpr{X: storageType}},
+					{Names: []*ast.Ident{{Name: "value"}}, Type: valueType},
 				}},
-				Results: &ast.FieldList{List: []*ast.Field{{Type: targetType}}},
+				Results: &ast.FieldList{List: []*ast.Field{{Type: valueType}}},
 			},
 			Body: &ast.BlockStmt{List: []ast.Stmt{
 				&ast.AssignStmt{
@@ -1342,24 +1377,29 @@ func isStringLikeExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
 	return false
 }
 
-// isFloatingPointTypedExprNode identifies both primitive and boxed Java
-// floating-point expressions. Go's default formatting omits the trailing .0
-// from whole values, while Java's Float/Double conversion retains it.
-func isFloatingPointTypedExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
-	if node == nil {
-		return false
+// javaStringConversionExpr applies Java's String-conversion rules to one
+// concatenation operand. Nested concatenations have already converted each of
+// their operands, so their accumulated fmt.Sprintf call can be reused. A char
+// needs static-type-aware rune-to-string conversion; all other values use the
+// runtime bridge for Java null and floating-point spelling.
+func javaStringConversionExpr(node *sitter.Node, expr ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	if isFmtSprintfCall(expr) {
+		return expr
 	}
-	javaType, ok := inferExprJavaType(node, ctx, source)
-	if !ok {
-		return false
+	if isCharTypedExprNode(node, ctx, source) {
+		return &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{expr}}
 	}
-	base, _ := parseJavaTypeString(javaType)
-	switch stripJavaQualifier(base) {
-	case "float", "Float", "double", "Double":
-		return true
-	default:
-		return false
+	if node != nil && node.Type() != "null_literal" && !isNullableValueBackedLocal(node, ctx, source) {
+		if javaType, ok := inferExprJavaType(node, ctx, source); ok {
+			base, _ := parseJavaTypeString(javaType)
+			switch stripJavaQualifier(base) {
+			case "String", "byte", "Byte", "short", "Short", "int", "Integer", "long", "Long", "boolean", "Boolean":
+				// fmt uses Java-compatible spelling for these concrete values.
+				return expr
+			}
+		}
 	}
+	return stdjavaCall(ctx, "StringValueOf", expr)
 }
 
 func isFmtSprintfCall(expr ast.Expr) bool {
@@ -3322,6 +3362,16 @@ func isPrimitiveCastTarget(target ast.Expr) bool {
 	}
 }
 
+func isBoxedPrimitiveJavaType(javaType string) bool {
+	base, _ := parseJavaTypeString(javaType)
+	switch stripJavaQualifier(base) {
+	case "Boolean", "Byte", "Short", "Character", "Integer", "Long", "Float", "Double":
+		return true
+	default:
+		return false
+	}
+}
+
 func instanceofAssertTypeExpr(javaType string, ctx Ctx) ast.Expr {
 	javaType = strings.TrimSpace(javaType)
 	if javaType == "" {
@@ -3571,12 +3621,31 @@ func stripJavaQualifier(typeName string) string {
 
 func inScopeTypeParameters(ctx Ctx) []string {
 	var params []string
-	if ctx.currentClass != nil {
-		params = append(params, ctx.currentClass.TypeParameterNames()...)
+	appendUnique := func(names ...string) {
+		for _, name := range names {
+			found := false
+			for _, existing := range params {
+				if existing == name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				params = append(params, name)
+			}
+		}
+	}
+
+	// Java class type parameters are unavailable inside static methods. Any
+	// parameters needed to model a raw generic signature are added explicitly as
+	// synthetic function parameters below.
+	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
+		appendUnique(ctx.currentClass.TypeParameterNames()...)
 	}
 	if ctx.localScope != nil {
-		params = append(params, ctx.localScope.TypeParameterNames()...)
+		appendUnique(ctx.localScope.TypeParameterNames()...)
 	}
+	appendUnique(symbol.TypeParamNames(ctx.syntheticTypeParameters)...)
 	return params
 }
 
@@ -3734,10 +3803,11 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 	isInterface := false
 	baseName := stripJavaQualifier(base)
 	targetPkg := ""
+	resolvedScope := resolveClassScopeByQualifiedName(ctx, base)
 
 	// java.util collection types map to the stdjava runtime types, provided the
 	// name is not shadowed by a user-defined class.
-	if resolveClassScopeByQualifiedName(ctx, base) == nil {
+	if resolvedScope == nil {
 		if collExpr := collectionTypeExpr(baseName, typeArgs, typeParams, ctx); collExpr != nil {
 			expr := collExpr
 			for i := 0; i < arrayDims; i++ {
@@ -3747,12 +3817,37 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		}
 	}
 
-	if resolvedScope := resolveClassScopeByQualifiedName(ctx, base); resolvedScope != nil && resolvedScope.Class != nil {
+	if resolvedScope != nil && resolvedScope.Class != nil {
 		isInterface = resolvedScope.IsInterface
 		if resolvedScope.Class.Name != "" {
 			baseName = resolvedScope.Class.Name
 		}
 		targetPkg = resolveJavaPackageForType(ctx, base, resolvedScope)
+
+		// A non-static nested Java class implicitly carries its enclosing class's
+		// type parameters. References such as `Node next` inside `Outer<T>` are
+		// therefore `Node<T>` even though Java does not repeat the argument. Go
+		// requires every generic type to be instantiated. The same fallback maps a
+		// true Java raw type to its erased upper bound (`Object` when unbounded),
+		// which is the closest valid Go representation.
+		if len(typeArgs) == 0 && len(resolvedScope.TypeParameters) > 0 {
+			available := make(map[string]struct{}, len(typeParams))
+			for _, typeParam := range typeParams {
+				available[typeParam] = struct{}{}
+			}
+			typeArgs = make([]string, 0, len(resolvedScope.TypeParameters))
+			for _, typeParam := range resolvedScope.TypeParameters {
+				if _, ok := available[typeParam.Name]; ok {
+					typeArgs = append(typeArgs, typeParam.Name)
+					continue
+				}
+				if len(typeParam.Bounds) > 0 && strings.TrimSpace(typeParam.Bounds[0].Original) != "" {
+					typeArgs = append(typeArgs, typeParam.Bounds[0].Original)
+					continue
+				}
+				typeArgs = append(typeArgs, "Object")
+			}
+		}
 	} else if ctx.currentFile != nil {
 		// If this type name maps to an import whose package we parsed in the same conversion run,
 		// emit a qualified Go selector and add the corresponding import.
@@ -3868,6 +3963,9 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 }
 
 func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
+	if rewritten, ok := ctx.rawGenericParameterTypes[name]; ok && strings.TrimSpace(rewritten) != "" {
+		return rewritten, true
+	}
 	if ctx.localScope != nil {
 		if param := ctx.localScope.ParameterByName(name); param != nil && param.OriginalType != "" {
 			return param.OriginalType, true
@@ -4204,6 +4302,8 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 						case methodName == "charAt":
 							// String.charAt returns char.
 							return "char", true
+						case methodName == "length" || methodName == "indexOf" || methodName == "lastIndexOf" || methodName == "compareTo":
+							return "int", true
 						case stringReturningStringMethods[methodName]:
 							return "String", true
 						case methodName == "split":

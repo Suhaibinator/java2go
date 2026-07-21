@@ -67,3 +67,17 @@ func TestStringValueOfUsesJavaFloatingAndStringerSemantics(t *testing.T) {
 		})
 	}
 }
+
+func TestStringRequireNonNullSupportsNullableStringSlots(t *testing.T) {
+	if got := StringRequireNonNull(any("ready")); got != "ready" {
+		t.Fatalf("StringRequireNonNull() = %q, want ready", got)
+	}
+
+	defer func() {
+		recovered := recover()
+		if !CaughtAs(recovered, "NullPointerException") {
+			t.Fatalf("null String receiver should panic with NullPointerException, got %T (%v)", recovered, recovered)
+		}
+	}()
+	StringRequireNonNull(nil)
+}

@@ -115,6 +115,15 @@ func registerStringIntrinsics() {
 		return &ast.BinaryExpr{X: recv, Op: token.EQL, Y: args[0]}
 	})
 
+	// concat(s) -> recv + s. Both operands are Java references, so normalize the
+	// argument as well as the receiver and retain concat(null)'s NPE behavior.
+	registerInstanceIntrinsic("String", "concat", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return &ast.BinaryExpr{X: recv, Op: token.ADD, Y: stdjavaCall(ctx, "StringRequireNonNull", args[0])}
+	})
+
 	// equalsIgnoreCase(o) -> strings.EqualFold via stdjava wrapper.
 	registerInstanceIntrinsic("String", "equalsIgnoreCase", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {

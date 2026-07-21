@@ -33,6 +33,17 @@ func TestArraysHelpers(t *testing.T) {
 	if got := SliceToString([]int32{1, 2, 3}); got != "[1, 2, 3]" {
 		t.Fatalf("SliceToString = %q, want [1, 2, 3]", got)
 	}
+	if got := ArrayDeepToString([][][]int32{{{1, 2}, {3, 4}}, {{5, 6}}}); got != "[[[1, 2], [3, 4]], [[5, 6]]]" {
+		t.Fatalf("ArrayDeepToString = %q", got)
+	}
+	if got := ArrayDeepToString([][]int32(nil)); got != "null" {
+		t.Fatalf("ArrayDeepToString(nil) = %q, want null", got)
+	}
+	cyclic := make([]any, 1)
+	cyclic[0] = cyclic
+	if got := ArrayDeepToString(cyclic); got != "[[...]]" {
+		t.Fatalf("ArrayDeepToString(cyclic) = %q, want [[...]]", got)
+	}
 }
 
 func TestSingletonAndEmptyList(t *testing.T) {
