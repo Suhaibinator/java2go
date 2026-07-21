@@ -27,6 +27,7 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 
 | Fixture | Domain and coverage | Status |
 | --- | --- | --- |
+| `existing_full_program` | Existing multi-package application reused in place: interfaces, inheritance, generics, collections, exceptions, imports, and cross-package calls | Passing |
 | `routing_engine` | Cross-package graph model, relaxation algorithm, interface dispatch, arrays, stable tie-breaking, unreachable routes, checksum | Passing |
 | `analytics_pipeline` | Parsing, validation, bounded generics, collections, scoring, aggregation, stable ranking, rejections, checksum | Passing |
 | `workflow_engine` | Generic workflow scheduler, rules, enums, collections, sorting, retries, failures, dependency cycles, histories, overflow | Passing |
@@ -51,6 +52,19 @@ Each direct child directory contains:
   expected.stderr      # optional; absence means stderr must be empty
   README.md
   src/**/*.java
+```
+
+An application already stored elsewhere under `testfiles` can be exercised
+without duplicating or modifying its sources by omitting `src` and setting a
+clean relative `source_root` in `fixture.json`, for example:
+
+```json
+{
+  "main_class": "com.acme.app.MainApp",
+  "module_path": "com/acme",
+  "source_root": "../../full_program",
+  "status": "passing"
+}
 ```
 
 A passing manifest contains:

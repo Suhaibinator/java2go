@@ -27,7 +27,8 @@ import (
 //
 //   - fixture.json: entry point, module path, and parity status
 //   - expected.stdout: the exact, deterministic output of the Java program
-//   - src/**/*.java: the complete Java source tree
+//   - src/**/*.java: the complete Java source tree, unless fixture.json points
+//     source_root at an existing source tree under testfiles
 //
 // A known-gap fixture is still compiled and run as far as possible. Its observed
 // failure must match both the declared stage and identifying text. Once it passes,
@@ -42,6 +43,7 @@ const (
 type applicationFixtureConfig struct {
 	MainClass               string `json:"main_class"`
 	ModulePath              string `json:"module_path"`
+	SourceRoot              string `json:"source_root,omitempty"`
 	Status                  string `json:"status"`
 	KnownGap                string `json:"known_gap,omitempty"`
 	ExpectedFailureStage    string `json:"expected_failure_stage,omitempty"`
@@ -173,9 +175,21 @@ func loadApplicationFixture(t testing.TB, fixtureRoot, name string) applicationF
 	}
 
 	sourceRoot := filepath.Join(fixtureRoot, "src")
+	if config.SourceRoot != "" {
+		if config.SourceRoot != strings.TrimSpace(config.SourceRoot) || strings.Contains(config.SourceRoot, "\\") || filepath.IsAbs(config.SourceRoot) || path.Clean(config.SourceRoot) != config.SourceRoot {
+			t.Fatalf("%s: source_root must be a trimmed, relative slash-form path, got %q", metadataPath, config.SourceRoot)
+		}
+		sourceRoot = filepath.Join(fixtureRoot, filepath.FromSlash(config.SourceRoot))
+	}
+	sourceRoot = filepath.Clean(sourceRoot)
+	testfilesRoot := filepath.Clean(filepath.Join(fixtureRoot, "..", ".."))
+	relativeSourceRoot, err := filepath.Rel(testfilesRoot, sourceRoot)
+	if err != nil || relativeSourceRoot == ".." || strings.HasPrefix(relativeSourceRoot, ".."+string(filepath.Separator)) {
+		t.Fatalf("%s: source_root must resolve inside %s", metadataPath, testfilesRoot)
+	}
 	info, err := os.Stat(sourceRoot)
 	if err != nil || !info.IsDir() {
-		t.Fatalf("application fixture %q must contain a src directory", name)
+		t.Fatalf("application fixture %q source root %s must be a readable directory", name, sourceRoot)
 	}
 
 	return applicationFixture{
