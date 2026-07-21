@@ -4366,9 +4366,17 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			return rt, true
 		}
 	case "field_access":
+		// Java arrays expose length as an int-valued pseudo-field. Preserve that
+		// static type so compound assignments such as total += values.length can
+		// apply Java numeric promotion instead of falling back to an unknown Object.
+		obj := node.ChildByFieldName("object")
+		fieldNode := node.ChildByFieldName("field")
+		if obj != nil && fieldNode != nil && fieldNode.Content(source) == "length" && isArrayTypedExprNode(obj, ctx, source) {
+			return "int", true
+		}
+
 		// A qualified enum constant access (Day.WED) has the enum's type, so that
 		// chained calls like Day.WED.ordinal() resolve to the enum's methods.
-		obj := node.ChildByFieldName("object")
 		if obj != nil && obj.Type() == "identifier" {
 			if scope := resolveClassScopeByIdentifier(ctx, source, obj); scope != nil && scope.IsEnum {
 				return obj.Content(source), true
@@ -4379,7 +4387,6 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		// Method calls commonly use an explicit `this.field` receiver; without this
 		// branch both user-method resolution and stdlib intrinsic dispatch lose the
 		// field's type and retain Java's lowercase method spelling in generated Go.
-		fieldNode := node.ChildByFieldName("field")
 		if obj == nil || fieldNode == nil {
 			return "", false
 		}

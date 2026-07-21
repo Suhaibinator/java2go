@@ -89,6 +89,41 @@ func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	return ParseExpr(node, source, ctx)
 }
 
+// inferEnhancedForElementJavaType resolves the Java type inferred by `var` in
+// an enhanced-for binding. Go's range statement infers the generated variable's
+// type automatically, but the transpiler's Java-side expression inference also
+// needs the element type for compound assignments, overload selection, and
+// intrinsic dispatch inside the loop body.
+func inferEnhancedForElementJavaType(valueNode *sitter.Node, source []byte, ctx Ctx) (string, bool) {
+	if valueNode == nil {
+		return "", false
+	}
+	rangeType, ok := inferExprJavaType(valueNode, ctx, source)
+	if !ok {
+		return "", false
+	}
+	rangeType = strings.TrimSpace(rangeType)
+	if strings.HasSuffix(rangeType, "[]") {
+		elementType := strings.TrimSpace(rangeType[:len(rangeType)-2])
+		return elementType, elementType != ""
+	}
+
+	base, typeArgs := parseJavaTypeString(rangeType)
+	if len(typeArgs) != 1 {
+		return "", false
+	}
+	base = stripJavaQualifier(base)
+	isIterableCollection := containsString(listTypeNames, base) || containsString(setTypeNames, base)
+	switch base {
+	case "Collection", "Iterable", "Queue", "Deque", "ArrayDeque", "PriorityQueue":
+		isIterableCollection = true
+	}
+	if !isIterableCollection {
+		return "", false
+	}
+	return typeArgs[0], true
+}
+
 func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	switch node.Type() {
 	case "ERROR":
@@ -521,7 +556,15 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		loopCtx := ctx.Clone()
 		if nameNode != nil && typeNode != nil {
-			recordLocalVariableDefinition(loopCtx, nameNode.Content(source), typeNode.Content(source), symbol.NodeToStr(astutil.ParseType(typeNode, source)))
+			originalType := typeNode.Content(source)
+			parsedType := symbol.NodeToStr(astutil.ParseType(typeNode, source))
+			if isVarKeywordType(originalType) {
+				if inferredType, ok := inferEnhancedForElementJavaType(valueNode, source, ctx); ok {
+					originalType = inferredType
+					parsedType = symbol.NodeToStr(javaTypeStringToGoTypeExpr(inferredType, inScopeTypeParameters(ctx), ctx))
+				}
+			}
+			recordLocalVariableDefinition(loopCtx, nameNode.Content(source), originalType, parsedType)
 		}
 
 		rangeValue := ast.Expr(&ast.Ident{Name: "_"})

@@ -99,3 +99,32 @@ func TestDiamondAssignment(t *testing.T) {
 }
 `)
 }
+
+func TestCompoundAssignmentInfersArrayLengthType(t *testing.T) {
+	src := `
+public class ArrayLengthCompoundProgram {
+    public static int run() {
+        int total = 1;
+        int[] values = new int[4];
+        total += values.length;
+        return total;
+    }
+}
+`
+
+	out := renderGoFileFromJava(t, src)
+	if strings.Contains(out, "BadExpr") {
+		t.Fatalf("array length must retain its Java int type in compound assignment, got:\n%s", out)
+	}
+	runGoTestInTempModule(t, out, `
+package main
+
+import "testing"
+
+func TestArrayLengthCompoundAssignment(t *testing.T) {
+    if got := Run(); got != 5 {
+        t.Fatalf("Run() = %d, want 5", got)
+    }
+}
+`)
+}
