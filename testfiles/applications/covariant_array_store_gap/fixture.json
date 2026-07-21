@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.arraycovariance.CovariantArrayStoreApplication",
+  "module_path": "parity/arraycovariance",
+  "status": "known_gap",
+  "known_gap": "Java arrays retain their runtime component type after covariant assignment, so storing a Base into a Child[] through a Base[] reference evaluates the target, index, and value before throwing ArrayStoreException; generated Go erases the component type, mutates the slice, and continues.",
+  "expected_failure_stage": "output",
+  "expected_failure_contains": "--- quoted go stdout ---\n\"TRACE=bcbcsssairbxsss\\nSUMS=9:14\\nVALUES=9:5\\n\""
+}
