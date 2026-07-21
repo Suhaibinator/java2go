@@ -1,6 +1,7 @@
 package stdjava
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -50,6 +51,46 @@ func TestFileExistsFalseAndDelete(t *testing.T) {
 	}
 	if f.Exists() {
 		t.Fatalf("Exists = true after delete")
+	}
+}
+
+func TestBufferedReaderReadLineIntoDistinguishesEmptyLineAndEOF(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "lines.txt")
+	w := NewPrintWriter(path)
+	w.Println("")
+	w.Print("tail")
+	w.Close()
+
+	r := NewBufferedReader(path)
+	defer r.Close()
+	line := "unchanged"
+	if ok := r.ReadLineInto(&line); !ok || line != "" {
+		t.Fatalf("empty line = %q, ok=%t", line, ok)
+	}
+	if ok := r.ReadLineInto(&line); !ok || line != "tail" {
+		t.Fatalf("unterminated line = %q, ok=%t", line, ok)
+	}
+	if ok := r.ReadLineInto(&line); ok {
+		t.Fatalf("EOF reported another line %q", line)
+	}
+}
+
+func TestBufferedReaderReadLineOKRecognizesJavaLineTerminators(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "terminators.txt")
+	if err := os.WriteFile(path, []byte("cr\rcrlf\r\nlf\ntail"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	r := NewBufferedReader(path)
+	defer r.Close()
+	for index, want := range []string{"cr", "crlf", "lf", "tail"} {
+		got, ok := r.ReadLineOK()
+		if !ok || got != want {
+			t.Fatalf("line %d = %q, ok=%t; want %q, true", index, got, ok, want)
+		}
+	}
+	if got, ok := r.ReadLineOK(); ok {
+		t.Fatalf("EOF returned %q, true", got)
 	}
 }
 

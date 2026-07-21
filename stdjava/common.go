@@ -18,14 +18,21 @@ func Ternary[T any](condition bool, result1, result2 T) T {
 // operation where a number is shifted over the number of times specified, but
 // the topmost bits are always filled in with zeroes
 func UnsignedRightShift[V, A constraints.Integer](value V, amount A) V {
-	return V(uint32(value) >> amount)
+	// Java applies >>> to either a 32-bit int or a 64-bit long. Generated Go
+	// uses int32/int64 for those types; untyped/direct int calls retain the
+	// historical Java-int behavior.
+	switch any(value).(type) {
+	case int64, uint64:
+		return V(uint64(value) >> uint64(amount))
+	default:
+		return V(uint32(value) >> uint32(amount))
+	}
 }
 
 // UnsignedRightShiftAssignment represents a right-shift assignment (`>>>=`)
 // where a value is assigned the result of an unsigned right shift
-func UnsignedRightShiftAssignment[A any, V constraints.Integer](assignTo *A, value V) {
-	// TODO: Fix this conversion hack, and change the function to take proper values
-	*assignTo = interface{}(UnsignedRightShift(value, 2)).(A)
+func UnsignedRightShiftAssignment[V, A constraints.Integer](assignTo *V, amount A) {
+	*assignTo = UnsignedRightShift(*assignTo, amount)
 }
 
 // number covers the Java primitive numeric types that support the ++ and --

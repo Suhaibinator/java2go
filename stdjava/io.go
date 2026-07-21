@@ -158,19 +158,57 @@ func NewBufferedReader(src any) *BufferedReader {
 	return &BufferedReader{file: file, buf: bufio.NewReader(file)}
 }
 
-// ReadLine reads the next line without its terminator, matching
-// BufferedReader.readLine. Java returns null at end of stream; since the
-// transpiled return type is a Go string (not nullable), EOF yields the empty
-// string. Use Ready to distinguish a genuine empty line from EOF.
-func (r *BufferedReader) ReadLine() string {
-	line, err := r.buf.ReadString('\n')
-	if err != nil {
-		if err == io.EOF {
-			return strings.TrimRight(line, "\r\n")
+// ReadLineOK reads the next line without its terminator and separately reports
+// whether a line was present. The boolean preserves BufferedReader.readLine's
+// null-at-EOF distinction without making every transpiled Java String a pointer.
+func (r *BufferedReader) ReadLineOK() (string, bool) {
+	line := make([]byte, 0, 80)
+	for {
+		b, err := r.buf.ReadByte()
+		if err != nil {
+			if err == io.EOF {
+				if len(line) == 0 {
+					return "", false
+				}
+				return string(line), true
+			}
+			panic(err)
 		}
-		panic(err)
+
+		switch b {
+		case '\n':
+			return string(line), true
+		case '\r':
+			// Java accepts CR, LF, and CRLF. Consume the LF half of CRLF but
+			// leave any other following byte for the next call.
+			if next, err := r.buf.Peek(1); err == nil && next[0] == '\n' {
+				_, _ = r.buf.ReadByte()
+			}
+			return string(line), true
+		default:
+			line = append(line, b)
+		}
 	}
-	return strings.TrimRight(line, "\r\n")
+}
+
+// ReadLine reads the next line without its terminator. Direct calls use the Go
+// string zero value at EOF; canonical Java `while ((line = r.readLine()) !=
+// null)` loops are lowered to ReadLineInto so empty lines remain distinguishable
+// from EOF.
+func (r *BufferedReader) ReadLine() string {
+	line, _ := r.ReadLineOK()
+	return line
+}
+
+// ReadLineInto implements the value-producing readLine/null-check loop idiom.
+// It updates target only when a line is available and returns the Java
+// `readLine() != null` condition.
+func (r *BufferedReader) ReadLineInto(target *string) bool {
+	line, ok := r.ReadLineOK()
+	if ok {
+		*target = line
+	}
+	return ok
 }
 
 // Ready reports whether more data is available to read without blocking,
