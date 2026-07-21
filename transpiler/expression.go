@@ -138,9 +138,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// (ex: n1 -> {})
 		samMethod, samTypeBindings := resolveFunctionalInterfaceMethod(ctx, ctx.expectedType)
 		var lambdaResults *ast.FieldList
+		lambdaReturnType := "void"
 
 		if samMethod != nil && strings.TrimSpace(samMethod.OriginalType) != "" && strings.TrimSpace(samMethod.OriginalType) != "void" {
 			resultType := substituteJavaTypeParams(samMethod.OriginalType, samTypeBindings)
+			lambdaReturnType = resultType
 			lambdaResults = &ast.FieldList{
 				List: []*ast.Field{
 					{Type: javaTypeStringToGoTypeExpr(resultType, inScopeTypeParameters(ctx), ctx)},
@@ -158,7 +160,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		inferredParamJavaTypes := inferLambdaParameterJavaTypes(ctx, paramCount)
 		inferredParamTypes := inferLambdaParameterTypeExprs(ctx, paramCount)
-		lambdaCtx := contextWithLambdaParameters(ctx, paramNode, inferredParamJavaTypes, source)
+		lambdaCtx := contextWithLambdaParameters(ctx, paramNode, inferredParamJavaTypes, lambdaReturnType, source)
 
 		var lambdaParameters *ast.FieldList
 		switch paramNode.Type() {
@@ -209,6 +211,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				inlineStmt = &ast.ReturnStmt{Results: []ast.Expr{inlineExpr}}
 			}
 			lambdaBody = &ast.BlockStmt{List: []ast.Stmt{inlineStmt}}
+		}
+		if lambdaResults != nil && len(lambdaResults.List) > 0 && bodyNeedsFallbackReturn(lambdaBody) {
+			lambdaBody.List = append(lambdaBody.List, &ast.ReturnStmt{
+				Results: []ast.Expr{zeroValueForType(lambdaResults.List[0].Type)},
+			})
 		}
 
 		lambdaFunc := &ast.FuncLit{
@@ -3614,15 +3621,14 @@ func inferLambdaParameterTypeExprs(ctx Ctx, parameterCount int) []ast.Expr {
 // contextWithLambdaParameters returns a context whose local scope includes the
 // lambda's own bindings ahead of enclosing method bindings. The scope is copied,
 // not mutated, because lambda parameters exist only inside this expression.
-func contextWithLambdaParameters(ctx Ctx, parameters *sitter.Node, inferredTypes []string, source []byte) Ctx {
+func contextWithLambdaParameters(ctx Ctx, parameters *sitter.Node, inferredTypes []string, returnType string, source []byte) Ctx {
 	lambdaCtx := ctx.Clone()
-	if parameters == nil {
-		return lambdaCtx
-	}
-
-	parameterNodes := nodeutil.NamedChildrenOf(parameters)
-	if parameters.Type() != "formal_parameters" && parameters.Type() != "inferred_parameters" {
-		parameterNodes = []*sitter.Node{parameters}
+	parameterNodes := []*sitter.Node{}
+	if parameters != nil {
+		parameterNodes = nodeutil.NamedChildrenOf(parameters)
+		if parameters.Type() != "formal_parameters" && parameters.Type() != "inferred_parameters" {
+			parameterNodes = []*sitter.Node{parameters}
+		}
 	}
 
 	definitions := make([]*symbol.Definition, 0, len(parameterNodes))
@@ -3648,18 +3654,21 @@ func contextWithLambdaParameters(ctx Ctx, parameters *sitter.Node, inferredTypes
 			OriginalType: javaType,
 		})
 	}
-	if len(definitions) == 0 {
-		return lambdaCtx
-	}
-
 	local := symbol.Definition{}
 	if ctx.localScope != nil {
 		local = *ctx.localScope
 		local.Parameters = append([]*symbol.Definition(nil), ctx.localScope.Parameters...)
 		local.Children = append([]*symbol.Definition(nil), ctx.localScope.Children...)
 	}
+	local.OriginalType = returnType
+	local.Constructor = false
 	local.Parameters = append(definitions, local.Parameters...)
 	lambdaCtx.localScope = &local
+	// A Java lambda is a function/control-flow boundary. Returns and any lowered
+	// closure state inside it belong to the SAM invocation, never to an enclosing
+	// method's try/finally or synchronized statement.
+	lambdaCtx.tryReturnTarget = nil
+	lambdaCtx.tryControlBoundary = nil
 	return lambdaCtx
 }
 

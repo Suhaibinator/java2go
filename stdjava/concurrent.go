@@ -229,7 +229,10 @@ func ThreadSleep(millis int64) {
 // lock token for `synchronized`. It returns a fresh, unique pointer so each
 // Object() has a distinct identity suitable as a monitor key.
 func NewObject() any {
-	return new(struct{})
+	// Pointers to distinct zero-sized Go variables are permitted to compare
+	// equal. Use a non-zero-sized token so every live Java Object has a distinct
+	// identity, including when two objects are used as nested monitor locks.
+	return new(byte)
 }
 
 // --- intrinsic object monitors (synchronized) ------------------------------

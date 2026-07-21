@@ -91,6 +91,21 @@ func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	return requireNullableValueBackedExpression(value, node, ctx.expectedType, ctx, source)
 }
 
+// replayedMethodReturnStmt builds the real function return after a generated
+// closure has recorded Java abrupt completion. Explicit Java constructors are
+// emitted as Go functions returning the newly allocated receiver, so their
+// source-level `return;` must return that receiver rather than a bare Go return.
+func replayedMethodReturnStmt(ctx Ctx, hasValue bool, valueName string) *ast.ReturnStmt {
+	if ctx.localScope != nil && ctx.localScope.Constructor {
+		return &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: ShortName(ctx.className)}}}
+	}
+	result := &ast.ReturnStmt{}
+	if hasValue {
+		result.Results = []ast.Expr{&ast.Ident{Name: valueName}}
+	}
+	return result
+}
+
 // lowerSimpleArrayAssignmentCall stages a Java simple array assignment as one
 // helper call. Go evaluates call arguments from left to right, so the array
 // reference, index, and right-hand side are all evaluated exactly once before
@@ -701,7 +716,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 
 		if node.NamedChildCount() < 1 {
-			return &ast.ReturnStmt{Results: []ast.Expr{}}
+			return replayedMethodReturnStmt(ctx, false, "")
 		}
 		returnCtx := ctx.Clone()
 		if ctx.localScope != nil && strings.TrimSpace(ctx.localScope.OriginalType) != "" {
@@ -1556,7 +1571,7 @@ func TryParseStmts(node *sitter.Node, source []byte, ctx Ctx) []ast.Stmt {
 		if stmts, ok := ParseNode(node, source, ctx).([]ast.Stmt); ok {
 			return stmts
 		}
-	case "try_statement":
+	case "try_statement", "try_with_resources_statement", "synchronized_statement":
 		if stmts, ok := ParseNode(node, source, ctx).([]ast.Stmt); ok {
 			return stmts
 		}

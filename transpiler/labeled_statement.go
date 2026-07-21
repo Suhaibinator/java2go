@@ -61,13 +61,10 @@ func parseLabeledStatementBody(node *sitter.Node, source []byte, ctx Ctx) ast.St
 	if node == nil {
 		return &ast.BadStmt{}
 	}
-	// Try lowering already has an abrupt-control channel that can replay a break
-	// outside its generated func literal. Synchronized lowering also returns a
-	// statement list, but does not yet have that channel; keep its existing
-	// unsupported diagnostic instead of turning a labeled synchronized break into
-	// an invalid cross-function goto.
+	// Try and synchronized lowering both return statement lists and replay abrupt
+	// control outside their generated func literals.
 	switch node.Type() {
-	case "try_statement", "try_with_resources_statement":
+	case "try_statement", "try_with_resources_statement", "synchronized_statement":
 		if statements, ok := ParseNode(node, source, ctx).([]ast.Stmt); ok {
 			return &ast.BlockStmt{List: statements}
 		}

@@ -188,6 +188,9 @@ func (ctx Ctx) nextControlLabelIndex() int {
 	return *ctx.controlLabelCounter
 }
 
+// tryReturnTarget carries Java abrupt completion across generated function
+// literals. Try/finally and synchronized lowering share it so nested closure
+// boundaries can propagate returns and loop transfers one level at a time.
 type tryReturnTarget struct {
 	FlagName    string
 	ValueName   string
@@ -546,43 +549,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 	case "try_statement":
 		return lowerTryStatement(node, source, ctx, false)
 	case "synchronized_statement":
-		// `synchronized (obj) { body }` acquires obj's intrinsic monitor for the
-		// duration of the block. It is lowered to a closure that enters the
-		// stdjava monitor for obj and defers the exit, then runs the body, giving
-		// true per-object mutual exclusion:
-		//
-		//   func() {
-		//       __mon := stdjava.MonitorEnter(obj)
-		//       defer stdjava.MonitorExit(__mon)
-		//       body...
-		//   }()
-		lockNode := node.NamedChild(0)
-		blockNode := node.NamedChild(1)
-		bodyStmts := []ast.Stmt{}
-		if blockNode != nil {
-			if block, ok := ParseStmt(blockNode, source, ctx).(*ast.BlockStmt); ok {
-				bodyStmts = block.List
-			}
-		}
-		monName := fmt.Sprintf("__java2goMonitor_%d", node.StartByte())
-		guarded := append([]ast.Stmt{
-			&ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.Ident{Name: monName}},
-				Tok: token.DEFINE,
-				Rhs: []ast.Expr{stdjavaCall(ctx, "MonitorEnter", ParseExpr(lockNode, source, ctx))},
-			},
-			&ast.DeferStmt{
-				Call: stdjavaCall(ctx, "MonitorExit", &ast.Ident{Name: monName}),
-			},
-		}, bodyStmts...)
-		return []ast.Stmt{
-			&ast.ExprStmt{X: &ast.CallExpr{
-				Fun: &ast.FuncLit{
-					Type: &ast.FuncType{},
-					Body: &ast.BlockStmt{List: guarded},
-				},
-			}},
-		}
+		return lowerSynchronizedStatement(node, source, ctx)
 	case "switch_label":
 		if node.NamedChildCount() > 0 {
 			return &ast.CaseClause{
@@ -877,23 +844,12 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 			Cond: &ast.Ident{Name: shouldReturnName},
 			Body: &ast.BlockStmt{List: propagation},
 		})
-	} else if hasReturnValue {
-		stmts = append(stmts, &ast.IfStmt{
-			Cond: &ast.Ident{Name: shouldReturnName},
-			Body: &ast.BlockStmt{
-				List: []ast.Stmt{
-					&ast.ReturnStmt{
-						Results: []ast.Expr{&ast.Ident{Name: returnValueName}},
-					},
-				},
-			},
-		})
 	} else {
 		stmts = append(stmts, &ast.IfStmt{
 			Cond: &ast.Ident{Name: shouldReturnName},
 			Body: &ast.BlockStmt{
 				List: []ast.Stmt{
-					&ast.ReturnStmt{},
+					replayedMethodReturnStmt(ctx, hasReturnValue, returnValueName),
 				},
 			},
 		})

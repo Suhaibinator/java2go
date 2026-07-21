@@ -201,6 +201,14 @@ func TestMonitor_SameObjectSameMutex(t *testing.T) {
 	monitorFor(obj).Unlock()
 }
 
+func TestMonitor_DistinctObjectsHaveDistinctIdentity(t *testing.T) {
+	first := NewObject()
+	second := NewObject()
+	if first == second {
+		t.Fatal("distinct Java Object allocations must not share monitor identity")
+	}
+}
+
 func TestMonitor_WaitNotify(t *testing.T) {
 	lock := NewObject()
 	ready := false
