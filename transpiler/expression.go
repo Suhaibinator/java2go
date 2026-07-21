@@ -1783,11 +1783,12 @@ func signedIntegerConstant(value int64) ast.Expr {
 // position. Go assignments are statements, so the generated expression uses a
 // small immediately-invoked closure and returns the stored value.
 //
-// The staging is deliberate. The address of the target is evaluated before the
-// right-hand side, and compound assignments capture the target's old value
-// before evaluating that right-hand side. This preserves both Java's single
-// evaluation of complex targets (for example values[index++]) and cases such as
-// x += (x = 5), whose result is based on x's value before the nested assignment.
+// The staging is deliberate. Non-array target addresses are evaluated before
+// the right-hand side, and compound assignments capture the target's old value
+// before evaluating that right-hand side. Simple array assignments take the
+// ArraySet path instead because Java delays their null/bounds checks until after
+// the RHS. Together these paths preserve single evaluation of complex targets
+// and cases such as x += (x = 5), whose result uses x's pre-RHS value.
 func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	if node == nil || node.ChildCount() < 3 {
 		return &ast.BadExpr{}
@@ -1816,6 +1817,9 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	operator := opNode.Content(source)
 
 	if operator == "=" {
+		if call, ok := lowerSimpleArrayAssignmentCall(node, source, ctx); ok {
+			return call
+		}
 		rhsCtx := ctx.Clone()
 		rhsCtx.expectedType = lhsJavaType
 		rhsCtx.expectedTypeRoot = rhsNode

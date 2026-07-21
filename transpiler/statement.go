@@ -91,6 +91,52 @@ func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	return requireNullableValueBackedExpression(value, node, ctx.expectedType, ctx, source)
 }
 
+// lowerSimpleArrayAssignmentCall stages a Java simple array assignment as one
+// helper call. Go evaluates call arguments from left to right, so the array
+// reference, index, and right-hand side are all evaluated exactly once before
+// ArraySet performs Java's null/bounds checks and the final store. Compound
+// assignments deliberately do not use this path: Java checks and saves their
+// old array component before evaluating the right-hand side.
+func lowerSimpleArrayAssignmentCall(node *sitter.Node, source []byte, ctx Ctx) (ast.Expr, bool) {
+	if node == nil || node.Type() != "assignment_expression" || node.ChildCount() < 3 {
+		return nil, false
+	}
+	lhsNode := node.Child(0)
+	operatorNode := node.Child(1)
+	rhsNode := node.Child(2)
+	if lhsNode == nil || lhsNode.Type() != "array_access" || operatorNode == nil || operatorNode.Content(source) != "=" || rhsNode == nil {
+		return nil, false
+	}
+
+	arrayNode := lhsNode.ChildByFieldName("array")
+	indexNode := lhsNode.ChildByFieldName("index")
+	if arrayNode == nil && lhsNode.NamedChildCount() > 0 {
+		arrayNode = lhsNode.NamedChild(0)
+	}
+	if indexNode == nil && lhsNode.NamedChildCount() > 1 {
+		indexNode = lhsNode.NamedChild(1)
+	}
+	if arrayNode == nil || indexNode == nil {
+		return nil, false
+	}
+
+	lhsJavaType, ok := inferExprJavaType(lhsNode, ctx, source)
+	if !ok || strings.TrimSpace(lhsJavaType) == "" {
+		return nil, false
+	}
+	rhsCtx := ctx.Clone()
+	rhsCtx.expectedType = lhsJavaType
+	rhsCtx.expectedTypeRoot = rhsNode
+	rhs := ParseExpr(rhsNode, source, rhsCtx)
+	rhs = coerceArgumentToExpectedType(rhs, rhsNode, lhsJavaType, ctx, source)
+
+	return stdjavaCall(ctx, "ArraySet",
+		ParseExpr(arrayNode, source, ctx),
+		ParseExpr(indexNode, source, ctx),
+		rhs,
+	), true
+}
+
 // requireNullableValueBackedExpression converts an interface-backed nullable
 // String/boxed local back to the concrete Go value used at a method boundary.
 // A selected null consequently raises the same kind of failure as Java
@@ -443,6 +489,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				return stmt
 			}
 			return &ast.ExprStmt{X: lowerAssignmentExpression(node, source, ctx)}
+		}
+		if call, ok := lowerSimpleArrayAssignmentCall(node, source, ctx); ok {
+			return &ast.ExprStmt{X: call}
 		}
 
 		lhsNode := node.Child(0)

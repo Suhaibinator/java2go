@@ -1,8 +1,5 @@
 {
   "main_class": "parity.arraytiming.ArrayAssignmentTimingApplication",
   "module_path": "parity/arraytiming",
-  "status": "known_gap",
-  "known_gap": "simple assignment to a null Java array evaluates the index and RHS before throwing NullPointerException, but a generated nil Go slice reports ArrayIndexOutOfBoundsException",
-  "expected_failure_stage": "go_run",
-  "expected_failure_contains": "ArrayIndexOutOfBoundsException"
+  "status": "passing"
 }

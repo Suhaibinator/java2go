@@ -1,14 +1,13 @@
-# Array-assignment exception timing known gap
+# Array-assignment exception timing parity
 
 For a simple Java array assignment, evaluation proceeds through the array
 expression, index, and right-hand side before the store performs its null/bounds
 check. Consequently this fixture records `i`, then `r`, and catches a
 `NullPointerException` as `c`.
 
-The generated representation is a Go slice. Indexing its nil value currently
-raises a native bounds panic, which normalization classifies as
-`ArrayIndexOutOfBoundsException`; the Java `NullPointerException` catch therefore
-does not handle it. This fixture remains `known_gap` until array-store lowering
-stages the operands and performs Java's checks at the correct point.
+Generated simple array stores use a staged runtime helper. Go evaluates the
+array expression, index, and value arguments from left to right; the helper then
+performs Java's null and bounds checks before storing. This preserves both the
+observable `ir` side effects and the caught `NullPointerException` marker `c`.
 
-`JAVA2GO_PARITY_STRICT=1` promotes the recorded gap to a failing TDD target.
+The fixture is passing and pins byte-exact Java/Go output parity.
