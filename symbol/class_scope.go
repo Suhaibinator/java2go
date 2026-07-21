@@ -19,6 +19,10 @@ type ClassScope struct {
 	Fields []*Definition
 	// Methods and constructors
 	Methods []*Definition
+	// AffineArrayViews groups proven trivial accessors over the same private final
+	// backing array and private final row-stride field. It is empty unless the
+	// declaring class is final and every recorded invariant was proven from source.
+	AffineArrayViews []*AffineArrayView
 	// Whether this class is an enum
 	IsEnum bool
 	// Interfaces implemented by this class/enum (content as written in source)

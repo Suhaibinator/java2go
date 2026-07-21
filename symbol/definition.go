@@ -1,5 +1,7 @@
 package symbol
 
+import sitter "github.com/smacker/go-tree-sitter"
+
 // Definition represents the name and type of a single symbol
 type Definition struct {
 	// The original Java name
@@ -17,6 +19,10 @@ type Definition struct {
 	TypeParameters []TypeParam
 	// Whether this definition is static (applies to methods/fields)
 	IsStatic bool
+	// IsFinal preserves Java's final modifier for classes, methods, and fields.
+	// Optimizations may rely on it only together with the relevant Java dispatch
+	// and mutation rules; it is metadata, not permission to drop checks by itself.
+	IsFinal bool
 	// IsPrivate marks members whose Java dispatch is statically bound to the
 	// declaring class and which are not inherited by subclasses.
 	IsPrivate bool
@@ -38,6 +44,15 @@ type Definition struct {
 	Parameters []*Definition
 	// Children of the declaration, if the declaration is a scope
 	Children []*Definition
+
+	// DeclarationNode retains the parsed declaration for conservative structural
+	// analyses that cannot be reconstructed from names and types alone. It is only
+	// populated for source-backed members and remains owned by the source AST.
+	DeclarationNode *sitter.Node
+
+	// TrivialArrayAccessor describes a proven, structurally trivial final-class
+	// array accessor. Nil means normal Java method dispatch must be retained.
+	TrivialArrayAccessor *TrivialArrayAccessor
 }
 
 // Rename changes the display name of a definition

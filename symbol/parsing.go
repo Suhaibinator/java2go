@@ -176,6 +176,7 @@ func parseClassScope(root *sitter.Node, source []byte) *ClassScope {
 func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, parentTypeParams []TypeParam) *ClassScope {
 	var public bool
 	var isAbstract bool
+	var isFinal bool
 	// Rename the type based on the public/static rules
 	if root.NamedChild(0).Type() == "modifiers" {
 		for _, node := range nodeutil.UnnamedChildrenOf(root.NamedChild(0)) {
@@ -184,6 +185,9 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			}
 			if node.Type() == "abstract" {
 				isAbstract = true
+			}
+			if node.Type() == "final" {
+				isFinal = true
 			}
 		}
 	}
@@ -195,8 +199,10 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	className := root.ChildByFieldName("name").Content(source)
 	scope := &ClassScope{
 		Class: &Definition{
-			OriginalName: className,
-			Name:         HandleExportStatus(public, className),
+			OriginalName:    className,
+			Name:            HandleExportStatus(public, className),
+			IsFinal:         isFinal,
+			DeclarationNode: root,
 		},
 		IsEnum:      root.Type() == "enum_declaration",
 		IsInterface: root.Type() == "interface_declaration",
@@ -320,6 +326,8 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 		)
 	}
 
+	discoverTrivialArrayAccessors(scope, source)
+
 	return scope
 }
 
@@ -329,6 +337,8 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 	case "field_declaration":
 		var public bool
 		var isStatic bool
+		var isFinal bool
+		var isPrivate bool
 		// Rename the type based on the public/static rules
 		if node.NamedChild(0).Type() == "modifiers" {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
@@ -337,6 +347,12 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 				}
 				if modifier.Type() == "static" {
 					isStatic = true
+				}
+				if modifier.Type() == "final" {
+					isFinal = true
+				}
+				if modifier.Type() == "private" {
+					isPrivate = true
 				}
 			}
 		}
@@ -367,11 +383,14 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			Type:         fieldType,
 			OriginalType: typeNode.Content(source),
 			IsStatic:     isStatic,
+			IsFinal:      isFinal,
+			IsPrivate:    isPrivate,
 		})
 	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
 		var public bool
 		var isStatic bool
 		var isPrivate bool
+		var isFinal bool
 		// Java interface methods are implicitly public.
 		if scope.IsInterface && node.Type() != "constructor_declaration" {
 			public = true
@@ -388,6 +407,9 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 				if modifier.Type() == "private" {
 					isPrivate = true
 				}
+				if modifier.Type() == "final" {
+					isFinal = true
+				}
 			}
 		}
 
@@ -399,13 +421,15 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		combinedTypeParamNames := TypeParamNames(combinedTypeParams)
 
 		declaration := &Definition{
-			Name:           HandleExportStatus(public, name),
-			OriginalName:   name,
-			Parameters:     []*Definition{},
-			TypeParameters: methodTypeParams,
-			IsStatic:       isStatic,
-			IsPrivate:      isPrivate,
-			HasBody:        node.ChildByFieldName("body") != nil,
+			Name:            HandleExportStatus(public, name),
+			OriginalName:    name,
+			Parameters:      []*Definition{},
+			TypeParameters:  methodTypeParams,
+			IsStatic:        isStatic,
+			IsPrivate:       isPrivate,
+			IsFinal:         isFinal,
+			HasBody:         node.ChildByFieldName("body") != nil,
+			DeclarationNode: node,
 		}
 
 		if node.Type() == "method_declaration" {
