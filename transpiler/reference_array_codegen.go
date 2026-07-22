@@ -275,9 +275,16 @@ func allSourceClassScopes() []*symbol.ClassScope {
 // classHasSyntheticSubclass finds subclass relationships represented only in
 // source syntax. Anonymous and method-local classes are hoisted during lowering
 // and therefore are absent from the ordinary global ClassScope hierarchy.
-func classHasSyntheticSubclass(target *symbol.ClassScope) bool {
+func classHasSyntheticSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 	if target == nil {
 		return false
+	}
+	activeLocalTarget := false
+	for _, info := range ctx.localClasses {
+		if info != nil && info.scope == target {
+			activeLocalTarget = true
+			break
+		}
 	}
 	for _, owner := range allSourceClassScopes() {
 		if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil {
@@ -288,6 +295,16 @@ func classHasSyntheticSubclass(target *symbol.ClassScope) bool {
 			continue
 		}
 		ownerCtx := Ctx{currentFile: file, currentClass: owner}
+		if activeLocalTarget {
+			// A method-local target exists only in the active lowering registry.
+			// Preserve that map solely while scanning the same source file; carrying
+			// it into another file could hijack an unrelated same-simple-name type.
+			if file != ctx.currentFile {
+				continue
+			}
+			ownerCtx = ctx.Clone()
+			ownerCtx.currentFile = file
+		}
 		var visit func(*sitter.Node) bool
 		visit = func(node *sitter.Node) bool {
 			if node == nil {
@@ -511,7 +528,7 @@ func sourceHierarchyUsesMostDerived(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil || scope.IsInterface || scope.IsEnum {
 		return false
 	}
-	return resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope)
+	return resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx)
 }
 
 func classNeedsReferenceObjectInfo(scope *symbol.ClassScope, ctx Ctx) bool {

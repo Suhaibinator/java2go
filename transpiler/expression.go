@@ -842,7 +842,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// current receiver is captured. The captured value is threaded as the
 		// constructor's leading argument.
 		if targetScope != nil && targetScope.IsInner {
-			if enclArg := enclosingInstanceArgument(node, objectType, source, ctx); enclArg != nil {
+			if enclArg := enclosingInstanceArgument(node, objectType, targetScope, source, ctx); enclArg != nil {
 				arguments = append([]ast.Expr{enclArg}, arguments...)
 			}
 		}
@@ -2865,9 +2865,13 @@ func enclosingMemberMethodSelector(methodName string, argCount int, ctx Ctx) (as
 
 // enclosingInstanceArgument computes the enclosing-instance expression passed to
 // an inner class's constructor. If the object creation is written as
-// `qualifier.new Inner(...)`, the qualifier expression is used; otherwise the
-// current method receiver (the implicit enclosing instance) is used.
-func enclosingInstanceArgument(node, objectType *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+// `qualifier.new Inner(...)`, the qualifier expression is used. Otherwise it
+// follows synthetic enclosing-instance links from the current receiver to the
+// target's lexical owner. This distinction matters when a local/inner class
+// recursively constructs itself: the current receiver is the local object, but
+// the new object's enclosing instance is the outer object stored on that
+// receiver.
+func enclosingInstanceArgument(node, objectType *sitter.Node, targetScope *symbol.ClassScope, source []byte, ctx Ctx) ast.Expr {
 	if node != nil && node.NamedChildCount() > 0 {
 		first := node.NamedChild(0)
 		// A leading named child that is not the type node is the explicit
@@ -2879,11 +2883,31 @@ func enclosingInstanceArgument(node, objectType *sitter.Node, source []byte, ctx
 		}
 	}
 
-	// Implicit form: use the current receiver as the enclosing instance.
-	if ctx.className != "" {
-		return &ast.Ident{Name: ShortName(ctx.className)}
+	if targetScope == nil || targetScope.Enclosing == nil || ctx.currentClass == nil || ctx.className == "" {
+		return nil
 	}
-	return nil
+
+	// Implicit form: start with the active receiver and walk its enclosing links
+	// until the target class's lexical owner is reached. Creating a direct member
+	// inner class from its owner therefore uses the receiver unchanged; creating a
+	// sibling or recursively creating the current local class forwards the stored
+	// outer link instead.
+	var result ast.Expr = &ast.Ident{Name: ShortName(ctx.className)}
+	current := ctx.currentClass
+	desired := targetScope.Enclosing
+	seen := map[*symbol.ClassScope]struct{}{}
+	for current != desired {
+		if _, duplicate := seen[current]; duplicate || !current.IsInner || current.Enclosing == nil {
+			return nil
+		}
+		seen[current] = struct{}{}
+		result = &ast.SelectorExpr{
+			X:   result,
+			Sel: &ast.Ident{Name: current.EnclosingFieldName()},
+		}
+		current = current.Enclosing
+	}
+	return result
 }
 
 func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
@@ -5174,6 +5198,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	captured := collectCapturedLocals(classBody, source, ctx)
 	bodyMethods := anonymousClassMethods(classBody)
 	reservedSelectors := anonymousInheritedSelectorNames(supertype, superScope, ctx)
+	reservedInstallerSelectors := inheritedSubobjectInstallerSelectorNames(superScope, ctx)
 	isInner := ctx.currentClass != nil && ctx.localScope != nil && !ctx.localScope.IsStatic
 	enclosingFieldName := ""
 	if isInner {
@@ -5199,7 +5224,15 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	// Register the complete exact type before rendering initializers or method
 	// bodies. Those bodies can recursively refer to this anonymous value, call a
 	// sibling method, or resolve a Java field whose generated selector moved.
-	syntheticScope := synthAnonClassScope(structName, declaredFieldDefs, captured, bodyMethods, source, false)
+	syntheticScope := synthAnonClassScope(
+		structName,
+		declaredFieldDefs,
+		captured,
+		bodyMethods,
+		reservedInstallerSelectors,
+		source,
+		false,
+	)
 	syntheticScope.Enclosing = ctx.currentClass
 	syntheticScope.IsInner = isInner
 	syntheticScope.EnclosingField = enclosingFieldName
@@ -5269,6 +5302,13 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	}
 
 	ctx.addHoistedDecl(genStructWithTypeParamsInContext(structName, fields, syntheticScope.TypeParameters, ctx))
+	installerCtx := ctx.Clone()
+	installerCtx.currentClass = syntheticScope
+	installerCtx.className = structName
+	installerCtx.localScope = nil
+	for _, declaration := range generateClassSubobjectInstallerDecls(installerCtx) {
+		ctx.addHoistedDecl(declaration)
+	}
 
 	if fieldInitializerMethod != "" {
 		initializerDecls := buildLocalClassFieldInitializerMethod(
@@ -5577,6 +5617,7 @@ func synthAnonClassScope(
 	declaredFields []*symbol.Definition,
 	captured []capturedLocal,
 	methodNodes []*sitter.Node,
+	reservedMethodNames map[string]struct{},
 	source []byte,
 	keepOriginalMethodNames bool,
 ) *symbol.ClassScope {
@@ -5591,7 +5632,10 @@ func synthAnonClassScope(
 			scope.Fields = append(scope.Fields, &captureField)
 		}
 	}
-	usedMethodNames := map[string]struct{}{}
+	usedMethodNames := make(map[string]struct{}, len(reservedMethodNames))
+	for name := range reservedMethodNames {
+		usedMethodNames[name] = struct{}{}
+	}
 	if keepOriginalMethodNames {
 		// Local-class instance members share one selector namespace after lowering
 		// to Go even though Java fields and methods do not. Reserve every generated
@@ -5667,7 +5711,7 @@ func javaTypeReferencesTypeParameter(javaType string, name string) bool {
 }
 
 func localClassTypeParameters(
-	classBody *sitter.Node,
+	classNode *sitter.Node,
 	captured []capturedLocal,
 	source []byte,
 	ctx Ctx,
@@ -5684,6 +5728,14 @@ func localClassTypeParameters(
 	}
 
 	used := map[string]struct{}{}
+	if ctx.currentClass != nil && ctx.localScope != nil && !ctx.localScope.IsStatic {
+		// Hoisting adds a synthetic field whose type is Outer[T,...]. Those outer
+		// parameters are structurally required even when no source member spells
+		// them directly.
+		for _, parameter := range ctx.currentClass.TypeParameters {
+			used[parameter.Name] = struct{}{}
+		}
+	}
 	var walk func(*sitter.Node)
 	walk = func(node *sitter.Node) {
 		if node == nil {
@@ -5701,7 +5753,10 @@ func localClassTypeParameters(
 			walk(child)
 		}
 	}
-	walk(classBody)
+	// Visit the declaration rather than only its body: superclass and interface
+	// headers can mention enclosing method type parameters that the hoisted Go
+	// declaration must carry explicitly.
+	walk(classNode)
 	for _, capture := range captured {
 		if capture.javaDef == nil {
 			continue
@@ -5712,6 +5767,7 @@ func localClassTypeParameters(
 			}
 		}
 	}
+	includeTransitiveTypeParameterBounds(used, available)
 
 	result := make([]symbol.TypeParam, 0, len(used))
 	for _, parameter := range available {
@@ -5720,6 +5776,33 @@ func localClassTypeParameters(
 		}
 	}
 	return result
+}
+
+// includeTransitiveTypeParameterBounds closes a selected type-parameter set
+// over dependencies in its bounds. For example, selecting T from
+// `B extends Root, T extends B` also selects B so every hoisted declaration has
+// the names needed to render T's constraint.
+func includeTransitiveTypeParameterBounds(used map[string]struct{}, available []symbol.TypeParam) {
+	changed := true
+	for changed {
+		changed = false
+		for _, parameter := range available {
+			if _, selected := used[parameter.Name]; !selected {
+				continue
+			}
+			for _, bound := range parameter.Bounds {
+				for _, dependency := range available {
+					if _, already := used[dependency.Name]; already {
+						continue
+					}
+					if javaTypeReferencesTypeParameter(bound.Original, dependency.Name) {
+						used[dependency.Name] = struct{}{}
+						changed = true
+					}
+				}
+			}
+		}
+	}
 }
 
 func anonymousClassTypeParameters(
@@ -5781,26 +5864,7 @@ func anonymousClassTypeParameters(
 	// Bounds can mention other in-scope parameters (`T extends B`). A hoisted
 	// generic declaration must carry those dependencies transitively so its own
 	// constraint remains well-formed.
-	changed := true
-	for changed {
-		changed = false
-		for _, parameter := range available {
-			if _, selected := used[parameter.Name]; !selected {
-				continue
-			}
-			for _, bound := range parameter.Bounds {
-				for _, dependency := range available {
-					if _, already := used[dependency.Name]; already {
-						continue
-					}
-					if javaTypeReferencesTypeParameter(bound.Original, dependency.Name) {
-						used[dependency.Name] = struct{}{}
-						changed = true
-					}
-				}
-			}
-		}
-	}
+	includeTransitiveTypeParameterBounds(used, available)
 
 	result := make([]symbol.TypeParam, 0, len(used))
 	for _, parameter := range available {
@@ -5907,8 +5971,26 @@ func anonymousInheritedSelectorNames(supertype string, superScope *symbol.ClassS
 		if classHasSelfSetter(current, ctx) {
 			reserved[classSelfSetterName(current)] = struct{}{}
 		}
+		if !current.IsInterface && current.Class != nil && constructorUsesMostDerived(current, ctx) {
+			reserved[classSubobjectInstallerName(current)] = struct{}{}
+		}
 		queue = append(queue, resolveSuperclassScopeInDeclaringContext(ctx, current))
 		queue = append(queue, resolveImplementedInterfaceScopesInDeclaringContext(ctx, current)...)
+	}
+	return reserved
+}
+
+func inheritedSubobjectInstallerSelectorNames(superScope *symbol.ClassScope, ctx Ctx) map[string]struct{} {
+	reserved := make(map[string]struct{})
+	seen := make(map[*symbol.ClassScope]struct{})
+	for current := superScope; current != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
+		if _, duplicate := seen[current]; duplicate {
+			break
+		}
+		seen[current] = struct{}{}
+		if !current.IsInterface && current.Class != nil && constructorUsesMostDerived(current, ctx) {
+			reserved[classSubobjectInstallerName(current)] = struct{}{}
+		}
 	}
 	return reserved
 }
@@ -5961,6 +6043,55 @@ func reserveLocalIdentityCaptureNames(captured []capturedLocal, declaredFields [
 		} else if _, collision := used[name]; collision {
 			name = nextSyntheticMemberName(name, used)
 		}
+		captured[index].fieldName = name
+		used[name] = struct{}{}
+	}
+}
+
+// reserveSyntheticSubobjectStorageNames keeps a generated installer method out
+// of Go's shared field/method selector namespace. Java field/capture lookup
+// continues through OriginalName after the private storage selector moves.
+func reserveSyntheticSubobjectStorageNames(
+	definitions []*symbol.Definition,
+	fields []*ast.Field,
+	captured []capturedLocal,
+	reserved map[string]struct{},
+) {
+	if len(reserved) == 0 {
+		return
+	}
+	used := make(map[string]struct{}, len(reserved)+len(definitions)+len(captured))
+	for name := range reserved {
+		used[name] = struct{}{}
+	}
+	for _, definition := range definitions {
+		if definition != nil {
+			used[definition.Name] = struct{}{}
+		}
+	}
+	for _, capture := range captured {
+		used[capturedLocalFieldName(capture)] = struct{}{}
+	}
+	for index, definition := range definitions {
+		if definition == nil {
+			continue
+		}
+		if _, collision := reserved[definition.Name]; !collision {
+			continue
+		}
+		name := nextSyntheticMemberName(definition.Name, used)
+		definition.Rename(name)
+		used[name] = struct{}{}
+		if index < len(fields) && fields[index] != nil && len(fields[index].Names) > 0 {
+			fields[index].Names[0] = &ast.Ident{Name: name}
+		}
+	}
+	for index := range captured {
+		name := capturedLocalFieldName(captured[index])
+		if _, collision := reserved[name]; !collision {
+			continue
+		}
+		name = nextSyntheticMemberName(name, used)
 		captured[index].fieldName = name
 		used[name] = struct{}{}
 	}
@@ -6105,9 +6236,18 @@ func synthLocalClassScope(
 	typeParameters []symbol.TypeParam,
 	methodNodes []*sitter.Node,
 	constructorNodes []*sitter.Node,
+	reservedSelectors map[string]struct{},
 	source []byte,
 ) *symbol.ClassScope {
-	scope := synthAnonClassScope(structName, declaredFields, captured, methodNodes, source, true)
+	scope := synthAnonClassScope(
+		structName,
+		declaredFields,
+		captured,
+		methodNodes,
+		reservedSelectors,
+		source,
+		true,
+	)
 	reserveLocalIdentityMethodNames(scope)
 	scope.Class.OriginalName = javaName
 	scope.Class.Name = structName
@@ -6517,8 +6657,32 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 
 	bodyMethods := anonymousClassMethods(classBody)
 	constructorNodes := localClassConstructors(classBody)
+	typeParameters := localClassTypeParameters(node, captured, source, ctx)
+	var superclassScope *symbol.ClassScope
+	if superclassNode := node.ChildByFieldName("superclass"); superclassNode != nil {
+		if superTypes := collectTypeNodes(superclassNode); len(superTypes) > 0 {
+			base, _ := parseJavaTypeString(superTypes[0].Content(source))
+			superclassScope = resolveClassScopeByQualifiedName(ctx, base)
+		}
+	}
+	reservedInstallerSelectors := make(map[string]struct{})
+	seenInstallerScopes := make(map[*symbol.ClassScope]struct{})
+	for current := superclassScope; current != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
+		if _, duplicate := seenInstallerScopes[current]; duplicate {
+			break
+		}
+		seenInstallerScopes[current] = struct{}{}
+		if !current.IsInterface && current.Class != nil && constructorUsesMostDerived(current, ctx) {
+			reservedInstallerSelectors[classSubobjectInstallerName(current)] = struct{}{}
+		}
+	}
+	reserveSyntheticSubobjectStorageNames(
+		declaredFieldDefs,
+		declaredAstFields,
+		captured,
+		reservedInstallerSelectors,
+	)
 	captureBindings := localConstructorCaptureBindings(classBody, captured, source)
-	typeParameters := localClassTypeParameters(classBody, captured, source, ctx)
 	syntheticScope := synthLocalClassScope(
 		node,
 		classBody,
@@ -6530,6 +6694,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		typeParameters,
 		bodyMethods,
 		constructorNodes,
+		reservedInstallerSelectors,
 		source,
 	)
 	if ctx.currentClass != nil && ctx.localScope != nil && !ctx.localScope.IsStatic {
@@ -6576,7 +6741,6 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 			Type:  enclosingType,
 		})
 	}
-	var superclassScope *symbol.ClassScope
 	if superclassNode := node.ChildByFieldName("superclass"); superclassNode != nil {
 		for _, superType := range collectTypeNodes(superclassNode) {
 			javaType := superType.Content(source)
@@ -6603,6 +6767,12 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 				fields.List = append(fields.List, &ast.Field{Type: embed})
 			}
 		}
+	}
+	if classNeedsVirtualDispatch(syntheticScope, ctx) {
+		fields.List = append(fields.List, &ast.Field{
+			Names: []*ast.Ident{{Name: classDispatchFieldName(syntheticScope)}},
+			Type:  classDispatchTypeExpr(syntheticScope),
+		})
 	}
 	fields.List = append(fields.List, declaredAstFields...)
 	for _, capture := range captured {
@@ -6656,6 +6826,12 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	localCtx.currentClass = syntheticScope
 	localCtx.className = structName
 	localCtx.localScope = nil
+	if dispatch := generateClassDispatchInterface(localCtx); dispatch != nil {
+		ctx.addHoistedDecl(dispatch)
+	}
+	for _, declaration := range generateClassSubobjectInstallerDecls(localCtx) {
+		ctx.addHoistedDecl(declaration)
+	}
 
 	if fieldInitializerMethod != "" {
 		initializerDecls := buildLocalClassFieldInitializerMethod(
@@ -7641,11 +7817,72 @@ func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
 		}
 	}
 	if ctx.currentClass != nil {
-		if field := findFieldInHierarchy(ctx.currentClass, name, ctx); field != nil && field.OriginalType != "" {
-			return field.OriginalType, true
+		if field := findFieldResolutionInHierarchy(ctx.currentClass, name, ctx); field != nil && field.def != nil && field.def.OriginalType != "" {
+			return instantiatedFieldJavaType(
+				ctx.currentClass,
+				ctx.currentClass.TypeParameterNames(),
+				field,
+				ctx,
+			), true
 		}
 	}
 	return "", false
+}
+
+// instantiatedFieldJavaType substitutes superclass type arguments into an
+// inherited field's declared Java type. A field `U held` on Holder<U>, observed
+// through LocalValue extends Holder<T>, has static type T rather than the
+// unresolved declaration-site name U. Keeping that substitution available to
+// expression inference is essential for method lookup through T's upper bound.
+func instantiatedFieldJavaType(
+	start *symbol.ClassScope,
+	startTypeArgs []string,
+	resolution *fieldResolution,
+	ctx Ctx,
+) string {
+	if resolution == nil || resolution.def == nil {
+		return ""
+	}
+	fallback := resolution.def.OriginalType
+	if start == nil || resolution.owner == nil {
+		return fallback
+	}
+	if len(startTypeArgs) == 0 && len(start.TypeParameters) > 0 {
+		startTypeArgs = start.TypeParameterNames()
+	}
+
+	current := start
+	currentArgs := append([]string(nil), startTypeArgs...)
+	seen := map[*symbol.ClassScope]struct{}{}
+	for current != nil {
+		if _, duplicate := seen[current]; duplicate {
+			return fallback
+		}
+		seen[current] = struct{}{}
+
+		bindings := make(map[string]string, len(current.TypeParameters))
+		for index, parameter := range current.TypeParameters {
+			if index < len(currentArgs) {
+				bindings[parameter.Name] = currentArgs[index]
+			}
+		}
+		if current == resolution.owner {
+			return substituteJavaTypeParameters(fallback, bindings)
+		}
+
+		superType := strings.TrimSpace(current.Superclass)
+		if superType == "" {
+			return fallback
+		}
+		_, declaredParentArgs := parseJavaTypeString(superType)
+		parentArgs := make([]string, len(declaredParentArgs))
+		for index, argument := range declaredParentArgs {
+			parentArgs[index] = substituteJavaTypeParameters(argument, bindings)
+		}
+		current = resolveSuperclassScopeInDeclaringContext(ctx, current)
+		currentArgs = parentArgs
+	}
+	return fallback
 }
 
 // qualifyJavaTypeInDeclaringContext preserves where user-defined types in a
@@ -8103,15 +8340,23 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		}
 
 		var owner *symbol.ClassScope
+		var ownerTypeArgs []string
 		switch obj.Type() {
 		case "this":
 			owner = ctx.currentClass
+			if owner != nil {
+				ownerTypeArgs = owner.TypeParameterNames()
+			}
 		case "super":
 			owner = resolveSuperclassScope(ctx, ctx.currentClass)
+			if ctx.currentClass != nil {
+				_, ownerTypeArgs = parseJavaTypeString(ctx.currentClass.Superclass)
+			}
 		default:
 			if ownerType, ok := inferExprJavaType(obj, ctx, source); ok {
-				base, _ := parseJavaTypeString(ownerType)
+				base, typeArgs := parseJavaTypeString(ownerType)
 				owner = resolveClassScopeByQualifiedName(ctx, base)
+				ownerTypeArgs = typeArgs
 			}
 			if owner == nil && obj.Type() == "identifier" {
 				// Static field access through a class name.
@@ -8119,8 +8364,8 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			}
 		}
 
-		if field := findFieldInHierarchy(owner, fieldNode.Content(source), ctx); field != nil && field.OriginalType != "" {
-			return field.OriginalType, true
+		if field := findFieldResolutionInHierarchy(owner, fieldNode.Content(source), ctx); field != nil && field.def != nil && field.def.OriginalType != "" {
+			return instantiatedFieldJavaType(owner, ownerTypeArgs, field, ctx), true
 		}
 	}
 	return "", false
@@ -8289,34 +8534,52 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 }
 
 // firstResolvableTypeParameterBound returns the first declared upper bound that
-// names a class or interface visible from ctx. Method type parameters shadow
-// class type parameters, matching Java's scope rules.
+// transitively reaches a class or interface visible from ctx. Method type
+// parameters shadow synthetic/raw and class type parameters, matching Java's
+// scope rules. Following parameter-to-parameter bounds is required for chains
+// such as `B extends Root, T extends B`, where calls through T use Root's method
+// set after erasure.
 func firstResolvableTypeParameterBound(name string, ctx Ctx) string {
-	find := func(params []symbol.TypeParam) string {
-		for _, param := range params {
-			if param.Name != name {
-				continue
+	var visible []symbol.TypeParam
+	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
+		visible = symbol.MergeTypeParams(visible, ctx.currentClass.TypeParameters)
+	}
+	visible = symbol.MergeTypeParams(visible, ctx.syntheticTypeParameters)
+	if ctx.localScope != nil {
+		visible = symbol.MergeTypeParams(visible, ctx.localScope.TypeParameters)
+	}
+
+	byName := make(map[string]symbol.TypeParam, len(visible))
+	for _, parameter := range visible {
+		byName[parameter.Name] = parameter
+	}
+	visiting := make(map[string]bool, len(visible))
+	var resolve func(string) string
+	resolve = func(parameterName string) string {
+		if visiting[parameterName] {
+			return ""
+		}
+		parameter, ok := byName[parameterName]
+		if !ok {
+			return ""
+		}
+		visiting[parameterName] = true
+		defer delete(visiting, parameterName)
+		for _, bound := range parameter.Bounds {
+			original := strings.TrimSpace(bound.Original)
+			base, arguments := parseJavaTypeString(original)
+			if resolveClassScopeByQualifiedName(ctx, base) != nil {
+				return original
 			}
-			for _, bound := range param.Bounds {
-				base, _ := parseJavaTypeString(bound.Original)
-				if resolveClassScopeByQualifiedName(ctx, base) != nil {
-					return bound.Original
+			if len(arguments) == 0 {
+				if resolved := resolve(stripJavaQualifier(base)); resolved != "" {
+					return resolved
 				}
 			}
-			return ""
 		}
 		return ""
 	}
-
-	if ctx.localScope != nil {
-		if bound := find(ctx.localScope.TypeParameters); bound != "" {
-			return bound
-		}
-	}
-	if ctx.currentClass != nil {
-		return find(ctx.currentClass.TypeParameters)
-	}
-	return ""
+	return resolve(strings.TrimSpace(name))
 }
 
 func explicitTypeArgumentExprs(node *sitter.Node, source []byte, typeParams []string, ctx Ctx) []ast.Expr {

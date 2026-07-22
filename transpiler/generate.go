@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	"strconv"
+	"strings"
 	"unicode"
 
 	"github.com/NickyBoy89/java2go/symbol"
@@ -143,14 +144,82 @@ func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast
 	}
 
 	paramNames := symbol.TypeParamNames(typeParams)
+	paramsByName := make(map[string]symbol.TypeParam, len(typeParams))
+	for _, parameter := range typeParams {
+		paramsByName[parameter.Name] = parameter
+	}
 	fields := make([]*ast.Field, len(typeParams))
 	for i, tp := range typeParams {
 		fields[i] = &ast.Field{
 			Names: []*ast.Ident{{Name: tp.Name}},
-			Type:  constraintExprInContext(tp.Bounds, paramNames, ctx),
+			Type: constraintExprInContext(
+				goRepresentableTypeParameterBounds(tp.Bounds, paramsByName, nil),
+				paramNames,
+				ctx,
+			),
 		}
 	}
 	return fields
+}
+
+// goRepresentableTypeParameterBounds replaces a direct type-parameter bound
+// with that parameter's own upper bounds. Java permits `T extends B` where B is
+// another type parameter; Go intentionally rejects using a type parameter as a
+// constraint. Following the bound chain to its concrete/interface erasure is
+// the closest representable constraint and preserves the method set available
+// through T (for example B extends Root, T extends B becomes T Root).
+//
+// Bounds whose base is a real type remain intact, including parameterized
+// bounds such as Comparable<T>. Intersection bounds are flattened in source
+// order and deduplicated.
+func goRepresentableTypeParameterBounds(
+	bounds []symbol.JavaType,
+	paramsByName map[string]symbol.TypeParam,
+	visiting map[string]bool,
+) []symbol.JavaType {
+	if len(bounds) == 0 {
+		return nil
+	}
+	if visiting == nil {
+		visiting = make(map[string]bool, len(paramsByName))
+	}
+
+	var result []symbol.JavaType
+	seen := make(map[string]struct{})
+	appendUnique := func(bound symbol.JavaType) {
+		original := strings.TrimSpace(bound.Original)
+		if original == "" {
+			return
+		}
+		if _, duplicate := seen[original]; duplicate {
+			return
+		}
+		seen[original] = struct{}{}
+		result = append(result, symbol.JavaType{Original: original})
+	}
+
+	for _, bound := range bounds {
+		original := strings.TrimSpace(bound.Original)
+		base, arguments := parseJavaTypeString(original)
+		dependencyName := stripJavaQualifier(base)
+		dependency, dependent := paramsByName[dependencyName]
+		if !dependent || len(arguments) != 0 {
+			appendUnique(bound)
+			continue
+		}
+		if visiting[dependencyName] {
+			// A direct cycle is not a useful Go constraint. Java's legal recursive
+			// form is normally parameterized (T extends Comparable<T>) and takes the
+			// non-dependent branch above.
+			continue
+		}
+		visiting[dependencyName] = true
+		for _, inherited := range goRepresentableTypeParameterBounds(dependency.Bounds, paramsByName, visiting) {
+			appendUnique(inherited)
+		}
+		delete(visiting, dependencyName)
+	}
+	return result
 }
 
 func constraintExprInContext(bounds []symbol.JavaType, typeParams []string, ctx Ctx) ast.Expr {

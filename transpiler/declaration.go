@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"strconv"
 	"strings"
 
 	"github.com/NickyBoy89/java2go/astutil"
@@ -276,6 +277,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		// Add the struct for the class (with type parameters if present)
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
+		declarations = append(declarations, generateClassSubobjectInstallerDecls(ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
 			declarations = append(declarations, registration)
 		}
@@ -1218,6 +1220,289 @@ func classSelfSetterName(scope *symbol.ClassScope) string {
 	return name
 }
 
+// classSubobjectInstallerName is the cross-package hook used while a source
+// superclass constructor is still running. It must be exported: a subclass in
+// another Java package has to satisfy the superclass's local installer
+// interface. Choosing the name through the same global collision check as the
+// execution helpers keeps legal Java members with the synthetic spelling from
+// occupying the Go method slot.
+func classSubobjectInstallerName(scope *symbol.ClassScope) string {
+	if scope == nil || scope.Class == nil || scope.Class.Name == "" {
+		return ""
+	}
+	base := "Java2goInstall" + symbol.Uppercase(sanitizeGoIdent(scope.Class.Name)) + "Subobject"
+	// Go cannot overload two installer methods named for different `Base`
+	// classes in a legal cross-package chain. Encoding the complete Java binary
+	// identity makes the selector stable and injective across packages/nesting.
+	base += "From"
+	for _, value := range []byte(javaClassBinaryName(scope)) {
+		base += fmt.Sprintf("%02X", value)
+	}
+	for suffix := 0; ; suffix++ {
+		candidate := base
+		if suffix > 0 {
+			candidate += strconv.Itoa(suffix)
+		}
+		if !generatedIdentifierExists(candidate, scope) && !sourceMethodIdentifierExists(candidate) {
+			return candidate
+		}
+	}
+}
+
+// sourceMethodIdentifierExists includes methods declared by anonymous and
+// method-local classes, which are intentionally absent from GlobalScope. A
+// source method must retain its Java override spelling, so an installer avoids
+// it instead of trying to rename it after hoisting.
+func sourceMethodIdentifierExists(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, pkg := range symbol.GlobalScope.Packages {
+		if pkg == nil {
+			continue
+		}
+		for _, file := range pkg.Files {
+			if file == nil {
+				continue
+			}
+			var visit func(*sitter.Node) bool
+			visit = func(node *sitter.Node) bool {
+				if node == nil {
+					return false
+				}
+				if node.Type() == "class_body" {
+					if _, collision := anonymousDeclaredMethodSelectorNames(
+						anonymousClassMethods(node),
+						file.Source,
+					)[name]; collision {
+						return true
+					}
+				}
+				for _, child := range nodeutil.NamedChildrenOf(node) {
+					if visit(child) {
+						return true
+					}
+				}
+				return false
+			}
+			for _, top := range file.TopLevelClasses {
+				if top != nil && top.Class != nil && visit(top.Class.DeclarationNode) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+type classSubobjectAncestorPath struct {
+	scope         *symbol.ClassScope
+	typeArguments []string
+	selectors     []string
+}
+
+// classSubobjectAncestorPaths records how a receiver reaches each separately
+// allocated source superclass embedded inside it. Type arguments are composed
+// at every edge so a Grandchild[U] installer can accept Base[U], rather than a
+// raw or unrelated instantiation.
+func classSubobjectAncestorPaths(scope *symbol.ClassScope, ctx Ctx) []classSubobjectAncestorPath {
+	if scope == nil {
+		return nil
+	}
+
+	current := scope
+	currentArgs := append([]string(nil), scope.TypeParameterNames()...)
+	selectors := []string{}
+	seen := map[*symbol.ClassScope]struct{}{}
+	var paths []classSubobjectAncestorPath
+
+	for current != nil {
+		if _, duplicate := seen[current]; duplicate {
+			break
+		}
+		seen[current] = struct{}{}
+
+		parent := resolveSuperclassScopeInDeclaringContext(ctx, current)
+		if parent == nil || parent.Class == nil {
+			break
+		}
+
+		bindings := make(map[string]string, len(current.TypeParameters))
+		for index, parameter := range current.TypeParameterNames() {
+			if index < len(currentArgs) {
+				bindings[parameter] = currentArgs[index]
+			}
+		}
+		_, declaredArgs := parseJavaTypeString(current.Superclass)
+		parentArgs := make([]string, 0, len(declaredArgs))
+		for _, argument := range declaredArgs {
+			parentArgs = append(parentArgs, substituteJavaTypeParameters(argument, bindings))
+		}
+
+		selectors = append(selectors, parent.Class.Name)
+		paths = append(paths, classSubobjectAncestorPath{
+			scope:         parent,
+			typeArguments: append([]string(nil), parentArgs...),
+			selectors:     append([]string(nil), selectors...),
+		})
+		current = parent
+		currentArgs = parentArgs
+	}
+
+	return paths
+}
+
+func classSubobjectPointerTypeExpr(
+	scope *symbol.ClassScope,
+	typeArguments []string,
+	receiverScope *symbol.ClassScope,
+	ctx Ctx,
+) ast.Expr {
+	if scope == nil || scope.Class == nil {
+		return &ast.InterfaceType{Methods: &ast.FieldList{}}
+	}
+
+	typeExpr := qualifiedNameExpr(scope.Class.Name, findJavaPackageForClassScope(scope), ctx)
+	typeParams := []string(nil)
+	if receiverScope != nil {
+		typeParams = receiverScope.TypeParameterNames()
+	}
+	effectiveTypeArguments := classTypeArgumentsWithRawFallback(scope, typeArguments, receiverScope)
+	if len(effectiveTypeArguments) > 0 {
+		args := make([]ast.Expr, 0, len(effectiveTypeArguments))
+		for _, argument := range effectiveTypeArguments {
+			args = append(args, javaTypeStringToGoTypeExpr(argument, typeParams, ctx))
+		}
+		typeExpr = applyTypeArguments(typeExpr, args)
+	}
+	return &ast.StarExpr{X: typeExpr}
+}
+
+func classTypeArgumentsWithRawFallback(
+	scope *symbol.ClassScope,
+	typeArguments []string,
+	receiverScope *symbol.ClassScope,
+) []string {
+	effectiveTypeArguments := append([]string(nil), typeArguments...)
+	if scope == nil {
+		return effectiveTypeArguments
+	}
+	if len(effectiveTypeArguments) == 0 && len(scope.TypeParameters) > 0 {
+		var typeParams []string
+		if receiverScope != nil {
+			typeParams = receiverScope.TypeParameterNames()
+		}
+		available := make(map[string]struct{}, len(typeParams))
+		for _, typeParam := range typeParams {
+			available[typeParam] = struct{}{}
+		}
+		for _, typeParam := range scope.TypeParameters {
+			if _, ok := available[typeParam.Name]; ok {
+				effectiveTypeArguments = append(effectiveTypeArguments, typeParam.Name)
+				continue
+			}
+			if len(typeParam.Bounds) > 0 && strings.TrimSpace(typeParam.Bounds[0].Original) != "" {
+				effectiveTypeArguments = append(effectiveTypeArguments, typeParam.Bounds[0].Original)
+				continue
+			}
+			effectiveTypeArguments = append(effectiveTypeArguments, "Object")
+		}
+	}
+	return effectiveTypeArguments
+}
+
+// generateClassSubobjectInstallerDecls gives every named subclass an installer
+// for each ancestor subobject. Construction invokes these hooks one level at a
+// time: Grandchild first receives its Child, then Child's constructor causes
+// Base to install itself at Grandchild.Child.Base before Base executes user
+// code. This makes inherited state visible to constructor-time virtual calls.
+func generateClassSubobjectInstallerDecls(ctx Ctx) []ast.Decl {
+	scope := ctx.currentClass
+	if scope == nil || scope.Class == nil || scope.IsInterface || scope.IsEnum {
+		return nil
+	}
+
+	paths := classSubobjectAncestorPaths(scope, ctx)
+	if len(paths) == 0 {
+		return nil
+	}
+	receiverName := ShortName(scope.Class.Name)
+	receiverType := classSubobjectPointerTypeExpr(scope, scope.TypeParameterNames(), scope, ctx)
+	usedNames := map[string]struct{}{receiverName: {}}
+	for _, typeParam := range scope.TypeParameterNames() {
+		usedNames[typeParam] = struct{}{}
+	}
+	valueName := synchronizedUniqueLocalName("__java2goSubobject", usedNames)
+	var declarations []ast.Decl
+
+	for _, path := range paths {
+		if path.scope == nil || len(path.selectors) == 0 || !constructorUsesMostDerived(path.scope, ctx) {
+			continue
+		}
+		var destination ast.Expr = &ast.Ident{Name: receiverName}
+		for _, selector := range path.selectors {
+			destination = &ast.SelectorExpr{X: destination, Sel: &ast.Ident{Name: selector}}
+		}
+		declarations = append(declarations, &ast.FuncDecl{
+			Name: &ast.Ident{Name: classSubobjectInstallerName(path.scope)},
+			Recv: &ast.FieldList{List: []*ast.Field{{
+				Names: []*ast.Ident{{Name: receiverName}},
+				Type:  receiverType,
+			}}},
+			Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
+				Names: []*ast.Ident{{Name: valueName}},
+				Type:  classSubobjectPointerTypeExpr(path.scope, path.typeArguments, scope, ctx),
+			}}}},
+			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{
+				Lhs: []ast.Expr{destination},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{&ast.Ident{Name: valueName}},
+			}}},
+		})
+	}
+	return declarations
+}
+
+// constructorSubobjectInstallerCallStmt attaches the newly allocated receiver
+// to an already-known most-derived object before any superclass constructor can
+// dispatch virtually. The anonymous interface keeps every existing WithSelf
+// signature and call shape unchanged.
+func constructorSubobjectInstallerCallStmt(
+	scope *symbol.ClassScope,
+	receiverName string,
+	mostDerived ast.Expr,
+	ctx Ctx,
+) ast.Stmt {
+	if scope == nil || scope.Class == nil || receiverName == "" || mostDerived == nil {
+		return nil
+	}
+
+	installerName := "__java2goSubobjectInstaller"
+	okName := "__java2goHasSubobjectInstaller"
+	hookName := classSubobjectInstallerName(scope)
+	hookType := &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{
+		Names: []*ast.Ident{{Name: hookName}},
+		Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
+			Type: classSubobjectPointerTypeExpr(scope, scope.TypeParameterNames(), scope, ctx),
+		}}}},
+	}}}}
+	return &ast.IfStmt{
+		Init: &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: installerName}, &ast.Ident{Name: okName}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{&ast.TypeAssertExpr{X: mostDerived, Type: hookType}},
+		},
+		Cond: &ast.Ident{Name: okName},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ExprStmt{X: &ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X:   &ast.Ident{Name: installerName},
+				Sel: &ast.Ident{Name: hookName},
+			},
+			Args: []ast.Expr{&ast.Ident{Name: receiverName}},
+		}}}},
+	}
+}
+
 func classDispatchTypeExpr(scope *symbol.ClassScope) ast.Expr {
 	if scope == nil {
 		return &ast.InterfaceType{Methods: &ast.FieldList{}}
@@ -1244,7 +1529,7 @@ func visitClassScopes(scope *symbol.ClassScope, visit func(*symbol.ClassScope) b
 // rather than just lexical nested classes. Java subclasses are normally sibling
 // or cross-file declarations, and each one must be able to replace the dynamic
 // receiver stored by its ancestors.
-func classHasKnownSubclass(target *symbol.ClassScope) bool {
+func classHasKnownSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 	if target == nil {
 		return false
 	}
@@ -1277,10 +1562,10 @@ func classHasKnownSubclass(target *symbol.ClassScope) bool {
 			}
 		}
 	}
-	return classHasSyntheticSubclass(target)
+	return classHasSyntheticSubclass(target, ctx)
 }
 
-func classNeedsVirtualDispatch(scope *symbol.ClassScope, _ Ctx) bool {
+func classNeedsVirtualDispatch(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil || scope.IsInterface || scope.IsEnum {
 		return false
 	}
@@ -1291,7 +1576,7 @@ func classNeedsVirtualDispatch(scope *symbol.ClassScope, _ Ctx) bool {
 			break
 		}
 	}
-	return hasDispatchableMethod && (scope.IsAbstract || classHasKnownSubclass(scope))
+	return hasDispatchableMethod && (scope.IsAbstract || classHasKnownSubclass(scope, ctx))
 }
 
 func generateClassDispatchInterface(ctx Ctx) ast.Decl {
@@ -1922,8 +2207,9 @@ func explicitSuperConstructorAssignment(
 		if invocation.target != nil {
 			methodTypeArgCapacity = len(invocation.target.TypeParameters)
 		}
-		args := make([]ast.Expr, 0, len(superArgStrs)+methodTypeArgCapacity)
-		for _, arg := range superArgStrs {
+		effectiveSuperArgs := classTypeArgumentsWithRawFallback(parent, superArgStrs, ctx.currentClass)
+		args := make([]ast.Expr, 0, len(effectiveSuperArgs)+methodTypeArgCapacity)
+		for _, arg := range effectiveSuperArgs {
 			args = append(args, javaTypeStringToGoTypeExpr(arg, inScopeTypeParameters(ctx), ctx))
 		}
 		args = append(args, constructorInvocationMethodTypeArgs(invocation, source, ctx)...)
@@ -1980,6 +2266,7 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 	}
 
 	base, typeArgs := parseJavaTypeString(scope.Superclass)
+	typeArgs = classTypeArgumentsWithRawFallback(parent, typeArgs, scope)
 	constructor := qualifiedNameExpr(
 		constructorName,
 		resolveJavaPackageForType(ctx, base, parent),
@@ -2134,6 +2421,9 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 	var mostDerived ast.Expr
 	if usesMostDerived {
 		mostDerived = &ast.Ident{Name: constructorSelfParam}
+	}
+	if installerCall := constructorSubobjectInstallerCallStmt(scope, recvName, mostDerived, ctx); installerCall != nil {
+		body = append(body, installerCall)
 	}
 	if identityInit := constructorObjectInfoInitStmt(scope, recvName, mostDerived, ctx); identityInit != nil {
 		body = append(body, identityInit)
@@ -3173,6 +3463,9 @@ func buildSourceConstructorDecls(
 		body.List = append(body.List, defaultStringFieldInitializationStmts(ctx.currentClass, receiverName, ctx)...)
 		if usesMostDerived {
 			body.List = append(body.List, constructorMostDerivedInitStmt(receiverName))
+		}
+		if installerCall := constructorSubobjectInstallerCallStmt(ctx.currentClass, receiverName, mostDerived, ctx); installerCall != nil {
+			body.List = append(body.List, installerCall)
 		}
 		if identityInit := constructorObjectInfoInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); identityInit != nil {
 			body.List = append(body.List, identityInit)
