@@ -131,6 +131,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				Type:  classDispatchTypeExpr(ctx.currentClass),
 			})
 		}
+		if classNeedsReferenceObjectInfo(ctx.currentClass, ctx) && sourceHierarchyRoot(ctx.currentClass, ctx) {
+			fields.List = append(fields.List, generatedObjectInfoField(ctx))
+		}
 
 		// Global variables
 		globalVariables := &ast.GenDecl{Tok: token.VAR}
@@ -273,6 +276,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		// Add the struct for the class (with type parameters if present)
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
+		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
+			declarations = append(declarations, registration)
+		}
+		declarations = append(declarations, sourceClassReferenceIdentityDecls(ctx.currentClass, ctx)...)
 		if setterDecl := generateClassSelfSetter(ctx); setterDecl != nil {
 			declarations = append(declarations, setterDecl)
 		}
@@ -395,6 +402,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		declarations := []ast.Decl{genInterfaceInContext(interfaceName, methods, classTypeParams, ctx)}
+		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
+			declarations = append(declarations, registration)
+		}
 		if companion := generateExecutionCompanionInterface(ctx.currentClass, ctx); companion != nil {
 			declarations = append(declarations, companion)
 		}
@@ -455,6 +465,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		// Declare the enum struct type
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
+		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
+			declarations = append(declarations, registration)
+		}
+		declarations = append(declarations, sourceClassReferenceIdentityDecls(ctx.currentClass, ctx)...)
 
 		// Generate ordinal constants to preserve declaration order
 		if len(ctx.currentClass.EnumConstants) > 0 {
@@ -856,8 +870,8 @@ func interfaceMethodSignature(def *symbol.Definition) string {
 	}
 	parts := make([]string, 0, len(def.Parameters)+1)
 	parts = append(parts, def.OriginalName)
-	for _, param := range def.Parameters {
-		parts = append(parts, param.OriginalType)
+	for index := range def.Parameters {
+		parts = append(parts, definitionParameterJavaSignatureType(def, index))
 	}
 	return strings.Join(parts, "\x00")
 }
@@ -1263,7 +1277,7 @@ func classHasKnownSubclass(target *symbol.ClassScope) bool {
 			}
 		}
 	}
-	return false
+	return classHasSyntheticSubclass(target)
 }
 
 func classNeedsVirtualDispatch(scope *symbol.ClassScope, _ Ctx) bool {
@@ -1896,7 +1910,7 @@ func explicitSuperConstructorAssignment(
 			args = append(args, javaTypeStringToGoTypeExpr(arg, inScopeTypeParameters(ctx), ctx))
 		}
 		args = append(args, constructorInvocationMethodTypeArgs(invocation, source, ctx)...)
-		if mostDerived != nil && parent != nil && classHasSelfSetter(parent, ctx) {
+		if mostDerived != nil && parent != nil && constructorUsesMostDerived(parent, ctx) {
 			constructorName = constructorWithSelfName(constructorName)
 		}
 		if executionExpr(ctx) != nil {
@@ -1909,7 +1923,7 @@ func explicitSuperConstructorAssignment(
 	}
 
 	callArgs := append([]ast.Expr(nil), invocation.parsedArgs...)
-	if mostDerived != nil && parent != nil && classHasSelfSetter(parent, ctx) {
+	if mostDerived != nil && parent != nil && constructorUsesMostDerived(parent, ctx) {
 		callArgs = append([]ast.Expr{mostDerived}, callArgs...)
 	}
 	if execution := executionExpr(ctx); execution != nil && parent != nil {
@@ -1939,7 +1953,7 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 		return nil
 	}
 	args := []ast.Expr{}
-	if mostDerived != nil && classHasSelfSetter(parent, ctx) {
+	if mostDerived != nil && constructorUsesMostDerived(parent, ctx) {
 		constructorName = constructorWithSelfName(constructorName)
 		args = append(args, mostDerived)
 	}
@@ -2084,7 +2098,7 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 	}
 
 	recvName := ShortName(ctx.className)
-	usesMostDerived := classHasSelfSetter(scope, ctx)
+	usesMostDerived := constructorUsesMostDerived(scope, ctx)
 	body := []ast.Stmt{
 		&ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.Ident{Name: recvName}},
@@ -2099,6 +2113,9 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 	var mostDerived ast.Expr
 	if usesMostDerived {
 		mostDerived = &ast.Ident{Name: constructorSelfParam}
+	}
+	if identityInit := constructorObjectInfoInitStmt(scope, recvName, mostDerived, ctx); identityInit != nil {
+		body = append(body, identityInit)
 	}
 	if superInit := implicitSuperConstructorAssignmentWithSelf(ctx, recvName, mostDerived); superInit != nil {
 		body = append(body, superInit)
@@ -2298,17 +2315,27 @@ func methodNodeMatchesDefinition(node *sitter.Node, def *symbol.Definition, sour
 	}
 
 	for index, param := range nodeutil.NamedChildrenOf(paramsNode) {
-		var paramType string
-		if param.Type() == "spread_parameter" {
-			paramType = param.NamedChild(0).Content(source)
-		} else {
-			paramType = param.ChildByFieldName("type").Content(source)
-		}
-		if def.Parameters[index].OriginalType != paramType {
+		if !declarationParameterMatchesDefinition(param, def, index, source) {
 			return false
 		}
 	}
 	return true
+}
+
+func declarationParameterMatchesDefinition(param *sitter.Node, def *symbol.Definition, index int, source []byte) bool {
+	if param == nil || def == nil || index < 0 || index >= len(def.Parameters) || def.Parameters[index] == nil {
+		return false
+	}
+	variadic := param.Type() == "spread_parameter"
+	var typeNode *sitter.Node
+	if variadic {
+		typeNode = param.NamedChild(0)
+	} else {
+		typeNode = param.ChildByFieldName("type")
+	}
+	return typeNode != nil &&
+		def.Parameters[index].OriginalType == typeNode.Content(source) &&
+		executionParameterIsVariadic(def, index) == variadic
 }
 
 func enumConstantMethodDeclarations(body *sitter.Node) []*sitter.Node {
@@ -2649,6 +2676,22 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 		executionName,
 		ctx,
 	)
+	if classNeedsReferenceIdentity(scope, ctx) {
+		identityReceiver := &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: receiverName}},
+			Type:  &ast.StarExpr{X: instantiateGenericType(adapterName, typeArgs)},
+		}}}
+		implMethods = append(implMethods, &ast.FuncDecl{
+			Name: &ast.Ident{Name: "JavaDynamicTypeID"},
+			Recv: identityReceiver,
+			Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{
+				Type: stdjavaQualifiedExpr("TypeID", ctx),
+			}}}},
+			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
+				javaTypeIDLiteral(javaClassBinaryName(scope), ctx),
+			}}}},
+		})
+	}
 
 	constructorName := "New" + adapterName
 	constructorParams := &ast.FieldList{
@@ -2990,13 +3033,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 			// Go through the types and check to see if they differ
 			for index, param := range nodeutil.NamedChildrenOf(paramNode) {
-				var paramType string
-				if param.Type() == "spread_parameter" {
-					paramType = param.NamedChild(0).Content(source)
-				} else {
-					paramType = param.ChildByFieldName("type").Content(source)
-				}
-				if paramType != d.Parameters[index].OriginalType {
+				if !declarationParameterMatchesDefinition(param, d, index, source) {
 					return false
 				}
 			}
@@ -3024,7 +3061,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		receiverName := ShortName(ctx.className)
-		usesMostDerived := classHasSelfSetter(ctx.currentClass, ctx)
+		usesMostDerived := constructorUsesMostDerived(ctx.currentClass, ctx)
 		var mostDerived ast.Expr
 		if usesMostDerived {
 			mostDerived = &ast.Ident{Name: constructorSelfParam}
@@ -3056,6 +3093,9 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			body.List = append(body.List, defaultStringFieldInitializationStmts(ctx.currentClass, receiverName, ctx)...)
 			if usesMostDerived {
 				body.List = append(body.List, constructorMostDerivedInitStmt(receiverName))
+			}
+			if identityInit := constructorObjectInfoInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); identityInit != nil {
+				body.List = append(body.List, identityInit)
 			}
 			// An inner-class allocation captures its enclosing receiver once, at the
 			// same terminal boundary as its ordinary Java instance fields.
@@ -3185,13 +3225,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				return false
 			}
 			for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
-				var paramType string
-				if param.Type() == "spread_parameter" {
-					paramType = param.NamedChild(0).Content(source)
-				} else {
-					paramType = param.ChildByFieldName("type").Content(source)
-				}
-				if d.Parameters[index].OriginalType != paramType {
+				if !declarationParameterMatchesDefinition(param, d, index, source) {
 					return false
 				}
 			}

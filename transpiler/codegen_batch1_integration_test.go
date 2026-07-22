@@ -153,20 +153,20 @@ public class A {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "stdjava.ArrayLiteral[int32](1, 2, 3)") {
-		t.Errorf("expected typed int32 ArrayLiteral, got:\n%s", out)
+	if !strings.Contains(flat, `stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 1, 2, 3)`) {
+		t.Errorf("expected an int32 primitive array literal with the exact Java int descriptor, got:\n%s", out)
 	}
-	if !strings.Contains(flat, `stdjava.ArrayLiteral[string]("x", "y")`) {
-		t.Errorf("expected typed string ArrayLiteral, got:\n%s", out)
+	if !strings.Contains(flat, `stdjava.ReferenceArrayLiteralOf[string](stdjava.StringTypeID, "x", "y")`) {
+		t.Errorf("expected a String[] literal with the exact Java String descriptor, got:\n%s", out)
 	}
-	if !strings.Contains(flat, `stdjava.ArrayLiteral[any](int32(1), "z")`) {
-		t.Errorf("expected Java Integer-width boxing in Object[], got:\n%s", out)
+	if !strings.Contains(flat, `stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID, int32(1), "z")`) {
+		t.Errorf("expected an Object[] literal with its descriptor and Java Integer-width boxing, got:\n%s", out)
 	}
 }
 
-// TestCodegen_SizedArrayAllocationKeepsSliceType verifies `new T[n]` emits
-// `NewArray[T](n)` with the component type, for primitive, string, and
-// user-defined (package-private) elements.
+// TestCodegen_SizedArrayAllocationKeepsSliceType verifies every sized array
+// carries exact reified Java component identity while retaining the concrete Go
+// component type used by generated element operations.
 func TestCodegen_SizedArrayAllocationKeepsSliceType(t *testing.T) {
 	src := `
 class Worker { int id; }
@@ -179,16 +179,16 @@ public class Alloc {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.NewArray[int32](n)") {
-		t.Errorf("expected NewArray[int32](n), got:\n%s", out)
+	if !strings.Contains(out, `stdjava.NewPrimitiveArray[int32](n, stdjava.PrimitiveIntTypeID)`) {
+		t.Errorf("expected a reified int[] allocation with the exact primitive descriptor, got:\n%s", out)
 	}
-	if !strings.Contains(out, "stdjava.NewArray[string](n)") {
-		t.Errorf("expected NewArray[string](n), got:\n%s", out)
+	if !strings.Contains(out, `stdjava.NewReferenceArrayOf[string](n, stdjava.StringTypeID)`) {
+		t.Errorf("expected a reified String[] allocation with the exact Java String descriptor, got:\n%s", out)
 	}
 	// Worker is package-private, so its struct is lowercased to `worker`; the
 	// element type must match.
-	if !strings.Contains(out, "stdjava.NewArray[*worker](n)") {
-		t.Errorf("expected NewArray[*worker](n) with lowercased element type, got:\n%s", out)
+	if !strings.Contains(out, `stdjava.NewReferenceArrayOf[*worker](n, stdjava.TypeID("Worker"))`) {
+		t.Errorf("expected a reified Worker[] with the lowercased Go component type, got:\n%s", out)
 	}
 }
 
@@ -390,9 +390,10 @@ public class App {
 	if !strings.Contains(flat, "type formal struct { greeter") {
 		t.Errorf("expected struct to embed `greeter`, got:\n%s", out)
 	}
-	// Interface element type is by value, not a pointer.
-	if !strings.Contains(flat, "stdjava.ArrayLiteral[greeter](newFormalJava2goExecution(__java2goExecution))") {
-		t.Errorf("expected identity-preserving ArrayLiteral[greeter] with an interface value element, got:\n%s", out)
+	// Interface element type is by value, not a pointer, and the literal retains
+	// the Java interface component descriptor for checked covariant stores.
+	if !strings.Contains(flat, `stdjava.ReferenceArrayLiteralOf[greeter](stdjava.TypeID("Greeter"), newFormalJava2goExecution(__java2goExecution))`) {
+		t.Errorf("expected a reified greeter[] literal with an interface value element, got:\n%s", out)
 	}
 }
 

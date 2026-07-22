@@ -268,6 +268,21 @@ func executionParameterIsVariadic(def *symbol.Definition, index int) bool {
 	return false
 }
 
+// definitionParameterJavaSignatureType restores the array dimension that Java
+// assigns to a varargs declaration. Symbols intentionally keep the written
+// element type (T for T...), while overload identity and fixed-arity invocation
+// semantics use T[].
+func definitionParameterJavaSignatureType(def *symbol.Definition, index int) string {
+	if def == nil || index < 0 || index >= len(def.Parameters) || def.Parameters[index] == nil {
+		return ""
+	}
+	javaType := def.Parameters[index].OriginalType
+	if executionParameterIsVariadic(def, index) {
+		javaType += "[]"
+	}
+	return javaType
+}
+
 // markVariadicForwardCall expands the final slice when a generated forwarding
 // call targets a Java varargs declaration. The forwarded parameter is already
 // represented as a Go slice in the wrapper or closure; omitting Ellipsis would

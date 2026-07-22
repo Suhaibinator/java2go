@@ -182,6 +182,12 @@ func generateAffineArrayViewDecls(ctx Ctx) []ast.Decl {
 			continue
 		}
 		arrayType := javaTypeStringToGoTypeExpr(view.ArrayField.OriginalType, nil, ctx)
+		arrayValue := ast.Expr(&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: view.ArrayField.Name}})
+		if component, primitive := javaPrimitiveArrayComponent(view.ArrayField.OriginalType); primitive {
+			componentType := javaTypeStringToGoTypeExpr(component, nil, ctx)
+			arrayType = &ast.ArrayType{Elt: componentType}
+			arrayValue = stdjavaCall(ctx, "PrimitiveArrayElements", arrayValue)
+		}
 		declarations = append(declarations, &ast.FuncDecl{
 			Name: &ast.Ident{Name: view.HelperName},
 			Recv: &ast.FieldList{List: []*ast.Field{{
@@ -205,7 +211,7 @@ func generateAffineArrayViewDecls(ctx Ctx) []ast.Decl {
 					}}}},
 				},
 				&ast.ReturnStmt{Results: []ast.Expr{
-					&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: view.ArrayField.Name}},
+					arrayValue,
 					&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: view.SizeField.Name}},
 				}},
 			}},

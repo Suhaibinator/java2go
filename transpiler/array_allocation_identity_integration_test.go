@@ -56,11 +56,19 @@ public class ArrayAllocationIdentityProgram {
 	if strings.Contains(out, "make([]int32") || strings.Contains(out, "make([][]int32") {
 		t.Fatalf("generated Java arrays bypassed the identity-preserving allocator:\n%s", out)
 	}
-	if got := strings.Count(out, "stdjava.NewArray["); got < 3 {
-		t.Fatalf("sized and multidimensional rows must use NewArray; got %d calls:\n%s", got, out)
+	if strings.Contains(out, "stdjava.NewArray[") || strings.Contains(out, "stdjava.ArrayLiteral[") {
+		t.Fatalf("generated Java arrays used the legacy slice-only ABI:\n%s", out)
 	}
-	if got := strings.Count(out, "stdjava.ArrayLiteral["); got < 4 {
-		t.Fatalf("outer and nested literals must use ArrayLiteral; got %d calls:\n%s", got, out)
+	for _, expected := range []string{
+		`stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID)`,
+		`stdjava.NewPrimitiveArray[int32](0, stdjava.PrimitiveIntTypeID)`,
+		`stdjava.NewMultiArrayOf[int32](stdjava.PrimitiveIntTypeID, 2, int32(2), int32(0))`,
+		`stdjava.ReferenceArrayLiteralOf[*stdjava.PrimitiveArray[int32]](stdjava.ArrayTypeID(stdjava.PrimitiveIntTypeID)`,
+		`stdjava.ReferenceArrayLength(values)`,
+	} {
+		if !strings.Contains(out, expected) {
+			t.Fatalf("generated arrays must retain the exact Java component descriptor in %q:\n%s", expected, out)
+		}
 	}
 
 	runGeneratedWithStdjava(t, out, `
@@ -73,7 +81,7 @@ import (
     "github.com/NickyBoy89/java2go/stdjava"
 )
 
-func requireIndependentArrayMonitors(t *testing.T, first, second []int32) {
+func requireIndependentArrayMonitors(t *testing.T, first, second any) {
     t.Helper()
     firstMonitor := stdjava.MonitorEnter(first)
     acquired := make(chan struct{})
@@ -99,33 +107,59 @@ func TestArrayAllocationShapes(t *testing.T) {
 
     fieldFirst := FieldEmpty()
     fieldAlias := FieldEmpty()
-    if len(fieldFirst) != 0 || cap(fieldFirst) != 1 || &fieldFirst[:1][0] != &fieldAlias[:1][0] {
+	intType := stdjava.PrimitiveTypeID("int")
+	intArrayType := stdjava.ArrayTypeID(intType)
+	if fieldFirst == nil || fieldFirst != fieldAlias || len(fieldFirst.Elements) != 0 {
         t.Fatalf("field array did not retain one zero-length Java object: first=%v alias=%v", fieldFirst, fieldAlias)
     }
+	if fieldFirst.ComponentType() != intType || fieldFirst.JavaArrayTypeID() != intArrayType {
+		t.Fatalf("field int[] descriptors = component %q array %q, want %q and %q", fieldFirst.ComponentType(), fieldFirst.JavaArrayTypeID(), intType, intArrayType)
+	}
 
     returnedFirst := ReturnedEmpty()
     returnedSecond := ReturnedEmpty()
     inferred := InferredEmpty()
-    for name, value := range map[string][]int32{"returned first": returnedFirst, "returned second": returnedSecond, "inferred": inferred} {
-        if len(value) != 0 || cap(value) != 1 {
-            t.Fatalf("%s shape = len %d cap %d, want len 0 cap 1", name, len(value), cap(value))
+	for name, value := range map[string]*stdjava.PrimitiveArray[int32]{"returned first": returnedFirst, "returned second": returnedSecond, "inferred": inferred} {
+		if value == nil || len(value.Elements) != 0 {
+			t.Fatalf("%s shape = %#v, want a non-nil zero-length Java array", name, value)
         }
+		if value.ComponentType() != intType || value.JavaArrayTypeID() != intArrayType {
+			t.Fatalf("%s descriptors = component %q array %q, want %q and %q", name, value.ComponentType(), value.JavaArrayTypeID(), intType, intArrayType)
+		}
     }
+	if returnedFirst == returnedSecond || returnedFirst == inferred || returnedSecond == inferred {
+		t.Fatal("distinct zero-length allocations collapsed to the same Java array object")
+	}
     requireIndependentArrayMonitors(t, returnedFirst, returnedSecond)
     requireIndependentArrayMonitors(t, returnedFirst, inferred)
 
     partial := PartialRank()
-    if len(partial) != 2 || partial[0] != nil || partial[1] != nil {
+	if stdjava.ReferenceArrayLength(partial) != 2 || partial.ComponentType() != intArrayType || partial.JavaArrayTypeID() != stdjava.ArrayTypeID(intArrayType) {
+		t.Fatalf("partial array descriptors/length are wrong: component=%q array=%q length=%d", partial.ComponentType(), partial.JavaArrayTypeID(), stdjava.ReferenceArrayLength(partial))
+	}
+	if stdjava.ReferenceArrayGet[*stdjava.PrimitiveArray[int32]](partial, 0, intArrayType) != nil || stdjava.ReferenceArrayGet[*stdjava.PrimitiveArray[int32]](partial, 1, intArrayType) != nil {
         t.Fatalf("partial array = %#v, want two null rows", partial)
     }
 
     nested := NestedEmpty()
-    if len(nested) != 2 || len(nested[0]) != 0 || cap(nested[0]) != 1 || len(nested[1]) != 0 || cap(nested[1]) != 1 {
+	if stdjava.ReferenceArrayLength(nested) != 2 || nested.ComponentType() != intArrayType {
+		t.Fatalf("nested int[][] descriptors/length are wrong: component=%q length=%d", nested.ComponentType(), stdjava.ReferenceArrayLength(nested))
+	}
+	nestedFirst := stdjava.ReferenceArrayGet[*stdjava.PrimitiveArray[int32]](nested, 0, intArrayType)
+	nestedSecond := stdjava.ReferenceArrayGet[*stdjava.PrimitiveArray[int32]](nested, 1, intArrayType)
+	if nestedFirst == nil || nestedSecond == nil || len(nestedFirst.Elements) != 0 || len(nestedSecond.Elements) != 0 {
         t.Fatalf("nested empty array has wrong shape: %#v", nested)
     }
-    requireIndependentArrayMonitors(t, nested[0], nested[1])
+	if nestedFirst == nestedSecond {
+		t.Fatal("two nested empty literals collapsed to the same Java array object")
+	}
+	requireIndependentArrayMonitors(t, nestedFirst, nestedSecond)
 
-    if got := GenericLength[string](stdjava.NewArray[string](0)); got != 0 {
+	genericEmpty := stdjava.NewReferenceArrayOf[string](0, stdjava.StringTypeID)
+	if genericEmpty.ComponentType() != stdjava.StringTypeID || genericEmpty.JavaArrayTypeID() != stdjava.ArrayTypeID(stdjava.StringTypeID) {
+		t.Fatalf("String[] descriptors = component %q array %q", genericEmpty.ComponentType(), genericEmpty.JavaArrayTypeID())
+	}
+	if got := GenericLength[string](genericEmpty); got != 0 {
         t.Fatalf("GenericLength(empty) = %d, want 0", got)
     }
 }

@@ -319,8 +319,17 @@ public class TernaryTypingProgram {
 	if !strings.Contains(out, "func() int64") {
 		t.Fatalf("numeric conditional did not retain standalone long promotion:\n%s", out)
 	}
-	if !strings.Contains(out, "func() []any") {
-		t.Fatalf("reference-array conditional did not retain Object[] LUB:\n%s", out)
+	if !strings.Contains(out, "func() *stdjava.ReferenceArray") {
+		t.Fatalf("reference-array conditional did not retain the common reified array ABI for its Object[] LUB:\n%s", out)
+	}
+	for _, expected := range []string{
+		`stdjava.NewReferenceArrayOf[string](2, stdjava.StringTypeID)`,
+		`stdjava.NewReferenceArrayOf[any](3, stdjava.ObjectTypeID)`,
+		`stdjava.ReferenceArrayLength(selected)`,
+	} {
+		if !strings.Contains(out, expected) {
+			t.Fatalf("reference-array conditional lost descriptor-aware branch/result lowering %q:\n%s", expected, out)
+		}
 	}
 
 	runGoTestInTempModule(t, out, `

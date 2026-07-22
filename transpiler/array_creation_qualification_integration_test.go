@@ -40,7 +40,7 @@ public class Kernel {
 	if !strings.Contains(flat, `model "example/model"`) {
 		t.Fatalf("expected imported model package, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.NewArray[*model.Cohort](count)") {
-		t.Fatalf("expected qualified imported array element type, got:\n%s", out)
+	if !strings.Contains(flat, `stdjava.NewReferenceArrayOf[*model.Cohort](count, stdjava.TypeID("example.model.Cohort"))`) {
+		t.Fatalf("expected qualified imported reference-array component and runtime type identity, got:\n%s", out)
 	}
 }

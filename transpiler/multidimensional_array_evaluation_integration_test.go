@@ -153,8 +153,15 @@ public class MultidimensionalArrayEvaluationProgram {
 	if strings.Count(function, "dimensionJava2goExecution(") != 3 {
 		t.Fatalf("each source dimension call must occur exactly once in generated code:\n%s", function)
 	}
-	if !strings.Contains(function, "stdjava.NewNegativeArraySizeException") {
-		t.Fatalf("negative dimensions must raise the Java exception type:\n%s", function)
+	allocation := `stdjava.NewMultiArrayOf[int32](stdjava.PrimitiveIntTypeID, 3,`
+	if !strings.Contains(function, allocation) {
+		t.Fatalf("multidimensional int array must retain its primitive descriptor and total rank in the checked allocator:\n%s", function)
+	}
+	firstDimension := strings.Index(function, "dimensionJava2goExecution(__java2goExecution, 1, 2)")
+	secondDimension := strings.Index(function, "dimensionJava2goExecution(__java2goExecution, 2, -1)")
+	thirdDimension := strings.Index(function, "dimensionJava2goExecution(__java2goExecution, 3, 4)")
+	if firstDimension < 0 || secondDimension <= firstDimension || thirdDimension <= secondDimension {
+		t.Fatalf("dimension expressions must be passed once in Java left-to-right order before runtime checks:\n%s", function)
 	}
 	typeParameterStart := strings.Index(out, "func TypeParameterBindersCompileJava2goExecution")
 	if typeParameterStart < 0 {
@@ -166,8 +173,8 @@ public class MultidimensionalArrayEvaluationProgram {
 		t.Fatalf("could not isolate generated generic collision method:\n%s", typeParameterTail)
 	}
 	typeParameterFunction := typeParameterTail[:typeParameterEnd+2]
-	if !strings.Contains(typeParameterFunction, "__java2goDimension0_1") {
-		t.Fatalf("array dimension binder must avoid the enclosing type parameter name:\n%s", typeParameterFunction)
+	if !strings.Contains(typeParameterFunction, `stdjava.NewMultiArrayOf[int32](stdjava.PrimitiveIntTypeID, 2, int32(2), int32(3))`) {
+		t.Fatalf("generic type-parameter collisions must retain the descriptor-based multidimensional allocator:\n%s", typeParameterFunction)
 	}
 
 	runGoTestInTempModule(t, out, `

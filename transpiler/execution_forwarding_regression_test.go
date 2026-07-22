@@ -126,11 +126,14 @@ public class VariadicMethodReferenceProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, ".SumJava2goExecution(__java2goExecution, values...)") {
-		t.Fatalf("execution-aware variadic method-reference call did not expand its forwarded slice:\n%s", out)
+	if !strings.Contains(flat, ".SumJava2goExecution(__java2goExecution, stdjava.PrimitiveArrayElements(values)...)") {
+		t.Fatalf("execution-aware variadic method-reference call did not unwrap and expand its forwarded PrimitiveArray:\n%s", out)
 	}
-	if !strings.Contains(flat, ".Sum(values...)") {
-		t.Fatalf("public fallback for variadic method reference did not expand its forwarded slice:\n%s", out)
+	if !strings.Contains(flat, ".Sum(stdjava.PrimitiveArrayElements(values)...)") {
+		t.Fatalf("public fallback for variadic method reference did not unwrap and expand its forwarded PrimitiveArray:\n%s", out)
+	}
+	if !strings.Contains(flat, "values *stdjava.PrimitiveArray[int32]") {
+		t.Fatalf("non-variadic int[] SAM parameter lost its descriptor-bearing wrapper ABI:\n%s", out)
 	}
 	runGeneratedWithStdjava(t, out, `
 package main

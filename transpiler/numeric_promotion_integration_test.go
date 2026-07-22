@@ -34,7 +34,8 @@ public class NumericPromotionProgram {
 	flat := normalizeSpaces(out)
 	for _, expected := range []string{
 		"int64(value)",
-		"int64(values[0])*int64(31)",
+		"values *stdjava.PrimitiveArray[int32]",
+		"int64(values.Elements[0])*int64(31)",
 		"float32(i)",
 		"float32(l)",
 		"float64(",
@@ -49,10 +50,18 @@ public class NumericPromotionProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestNumericPromotionBehavior(t *testing.T) {
-    if got := Combine(7, []int32{5}); got != 163 {
+	values := stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveTypeID("int"), 5)
+	if values.ComponentType() != stdjava.PrimitiveTypeID("int") {
+		t.Fatalf("numeric input component descriptor = %q, want Java int", values.ComponentType())
+	}
+    if got := Combine(7, values); got != 163 {
         t.Fatalf("Combine() = %d, want 163", got)
     }
 	if got := Narrow(int8(1), int16(2), rune(3), int32(4), int64(5)); got != 15 {

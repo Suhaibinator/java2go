@@ -48,7 +48,7 @@ func TestIntrinsics_StringMethods(t *testing.T) {
 		{"trim", "s.trim()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
 		{"strip", "s.strip()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
 		{"replace", "s.replace(\"a\", \"b\")", "stdjava.StringReplace(stdjava.StringRequireNonNull(s), \"a\", \"b\")"},
-		{"split", "s.split(\",\")", "stdjava.StringSplit(stdjava.StringRequireNonNull(s), \",\")"},
+		{"split", "s.split(\",\")", "stdjava.StringSplitArray(stdjava.StringRequireNonNull(s), \",\")"},
 		{"chars", "s.chars()", "stdjava.StringChars(stdjava.StringRequireNonNull(s))"},
 	}
 	for _, tc := range cases {
@@ -230,12 +230,50 @@ public class LiteralReceiver {
     public static int parts() {
         return "a,b,c".split(",").length;
     }
+	public static int trailingEmptyParts() {
+		return "a,b,,".split(",").length;
+	}
+	public static String second() {
+		return "a,b".split(",")[1];
+	}
+	public static int descriptorChecks() {
+		Object parts = "a,b".split(",");
+		int bits = 0;
+		if (parts instanceof String[]) bits |= 1;
+		if (parts instanceof Object[]) bits |= 2;
+		return bits;
+	}
 }
 `
 	out := renderIntrinsicProgram(t, src)
 	assertContains(t, out, `strings.TrimSpace("  hi  ")`)
-	// split returns []string; Java array.length lowers to int32(len(...)).
-	assertContains(t, out, `int32(len(stdjava.StringSplit("a,b,c", ",")))`)
+	// split returns a descriptor-bearing String[]; array.length must use the
+	// wrapper helper rather than native len so null/descriptor behavior survives.
+	assertContains(t, out, `stdjava.ReferenceArrayLength(stdjava.StringSplitArray("a,b,c", ","))`)
+	assertContains(t, out, `stdjava.ReferenceArrayGet[string](stdjava.StringSplitArray("a,b", ","), 1, stdjava.StringTypeID)`)
+	runGeneratedWithStdjava(t, out, `
+package main
+
+import "testing"
+
+func TestStringSplitArrayRuntime(t *testing.T) {
+	if got := Trimmed(); got != "hi" {
+		t.Fatalf("Trimmed() = %q, want hi", got)
+	}
+	if got := Parts(); got != 3 {
+		t.Fatalf("Parts() = %d, want 3", got)
+	}
+	if got := TrailingEmptyParts(); got != 2 {
+		t.Fatalf("TrailingEmptyParts() = %d, want Java trailing-empty length 2", got)
+	}
+	if got := Second(); got != "b" {
+		t.Fatalf("Second() = %q, want b", got)
+	}
+	if got := DescriptorChecks(); got != 3 {
+		t.Fatalf("DescriptorChecks() = %d, want String[] and covariant Object[] bits", got)
+	}
+}
+`)
 }
 
 func TestIntrinsics_ChainedStringCalls(t *testing.T) {

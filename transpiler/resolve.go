@@ -354,6 +354,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 
 		// Rename the field if its name conflits with any keyword
 		for i := 0; symbol.IsReserved(field.Name) ||
+			(!field.IsStatic && classNeedsReferenceIdentity(class, Ctx{}) && referenceIdentityReservedSelector(field.Name)) ||
 			classHasOtherFieldName(class, field, field.Name) ||
 			(!field.IsStatic && classHasOtherInstanceMethodName(class, field, field.Name)) ||
 			(field.IsStatic && packageHasOtherStaticFieldName(packageScope, field, field.Name)) ||
@@ -382,8 +383,8 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 			}
 
 			// Go through the types and check to see if they differ
-			for index, param := range method.Parameters {
-				if param.OriginalType != d.Parameters[index].OriginalType {
+			for index := range method.Parameters {
+				if definitionParameterJavaSignatureType(method, index) != definitionParameterJavaSignatureType(d, index) {
 					return true
 				}
 			}
@@ -394,6 +395,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 		}
 
 		for i := 0; symbol.IsReserved(method.Name) ||
+			(!method.IsStatic && classNeedsReferenceIdentity(class, Ctx{}) && referenceIdentityReservedSelector(method.Name)) ||
 			collidesWithGoFuncName(method) ||
 			classHasOtherFieldName(class, method, method.Name) ||
 			(method.IsStatic && packageHasOtherStaticFieldName(packageScope, method, method.Name)) ||

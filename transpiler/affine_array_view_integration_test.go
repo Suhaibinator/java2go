@@ -166,7 +166,7 @@ func TestGenerateAffineArrayViewHelper_IsNilSafeAndAliasesBackingSlice(t *testin
 	for _, fragment := range []string{
 		"func (mx *Matrix) Java2goAffineView2Values() ([]float64, int32)",
 		"if mx == nil { return nil, 0 }",
-		"return mx.values, mx.size",
+		"return stdjava.PrimitiveArrayElements(mx.values), mx.size",
 	} {
 		if !strings.Contains(flat, fragment) {
 			t.Fatalf("generated affine view helper is missing %q:\n%s", fragment, out)

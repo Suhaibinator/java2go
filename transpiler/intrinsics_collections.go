@@ -324,13 +324,13 @@ func registerCollectionsStatics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "SortSlice", args[0])
+		return stdjavaCall(ctx, "SortArray", args[0])
 	})
 	registerStaticIntrinsic("Arrays", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "SliceToString", args[0])
+		return stdjavaCall(ctx, "ArrayToString", args[0])
 	})
 	registerStaticIntrinsic("Arrays", "deepToString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {

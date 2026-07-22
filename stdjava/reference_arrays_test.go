@@ -8,6 +8,56 @@ const (
 	testSiblingType TypeID = "tests.Sibling"
 )
 
+var (
+	primitiveTypeIDAllocationInput = "int"
+	primitiveTypeIDAllocationSink  TypeID
+)
+
+func TestPrimitiveTypeIDReturnsCanonicalDescriptorsWithoutKnownLookupAllocations(t *testing.T) {
+	tests := []struct {
+		name string
+		want TypeID
+	}{
+		{name: "boolean", want: PrimitiveBooleanTypeID},
+		{name: "byte", want: PrimitiveByteTypeID},
+		{name: "short", want: PrimitiveShortTypeID},
+		{name: "char", want: PrimitiveCharTypeID},
+		{name: "int", want: PrimitiveIntTypeID},
+		{name: "long", want: PrimitiveLongTypeID},
+		{name: "float", want: PrimitiveFloatTypeID},
+		{name: "double", want: PrimitiveDoubleTypeID},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := PrimitiveTypeID(testCase.name); got != testCase.want {
+				t.Fatalf("PrimitiveTypeID(%q) = %q, want canonical %q", testCase.name, got, testCase.want)
+			}
+			if got := PrimitiveTypeID(" \t" + testCase.name + "\n"); got != testCase.want {
+				t.Fatalf("trimmed PrimitiveTypeID(%q) = %q, want %q", testCase.name, got, testCase.want)
+			}
+		})
+	}
+
+	if got := ArrayTypeID(ArrayTypeID(PrimitiveTypeID("int"))); got != TypeID("array:array:primitive:int") {
+		t.Fatalf("nested primitive descriptor = %q, want array:array:primitive:int", got)
+	}
+	for input, want := range map[string]TypeID{
+		" word ": "primitive:word",
+		"INT":    "primitive:INT",
+		"":       "primitive:",
+	} {
+		if got := PrimitiveTypeID(input); got != want {
+			t.Fatalf("fallback PrimitiveTypeID(%q) = %q, want %q", input, got, want)
+		}
+	}
+
+	if allocations := testing.AllocsPerRun(1000, func() {
+		primitiveTypeIDAllocationSink = PrimitiveTypeID(primitiveTypeIDAllocationInput)
+	}); allocations != 0 {
+		t.Fatalf("known PrimitiveTypeID lookup allocated %.2f objects per call, want zero", allocations)
+	}
+}
+
 // These deliberately use distinct Go view types, matching generated embedded
 // class views. Using one Go struct for Base/Child/Sibling would let a direct
 // type assertion conceal failures in ObjectInfo view resolution.
@@ -160,7 +210,7 @@ func TestReferenceArrayAssignPreservesJavaOrderAndStaticResultView(t *testing.T)
 	result := ReferenceArrayAssign[*referenceArrayBaseView](array, 0, func() *referenceArrayChildView {
 		rhsCalls++
 		return child
-	}, testBaseType)
+	}(), testBaseType)
 	if rhsCalls != 1 || result != child.referenceArrayBaseView {
 		t.Fatalf("assignment result = %#v after %d RHS calls, want Base view after one call", result, rhsCalls)
 	}
@@ -174,7 +224,7 @@ func TestReferenceArrayAssignPreservesJavaOrderAndStaticResultView(t *testing.T)
 			_ = ReferenceArrayAssign[any](target, index, func() any {
 				calls++
 				return child
-			}, ObjectTypeID)
+			}(), ObjectTypeID)
 		}()
 		if !CaughtAs(recovered, wantException) {
 			t.Fatalf("%s panic = %T (%v), want %s", name, recovered, recovered, wantException)
@@ -200,7 +250,7 @@ func TestReferenceArrayAssignPreservesJavaOrderAndStaticResultView(t *testing.T)
 			defer func() { recovered = recover() }()
 			_ = ReferenceArrayAssign[any](testCase.target, testCase.index, func() any {
 				panic(rhsPanic)
-			}, ObjectTypeID)
+			}(), ObjectTypeID)
 		}()
 		if recovered != rhsPanic {
 			t.Fatalf("%s panic = %T (%v), want RHS panic", testCase.name, recovered, recovered)
@@ -215,7 +265,7 @@ func TestReferenceArrayAssignPreservesJavaOrderAndStaticResultView(t *testing.T)
 		_ = ReferenceArrayAssign[*referenceArrayBaseView](array, 0, func() *referenceArrayBaseView {
 			storeCalls++
 			return base
-		}, testBaseType)
+		}(), testBaseType)
 	}()
 	if !CaughtAs(recovered, "ArrayStoreException") || storeCalls != 1 {
 		t.Fatalf("covariant rejection = %T (%v) after %d RHS calls, want ArrayStoreException after one", recovered, recovered, storeCalls)
@@ -229,7 +279,7 @@ func TestPrimitiveArraysRetainRuntimeTypeThroughNestedAndErasedViews(t *testing.
 	intType := PrimitiveTypeID("int")
 	charType := PrimitiveTypeID("char")
 	ints := NewPrimitiveArray[int32](2, intType)
-	PrimitiveArrayAssign(ints, 0, func() int32 { return 7 })
+	PrimitiveArrayAssign(ints, 0, int32(7))
 	if PrimitiveArrayGet(ints, 0) != 7 || PrimitiveArrayLength(ints) != 2 {
 		t.Fatal("primitive array lost its stored element or length")
 	}

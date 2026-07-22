@@ -86,6 +86,73 @@ func SortSlice[T cmp.Ordered](elements []T) {
 	})
 }
 
+// SortArray is the generated Arrays.sort bridge for descriptor-bearing Java
+// arrays. Primitive wrappers retain a direct native-slice sort; reference
+// arrays support the value-backed comparable types currently emitted by the
+// transpiler (String and boxed primitive scalars).
+func SortArray(array any) {
+	switch values := array.(type) {
+	case *PrimitiveArray[int8]:
+		SortSlice(values.Elements)
+	case *PrimitiveArray[int16]:
+		SortSlice(values.Elements)
+	case *PrimitiveArray[int32]:
+		SortSlice(values.Elements)
+	case *PrimitiveArray[int64]:
+		SortSlice(values.Elements)
+	case *PrimitiveArray[float32]:
+		SortSlice(values.Elements)
+	case *PrimitiveArray[float64]:
+		SortSlice(values.Elements)
+	case *ReferenceArray:
+		if values == nil {
+			panic(NewNullPointerException("Arrays.sort on null"))
+		}
+		sort.SliceStable(values.elements, func(i, j int) bool {
+			return javaComparableLess(values.elements[i], values.elements[j])
+		})
+	default:
+		reflected := reflect.ValueOf(array)
+		if !reflected.IsValid() || ((reflected.Kind() == reflect.Pointer || reflected.Kind() == reflect.Slice) && reflected.IsNil()) {
+			panic(NewNullPointerException("Arrays.sort on null"))
+		}
+		if reflected.Kind() != reflect.Slice {
+			panic(NewIllegalArgumentException("Arrays.sort requires an array"))
+		}
+		sort.Slice(array, func(i, j int) bool {
+			return javaComparableLess(reflected.Index(i).Interface(), reflected.Index(j).Interface())
+		})
+	}
+}
+
+func javaComparableLess(left, right any) bool {
+	switch left := left.(type) {
+	case string:
+		right, ok := right.(string)
+		return ok && left < right
+	case int8:
+		right, ok := right.(int8)
+		return ok && left < right
+	case int16:
+		right, ok := right.(int16)
+		return ok && left < right
+	case int32:
+		right, ok := right.(int32)
+		return ok && left < right
+	case int64:
+		right, ok := right.(int64)
+		return ok && left < right
+	case float32:
+		right, ok := right.(float32)
+		return ok && left < right
+	case float64:
+		right, ok := right.(float64)
+		return ok && left < right
+	default:
+		panic(NewClassCastException("array element is not naturally comparable"))
+	}
+}
+
 // SliceToString returns the Java Arrays.toString form of a slice, e.g.
 // "[a, b, c]".
 func SliceToString[T any](elements []T) string {
@@ -94,6 +161,60 @@ func SliceToString[T any](elements []T) string {
 		parts[i] = StringValueOf(e)
 	}
 	return "[" + strings.Join(parts, ", ") + "]"
+}
+
+// ArrayToString is the descriptor-bearing Arrays.toString bridge. Unlike
+// deepToString it renders one level and applies String.valueOf to each element.
+func ArrayToString(value any) string {
+	if value == nil {
+		return "null"
+	}
+	var elements []any
+	switch array := value.(type) {
+	case *ReferenceArray:
+		if array == nil {
+			return "null"
+		}
+		elements = array.elements
+	case *PrimitiveArray[bool]:
+		return primitiveArrayToString(array)
+	case *PrimitiveArray[int8]:
+		return primitiveArrayToString(array)
+	case *PrimitiveArray[int16]:
+		return primitiveArrayToString(array)
+	case *PrimitiveArray[int32]:
+		return primitiveArrayToString(array)
+	case *PrimitiveArray[int64]:
+		return primitiveArrayToString(array)
+	case *PrimitiveArray[float32]:
+		return primitiveArrayToString(array)
+	case *PrimitiveArray[float64]:
+		return primitiveArrayToString(array)
+	default:
+		reflected := reflect.ValueOf(value)
+		if (reflected.Kind() == reflect.Pointer || reflected.Kind() == reflect.Slice) && reflected.IsNil() {
+			return "null"
+		}
+		if reflected.Kind() != reflect.Array && reflected.Kind() != reflect.Slice {
+			return StringValueOf(value)
+		}
+		elements = make([]any, reflected.Len())
+		for index := range elements {
+			elements[index] = reflected.Index(index).Interface()
+		}
+	}
+	parts := make([]string, len(elements))
+	for index, element := range elements {
+		parts[index] = StringValueOf(element)
+	}
+	return "[" + strings.Join(parts, ", ") + "]"
+}
+
+func primitiveArrayToString[T any](array *PrimitiveArray[T]) string {
+	if array == nil {
+		return "null"
+	}
+	return SliceToString(array.Elements)
 }
 
 // ArrayDeepToString returns the recursive Java Arrays.deepToString form of a
@@ -123,6 +244,34 @@ func appendDeepArrayString(out *strings.Builder, value reflect.Value, active map
 	if !value.IsValid() {
 		out.WriteString("null")
 		return
+	}
+	if value.CanInterface() {
+		switch array := value.Interface().(type) {
+		case *ReferenceArray:
+			appendReferenceArrayString(out, array, active)
+			return
+		case *PrimitiveArray[bool]:
+			appendPrimitiveArrayString(out, array, active)
+			return
+		case *PrimitiveArray[int8]:
+			appendPrimitiveArrayString(out, array, active)
+			return
+		case *PrimitiveArray[int16]:
+			appendPrimitiveArrayString(out, array, active)
+			return
+		case *PrimitiveArray[int32]:
+			appendPrimitiveArrayString(out, array, active)
+			return
+		case *PrimitiveArray[int64]:
+			appendPrimitiveArrayString(out, array, active)
+			return
+		case *PrimitiveArray[float32]:
+			appendPrimitiveArrayString(out, array, active)
+			return
+		case *PrimitiveArray[float64]:
+			appendPrimitiveArrayString(out, array, active)
+			return
+		}
 	}
 
 	if value.Kind() != reflect.Array && value.Kind() != reflect.Slice {
@@ -154,6 +303,50 @@ func appendDeepArrayString(out *strings.Builder, value reflect.Value, active map
 			out.WriteString(", ")
 		}
 		appendDeepArrayString(out, value.Index(index), active)
+	}
+	out.WriteByte(']')
+}
+
+func appendReferenceArrayString(out *strings.Builder, array *ReferenceArray, active map[deepArrayVisit]bool) {
+	if array == nil {
+		out.WriteString("null")
+		return
+	}
+	visit := deepArrayVisit{typeOf: reflect.TypeOf(array), pointer: reflect.ValueOf(array).Pointer()}
+	if active[visit] {
+		out.WriteString("[...]")
+		return
+	}
+	active[visit] = true
+	defer delete(active, visit)
+	out.WriteByte('[')
+	for index, element := range array.elements {
+		if index > 0 {
+			out.WriteString(", ")
+		}
+		appendDeepArrayString(out, reflect.ValueOf(element), active)
+	}
+	out.WriteByte(']')
+}
+
+func appendPrimitiveArrayString[T any](out *strings.Builder, array *PrimitiveArray[T], active map[deepArrayVisit]bool) {
+	if array == nil {
+		out.WriteString("null")
+		return
+	}
+	visit := deepArrayVisit{typeOf: reflect.TypeOf(array), pointer: reflect.ValueOf(array).Pointer()}
+	if active[visit] {
+		out.WriteString("[...]")
+		return
+	}
+	active[visit] = true
+	defer delete(active, visit)
+	out.WriteByte('[')
+	for index, element := range array.Elements {
+		if index > 0 {
+			out.WriteString(", ")
+		}
+		appendDeepArrayString(out, reflect.ValueOf(element), active)
 	}
 	out.WriteByte(']')
 }

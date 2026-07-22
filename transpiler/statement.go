@@ -192,6 +192,21 @@ func lowerSimpleArrayAssignmentCall(node *sitter.Node, source []byte, ctx Ctx) (
 	rhsCtx.expectedTypeRoot = rhsNode
 	rhs := ParseExpr(rhsNode, source, rhsCtx)
 	rhs = coerceArgumentToExpectedType(rhs, rhsNode, lhsJavaType, ctx, source)
+	if _, componentType, componentID, reified := expressionUsesReifiedReferenceArray(arrayNode, ctx, source); reified {
+		return stdjavaGenericCall(ctx, "ReferenceArrayAssign", []ast.Expr{componentType}, []ast.Expr{
+			ParseExpr(arrayNode, source, ctx),
+			ParseExpr(indexNode, source, ctx),
+			rhs,
+			componentID,
+		}), true
+	}
+	if _, componentType, _, primitive := expressionUsesPrimitiveArray(arrayNode, ctx, source); primitive {
+		return stdjavaGenericCall(ctx, "PrimitiveArrayAssign", []ast.Expr{componentType}, []ast.Expr{
+			ParseExpr(arrayNode, source, ctx),
+			ParseExpr(indexNode, source, ctx),
+			rhs,
+		}), true
+	}
 
 	return stdjavaCall(ctx, "ArraySet",
 		ParseExpr(arrayNode, source, ctx),
@@ -255,6 +270,46 @@ func inferEnhancedForElementJavaType(valueNode *sitter.Node, source []byte, ctx 
 		return "", false
 	}
 	return typeArgs[0], true
+}
+
+// enhancedForReferenceElementView converts only the element currently selected
+// by a reference-array range. Reference loop variables request their declared
+// Java view (for example a Base view while iterating Child[]); primitive loop
+// variables first read the boxed component view and then apply Java's permitted
+// unboxing/widening conversion.
+func enhancedForReferenceElementView(
+	raw ast.Expr,
+	componentJavaType string,
+	componentGoType ast.Expr,
+	componentTypeID ast.Expr,
+	bindingJavaType string,
+	ctx Ctx,
+) ast.Expr {
+	bindingJavaType = strings.TrimSpace(bindingJavaType)
+	if bindingJavaType == "" {
+		bindingJavaType = componentJavaType
+	}
+
+	if expectedPrimitive, primitiveBinding := javaPrimitiveType(bindingJavaType); primitiveBinding {
+		value := ast.Expr(stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{componentGoType}, []ast.Expr{raw, componentTypeID}))
+		if actualPrimitive, boxed := ternaryBoxedPrimitive(componentJavaType); boxed && actualPrimitive != expectedPrimitive {
+			if _, widening := javaPrimitiveWideningDistance(actualPrimitive, expectedPrimitive); widening {
+				if conversion := goPrimitiveConversionName(expectedPrimitive); conversion != "" {
+					return &ast.CallExpr{Fun: &ast.Ident{Name: conversion}, Args: []ast.Expr{value}}
+				}
+			}
+		}
+		return value
+	}
+
+	bindingGoType := javaTypeStringToGoTypeExpr(bindingJavaType, inScopeTypeParameters(ctx), ctx)
+	bindingGoType = abstractClassToInterface(bindingGoType, bindingJavaType, ctx)
+	bindingTypeID, ok := javaTypeDescriptorExpr(bindingJavaType, ctx)
+	if !ok {
+		bindingGoType = componentGoType
+		bindingTypeID = componentTypeID
+	}
+	return stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{bindingGoType}, []ast.Expr{raw, bindingTypeID})
 }
 
 // lowerSimpleLocalNumericCompoundAssignmentStmt handles the statement-only
@@ -827,6 +882,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 
 		loopCtx := ctx.Clone()
+		bindingJavaType := ""
 		if nameNode != nil && typeNode != nil {
 			originalType := typeNode.Content(source)
 			parsedType := symbol.NodeToStr(astutil.ParseType(typeNode, source))
@@ -836,16 +892,40 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					parsedType = symbol.NodeToStr(javaTypeStringToGoTypeExpr(inferredType, inScopeTypeParameters(ctx), ctx))
 				}
 			}
+			bindingJavaType = originalType
 			recordLocalVariableDefinition(loopCtx, nameNode.Content(source), originalType, parsedType)
 		}
 
-		rangeValue := ast.Expr(&ast.Ident{Name: "_"})
+		bindingValue := ast.Expr(&ast.Ident{Name: "_"})
 		if nameNode != nil {
-			rangeValue = ParseExpr(nameNode, source, loopCtx)
+			bindingValue = ParseExpr(nameNode, source, loopCtx)
 		}
+		rangeValue := bindingValue
 		rangeExpr := ast.Expr(&ast.BadExpr{})
+		var referenceBinding ast.Stmt
 		if valueNode != nil {
 			rangeExpr = ParseExpr(valueNode, source, ctx)
+			if componentJavaType, componentGoType, componentTypeID, reified := expressionUsesReifiedReferenceArray(valueNode, ctx, source); reified {
+				usedNames := affineLoopUsedNames(node, source, ctx)
+				rawName := synchronizedUniqueLocalName(fmt.Sprintf("__java2goEnhancedForElement_%d", node.StartByte()), usedNames)
+				rawValue := &ast.Ident{Name: rawName}
+				rangeValue = rawValue
+				rangeExpr = stdjavaCall(ctx, "ReferenceArrayIterationElements", rangeExpr)
+				referenceBinding = &ast.AssignStmt{
+					Lhs: []ast.Expr{bindingValue},
+					Tok: token.DEFINE,
+					Rhs: []ast.Expr{enhancedForReferenceElementView(
+						rawValue,
+						componentJavaType,
+						componentGoType,
+						componentTypeID,
+						bindingJavaType,
+						ctx,
+					)},
+				}
+			} else if _, _, _, primitive := expressionUsesPrimitiveArray(valueNode, ctx, source); primitive {
+				rangeExpr = stdjavaCall(ctx, "PrimitiveArrayIterationElements", rangeExpr)
+			}
 			// stdjava List/Set are pointer types, not slices, so an enhanced-for
 			// over them ranges over their Slice() view instead.
 			if collectionNeedsSliceForRange(valueNode, ctx, source) {
@@ -856,13 +936,30 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 		rangeBody := &ast.BlockStmt{}
 		if bodyNode != nil {
-			rangeBody = ParseStmt(bodyNode, source, loopCtx).(*ast.BlockStmt)
+			parsedBody := ParseStmt(bodyNode, source, loopCtx)
+			if block, ok := parsedBody.(*ast.BlockStmt); ok {
+				rangeBody = block
+			} else {
+				rangeBody.List = []ast.Stmt{parsedBody}
+			}
 		}
-		if ident, ok := rangeValue.(*ast.Ident); ok && ident.Name != "_" {
-			rangeBody.List = append(unusedLocalDiscardStatements(&ast.AssignStmt{
+		if referenceBinding != nil {
+			rangeBody.List = append([]ast.Stmt{referenceBinding}, rangeBody.List...)
+		}
+		if ident, ok := bindingValue.(*ast.Ident); ok && ident.Name != "_" {
+			bindingDeclaration := ast.Stmt(&ast.AssignStmt{
 				Lhs: []ast.Expr{ident},
 				Tok: token.DEFINE,
-			}, node, source), rangeBody.List...)
+			})
+			if referenceBinding != nil {
+				bindingDeclaration = referenceBinding
+			}
+			discards := unusedLocalDiscardStatements(bindingDeclaration, node, source)
+			if referenceBinding != nil && len(rangeBody.List) > 0 {
+				rangeBody.List = append(append([]ast.Stmt{rangeBody.List[0]}, discards...), rangeBody.List[1:]...)
+			} else {
+				rangeBody.List = append(discards, rangeBody.List...)
+			}
 		}
 
 		return &ast.RangeStmt{
@@ -1345,6 +1442,7 @@ func lowerInstanceofPattern(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt
 	nameNode := node.ChildByFieldName("name")
 
 	bindName := nameNode.Content(source)
+	rightJavaType := right.Content(source)
 	assertType := instanceofAssertTypeExpr(right.Content(source), ctx)
 	if assertType == nil {
 		assertType = &ast.Ident{Name: "any"}
@@ -1353,15 +1451,23 @@ func lowerInstanceofPattern(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt
 	bodyCtx := ctx.Clone()
 	recordLocalVariableDefinition(bodyCtx, bindName, right.Content(source), symbol.NodeToStr(assertType))
 
+	var patternValue ast.Expr = &ast.TypeAssertExpr{
+		X:    &ast.CallExpr{Fun: &ast.Ident{Name: "any"}, Args: []ast.Expr{instanceofSubjectExpr(left, rightJavaType, source, ctx)}},
+		Type: assertType,
+	}
+	if _, rank := javaArrayTypeParts(rightJavaType); rank > 0 {
+		if descriptor, ok := javaTypeDescriptorExpr(rightJavaType, ctx); ok {
+			patternValue = stdjavaGenericCall(ctx, "JavaArrayPattern", []ast.Expr{assertType}, []ast.Expr{
+				instanceofSubjectExpr(left, rightJavaType, source, ctx),
+				descriptor,
+			})
+		}
+	}
+
 	initStmt := &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.Ident{Name: bindName}, &ast.Ident{Name: "ok"}},
 		Tok: token.DEFINE,
-		Rhs: []ast.Expr{
-			&ast.TypeAssertExpr{
-				X:    &ast.CallExpr{Fun: &ast.Ident{Name: "any"}, Args: []ast.Expr{instanceofSubjectExpr(left, right.Content(source), source, ctx)}},
-				Type: assertType,
-			},
-		},
+		Rhs: []ast.Expr{patternValue},
 	}
 	return initStmt, &ast.Ident{Name: "ok"}, bodyCtx
 }

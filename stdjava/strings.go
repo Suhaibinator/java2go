@@ -54,6 +54,18 @@ func StringSplit(s, pattern string) []string {
 	return parts[:end]
 }
 
+// StringSplitArray is the generated Java-array ABI for String.split. The
+// slice-returning StringSplit remains available to runtime callers, while
+// transpiled code retains String[] identity, covariance, and cast behavior.
+func StringSplitArray(s, pattern string) *ReferenceArray {
+	parts := StringSplit(s, pattern)
+	elements := make([]any, len(parts))
+	for index, part := range parts {
+		elements[index] = part
+	}
+	return ReferenceArrayLiteral(StringTypeID, elements...)
+}
+
 // StringCharAt returns the character at the given index, matching Java's
 // String.charAt which returns a char. We model a Java char as a rune. Indexing
 // is by rune position rather than byte offset so that multi-byte characters are

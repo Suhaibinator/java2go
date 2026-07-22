@@ -843,9 +843,11 @@ func TestAffineWholeRangeRuntime(t *testing.T) {
     if gotAlias != wantAlias {
         t.Fatalf("Blocked(alias) = %d, reference %d", gotAlias, wantAlias)
     }
-    for index := range actualAlias.values {
-        if actualAlias.values[index] != referenceAlias.values[index] {
-            t.Fatalf("Blocked(alias) values[%d] = %d, reference %d", index, actualAlias.values[index], referenceAlias.values[index])
+    actualValues := actualAlias.values.Elements
+    referenceValues := referenceAlias.values.Elements
+    for index := range actualValues {
+        if actualValues[index] != referenceValues[index] {
+            t.Fatalf("Blocked(alias) values[%d] = %d, reference %d", index, actualValues[index], referenceValues[index])
         }
     }
 

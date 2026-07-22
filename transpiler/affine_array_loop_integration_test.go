@@ -798,10 +798,14 @@ public class BinderLoopProgram {
 	}
 	runGoTestInTempModule(t, out, `
 package main
-import "testing"
+import (
+    "testing"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestNestedBinderFallback(t *testing.T) {
-    if got := Run(Grid(), []int32{1}); got != 0 {
-        t.Fatalf("Run(Grid(), []int32{1}) = %d, want 0", got)
+    source := stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveTypeID("int"), 1)
+    if got := Run(Grid(), source); got != 0 {
+        t.Fatalf("Run(Grid(), int[]{1}) = %d, want 0", got)
     }
 }
 `)
@@ -840,7 +844,7 @@ public class App {
 	if strings.Contains(flat, "NewNullPointerException") || strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("cross-package alias shadowed by nested binder unexpectedly used the fast path:\n%s", appOut)
 	}
-	if !strings.Contains(flat, "for _, p := range source") || !strings.Contains(flat, "grid.GetJava2goExecution(__java2goExecution, 0, 0)") {
+	if !strings.Contains(flat, "for _, p := range stdjava.PrimitiveArrayIterationElements(source)") || !strings.Contains(flat, "grid.GetJava2goExecution(__java2goExecution, 0, 0)") {
 		t.Fatalf("cross-package alias collision did not retain ordinary dispatch:\n%s", appOut)
 	}
 
@@ -861,10 +865,14 @@ public class App {
 	}
 	testPath := filepath.Join(moduleRoot, "app", "affine_alias_test.go")
 	if err := os.WriteFile(testPath, []byte(`package app
-import "testing"
+import (
+    "testing"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestAliasCollisionFallback(t *testing.T) {
-    if got := Run(Grid(), []int32{1}); got != 0 {
-        t.Fatalf("Run(Grid(), []int32{1}) = %d, want 0", got)
+    source := stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveTypeID("int"), 1)
+    if got := Run(Grid(), source); got != 0 {
+        t.Fatalf("Run(Grid(), int[]{1}) = %d, want 0", got)
     }
 }
 `), 0o644); err != nil {

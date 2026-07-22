@@ -353,6 +353,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "array_initializer":
 		// A literal that initilzes an array, such as `{1, 2, 3}`
 		items := []ast.Expr{}
+		reifiedComponent, reifiedComponentType, reifiedComponentID, reified := reifiedReferenceArrayComponentInfo(ctx.expectedType, ctx)
+		primitiveComponent, primitiveArray := javaPrimitiveArrayComponent(ctx.expectedType)
+		var primitiveComponentType ast.Expr
+		var primitiveComponentID ast.Expr
+		if primitiveArray {
+			primitiveComponentType = javaTypeStringToGoTypeExpr(primitiveComponent, inScopeTypeParameters(ctx), ctx)
+			primitiveComponentID, _ = javaPrimitiveTypeIDExpr(primitiveComponent, ctx)
+		}
 		arrayType, hasArrayType := ctx.lastType.(*ast.ArrayType)
 		if !hasArrayType && strings.HasSuffix(strings.TrimSpace(ctx.expectedType), "[]") {
 			inferredType := javaTypeStringToGoTypeExpr(ctx.expectedType, inScopeTypeParameters(ctx), ctx)
@@ -361,6 +369,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		expectedElementType := strings.TrimSpace(ctx.expectedType)
 		if strings.HasSuffix(expectedElementType, "[]") {
 			expectedElementType = strings.TrimSpace(strings.TrimSuffix(expectedElementType, "[]"))
+		}
+		if reified {
+			expectedElementType = reifiedComponent
+		} else if primitiveArray {
+			expectedElementType = primitiveComponent
 		}
 		for _, c := range nodeutil.NamedChildrenOf(node) {
 			itemCtx := ctx.Clone()
@@ -376,6 +389,18 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			item = coerceArgumentToExpectedType(item, c, expectedElementType, ctx, source)
 			item = boxPrimitiveForObject(item, c, expectedElementType, ctx, source)
 			items = append(items, item)
+		}
+
+		// A source reference array retains its runtime component independently of
+		// any covariant target type. Values remain ordinary generated object views;
+		// ReferenceArray performs the nominal store checks.
+		if reified {
+			args := append([]ast.Expr{reifiedComponentID}, items...)
+			return stdjavaGenericCall(ctx, "ReferenceArrayLiteralOf", []ast.Expr{reifiedComponentType}, args)
+		}
+		if primitiveArray {
+			args := append([]ast.Expr{primitiveComponentID}, items...)
+			return stdjavaGenericCall(ctx, "PrimitiveArrayLiteral", []ast.Expr{primitiveComponentType}, args)
 		}
 
 		// ArrayLiteral retains allocation identity for an empty initializer while
@@ -440,18 +465,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// built-in exception types and user-defined ones.
 			if argCount == 0 && (methodName == "getCause" || methodName == "getMessage" || methodName == "getSuppressed" || methodName == "printStackTrace") {
 				if javaType, ok := inferExprJavaType(objectNode, ctx, source); ok && isExceptionJavaType(ctx, javaType) {
+					receiver := ParseExpr(objectNode, source, ctx)
+					if methodName == "getSuppressed" {
+						return stdjavaCall(ctx, "SuppressedArray", stdjavaCall(ctx, "GetSuppressed", receiver))
+					}
 					runtimeFn := "GetMessage"
 					switch methodName {
 					case "getCause":
 						runtimeFn = "GetCause"
-					case "getSuppressed":
-						runtimeFn = "GetSuppressed"
 					case "printStackTrace":
 						runtimeFn = "PrintStackTrace"
 					}
 					return &ast.CallExpr{
 						Fun:  stdjavaQualifiedExpr(runtimeFn, ctx),
-						Args: []ast.Expr{ParseExpr(objectNode, source, ctx)},
+						Args: []ast.Expr{receiver},
 					}
 				}
 			}
@@ -505,11 +532,24 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			if instanceResolution != nil {
 				expectedArgTypes = definitionParameterOriginalTypes(instanceResolution.def)
+				if genericArrayFormalNeedsExplicitTypeArguments(instanceResolution.def) {
+					expectedArgTypes = genericArrayInvocationExpectedTypes(instanceResolution.def, node, ctx, source)
+				}
 			} else if staticResolution != nil {
 				expectedArgTypes = definitionParameterOriginalTypes(staticResolution.def)
+				if genericArrayFormalNeedsExplicitTypeArguments(staticResolution.def) {
+					expectedArgTypes = genericArrayInvocationExpectedTypes(staticResolution.def, node, ctx, source)
+				}
 			}
-			args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, expectedArgTypes)
+			selectedResolution := instanceResolution
+			if selectedResolution == nil {
+				selectedResolution = staticResolution
+			}
+			args, expandVarargsArray := parseResolvedInvocationArguments(selectedResolution, argListNode, source, ctx, expectedArgTypes)
 			typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx), ctx)
+			if len(typeArgs) == 0 && staticResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(staticResolution.def) {
+				typeArgs = inferMethodTypeArguments(staticResolution.def, node, ctx, source)
+			}
 
 			// If this is a static call on a class name (e.g., Utils.<T>id(...)),
 			// rewrite it to a plain function call to match how static methods are emitted.
@@ -517,14 +557,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				staticPkg := findJavaPackageForClassScope(staticResolution.owner)
 				fun := qualifiedNameExpr(executionMethodCallName(staticResolution.def, staticResolution.owner, ctx), staticPkg, ctx)
 				fun = applyTypeArguments(fun, typeArgs)
-				return &ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, staticResolution.def, args)}
+				return markDirectVarargsExpansion(
+					&ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, staticResolution.def, args)},
+					expandVarargsArray,
+				)
 			}
 
-			if rewritten := rewriteAffineArrayAccessorInvocation(node, objectNode, objectExpr, target, instanceResolution, args, ctx, source); rewritten != nil {
-				return rewritten
+			if !expandVarargsArray {
+				if rewritten := rewriteAffineArrayAccessorInvocation(node, objectNode, objectExpr, target, instanceResolution, args, ctx, source); rewritten != nil {
+					return rewritten
+				}
 			}
 
 			if rewritten := maybeRewriteInstanceGenericMethodInvocationWithTarget(target, instanceResolution, objectExpr, methodName, args, node, ctx, source); rewritten != nil {
+				markDirectVarargsExpansionExpr(rewritten, expandVarargsArray)
 				return rewritten
 			}
 
@@ -537,7 +583,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					// still evaluated before the arguments, even though its value is ignored.
 					fun := qualifiedNameExpr(executionMethodCallName(staticResolution.def, staticResolution.owner, ctx), findJavaPackageForClassScope(staticResolution.owner), ctx)
 					fun = applyTypeArguments(fun, typeArgs)
-					call := &ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, staticResolution.def, args)}
+					call := markDirectVarargsExpansion(
+						&ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, staticResolution.def, args)},
+						expandVarargsArray,
+					)
 					if staged := stageStaticInvocationQualifier(node, objectExpr, staticResolution, call, ctx, source); staged != nil {
 						return staged
 					}
@@ -553,15 +602,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				(target.classScope.IsInterface || target.classScope.IsAbstract)
 			if companionInterfaceReceiver && instanceResolution != nil && executionExpr(ctx) != nil {
 				if dispatched := executionCompanionDispatchInvocation(
-					node, objectNode, objectExpr, target, instanceResolution, args, ctx, source,
+					node, objectNode, objectExpr, target, instanceResolution, args, expandVarargsArray, ctx, source,
 				); dispatched != nil {
 					return dispatched
 				}
 			}
 			if objectNode.Type() != "super" && !abstractInterfaceReceiver {
-				if dispatched := virtualDispatchMethodCall(objectExpr, instanceResolution, args, ctx); dispatched != nil {
+				if dispatched := virtualDispatchMethodCall(objectExpr, instanceResolution, args, expandVarargsArray, ctx); dispatched != nil {
 					buildDispatch := func(receiver ast.Expr, callArgs []ast.Expr) ast.Expr {
-						return virtualDispatchMethodCall(receiver, instanceResolution, callArgs, ctx)
+						return virtualDispatchMethodCall(receiver, instanceResolution, callArgs, expandVarargsArray, ctx)
 					}
 					if staged := stageVirtualDispatchInvocation(node, objectNode, objectExpr, instanceResolution, args, buildDispatch, ctx, source); staged != nil {
 						return staged
@@ -577,10 +626,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if instanceResolution != nil && companionInterfaceReceiver {
 				methodIdent = &ast.Ident{Name: instanceResolution.def.Name}
 			}
-			return &ast.CallExpr{
+			return markDirectVarargsExpansion(&ast.CallExpr{
 				Fun:  &ast.SelectorExpr{X: objectExpr, Sel: methodIdent},
 				Args: callArgs,
-			}
+			}, expandVarargsArray)
 		}
 		methodName := node.ChildByFieldName("name").Content(source)
 		argListNode := node.ChildByFieldName("arguments")
@@ -619,8 +668,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 		}
-		args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, expectedArgTypes)
+		if implicitInstanceResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(implicitInstanceResolution.def) {
+			expectedArgTypes = genericArrayInvocationExpectedTypes(implicitInstanceResolution.def, node, ctx, source)
+		} else if implicitStaticResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(implicitStaticResolution.def) {
+			expectedArgTypes = genericArrayInvocationExpectedTypes(implicitStaticResolution.def, node, ctx, source)
+		}
+		selectedResolution := implicitInstanceResolution
+		if selectedResolution == nil {
+			selectedResolution = implicitStaticResolution
+		}
+		args, expandVarargsArray := parseResolvedInvocationArguments(selectedResolution, argListNode, source, ctx, expectedArgTypes)
 		typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx), ctx)
+		if len(typeArgs) == 0 && implicitStaticResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(implicitStaticResolution.def) {
+			typeArgs = inferMethodTypeArguments(implicitStaticResolution.def, node, ctx, source)
+		}
 
 		// Unqualified invocation in Java is typically an implicit receiver call.
 		// Only do this in a non-static method/constructor body where the receiver
@@ -632,19 +693,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				classTypeArgs: typeParamExprs(ctx.currentClass.TypeParameterNames()),
 			}
 			if rewritten := maybeRewriteInstanceGenericMethodInvocationWithTarget(target, implicitInstanceResolution, recv, methodName, args, node, ctx, source); rewritten != nil {
+				markDirectVarargsExpansionExpr(rewritten, expandVarargsArray)
 				return rewritten
 			}
 			if implicitInstanceResolution != nil {
-				if dispatched := virtualDispatchMethodCall(recv, implicitInstanceResolution, args, ctx); dispatched != nil {
+				if dispatched := virtualDispatchMethodCall(recv, implicitInstanceResolution, args, expandVarargsArray, ctx); dispatched != nil {
 					return dispatched
 				}
-				return &ast.CallExpr{
+				return markDirectVarargsExpansion(&ast.CallExpr{
 					Fun: &ast.SelectorExpr{
 						X:   recv,
 						Sel: &ast.Ident{Name: executionMethodCallName(implicitInstanceResolution.def, implicitInstanceResolution.owner, ctx)},
 					},
 					Args: prependExecutionMethodArgument(ctx, implicitInstanceResolution.def, args),
-				}
+				}, expandVarargsArray)
 			}
 			// Unqualified call to an enclosing class's instance method from inside
 			// an inner class: route it through the enclosing-instance field, e.g.
@@ -660,7 +722,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if implicitStaticResolution != nil {
 				fun := qualifiedNameExpr(executionMethodCallName(implicitStaticResolution.def, implicitStaticResolution.owner, ctx), findJavaPackageForClassScope(implicitStaticResolution.owner), ctx)
 				fun = applyTypeArguments(fun, typeArgs)
-				return &ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, implicitStaticResolution.def, args)}
+				return markDirectVarargsExpansion(
+					&ast.CallExpr{Fun: fun, Args: prependExecutionMethodArgument(ctx, implicitStaticResolution.def, args)},
+					expandVarargsArray,
+				)
 			}
 		}
 
@@ -783,9 +848,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		// Find the respective constructor (if we have symbol info for that class).
 		var constructor *symbol.Definition
+		var constructorResolution *methodResolution
 		targetScope := resolveClassScopeByQualifiedName(ctx, className)
 		if resolution := findBestConstructor(targetScope, objectArguments, ctx, source); resolution != nil {
 			constructor = resolution.def
+			constructorResolution = resolution
 		}
 		targetPkg := resolveJavaPackageForType(ctx, className, targetScope)
 		var expectedArgumentTypes []string
@@ -794,7 +861,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		} else if stripJavaQualifier(className) == "Thread" && resolveClassScopeByQualifiedName(ctx, className) == nil {
 			expectedArgumentTypes = []string{"Runnable"}
 		}
-		arguments := parseArgumentListWithExpectedTypes(objectArguments, source, ctx, expectedArgumentTypes)
+		arguments, expandVarargsArray := parseResolvedInvocationArguments(constructorResolution, objectArguments, source, ctx, expectedArgumentTypes)
 
 		// Inner-class instantiation captures an enclosing instance. For the
 		// explicit `outer.new Inner()` form, the qualifier expression precedes the
@@ -867,10 +934,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				callArgs = prependExecutionArgument(ctx, callArgs)
 			}
 			funExpr := addTypeArgs(qualifiedNameExpr(constructorName, targetPkg, ctx), effectiveTypeArgs)
-			call := &ast.CallExpr{
+			call := markDirectVarargsExpansion(&ast.CallExpr{
 				Fun:  funExpr,
 				Args: callArgs,
-			}
+			}, expandVarargsArray)
 			if targetScope == nil || targetScope.Class == nil {
 				return call
 			}
@@ -926,7 +993,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			elementJavaType = typeNode.Content(source)
 		}
 		arrayJavaType, arrayDimensions := javaArrayCreationJavaType(node, source)
-		if expectedTypeTargetsExpression(ctx, node) && arrayDimensions > 0 &&
+		_, _, reifiedSourceArray := reifiedSourceReferenceArrayComponent(arrayJavaType, ctx)
+		_, primitiveLeafArray := javaPrimitiveArrayComponent(arrayJavaType)
+		if !reifiedSourceArray && !primitiveLeafArray && expectedTypeTargetsExpression(ctx, node) && arrayDimensions > 0 &&
 			javaTernaryAssignmentCompatible(arrayJavaType, ctx.expectedType, ctx) {
 			targetElement := strings.TrimSpace(ctx.expectedType)
 			for dimension := 0; dimension < arrayDimensions && strings.HasSuffix(targetElement, "[]"); dimension++ {
@@ -961,8 +1030,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				dimensions = append(dimensions, ParseExpr(child, source, ctx))
 			} else if child.Type() == "array_initializer" {
 				initCtx := ctx.Clone()
-				initCtx.lastType = genArrayType(elementType, arrayDimensions)
-				if typeNode != nil {
+				if reifiedSourceArray || primitiveLeafArray {
+					initCtx.lastType = reifiedReferenceArrayTypeExpr(ctx)
+					initCtx.expectedType = arrayJavaType
+					initCtx.expectedTypeRoot = child
+				} else {
+					initCtx.lastType = genArrayType(elementType, arrayDimensions)
+				}
+				if typeNode != nil && !reifiedSourceArray && !primitiveLeafArray {
 					initCtx.expectedType = elementJavaType
 					initCtx.expectedTypeRoot = child
 				}
@@ -976,6 +1051,30 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		if len(dimensions) == 0 {
 			panic("Array had zero dimensions")
+		}
+		if reifiedSourceArray {
+			_, componentType, componentID, ok := reifiedReferenceArrayComponentInfo(arrayJavaType, ctx)
+			if ok && arrayDimensions == 1 {
+				return stdjavaGenericCall(ctx, "NewReferenceArrayOf", []ast.Expr{componentType}, []ast.Expr{dimensions[0], componentID})
+			}
+		}
+		if primitiveLeafArray && arrayDimensions == 1 {
+			component, _ := javaPrimitiveArrayComponent(arrayJavaType)
+			componentType := javaTypeStringToGoTypeExpr(component, inScopeTypeParameters(ctx), ctx)
+			componentID, _ := javaPrimitiveTypeIDExpr(component, ctx)
+			return stdjavaGenericCall(ctx, "NewPrimitiveArray", []ast.Expr{componentType}, []ast.Expr{dimensions[0], componentID})
+		}
+		if arrayDimensions > 1 {
+			baseComponent, _ := javaArrayTypeParts(arrayJavaType)
+			baseComponentType := javaTypeStringToGoTypeExpr(baseComponent, inScopeTypeParameters(ctx), ctx)
+			baseComponentID, descriptorOK := javaTypeDescriptorExpr(baseComponent, ctx)
+			if descriptorOK {
+				args := []ast.Expr{baseComponentID, &ast.BasicLit{Kind: token.INT, Value: strconv.Itoa(arrayDimensions)}}
+				for _, dimension := range dimensions {
+					args = append(args, &ast.CallExpr{Fun: &ast.Ident{Name: "int32"}, Args: []ast.Expr{dimension}})
+				}
+				return stdjavaGenericCall(ctx, "NewMultiArrayOf", []ast.Expr{baseComponentType}, args)
+			}
 		}
 
 		return GenMultiDimArray(elementType, dimensions, arrayDimensions, ctx)
@@ -992,7 +1091,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			return &ast.BadExpr{}
 		}
 
-		assertType := instanceofAssertTypeExpr(right.Content(source), ctx)
+		rightJavaType := right.Content(source)
+		if _, rank := javaArrayTypeParts(rightJavaType); rank > 0 {
+			if descriptor, ok := javaTypeDescriptorExpr(rightJavaType, ctx); ok {
+				return stdjavaCall(ctx, "JavaArrayInstanceOf", ParseExpr(left, source, ctx), descriptor)
+			}
+		}
+
+		assertType := instanceofAssertTypeExpr(rightJavaType, ctx)
 		if assertType == nil {
 			return &ast.BadExpr{}
 		}
@@ -1121,6 +1227,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			return javaNullStringExpr()
 		}
 		valueExpr := ParseExpr(valueNode, source, ctx)
+		if _, rank := javaArrayTypeParts(targetJavaType); rank > 0 {
+			if descriptor, ok := javaTypeDescriptorExpr(targetJavaType, ctx); ok {
+				return stdjavaGenericCall(ctx, "JavaArrayCast", []ast.Expr{targetType}, []ast.Expr{valueExpr, descriptor})
+			}
+		}
 		typeAssert := func() ast.Expr {
 			return &ast.TypeAssertExpr{
 				X: &ast.CallExpr{
@@ -1164,6 +1275,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// receiver is known to be an array, so a user class field named
 			// "length" is left untouched.
 			if fieldNode.Content(source) == "length" && isArrayTypedExprNode(obj, ctx, source) {
+				if _, _, _, reified := expressionUsesReifiedReferenceArray(obj, ctx, source); reified {
+					return stdjavaCall(ctx, "ReferenceArrayLength", ParseExpr(obj, source, ctx))
+				}
+				if _, _, _, primitive := expressionUsesPrimitiveArray(obj, ctx, source); primitive {
+					return stdjavaCall(ctx, "PrimitiveArrayLength", ParseExpr(obj, source, ctx))
+				}
 				return &ast.CallExpr{
 					Fun:  &ast.Ident{Name: "int32"},
 					Args: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "len"}, Args: []ast.Expr{ParseExpr(obj, source, ctx)}}},
@@ -1214,6 +1331,32 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			Sel: &ast.Ident{Name: selName},
 		}
 	case "array_access":
+		arrayNode := node.ChildByFieldName("array")
+		indexNode := node.ChildByFieldName("index")
+		if arrayNode == nil && node.NamedChildCount() > 0 {
+			arrayNode = node.NamedChild(0)
+		}
+		if indexNode == nil && node.NamedChildCount() > 1 {
+			indexNode = node.NamedChild(1)
+		}
+		if arrayNode != nil && indexNode != nil {
+			if _, componentType, componentID, reified := expressionUsesReifiedReferenceArray(arrayNode, ctx, source); reified {
+				return stdjavaGenericCall(ctx, "ReferenceArrayGet", []ast.Expr{componentType}, []ast.Expr{
+					ParseExpr(arrayNode, source, ctx),
+					ParseExpr(indexNode, source, ctx),
+					componentID,
+				})
+			}
+			if _, _, _, primitive := expressionUsesPrimitiveArray(arrayNode, ctx, source); primitive {
+				return &ast.IndexExpr{
+					X: &ast.SelectorExpr{
+						X:   ParseExpr(arrayNode, source, ctx),
+						Sel: &ast.Ident{Name: "Elements"},
+					},
+					Index: goIndexExpr(indexNode, source, ctx),
+				}
+			}
+		}
 		return &ast.IndexExpr{
 			X: ParseExpr(node.NamedChild(0), source, ctx),
 			// Java index expressions are int32 now that int locals are pinned, but
@@ -2068,6 +2211,82 @@ func javaNullStringExpr() ast.Expr {
 	return &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote("\xffjava2go:null-string\x00")}
 }
 
+// lowerReferenceArrayCompoundAssignment stages a compound assignment through
+// the descriptor-bearing array API. The outer call evaluates and validates the
+// array/index and loads the old component before the RHS is evaluated; the
+// inner call computes, checks, stores, and returns the narrowed Java result.
+func lowerReferenceArrayCompoundAssignment(node *sitter.Node, lhsJavaType, operator string, source []byte, ctx Ctx) (ast.Expr, bool) {
+	if node == nil || node.ChildCount() < 3 || operator == "=" {
+		return nil, false
+	}
+	lhsNode, rhsNode := node.Child(0), node.Child(2)
+	if lhsNode == nil || lhsNode.Type() != "array_access" || rhsNode == nil {
+		return nil, false
+	}
+	arrayNode := lhsNode.ChildByFieldName("array")
+	indexNode := lhsNode.ChildByFieldName("index")
+	if arrayNode == nil && lhsNode.NamedChildCount() > 0 {
+		arrayNode = lhsNode.NamedChild(0)
+	}
+	if indexNode == nil && lhsNode.NamedChildCount() > 1 {
+		indexNode = lhsNode.NamedChild(1)
+	}
+	if arrayNode == nil || indexNode == nil {
+		return nil, false
+	}
+	_, componentType, componentID, reified := expressionUsesReifiedReferenceArray(arrayNode, ctx, source)
+	if !reified {
+		return nil, false
+	}
+
+	rhsJavaType, known := inferExprJavaType(rhsNode, ctx, source)
+	if !known || strings.TrimSpace(rhsJavaType) == "" {
+		rhsJavaType = "Object"
+	}
+	rhsType := javaTypeStringToGoTypeExpr(rhsJavaType, inScopeTypeParameters(ctx), ctx)
+	value, ok := compoundAssignmentValue(operator, &ast.Ident{Name: "old"}, &ast.Ident{Name: "rhs"}, lhsJavaType, rhsJavaType, ctx)
+	if !ok {
+		return nil, false
+	}
+	inner := &ast.FuncLit{
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: "rhs"}}, Type: rhsType}}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: componentType}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "value"}}, Tok: token.DEFINE, Rhs: []ast.Expr{value}},
+			&ast.ExprStmt{X: stdjavaCall(ctx, "ReferenceArraySet", &ast.Ident{Name: "array"}, &ast.Ident{Name: "index"}, &ast.Ident{Name: "value"})},
+			&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "value"}}},
+		}},
+	}
+	outer := &ast.FuncLit{
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{List: []*ast.Field{
+				{Names: []*ast.Ident{{Name: "array"}}, Type: reifiedReferenceArrayTypeExpr(ctx)},
+				{Names: []*ast.Ident{{Name: "index"}}, Type: &ast.Ident{Name: "int32"}},
+			}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: inner.Type}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: "old"}},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{stdjavaGenericCall(ctx, "ReferenceArrayGet", []ast.Expr{componentType}, []ast.Expr{
+					&ast.Ident{Name: "array"}, &ast.Ident{Name: "index"}, componentID,
+				})},
+			},
+			&ast.ReturnStmt{Results: []ast.Expr{inner}},
+		}},
+	}
+	return &ast.CallExpr{
+		Fun: &ast.CallExpr{Fun: outer, Args: []ast.Expr{
+			ParseExpr(arrayNode, source, ctx),
+			&ast.CallExpr{Fun: &ast.Ident{Name: "int32"}, Args: []ast.Expr{ParseExpr(indexNode, source, ctx)}},
+		}},
+		Args: []ast.Expr{ParseExpr(rhsNode, source, ctx)},
+	}, true
+}
+
 // lowerAssignmentExpression implements Java assignments that occur in value
 // position. Go assignments are statements, so the generated expression uses a
 // small immediately-invoked closure and returns the stored value.
@@ -2107,6 +2326,9 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	}
 	targetAddress := &ast.UnaryExpr{Op: token.AND, X: ParseExpr(lhsNode, source, ctx)}
 	operator := opNode.Content(source)
+	if compound, ok := lowerReferenceArrayCompoundAssignment(node, lhsJavaType, operator, source, ctx); ok {
+		return compound
+	}
 
 	if operator == "=" {
 		if call, ok := lowerSimpleArrayAssignmentCall(node, source, ctx); ok {
@@ -2708,8 +2930,9 @@ func resolveImplementedInterfaceScopesInDeclaringContext(ctx Ctx, scope *symbol.
 }
 
 type methodResolution struct {
-	def   *symbol.Definition
-	owner *symbol.ClassScope
+	def                *symbol.Definition
+	owner              *symbol.ClassScope
+	expandVarargsArray bool
 }
 
 // virtualDispatchMethodCall routes a call through the declaring class's stored
@@ -2717,14 +2940,14 @@ type methodResolution struct {
 // Go's embedded methods otherwise retain their original receiver, so a base
 // method calling another virtual method would incorrectly invoke the base
 // implementation. Explicit super calls bypass this helper at the call site.
-func virtualDispatchMethodCall(receiver ast.Expr, resolution *methodResolution, args []ast.Expr, ctx Ctx) ast.Expr {
+func virtualDispatchMethodCall(receiver ast.Expr, resolution *methodResolution, args []ast.Expr, expandVarargsArray bool, ctx Ctx) ast.Expr {
 	if receiver == nil || resolution == nil || resolution.def == nil || resolution.owner == nil {
 		return nil
 	}
 	if resolution.def.IsStatic || resolution.def.IsPrivate || resolution.def.RequiresHelper || !classNeedsVirtualDispatch(resolution.owner, ctx) {
 		return nil
 	}
-	return &ast.CallExpr{
+	return markDirectVarargsExpansion(&ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X: &ast.SelectorExpr{
 				X:   receiver,
@@ -2733,7 +2956,7 @@ func virtualDispatchMethodCall(receiver ast.Expr, resolution *methodResolution, 
 			Sel: &ast.Ident{Name: executionMethodCallName(resolution.def, resolution.owner, ctx)},
 		},
 		Args: prependExecutionMethodArgument(ctx, resolution.def, args),
-	}
+	}, expandVarargsArray)
 }
 
 // stageStaticInvocationQualifier preserves the otherwise-surprising Java rule
@@ -2802,6 +3025,8 @@ func stageVirtualDispatchInvocation(
 		javaType := ""
 		if index < len(resolution.def.Parameters) && resolution.def.Parameters[index] != nil {
 			javaType = resolution.def.Parameters[index].OriginalType
+		} else if len(resolution.def.Parameters) > 0 && executionParameterIsVariadic(resolution.def, len(resolution.def.Parameters)-1) {
+			javaType = resolution.def.Parameters[len(resolution.def.Parameters)-1].OriginalType
 		}
 		var argumentNode *sitter.Node
 		if index < len(argumentNodes) {
@@ -2833,6 +3058,7 @@ func executionCompanionDispatchInvocation(
 	target *invocationTargetInfo,
 	resolution *methodResolution,
 	args []ast.Expr,
+	expandVarargsArray bool,
 	ctx Ctx,
 	source []byte,
 ) ast.Expr {
@@ -2864,6 +3090,8 @@ func executionCompanionDispatchInvocation(
 		javaType := ""
 		if index < len(resolution.def.Parameters) && resolution.def.Parameters[index] != nil {
 			javaType = resolution.def.Parameters[index].OriginalType
+		} else if len(resolution.def.Parameters) > 0 && executionParameterIsVariadic(resolution.def, len(resolution.def.Parameters)-1) {
+			javaType = resolution.def.Parameters[len(resolution.def.Parameters)-1].OriginalType
 		}
 		var argumentNode *sitter.Node
 		if index < len(argumentNodes) {
@@ -2888,13 +3116,13 @@ func executionCompanionDispatchInvocation(
 			Type: companionType,
 		}},
 	})
-	hiddenCall := &ast.CallExpr{
+	hiddenCall := markDirectVarargsExpansion(&ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X:   &ast.Ident{Name: companionName},
 			Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner)},
 		},
 		Args: prependExecutionMethodArgument(ctx, resolution.def, stagedArgs),
-	}
+	}, expandVarargsArray)
 	hiddenBody := []ast.Stmt{invocationClosureCallStatement(hiddenCall, results)}
 	if results == nil || len(results.List) == 0 {
 		hiddenBody = append(hiddenBody, &ast.ReturnStmt{})
@@ -2903,13 +3131,13 @@ func executionCompanionDispatchInvocation(
 		Cond: &ast.Ident{Name: okName},
 		Body: &ast.BlockStmt{List: hiddenBody},
 	})
-	publicCall := &ast.CallExpr{
+	publicCall := markDirectVarargsExpansion(&ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X:   &ast.Ident{Name: receiverName},
 			Sel: &ast.Ident{Name: resolution.def.Name},
 		},
 		Args: stagedArgs,
-	}
+	}, expandVarargsArray)
 	body = append(body, invocationClosureCallStatement(publicCall, results))
 	return &ast.CallExpr{Fun: &ast.FuncLit{
 		Type: &ast.FuncType{Results: results},
@@ -3061,8 +3289,27 @@ func invocationClosureCallStatement(call ast.Expr, results *ast.FieldList) ast.S
 }
 
 type methodCandidateScore struct {
-	totalCost  int
-	exactCount int
+	phase              int
+	totalCost          int
+	exactCount         int
+	expandVarargsArray bool
+}
+
+func methodCandidateScoreBetter(candidate, current methodCandidateScore) bool {
+	return candidate.phase < current.phase ||
+		(candidate.phase == current.phase && candidate.totalCost < current.totalCost) ||
+		(candidate.phase == current.phase && candidate.totalCost == current.totalCost && candidate.exactCount > current.exactCount)
+}
+
+func methodInvocationArityApplicable(def *symbol.Definition, argumentCount int) bool {
+	if def == nil {
+		return false
+	}
+	parameterCount := len(def.Parameters)
+	if parameterCount == 0 || !executionParameterIsVariadic(def, parameterCount-1) {
+		return parameterCount == argumentCount
+	}
+	return argumentCount >= parameterCount-1
 }
 
 // findBestConstructor selects one constructor declared by scope using the same
@@ -3084,7 +3331,7 @@ func findBestConstructor(scope *symbol.ClassScope, argsNode *sitter.Node, ctx Ct
 	var best *methodResolution
 	var bestScore methodCandidateScore
 	for _, def := range scope.Methods {
-		if def == nil || !def.Constructor || len(def.Parameters) != len(argNodes) {
+		if def == nil || !def.Constructor || !methodInvocationArityApplicable(def, len(argNodes)) {
 			continue
 		}
 		candidateTypeParams := append([]string{}, scope.TypeParameterNames()...)
@@ -3093,10 +3340,9 @@ func findBestConstructor(scope *symbol.ClassScope, argsNode *sitter.Node, ctx Ct
 		if !applicable {
 			continue
 		}
-		candidate := &methodResolution{def: def, owner: scope}
-		if best == nil || score.totalCost < bestScore.totalCost ||
-			(score.totalCost == bestScore.totalCost && score.exactCount > bestScore.exactCount) ||
-			(score.totalCost == bestScore.totalCost && score.exactCount == bestScore.exactCount && methodResolutionMoreSpecific(candidate, best, ctx)) {
+		candidate := &methodResolution{def: def, owner: scope, expandVarargsArray: score.expandVarargsArray}
+		if best == nil || methodCandidateScoreBetter(score, bestScore) ||
+			(score.phase == bestScore.phase && score.totalCost == bestScore.totalCost && score.exactCount == bestScore.exactCount && methodResolutionMoreSpecific(candidate, best, ctx)) {
 			best = candidate
 			bestScore = score
 		}
@@ -3132,7 +3378,7 @@ func findBestMethodInHierarchy(
 	var bestScore methodCandidateScore
 	considerScope := func(scope *symbol.ClassScope, inheritedInterface bool) {
 		for _, def := range scope.Methods {
-			if def == nil || def.Constructor || def.OriginalName != methodName || len(def.Parameters) != len(argNodes) {
+			if def == nil || def.Constructor || def.OriginalName != methodName || !methodInvocationArityApplicable(def, len(argNodes)) {
 				continue
 			}
 			// Java interface static and private methods are not inherited by
@@ -3151,10 +3397,9 @@ func findBestMethodInHierarchy(
 			if !applicable {
 				continue
 			}
-			candidate := &methodResolution{def: def, owner: scope}
-			if best == nil || score.totalCost < bestScore.totalCost ||
-				(score.totalCost == bestScore.totalCost && score.exactCount > bestScore.exactCount) ||
-				(score.totalCost == bestScore.totalCost && score.exactCount == bestScore.exactCount && methodResolutionMoreSpecific(candidate, best, ctx)) {
+			candidate := &methodResolution{def: def, owner: scope, expandVarargsArray: score.expandVarargsArray}
+			if best == nil || methodCandidateScoreBetter(score, bestScore) ||
+				(score.phase == bestScore.phase && score.totalCost == bestScore.totalCost && score.exactCount == bestScore.exactCount && methodResolutionMoreSpecific(candidate, best, ctx)) {
 				best = candidate
 				bestScore = score
 			}
@@ -3199,17 +3444,41 @@ func findBestMethodInHierarchy(
 }
 
 func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, candidateTypeParams []string, argNodes []*sitter.Node, ctx Ctx, source []byte) (methodCandidateScore, bool) {
-	score := methodCandidateScore{}
-	for index, parameter := range def.Parameters {
-		if parameter == nil || index >= len(argNodes) {
+	if def == nil || !methodInvocationArityApplicable(def, len(argNodes)) {
+		return methodCandidateScore{}, false
+	}
+
+	parameterCount := len(def.Parameters)
+	variadic := parameterCount > 0 && executionParameterIsVariadic(def, parameterCount-1)
+	fixedArrayInvocation := variadic && len(argNodes) == parameterCount &&
+		invocationArgumentCanTargetVarargsArray(argNodes[parameterCount-1], def.Parameters[parameterCount-1], owner, candidateTypeParams, ctx, source)
+
+	score := methodCandidateScore{expandVarargsArray: fixedArrayInvocation}
+	if variadic && !fixedArrayInvocation {
+		// Java first considers fixed-arity declarations (including a varargs
+		// declaration receiving one compatible array) and only then performs
+		// variable-arity expansion. Keep that phase boundary stronger than the
+		// per-argument conversion costs used within one phase.
+		score.phase = 1
+	}
+	for index, argNode := range argNodes {
+		parameterIndex := index
+		if variadic && parameterIndex >= parameterCount-1 {
+			parameterIndex = parameterCount - 1
+		}
+		if parameterIndex < 0 || parameterIndex >= parameterCount || def.Parameters[parameterIndex] == nil {
 			return methodCandidateScore{}, false
 		}
+		parameter := def.Parameters[parameterIndex]
 		// Parameter types are declared in the callee's file, not the caller's.
 		// Preserve that package provenance before resolving reference conversions;
 		// otherwise an unqualified imported type such as Rule<T> becomes invisible
 		// when Engine<T>.addRule is invoked from a different package.
 		expectedType := qualifyJavaTypeInDeclaringContext(parameter.OriginalType, owner)
-		cost, exact, applicable := javaInvocationConversionCost(argNodes[index], expectedType, candidateTypeParams, ctx, source)
+		if fixedArrayInvocation && index == parameterCount-1 {
+			expectedType += "[]"
+		}
+		cost, exact, applicable := javaInvocationConversionCost(argNode, expectedType, candidateTypeParams, ctx, source)
 		if !applicable {
 			return methodCandidateScore{}, false
 		}
@@ -3219,6 +3488,39 @@ func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, cand
 		}
 	}
 	return score, true
+}
+
+func invocationArgumentCanTargetVarargsArray(
+	argNode *sitter.Node,
+	parameter *symbol.Definition,
+	owner *symbol.ClassScope,
+	candidateTypeParams []string,
+	ctx Ctx,
+	source []byte,
+) bool {
+	if argNode == nil || parameter == nil {
+		return false
+	}
+	unwrapped := unwrapParenthesizedExpressionNode(argNode)
+	if unwrapped != nil && unwrapped.Type() == "null_literal" {
+		return true
+	}
+	inferenceCtx := ctx.Clone()
+	inferenceCtx.expectedType = ""
+	inferenceCtx.expectedTypeRoot = nil
+	actualType, known := inferExprJavaType(argNode, inferenceCtx, source)
+	if !known || strings.TrimSpace(actualType) == "" {
+		return false
+	}
+	if actualType == ternaryNullJavaType {
+		return true
+	}
+	if _, rank := javaArrayTypeParts(actualType); rank == 0 {
+		return false
+	}
+	expectedType := qualifyJavaTypeInDeclaringContext(parameter.OriginalType, owner) + "[]"
+	_, _, applicable := javaInvocationConversionCost(argNode, expectedType, candidateTypeParams, ctx, source)
+	return applicable
 }
 
 // methodResolutionMoreSpecific applies Java's most-specific tie-break after
@@ -3238,8 +3540,16 @@ func methodResolutionMoreSpecific(candidate, current *methodResolution, ctx Ctx)
 		if candidateParam == nil || currentParam == nil {
 			return false
 		}
-		candidateType := qualifyJavaTypeInDeclaringContext(candidateParam.OriginalType, candidate.owner)
-		currentType := qualifyJavaTypeInDeclaringContext(currentParam.OriginalType, current.owner)
+		candidateType := candidateParam.OriginalType
+		if candidate.expandVarargsArray && executionParameterIsVariadic(candidate.def, index) {
+			candidateType += "[]"
+		}
+		currentType := currentParam.OriginalType
+		if current.expandVarargsArray && executionParameterIsVariadic(current.def, index) {
+			currentType += "[]"
+		}
+		candidateType = qualifyJavaTypeInDeclaringContext(candidateType, candidate.owner)
+		currentType = qualifyJavaTypeInDeclaringContext(currentType, current.owner)
 		atLeastAsSpecific, parameterStrict := javaParameterAtLeastAsSpecific(candidateType, currentType, ctx)
 		if !atLeastAsSpecific {
 			return false
@@ -3391,6 +3701,49 @@ func javaInvocationConversionCost(argNode *sitter.Node, expectedType string, can
 		// match so generic methods remain in the overload set and explicit Go type
 		// arguments are applied to their generated helper/function.
 		return 0, true, true
+	}
+	// A generic array formal is inferred at the Java level even though its
+	// generated Go parameter is the non-generic *ReferenceArray ABI. Keep the
+	// candidate applicable when stripping the formal array rank exposes one of
+	// its type parameters; call lowering will then emit the inferred Go argument.
+	expectedArrayBase, expectedArrayRank := javaArrayTypeParts(expectedType)
+	if expectedArrayRank > 0 && containsString(candidateTypeParams, stripJavaQualifier(expectedArrayBase)) {
+		actualArrayBase, actualArrayRank := javaArrayTypeParts(actualType)
+		if actualArrayRank >= expectedArrayRank {
+			if actualArrayRank == expectedArrayRank {
+				if _, primitive := javaPrimitiveType(actualArrayBase); primitive {
+					return 0, false, false
+				}
+			}
+			return 0, true, true
+		}
+		return 0, false, false
+	}
+
+	actualComponent, actualArray := javaArrayComponentType(actualType)
+	expectedComponent, expectedArray := javaArrayComponentType(expectedType)
+	if actualArray || expectedArray {
+		if actualArray && expectedArray {
+			actualPrimitive, actualComponentPrimitive := javaPrimitiveType(actualComponent)
+			expectedPrimitive, expectedComponentPrimitive := javaPrimitiveType(expectedComponent)
+			if actualComponentPrimitive || expectedComponentPrimitive {
+				// Primitive array components are invariant. Equality was handled
+				// above, before reaching this branch.
+				return 0, false, actualComponentPrimitive && expectedComponentPrimitive && actualPrimitive == expectedPrimitive
+			}
+			if assignable, _ := javaParameterAtLeastAsSpecific(actualType, expectedType, ctx); assignable {
+				return 16, false, true
+			}
+			return 0, false, false
+		}
+		if actualArray {
+			expectedBase, _ := parseJavaTypeString(expectedType)
+			switch stripJavaQualifier(expectedBase) {
+			case "Object", "Cloneable", "Serializable":
+				return 24, false, true
+			}
+		}
+		return 0, false, false
 	}
 
 	actualPrimitive, actualIsPrimitive := javaPrimitiveType(actualType)
@@ -3792,6 +4145,91 @@ func definitionParameterOriginalTypes(def *symbol.Definition) []string {
 		types[ind] = param.OriginalType
 	}
 	return types
+}
+
+// parseResolvedInvocationArguments applies Java's two varargs call modes to the
+// generated Go ABI. Element-style calls keep their individual arguments. A
+// fixed-arity Java call whose final argument is already an array instead passes
+// the wrapper's native element slice and asks the eventual Go call to expand it.
+func parseResolvedInvocationArguments(
+	resolution *methodResolution,
+	argsNode *sitter.Node,
+	source []byte,
+	ctx Ctx,
+	expectedTypes []string,
+) ([]ast.Expr, bool) {
+	if resolution == nil || resolution.def == nil {
+		return parseArgumentListWithExpectedTypes(argsNode, source, ctx, expectedTypes), false
+	}
+	def := resolution.def
+	argumentCount := 0
+	if argsNode != nil {
+		argumentCount = int(argsNode.NamedChildCount())
+	}
+	if len(expectedTypes) == 0 {
+		expectedTypes = definitionParameterOriginalTypes(def)
+	}
+	if len(def.Parameters) > 0 && executionParameterIsVariadic(def, len(def.Parameters)-1) {
+		formalCount := len(def.Parameters)
+		varargType := def.Parameters[formalCount-1].OriginalType
+		if formalCount-1 < len(expectedTypes) && strings.TrimSpace(expectedTypes[formalCount-1]) != "" {
+			varargType = expectedTypes[formalCount-1]
+		}
+		invocationTypes := make([]string, argumentCount)
+		for index := range invocationTypes {
+			switch {
+			case index < formalCount-1 && index < len(expectedTypes):
+				invocationTypes[index] = expectedTypes[index]
+			case index >= formalCount-1:
+				invocationTypes[index] = varargType
+			}
+		}
+		if resolution.expandVarargsArray && argumentCount == formalCount {
+			invocationTypes[formalCount-1] = varargType + "[]"
+		}
+		expectedTypes = invocationTypes
+	}
+
+	args := parseArgumentListWithExpectedTypes(argsNode, source, ctx, expectedTypes)
+	if !resolution.expandVarargsArray || len(args) == 0 || len(def.Parameters) == 0 {
+		return args, false
+	}
+	last := len(args) - 1
+	componentJavaType := def.Parameters[len(def.Parameters)-1].OriginalType
+	if last < len(expectedTypes) {
+		if expectedComponent, ok := javaArrayComponentType(expectedTypes[last]); ok {
+			componentJavaType = expectedComponent
+		}
+	}
+	if _, primitive := javaPrimitiveType(componentJavaType); primitive {
+		args[last] = stdjavaCall(ctx, "PrimitiveArrayElements", args[last])
+		return args, true
+	}
+	componentType := javaTypeStringToGoTypeExpr(componentJavaType, inScopeTypeParameters(ctx), ctx)
+	componentDescriptor, ok := javaTypeDescriptorExpr(componentJavaType, ctx)
+	if !ok {
+		componentDescriptor = stdjavaQualifiedExpr("ObjectTypeID", ctx)
+	}
+	args[last] = stdjavaGenericCall(
+		ctx,
+		"ReferenceArrayElements",
+		[]ast.Expr{componentType},
+		[]ast.Expr{args[last], componentDescriptor},
+	)
+	return args, true
+}
+
+func markDirectVarargsExpansion(call *ast.CallExpr, expand bool) *ast.CallExpr {
+	if call != nil && expand {
+		call.Ellipsis = token.Pos(1)
+	}
+	return call
+}
+
+func markDirectVarargsExpansionExpr(expr ast.Expr, expand bool) {
+	if call, ok := expr.(*ast.CallExpr); ok {
+		markDirectVarargsExpansion(call, expand)
+	}
 }
 
 func parseArgumentListWithExpectedTypes(argsNode *sitter.Node, source []byte, ctx Ctx, expectedTypes []string) []ast.Expr {
@@ -4640,6 +5078,42 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 	}
 
+	// A non-SAM anonymous implementation has no source ClassScope of its own, but
+	// it is still a real Java object that can be stored in an interface array.
+	// Give it a unique nominal type and register every inherited interface edge;
+	// the generated pointer already satisfies those Go interface views directly.
+	if superScope != nil && superScope.IsInterface && classNeedsReferenceIdentity(superScope, ctx) {
+		interfaceScopes := append([]*symbol.ClassScope{superScope}, transitiveImplementedInterfaceScopes(superScope, ctx)...)
+		interfaceIDs := make([]ast.Expr, 0, len(interfaceScopes))
+		seenInterfaces := make(map[*symbol.ClassScope]struct{})
+		for _, interfaceScope := range interfaceScopes {
+			if interfaceScope == nil || interfaceScope.Class == nil {
+				continue
+			}
+			if _, duplicate := seenInterfaces[interfaceScope]; duplicate {
+				continue
+			}
+			seenInterfaces[interfaceScope] = struct{}{}
+			interfaceIDs = append(interfaceIDs, javaTypeIDLiteral(javaClassBinaryName(interfaceScope), ctx))
+		}
+		ownerID := ""
+		if ctx.currentClass != nil {
+			ownerID = javaClassBinaryName(ctx.currentClass)
+		}
+		if ownerID == "" {
+			ownerID = ctx.className
+		}
+		for _, declaration := range syntheticReferenceIdentityDecls(
+			structName,
+			ownerID+"$"+structName,
+			nil,
+			interfaceIDs,
+			ctx,
+		) {
+			ctx.addHoistedDecl(declaration)
+		}
+	}
+
 	// Construct the value with its real Java superclass subobject initialized.
 	// A bare embedded pointer has a nil method set at runtime and cannot carry
 	// virtual calls back to the anonymous override.
@@ -4788,7 +5262,12 @@ func synthAnonClassScope(
 		}
 	}
 	for _, methodNode := range methodNodes {
-		method := synthAnonClassMethodDefinition(methodNode, source, keepOriginalMethodNames)
+		// Local classes are now registered in the synthetic scope before their
+		// call sites are rendered, so calls can follow the final selector name.
+		// Honor Java visibility here as ordinary/anonymous classes do; in
+		// particular a public method implementing an interface must be exported
+		// in Go to satisfy that interface outside the concrete method set.
+		method := synthAnonClassMethodDefinition(methodNode, source, false)
 		if method == nil {
 			continue
 		}
@@ -5116,6 +5595,36 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	}
 
 	ctx.addHoistedDecl(GenStruct(structName, fields))
+	if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
+		interfaceIDs := []ast.Expr{}
+		needsIdentity := false
+		for _, interfaceType := range collectTypeNodes(interfacesNode) {
+			interfaceScope := resolveClassScopeByQualifiedName(ctx, interfaceType.Content(source))
+			if interfaceScope == nil || interfaceScope.Class == nil {
+				continue
+			}
+			interfaceIDs = append(interfaceIDs, javaTypeIDLiteral(javaClassBinaryName(interfaceScope), ctx))
+			needsIdentity = needsIdentity || classNeedsReferenceIdentity(interfaceScope, ctx)
+		}
+		if needsIdentity {
+			ownerID := ""
+			if ctx.currentClass != nil {
+				ownerID = javaClassBinaryName(ctx.currentClass)
+			}
+			if ownerID == "" {
+				ownerID = ctx.className
+			}
+			for _, declaration := range syntheticReferenceIdentityDecls(
+				structName,
+				ownerID+"$"+structName,
+				nil,
+				interfaceIDs,
+				ctx,
+			) {
+				ctx.addHoistedDecl(declaration)
+			}
+		}
+	}
 
 	bodyMethods := anonymousClassMethods(classBody)
 	syntheticScope := synthAnonClassScope(structName, declaredFieldDefs, captured, bodyMethods, source, true)
@@ -5230,6 +5739,15 @@ func executionAwareMethodReferenceForwarder(
 	if receiver == nil {
 		return nil
 	}
+	if executionParameterIsVariadic(resolution.def, len(resolution.def.Parameters)-1) && len(javaArgs) > 0 {
+		// A non-varargs SAM parameter such as int[] now uses PrimitiveArray,
+		// while the target's Go variadic ABI necessarily receives []int32.
+		// Unwrap only when the forwarding closure's final parameter has that
+		// descriptor-bearing wrapper shape; a varargs SAM already has []T here.
+		if last := functionType.Params.List[len(functionType.Params.List)-1]; last != nil && primitiveArrayWrapperType(last.Type) {
+			javaArgs[len(javaArgs)-1] = stdjavaCall(ctx, "PrimitiveArrayElements", javaArgs[len(javaArgs)-1])
+		}
+	}
 
 	executionReceiverName := synchronizedUniqueLocalName("__java2goExecutionReceiver", usedNames)
 	hasExecutionReceiverName := synchronizedUniqueLocalName("__java2goHasExecutionReceiver", usedNames)
@@ -5311,6 +5829,25 @@ func executionAwareMethodReferenceForwarder(
 		},
 		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{inner}}}},
 	}, Args: []ast.Expr{originalBoundReceiver}}
+}
+
+func primitiveArrayWrapperType(expr ast.Expr) bool {
+	pointer, ok := expr.(*ast.StarExpr)
+	if !ok || pointer == nil {
+		return false
+	}
+	indexed, ok := pointer.X.(*ast.IndexExpr)
+	if !ok || indexed == nil {
+		return false
+	}
+	switch base := indexed.X.(type) {
+	case *ast.SelectorExpr:
+		return base.Sel != nil && base.Sel.Name == "PrimitiveArray"
+	case *ast.Ident:
+		return base.Name == "PrimitiveArray"
+	default:
+		return false
+	}
 }
 
 func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType string, executionAware bool, ctx Ctx) ast.Expr {
@@ -5797,11 +6334,20 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		return &ast.Ident{Name: "any"}
 	}
 
+	originalType := typeStr
 	// Arrays like Foo[][].
 	arrayDims := 0
 	for strings.HasSuffix(typeStr, "[]") {
 		arrayDims++
 		typeStr = strings.TrimSpace(typeStr[:len(typeStr)-2])
+	}
+	if arrayDims > 0 {
+		if primitive, ok := primitiveArrayTypeExpr(originalType, ctx); ok {
+			return primitive
+		}
+		if _, _, reified := reifiedSourceReferenceArrayComponent(originalType, ctx); reified {
+			return reifiedReferenceArrayTypeExpr(ctx)
+		}
 	}
 
 	// Wildcards like ?, ? extends Foo, ? super Foo.
@@ -5949,7 +6495,12 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 	}
 
 	var expr ast.Expr
-	if prim, ok := primitive(baseName); ok {
+	if resolvedScope == nil && baseName == "Throwable" {
+		// Throwable is the runtime's common exception interface. Keep this narrow
+		// and after source resolution so a user-defined class with the same simple
+		// name retains its generated type.
+		expr = stdjavaQualifiedExpr("Throwable", ctx)
+	} else if prim, ok := primitive(baseName); ok {
 		expr = prim
 	} else if rt, ok := stdjavaRuntimeTypeExpr(baseName, typeArgs, typeParams, ctx); ok {
 		// java.util.concurrent / java.lang.Thread types backed by the stdjava
@@ -6676,15 +7227,8 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 	}
 
 	resolved := make(map[string]ast.Expr)
-	argNodes := nodeutil.NamedChildrenOf(argsNode)
-	for idx, param := range def.Parameters {
-		for _, tp := range def.TypeParameters {
-			if param.OriginalType == tp.Name && idx < len(argNodes) {
-				if javaType, ok := inferExprJavaType(argNodes[idx], ctx, source); ok {
-					resolved[tp.Name] = javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx)
-				}
-			}
-		}
+	for name, javaType := range genericArrayInvocationTypeBindings(def, invocationNode, ctx, source) {
+		resolved[name] = javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx)
 	}
 
 	result := make([]ast.Expr, len(def.TypeParameters))
@@ -6696,6 +7240,312 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 		}
 	}
 	return result
+}
+
+// genericArrayInvocationTypeBindings reconstructs the type arguments Java
+// infers from bare T and T[] formals before generic reference arrays collapse
+// to *ReferenceArray in Go. Every applicable argument contributes a lower
+// bound: choosing the first one is unsound for calls such as f(Child[], Base)
+// or f(Child[], Sibling[]), whose inferred T is their common Base.
+//
+// A concrete class bound still uses its erased class view because the current
+// Go constraint is that concrete pointer type; scalar arguments are
+// target-typed to the same view by genericArrayInvocationExpectedTypes below.
+func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *sitter.Node, ctx Ctx, source []byte) map[string]string {
+	bindings := map[string]string{}
+	if def == nil || invocationNode == nil {
+		return bindings
+	}
+	if typeArguments := invocationNode.ChildByFieldName("type_arguments"); typeArguments != nil {
+		explicit := nodeutil.NamedChildrenOf(typeArguments)
+		if len(explicit) == len(def.TypeParameters) {
+			for index, parameter := range def.TypeParameters {
+				bindings[parameter.Name] = explicit[index].Content(source)
+			}
+			return bindings
+		}
+	}
+	argsNode := invocationNode.ChildByFieldName("arguments")
+	if argsNode == nil {
+		return bindings
+	}
+	argNodes := nodeutil.NamedChildrenOf(argsNode)
+	lowerBounds := make(map[string][]string, len(def.TypeParameters))
+	for index, parameter := range def.Parameters {
+		if parameter == nil || index >= len(argNodes) {
+			continue
+		}
+		formalBase, formalRank := javaArrayTypeParts(parameter.OriginalType)
+		for _, typeParameter := range def.TypeParameters {
+			if stripJavaQualifier(formalBase) != typeParameter.Name {
+				continue
+			}
+			actualType, ok := inferExprJavaType(argNodes[index], ctx, source)
+			if !ok {
+				continue
+			}
+			actualBase, actualRank := javaArrayTypeParts(actualType)
+			if actualRank < formalRank {
+				continue
+			}
+			inferred := actualBase + strings.Repeat("[]", actualRank-formalRank)
+			// A primitive expression supplied for scalar T participates through
+			// Java boxing. Primitive arrays are references only while at least one
+			// array dimension remains after matching the formal rank.
+			if actualRank == 0 && formalRank == 0 {
+				if boxed := ternaryBoxedJavaType(inferred); boxed != "" {
+					inferred = boxed
+				}
+			}
+			lowerBounds[typeParameter.Name] = append(lowerBounds[typeParameter.Name], inferred)
+		}
+	}
+
+	for _, typeParameter := range def.TypeParameters {
+		inferred := javaInferenceLeastUpperBound(lowerBounds[typeParameter.Name], ctx)
+		if inferred == "" {
+			continue
+		}
+		if len(typeParameter.Bounds) > 0 {
+			bound := strings.TrimSpace(typeParameter.Bounds[0].Original)
+			boundBase, _ := parseJavaTypeString(bound)
+			if boundScope := resolveClassScopeByQualifiedName(ctx, boundBase); boundScope != nil && !boundScope.IsInterface {
+				inferred = bound
+			}
+		}
+		bindings[typeParameter.Name] = inferred
+	}
+	return bindings
+}
+
+// javaInferenceLeastUpperBound returns a deterministic, representable Java
+// least upper bound for method-inference constraints. Java can describe some
+// LUBs as intersection/capture types that have no direct generated-Go spelling;
+// in those cases Object is the safe erased view.
+func javaInferenceLeastUpperBound(javaTypes []string, ctx Ctx) string {
+	var result string
+	for _, javaType := range javaTypes {
+		javaType = strings.TrimSpace(javaType)
+		if javaType == "" {
+			continue
+		}
+		if result == "" {
+			result = javaType
+			continue
+		}
+		result = javaInferencePairLeastUpperBound(result, javaType, ctx)
+	}
+	return result
+}
+
+func javaInferencePairLeastUpperBound(left, right string, ctx Ctx) string {
+	left = strings.TrimSpace(left)
+	right = strings.TrimSpace(right)
+	if left == "" {
+		return right
+	}
+	if right == "" {
+		return left
+	}
+	if javaInferenceSameType(left, right, ctx) {
+		return left
+	}
+
+	// Preserve an existing wider candidate. Besides ordinary class inheritance,
+	// this handles Object and covariant arrays without rebuilding their spelling.
+	if javaInferenceTypeAssignable(left, right, ctx) {
+		return right
+	}
+	if javaInferenceTypeAssignable(right, left, ctx) {
+		return left
+	}
+
+	leftComponent, leftArray := javaArrayComponentType(left)
+	rightComponent, rightArray := javaArrayComponentType(right)
+	if leftArray || rightArray {
+		if !leftArray || !rightArray {
+			return "Object"
+		}
+
+		// Array covariance applies only when both immediate components are
+		// references. Thus Child[] and int[] meet at Object, while Child[][]
+		// and Sibling[][] recursively retain their common Base[][] rank.
+		_, leftPrimitive := javaPrimitiveType(leftComponent)
+		_, rightPrimitive := javaPrimitiveType(rightComponent)
+		if leftPrimitive || rightPrimitive {
+			return "Object"
+		}
+		componentLUB := javaInferencePairLeastUpperBound(leftComponent, rightComponent, ctx)
+		if componentLUB == "" {
+			return "Object"
+		}
+		return componentLUB + "[]"
+	}
+
+	leftBase, leftArgs := parseJavaTypeString(left)
+	rightBase, rightArgs := parseJavaTypeString(right)
+	leftScope := resolveClassScopeByQualifiedName(ctx, leftBase)
+	rightScope := resolveClassScopeByQualifiedName(ctx, rightBase)
+	if leftScope == nil || rightScope == nil {
+		return "Object"
+	}
+	if leftScope == rightScope {
+		// Invariant generic instantiations with distinct arguments have a
+		// wildcard LUB in Java. The raw class is its representable erased view.
+		if len(leftArgs) > 0 || len(rightArgs) > 0 {
+			return javaInferenceTypeName(leftScope)
+		}
+		return left
+	}
+
+	if common := javaInferenceCommonSuperclass(leftScope, rightScope, ctx); common != nil {
+		return javaInferenceTypeName(common)
+	}
+	return "Object"
+}
+
+func javaInferenceSameType(left, right string, ctx Ctx) bool {
+	leftBase, leftRank := javaArrayTypeParts(left)
+	rightBase, rightRank := javaArrayTypeParts(right)
+	if leftRank != rightRank {
+		return false
+	}
+	leftRaw, leftArgs := parseJavaTypeString(leftBase)
+	rightRaw, rightArgs := parseJavaTypeString(rightBase)
+	leftScope := resolveClassScopeByQualifiedName(ctx, leftRaw)
+	rightScope := resolveClassScopeByQualifiedName(ctx, rightRaw)
+	if leftScope != nil && rightScope != nil {
+		if leftScope != rightScope {
+			return false
+		}
+	} else if !sameJavaRawType(leftRaw, rightRaw) {
+		return false
+	}
+	if len(leftArgs) != len(rightArgs) {
+		return false
+	}
+	for index := range leftArgs {
+		if !javaInferenceSameType(leftArgs[index], rightArgs[index], ctx) {
+			return false
+		}
+	}
+	return true
+}
+
+func javaInferenceTypeAssignable(actual, expected string, ctx Ctx) bool {
+	if javaInferenceSameType(actual, expected, ctx) {
+		return true
+	}
+	actualBase, actualRank := javaArrayTypeParts(actual)
+	expectedBase, expectedRank := javaArrayTypeParts(expected)
+	if expectedRank == 0 && stripJavaQualifier(expectedBase) == "Object" {
+		_, scalarPrimitive := javaPrimitiveType(actualBase)
+		return actualRank > 0 || !scalarPrimitive
+	}
+	if actualRank > 0 || expectedRank > 0 {
+		if actualRank == 0 || expectedRank == 0 {
+			return false
+		}
+		actualComponent := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(actual), "[]"))
+		expectedComponent := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(expected), "[]"))
+		_, actualPrimitive := javaPrimitiveType(actualComponent)
+		_, expectedPrimitive := javaPrimitiveType(expectedComponent)
+		if actualPrimitive || expectedPrimitive {
+			return actualPrimitive && expectedPrimitive && javaInferenceSameType(actualComponent, expectedComponent, ctx)
+		}
+		return javaInferenceTypeAssignable(actualComponent, expectedComponent, ctx)
+	}
+
+	actualPrimitive, actualIsPrimitive := javaPrimitiveType(actualBase)
+	expectedPrimitive, expectedIsPrimitive := javaPrimitiveType(expectedBase)
+	if actualIsPrimitive || expectedIsPrimitive {
+		return actualIsPrimitive && expectedIsPrimitive && actualPrimitive == expectedPrimitive
+	}
+
+	actualRaw, actualArgs := parseJavaTypeString(actualBase)
+	expectedRaw, expectedArgs := parseJavaTypeString(expectedBase)
+	actualScope := resolveClassScopeByQualifiedName(ctx, actualRaw)
+	expectedScope := resolveClassScopeByQualifiedName(ctx, expectedRaw)
+	if actualScope == nil || expectedScope == nil {
+		return false
+	}
+	if actualScope == expectedScope {
+		if len(actualArgs) == 0 || len(expectedArgs) == 0 {
+			return true
+		}
+		return javaInferenceSameType(actual, expected, ctx)
+	}
+	return javaReferenceTypeAssignable(actualScope, expectedScope, ctx)
+}
+
+// javaInferenceCommonSuperclass follows Java's single superclass chain, which
+// makes selection stable regardless of map iteration. Shared interfaces can
+// form intersection LUBs, so they deliberately fall back to Object above.
+func javaInferenceCommonSuperclass(left, right *symbol.ClassScope, ctx Ctx) *symbol.ClassScope {
+	leftAncestors := map[*symbol.ClassScope]struct{}{}
+	seen := map[*symbol.ClassScope]struct{}{}
+	for scope := left; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
+		if _, exists := seen[scope]; exists {
+			break
+		}
+		seen[scope] = struct{}{}
+		if !scope.IsInterface {
+			leftAncestors[scope] = struct{}{}
+		}
+	}
+
+	seen = map[*symbol.ClassScope]struct{}{}
+	for scope := right; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
+		if _, exists := seen[scope]; exists {
+			break
+		}
+		seen[scope] = struct{}{}
+		if _, common := leftAncestors[scope]; common && !scope.IsInterface {
+			return scope
+		}
+	}
+	return nil
+}
+
+func javaInferenceTypeName(scope *symbol.ClassScope) string {
+	if scope == nil || scope.Class == nil {
+		return "Object"
+	}
+	return qualifyJavaTypeInDeclaringContext(scope.Class.OriginalName, scope)
+}
+
+func genericArrayInvocationExpectedTypes(def *symbol.Definition, invocationNode *sitter.Node, ctx Ctx, source []byte) []string {
+	expected := definitionParameterOriginalTypes(def)
+	bindings := genericArrayInvocationTypeBindings(def, invocationNode, ctx, source)
+	if len(bindings) == 0 {
+		return expected
+	}
+	for index, javaType := range expected {
+		expected[index] = substituteJavaTypeParameters(javaType, bindings)
+	}
+	return expected
+}
+
+// genericArrayFormalNeedsExplicitTypeArguments identifies generic calls for
+// which the common *ReferenceArray ABI has erased the Go parameter shape that
+// previously let the compiler infer T. Java has already inferred T from the
+// source-level T[] formal, so call lowering must spell that argument explicitly.
+func genericArrayFormalNeedsExplicitTypeArguments(def *symbol.Definition) bool {
+	if def == nil || len(def.TypeParameters) == 0 {
+		return false
+	}
+	for _, parameter := range def.Parameters {
+		base, rank := javaArrayTypeParts(parameter.OriginalType)
+		if rank == 0 {
+			continue
+		}
+		for _, typeParameter := range def.TypeParameters {
+			if stripJavaQualifier(base) == typeParameter.Name {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func maybeRewriteInstanceGenericMethodInvocationWithTarget(target *invocationTargetInfo, resolved *methodResolution, objectExpr ast.Expr, methodName string, args []ast.Expr, invocationNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {

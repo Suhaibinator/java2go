@@ -293,7 +293,11 @@ public class RuntimeExProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestDivide(t *testing.T) {
 	if got := Divide(10, 2); got != 5 {
@@ -306,13 +310,31 @@ func TestDivide(t *testing.T) {
 }
 
 func TestIndexAccess(t *testing.T) {
-	arr := []int32{1, 2, 3}
+	arr := stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveTypeID("int"), 1, 2, 3)
 	if got := IndexAccess(arr, 1); got != 2 {
 		t.Fatalf("in-range access = %d, want 2", got)
 	}
 	if got := IndexAccess(arr, 9); got != -1 {
 		t.Fatalf("out-of-range = %d, want -1 (ArrayIndexOutOfBoundsException caught)", got)
 	}
+	if got := IndexAccess(arr, -1); got != -1 {
+		t.Fatalf("negative index = %d, want -1 (ArrayIndexOutOfBoundsException caught)", got)
+	}
+	empty := stdjava.NewPrimitiveArray[int32](0, stdjava.PrimitiveTypeID("int"))
+	if got := IndexAccess(empty, 0); got != -1 {
+		t.Fatalf("empty-array access = %d, want -1 (ArrayIndexOutOfBoundsException caught)", got)
+	}
+}
+
+func TestNullIndexAccessRemainsNullPointerException(t *testing.T) {
+	defer func() {
+		recovered := stdjava.NormalizePanic(recover())
+		if !stdjava.CaughtAs(recovered, "NullPointerException") || stdjava.CaughtAs(recovered, "ArrayIndexOutOfBoundsException") {
+			t.Fatalf("null array panic = %T (%v), want only NullPointerException", recovered, recovered)
+		}
+	}()
+	IndexAccess(nil, 0)
+	t.Fatal("null array access unexpectedly returned")
 }
 
 func TestByRuntimeException(t *testing.T) {

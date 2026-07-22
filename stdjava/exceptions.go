@@ -57,6 +57,23 @@ var (
 	}
 )
 
+func registerExceptionJavaType(child, parent string) {
+	if child == "" {
+		return
+	}
+	super := ObjectTypeID
+	if parent != "" {
+		super = TypeID(parent)
+	}
+	RegisterJavaType(TypeID(child), super)
+}
+
+func init() {
+	for child, parent := range exceptionHierarchy {
+		registerExceptionJavaType(child, parent)
+	}
+}
+
 // RegisterException records that the exception type child extends parent. It is
 // called from generated init() blocks so that user-defined exception classes
 // participate in catch-by-supertype dispatch. Re-registering a type with the
@@ -70,7 +87,6 @@ var (
 // ambiguity is at least visible rather than silently mis-dispatching.
 func RegisterException(child, parent string) {
 	exceptionHierarchyMu.Lock()
-	defer exceptionHierarchyMu.Unlock()
 	if existing, ok := exceptionHierarchy[child]; ok && existing != parent {
 		fmt.Fprintf(os.Stderr,
 			"stdjava: exception type %q registered with conflicting parents %q and %q; "+
@@ -78,6 +94,8 @@ func RegisterException(child, parent string) {
 			child, existing, parent, child)
 	}
 	exceptionHierarchy[child] = parent
+	exceptionHierarchyMu.Unlock()
+	registerExceptionJavaType(child, parent)
 }
 
 // isSubtypeOf reports whether the exception type named child is the same as, or
@@ -276,6 +294,22 @@ func GetSuppressed(primary interface{}) []interface{} {
 	return carrier.SuppressedValues()
 }
 
+// GetSuppressedArray exposes Throwable.getSuppressed through the generated
+// descriptor-bearing array ABI. SuppressedValues is runtime-owned and already
+// guarantees every element is a Throwable, so the trusted copy does not bypass
+// any user-visible array store check.
+func GetSuppressedArray(primary interface{}) *ReferenceArray {
+	return SuppressedArray(GetSuppressed(primary))
+}
+
+// SuppressedArray converts the runtime snapshot to the generated Java-array
+// ABI while keeping GetSuppressed's slice API available to runtime callers.
+func SuppressedArray(values []interface{}) *ReferenceArray {
+	array := NewReferenceArray(len(values), ThrowableTypeID)
+	copy(array.elements, values)
+	return array
+}
+
 // GetCause returns the cause associated with a throwable, mirroring
 // Throwable.getCause(). Most constructors leave it nil; the
 // IllegalArgumentException raised for self-suppression records the original
@@ -359,6 +393,11 @@ type throwableState struct {
 
 func (t ThrowableBase) ThrowableTypeName() string { return t.typeName }
 func (t ThrowableBase) Message() string           { return t.message }
+
+// JavaDynamicTypeID lets every built-in Throwable value participate in the
+// descriptor-bearing reference-array ABI. The method is promoted through each
+// concrete exception and through generated subclasses that embed one.
+func (t ThrowableBase) JavaDynamicTypeID() TypeID { return TypeID(t.typeName) }
 
 func (t ThrowableBase) Error() string {
 	if t.message == "" {
