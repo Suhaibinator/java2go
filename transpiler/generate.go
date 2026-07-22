@@ -147,13 +147,20 @@ func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast
 	parameterLookup := newTypeParameterLookup(typeParams)
 	fields := make([]*ast.Field, len(typeParams))
 	for i, tp := range typeParams {
+		constraint := constraintExprInContext(
+			goRepresentableTypeParameterBounds(tp.Bounds, parameterLookup, nil),
+			paramNames,
+			ctx,
+		)
+		if ctx.dependentTypeWitnesses != nil && ctx.dependentTypeWitnesses.hasSource(tp.Declaration) {
+			// A concrete Java upper bound admits every generated subclass pointer,
+			// while Go's *Base constraint admits only the exact Base subobject. The
+			// hidden projection witness carries that Java proof instead.
+			constraint = &ast.Ident{Name: "any"}
+		}
 		fields[i] = &ast.Field{
 			Names: []*ast.Ident{{Name: tp.EmittedName()}},
-			Type: constraintExprInContext(
-				goRepresentableTypeParameterBounds(tp.Bounds, parameterLookup, nil),
-				paramNames,
-				ctx,
-			),
+			Type:  constraint,
 		}
 	}
 	return fields

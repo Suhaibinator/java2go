@@ -553,7 +553,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			} else if staticResolution != nil {
 				expectedArgTypes = definitionParameterOriginalTypes(staticResolution.def)
-				if genericMethodNeedsExplicitTypeArguments(staticResolution.def) {
+				if genericMethodNeedsExplicitTypeArguments(staticResolution.def) ||
+					methodUsesConcreteDependentTypeWitnesses(staticResolution.def, ctx) {
 					expectedArgTypes = genericArrayInvocationExpectedTypes(staticResolution.def, node, ctx, source)
 				}
 			}
@@ -563,8 +564,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			args, expandVarargsArray := parseResolvedInvocationArguments(selectedResolution, argListNode, source, ctx, expectedArgTypes)
 			typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx), ctx)
-			if len(typeArgs) == 0 && staticResolution != nil && genericMethodNeedsExplicitTypeArguments(staticResolution.def) {
+			if len(typeArgs) == 0 && staticResolution != nil &&
+				(genericMethodNeedsExplicitTypeArguments(staticResolution.def) || methodUsesConcreteDependentTypeWitnesses(staticResolution.def, ctx)) {
 				typeArgs = inferMethodTypeArguments(staticResolution.def, node, ctx, source)
+			}
+			if staticResolution != nil {
+				witnesses := dependentTypeWitnessInvocationArguments(staticResolution.def, node, ctx, source)
+				args = append(witnesses, args...)
+			}
+			if instanceResolution != nil {
+				receiverScope := instanceResolution.receiverScope
+				if receiverScope == nil {
+					receiverScope = instanceResolution.owner
+				}
+				objectExpr = projectDependentTypeParameterReceiver(objectExpr, objectNode, receiverScope, ctx, source)
 			}
 
 			// If this is a static call on a class name (e.g., Utils.<T>id(...)),
@@ -686,7 +699,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		if implicitInstanceResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(implicitInstanceResolution.def) {
 			expectedArgTypes = genericArrayInvocationExpectedTypes(implicitInstanceResolution.def, node, ctx, source)
-		} else if implicitStaticResolution != nil && genericMethodNeedsExplicitTypeArguments(implicitStaticResolution.def) {
+		} else if implicitStaticResolution != nil &&
+			(genericMethodNeedsExplicitTypeArguments(implicitStaticResolution.def) || methodUsesConcreteDependentTypeWitnesses(implicitStaticResolution.def, ctx)) {
 			expectedArgTypes = genericArrayInvocationExpectedTypes(implicitStaticResolution.def, node, ctx, source)
 		}
 		selectedResolution := implicitInstanceResolution
@@ -695,8 +709,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		args, expandVarargsArray := parseResolvedInvocationArguments(selectedResolution, argListNode, source, ctx, expectedArgTypes)
 		typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx), ctx)
-		if len(typeArgs) == 0 && implicitStaticResolution != nil && genericMethodNeedsExplicitTypeArguments(implicitStaticResolution.def) {
+		if len(typeArgs) == 0 && implicitStaticResolution != nil &&
+			(genericMethodNeedsExplicitTypeArguments(implicitStaticResolution.def) || methodUsesConcreteDependentTypeWitnesses(implicitStaticResolution.def, ctx)) {
 			typeArgs = inferMethodTypeArguments(implicitStaticResolution.def, node, ctx, source)
+		}
+		if implicitStaticResolution != nil {
+			witnesses := dependentTypeWitnessInvocationArguments(implicitStaticResolution.def, node, ctx, source)
+			args = append(witnesses, args...)
 		}
 
 		// Unqualified invocation in Java is typically an implicit receiver call.
@@ -871,14 +890,25 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				effectiveTypeArgs = normalizeClassTypeArguments(targetScope, effectiveTypeArgs, receiverScope, receiverTypeArgs)
 			}
 		}
+		constructorMethodTypeArgs := methodInvocationTypeArgumentJavaTypes(constructor, node, ctx, source)
+		constructorFunctionTypeArgs := append(append([]string(nil), effectiveTypeArgs...), constructorMethodTypeArgs...)
 
 		var expectedArgumentTypes []string
 		if constructor != nil {
-			expectedArgumentTypes = instantiatedConstructorParameterTypes(constructor, targetScope, effectiveTypeArgs)
+			expectedArgumentTypes = instantiatedConstructorParameterTypes(
+				constructor,
+				targetScope,
+				effectiveTypeArgs,
+				constructorMethodTypeArgs,
+			)
 		} else if stripJavaQualifier(className) == "Thread" && resolveClassScopeByQualifiedName(ctx, className) == nil {
 			expectedArgumentTypes = []string{"Runnable"}
 		}
 		arguments, expandVarargsArray := parseResolvedInvocationArguments(constructorResolution, objectArguments, source, ctx, expectedArgumentTypes)
+		if constructor != nil {
+			witnesses := dependentTypeWitnessInvocationArguments(constructor, node, ctx, source)
+			arguments = append(witnesses, arguments...)
+		}
 		if localInfo != nil {
 			captureArgs := make([]ast.Expr, 0, len(localInfo.captured))
 			for _, capture := range localInfo.captured {
@@ -943,7 +973,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				constructorName = executionConstructorImplementationName(constructorName, targetScope)
 				callArgs = prependExecutionArgument(ctx, callArgs)
 			}
-			funExpr := addTypeArgs(qualifiedNameExpr(constructorName, targetPkg, ctx), effectiveTypeArgs)
+			funExpr := addTypeArgs(qualifiedNameExpr(constructorName, targetPkg, ctx), constructorFunctionTypeArgs)
 			call := markDirectVarargsExpansion(&ast.CallExpr{
 				Fun:  funExpr,
 				Args: callArgs,
@@ -1361,29 +1391,40 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		fieldName := node.ChildByFieldName("field").Content(source)
 		var owner *symbol.ClassScope
+		ownerJavaType := ""
 		switch obj.Type() {
 		case "this":
 			owner = ctx.currentClass
 		case "super":
 			owner = resolveSuperclassScope(ctx, ctx.currentClass)
 		default:
-			if ownerType, ok := inferExprJavaType(obj, ctx, source); ok {
-				base, _ := parseJavaTypeString(ownerType)
+			if inferredOwnerType, ok := inferExprJavaType(obj, ctx, source); ok {
+				ownerJavaType = inferredOwnerType
+				base, _ := parseJavaTypeString(inferredOwnerType)
 				owner = resolveClassScopeByQualifiedName(ctx, base)
+			}
+			if owner == nil {
+				if target := resolveInvocationTarget(obj, ctx, source); target != nil {
+					owner = target.classScope
+				}
 			}
 			if owner == nil && obj.Type() == "identifier" {
 				owner = resolveClassScopeByIdentifier(ctx, source, obj)
 			}
 		}
 		selName := sanitizeGoIdent(fieldName)
-		if def := findFieldInHierarchy(owner, fieldName, ctx); def != nil && def.Name != "" {
+		field := findFieldResolutionInHierarchy(owner, fieldName, ctx)
+		if field != nil && field.def != nil && field.def.Name != "" {
 			// Resolve against the symbol's final display name. Reserved identifiers
 			// can be renamed further than lexical sanitization (`map` -> `map0`) to
 			// avoid collisions, and every receiver form must select that same field.
-			selName = def.Name
+			selName = field.def.Name
 		}
 		if parsedObject == nil {
 			parsedObject = ParseExpr(obj, source, ctx)
+		}
+		if field != nil && ownerJavaType != "" {
+			parsedObject = projectDependentTypeParameterReceiver(parsedObject, obj, field.owner, ctx, source)
 		}
 		return &ast.SelectorExpr{
 			X:   parsedObject,
@@ -4475,23 +4516,39 @@ func definitionParameterOriginalTypes(def *symbol.Definition) []string {
 func instantiatedConstructorParameterTypes(
 	constructor *symbol.Definition,
 	scope *symbol.ClassScope,
-	typeArguments []string,
+	classTypeArguments []string,
+	methodTypeArgumentGroups ...[]string,
 ) []string {
 	if constructor == nil || len(constructor.Parameters) == 0 {
 		return nil
 	}
 	types := make([]string, len(constructor.Parameters))
-	bindings := make(map[string]string, len(typeArguments)*2)
+	var methodTypeArguments []string
+	if len(methodTypeArgumentGroups) > 0 {
+		methodTypeArguments = methodTypeArgumentGroups[0]
+	}
+	bindings := make(map[string]string, (len(classTypeArguments)+len(methodTypeArguments))*2)
 	if scope != nil {
 		for index, parameter := range scope.TypeParameters {
-			if index >= len(typeArguments) {
+			if index >= len(classTypeArguments) {
 				continue
 			}
 			// EmittedName is declaration-unique and definitionJavaType rewrites a
 			// bound source occurrence to that spelling. The source name remains a
 			// compatibility fallback for older synthetic definitions.
-			bindings[parameter.Name] = typeArguments[index]
-			bindings[parameter.EmittedName()] = typeArguments[index]
+			bindings[parameter.EmittedName()] = classTypeArguments[index]
+			if parameter.Declaration == nil {
+				bindings[parameter.Name] = classTypeArguments[index]
+			}
+		}
+	}
+	for index, parameter := range constructor.TypeParameters {
+		if index >= len(methodTypeArguments) {
+			continue
+		}
+		bindings[parameter.EmittedName()] = methodTypeArguments[index]
+		if parameter.Declaration == nil {
+			bindings[parameter.Name] = methodTypeArguments[index]
 		}
 	}
 	for index, parameter := range constructor.Parameters {
@@ -4669,6 +4726,11 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 
 	expectedBase, _ := parseJavaTypeString(expectedType)
 	expectedScope := resolveClassScopeByQualifiedName(ctx, expectedBase)
+	if actualKnown && expectedScope != nil {
+		if projected, ok := dependentTypeParameterConcreteViewExpr(argExpr, actualType, expectedScope, ctx); ok {
+			return projected
+		}
+	}
 	if expectedScope == nil || expectedScope.IsInterface || expectedScope.IsAbstract || expectedScope.Class == nil {
 		return argExpr
 	}
@@ -4752,6 +4814,9 @@ func javaDependentTypeParameterAssignable(actualType, expectedType string, ctx C
 // either representation to B can panic or create a non-null Go interface,
 // whereas Java widens null without changing its identity.
 func dependentTypeParameterWideningExpr(argExpr ast.Expr, actualType, expectedType string, ctx Ctx) ast.Expr {
+	if projected, ok := plannedDependentTypeParameterWideningExpr(argExpr, actualType, expectedType, ctx); ok {
+		return projected
+	}
 	actualGoType := javaTypeStringToGoTypeExpr(actualType, inScopeTypeParameters(ctx), ctx)
 	expectedGoType := javaTypeStringToGoTypeExpr(expectedType, inScopeTypeParameters(ctx), ctx)
 	const valueName = "__java2goDependentValue"
@@ -9502,10 +9567,31 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 		// carve the corresponding Base subobject.
 		erased := rawTypeParameterErasure(typeParameter, def.TypeParameters)
 		erasedBase, _ := parseJavaTypeString(erased)
-		if boundScope := resolveClassScopeByQualifiedName(ctx, erasedBase); boundScope != nil && !boundScope.IsInterface {
+		if boundScope := resolveClassScopeByQualifiedName(ctx, erasedBase); boundScope != nil && !boundScope.IsInterface &&
+			!methodTypeParameterRequiresConcreteWitness(def, typeParameter.Declaration, ctx) {
 			inferred = erased
 		}
 		bindings[typeParameter.Name] = inferred
+	}
+
+	// A nested generic invocation can be target-typed by an enclosing generic
+	// argument whose expected type is itself a live type parameter. That relation
+	// is not recoverable from the nested invocation's value arguments alone. Keep
+	// the outer declaration as the return parameter's view before dependent-bound
+	// propagation fills otherwise-missing parameters (for example an inner
+	// widen(T) used where the outer call requires B).
+	returnBase, returnRank := javaArrayTypeParts(def.OriginalType)
+	returnName := stripJavaQualifier(returnBase)
+	if returnRank == 0 && expectedTypeTargetsExpression(ctx, invocationNode) &&
+		visibleTypeParameterDeclarationForJavaType(ctx.expectedType, ctx) != nil {
+		for _, parameter := range def.TypeParameters {
+			if parameter.Name == returnName {
+				if _, alreadyResolved := bindings[parameter.Name]; !alreadyResolved {
+					bindings[parameter.Name] = strings.TrimSpace(ctx.expectedType)
+				}
+				break
+			}
+		}
 	}
 
 	// If B occurs only in `T extends B`, Java infers it through T's bound
@@ -9534,7 +9620,8 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 		erased := rawTypeParameterErasure(missing, def.TypeParameters)
 		erasedBase, _ := parseJavaTypeString(erased)
 		if boundScope := resolveClassScopeByQualifiedName(ctx, erasedBase); boundScope != nil {
-			if !boundScope.IsInterface || !javaInferenceTypeAssignable(inferred, erased, ctx) {
+			if !methodTypeParameterRequiresConcreteWitness(def, missing.Declaration, ctx) &&
+				(!boundScope.IsInterface || !javaInferenceTypeAssignable(inferred, erased, ctx)) {
 				inferred = erased
 			}
 		}

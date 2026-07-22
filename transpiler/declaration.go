@@ -3547,11 +3547,16 @@ func buildSourceConstructorDecls(
 		definition = matches[0]
 	}
 	ctx.localScope = definition
+	ctx.dependentTypeWitnesses = planConcreteDependentTypeWitnesses(ctx.localScope, source, ctx)
 
 	constructorParams := ParseNode(paramNode, source, ctx).(*ast.FieldList)
 	if constructorParams == nil {
 		constructorParams = &ast.FieldList{}
 	}
+	constructorParams.List = append(
+		dependentTypeWitnessParameterFields(ctx.dependentTypeWitnesses, ctx),
+		constructorParams.List...,
+	)
 	if len(options.leadingParams) > 0 {
 		leading := append([]*ast.Field(nil), options.leadingParams...)
 		constructorParams.List = append(leading, constructorParams.List...)
@@ -3670,7 +3675,6 @@ func buildSourceConstructorDecls(
 		}
 		constructorParams.List = append([]*ast.Field{enclParam}, constructorParams.List...)
 	}
-
 	return buildConstructorDeclarations(
 		ctx.localScope.Name,
 		constructorTypeParams,
@@ -3767,6 +3771,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		ctx.localScope = methodDefinition[0]
 		if static {
 			ctx.syntheticTypeParameters, ctx.rawGenericParameterTypes = synthesizeRawGenericFunctionParameters(ctx.localScope, ctx)
+			ctx.dependentTypeWitnesses = planConcreteDependentTypeWitnesses(ctx.localScope, source, ctx)
 		}
 		executionName := executionParameterName(node, source, ctx)
 		ctx.executionContextName = executionName
@@ -3816,6 +3821,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		bodyNode := node.ChildByFieldName("body")
 		params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
+		params.List = append(dependentTypeWitnessParameterFields(ctx.dependentTypeWitnesses, ctx), params.List...)
 
 		var results *ast.FieldList
 		if strings.TrimSpace(ctx.localScope.OriginalType) != "" && strings.TrimSpace(ctx.localScope.OriginalType) != "void" {

@@ -322,7 +322,7 @@ public class Boxes<T> {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "NewBoxesJava2goExecution[int32](__java2goExecution, 42)")
+	assertContains(t, out, "NewBoxesJava2goExecution[int32](__java2goExecution, int32(42))")
 	if strings.Contains(out, "*Integer") || strings.Contains(out, "*Long") || strings.Contains(out, "*Double") || strings.Contains(out, "*Boolean") {
 		t.Fatalf("boxed type leaked as an undefined pointer type:\n%s", out)
 	}

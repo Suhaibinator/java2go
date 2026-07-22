@@ -98,8 +98,9 @@ public class Box<T> {
 		!strings.Contains(out, "NewBoxJava2goExecution[int32](__java2goExecution)") {
 		t.Errorf("Expected explicit type args on constructor call, got:\n%s", out)
 	}
-	if strings.Contains(out, "raw := NewBoxJava2goExecution[") || strings.Contains(out, "raw = NewBoxJava2goExecution[") {
-		t.Errorf("Expected raw 'new Box()' to omit type args, got:\n%s", out)
+	if !strings.Contains(out, "raw := NewBoxJava2goExecution[any](__java2goExecution)") &&
+		!strings.Contains(out, "raw = NewBoxJava2goExecution[any](__java2goExecution)") {
+		t.Errorf("Expected raw 'new Box()' to carry its erased any argument explicitly, got:\n%s", out)
 	}
 }
 

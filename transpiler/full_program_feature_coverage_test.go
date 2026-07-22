@@ -90,8 +90,11 @@ func TestFullProgram_MethodReferencesAndNestedConstructors(t *testing.T) {
 	// Inner (non-static) class: `this.new Inner(in)` lowers to the renamed
 	// nested-class constructor and threads the enclosing instance as the leading
 	// argument, e.g. NewOuterInner(or, in).
-	if !strings.Contains(outer, "NewOuterInnerJava2goExecution(__java2goExecution, or, in)") {
-		t.Fatalf("expected inner-class constructor call to thread the enclosing instance, got:\n%s", outputs["com/acme/refs/Outer.go"])
+	if !strings.Contains(outer, "NewOuterInnerJava2goExecution(__java2goExecution, func() *Outer") ||
+		!strings.Contains(outer, "__java2goEnclosingInstance := or") ||
+		!strings.Contains(outer, "if __java2goEnclosingInstance == nil") ||
+		!strings.Contains(outer, "}(), in)") {
+		t.Fatalf("expected inner-class constructor call to null-check and thread the enclosing instance, got:\n%s", outputs["com/acme/refs/Outer.go"])
 	}
 }
 

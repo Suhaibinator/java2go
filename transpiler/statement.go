@@ -593,7 +593,15 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// Loop through every pair of name and value
 		for ind := 0; ind < int(node.NamedChildCount())-1; ind += 2 {
 			names = append(names, identFromNode(node.NamedChild(ind), source))
-			values = append(values, ParseExpr(node.NamedChild(ind+1), source, ctx))
+			valueNode := node.NamedChild(ind + 1)
+			value := ParseExpr(valueNode, source, ctx)
+			if expectedType := strings.TrimSpace(ctx.expectedType); expectedType != "" && !isVarKeywordType(expectedType) {
+				if actualType, known := inferExprJavaType(valueNode, ctx, source); known &&
+					javaDependentTypeParameterAssignable(actualType, expectedType, ctx) {
+					value = dependentTypeParameterWideningExpr(value, actualType, expectedType, ctx)
+				}
+			}
+			values = append(values, value)
 		}
 
 		return &ast.AssignStmt{Lhs: names, Tok: token.DEFINE, Rhs: values}

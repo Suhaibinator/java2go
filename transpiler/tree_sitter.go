@@ -84,6 +84,14 @@ type Ctx struct {
 	// the emitted function signature.
 	rawGenericParameterTypes map[string]string
 
+	// dependentTypeWitnesses describes the hidden, declaration-identity-aware
+	// conversions carried by a generic method whose Java bounds form a chain over
+	// a concrete class (for example T extends B extends A extends Base). Go cannot
+	// express that subtype relation in a type-parameter constraint because *Base
+	// denotes the exact generated Base subobject, so lowering passes explicit
+	// conversion evidence alongside the ordinary method arguments.
+	dependentTypeWitnesses *dependentTypeWitnessPlan
+
 	// Java package -> Go alias map for generated imports in the current output file
 	importAliases map[string]string
 	// Tracks which imported Java packages are actually used by generated nodes
@@ -381,6 +389,7 @@ func (c Ctx) Clone() Ctx {
 		expectedTypeRoot:                    c.expectedTypeRoot,
 		syntheticTypeParameters:             c.syntheticTypeParameters,
 		rawGenericParameterTypes:            c.rawGenericParameterTypes,
+		dependentTypeWitnesses:              c.dependentTypeWitnesses,
 		importAliases:                       c.importAliases,
 		usedImports:                         c.usedImports,
 		tryReturnTarget:                     c.tryReturnTarget,

@@ -176,8 +176,10 @@ public class Outer {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "return NewOuterInnerJava2goExecution(__java2goExecution, o)") {
-		t.Fatalf("expected `o.new Inner()` to pass the qualifier as enclosing instance, got:\n%s", out)
+	if !strings.Contains(flat, "return NewOuterInnerJava2goExecution(__java2goExecution, func() *Outer") ||
+		!strings.Contains(flat, "__java2goEnclosingInstance := o") ||
+		!strings.Contains(flat, "if __java2goEnclosingInstance == nil") {
+		t.Fatalf("expected `o.new Inner()` to evaluate, null-check, and pass its qualifier, got:\n%s", out)
 	}
 }
 
