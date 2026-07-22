@@ -143,17 +143,14 @@ func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast
 		return nil
 	}
 
-	paramNames := symbol.TypeParamNames(typeParams)
-	paramsByName := make(map[string]symbol.TypeParam, len(typeParams))
-	for _, parameter := range typeParams {
-		paramsByName[parameter.Name] = parameter
-	}
+	paramNames := symbol.GoTypeParamNames(typeParams)
+	parameterLookup := newTypeParameterLookup(typeParams)
 	fields := make([]*ast.Field, len(typeParams))
 	for i, tp := range typeParams {
 		fields[i] = &ast.Field{
-			Names: []*ast.Ident{{Name: tp.Name}},
+			Names: []*ast.Ident{{Name: tp.EmittedName()}},
 			Type: constraintExprInContext(
-				goRepresentableTypeParameterBounds(tp.Bounds, paramsByName, nil),
+				goRepresentableTypeParameterBounds(tp.Bounds, parameterLookup, nil),
 				paramNames,
 				ctx,
 			),
@@ -174,14 +171,14 @@ func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast
 // order and deduplicated.
 func goRepresentableTypeParameterBounds(
 	bounds []symbol.JavaType,
-	paramsByName map[string]symbol.TypeParam,
-	visiting map[string]bool,
+	parameters typeParameterLookup,
+	visiting map[typeParameterIdentityKey]bool,
 ) []symbol.JavaType {
 	if len(bounds) == 0 {
 		return nil
 	}
 	if visiting == nil {
-		visiting = make(map[string]bool, len(paramsByName))
+		visiting = make(map[typeParameterIdentityKey]bool, len(parameters.byName))
 	}
 
 	var result []symbol.JavaType
@@ -191,33 +188,36 @@ func goRepresentableTypeParameterBounds(
 		if original == "" {
 			return
 		}
-		if _, duplicate := seen[original]; duplicate {
+		resolved := substituteTypeParameterDeclarations(original, bound.TypeParameterBindings)
+		if _, duplicate := seen[resolved]; duplicate {
 			return
 		}
-		seen[original] = struct{}{}
-		result = append(result, symbol.JavaType{Original: original})
+		seen[resolved] = struct{}{}
+		bound.Original = original
+		result = append(result, bound)
 	}
 
 	for _, bound := range bounds {
 		original := strings.TrimSpace(bound.Original)
 		base, arguments := parseJavaTypeString(original)
-		dependencyName := stripJavaQualifier(base)
-		dependency, dependent := paramsByName[dependencyName]
+		dependencyName := strings.TrimSpace(base)
+		dependency, dependent := parameters.resolve(bound, dependencyName)
 		if !dependent || len(arguments) != 0 {
 			appendUnique(bound)
 			continue
 		}
-		if visiting[dependencyName] {
+		identity := identityKeyForTypeParameter(dependency)
+		if visiting[identity] {
 			// A direct cycle is not a useful Go constraint. Java's legal recursive
 			// form is normally parameterized (T extends Comparable<T>) and takes the
 			// non-dependent branch above.
 			continue
 		}
-		visiting[dependencyName] = true
-		for _, inherited := range goRepresentableTypeParameterBounds(dependency.Bounds, paramsByName, visiting) {
+		visiting[identity] = true
+		for _, inherited := range goRepresentableTypeParameterBounds(dependency.Bounds, parameters, visiting) {
 			appendUnique(inherited)
 		}
-		delete(visiting, dependencyName)
+		delete(visiting, identity)
 	}
 	return result
 }
@@ -228,12 +228,14 @@ func constraintExprInContext(bounds []symbol.JavaType, typeParams []string, ctx 
 	}
 
 	if len(bounds) == 1 {
-		return javaTypeStringToGoTypeExpr(bounds[0].Original, typeParams, ctx)
+		javaType := substituteTypeParameterDeclarations(bounds[0].Original, bounds[0].TypeParameterBindings)
+		return javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)
 	}
 
 	fields := make([]*ast.Field, len(bounds))
 	for i, b := range bounds {
-		fields[i] = &ast.Field{Type: javaTypeStringToGoTypeExpr(b.Original, typeParams, ctx)}
+		javaType := substituteTypeParameterDeclarations(b.Original, b.TypeParameterBindings)
+		fields[i] = &ast.Field{Type: javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)}
 	}
 
 	return &ast.InterfaceType{Methods: &ast.FieldList{List: fields}}

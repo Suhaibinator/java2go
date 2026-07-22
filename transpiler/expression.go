@@ -565,7 +565,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			} else if staticResolution != nil {
 				expectedArgTypes = definitionParameterOriginalTypes(staticResolution.def)
-				if genericArrayFormalNeedsExplicitTypeArguments(staticResolution.def) {
+				if genericMethodNeedsExplicitTypeArguments(staticResolution.def) {
 					expectedArgTypes = genericArrayInvocationExpectedTypes(staticResolution.def, node, ctx, source)
 				}
 			}
@@ -575,7 +575,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			args, expandVarargsArray := parseResolvedInvocationArguments(selectedResolution, argListNode, source, ctx, expectedArgTypes)
 			typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx), ctx)
-			if len(typeArgs) == 0 && staticResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(staticResolution.def) {
+			if len(typeArgs) == 0 && staticResolution != nil && genericMethodNeedsExplicitTypeArguments(staticResolution.def) {
 				typeArgs = inferMethodTypeArguments(staticResolution.def, node, ctx, source)
 			}
 
@@ -698,7 +698,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		if implicitInstanceResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(implicitInstanceResolution.def) {
 			expectedArgTypes = genericArrayInvocationExpectedTypes(implicitInstanceResolution.def, node, ctx, source)
-		} else if implicitStaticResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(implicitStaticResolution.def) {
+		} else if implicitStaticResolution != nil && genericMethodNeedsExplicitTypeArguments(implicitStaticResolution.def) {
 			expectedArgTypes = genericArrayInvocationExpectedTypes(implicitStaticResolution.def, node, ctx, source)
 		}
 		selectedResolution := implicitInstanceResolution
@@ -707,7 +707,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		args, expandVarargsArray := parseResolvedInvocationArguments(selectedResolution, argListNode, source, ctx, expectedArgTypes)
 		typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx), ctx)
-		if len(typeArgs) == 0 && implicitStaticResolution != nil && genericArrayFormalNeedsExplicitTypeArguments(implicitStaticResolution.def) {
+		if len(typeArgs) == 0 && implicitStaticResolution != nil && genericMethodNeedsExplicitTypeArguments(implicitStaticResolution.def) {
 			typeArgs = inferMethodTypeArguments(implicitStaticResolution.def, node, ctx, source)
 		}
 
@@ -718,7 +718,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			recv := &ast.Ident{Name: ShortName(ctx.className)}
 			target := &invocationTargetInfo{
 				classScope:    ctx.currentClass,
-				classTypeArgs: typeParamExprs(ctx.currentClass.TypeParameterNames()),
+				classTypeArgs: typeParamExprs(ctx.currentClass.GoTypeParameterNames()),
 			}
 			if rewritten := maybeRewriteInstanceGenericMethodInvocationWithTarget(target, implicitInstanceResolution, recv, methodName, args, node, ctx, source); rewritten != nil {
 				markDirectVarargsExpansionExpr(rewritten, expandVarargsArray)
@@ -862,14 +862,22 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
-		// Helper function to add type arguments to a function expression
+		// Helper function to add type arguments to a function expression. Hidden
+		// local-class arguments are already generated binder spellings; converting
+		// an outer `T` as Java source here would incorrectly rebind it to an
+		// innermost same-named method/local declaration.
+		generatedTypeArgumentPrefix := 0
 		addTypeArgs := func(funExpr ast.Expr, args []string) ast.Expr {
 			if len(args) == 0 {
 				return funExpr
 			}
 			scopeTypeParams := inScopeTypeParameters(ctx)
 			typeArgExprs := make([]ast.Expr, 0, len(args))
-			for _, ta := range args {
+			for index, ta := range args {
+				if index < generatedTypeArgumentPrefix {
+					typeArgExprs = append(typeArgExprs, &ast.Ident{Name: ta})
+					continue
+				}
 				typeArgExprs = append(typeArgExprs, javaTypeStringToGoTypeExpr(ta, scopeTypeParams, ctx))
 			}
 			return applyTypeArguments(funExpr, typeArgExprs)
@@ -888,18 +896,27 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 			// For inner class constructors (not diamond), use parent class type parameters
 			// This handles cases like `new Node(element)` inside a generic class
-			if len(effectiveTypeArgs) == 0 && !isDiamond && len(ctx.currentClass.TypeParameters) > 0 {
+			if len(effectiveTypeArgs) == 0 && !isDiamond && targetScope != nil && targetScope.IsInner && len(ctx.currentClass.TypeParameters) > 0 {
 				// Check if className is a nested class of the current class
 				for _, sub := range ctx.currentClass.Subclasses {
 					if sub.Class.OriginalName == className {
-						effectiveTypeArgs = ctx.currentClass.TypeParameterNames()
+						effectiveTypeArgs = ctx.currentClass.GoTypeParameterNames()
 						break
 					}
 				}
 			}
 		}
-		if len(effectiveTypeArgs) == 0 && localInfo != nil && localInfo.scope != nil {
-			effectiveTypeArgs = append(effectiveTypeArgs, localInfo.scope.TypeParameterNames()...)
+		if localInfo != nil && localInfo.scope != nil && len(effectiveTypeArgs) != len(localInfo.scope.TypeParameters) {
+			declaredArgs := append([]string(nil), effectiveTypeArgs...)
+			effectiveTypeArgs = append([]string(nil), localInfo.hiddenTypeArguments...)
+			generatedTypeArgumentPrefix = len(localInfo.hiddenTypeArguments)
+			for index, parameter := range localInfo.scope.OwnTypeParameters() {
+				if index < len(declaredArgs) {
+					effectiveTypeArgs = append(effectiveTypeArgs, declaredArgs[index])
+					continue
+				}
+				effectiveTypeArgs = append(effectiveTypeArgs, rawTypeParameterErasure(parameter, localInfo.scope.TypeParameters))
+			}
 		}
 		if targetScope != nil && (len(effectiveTypeArgs) > 0 || targetScope.IsInner) {
 			receiverScope := ctx.currentClass
@@ -4438,6 +4455,9 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 			}
 		}
 	}
+	if actualKnown && javaDependentTypeParameterAssignable(actualType, expectedType, ctx) {
+		return dependentTypeParameterWideningExpr(argExpr, actualType, expectedType, ctx)
+	}
 
 	if ctx.currentFile == nil {
 		return argExpr
@@ -4464,6 +4484,105 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	return &ast.SelectorExpr{
 		X:   argExpr,
 		Sel: &ast.Ident{Name: expectedScope.Class.Name},
+	}
+}
+
+// javaDependentTypeParameterAssignable recognizes Java's declaration-level
+// proof that one in-scope type parameter widens to another. Go cannot encode
+// `T extends B` directly when B is itself a type parameter, so code generation
+// flattens both constraints to B's representable upper bound. Keep the original
+// symbol relation available for conversions that rely on it.
+func javaDependentTypeParameterAssignable(actualType, expectedType string, ctx Ctx) bool {
+	actualBase, actualRank := javaArrayTypeParts(strings.TrimSpace(actualType))
+	expectedBase, expectedRank := javaArrayTypeParts(strings.TrimSpace(expectedType))
+	if actualRank != 0 || expectedRank != 0 {
+		return false
+	}
+	actualName := stripJavaQualifier(actualBase)
+	expectedName := stripJavaQualifier(expectedBase)
+	if actualName == "" || expectedName == "" || actualName == expectedName {
+		return false
+	}
+
+	lookup := newTypeParameterLookup(visibleTypeParameterDeclarations(ctx))
+	expected, ok := lookup.resolve(symbol.JavaType{}, expectedName)
+	if !ok {
+		return false
+	}
+	actual, ok := lookup.resolve(symbol.JavaType{}, actualName)
+	if !ok {
+		return false
+	}
+
+	expectedIdentity := identityKeyForTypeParameter(expected)
+	visiting := make(map[typeParameterIdentityKey]bool, len(lookup.byName))
+	var reaches func(symbol.TypeParam) bool
+	reaches = func(parameter symbol.TypeParam) bool {
+		identity := identityKeyForTypeParameter(parameter)
+		if identity == expectedIdentity {
+			return true
+		}
+		if visiting[identity] {
+			return false
+		}
+		visiting[identity] = true
+		defer delete(visiting, identity)
+		for _, bound := range parameter.Bounds {
+			boundBase, arguments := parseJavaTypeString(strings.TrimSpace(bound.Original))
+			if len(arguments) != 0 {
+				continue
+			}
+			dependency, found := lookup.resolve(bound, strings.TrimSpace(boundBase))
+			if found && reaches(dependency) {
+				return true
+			}
+		}
+		return false
+	}
+	return reaches(actual)
+}
+
+// dependentTypeParameterWideningExpr emits a single-evaluation bridge from T
+// to B after javaDependentTypeParameterAssignable has proved T extends B. The
+// nil branch covers both a zero interface and a typed nil pointer: asserting
+// either representation to B can panic or create a non-null Go interface,
+// whereas Java widens null without changing its identity.
+func dependentTypeParameterWideningExpr(argExpr ast.Expr, actualType, expectedType string, ctx Ctx) ast.Expr {
+	actualGoType := javaTypeStringToGoTypeExpr(actualType, inScopeTypeParameters(ctx), ctx)
+	expectedGoType := javaTypeStringToGoTypeExpr(expectedType, inScopeTypeParameters(ctx), ctx)
+	const valueName = "__java2goDependentValue"
+	boxedValue := func() ast.Expr {
+		return &ast.CallExpr{
+			Fun:  &ast.InterfaceType{Methods: &ast.FieldList{}},
+			Args: []ast.Expr{&ast.Ident{Name: valueName}},
+		}
+	}
+	return &ast.CallExpr{
+		Fun: &ast.FuncLit{
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{List: []*ast.Field{{
+					Names: []*ast.Ident{{Name: valueName}},
+					Type:  actualGoType,
+				}}},
+				Results: &ast.FieldList{List: []*ast.Field{{Type: expectedGoType}}},
+			},
+			Body: &ast.BlockStmt{List: []ast.Stmt{
+				&ast.IfStmt{
+					Cond: stdjavaCall(ctx, "JavaReferenceEqual", &ast.Ident{Name: valueName}, &ast.Ident{Name: "nil"}),
+					Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
+						&ast.StarExpr{X: &ast.CallExpr{
+							Fun:  &ast.Ident{Name: "new"},
+							Args: []ast.Expr{expectedGoType},
+						}},
+					}}}},
+				},
+				&ast.ReturnStmt{Results: []ast.Expr{&ast.TypeAssertExpr{
+					X:    boxedValue(),
+					Type: expectedGoType,
+				}}},
+			}},
+		},
+		Args: []ast.Expr{argExpr},
 	}
 }
 
@@ -5474,7 +5593,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 			ownerID+"$"+structName,
 			nil,
 			interfaceIDs,
-			syntheticScope.TypeParameterNames(),
+			syntheticScope.GoTypeParameterNames(),
 			ctx,
 		) {
 			ctx.addHoistedDecl(declaration)
@@ -5505,7 +5624,7 @@ func anonymousClassConstructionExpr(
 		superScope.Class != nil && constructorUsesMostDerived(superScope, ctx)
 	structType := instantiateGenericType(
 		info.structName,
-		typeParamExprs(info.scope.TypeParameterNames()),
+		typeParamExprs(info.scope.GoTypeParameterNames()),
 	)
 	elts := make([]ast.Expr, 0, len(info.captured)+1)
 	if info.scope.IsInner {
@@ -5815,31 +5934,56 @@ func javaTypeReferencesTypeParameter(javaType string, name string) bool {
 	return false
 }
 
-func localClassTypeParameters(
+type localClassTypeParameterPlan struct {
+	carried         []symbol.TypeParam
+	declared        []symbol.TypeParam
+	hiddenArguments []string
+}
+
+func planLocalClassTypeParameters(
 	classNode *sitter.Node,
 	captured []capturedLocal,
 	source []byte,
 	ctx Ctx,
-) []symbol.TypeParam {
-	var available []symbol.TypeParam
+) localClassTypeParameterPlan {
+	var external []symbol.TypeParam
 	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
-		available = symbol.MergeTypeParams(available, ctx.currentClass.TypeParameters)
+		external = symbol.AppendTypeParamsByDeclaration(external, ctx.currentClass.TypeParameters)
 	}
 	if ctx.localScope != nil {
-		available = symbol.MergeTypeParams(available, ctx.localScope.TypeParameters)
+		external = symbol.AppendTypeParamsByDeclaration(external, ctx.localScope.TypeParameters)
 	}
-	if len(available) == 0 {
-		return nil
-	}
+	declared := symbol.ExtractTypeParameters(classNode.ChildByFieldName("type_parameters"), source)
+	allAvailable := symbol.AppendTypeParamsByDeclaration(external, declared)
+	symbol.DisambiguateTypeParamGoNames(allAvailable)
+	symbol.BindTypeParameterBounds(declared, symbol.MergeTypeParams(external, declared))
 
-	used := map[string]struct{}{}
+	selected := map[*symbol.TypeParamDeclaration]struct{}{}
+	selectParameter := func(parameter symbol.TypeParam) {
+		if parameter.Declaration != nil {
+			selected[parameter.Declaration] = struct{}{}
+		}
+	}
 	if ctx.currentClass != nil && ctx.localScope != nil && !ctx.localScope.IsStatic {
 		// Hoisting adds a synthetic field whose type is Outer[T,...]. Those outer
 		// parameters are structurally required even when no source member spells
 		// them directly.
 		for _, parameter := range ctx.currentClass.TypeParameters {
-			used[parameter.Name] = struct{}{}
+			selectParameter(parameter)
 		}
+	}
+
+	declaredNames := map[string]struct{}{}
+	for _, parameter := range declared {
+		declaredNames[parameter.Name] = struct{}{}
+	}
+	findExternal := func(sourceName string) (symbol.TypeParam, bool) {
+		for index := len(external) - 1; index >= 0; index-- {
+			if external[index].Name == sourceName {
+				return external[index], true
+			}
+		}
+		return symbol.TypeParam{}, false
 	}
 	var walk func(*sitter.Node)
 	walk = func(node *sitter.Node) {
@@ -5848,9 +5992,9 @@ func localClassTypeParameters(
 		}
 		if node.Type() == "type_identifier" {
 			content := node.Content(source)
-			for _, parameter := range available {
-				if content == parameter.Name {
-					used[parameter.Name] = struct{}{}
+			if _, shadowed := declaredNames[content]; !shadowed {
+				if parameter, found := findExternal(content); found {
+					selectParameter(parameter)
 				}
 			}
 		}
@@ -5866,21 +6010,77 @@ func localClassTypeParameters(
 		if capture.javaDef == nil {
 			continue
 		}
-		for _, parameter := range available {
-			if javaTypeReferencesTypeParameter(capture.javaDef.OriginalType, parameter.Name) {
-				used[parameter.Name] = struct{}{}
+		matchedIdentity := false
+		for sourceName, declaration := range capture.javaDef.TypeParameterBindings {
+			if declaration == nil || !javaTypeReferencesTypeParameter(capture.javaDef.OriginalType, sourceName) {
+				continue
+			}
+			selected[declaration] = struct{}{}
+			matchedIdentity = true
+		}
+		if !matchedIdentity {
+			for _, parameter := range external {
+				if javaTypeReferencesTypeParameter(capture.javaDef.OriginalType, parameter.Name) {
+					selectParameter(parameter)
+				}
 			}
 		}
 	}
-	includeTransitiveTypeParameterBounds(used, available)
-
-	result := make([]symbol.TypeParam, 0, len(used))
-	for _, parameter := range available {
-		if _, ok := used[parameter.Name]; ok {
-			result = append(result, parameter)
+	// Close hidden carriage over declaration-bound dependencies. A captured T
+	// whose bound is another parameter B needs B in the generated declaration
+	// even when no source member spells B directly.
+	changed := true
+	for changed {
+		changed = false
+		for _, parameter := range external {
+			if parameter.Declaration == nil {
+				continue
+			}
+			if _, isSelected := selected[parameter.Declaration]; !isSelected {
+				continue
+			}
+			for _, bound := range parameter.Bounds {
+				matchedIdentity := false
+				for sourceName, declaration := range bound.TypeParameterBindings {
+					if declaration == nil || declaration == parameter.Declaration || !javaTypeReferencesTypeParameter(bound.Original, sourceName) {
+						continue
+					}
+					matchedIdentity = true
+					if _, already := selected[declaration]; !already {
+						selected[declaration] = struct{}{}
+						changed = true
+					}
+				}
+				if matchedIdentity {
+					continue
+				}
+				for _, dependency := range external {
+					visible, found := findExternal(dependency.Name)
+					if !found || visible.Declaration != dependency.Declaration || dependency.Declaration == nil || dependency.Declaration == parameter.Declaration {
+						continue
+					}
+					if _, already := selected[dependency.Declaration]; !already && javaTypeReferencesTypeParameter(bound.Original, dependency.Name) {
+						selected[dependency.Declaration] = struct{}{}
+						changed = true
+					}
+				}
+			}
 		}
 	}
-	return result
+
+	hidden := make([]symbol.TypeParam, 0, len(selected))
+	for _, parameter := range external {
+		if _, ok := selected[parameter.Declaration]; ok {
+			hidden = append(hidden, parameter)
+		}
+	}
+	carried := symbol.AppendTypeParamsByDeclaration(hidden, declared)
+	hiddenArguments := symbol.GoTypeParamNames(hidden)
+	return localClassTypeParameterPlan{
+		carried:         carried,
+		declared:        append([]symbol.TypeParam{}, declared...),
+		hiddenArguments: hiddenArguments,
+	}
 }
 
 // includeTransitiveTypeParameterBounds closes a selected type-parameter set
@@ -6330,6 +6530,14 @@ func syntheticConstructorParameterDefinitions(node *sitter.Node, source []byte) 
 	return parameters
 }
 
+func bindDefinitionTypeParameters(definition *symbol.Definition, parameters []symbol.TypeParam) {
+	if definition == nil {
+		return
+	}
+	definition.DirectTypeParameter = symbol.DirectTypeParamForJavaType(definition.OriginalType, parameters)
+	definition.TypeParameterBindings = symbol.VisibleTypeParamBindings(parameters)
+}
+
 func synthLocalClassScope(
 	classNode *sitter.Node,
 	classBody *sitter.Node,
@@ -6339,6 +6547,7 @@ func synthLocalClassScope(
 	captured []capturedLocal,
 	captureBindings []localConstructorCapture,
 	typeParameters []symbol.TypeParam,
+	declaredTypeParameters []symbol.TypeParam,
 	methodNodes []*sitter.Node,
 	constructorNodes []*sitter.Node,
 	reservedSelectors map[string]struct{},
@@ -6358,6 +6567,13 @@ func synthLocalClassScope(
 	scope.Class.Name = structName
 	scope.Class.DeclarationNode = classNode
 	scope.TypeParameters = append([]symbol.TypeParam(nil), typeParameters...)
+	scope.DeclaredTypeParameters = append([]symbol.TypeParam{}, declaredTypeParameters...)
+	for _, method := range scope.Methods {
+		bindDefinitionTypeParameters(method, scope.TypeParameters)
+		for _, parameter := range method.Parameters {
+			bindDefinitionTypeParameters(parameter, scope.TypeParameters)
+		}
+	}
 	if superclass := classNode.ChildByFieldName("superclass"); superclass != nil {
 		if types := collectTypeNodes(superclass); len(types) > 0 {
 			scope.Superclass = types[0].Content(source)
@@ -6390,6 +6606,9 @@ func synthLocalClassScope(
 			HasBody:         constructorNode.ChildByFieldName("body") != nil,
 			DeclarationNode: constructorNode,
 			Parameters:      syntheticConstructorParameterDefinitions(constructorNode, source),
+		}
+		for _, parameter := range constructor.Parameters {
+			bindDefinitionTypeParameters(parameter, scope.TypeParameters)
 		}
 		for _, binding := range captureBindings {
 			if binding.capture.javaDef == nil {
@@ -6541,7 +6760,7 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 		Body: body,
 	}
 	if !methodScope.IsStatic {
-		receiverType := instantiateGenericType(structName, typeParamExprs(syntheticScope.TypeParameterNames()))
+		receiverType := instantiateGenericType(structName, typeParamExprs(syntheticScope.GoTypeParameterNames()))
 		decl.Recv = &ast.FieldList{List: []*ast.Field{{
 			Names: []*ast.Ident{{Name: recvName}},
 			Type:  &ast.StarExpr{X: receiverType},
@@ -6661,7 +6880,7 @@ func buildLocalClassFieldInitializerMethod(
 		return nil
 	}
 
-	receiverType := instantiateGenericType(structName, typeParamExprs(syntheticScope.TypeParameterNames()))
+	receiverType := instantiateGenericType(structName, typeParamExprs(syntheticScope.GoTypeParameterNames()))
 	declaration := &ast.FuncDecl{
 		Name: &ast.Ident{Name: methodName},
 		Recv: &ast.FieldList{List: []*ast.Field{{
@@ -6762,7 +6981,10 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 
 	bodyMethods := anonymousClassMethods(classBody)
 	constructorNodes := localClassConstructors(classBody)
-	typeParameters := localClassTypeParameters(node, captured, source, ctx)
+	typeParameterPlan := planLocalClassTypeParameters(node, captured, source, ctx)
+	for _, definition := range declaredFieldDefs {
+		bindDefinitionTypeParameters(definition, typeParameterPlan.carried)
+	}
 	var superclassScope *symbol.ClassScope
 	if superclassNode := node.ChildByFieldName("superclass"); superclassNode != nil {
 		if superTypes := collectTypeNodes(superclassNode); len(superTypes) > 0 {
@@ -6796,7 +7018,8 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		declaredFieldDefs,
 		captured,
 		captureBindings,
-		typeParameters,
+		typeParameterPlan.carried,
+		typeParameterPlan.declared,
 		bodyMethods,
 		constructorNodes,
 		reservedInstallerSelectors,
@@ -6819,6 +7042,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		dynamicTypeID:              dynamicTypeID,
 		captured:                   captured,
 		scope:                      syntheticScope,
+		hiddenTypeArguments:        append([]string(nil), typeParameterPlan.hiddenArguments...),
 		fieldInitializerMethodName: fieldInitializerMethod,
 	}
 	fieldTypeCtx := ctx.Clone()
@@ -6830,8 +7054,8 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 			continue
 		}
 		declaredAstFields[index].Type = javaTypeStringToGoTypeExpr(
-			definition.OriginalType,
-			syntheticScope.TypeParameterNames(),
+			definitionJavaType(definition),
+			syntheticScope.GoTypeParameterNames(),
 			fieldTypeCtx,
 		)
 	}
@@ -6901,7 +7125,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 			dynamicTypeID,
 			superclassScope,
 			directInterfaceScopes,
-			syntheticScope.TypeParameterNames(),
+			syntheticScope.GoTypeParameterNames(),
 			ctx,
 		) {
 			ctx.addHoistedDecl(declaration)
@@ -6920,7 +7144,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 			dynamicTypeID,
 			superID,
 			interfaceIDs,
-			syntheticScope.TypeParameterNames(),
+			syntheticScope.GoTypeParameterNames(),
 			ctx,
 		) {
 			ctx.addHoistedDecl(declaration)
@@ -7546,13 +7770,48 @@ func inScopeTypeParameters(ctx Ctx) []string {
 	// parameters needed to model a raw generic signature are added explicitly as
 	// synthetic function parameters below.
 	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
-		appendUnique(ctx.currentClass.TypeParameterNames()...)
+		appendUnique(ctx.currentClass.GoTypeParameterNames()...)
 	}
 	if ctx.localScope != nil {
-		appendUnique(ctx.localScope.TypeParameterNames()...)
+		appendUnique(ctx.localScope.GoTypeParameterNames()...)
 	}
-	appendUnique(symbol.TypeParamNames(ctx.syntheticTypeParameters)...)
+	appendUnique(symbol.GoTypeParamNames(ctx.syntheticTypeParameters)...)
 	return params
+}
+
+func visibleTypeParameterDeclarations(ctx Ctx) []symbol.TypeParam {
+	var visible []symbol.TypeParam
+	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
+		visible = symbol.MergeTypeParams(visible, ctx.currentClass.TypeParameters)
+	}
+	visible = symbol.MergeTypeParams(visible, ctx.syntheticTypeParameters)
+	if ctx.localScope != nil {
+		visible = symbol.MergeTypeParams(visible, ctx.localScope.TypeParameters)
+	}
+	return visible
+}
+
+// visibleTypeParameterGoName performs Java lexical lookup by source spelling
+// while returning the generated binder name. Class carriage order is outer to
+// inner, then a method declaration shadows the class, and synthetic function
+// parameters are innermost.
+func visibleTypeParameterGoName(sourceName string, ctx Ctx) (string, bool) {
+	resolved := ""
+	consider := func(parameters []symbol.TypeParam) {
+		for _, parameter := range parameters {
+			if parameter.Name == sourceName {
+				resolved = parameter.EmittedName()
+			}
+		}
+	}
+	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
+		consider(ctx.currentClass.TypeParameters)
+	}
+	if ctx.localScope != nil {
+		consider(ctx.localScope.TypeParameters)
+	}
+	consider(ctx.syntheticTypeParameters)
+	return resolved, resolved != ""
 }
 
 // javaNumericPromotionType returns the primitive type produced by Java binary
@@ -7859,6 +8118,8 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		// java.util.concurrent / java.lang.Thread types backed by the stdjava
 		// runtime (AtomicInteger, Thread, ConcurrentHashMap, ...).
 		expr = rt
+	} else if generatedName, visible := visibleTypeParameterGoName(baseName, ctx); visible {
+		expr = &ast.Ident{Name: generatedName}
 	} else if isTypeParam(baseName) {
 		expr = &ast.Ident{Name: baseName}
 	} else {
@@ -7895,23 +8156,101 @@ func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
 	}
 	if ctx.localScope != nil {
 		if param := ctx.localScope.ParameterByName(name); param != nil && param.OriginalType != "" {
-			return param.OriginalType, true
+			return definitionJavaType(param), true
 		}
 		if local := ctx.localScope.FindVariable(name); local != nil && local.OriginalType != "" {
-			return local.OriginalType, true
+			return definitionJavaType(local), true
 		}
 	}
 	if ctx.currentClass != nil {
 		if field := findFieldResolutionInHierarchy(ctx.currentClass, name, ctx); field != nil && field.def != nil && field.def.OriginalType != "" {
 			return instantiatedFieldJavaType(
 				ctx.currentClass,
-				ctx.currentClass.TypeParameterNames(),
+				ctx.currentClass.GoTypeParameterNames(),
 				field,
 				ctx,
 			), true
 		}
+		if javaType, found := inferEnclosingFieldJavaType(name, ctx); found {
+			return javaType, true
+		}
 	}
 	return "", false
+}
+
+func inferEnclosingFieldJavaType(name string, ctx Ctx) (string, bool) {
+	if ctx.currentClass == nil || !ctx.currentClass.IsInner || (ctx.localScope != nil && ctx.localScope.IsStatic) {
+		return "", false
+	}
+	seen := map[*symbol.ClassScope]struct{}{}
+	for current := ctx.currentClass; current != nil && current.IsInner; current = current.Enclosing {
+		if _, duplicate := seen[current]; duplicate {
+			return "", false
+		}
+		seen[current] = struct{}{}
+		enclosing := current.Enclosing
+		if enclosing == nil {
+			return "", false
+		}
+		resolution := findFieldResolutionInHierarchy(enclosing, name, ctx)
+		if resolution == nil || resolution.def == nil || resolution.def.IsStatic {
+			continue
+		}
+		return instantiatedFieldJavaType(enclosing, enclosing.GoTypeParameterNames(), resolution, ctx), true
+	}
+	return "", false
+}
+
+func definitionJavaType(definition *symbol.Definition) string {
+	if definition == nil {
+		return ""
+	}
+	javaType := strings.TrimSpace(definition.OriginalType)
+	bindings := definition.TypeParameterBindings
+	if len(bindings) == 0 && definition.DirectTypeParameter != nil {
+		bindings = map[string]*symbol.TypeParamDeclaration{
+			definition.DirectTypeParameter.SourceName: definition.DirectTypeParameter,
+		}
+	}
+	if len(bindings) == 0 {
+		return javaType
+	}
+	return substituteTypeParameterDeclarations(javaType, bindings)
+}
+
+func substituteTypeParameterDeclarations(javaType string, bindings map[string]*symbol.TypeParamDeclaration) string {
+	arraySuffix := ""
+	base := javaType
+	for strings.HasSuffix(base, "[]") {
+		arraySuffix += "[]"
+		base = strings.TrimSpace(strings.TrimSuffix(base, "[]"))
+	}
+	if strings.HasPrefix(base, "?") {
+		rest := strings.TrimSpace(strings.TrimPrefix(base, "?"))
+		if rest == "" {
+			return "?" + arraySuffix
+		}
+		if strings.HasPrefix(rest, "extends") {
+			bound := strings.TrimSpace(strings.TrimPrefix(rest, "extends"))
+			return "? extends " + substituteTypeParameterDeclarations(bound, bindings) + arraySuffix
+		}
+		if strings.HasPrefix(rest, "super") {
+			bound := strings.TrimSpace(strings.TrimPrefix(rest, "super"))
+			return "? super " + substituteTypeParameterDeclarations(bound, bindings) + arraySuffix
+		}
+		return javaType
+	}
+	typeBase, arguments := parseJavaTypeString(base)
+	if len(arguments) == 0 {
+		if declaration := bindings[typeBase]; declaration != nil && strings.TrimSpace(declaration.GoName) != "" {
+			return declaration.GoName + arraySuffix
+		}
+		return base + arraySuffix
+	}
+	for index, argument := range arguments {
+		arguments[index] = substituteTypeParameterDeclarations(argument, bindings)
+	}
+	return typeBase + "<" + strings.Join(arguments, ", ") + ">" + arraySuffix
 }
 
 // instantiatedFieldJavaType substitutes superclass type arguments into an
@@ -7928,7 +8267,7 @@ func instantiatedFieldJavaType(
 	if resolution == nil || resolution.def == nil {
 		return ""
 	}
-	fallback := resolution.def.OriginalType
+	fallback := definitionJavaType(resolution.def)
 	if start == nil || resolution.owner == nil {
 		return readableWildcardProjection(fallback)
 	}
@@ -8184,7 +8523,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		if len(ctx.currentClass.TypeParameters) == 0 {
 			return base, true
 		}
-		return fmt.Sprintf("%s<%s>", base, strings.Join(ctx.currentClass.TypeParameterNames(), ", ")), true
+		return fmt.Sprintf("%s<%s>", base, strings.Join(ctx.currentClass.GoTypeParameterNames(), ", ")), true
 	case "object_creation_expression":
 		// Java `var` retains the exact anonymous class type, not merely the
 		// written superclass/interface. The creation expression is lowered before
@@ -8194,7 +8533,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			if key, ok := anonymousClassSourceKey(node); ok {
 				if info := ctx.anonymousClasses[key]; info != nil && info.structName != "" {
 					if info.scope != nil && len(info.scope.TypeParameters) > 0 {
-						return info.structName + "<" + strings.Join(info.scope.TypeParameterNames(), ", ") + ">", true
+						return info.structName + "<" + strings.Join(info.scope.GoTypeParameterNames(), ", ") + ">", true
 					}
 					return info.structName, true
 				}
@@ -8462,7 +8801,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		case "this":
 			owner = ctx.currentClass
 			if owner != nil {
-				ownerTypeArgs = owner.TypeParameterNames()
+				ownerTypeArgs = owner.GoTypeParameterNames()
 			}
 		case "super":
 			owner = resolveSuperclassScope(ctx, ctx.currentClass)
@@ -8688,7 +9027,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 			return nil
 		}
 		className = ctx.currentClass.Class.OriginalName
-		classTypeArgs = ctx.currentClass.TypeParameterNames()
+		classTypeArgs = ctx.currentClass.GoTypeParameterNames()
 	case "super":
 		if ctx.currentClass == nil {
 			return nil
@@ -8768,50 +9107,73 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 // parameters shadow synthetic/raw and class type parameters, matching Java's
 // scope rules. The traversal is cycle-safe and preserves declaration order.
 func resolvableTypeParameterBounds(name string, ctx Ctx) []string {
-	var visible []symbol.TypeParam
-	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
-		visible = symbol.MergeTypeParams(visible, ctx.currentClass.TypeParameters)
-	}
-	visible = symbol.MergeTypeParams(visible, ctx.syntheticTypeParameters)
-	if ctx.localScope != nil {
-		visible = symbol.MergeTypeParams(visible, ctx.localScope.TypeParameters)
-	}
+	visible := visibleTypeParameterDeclarations(ctx)
 
-	byName := make(map[string]symbol.TypeParam, len(visible))
+	bySourceName := make(map[string]symbol.TypeParam, len(visible))
+	byEmittedName := make(map[string]symbol.TypeParam, len(visible))
+	byDeclaration := make(map[*symbol.TypeParamDeclaration]symbol.TypeParam, len(visible))
 	for _, parameter := range visible {
-		byName[parameter.Name] = parameter
+		bySourceName[parameter.Name] = parameter
+		byEmittedName[parameter.EmittedName()] = parameter
+		if parameter.Declaration != nil {
+			byDeclaration[parameter.Declaration] = parameter
+		}
 	}
-	visiting := make(map[string]bool, len(visible))
+	visitingDeclarations := make(map[*symbol.TypeParamDeclaration]bool, len(visible))
+	visitingLegacy := make(map[string]bool, len(visible))
 	seenBounds := map[string]struct{}{}
-	var resolve func(string) []string
-	resolve = func(parameterName string) []string {
-		if visiting[parameterName] {
+	var resolve func(symbol.TypeParam) []string
+	resolve = func(parameter symbol.TypeParam) []string {
+		if parameter.Declaration != nil {
+			if visitingDeclarations[parameter.Declaration] {
+				return nil
+			}
+			visitingDeclarations[parameter.Declaration] = true
+			defer delete(visitingDeclarations, parameter.Declaration)
+		} else if visitingLegacy[parameter.EmittedName()] {
 			return nil
+		} else {
+			visitingLegacy[parameter.EmittedName()] = true
+			defer delete(visitingLegacy, parameter.EmittedName())
 		}
-		parameter, ok := byName[parameterName]
-		if !ok {
-			return nil
-		}
-		visiting[parameterName] = true
-		defer delete(visiting, parameterName)
 		var result []string
 		for _, bound := range parameter.Bounds {
 			original := strings.TrimSpace(bound.Original)
 			base, arguments := parseJavaTypeString(original)
 			if resolveClassScopeByQualifiedName(ctx, base) != nil {
-				if _, duplicate := seenBounds[original]; !duplicate {
-					seenBounds[original] = struct{}{}
-					result = append(result, original)
+				emittedBound := substituteTypeParameterDeclarations(original, bound.TypeParameterBindings)
+				if _, duplicate := seenBounds[emittedBound]; !duplicate {
+					seenBounds[emittedBound] = struct{}{}
+					result = append(result, emittedBound)
 				}
 				continue
 			}
 			if len(arguments) == 0 {
-				result = append(result, resolve(stripJavaQualifier(base))...)
+				dependencyName := stripJavaQualifier(base)
+				if declaration := bound.TypeParameterBindings[dependencyName]; declaration != nil {
+					if dependency, found := byDeclaration[declaration]; found {
+						result = append(result, resolve(dependency)...)
+						continue
+					}
+				}
+				if dependency, found := bySourceName[dependencyName]; found {
+					result = append(result, resolve(dependency)...)
+				}
 			}
 		}
 		return result
 	}
-	return resolve(strings.TrimSpace(name))
+	trimmedName := strings.TrimSpace(name)
+	// Persisted Definition provenance rewrites references to emitted names. Give
+	// that exact namespace priority over Java lexical source lookup; shadowed
+	// source uses have already been rewritten to their own emitted binder.
+	if parameter, found := byEmittedName[trimmedName]; found {
+		return resolve(parameter)
+	}
+	if parameter, found := bySourceName[trimmedName]; found {
+		return resolve(parameter)
+	}
+	return nil
 }
 
 func explicitTypeArgumentExprs(node *sitter.Node, source []byte, typeParams []string, ctx Ctx) []ast.Expr {
@@ -8850,7 +9212,11 @@ func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Nod
 		if expr, ok := resolved[tp.Name]; ok {
 			result[i] = expr
 		} else {
-			result[i] = &ast.Ident{Name: "any"}
+			// If no dependent argument supplied a precise view for a bound-only
+			// parameter, use Java's transitive first-bound erasure. Unlike `any`, the
+			// erased view is guaranteed to satisfy the generated Go constraint.
+			erased := rawTypeParameterErasure(tp, def.TypeParameters)
+			result[i] = javaTypeStringToGoTypeExpr(erased, inScopeTypeParameters(ctx), ctx)
 		}
 	}
 	return result
@@ -8885,34 +9251,25 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 	}
 	argNodes := nodeutil.NamedChildrenOf(argsNode)
 	lowerBounds := make(map[string][]string, len(def.TypeParameters))
+	typeParameterNames := make(map[string]struct{}, len(def.TypeParameters))
+	for _, typeParameter := range def.TypeParameters {
+		typeParameterNames[typeParameter.Name] = struct{}{}
+	}
 	for index, parameter := range def.Parameters {
 		if parameter == nil || index >= len(argNodes) {
 			continue
 		}
-		formalBase, formalRank := javaArrayTypeParts(parameter.OriginalType)
-		for _, typeParameter := range def.TypeParameters {
-			if stripJavaQualifier(formalBase) != typeParameter.Name {
-				continue
-			}
-			actualType, ok := inferExprJavaType(argNodes[index], ctx, source)
-			if !ok {
-				continue
-			}
-			actualBase, actualRank := javaArrayTypeParts(actualType)
-			if actualRank < formalRank {
-				continue
-			}
-			inferred := actualBase + strings.Repeat("[]", actualRank-formalRank)
-			// A primitive expression supplied for scalar T participates through
-			// Java boxing. Primitive arrays are references only while at least one
-			// array dimension remains after matching the formal rank.
-			if actualRank == 0 && formalRank == 0 {
-				if boxed := ternaryBoxedJavaType(inferred); boxed != "" {
-					inferred = boxed
-				}
-			}
-			lowerBounds[typeParameter.Name] = append(lowerBounds[typeParameter.Name], inferred)
+		actualType, ok := inferExprJavaType(argNodes[index], ctx, source)
+		if !ok {
+			continue
 		}
+		collectGenericMethodInferenceBounds(
+			parameter.OriginalType,
+			actualType,
+			typeParameterNames,
+			lowerBounds,
+			ctx,
+		)
 	}
 
 	for _, typeParameter := range def.TypeParameters {
@@ -8920,16 +9277,164 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 		if inferred == "" {
 			continue
 		}
-		if len(typeParameter.Bounds) > 0 {
-			bound := strings.TrimSpace(typeParameter.Bounds[0].Original)
-			boundBase, _ := parseJavaTypeString(bound)
-			if boundScope := resolveClassScopeByQualifiedName(ctx, boundBase); boundScope != nil && !boundScope.IsInterface {
-				inferred = bound
-			}
+		// A concrete class used as a constraint denotes exactly *Base in Go,
+		// unlike a Java upper bound that also admits subclasses. Use the transitive
+		// erasure view (including T extends B extends Base) so argument lowering can
+		// carve the corresponding Base subobject.
+		erased := rawTypeParameterErasure(typeParameter, def.TypeParameters)
+		erasedBase, _ := parseJavaTypeString(erased)
+		if boundScope := resolveClassScopeByQualifiedName(ctx, erasedBase); boundScope != nil && !boundScope.IsInterface {
+			inferred = erased
 		}
 		bindings[typeParameter.Name] = inferred
 	}
+
+	// If B occurs only in `T extends B`, Java infers it through T's bound
+	// constraint while Go sees no B-bearing value parameter. Preserve the most
+	// precise inferred dependent view when it satisfies B's own erasure. This is
+	// what keeps `<B extends Root, T extends B> B id(T)` returning Impl for an
+	// Impl argument instead of unnecessarily widening its call-site type to Root.
+	for _, missing := range def.TypeParameters {
+		if _, alreadyResolved := bindings[missing.Name]; alreadyResolved {
+			continue
+		}
+		var candidates []string
+		for _, dependent := range def.TypeParameters {
+			if !methodTypeParameterDependsOn(dependent.Name, missing.Name, def.TypeParameters) {
+				continue
+			}
+			if inferred := strings.TrimSpace(bindings[dependent.Name]); inferred != "" {
+				candidates = append(candidates, inferred)
+			}
+		}
+		inferred := javaInferenceLeastUpperBound(candidates, ctx)
+		if inferred == "" {
+			continue
+		}
+
+		erased := rawTypeParameterErasure(missing, def.TypeParameters)
+		erasedBase, _ := parseJavaTypeString(erased)
+		if boundScope := resolveClassScopeByQualifiedName(ctx, erasedBase); boundScope != nil {
+			if !boundScope.IsInterface || !javaInferenceTypeAssignable(inferred, erased, ctx) {
+				inferred = erased
+			}
+		}
+		bindings[missing.Name] = inferred
+	}
 	return bindings
+}
+
+// collectGenericMethodInferenceBounds mirrors the structural portion of Java
+// method-invocation inference. A method parameter can mention its type variable
+// below arrays or invariant generic constructors (Box<T>, Map<K, List<V>>), not
+// only as a bare T. Matching the actual generic shape records the corresponding
+// lower bounds so helper calls can spell the same concrete type arguments Java
+// inferred before Go sees the call.
+func collectGenericMethodInferenceBounds(
+	formal string,
+	actual string,
+	typeParameterNames map[string]struct{},
+	lowerBounds map[string][]string,
+	ctx Ctx,
+) {
+	formal = strings.TrimSpace(formal)
+	actual = strings.TrimSpace(actual)
+	if formal == "" || actual == "" || formal == "?" {
+		return
+	}
+	if strings.HasPrefix(formal, "? extends ") {
+		collectGenericMethodInferenceBounds(
+			strings.TrimSpace(strings.TrimPrefix(formal, "? extends ")),
+			actual,
+			typeParameterNames,
+			lowerBounds,
+			ctx,
+		)
+		return
+	}
+	if strings.HasPrefix(formal, "? super ") {
+		// A lower-bounded wildcard contributes an upper constraint on the method
+		// variable, not the lower bound accumulated by this helper. Leave it to Go
+		// inference or the declared erasure until upper constraints are modeled.
+		return
+	}
+
+	formalBase, formalRank := javaArrayTypeParts(formal)
+	actualBase, actualRank := javaArrayTypeParts(actual)
+	bareFormal, formalArguments := parseJavaTypeString(formalBase)
+	formalName := stripJavaQualifier(bareFormal)
+	if _, isTypeParameter := typeParameterNames[formalName]; isTypeParameter && len(formalArguments) == 0 {
+		if actualRank < formalRank {
+			return
+		}
+		inferred := actualBase + strings.Repeat("[]", actualRank-formalRank)
+		// A primitive expression supplied for scalar T participates through Java
+		// boxing. Primitive arrays remain reference types while a dimension remains.
+		if actualRank == 0 && formalRank == 0 {
+			if boxed := ternaryBoxedJavaType(inferred); boxed != "" {
+				inferred = boxed
+			}
+		}
+		lowerBounds[formalName] = append(lowerBounds[formalName], inferred)
+		return
+	}
+	if formalRank != actualRank {
+		return
+	}
+
+	actualRaw, actualArguments := parseJavaTypeString(actualBase)
+	if len(formalArguments) == 0 || len(formalArguments) != len(actualArguments) {
+		return
+	}
+	formalScope := resolveClassScopeByQualifiedName(ctx, bareFormal)
+	actualScope := resolveClassScopeByQualifiedName(ctx, actualRaw)
+	if formalScope != nil || actualScope != nil {
+		if formalScope == nil || actualScope == nil || formalScope != actualScope {
+			return
+		}
+	} else if stripJavaQualifier(bareFormal) != stripJavaQualifier(actualRaw) {
+		return
+	}
+	for index := range formalArguments {
+		collectGenericMethodInferenceBounds(
+			formalArguments[index],
+			actualArguments[index],
+			typeParameterNames,
+			lowerBounds,
+			ctx,
+		)
+	}
+}
+
+func methodTypeParameterDependsOn(actualName, expectedName string, parameters []symbol.TypeParam) bool {
+	byName := make(map[string]symbol.TypeParam, len(parameters))
+	for _, parameter := range parameters {
+		byName[parameter.Name] = parameter
+	}
+	visiting := make(map[string]bool, len(parameters))
+	var reaches func(string) bool
+	reaches = func(name string) bool {
+		if name == expectedName {
+			return true
+		}
+		if visiting[name] {
+			return false
+		}
+		parameter, ok := byName[name]
+		if !ok {
+			return false
+		}
+		visiting[name] = true
+		defer delete(visiting, name)
+		for _, bound := range parameter.Bounds {
+			base, arguments := parseJavaTypeString(strings.TrimSpace(bound.Original))
+			if len(arguments) == 0 && reaches(stripJavaQualifier(base)) {
+				return true
+			}
+		}
+		return false
+	}
+	return actualName != expectedName && reaches(actualName)
 }
 
 // javaInferenceLeastUpperBound returns a deterministic, representable Java
@@ -9156,6 +9661,45 @@ func genericArrayFormalNeedsExplicitTypeArguments(def *symbol.Definition) bool {
 		for _, typeParameter := range def.TypeParameters {
 			if stripJavaQualifier(base) == typeParameter.Name {
 				return true
+			}
+		}
+	}
+	return false
+}
+
+// genericMethodNeedsExplicitTypeArguments covers the places where Java's
+// source-level inference proof is no longer visible in the generated Go
+// signature. Reference arrays lose T through their shared runtime ABI. A
+// dependent bound can likewise mention B only in `T extends B`, leaving no Go
+// value parameter from which B can be inferred.
+func genericMethodNeedsExplicitTypeArguments(def *symbol.Definition) bool {
+	if genericArrayFormalNeedsExplicitTypeArguments(def) {
+		return true
+	}
+	if def == nil || len(def.TypeParameters) < 2 {
+		return false
+	}
+
+	formalReferences := make(map[string]bool, len(def.TypeParameters))
+	for _, typeParameter := range def.TypeParameters {
+		for _, parameter := range def.Parameters {
+			if parameter != nil && javaTypeReferencesTypeParameter(parameter.OriginalType, typeParameter.Name) {
+				formalReferences[typeParameter.Name] = true
+				break
+			}
+		}
+	}
+
+	for _, missing := range def.TypeParameters {
+		if formalReferences[missing.Name] {
+			continue
+		}
+		for _, dependent := range def.TypeParameters {
+			for _, bound := range dependent.Bounds {
+				base, arguments := parseJavaTypeString(strings.TrimSpace(bound.Original))
+				if len(arguments) == 0 && stripJavaQualifier(base) == missing.Name {
+					return true
+				}
 			}
 		}
 	}

@@ -173,6 +173,7 @@ type localClassInfo struct {
 	dynamicTypeID              string
 	captured                   []capturedLocal
 	scope                      *symbol.ClassScope
+	hiddenTypeArguments        []string
 	fieldInitializerMethodName string
 }
 

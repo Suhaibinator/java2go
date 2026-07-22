@@ -1675,15 +1675,18 @@ func recordLocalVariableDefinition(ctx Ctx, name, originalType, parsedType strin
 		}
 		existing.Type = parsedType
 		existing.OriginalType = originalType
+		bindDefinitionTypeParameters(existing, visibleTypeParameterDeclarations(ctx))
 		return
 	}
 
-	ctx.localScope.Children = append(ctx.localScope.Children, &symbol.Definition{
+	definition := &symbol.Definition{
 		OriginalName: name,
 		Name:         name,
 		OriginalType: originalType,
 		Type:         parsedType,
-	})
+	}
+	bindDefinitionTypeParameters(definition, visibleTypeParameterDeclarations(ctx))
+	ctx.localScope.Children = append(ctx.localScope.Children, definition)
 }
 
 func markLocalVariableNullable(ctx Ctx, name string) {

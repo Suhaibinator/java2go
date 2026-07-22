@@ -10,6 +10,16 @@ type Definition struct {
 	Name string
 	// Original Java type of the object
 	OriginalType string
+	// DirectTypeParameter identifies the declaration referenced when OriginalType
+	// is a bare type-parameter use (possibly with array suffixes). It prevents a
+	// captured or hoisted definition from being rebound to a different same-named
+	// parameter in its generated lexical context.
+	DirectTypeParameter *TypeParamDeclaration
+	// TypeParameterBindings records the lexical declaration selected for every
+	// visible source spelling when OriginalType was parsed. It preserves nested
+	// uses such as List<T> when a definition is later captured into a scope whose
+	// own T shadows the original declaration.
+	TypeParameterBindings map[string]*TypeParamDeclaration
 	// Display type of the object
 	Type string
 	// Nullable marks a local whose generated storage must preserve a Java null
@@ -108,4 +118,11 @@ func (d *Definition) TypeParameterNames() []string {
 		return nil
 	}
 	return TypeParamNames(d.TypeParameters)
+}
+
+func (d *Definition) GoTypeParameterNames() []string {
+	if d == nil {
+		return nil
+	}
+	return GoTypeParamNames(d.TypeParameters)
 }

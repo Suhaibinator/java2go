@@ -199,7 +199,7 @@ func executionNameForParams(params *ast.FieldList, reservedNames ...string) stri
 func executionNameForClass(scope *symbol.ClassScope) string {
 	used := make(map[string]struct{})
 	if scope != nil {
-		for _, typeParam := range scope.TypeParameterNames() {
+		for _, typeParam := range scope.GoTypeParameterNames() {
 			used[typeParam] = struct{}{}
 		}
 		for _, field := range scope.Fields {
@@ -233,9 +233,9 @@ func executionMethodField(public *ast.Field, def *symbol.Definition, owner *symb
 	}
 	var reservedNames []string
 	if owner != nil {
-		reservedNames = append(reservedNames, owner.TypeParameterNames()...)
+		reservedNames = append(reservedNames, owner.GoTypeParameterNames()...)
 	}
-	reservedNames = append(reservedNames, def.TypeParameterNames()...)
+	reservedNames = append(reservedNames, def.GoTypeParameterNames()...)
 	executionName := executionNameForParams(params, reservedNames...)
 	params.List = append([]*ast.Field{executionParameterField(executionName, ctx)}, params.List...)
 	return &ast.Field{

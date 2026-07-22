@@ -95,6 +95,16 @@ func (cs *ClassScope) TypeParameterNames() []string {
 	return TypeParamNames(cs.TypeParameters)
 }
 
+// GoTypeParameterNames returns collision-free generated binder spellings.
+// TypeParameterNames intentionally remains the Java source-name view used for
+// lexical lookup and substitution.
+func (cs *ClassScope) GoTypeParameterNames() []string {
+	if cs == nil {
+		return nil
+	}
+	return GoTypeParamNames(cs.TypeParameters)
+}
+
 // OwnTypeParameters returns the source-declared parameters for a parsed class.
 // A non-nil empty DeclaredTypeParameters slice intentionally means the class
 // declared no parameters even when its generated ABI carries enclosing ones.

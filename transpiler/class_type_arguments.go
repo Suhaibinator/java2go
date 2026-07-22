@@ -6,6 +6,70 @@ import (
 	"github.com/NickyBoy89/java2go/symbol"
 )
 
+// typeParameterLookup resolves Java source references without collapsing
+// distinct same-named declarations. The source-name map is retained only as a
+// compatibility fallback for older synthetic TypeParam values that do not yet
+// carry declaration identity.
+type typeParameterLookup struct {
+	byDeclaration map[*symbol.TypeParamDeclaration]symbol.TypeParam
+	byName        map[string]symbol.TypeParam
+}
+
+func newTypeParameterLookup(parameters []symbol.TypeParam) typeParameterLookup {
+	lookup := typeParameterLookup{
+		byDeclaration: make(map[*symbol.TypeParamDeclaration]symbol.TypeParam, len(parameters)),
+		byName:        make(map[string]symbol.TypeParam, len(parameters)*2),
+	}
+	for _, parameter := range parameters {
+		if parameter.Declaration != nil {
+			lookup.byDeclaration[parameter.Declaration] = parameter
+		}
+		lookup.byName[parameter.Name] = parameter
+		lookup.byName[parameter.EmittedName()] = parameter
+	}
+	return lookup
+}
+
+func (lookup typeParameterLookup) resolve(javaType symbol.JavaType, name string) (symbol.TypeParam, bool) {
+	if declaration := javaType.TypeParameterBindings[name]; declaration != nil {
+		parameter, found := lookup.byDeclaration[declaration]
+		return parameter, found
+	}
+	parameter, found := lookup.byName[name]
+	return parameter, found
+}
+
+type typeParameterIdentityKey struct {
+	declaration *symbol.TypeParamDeclaration
+	legacyName  string
+}
+
+func identityKeyForTypeParameter(parameter symbol.TypeParam) typeParameterIdentityKey {
+	if parameter.Declaration != nil {
+		return typeParameterIdentityKey{declaration: parameter.Declaration}
+	}
+	return typeParameterIdentityKey{legacyName: parameter.Name}
+}
+
+type receiverTypeArgumentBindings struct {
+	byDeclaration  map[*symbol.TypeParamDeclaration]string
+	byUniqueName   map[string]string
+	ambiguousNames map[string]struct{}
+}
+
+func (bindings receiverTypeArgumentBindings) argumentFor(parameter symbol.TypeParam) (string, bool) {
+	if parameter.Declaration != nil {
+		if argument, found := bindings.byDeclaration[parameter.Declaration]; found {
+			return argument, true
+		}
+	}
+	if _, ambiguous := bindings.ambiguousNames[parameter.Name]; ambiguous {
+		return "", false
+	}
+	argument, found := bindings.byUniqueName[parameter.Name]
+	return argument, found
+}
+
 // normalizeClassTypeArguments converts Java's source-level type arguments into
 // the complete generated Go ABI for a class. A member class declares only its
 // own trailing parameters in source, but TypeParameters also contains the
@@ -53,7 +117,7 @@ func normalizeClassTypeArguments(
 			result = append(result, sourceTypeArguments[index])
 			continue
 		}
-		if argument := available[parameter.Name]; strings.TrimSpace(argument) != "" {
+		if argument, found := available.argumentFor(parameter); found && strings.TrimSpace(argument) != "" {
 			result = append(result, argument)
 			continue
 		}
@@ -78,19 +142,36 @@ func normalizeClassTypeArguments(
 	return result
 }
 
-func receiverClassTypeArgumentBindings(scope *symbol.ClassScope, arguments []string) map[string]string {
+func receiverClassTypeArgumentBindings(scope *symbol.ClassScope, arguments []string) receiverTypeArgumentBindings {
 	if scope == nil {
-		return nil
+		return receiverTypeArgumentBindings{}
 	}
 	actual := arguments
 	if actual == nil {
-		actual = scope.TypeParameterNames()
+		actual = scope.GoTypeParameterNames()
 	}
-	bindings := make(map[string]string, len(scope.TypeParameters))
+	bindings := receiverTypeArgumentBindings{
+		byDeclaration:  make(map[*symbol.TypeParamDeclaration]string, len(scope.TypeParameters)),
+		byUniqueName:   make(map[string]string, len(scope.TypeParameters)),
+		ambiguousNames: make(map[string]struct{}),
+	}
 	for index, parameter := range scope.TypeParameters {
-		if index < len(actual) && strings.TrimSpace(actual[index]) != "" {
-			bindings[parameter.Name] = actual[index]
+		if index >= len(actual) || strings.TrimSpace(actual[index]) == "" {
+			continue
 		}
+		argument := actual[index]
+		if parameter.Declaration != nil {
+			bindings.byDeclaration[parameter.Declaration] = argument
+		}
+		if _, ambiguous := bindings.ambiguousNames[parameter.Name]; ambiguous {
+			continue
+		}
+		if _, duplicate := bindings.byUniqueName[parameter.Name]; duplicate {
+			delete(bindings.byUniqueName, parameter.Name)
+			bindings.ambiguousNames[parameter.Name] = struct{}{}
+			continue
+		}
+		bindings.byUniqueName[parameter.Name] = argument
 	}
 	return bindings
 }
@@ -99,25 +180,23 @@ func receiverClassTypeArgumentBindings(scope *symbol.ClassScope, arguments []str
 // source argument. A parameter-to-parameter bound is followed transitively;
 // an unbounded or cyclic parameter erases to Object.
 func rawTypeParameterErasure(parameter symbol.TypeParam, visible []symbol.TypeParam) string {
-	byName := make(map[string]symbol.TypeParam, len(visible))
-	for _, candidate := range visible {
-		byName[candidate.Name] = candidate
-	}
-	visiting := map[string]bool{}
+	lookup := newTypeParameterLookup(visible)
+	visiting := map[typeParameterIdentityKey]bool{}
 	var erase func(symbol.TypeParam) string
 	erase = func(current symbol.TypeParam) string {
-		if visiting[current.Name] || len(current.Bounds) == 0 {
+		identity := identityKeyForTypeParameter(current)
+		if visiting[identity] || len(current.Bounds) == 0 {
 			return "Object"
 		}
-		visiting[current.Name] = true
-		defer delete(visiting, current.Name)
+		visiting[identity] = true
+		defer delete(visiting, identity)
 
 		bound := strings.TrimSpace(current.Bounds[0].Original)
 		if bound == "" {
 			return "Object"
 		}
-		base, _ := parseJavaTypeString(bound)
-		if next, ok := byName[stripJavaQualifier(base)]; ok {
+		base, arguments := parseJavaTypeString(bound)
+		if next, ok := lookup.resolve(current.Bounds[0], strings.TrimSpace(base)); ok && len(arguments) == 0 {
 			return erase(next)
 		}
 		// Java erasure drops the bound's own type arguments. The downstream type

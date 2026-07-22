@@ -68,3 +68,51 @@ func TestNormalizeClassTypeArguments_NonGenericInnerCarriesOnlyOuterArgument(t *
 		t.Fatalf("carried arguments = %#v, want %#v", got, want)
 	}
 }
+
+func TestNormalizeClassTypeArguments_DuplicateShadowedNamesUseDeclarationIdentity(t *testing.T) {
+	outerT := symbol.NewTypeParam("T", nil)
+	innerT := symbol.NewTypeParam("T", nil)
+	deepU := symbol.NewTypeParam("U", nil)
+
+	receiver := &symbol.ClassScope{
+		TypeParameters:         []symbol.TypeParam{outerT, innerT},
+		DeclaredTypeParameters: []symbol.TypeParam{innerT},
+	}
+	deep := &symbol.ClassScope{
+		TypeParameters:         []symbol.TypeParam{outerT, innerT, deepU},
+		DeclaredTypeParameters: []symbol.TypeParam{deepU},
+	}
+
+	got := normalizeClassTypeArguments(
+		deep,
+		[]string{"Long"},
+		receiver,
+		[]string{"String", "Integer"},
+	)
+	want := []string{"String", "Integer", "Long"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Outer<T>.Inner<T>.Deep<U> arguments = %#v, want %#v", got, want)
+	}
+
+	allParameters := []symbol.TypeParam{outerT, innerT, deepU}
+	symbol.DisambiguateTypeParamGoNames(allParameters)
+	got = normalizeClassTypeArguments(deep, []string{"Long"}, receiver, nil)
+	want = []string{"T", "T2", "Long"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("symbolic Outer<T>.Inner<T>.Deep<U> arguments = %#v, want %#v", got, want)
+	}
+}
+
+func TestRawTypeParameterErasure_UsesBoundDeclarationIdentity(t *testing.T) {
+	outerA := symbol.NewTypeParam("A", []symbol.JavaType{{Original: "OuterRoot"}})
+	outerB := symbol.NewTypeParam("B", []symbol.JavaType{{Original: "A"}})
+	outerParameters := []symbol.TypeParam{outerA, outerB}
+	symbol.BindTypeParameterBounds(outerParameters[1:], outerParameters)
+
+	innerA := symbol.NewTypeParam("A", []symbol.JavaType{{Original: "InnerRoot"}})
+	visible := append(append([]symbol.TypeParam{}, outerParameters...), innerA)
+
+	if got, want := rawTypeParameterErasure(outerParameters[1], visible), "OuterRoot"; got != want {
+		t.Fatalf("B erasure = %q, want %q", got, want)
+	}
+}

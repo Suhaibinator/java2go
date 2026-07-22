@@ -116,12 +116,15 @@ func extractTypeParameters(node *sitter.Node, source []byte) []TypeParam {
 		if nameNode == nil {
 			continue
 		}
-		params = append(params, TypeParam{
-			Name:   nameNode.Content(source),
-			Bounds: extractTypeParameterBounds(param, source),
-		})
+		params = append(params, NewTypeParam(nameNode.Content(source), extractTypeParameterBounds(param, source)))
 	}
 	return params
+}
+
+// ExtractTypeParameters exposes the parser's declaration-identity preserving
+// type-parameter extraction for method-local class lowering.
+func ExtractTypeParameters(node *sitter.Node, source []byte) []TypeParam {
+	return extractTypeParameters(node, source)
 }
 
 // ParseSymbols generates a symbol table for a single class file.
@@ -224,13 +227,18 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	// Extract this class's own type parameters first (e.g., class Foo<T, U>)
 	ownTypeParams := extractTypeParameters(root.ChildByFieldName("type_parameters"), source)
 
-	// Merge parent type parameters (for nested classes), applying shadowing:
-	// class Outer<T> { class Inner<T> { } } where Inner's T shadows Outer's T.
+	// Generated member-class ABIs carry enclosing declarations even when an own
+	// parameter shadows the same Java source spelling. Lexical lookup still uses
+	// MergeTypeParams at use sites; ABI carriage is declaration-identity based.
+	carriedTypeParams := AppendTypeParamsByDeclaration(parentTypeParams, ownTypeParams)
+	DisambiguateTypeParamGoNames(carriedTypeParams)
+	BindTypeParameterBounds(ownTypeParams, MergeTypeParams(parentTypeParams, ownTypeParams))
+	carriedTypeParams = AppendTypeParamsByDeclaration(parentTypeParams, ownTypeParams)
 	// Preserve a non-nil empty slice: it distinguishes a parsed non-generic
 	// member class that only carries enclosing parameters from a synthetic scope
 	// which has not supplied declared-arity metadata yet.
 	scope.DeclaredTypeParameters = append([]TypeParam{}, ownTypeParams...)
-	scope.TypeParameters = MergeTypeParams(parentTypeParams, ownTypeParams)
+	scope.TypeParameters = carriedTypeParams
 
 	// Track implemented or extended interfaces. Tree-sitter uses
 	// `extends_interfaces` for interface inheritance and `interfaces` for class /
@@ -385,7 +393,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		// The converted name and type of the field
 		fieldName := fieldNameNode.Content(source)
-		fieldType := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, scope.TypeParameterNames()))
+		fieldType := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, TypeParamNames(scope.TypeParameters)))
 
 		initializer := node.ChildByFieldName("declarator").ChildByFieldName("value")
 		scope.Fields = append(scope.Fields, &Definition{
@@ -393,9 +401,14 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			OriginalName: fieldName,
 			Type:         fieldType,
 			OriginalType: typeNode.Content(source),
-			IsStatic:     isStatic,
-			IsFinal:      isFinal,
-			IsPrivate:    isPrivate,
+			DirectTypeParameter: DirectTypeParamForJavaType(
+				typeNode.Content(source),
+				scope.TypeParameters,
+			),
+			TypeParameterBindings: VisibleTypeParamBindings(scope.TypeParameters),
+			IsStatic:              isStatic,
+			IsFinal:               isFinal,
+			IsPrivate:             isPrivate,
 			IsCompileTimeConstant: isStatic && isFinal &&
 				javaConstantVariableType(typeNode.Content(source)) &&
 				javaConstantExpression(initializer, source, scope),
@@ -432,7 +445,10 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		name := node.ChildByFieldName("name").Content(source)
 		methodTypeParams := extractTypeParameters(node.ChildByFieldName("type_parameters"), source)
+		carriedMethodParams := AppendTypeParamsByDeclaration(scope.TypeParameters, methodTypeParams)
+		DisambiguateTypeParamGoNames(carriedMethodParams)
 		combinedTypeParams := MergeTypeParams(scope.TypeParameters, methodTypeParams)
+		BindTypeParameterBounds(methodTypeParams, combinedTypeParams)
 		combinedTypeParamNames := TypeParamNames(combinedTypeParams)
 
 		declaration := &Definition{
@@ -450,6 +466,8 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		if node.Type() == "method_declaration" {
 			declaration.Type = nodeToStr(astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, combinedTypeParamNames))
 			declaration.OriginalType = node.ChildByFieldName("type").Content(source)
+			declaration.DirectTypeParameter = DirectTypeParamForJavaType(declaration.OriginalType, combinedTypeParams)
+			declaration.TypeParameterBindings = VisibleTypeParamBindings(combinedTypeParams)
 		} else {
 			// A constructor declaration returns the type being constructed
 
@@ -484,11 +502,16 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 				OriginalName: paramName,
 				Type:         nodeToStr(astutil.ParseTypeWithTypeParams(paramType, source, combinedTypeParamNames)),
 				OriginalType: paramType.Content(source),
+				DirectTypeParameter: DirectTypeParamForJavaType(
+					paramType.Content(source),
+					combinedTypeParams,
+				),
+				TypeParameterBindings: VisibleTypeParamBindings(combinedTypeParams),
 			})
 		}
 
 		if node.ChildByFieldName("body") != nil {
-			methodScope := parseScope(node.ChildByFieldName("body"), source, combinedTypeParamNames)
+			methodScope := parseScope(node.ChildByFieldName("body"), source, combinedTypeParams)
 			if !methodScope.IsEmpty() {
 				declaration.Children = append(declaration.Children, methodScope.Children...)
 			}
@@ -505,7 +528,12 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		scope.Methods = append(scope.Methods, declaration)
 	case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
-		other := parseClassScopeWithParentTypeParams(node, source, scope.TypeParameters)
+		implicitlyStatic := scope.IsInterface
+		parentTypeParams := scope.TypeParameters
+		if implicitlyStatic || node.Type() != "class_declaration" || nestedClassIsStatic(node) {
+			parentTypeParams = nil
+		}
+		other := parseClassScopeWithParentTypeParams(node, source, parentTypeParams)
 		// Any subclasses will be renamed to part of their parent class
 		other.Class.Rename(scope.Class.Name + other.Class.Name)
 		// Constructors carry the (now stale) original short name in their "New" +
@@ -514,7 +542,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		other.Enclosing = scope
 		// A non-static nested class (only plain classes can be "inner"; nested
 		// interfaces and enums are implicitly static) holds an enclosing instance.
-		if node.Type() == "class_declaration" && !nestedClassIsStatic(node) {
+		if node.Type() == "class_declaration" && !implicitlyStatic && !nestedClassIsStatic(node) {
 			other.IsInner = true
 		}
 		scope.Subclasses = append(scope.Subclasses, other)
@@ -550,7 +578,7 @@ func injectRecordMembers(scope *ClassScope, root *sitter.Node, source []byte) {
 		comp := component{
 			name:     nameNode.Content(source),
 			origType: typeNode.Content(source),
-			goType:   nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, scope.TypeParameterNames())),
+			goType:   nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, TypeParamNames(scope.TypeParameters))),
 		}
 		components = append(components, comp)
 
@@ -562,6 +590,11 @@ func injectRecordMembers(scope *ClassScope, root *sitter.Node, source []byte) {
 			OriginalName: comp.name,
 			Type:         comp.goType,
 			OriginalType: comp.origType,
+			DirectTypeParameter: DirectTypeParamForJavaType(
+				comp.origType,
+				scope.TypeParameters,
+			),
+			TypeParameterBindings: VisibleTypeParamBindings(scope.TypeParameters),
 		})
 
 		// Accessor method named exactly after the component (exported), unless the
@@ -695,11 +728,13 @@ func resolveClassNameCollisions(scopes []*ClassScope) {
 	}
 }
 
-func parseScope(root *sitter.Node, source []byte, typeParams []string) *Definition {
+func parseScope(root *sitter.Node, source []byte, typeParams []TypeParam) *Definition {
 	def := &Definition{}
 	if root == nil {
 		return def
 	}
+	typeParamNames := TypeParamNames(typeParams)
+	typeParamBindings := VisibleTypeParamBindings(typeParams)
 	for _, node := range nodeutil.NamedChildrenOf(root) {
 		switch node.Type() {
 		case "local_variable_declaration":
@@ -709,16 +744,18 @@ func parseScope(root *sitter.Node, source []byte, typeParams []string) *Definiti
 				continue
 			}
 
-			typeStr := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, typeParams))
+			typeStr := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, typeParamNames))
 			originalType := typeNode.Content(source)
 
 			if declarator.NamedChildCount() == 1 {
 				nameNode := declarator.NamedChild(0)
 				def.Children = append(def.Children, &Definition{
-					OriginalName: nameNode.Content(source),
-					Name:         nameNode.Content(source),
-					OriginalType: originalType,
-					Type:         typeStr,
+					OriginalName:          nameNode.Content(source),
+					Name:                  nameNode.Content(source),
+					OriginalType:          originalType,
+					DirectTypeParameter:   DirectTypeParamForJavaType(originalType, typeParams),
+					TypeParameterBindings: typeParamBindings,
+					Type:                  typeStr,
 				})
 				continue
 			}
@@ -726,10 +763,12 @@ func parseScope(root *sitter.Node, source []byte, typeParams []string) *Definiti
 			for ind := 0; ind < int(declarator.NamedChildCount())-1; ind += 2 {
 				nameNode := declarator.NamedChild(ind)
 				def.Children = append(def.Children, &Definition{
-					OriginalName: nameNode.Content(source),
-					Name:         nameNode.Content(source),
-					OriginalType: originalType,
-					Type:         typeStr,
+					OriginalName:          nameNode.Content(source),
+					Name:                  nameNode.Content(source),
+					OriginalType:          originalType,
+					DirectTypeParameter:   DirectTypeParamForJavaType(originalType, typeParams),
+					TypeParameterBindings: typeParamBindings,
+					Type:                  typeStr,
 				})
 			}
 		default:

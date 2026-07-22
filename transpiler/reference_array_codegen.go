@@ -657,7 +657,7 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 		return nil
 	}
 	receiverName := ShortName(scope.Class.Name)
-	receiverType := &ast.StarExpr{X: instantiateGenericType(scope.Class.Name, typeParamExprs(scope.TypeParameterNames()))}
+	receiverType := &ast.StarExpr{X: instantiateGenericType(scope.Class.Name, typeParamExprs(scope.GoTypeParameterNames()))}
 	receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: receiverName}}, Type: receiverType}}}
 	if !classNeedsReferenceObjectInfo(scope, ctx) {
 		return []ast.Decl{&ast.FuncDecl{

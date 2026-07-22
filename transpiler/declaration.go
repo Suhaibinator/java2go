@@ -557,7 +557,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				}},
 			})
 
-			receiverBase := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
+			receiverBase := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.GoTypeParameterNames()))
 			receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBase}}}}
 			receiverName := ShortName(ctx.className)
 			stringExecutionName := executionNameForClass(ctx.currentClass)
@@ -743,7 +743,7 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) [
 		return nil
 	}
 
-	receiverBaseType := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
+	receiverBaseType := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.GoTypeParameterNames()))
 	executionName := executionNameForClass(ctx.currentClass)
 
 	declaration := &ast.FuncDecl{
@@ -954,7 +954,7 @@ func buildInheritedInterfaceDefaultForwarder(
 		results = &ast.FieldList{List: []*ast.Field{{Type: mapType(def.OriginalType)}}}
 	}
 	recvName := ShortName(carrierName)
-	executionName := executionNameForParams(params, childScope.TypeParameterNames()...)
+	executionName := executionNameForParams(params, childScope.GoTypeParameterNames()...)
 	call := &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X: &ast.SelectorExpr{
@@ -976,7 +976,7 @@ func buildInheritedInterfaceDefaultForwarder(
 	} else {
 		body.List = []ast.Stmt{&ast.ExprStmt{X: call}}
 	}
-	recvType := instantiateGenericType(carrierName, typeParamExprs(childScope.TypeParameterNames()))
+	recvType := instantiateGenericType(carrierName, typeParamExprs(childScope.GoTypeParameterNames()))
 	declaration := &ast.FuncDecl{
 		Name: &ast.Ident{Name: def.Name},
 		Recv: &ast.FieldList{List: []*ast.Field{{
@@ -1022,7 +1022,7 @@ func buildInterfaceAbstractExecutionBridge(
 		}}}
 	}
 
-	executionName := executionNameForParams(params, scope.TypeParameterNames()...)
+	executionName := executionNameForParams(params, scope.GoTypeParameterNames()...)
 	usedNames := map[string]struct{}{executionName: {}}
 	for _, argument := range methodCallArgs(params) {
 		if ident, ok := argument.(*ast.Ident); ok {
@@ -1032,7 +1032,7 @@ func buildInterfaceAbstractExecutionBridge(
 	companionName := synchronizedUniqueLocalName("__java2goExecutionReceiver", usedNames)
 	okName := synchronizedUniqueLocalName("__java2goHasExecutionReceiver", usedNames)
 	recvName := synchronizedUniqueLocalName(ShortName(carrierName), usedNames)
-	typeArgs := typeParamExprs(scope.TypeParameterNames())
+	typeArgs := typeParamExprs(scope.GoTypeParameterNames())
 	interfaceField := &ast.SelectorExpr{
 		X:   &ast.Ident{Name: recvName},
 		Sel: &ast.Ident{Name: scope.Class.Name},
@@ -1112,8 +1112,9 @@ func generateInterfaceDefaultMethodDecls(node *sitter.Node, source []byte, ctx C
 
 	carrierName := interfaceDefaultCarrierName(scope)
 	typeParamNames := scope.TypeParameterNames()
-	interfaceType := instantiateGenericType(scope.Class.Name, typeParamExprs(typeParamNames))
-	carrierType := instantiateGenericType(carrierName, typeParamExprs(typeParamNames))
+	goTypeParamNames := scope.GoTypeParameterNames()
+	interfaceType := instantiateGenericType(scope.Class.Name, typeParamExprs(goTypeParamNames))
+	carrierType := instantiateGenericType(carrierName, typeParamExprs(goTypeParamNames))
 
 	fields := &ast.FieldList{List: []*ast.Field{{Type: interfaceType}}}
 	parentDefaultTypes := defaultInterfaceTypes(scope, ctx)
@@ -1311,7 +1312,7 @@ func classSubobjectAncestorPaths(scope *symbol.ClassScope, ctx Ctx) []classSubob
 	}
 
 	current := scope
-	currentArgs := append([]string(nil), scope.TypeParameterNames()...)
+	currentArgs := append([]string(nil), scope.GoTypeParameterNames()...)
 	selectors := []string{}
 	seen := map[*symbol.ClassScope]struct{}{}
 	var paths []classSubobjectAncestorPath
@@ -1365,7 +1366,7 @@ func classSubobjectPointerTypeExpr(
 	typeExpr := qualifiedNameExpr(scope.Class.Name, findJavaPackageForClassScope(scope), ctx)
 	typeParams := []string(nil)
 	if receiverScope != nil {
-		typeParams = receiverScope.TypeParameterNames()
+		typeParams = append(receiverScope.TypeParameterNames(), receiverScope.GoTypeParameterNames()...)
 	}
 	effectiveTypeArguments := classTypeArgumentsWithRawFallback(scope, typeArguments, receiverScope)
 	if len(effectiveTypeArguments) > 0 {
@@ -1402,9 +1403,9 @@ func generateClassSubobjectInstallerDecls(ctx Ctx) []ast.Decl {
 		return nil
 	}
 	receiverName := ShortName(scope.Class.Name)
-	receiverType := classSubobjectPointerTypeExpr(scope, scope.TypeParameterNames(), scope, ctx)
+	receiverType := classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx)
 	usedNames := map[string]struct{}{receiverName: {}}
-	for _, typeParam := range scope.TypeParameterNames() {
+	for _, typeParam := range scope.GoTypeParameterNames() {
 		usedNames[typeParam] = struct{}{}
 	}
 	valueName := synchronizedUniqueLocalName("__java2goSubobject", usedNames)
@@ -1458,7 +1459,7 @@ func constructorSubobjectInstallerCallStmt(
 	hookType := &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{
 		Names: []*ast.Ident{{Name: hookName}},
 		Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
-			Type: classSubobjectPointerTypeExpr(scope, scope.TypeParameterNames(), scope, ctx),
+			Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx),
 		}}}},
 	}}}}
 	return &ast.IfStmt{
@@ -1482,7 +1483,7 @@ func classDispatchTypeExpr(scope *symbol.ClassScope) ast.Expr {
 	if scope == nil {
 		return &ast.InterfaceType{Methods: &ast.FieldList{}}
 	}
-	return instantiateGenericType(classDispatchTypeName(scope), typeParamExprs(scope.TypeParameterNames()))
+	return instantiateGenericType(classDispatchTypeName(scope), typeParamExprs(scope.GoTypeParameterNames()))
 }
 
 func visitClassScopes(scope *symbol.ClassScope, visit func(*symbol.ClassScope) bool) bool {
@@ -1650,7 +1651,7 @@ func generateClassSelfSetter(ctx Ctx) ast.Decl {
 	}
 
 	recvName := ShortName(scope.Class.Name)
-	recvType := instantiateGenericType(scope.Class.Name, typeParamExprs(scope.TypeParameterNames()))
+	recvType := instantiateGenericType(scope.Class.Name, typeParamExprs(scope.GoTypeParameterNames()))
 	selfName := "self"
 	body := []ast.Stmt{}
 
@@ -1734,7 +1735,7 @@ func enclosingInstanceType(scope *symbol.ClassScope) ast.Expr {
 		return nil
 	}
 	encl := scope.Enclosing
-	base := instantiateGenericType(encl.Class.Name, typeParamExprs(encl.TypeParameterNames()))
+	base := instantiateGenericType(encl.Class.Name, typeParamExprs(encl.GoTypeParameterNames()))
 	return &ast.StarExpr{X: base}
 }
 
@@ -1763,6 +1764,7 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	}
 	ctx.className = scope.Class.Name
 	typeParams := scope.TypeParameterNames()
+	goTypeParams := scope.GoTypeParameterNames()
 
 	declarations := []ast.Decl{}
 
@@ -1776,7 +1778,7 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	}
 	declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, scope.TypeParameters, ctx))
 
-	recvBase := instantiateGenericType(ctx.className, typeParamExprs(typeParams))
+	recvBase := instantiateGenericType(ctx.className, typeParamExprs(goTypeParams))
 	recvName := ShortName(ctx.className)
 
 	// Canonical constructor: New<Name>(c1, c2, ...) *Name.
@@ -2118,7 +2120,7 @@ func explicitThisConstructorAssignment(
 	}
 
 	constructor := ast.Expr(&ast.Ident{Name: constructorName})
-	typeArgs := typeParamExprs(ctx.currentClass.TypeParameterNames())
+	typeArgs := typeParamExprs(ctx.currentClass.GoTypeParameterNames())
 	typeArgs = append(typeArgs, constructorInvocationMethodTypeArgs(invocation, source, ctx)...)
 	if len(typeArgs) > 0 {
 		constructor = applyTypeArguments(constructor, typeArgs)
@@ -2319,7 +2321,7 @@ func buildConstructorDeclarations(
 	internalWithSelfName := executionConstructorWithSelfImplementationName(constructorName, ctx.currentClass)
 	internalWithSelfFun := ast.Expr(&ast.Ident{Name: internalWithSelfName})
 	if len(typeParams) > 0 {
-		internalWithSelfFun = applyTypeArguments(internalWithSelfFun, typeParamExprs(symbol.TypeParamNames(typeParams)))
+		internalWithSelfFun = applyTypeArguments(internalWithSelfFun, typeParamExprs(symbol.GoTypeParamNames(typeParams)))
 	}
 	forwardArgs := []ast.Expr{
 		&ast.Ident{Name: executionName},
@@ -2389,7 +2391,7 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 	typeParams := scope.TypeParameters
 	var structType ast.Expr = &ast.Ident{Name: ctx.className}
 	if len(typeParams) > 0 {
-		structType = instantiateGenericType(ctx.className, typeParamExprs(scope.TypeParameterNames()))
+		structType = instantiateGenericType(ctx.className, typeParamExprs(scope.GoTypeParameterNames()))
 	}
 
 	recvName := ShortName(ctx.className)
@@ -2900,7 +2902,7 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 	}
 
 	adapterName := interfaceName + "FuncAdapter"
-	typeParamNames := symbol.TypeParamNames(typeParams)
+	typeParamNames := symbol.GoTypeParamNames(typeParams)
 	typeArgs := typeParamExprs(typeParamNames)
 	executionName := executionNameForParams(methodType.Params, typeParamNames...)
 	executionFunctionType := cloneFuncType(methodType)
@@ -3132,8 +3134,9 @@ func findEnumToStringMethod(scope *symbol.ClassScope) *symbol.Definition {
 }
 
 func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {
-	combinedTypeParams := symbol.MergeTypeParams(ctx.currentClass.TypeParameters, def.TypeParameters)
-	combinedTypeParamNames := symbol.TypeParamNames(combinedTypeParams)
+	combinedTypeParams := symbol.AppendTypeParamsByDeclaration(ctx.currentClass.TypeParameters, def.TypeParameters)
+	symbol.DisambiguateTypeParamGoNames(combinedTypeParams)
+	combinedTypeParamNames := symbol.GoTypeParamNames(combinedTypeParams)
 
 	helperName := def.HelperName
 	helperFields := &ast.FieldList{
@@ -3581,7 +3584,7 @@ func buildSourceConstructorDecls(
 
 	var structType ast.Expr = &ast.Ident{Name: ctx.className}
 	if len(ctx.currentClass.TypeParameters) > 0 {
-		structType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
+		structType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.GoTypeParameterNames()))
 	}
 
 	receiverName := ShortName(ctx.className)
@@ -3658,7 +3661,8 @@ func buildSourceConstructorDecls(
 	body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: receiverName}}})
 
 	returnType := &ast.StarExpr{X: structType}
-	constructorTypeParams := symbol.MergeTypeParams(ctx.currentClass.TypeParameters, ctx.localScope.TypeParameters)
+	constructorTypeParams := symbol.AppendTypeParamsByDeclaration(ctx.currentClass.TypeParameters, ctx.localScope.TypeParameters)
+	symbol.DisambiguateTypeParamGoNames(constructorTypeParams)
 	if enclType := enclosingInstanceType(ctx.currentClass); enclType != nil {
 		enclParam := &ast.Field{
 			Names: []*ast.Ident{{Name: ctx.currentClass.EnclosingFieldName()}},
@@ -3720,7 +3724,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		// If a function is non-static, it has a method receiver
 		if !static {
-			receiverBaseType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
+			receiverBaseType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.GoTypeParameterNames()))
 			receiver = &ast.FieldList{
 				List: []*ast.Field{
 					{

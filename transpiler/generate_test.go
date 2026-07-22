@@ -386,6 +386,61 @@ func TestGenFuncDeclWithTypeParams_MultipleTypeParams(t *testing.T) {
 	}
 }
 
+func TestTypeParameterConstraintFlatteningUsesDeclarationIdentity(t *testing.T) {
+	outerA := symbol.NewTypeParam("A", nil)
+	outerB := symbol.NewTypeParam("B", []symbol.JavaType{{Original: "A"}})
+	outerParameters := []symbol.TypeParam{outerA, outerB}
+	symbol.BindTypeParameterBounds(outerParameters[1:], outerParameters)
+
+	innerA := symbol.NewTypeParam("A", []symbol.JavaType{{Original: "InnerMark"}})
+	parameters := append(append([]symbol.TypeParam{}, outerParameters...), innerA)
+	symbol.DisambiguateTypeParamGoNames(parameters)
+
+	fields := makeTypeParamFieldsInContext(parameters, Ctx{})
+	constraint, ok := fields[1].Type.(*ast.Ident)
+	if !ok || constraint.Name != "any" {
+		t.Fatalf("Outer<A, B extends A>.Inner<A> B constraint = %#v, want any", fields[1].Type)
+	}
+}
+
+func TestTypeParameterConstraintFlatteningPreservesInheritedBoundBindings(t *testing.T) {
+	outerA := symbol.NewTypeParam("A", nil)
+	outerC := symbol.NewTypeParam("C", []symbol.JavaType{{Original: "Comparable<A>"}})
+	outerParameters := []symbol.TypeParam{outerA, outerC}
+	symbol.BindTypeParameterBounds(outerParameters[1:], outerParameters)
+
+	outerB := symbol.NewTypeParam("B", []symbol.JavaType{{Original: "C"}})
+	outerParameters = append(outerParameters, outerB)
+	symbol.BindTypeParameterBounds(outerParameters[2:], outerParameters)
+	innerA := symbol.NewTypeParam("A", []symbol.JavaType{{Original: "InnerMark"}})
+	parameters := append(append([]symbol.TypeParam{}, outerParameters...), innerA)
+	symbol.DisambiguateTypeParamGoNames(parameters)
+
+	flattened := goRepresentableTypeParameterBounds(
+		outerParameters[2].Bounds,
+		newTypeParameterLookup(parameters),
+		nil,
+	)
+	if len(flattened) != 1 {
+		t.Fatalf("flattened B bounds = %#v, want one Comparable<A> bound", flattened)
+	}
+	if got := flattened[0].TypeParameterBindings["A"]; got != outerParameters[0].Declaration {
+		t.Fatal("flattening rebound Comparable<A> to the shadowing inner A declaration")
+	}
+	if got, want := substituteTypeParameterDeclarations(flattened[0].Original, flattened[0].TypeParameterBindings), "Comparable<A>"; got != want {
+		t.Fatalf("resolved inherited bound = %q, want %q", got, want)
+	}
+
+	fields := makeTypeParamFieldsInContext(parameters, Ctx{})
+	var rendered bytes.Buffer
+	if err := printer.Fprint(&rendered, token.NewFileSet(), fields[2].Type); err != nil {
+		t.Fatalf("render inherited B constraint: %v", err)
+	}
+	if got := rendered.String(); !strings.Contains(got, "[A]") || strings.Contains(got, "[A2]") {
+		t.Fatalf("rendered inherited B constraint = %q, want outer A rather than inner A2", got)
+	}
+}
+
 func TestGenStruct_DelegatesCorrectly(t *testing.T) {
 	fields := &ast.FieldList{
 		List: []*ast.Field{
