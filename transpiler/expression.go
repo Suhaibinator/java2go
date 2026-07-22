@@ -332,7 +332,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		methodExpr := ast.Expr(&ast.SelectorExpr{X: ParseExpr(targetNode, source, ctx), Sel: identFromNode(node.NamedChild(1), source)})
 		if samMethod != nil && samType != nil {
 			if target := resolveInvocationTarget(targetNode, ctx, source); target != nil && target.classScope != nil {
-				if resolution := findInstanceMethodInHierarchy(target.classScope, methodName, len(samMethod.Parameters), ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
+				if resolution, selectedTarget := findInstanceMethodForInvocationTarget(target, methodName, len(samMethod.Parameters), ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
+					target = selectedTarget
 					receiver := ParseExpr(targetNode, source, ctx)
 					if target.classScope.IsInterface || target.classScope.IsAbstract {
 						methodExpr = executionAwareMethodReferenceForwarder(receiver, resolution, target, samType, samExecutionName, false, node, source, ctx)
@@ -536,7 +537,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			} else if target != nil {
 				// Java permits a static method to be selected through an expression as
 				// well as normal instance dispatch, so consider the complete overload set.
-				selected := findBestMethodInHierarchy(target.classScope, methodName, argListNode, true, true, ctx, source)
+				selected, selectedTarget := findBestMethodForInvocationTarget(target, methodName, argListNode, true, true, ctx, source)
+				target = selectedTarget
 				if selected != nil && selected.def != nil && selected.def.IsStatic {
 					staticResolution = selected
 				} else {
@@ -3030,6 +3032,7 @@ func resolveImplementedInterfaceScopesInDeclaringContext(ctx Ctx, scope *symbol.
 type methodResolution struct {
 	def                *symbol.Definition
 	owner              *symbol.ClassScope
+	receiverScope      *symbol.ClassScope
 	expandVarargsArray bool
 }
 
@@ -3464,7 +3467,32 @@ func findBestMethodInHierarchy(
 	ctx Ctx,
 	source []byte,
 ) *methodResolution {
-	if start == nil {
+	return findBestMethodInHierarchies(
+		[]*symbol.ClassScope{start},
+		methodName,
+		argsNode,
+		allowInstance,
+		allowStatic,
+		ctx,
+		source,
+	)
+}
+
+// findBestMethodInHierarchies performs one overload selection across every
+// member contributed by an intersection type's upper bounds. Selecting the
+// first resolvable bound is insufficient: `T extends Primary & Secondary` has
+// the methods of both interfaces, and overload specificity is defined over the
+// combined candidate set.
+func findBestMethodInHierarchies(
+	starts []*symbol.ClassScope,
+	methodName string,
+	argsNode *sitter.Node,
+	allowInstance bool,
+	allowStatic bool,
+	ctx Ctx,
+	source []byte,
+) *methodResolution {
+	if len(starts) == 0 {
 		return nil
 	}
 
@@ -3474,7 +3502,7 @@ func findBestMethodInHierarchy(
 	}
 	var best *methodResolution
 	var bestScore methodCandidateScore
-	considerScope := func(scope *symbol.ClassScope, inheritedInterface bool) {
+	considerScope := func(scope *symbol.ClassScope, receiverScope *symbol.ClassScope, inheritedInterface bool) {
 		for _, def := range scope.Methods {
 			if def == nil || def.Constructor || def.OriginalName != methodName || !methodInvocationArityApplicable(def, len(argNodes)) {
 				continue
@@ -3495,7 +3523,12 @@ func findBestMethodInHierarchy(
 			if !applicable {
 				continue
 			}
-			candidate := &methodResolution{def: def, owner: scope, expandVarargsArray: score.expandVarargsArray}
+			candidate := &methodResolution{
+				def:                def,
+				owner:              scope,
+				receiverScope:      receiverScope,
+				expandVarargsArray: score.expandVarargsArray,
+			}
 			if best == nil || methodCandidateScoreBetter(score, bestScore) ||
 				(score.phase == bestScore.phase && score.totalCost == bestScore.totalCost && score.exactCount == bestScore.exactCount && methodResolutionMoreSpecific(candidate, best, ctx)) {
 				best = candidate
@@ -3504,29 +3537,38 @@ func findBestMethodInHierarchy(
 		}
 	}
 
-	classHierarchy := []*symbol.ClassScope{}
+	type hierarchyScope struct {
+		scope         *symbol.ClassScope
+		receiverScope *symbol.ClassScope
+	}
+	classHierarchy := []hierarchyScope{}
 	seenClasses := map[*symbol.ClassScope]struct{}{}
-	for scope := start; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
-		if _, duplicate := seenClasses[scope]; duplicate {
-			break
+	for _, start := range starts {
+		for scope := start; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
+			if _, duplicate := seenClasses[scope]; duplicate {
+				break
+			}
+			seenClasses[scope] = struct{}{}
+			classHierarchy = append(classHierarchy, hierarchyScope{scope: scope, receiverScope: start})
+			considerScope(scope, start, false)
 		}
-		seenClasses[scope] = struct{}{}
-		classHierarchy = append(classHierarchy, scope)
-		considerScope(scope, false)
 	}
 
 	// Methods inherited from implemented/extended interfaces are members of the
 	// receiver's Java type too. Their generated Go names carry export casing and,
 	// for defaults, their implementations are promoted from the initialized
 	// carrier embedded in the concrete class.
-	interfaceQueue := []*symbol.ClassScope{}
-	for _, scope := range classHierarchy {
-		interfaceQueue = append(interfaceQueue, resolveImplementedInterfaceScopesInDeclaringContext(ctx, scope)...)
+	interfaceQueue := []hierarchyScope{}
+	for _, entry := range classHierarchy {
+		for _, implemented := range resolveImplementedInterfaceScopesInDeclaringContext(ctx, entry.scope) {
+			interfaceQueue = append(interfaceQueue, hierarchyScope{scope: implemented, receiverScope: entry.receiverScope})
+		}
 	}
 	seenInterfaces := map[*symbol.ClassScope]struct{}{}
 	for len(interfaceQueue) > 0 {
-		current := interfaceQueue[0]
+		entry := interfaceQueue[0]
 		interfaceQueue = interfaceQueue[1:]
+		current := entry.scope
 		if current == nil {
 			continue
 		}
@@ -3534,8 +3576,10 @@ func findBestMethodInHierarchy(
 			continue
 		}
 		seenInterfaces[current] = struct{}{}
-		considerScope(current, true)
-		interfaceQueue = append(interfaceQueue, resolveImplementedInterfaceScopesInDeclaringContext(ctx, current)...)
+		considerScope(current, entry.receiverScope, true)
+		for _, implemented := range resolveImplementedInterfaceScopesInDeclaringContext(ctx, current) {
+			interfaceQueue = append(interfaceQueue, hierarchyScope{scope: implemented, receiverScope: entry.receiverScope})
+		}
 	}
 
 	return best
@@ -7963,6 +8007,7 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 	argListNode := node.ChildByFieldName("arguments")
 
 	var scope *symbol.ClassScope
+	var invocationTarget *invocationTargetInfo
 	allowInstance := true
 	allowStatic := true
 	var receiverTypeArgs []string
@@ -7975,6 +8020,7 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 				_, receiverTypeArgs = parseJavaTypeString(receiverType)
 			}
 			if target := resolveInvocationTarget(objectNode, ctx, source); target != nil {
+				invocationTarget = target
 				scope = target.classScope
 			}
 		}
@@ -7986,7 +8032,16 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 		return "", false
 	}
 
-	resolution := findBestMethodInHierarchy(scope, methodName, argListNode, allowInstance, allowStatic, ctx, source)
+	resolution := (*methodResolution)(nil)
+	if invocationTarget != nil {
+		var selectedTarget *invocationTargetInfo
+		resolution, selectedTarget = findBestMethodForInvocationTarget(invocationTarget, methodName, argListNode, allowInstance, allowStatic, ctx, source)
+		if selectedTarget != nil {
+			scope = selectedTarget.classScope
+		}
+	} else {
+		resolution = findBestMethodInHierarchy(scope, methodName, argListNode, allowInstance, allowStatic, ctx, source)
+	}
 	if resolution == nil || resolution.def == nil {
 		return "", false
 	}
@@ -8477,6 +8532,93 @@ func applyTypeArguments(fun ast.Expr, args []ast.Expr) ast.Expr {
 type invocationTargetInfo struct {
 	classScope    *symbol.ClassScope
 	classTypeArgs []ast.Expr
+	boundViews    []invocationTargetBoundView
+}
+
+type invocationTargetBoundView struct {
+	classScope    *symbol.ClassScope
+	classTypeArgs []ast.Expr
+}
+
+func invocationTargetScopes(target *invocationTargetInfo) []*symbol.ClassScope {
+	if target == nil {
+		return nil
+	}
+	if len(target.boundViews) == 0 {
+		return []*symbol.ClassScope{target.classScope}
+	}
+	result := make([]*symbol.ClassScope, 0, len(target.boundViews))
+	for _, view := range target.boundViews {
+		if view.classScope != nil {
+			result = append(result, view.classScope)
+		}
+	}
+	return result
+}
+
+func invocationTargetForReceiverScope(target *invocationTargetInfo, receiverScope *symbol.ClassScope) *invocationTargetInfo {
+	if target == nil || receiverScope == nil || len(target.boundViews) == 0 {
+		return target
+	}
+	for _, view := range target.boundViews {
+		if view.classScope == receiverScope {
+			selected := *target
+			selected.classScope = view.classScope
+			selected.classTypeArgs = append([]ast.Expr(nil), view.classTypeArgs...)
+			return &selected
+		}
+	}
+	return target
+}
+
+func findBestMethodForInvocationTarget(
+	target *invocationTargetInfo,
+	methodName string,
+	argsNode *sitter.Node,
+	allowInstance bool,
+	allowStatic bool,
+	ctx Ctx,
+	source []byte,
+) (*methodResolution, *invocationTargetInfo) {
+	if target == nil {
+		return nil, target
+	}
+	resolution := findBestMethodInHierarchies(
+		invocationTargetScopes(target),
+		methodName,
+		argsNode,
+		allowInstance,
+		allowStatic,
+		ctx,
+		source,
+	)
+	if resolution == nil {
+		return nil, target
+	}
+	return resolution, invocationTargetForReceiverScope(target, resolution.receiverScope)
+}
+
+func findInstanceMethodForInvocationTarget(
+	target *invocationTargetInfo,
+	methodName string,
+	argCount int,
+	ctx Ctx,
+) (*methodResolution, *invocationTargetInfo) {
+	if target == nil {
+		return nil, target
+	}
+	if len(target.boundViews) == 0 {
+		return findInstanceMethodInHierarchy(target.classScope, methodName, argCount, ctx), target
+	}
+	for _, view := range target.boundViews {
+		resolution := findInstanceMethodInHierarchy(view.classScope, methodName, argCount, ctx)
+		if resolution == nil {
+			continue
+		}
+		resolution.receiverScope = view.classScope
+		return resolution, invocationTargetForReceiverScope(target, view.classScope)
+	}
+	return nil, target
 }
 
 func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *invocationTargetInfo {
@@ -8519,12 +8661,14 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 	}
 
 	classScope := resolveClassScopeByQualifiedName(ctx, className)
+	var boundTypes []string
 	if classScope == nil {
 		// A value whose declared type is a type parameter gets its callable method
-		// set from its Java upper bound. This lets `T extends Ranked` resolve calls
-		// such as value.primaryScore() against Ranked's generated method names.
-		if bound := firstResolvableTypeParameterBound(className, ctx); bound != "" {
-			className, classTypeArgs = parseJavaTypeString(bound)
+		// set from every Java upper bound. This lets `T extends Primary & Secondary`
+		// resolve members declared only by Secondary as well as transitive bounds.
+		boundTypes = resolvableTypeParameterBounds(className, ctx)
+		if len(boundTypes) > 0 {
+			className, classTypeArgs = parseJavaTypeString(boundTypes[0])
 			classScope = resolveClassScopeByQualifiedName(ctx, className)
 		}
 	}
@@ -8537,19 +8681,40 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		classTypeArgExprs = append(classTypeArgExprs, javaTypeStringToGoTypeExpr(arg, scopeTypeParams, ctx))
 	}
 
-	return &invocationTargetInfo{
+	target := &invocationTargetInfo{
 		classScope:    classScope,
 		classTypeArgs: classTypeArgExprs,
 	}
+	if len(boundTypes) > 0 {
+		seen := map[*symbol.ClassScope]struct{}{}
+		for _, bound := range boundTypes {
+			base, arguments := parseJavaTypeString(bound)
+			scope := resolveClassScopeByQualifiedName(ctx, base)
+			if scope == nil {
+				continue
+			}
+			if _, duplicate := seen[scope]; duplicate {
+				continue
+			}
+			seen[scope] = struct{}{}
+			args := make([]ast.Expr, 0, len(arguments))
+			for _, argument := range arguments {
+				args = append(args, javaTypeStringToGoTypeExpr(argument, scopeTypeParams, ctx))
+			}
+			target.boundViews = append(target.boundViews, invocationTargetBoundView{
+				classScope:    scope,
+				classTypeArgs: args,
+			})
+		}
+	}
+	return target
 }
 
-// firstResolvableTypeParameterBound returns the first declared upper bound that
+// resolvableTypeParameterBounds returns every declared upper bound that
 // transitively reaches a class or interface visible from ctx. Method type
 // parameters shadow synthetic/raw and class type parameters, matching Java's
-// scope rules. Following parameter-to-parameter bounds is required for chains
-// such as `B extends Root, T extends B`, where calls through T use Root's method
-// set after erasure.
-func firstResolvableTypeParameterBound(name string, ctx Ctx) string {
+// scope rules. The traversal is cycle-safe and preserves declaration order.
+func resolvableTypeParameterBounds(name string, ctx Ctx) []string {
 	var visible []symbol.TypeParam
 	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
 		visible = symbol.MergeTypeParams(visible, ctx.currentClass.TypeParameters)
@@ -8564,30 +8729,34 @@ func firstResolvableTypeParameterBound(name string, ctx Ctx) string {
 		byName[parameter.Name] = parameter
 	}
 	visiting := make(map[string]bool, len(visible))
-	var resolve func(string) string
-	resolve = func(parameterName string) string {
+	seenBounds := map[string]struct{}{}
+	var resolve func(string) []string
+	resolve = func(parameterName string) []string {
 		if visiting[parameterName] {
-			return ""
+			return nil
 		}
 		parameter, ok := byName[parameterName]
 		if !ok {
-			return ""
+			return nil
 		}
 		visiting[parameterName] = true
 		defer delete(visiting, parameterName)
+		var result []string
 		for _, bound := range parameter.Bounds {
 			original := strings.TrimSpace(bound.Original)
 			base, arguments := parseJavaTypeString(original)
 			if resolveClassScopeByQualifiedName(ctx, base) != nil {
-				return original
+				if _, duplicate := seenBounds[original]; !duplicate {
+					seenBounds[original] = struct{}{}
+					result = append(result, original)
+				}
+				continue
 			}
 			if len(arguments) == 0 {
-				if resolved := resolve(stripJavaQualifier(base)); resolved != "" {
-					return resolved
-				}
+				result = append(result, resolve(stripJavaQualifier(base))...)
 			}
 		}
-		return ""
+		return result
 	}
 	return resolve(strings.TrimSpace(name))
 }
