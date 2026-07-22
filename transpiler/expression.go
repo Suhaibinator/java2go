@@ -5363,6 +5363,18 @@ func anonymousClassConstructionExpr(
 		typeParamExprs(info.scope.TypeParameterNames()),
 	)
 	elts := make([]ast.Expr, 0, len(info.captured)+1)
+	if info.scope.IsInner {
+		receiverName := ctx.className
+		if receiverName == "" && ctx.currentClass != nil && ctx.currentClass.Class != nil {
+			receiverName = ctx.currentClass.Class.Name
+		}
+		if receiverName != "" {
+			elts = append(elts, &ast.KeyValueExpr{
+				Key:   &ast.Ident{Name: info.scope.EnclosingFieldName()},
+				Value: &ast.Ident{Name: ShortName(receiverName)},
+			})
+		}
+	}
 	if superScope != nil && !superScope.IsInterface && superScope.Class != nil && !usesMostDerived {
 		if initializer := anonymousSuperclassConstructorExpr(node, objectType, superScope, nil, source, ctx); initializer != nil {
 			elts = append(elts, &ast.KeyValueExpr{
@@ -5385,20 +5397,35 @@ func anonymousClassConstructionExpr(
 			Elts: elts,
 		},
 	}
-	if !usesMostDerived && info.fieldInitializerMethodName == "" {
+	instanceName := "__java2goAnonymous"
+	defaultStringInitializers := defaultStringFieldInitializationForFieldsStmts(
+		info.declaredFields,
+		instanceName,
+		ctx,
+	)
+	var defaultCarrierConstructor ast.Expr
+	if superScope != nil && superScope.IsInterface && objectType != nil {
+		defaultCarrierConstructor = interfaceDefaultCarrierConstructorExpr(
+			objectType.Content(source),
+			info.scope.TypeParameterNames(),
+			ctx,
+		)
+	}
+	if !usesMostDerived && info.fieldInitializerMethodName == "" &&
+		len(defaultStringInitializers) == 0 && defaultCarrierConstructor == nil {
 		return composite
 	}
 
-	instanceName := "__java2goAnonymous"
 	statements := []ast.Stmt{&ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.Ident{Name: instanceName}},
 		Tok: token.DEFINE,
 		Rhs: []ast.Expr{composite},
 	}}
+	// Source-declared String fields use a sentinel for Java null. Captured String
+	// values were populated by the composite literal and deliberately remain
+	// untouched before constructor-time virtual dispatch.
+	statements = append(statements, defaultStringInitializers...)
 	if usesMostDerived {
-		// Java default values exist before super() and are therefore visible to a
-		// constructor-time virtual call into the anonymous override.
-		statements = append(statements, defaultStringFieldInitializationStmts(info.scope, instanceName, ctx)...)
 		if initializer := anonymousSuperclassConstructorExpr(
 			node,
 			objectType,
@@ -5416,6 +5443,22 @@ func anonymousClassConstructionExpr(
 				Rhs: []ast.Expr{initializer},
 			})
 		}
+	}
+	if defaultCarrierConstructor != nil {
+		// An embedded default-method carrier is executable state, not a nil
+		// interface placeholder. Point it at the most-derived anonymous receiver
+		// before any source initializer can invoke an inherited default method.
+		statements = append(statements, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.SelectorExpr{
+				X:   &ast.Ident{Name: instanceName},
+				Sel: &ast.Ident{Name: interfaceDefaultCarrierName(superScope)},
+			}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{&ast.CallExpr{
+				Fun:  defaultCarrierConstructor,
+				Args: []ast.Expr{&ast.Ident{Name: instanceName}},
+			}},
+		})
 	}
 	if info.fieldInitializerMethodName != "" {
 		methodName := info.fieldInitializerMethodName
@@ -6269,6 +6312,9 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 
 func localClassHasInstanceFieldInitializers(classBody *sitter.Node) bool {
 	for _, member := range nodeutil.NamedChildrenOf(classBody) {
+		if member.Type() == "block" {
+			return true
+		}
 		if member.Type() != "field_declaration" || fieldDeclarationIsStatic(member) {
 			continue
 		}
@@ -6327,6 +6373,17 @@ func buildLocalClassFieldInitializerMethod(
 
 	var statements []ast.Stmt
 	for _, member := range nodeutil.NamedChildrenOf(classBody) {
+		if member.Type() == "block" {
+			// Each Java instance-initializer block introduces its own lexical scope.
+			// Preserve the block node in the Go AST (rather than flattening it) so
+			// local declarations cannot leak into a later initializer block.
+			blockCtx := initializerCtx.Clone()
+			blockCtx.localScope = &symbol.Definition{OriginalName: methodName, Name: methodName}
+			if block, ok := ParseStmt(member, source, blockCtx).(*ast.BlockStmt); ok && block != nil {
+				statements = append(statements, block)
+			}
+			continue
+		}
 		if member.Type() != "field_declaration" || fieldDeclarationIsStatic(member) {
 			continue
 		}
@@ -6343,13 +6400,15 @@ func buildLocalClassFieldInitializerMethod(
 			valueCtx := initializerCtx.Clone()
 			valueCtx.expectedType = field.OriginalType
 			valueCtx.expectedTypeRoot = valueNode
+			value := ParseExpr(valueNode, source, valueCtx)
+			value = coerceArgumentToExpectedType(value, valueNode, field.OriginalType, valueCtx, source)
 			statements = append(statements, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.SelectorExpr{
 					X:   &ast.Ident{Name: receiverName},
 					Sel: &ast.Ident{Name: field.Name},
 				}},
 				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{ParseExpr(valueNode, source, valueCtx)},
+				Rhs: []ast.Expr{value},
 			})
 		}
 	}

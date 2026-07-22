@@ -1681,8 +1681,23 @@ func defaultStringFieldInitializationStmts(scope *symbol.ClassScope, receiverNam
 	if scope == nil || receiverName == "" {
 		return nil
 	}
+	return defaultStringFieldInitializationForFieldsStmts(scope.Fields, receiverName, ctx)
+}
+
+// defaultStringFieldInitializationForFieldsStmts is the field-list form used
+// by synthetic classes whose scope also contains compiler-generated capture
+// fields. Captures already hold their enclosing values before super() runs and
+// must not be reset while installing Java defaults for source-declared fields.
+func defaultStringFieldInitializationForFieldsStmts(
+	fields []*symbol.Definition,
+	receiverName string,
+	ctx Ctx,
+) []ast.Stmt {
+	if receiverName == "" {
+		return nil
+	}
 	var statements []ast.Stmt
-	for _, field := range scope.Fields {
+	for _, field := range fields {
 		if field == nil || field.IsStatic || !isJavaStringType(field.OriginalType) {
 			continue
 		}
