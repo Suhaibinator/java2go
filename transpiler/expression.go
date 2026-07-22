@@ -2896,7 +2896,17 @@ func enclosingInstanceArgument(node, objectType *sitter.Node, targetScope *symbo
 	current := ctx.currentClass
 	desired := targetScope.Enclosing
 	seen := map[*symbol.ClassScope]struct{}{}
-	for current != desired {
+	for {
+		// A member inner class is inherited together with its enclosing-instance
+		// requirement. Inside `Sub extends Outer`, an unqualified `new Inner()`
+		// therefore uses the current Sub object as its Outer instance. The Go
+		// representation passes Sub's embedded Outer subobject, whose constructor
+		// wiring retains Sub as the most-derived dispatch receiver.
+		if javaReferenceTypeAssignable(current, desired, ctx) {
+			if view := sourceClassViewExpr(current, desired, result, ctx); view != nil {
+				return view
+			}
+		}
 		if _, duplicate := seen[current]; duplicate || !current.IsInner || current.Enclosing == nil {
 			return nil
 		}
