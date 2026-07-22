@@ -901,6 +901,17 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if len(effectiveTypeArgs) == 0 && localInfo != nil && localInfo.scope != nil {
 			effectiveTypeArgs = append(effectiveTypeArgs, localInfo.scope.TypeParameterNames()...)
 		}
+		if targetScope != nil && (len(effectiveTypeArgs) > 0 || targetScope.IsInner) {
+			receiverScope := ctx.currentClass
+			var receiverTypeArgs []string
+			if targetScope.IsInner {
+				if explicitScope, explicitArgs := explicitEnclosingInstanceTypeView(node, objectType, source, ctx); explicitScope != nil {
+					receiverScope = explicitScope
+					receiverTypeArgs = explicitArgs
+				}
+			}
+			effectiveTypeArgs = normalizeClassTypeArguments(targetScope, effectiveTypeArgs, receiverScope, receiverTypeArgs)
+		}
 
 		// Standard-library constructors (StringBuilder, ArrayList, HashMap, ...) are
 		// handled by the intrinsics table, which maps them onto stdjava runtime
@@ -2932,7 +2943,33 @@ func enclosingInstanceArgument(node, objectType *sitter.Node, targetScope *symbo
 		}
 		current = current.Enclosing
 	}
-	return result
+}
+
+// explicitEnclosingInstanceTypeView returns the static generic view of the
+// qualifier in `outer.new Inner()`. Constructor type arguments must carry that
+// qualifier's actual enclosing arguments rather than assigning Inner's own
+// source argument to the first hidden ABI slot.
+func explicitEnclosingInstanceTypeView(node, objectType *sitter.Node, source []byte, ctx Ctx) (*symbol.ClassScope, []string) {
+	if node == nil || objectType == nil || node.NamedChildCount() == 0 {
+		return nil, nil
+	}
+	qualifier := node.NamedChild(0)
+	if qualifier == nil || qualifier.StartByte() == objectType.StartByte() {
+		return nil, nil
+	}
+	if _, isType := javaTypeNodeKinds[qualifier.Type()]; isType {
+		return nil, nil
+	}
+	javaType, ok := inferExprJavaType(qualifier, ctx, source)
+	if !ok {
+		return nil, nil
+	}
+	base, arguments := parseJavaTypeString(javaType)
+	scope := resolveClassScopeByQualifiedName(ctx, base)
+	if scope == nil {
+		return nil, nil
+	}
+	return scope, normalizeClassTypeArguments(scope, arguments, ctx.currentClass, nil)
 }
 
 func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
@@ -4179,8 +4216,8 @@ func mapClassTypeArgsToAncestor(child *symbol.ClassScope, childTypeArgs []ast.Ex
 			return nil
 		}
 
-		base, superArgStrs := parseJavaTypeString(superType)
-		parentScope := resolveClassScopeByQualifiedName(ctx, base)
+		_, superArgStrs := parseJavaTypeString(superType)
+		parentScope := resolveSuperclassScopeInDeclaringContext(ctx, currentScope)
 		if parentScope == nil {
 			return nil
 		}
@@ -4194,9 +4231,10 @@ func mapClassTypeArgsToAncestor(child *symbol.ClassScope, childTypeArgs []ast.Ex
 			}
 		}
 
+		normalizedSuperArgs := normalizeClassTypeArguments(parentScope, superArgStrs, currentScope, paramNames)
 		scopeTypeParams := append(inScopeTypeParameters(ctx), paramNames...)
-		parentArgs := make([]ast.Expr, 0, len(superArgStrs))
-		for _, a := range superArgStrs {
+		parentArgs := make([]ast.Expr, 0, len(normalizedSuperArgs))
+		for _, a := range normalizedSuperArgs {
 			a = strings.TrimSpace(stripJavaQualifier(a))
 			if expr, ok := paramMap[a]; ok {
 				parentArgs = append(parentArgs, expr)
@@ -7728,30 +7766,10 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		}
 		targetPkg = resolveJavaPackageForType(ctx, base, resolvedScope)
 
-		// A non-static nested Java class implicitly carries its enclosing class's
-		// type parameters. References such as `Node next` inside `Outer<T>` are
-		// therefore `Node<T>` even though Java does not repeat the argument. Go
-		// requires every generic type to be instantiated. The same fallback maps a
-		// true Java raw type to its erased upper bound (`Object` when unbounded),
-		// which is the closest valid Go representation.
-		if len(typeArgs) == 0 && len(resolvedScope.TypeParameters) > 0 {
-			available := make(map[string]struct{}, len(typeParams))
-			for _, typeParam := range typeParams {
-				available[typeParam] = struct{}{}
-			}
-			typeArgs = make([]string, 0, len(resolvedScope.TypeParameters))
-			for _, typeParam := range resolvedScope.TypeParameters {
-				if _, ok := available[typeParam.Name]; ok {
-					typeArgs = append(typeArgs, typeParam.Name)
-					continue
-				}
-				if len(typeParam.Bounds) > 0 && strings.TrimSpace(typeParam.Bounds[0].Original) != "" {
-					typeArgs = append(typeArgs, typeParam.Bounds[0].Original)
-					continue
-				}
-				typeArgs = append(typeArgs, "Object")
-			}
-		}
+		// Java only spells a member class's own arguments at an unqualified use
+		// site. Complete the generated ABI with hidden enclosing arguments and use
+		// Java first-bound erasure for genuinely raw declared slots.
+		typeArgs = normalizeClassTypeArguments(resolvedScope, typeArgs, ctx.currentClass, nil)
 	} else if ctx.currentFile != nil {
 		// If this type name maps to an import whose package we parsed in the same conversion run,
 		// emit a qualified Go selector and add the corresponding import.
@@ -7912,11 +7930,9 @@ func instantiatedFieldJavaType(
 	}
 	fallback := resolution.def.OriginalType
 	if start == nil || resolution.owner == nil {
-		return fallback
+		return readableWildcardProjection(fallback)
 	}
-	if len(startTypeArgs) == 0 && len(start.TypeParameters) > 0 {
-		startTypeArgs = start.TypeParameterNames()
-	}
+	startTypeArgs = normalizeClassTypeArguments(start, startTypeArgs, ctx.currentClass, nil)
 
 	current := start
 	currentArgs := append([]string(nil), startTypeArgs...)
@@ -7934,22 +7950,45 @@ func instantiatedFieldJavaType(
 			}
 		}
 		if current == resolution.owner {
-			return substituteJavaTypeParameters(fallback, bindings)
+			return readableWildcardProjection(substituteJavaTypeParameters(fallback, bindings))
 		}
 
 		superType := strings.TrimSpace(current.Superclass)
 		if superType == "" {
-			return fallback
+			return readableWildcardProjection(fallback)
 		}
 		_, declaredParentArgs := parseJavaTypeString(superType)
-		parentArgs := make([]string, len(declaredParentArgs))
-		for index, argument := range declaredParentArgs {
+		parent := resolveSuperclassScopeInDeclaringContext(ctx, current)
+		if parent == nil {
+			return readableWildcardProjection(fallback)
+		}
+		normalizedParentArgs := normalizeClassTypeArguments(parent, declaredParentArgs, current, currentArgs)
+		parentArgs := make([]string, len(normalizedParentArgs))
+		for index, argument := range normalizedParentArgs {
 			parentArgs[index] = substituteJavaTypeParameters(argument, bindings)
 		}
-		current = resolveSuperclassScopeInDeclaringContext(ctx, current)
+		current = parent
 		currentArgs = parentArgs
 	}
-	return fallback
+	return readableWildcardProjection(fallback)
+}
+
+// readableWildcardProjection returns the Java type available when reading a
+// value through a wildcard capture. `? extends Root` is readable as Root;
+// unbounded and lower-bounded wildcards are only safely readable as Object.
+func readableWildcardProjection(javaType string) string {
+	javaType = strings.TrimSpace(javaType)
+	if !strings.HasPrefix(javaType, "?") {
+		return javaType
+	}
+	rest := strings.TrimSpace(strings.TrimPrefix(javaType, "?"))
+	if strings.HasPrefix(rest, "extends") {
+		bound := strings.TrimSpace(strings.TrimPrefix(rest, "extends"))
+		if bound != "" {
+			return bound
+		}
+	}
+	return "Object"
 }
 
 // qualifyJavaTypeInDeclaringContext preserves where user-defined types in a
@@ -8688,6 +8727,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 	if classScope == nil {
 		return nil
 	}
+	classTypeArgs = normalizeClassTypeArguments(classScope, classTypeArgs, ctx.currentClass, nil)
 
 	classTypeArgExprs := make([]ast.Expr, 0, len(classTypeArgs))
 	for _, arg := range classTypeArgs {

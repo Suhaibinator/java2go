@@ -1383,32 +1383,7 @@ func classTypeArgumentsWithRawFallback(
 	typeArguments []string,
 	receiverScope *symbol.ClassScope,
 ) []string {
-	effectiveTypeArguments := append([]string(nil), typeArguments...)
-	if scope == nil {
-		return effectiveTypeArguments
-	}
-	if len(effectiveTypeArguments) == 0 && len(scope.TypeParameters) > 0 {
-		var typeParams []string
-		if receiverScope != nil {
-			typeParams = receiverScope.TypeParameterNames()
-		}
-		available := make(map[string]struct{}, len(typeParams))
-		for _, typeParam := range typeParams {
-			available[typeParam] = struct{}{}
-		}
-		for _, typeParam := range scope.TypeParameters {
-			if _, ok := available[typeParam.Name]; ok {
-				effectiveTypeArguments = append(effectiveTypeArguments, typeParam.Name)
-				continue
-			}
-			if len(typeParam.Bounds) > 0 && strings.TrimSpace(typeParam.Bounds[0].Original) != "" {
-				effectiveTypeArguments = append(effectiveTypeArguments, typeParam.Bounds[0].Original)
-				continue
-			}
-			effectiveTypeArguments = append(effectiveTypeArguments, "Object")
-		}
-	}
-	return effectiveTypeArguments
+	return normalizeClassTypeArguments(scope, typeArguments, receiverScope, nil)
 }
 
 // generateClassSubobjectInstallerDecls gives every named subclass an installer
@@ -2226,6 +2201,12 @@ func explicitSuperConstructorAssignment(
 	}
 
 	callArgs := append([]ast.Expr(nil), invocation.parsedArgs...)
+	if parent != nil && parent.IsInner && ctx.currentClass.IsInner {
+		callArgs = append([]ast.Expr{&ast.SelectorExpr{
+			X:   &ast.Ident{Name: receiverName},
+			Sel: &ast.Ident{Name: ctx.currentClass.EnclosingFieldName()},
+		}}, callArgs...)
+	}
 	if mostDerived != nil && parent != nil && constructorUsesMostDerived(parent, ctx) {
 		callArgs = append([]ast.Expr{mostDerived}, callArgs...)
 	}
@@ -2256,6 +2237,12 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 		return nil
 	}
 	args := []ast.Expr{}
+	if parent.IsInner && scope.IsInner {
+		args = append(args, &ast.SelectorExpr{
+			X:   &ast.Ident{Name: receiverName},
+			Sel: &ast.Ident{Name: scope.EnclosingFieldName()},
+		})
+	}
 	if mostDerived != nil && constructorUsesMostDerived(parent, ctx) {
 		constructorName = constructorWithSelfName(constructorName)
 		args = append(args, mostDerived)
@@ -3239,12 +3226,16 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 	return append([]ast.Decl{helperStruct, constructor}, methodDecls...)
 }
 
-// synthesizeRawGenericFunctionParameters models Java raw generic parameters on
-// static methods. A raw `Box box` accepts Box<String>, Box<Integer>, and every
-// other instantiation, but Go requires an explicit argument and its generic
-// types are invariant. Emitting a fresh function type parameter per raw formal
-// (`func Use[BoxT any](box *Box[BoxT])`) preserves that call-site flexibility
-// and lets Go infer the concrete argument without changing the Java symbols.
+// synthesizeRawGenericFunctionParameters models Java raw and wildcard generic
+// parameters on static methods. A raw `Box box` and a covariant `Box<? extends
+// Root> box` both accept multiple concrete instantiations, while Go generic
+// types are invariant. Fresh function type parameters preserve that call-site
+// flexibility and let Go infer the concrete arguments without mutating the Java
+// symbols. Reference arrays are the exception: their generated ABI is the
+// non-generic *stdjava.ReferenceArray, so a fresh parameter would be absent from
+// the Go signature and could not be inferred. Array wildcards therefore use
+// their readable upper projection; the runtime array descriptor retains the
+// reified component identity independently.
 func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]symbol.TypeParam, map[string]string) {
 	if def == nil || !def.IsStatic {
 		return nil, nil
@@ -3253,6 +3244,16 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 	usedNames := make(map[string]struct{})
 	for _, typeParam := range def.TypeParameters {
 		usedNames[typeParam.Name] = struct{}{}
+	}
+	// Go type parameters and ordinary function parameters share a declaration
+	// scope. Reserve both Java and resolved spellings so a synthetic `ValueT`
+	// cannot collide with an existing formal of the same name.
+	for _, parameter := range def.Parameters {
+		if parameter == nil {
+			continue
+		}
+		usedNames[sanitizeGoIdent(parameter.OriginalName)] = struct{}{}
+		usedNames[sanitizeGoIdent(parameter.Name)] = struct{}{}
 	}
 
 	var synthetic []symbol.TypeParam
@@ -3269,7 +3270,7 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 			javaType = strings.TrimSpace(javaType[:len(javaType)-2])
 		}
 		base, explicitArgs := parseJavaTypeString(javaType)
-		if base == "" || len(explicitArgs) > 0 {
+		if base == "" {
 			continue
 		}
 		target := resolveClassScopeByQualifiedName(ctx, base)
@@ -3281,21 +3282,62 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 		if stem == "" {
 			stem = "Raw"
 		}
+
+		if len(explicitArgs) > 0 {
+			rewrittenArgs := append([]string(nil), explicitArgs...)
+			type wildcardPlan struct {
+				name        string
+				upperBound  string
+				targetParam *symbol.TypeParam
+			}
+			var plans []wildcardPlan
+			changed := false
+			for index, argument := range explicitArgs {
+				upperBound, wildcard := javaWildcardUpperBound(argument)
+				if !wildcard {
+					continue
+				}
+				changed = true
+				targetParam := genericTargetParameterForArgument(target, len(explicitArgs), index)
+				if arraySuffix != "" {
+					rewrittenArgs[index] = readableWildcardUpperBound(upperBound, targetParam, nil)
+					continue
+				}
+
+				targetName := fmt.Sprintf("Arg%d", index+1)
+				if targetParam != nil && targetParam.Name != "" {
+					targetName = targetParam.Name
+				}
+				name := nextSyntheticGenericParameterName(stem+targetName, usedNames)
+				rewrittenArgs[index] = name
+				plans = append(plans, wildcardPlan{
+					name:        name,
+					upperBound:  upperBound,
+					targetParam: targetParam,
+				})
+			}
+			if !changed {
+				continue
+			}
+
+			bindings := genericTargetArgumentBindings(target, rewrittenArgs)
+			for _, plan := range plans {
+				synthetic = append(synthetic, symbol.TypeParam{
+					Name:   plan.name,
+					Bounds: wildcardSyntheticBounds(plan.upperBound, plan.targetParam, bindings),
+				})
+			}
+
+			rewritten := base + "<" + strings.Join(rewrittenArgs, ", ") + ">" + arraySuffix
+			rewrittenTypes[param.OriginalName] = rewritten
+			rewrittenTypes[param.Name] = rewritten
+			continue
+		}
+
 		bindings := make(map[string]string, len(target.TypeParameters))
 		generatedNames := make([]string, 0, len(target.TypeParameters))
 		for _, targetParam := range target.TypeParameters {
-			candidate := stem + targetParam.Name
-			if candidate == "" {
-				candidate = "RawType"
-			}
-			baseCandidate := candidate
-			for suffix := 2; ; suffix++ {
-				if _, exists := usedNames[candidate]; !exists {
-					break
-				}
-				candidate = fmt.Sprintf("%s%d", baseCandidate, suffix)
-			}
-			usedNames[candidate] = struct{}{}
+			candidate := nextSyntheticGenericParameterName(stem+targetParam.Name, usedNames)
 			bindings[targetParam.Name] = candidate
 			generatedNames = append(generatedNames, candidate)
 		}
@@ -3319,6 +3361,114 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 		return nil, nil
 	}
 	return synthetic, rewrittenTypes
+}
+
+// javaWildcardUpperBound recognizes a complete Java wildcard argument. The
+// empty returned upper bound represents both an unbounded wildcard and `super`:
+// values read through either form have the generic declaration's upper bound.
+func javaWildcardUpperBound(argument string) (string, bool) {
+	argument = strings.TrimSpace(argument)
+	if argument == "?" {
+		return "", true
+	}
+	rest := strings.TrimSpace(strings.TrimPrefix(argument, "?"))
+	if rest == argument {
+		return "", false
+	}
+	if strings.HasPrefix(rest, "extends") {
+		return strings.TrimSpace(strings.TrimPrefix(rest, "extends")), true
+	}
+	if strings.HasPrefix(rest, "super") {
+		return "", true
+	}
+	return "", false
+}
+
+// genericTargetParameterForArgument aligns source-level arguments with the
+// generated target ABI. A member class may carry enclosing parameters which do
+// not appear at an unqualified Java use site, so its own arguments occupy the
+// trailing slots.
+func genericTargetParameterForArgument(target *symbol.ClassScope, argumentCount, index int) *symbol.TypeParam {
+	if target == nil || index < 0 || index >= argumentCount || len(target.TypeParameters) == 0 {
+		return nil
+	}
+	offset := 0
+	if argumentCount != len(target.TypeParameters) {
+		ownCount := len(target.OwnTypeParameters())
+		if argumentCount <= ownCount {
+			offset = len(target.TypeParameters) - ownCount
+		} else if argumentCount < len(target.TypeParameters) {
+			offset = len(target.TypeParameters) - argumentCount
+		}
+	}
+	parameterIndex := offset + index
+	if parameterIndex < 0 || parameterIndex >= len(target.TypeParameters) {
+		return nil
+	}
+	return &target.TypeParameters[parameterIndex]
+}
+
+func genericTargetArgumentBindings(target *symbol.ClassScope, arguments []string) map[string]string {
+	bindings := make(map[string]string, len(arguments))
+	for index, argument := range arguments {
+		if parameter := genericTargetParameterForArgument(target, len(arguments), index); parameter != nil {
+			bindings[parameter.Name] = argument
+		}
+	}
+	return bindings
+}
+
+func nextSyntheticGenericParameterName(base string, usedNames map[string]struct{}) string {
+	base = sanitizeGoIdent(base)
+	if base == "" {
+		base = "RawType"
+	}
+	candidate := base
+	for suffix := 2; ; suffix++ {
+		if _, exists := usedNames[candidate]; !exists {
+			usedNames[candidate] = struct{}{}
+			return candidate
+		}
+		candidate = fmt.Sprintf("%s%d", base, suffix)
+	}
+}
+
+func readableWildcardUpperBound(upperBound string, targetParam *symbol.TypeParam, bindings map[string]string) string {
+	if upperBound = strings.TrimSpace(upperBound); upperBound != "" {
+		return upperBound
+	}
+	if targetParam != nil {
+		for _, bound := range targetParam.Bounds {
+			if original := strings.TrimSpace(bound.Original); original != "" {
+				return substituteJavaTypeParameters(original, bindings)
+			}
+		}
+	}
+	return "Object"
+}
+
+func wildcardSyntheticBounds(upperBound string, targetParam *symbol.TypeParam, bindings map[string]string) []symbol.JavaType {
+	var result []symbol.JavaType
+	seen := make(map[string]struct{})
+	appendBound := func(original string) {
+		original = strings.TrimSpace(original)
+		if original == "" {
+			return
+		}
+		if _, duplicate := seen[original]; duplicate {
+			return
+		}
+		seen[original] = struct{}{}
+		result = append(result, symbol.JavaType{Original: original})
+	}
+
+	appendBound(upperBound)
+	if targetParam != nil {
+		for _, bound := range targetParam.Bounds {
+			appendBound(substituteJavaTypeParameters(bound.Original, bindings))
+		}
+	}
+	return result
 }
 
 // constructorLoweringOptions carries the synthetic parameters and lifecycle
