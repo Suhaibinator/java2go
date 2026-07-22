@@ -2237,15 +2237,15 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 		return nil
 	}
 	args := []ast.Expr{}
+	if mostDerived != nil && constructorUsesMostDerived(parent, ctx) {
+		constructorName = constructorWithSelfName(constructorName)
+		args = append(args, mostDerived)
+	}
 	if parent.IsInner && scope.IsInner {
 		args = append(args, &ast.SelectorExpr{
 			X:   &ast.Ident{Name: receiverName},
 			Sel: &ast.Ident{Name: scope.EnclosingFieldName()},
 		})
-	}
-	if mostDerived != nil && constructorUsesMostDerived(parent, ctx) {
-		constructorName = constructorWithSelfName(constructorName)
-		args = append(args, mostDerived)
 	}
 	if execution := executionExpr(ctx); execution != nil {
 		constructorName += executionMethodSuffix
