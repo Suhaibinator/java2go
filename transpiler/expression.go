@@ -14,18 +14,6 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-// extractTypeArgsFromString extracts every source-level type argument from a
-// Java reference type. Member classes can introduce a type-argument list on
-// each segment, so Outer<String>.Child<Integer> contributes both arguments in
-// enclosing-to-nested order. Nested arguments remain intact.
-func extractTypeArgsFromString(typeStr string) []string {
-	_, arguments, ok := splitJavaMemberType(typeStr)
-	if !ok {
-		return nil
-	}
-	return arguments
-}
-
 // splitJavaMemberType removes generic groups from each member-type segment and
 // returns their arguments flattened in source order. For example,
 // pkg.Outer<String>.Child<List<Integer>> becomes
@@ -824,14 +812,73 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			constructorResolution = resolution
 		}
 		targetPkg := resolveJavaPackageForType(ctx, className, targetScope)
+		localInfo := ctx.localClasses[className]
+
+		// Resolve an inner creation's enclosing value and generic view together.
+		// The hidden constructor argument and the hidden class type-argument slots
+		// must describe the same exact superclass projection.
+		var enclosingView *objectCreationEnclosingView
+		if targetScope != nil && targetScope.IsInner {
+			enclosingView = resolveObjectCreationEnclosingView(node, objectType, targetScope, source, ctx)
+		}
+
+		// Determine the complete generated class ABI before lowering constructor
+		// arguments. Java raw construction is distinct from diamond inference: an
+		// omitted raw own argument is explicitly instantiated with its first-bound
+		// erasure so Go does not accidentally infer a narrower type from an argument.
+		generatedTypeArgumentPrefix := 0
+		effectiveTypeArgs := typeArgs
+		diamondTargetResolved := false
+		if len(effectiveTypeArgs) == 0 && isDiamond {
+			if targetArguments, resolved := objectCreationDiamondTargetArguments(targetScope, className, ctx.expectedType, ctx); resolved {
+				effectiveTypeArgs = targetArguments
+				diamondTargetResolved = true
+			}
+		}
+		if localInfo != nil && localInfo.scope != nil && len(effectiveTypeArgs) != len(localInfo.scope.TypeParameters) {
+			declaredArgs := append([]string(nil), effectiveTypeArgs...)
+			effectiveTypeArgs = append([]string(nil), localInfo.hiddenTypeArguments...)
+			generatedTypeArgumentPrefix = len(localInfo.hiddenTypeArguments)
+			for index, parameter := range localInfo.scope.OwnTypeParameters() {
+				if index < len(declaredArgs) {
+					effectiveTypeArgs = append(effectiveTypeArgs, declaredArgs[index])
+					continue
+				}
+				effectiveTypeArgs = append(effectiveTypeArgs, rawTypeParameterErasure(parameter, localInfo.scope.TypeParameters))
+			}
+			if isDiamond {
+				diamondTargetResolved = true
+			}
+		}
+		if targetScope != nil && len(targetScope.TypeParameters) > 0 {
+			receiverScope := ctx.currentClass
+			var receiverTypeArgs []string
+			if enclosingView != nil {
+				receiverScope = enclosingView.scope
+				receiverTypeArgs = enclosingView.typeArguments
+			}
+			if isDiamond && !diamondTargetResolved {
+				effectiveTypeArgs = inferObjectCreationDiamondTypeArguments(
+					targetScope,
+					constructor,
+					node,
+					receiverScope,
+					receiverTypeArgs,
+					ctx,
+					source,
+				)
+			} else {
+				effectiveTypeArgs = normalizeClassTypeArguments(targetScope, effectiveTypeArgs, receiverScope, receiverTypeArgs)
+			}
+		}
+
 		var expectedArgumentTypes []string
 		if constructor != nil {
-			expectedArgumentTypes = definitionParameterOriginalTypes(constructor)
+			expectedArgumentTypes = instantiatedConstructorParameterTypes(constructor, targetScope, effectiveTypeArgs)
 		} else if stripJavaQualifier(className) == "Thread" && resolveClassScopeByQualifiedName(ctx, className) == nil {
 			expectedArgumentTypes = []string{"Runnable"}
 		}
 		arguments, expandVarargsArray := parseResolvedInvocationArguments(constructorResolution, objectArguments, source, ctx, expectedArgumentTypes)
-		localInfo := ctx.localClasses[className]
 		if localInfo != nil {
 			captureArgs := make([]ast.Expr, 0, len(localInfo.captured))
 			for _, capture := range localInfo.captured {
@@ -850,23 +897,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			arguments = append(captureArgs, arguments...)
 		}
-
-		// Inner-class instantiation captures an enclosing instance. For the
-		// explicit `outer.new Inner()` form, the qualifier expression precedes the
-		// type; for the implicit `new Inner()` form inside the enclosing class, the
-		// current receiver is captured. The captured value is threaded as the
-		// constructor's leading argument.
-		if targetScope != nil && targetScope.IsInner {
-			if enclArg := enclosingInstanceArgument(node, objectType, targetScope, source, ctx); enclArg != nil {
-				arguments = append([]ast.Expr{enclArg}, arguments...)
-			}
+		if enclosingView != nil && enclosingView.expression != nil {
+			arguments = append([]ast.Expr{enclosingView.expression}, arguments...)
 		}
 
 		// Helper function to add type arguments to a function expression. Hidden
 		// local-class arguments are already generated binder spellings; converting
 		// an outer `T` as Java source here would incorrectly rebind it to an
 		// innermost same-named method/local declaration.
-		generatedTypeArgumentPrefix := 0
 		addTypeArgs := func(funExpr ast.Expr, args []string) ast.Expr {
 			if len(args) == 0 {
 				return funExpr
@@ -881,53 +919,6 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				typeArgExprs = append(typeArgExprs, javaTypeStringToGoTypeExpr(ta, scopeTypeParams, ctx))
 			}
 			return applyTypeArguments(funExpr, typeArgExprs)
-		}
-
-		// Determine effective type arguments:
-		// 1. If explicit type arguments provided, use them
-		// 2. If diamond operator, try to infer from expectedType
-		// 3. For inner class constructors (non-diamond), use parent class type params
-		effectiveTypeArgs := typeArgs
-		if len(effectiveTypeArgs) == 0 {
-			// For diamond operator, try to infer from expectedType
-			if isDiamond && ctx.expectedType != "" {
-				effectiveTypeArgs = extractTypeArgsFromString(ctx.expectedType)
-			}
-
-			// For inner class constructors (not diamond), use parent class type parameters
-			// This handles cases like `new Node(element)` inside a generic class
-			if len(effectiveTypeArgs) == 0 && !isDiamond && targetScope != nil && targetScope.IsInner && len(ctx.currentClass.TypeParameters) > 0 {
-				// Check if className is a nested class of the current class
-				for _, sub := range ctx.currentClass.Subclasses {
-					if sub.Class.OriginalName == className {
-						effectiveTypeArgs = ctx.currentClass.GoTypeParameterNames()
-						break
-					}
-				}
-			}
-		}
-		if localInfo != nil && localInfo.scope != nil && len(effectiveTypeArgs) != len(localInfo.scope.TypeParameters) {
-			declaredArgs := append([]string(nil), effectiveTypeArgs...)
-			effectiveTypeArgs = append([]string(nil), localInfo.hiddenTypeArguments...)
-			generatedTypeArgumentPrefix = len(localInfo.hiddenTypeArguments)
-			for index, parameter := range localInfo.scope.OwnTypeParameters() {
-				if index < len(declaredArgs) {
-					effectiveTypeArgs = append(effectiveTypeArgs, declaredArgs[index])
-					continue
-				}
-				effectiveTypeArgs = append(effectiveTypeArgs, rawTypeParameterErasure(parameter, localInfo.scope.TypeParameters))
-			}
-		}
-		if targetScope != nil && (len(effectiveTypeArgs) > 0 || targetScope.IsInner) {
-			receiverScope := ctx.currentClass
-			var receiverTypeArgs []string
-			if targetScope.IsInner {
-				if explicitScope, explicitArgs := explicitEnclosingInstanceTypeView(node, objectType, source, ctx); explicitScope != nil {
-					receiverScope = explicitScope
-					receiverTypeArgs = explicitArgs
-				}
-			}
-			effectiveTypeArgs = normalizeClassTypeArguments(targetScope, effectiveTypeArgs, receiverScope, receiverTypeArgs)
 		}
 
 		// Standard-library constructors (StringBuilder, ArrayList, HashMap, ...) are
@@ -2906,27 +2897,84 @@ func enclosingMemberMethodSelector(methodName string, argCount int, ctx Ctx) (as
 	return nil, nil
 }
 
-// enclosingInstanceArgument computes the enclosing-instance expression passed to
-// an inner class's constructor. If the object creation is written as
-// `qualifier.new Inner(...)`, the qualifier expression is used. Otherwise it
-// follows synthetic enclosing-instance links from the current receiver to the
-// target's lexical owner. This distinction matters when a local/inner class
-// recursively constructs itself: the current receiver is the local object, but
-// the new object's enclosing instance is the outer object stored on that
-// receiver.
-func enclosingInstanceArgument(node, objectType *sitter.Node, targetScope *symbol.ClassScope, source []byte, ctx Ctx) ast.Expr {
+type objectCreationEnclosingView struct {
+	expression    ast.Expr
+	scope         *symbol.ClassScope
+	typeArguments []string
+}
+
+// resolveObjectCreationEnclosingView computes the enclosing-instance expression
+// and its exact target-owner generic view as one value. If object creation is
+// written as `qualifier.new Inner(...)`, an inherited qualifier is projected to
+// the embedded target-owner subobject. Otherwise synthetic enclosing-instance
+// links are followed from the active receiver. Coupling these results prevents
+// the hidden constructor value from being Base<String> while the hidden generic
+// slot is independently erased to Base<any>.
+func resolveObjectCreationEnclosingView(
+	node, objectType *sitter.Node,
+	targetScope *symbol.ClassScope,
+	source []byte,
+	ctx Ctx,
+) *objectCreationEnclosingView {
+	if targetScope == nil || targetScope.Enclosing == nil || targetScope.Enclosing.Class == nil {
+		return nil
+	}
+	desired := targetScope.Enclosing
+
 	if node != nil && node.NamedChildCount() > 0 {
 		first := node.NamedChild(0)
 		// A leading named child that is not the type node is the explicit
 		// qualifier in `qualifier.new Inner()`.
 		if first != nil && objectType != nil && first.StartByte() != objectType.StartByte() {
 			if _, isType := javaTypeNodeKinds[first.Type()]; !isType {
-				return ParseExpr(first, source, ctx)
+				javaType, known := inferExprJavaType(first, ctx, source)
+				if !known {
+					// Auxiliary inference does not cover every expression ParseExpr can
+					// lower (notably switch expressions). Never drop Java's required
+					// enclosing argument merely because its static view is unavailable.
+					// A non-generic owner still has a fully known target type, so retain
+					// the exact null-before-arguments check as well.
+					fallbackArguments := normalizeClassTypeArguments(desired, nil, nil, []string{})
+					fallbackJavaType := desired.Class.OriginalName
+					if len(fallbackArguments) > 0 {
+						fallbackJavaType += "<" + strings.Join(fallbackArguments, ", ") + ">"
+					}
+					qualifierCtx := ctx.Clone()
+					qualifierCtx.expectedType = fallbackJavaType
+					qualifierCtx.expectedTypeRoot = first
+					expression := ParseExpr(first, source, qualifierCtx)
+					expression = requireNonNullEnclosingInstance(expression, desired, fallbackArguments, ctx)
+					return &objectCreationEnclosingView{
+						expression:    expression,
+						scope:         desired,
+						typeArguments: fallbackArguments,
+					}
+				}
+				base, arguments := parseJavaTypeString(javaType)
+				sourceScope := resolveClassScopeByQualifiedName(ctx, base)
+				if sourceScope == nil || !javaReferenceTypeAssignable(sourceScope, desired, ctx) {
+					return nil
+				}
+				sourceArguments := normalizeClassTypeArguments(sourceScope, arguments, ctx.currentClass, nil)
+				expression := ParseExpr(first, source, ctx)
+				if sourceScope != desired {
+					expression = sourceClassViewExpr(sourceScope, desired, expression, ctx)
+					if expression == nil {
+						return nil
+					}
+				}
+				mappedArguments := mapClassTypeArgumentStringsToAncestor(sourceScope, sourceArguments, desired, ctx)
+				expression = requireNonNullEnclosingInstance(expression, desired, mappedArguments, ctx)
+				return &objectCreationEnclosingView{
+					expression:    expression,
+					scope:         desired,
+					typeArguments: mappedArguments,
+				}
 			}
 		}
 	}
 
-	if targetScope == nil || targetScope.Enclosing == nil || ctx.currentClass == nil || ctx.className == "" {
+	if ctx.currentClass == nil || ctx.className == "" {
 		return nil
 	}
 
@@ -2937,7 +2985,7 @@ func enclosingInstanceArgument(node, objectType *sitter.Node, targetScope *symbo
 	// outer link instead.
 	var result ast.Expr = &ast.Ident{Name: ShortName(ctx.className)}
 	current := ctx.currentClass
-	desired := targetScope.Enclosing
+	currentArguments := current.GoTypeParameterNames()
 	seen := map[*symbol.ClassScope]struct{}{}
 	for {
 		// A member inner class is inherited together with its enclosing-instance
@@ -2947,7 +2995,11 @@ func enclosingInstanceArgument(node, objectType *sitter.Node, targetScope *symbo
 		// wiring retains Sub as the most-derived dispatch receiver.
 		if javaReferenceTypeAssignable(current, desired, ctx) {
 			if view := sourceClassViewExpr(current, desired, result, ctx); view != nil {
-				return view
+				return &objectCreationEnclosingView{
+					expression:    view,
+					scope:         desired,
+					typeArguments: mapClassTypeArgumentStringsToAncestor(current, currentArguments, desired, ctx),
+				}
 			}
 		}
 		if _, duplicate := seen[current]; duplicate || !current.IsInner || current.Enclosing == nil {
@@ -2958,35 +3010,151 @@ func enclosingInstanceArgument(node, objectType *sitter.Node, targetScope *symbo
 			X:   result,
 			Sel: &ast.Ident{Name: current.EnclosingFieldName()},
 		}
+		currentArguments = classTypeArgumentStringsForScope(current, currentArguments, current.Enclosing)
 		current = current.Enclosing
 	}
 }
 
-// explicitEnclosingInstanceTypeView returns the static generic view of the
-// qualifier in `outer.new Inner()`. Constructor type arguments must carry that
-// qualifier's actual enclosing arguments rather than assigning Inner's own
-// source argument to the first hidden ABI slot.
-func explicitEnclosingInstanceTypeView(node, objectType *sitter.Node, source []byte, ctx Ctx) (*symbol.ClassScope, []string) {
-	if node == nil || objectType == nil || node.NamedChildCount() == 0 {
-		return nil, nil
+// requireNonNullEnclosingInstance performs the qualified-inner-creation null
+// check as part of evaluating the constructor's leading argument. Java checks
+// `qualifier` before evaluating source constructor arguments; the closure keeps
+// that ordering, evaluates the qualifier once, and returns its exact generic
+// target-owner view. The native nil dereference is normalized to Java's
+// NullPointerException by the generated exception boundary.
+func requireNonNullEnclosingInstance(
+	expression ast.Expr,
+	scope *symbol.ClassScope,
+	typeArguments []string,
+	ctx Ctx,
+) ast.Expr {
+	if expression == nil || scope == nil || scope.Class == nil {
+		return expression
 	}
-	qualifier := node.NamedChild(0)
-	if qualifier == nil || qualifier.StartByte() == objectType.StartByte() {
-		return nil, nil
+	classType := qualifiedNameExpr(scope.Class.Name, findJavaPackageForClassScope(scope), ctx)
+	if len(typeArguments) > 0 {
+		goTypeArguments := make([]ast.Expr, 0, len(typeArguments))
+		for _, argument := range typeArguments {
+			goTypeArguments = append(goTypeArguments, javaTypeStringToGoTypeExpr(argument, inScopeTypeParameters(ctx), ctx))
+		}
+		classType = applyTypeArguments(classType, goTypeArguments)
 	}
-	if _, isType := javaTypeNodeKinds[qualifier.Type()]; isType {
-		return nil, nil
+	resultType := &ast.StarExpr{X: classType}
+	const valueName = "__java2goEnclosingInstance"
+	return &ast.CallExpr{Fun: &ast.FuncLit{
+		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: resultType}}}},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: valueName}},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{expression},
+			},
+			&ast.IfStmt{
+				Cond: &ast.BinaryExpr{
+					X:  &ast.Ident{Name: valueName},
+					Op: token.EQL,
+					Y:  &ast.Ident{Name: "nil"},
+				},
+				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{
+					Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
+					Tok: token.ASSIGN,
+					Rhs: []ast.Expr{&ast.StarExpr{X: &ast.Ident{Name: valueName}}},
+				}}},
+			},
+			&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valueName}}},
+		}},
+	}}
+}
+
+// objectCreationDiamondTargetArguments accepts contextual arguments only when
+// the context is the class being constructed. `var`, Object, and unrelated
+// supertypes are not usable direct target views. A raw target of the same class
+// is deliberately resolved with no source arguments so normalization applies
+// Java erasure rather than producing an invariant *Box[string] for a *Box[any]
+// storage slot.
+func objectCreationDiamondTargetArguments(
+	targetScope *symbol.ClassScope,
+	targetClassName string,
+	expectedType string,
+	ctx Ctx,
+) ([]string, bool) {
+	if strings.TrimSpace(expectedType) == "" {
+		return nil, false
 	}
-	javaType, ok := inferExprJavaType(qualifier, ctx, source)
-	if !ok {
-		return nil, nil
+	base, arguments := parseJavaTypeString(expectedType)
+	if targetScope != nil {
+		if resolveClassScopeByQualifiedName(ctx, base) != targetScope {
+			return nil, false
+		}
+		return arguments, true
 	}
-	base, arguments := parseJavaTypeString(javaType)
-	scope := resolveClassScopeByQualifiedName(ctx, base)
-	if scope == nil {
-		return nil, nil
+	targetBase, _ := parseJavaTypeString(targetClassName)
+	if !sameJavaRawType(base, targetBase) && !sameIntrinsicGenericTypeFamily(base, targetBase) {
+		return nil, false
 	}
-	return scope, normalizeClassTypeArguments(scope, arguments, ctx.currentClass, nil)
+	if len(arguments) == 0 {
+		arguments = rawIntrinsicConstructorTypeArguments(targetBase)
+		if len(arguments) == 0 {
+			return nil, false
+		}
+	}
+	return arguments, true
+}
+
+func sameIntrinsicGenericTypeFamily(left, right string) bool {
+	left = stripJavaQualifier(left)
+	right = stripJavaQualifier(right)
+	return (containsString(listTypeNames, left) && containsString(listTypeNames, right)) ||
+		(containsString(mapTypeNames, left) && containsString(mapTypeNames, right)) ||
+		(containsString(setTypeNames, left) && containsString(setTypeNames, right)) ||
+		(left == "Optional" && right == "Optional")
+}
+
+func rawIntrinsicConstructorTypeArguments(className string) []string {
+	className = stripJavaQualifier(className)
+	switch {
+	case containsString(mapTypeNames, className):
+		return []string{"Object", "Object"}
+	case containsString(listTypeNames, className), containsString(setTypeNames, className), className == "Optional":
+		return []string{"Object"}
+	default:
+		return nil
+	}
+}
+
+// inferObjectCreationDiamondTypeArguments mirrors the structural portion of
+// Java constructor inference using the same lower-bound engine as generic
+// methods. Supplying the complete result explicitly avoids relying on Go to
+// infer parameters that do not occur in constructor formals: Java gives those
+// parameters their first-bound erasure, while Go would reject the call as
+// uninferable.
+func inferObjectCreationDiamondTypeArguments(
+	targetScope *symbol.ClassScope,
+	constructor *symbol.Definition,
+	creationNode *sitter.Node,
+	receiverScope *symbol.ClassScope,
+	receiverTypeArguments []string,
+	ctx Ctx,
+	source []byte,
+) []string {
+	if targetScope == nil {
+		return nil
+	}
+	result := diamondClassTypeArgumentPrefix(targetScope, receiverScope, receiverTypeArguments)
+	declared := targetScope.OwnTypeParameters()
+	bindings := map[string]string{}
+	if constructor != nil && creationNode != nil && len(declared) > 0 {
+		inferenceDefinition := *constructor
+		inferenceDefinition.TypeParameters = declared
+		bindings = genericArrayInvocationTypeBindings(&inferenceDefinition, creationNode, ctx, source)
+	}
+	for _, parameter := range declared {
+		if inferred := strings.TrimSpace(bindings[parameter.Name]); inferred != "" {
+			result = append(result, inferred)
+			continue
+		}
+		result = append(result, rawTypeParameterErasure(parameter, targetScope.TypeParameters))
+	}
+	return result
 }
 
 func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
@@ -4295,6 +4463,42 @@ func definitionParameterOriginalTypes(def *symbol.Definition) []string {
 			continue
 		}
 		types[ind] = param.OriginalType
+	}
+	return types
+}
+
+// instantiatedConstructorParameterTypes substitutes the constructed class's
+// concrete arguments into constructor formals before expression lowering. A
+// constructor declared as Box(X) on Box<X>, invoked as new Box<B>(value), has a
+// B formal at that call site; retaining X would hide Java's proven T extends B
+// conversion from coerceArgumentToExpectedType.
+func instantiatedConstructorParameterTypes(
+	constructor *symbol.Definition,
+	scope *symbol.ClassScope,
+	typeArguments []string,
+) []string {
+	if constructor == nil || len(constructor.Parameters) == 0 {
+		return nil
+	}
+	types := make([]string, len(constructor.Parameters))
+	bindings := make(map[string]string, len(typeArguments)*2)
+	if scope != nil {
+		for index, parameter := range scope.TypeParameters {
+			if index >= len(typeArguments) {
+				continue
+			}
+			// EmittedName is declaration-unique and definitionJavaType rewrites a
+			// bound source occurrence to that spelling. The source name remains a
+			// compatibility fallback for older synthetic definitions.
+			bindings[parameter.Name] = typeArguments[index]
+			bindings[parameter.EmittedName()] = typeArguments[index]
+		}
+	}
+	for index, parameter := range constructor.Parameters {
+		if parameter == nil {
+			continue
+		}
+		types[index] = substituteJavaTypeParameters(definitionJavaType(parameter), bindings)
 	}
 	return types
 }
@@ -7719,6 +7923,21 @@ func substituteJavaTypeParameters(typeStr string, bindings map[string]string) st
 	for strings.HasSuffix(typeStr, "[]") {
 		arraySuffix += "[]"
 		typeStr = strings.TrimSpace(typeStr[:len(typeStr)-2])
+	}
+	if strings.HasPrefix(typeStr, "?") {
+		rest := strings.TrimSpace(strings.TrimPrefix(typeStr, "?"))
+		switch {
+		case rest == "":
+			return "?" + arraySuffix
+		case strings.HasPrefix(rest, "extends"):
+			bound := strings.TrimSpace(strings.TrimPrefix(rest, "extends"))
+			return "? extends " + substituteJavaTypeParameters(bound, bindings) + arraySuffix
+		case strings.HasPrefix(rest, "super"):
+			bound := strings.TrimSpace(strings.TrimPrefix(rest, "super"))
+			return "? super " + substituteJavaTypeParameters(bound, bindings) + arraySuffix
+		default:
+			return typeStr + arraySuffix
+		}
 	}
 
 	if replacement, ok := bindings[typeStr]; ok {
