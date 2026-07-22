@@ -14,65 +14,78 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-// extractTypeArgsFromString extracts type arguments from a string like "List<Integer>"
-// or nested generics like "Map<String, List<Integer>>".
-// Returns ["Integer"] or ["String", "List<Integer>"] respectively, or nil if no type arguments found
-// or if the input has unbalanced angle brackets.
+// extractTypeArgsFromString extracts every source-level type argument from a
+// Java reference type. Member classes can introduce a type-argument list on
+// each segment, so Outer<String>.Child<Integer> contributes both arguments in
+// enclosing-to-nested order. Nested arguments remain intact.
 func extractTypeArgsFromString(typeStr string) []string {
-	start := strings.Index(typeStr, "<")
-	end := strings.LastIndex(typeStr, ">")
-	if start == -1 || end == -1 || end <= start {
+	_, arguments, ok := splitJavaMemberType(typeStr)
+	if !ok {
 		return nil
 	}
-	argsStr := typeStr[start+1 : end]
+	return arguments
+}
 
-	// Split by commas, but only at the top level (not inside nested angle brackets)
-	var result []string
-	var current strings.Builder
-	depth := 0
+// splitJavaMemberType removes generic groups from each member-type segment and
+// returns their arguments flattened in source order. For example,
+// pkg.Outer<String>.Child<List<Integer>> becomes
+// pkg.Outer.Child plus [String, List<Integer>].
+func splitJavaMemberType(typeStr string) (string, []string, bool) {
+	typeStr = strings.TrimSpace(typeStr)
+	var base strings.Builder
+	var arguments []string
 
-	for _, ch := range argsStr {
-		switch ch {
-		case '<':
-			depth++
-			current.WriteRune(ch)
-		case '>':
-			depth--
-			if depth < 0 {
-				log.WithField("typeStr", typeStr).Warn("Unbalanced angle brackets in type string: too many '>'")
-				return nil
-			}
-			current.WriteRune(ch)
-		case ',':
-			if depth == 0 {
-				// Top-level comma - split here
-				trimmed := strings.TrimSpace(current.String())
-				if trimmed != "" {
-					result = append(result, trimmed)
+	for index := 0; index < len(typeStr); index++ {
+		if typeStr[index] == '>' {
+			log.WithField("typeStr", typeStr).Warn("Unbalanced angle brackets in type string: too many '>'")
+			return "", nil, false
+		}
+		if typeStr[index] != '<' {
+			base.WriteByte(typeStr[index])
+			continue
+		}
+
+		depth := 1
+		var current strings.Builder
+		closed := false
+		for index++; index < len(typeStr); index++ {
+			switch typeStr[index] {
+			case '<':
+				depth++
+				current.WriteByte('<')
+			case '>':
+				depth--
+				if depth == 0 {
+					if argument := strings.TrimSpace(current.String()); argument != "" {
+						arguments = append(arguments, argument)
+					}
+					closed = true
+					break
 				}
-				current.Reset()
-			} else {
-				// Comma inside nested generics - keep it
-				current.WriteRune(ch)
+				current.WriteByte('>')
+			case ',':
+				if depth == 1 {
+					if argument := strings.TrimSpace(current.String()); argument != "" {
+						arguments = append(arguments, argument)
+					}
+					current.Reset()
+					continue
+				}
+				current.WriteByte(',')
+			default:
+				current.WriteByte(typeStr[index])
 			}
-		default:
-			current.WriteRune(ch)
+			if closed {
+				break
+			}
+		}
+		if !closed {
+			log.WithField("typeStr", typeStr).Warn("Unbalanced angle brackets in type string: unclosed '<'")
+			return "", nil, false
 		}
 	}
 
-	// Validate that all angle brackets were closed
-	if depth != 0 {
-		log.WithField("typeStr", typeStr).Warn("Unbalanced angle brackets in type string: unclosed '<'")
-		return nil
-	}
-
-	// Don't forget the last argument
-	trimmed := strings.TrimSpace(current.String())
-	if trimmed != "" {
-		result = append(result, trimmed)
-	}
-
-	return result
+	return strings.TrimSpace(base.String()), arguments, true
 }
 
 // ParseExpr parses an expression type
@@ -7423,11 +7436,11 @@ func parseJavaTypeString(typeStr string) (string, []string) {
 	if typeStr == "" {
 		return "", nil
 	}
-	base := typeStr
-	if idx := strings.Index(typeStr, "<"); idx >= 0 {
-		base = strings.TrimSpace(typeStr[:idx])
+	base, arguments, ok := splitJavaMemberType(typeStr)
+	if !ok {
+		return typeStr, nil
 	}
-	return base, extractTypeArgsFromString(typeStr)
+	return base, arguments
 }
 
 // substituteJavaTypeParameters replaces class type parameters in a Java type
