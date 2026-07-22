@@ -1818,6 +1818,7 @@ func explicitThisConstructorAssignment(
 	invocation *explicitConstructorInvocation,
 	receiverName string,
 	usesMostDerived bool,
+	leadingArgs []ast.Expr,
 	source []byte,
 	ctx Ctx,
 ) ast.Stmt {
@@ -1858,6 +1859,7 @@ func explicitThisConstructorAssignment(
 	if enclosingInstanceType(ctx.currentClass) != nil {
 		args = append(args, &ast.Ident{Name: ctx.currentClass.EnclosingFieldName()})
 	}
+	args = append(args, leadingArgs...)
 	args = append(args, invocation.parsedArgs...)
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.Ident{Name: receiverName}},
@@ -2081,6 +2083,10 @@ func buildConstructorDeclarations(
 // initializers, and return the pointer. Interfaces and enums are skipped since
 // they are never instantiated through a `New<Class>` function.
 func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
+	return buildDefaultConstructorDeclsWithOptions(ctx, constructorLoweringOptions{})
+}
+
+func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLoweringOptions) []ast.Decl {
 	scope := ctx.currentClass
 	if scope == nil || scope.IsInterface || scope.IsEnum {
 		return nil
@@ -2117,6 +2123,7 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 	if identityInit := constructorObjectInfoInitStmt(scope, recvName, mostDerived, ctx); identityInit != nil {
 		body = append(body, identityInit)
 	}
+	body = append(body, options.terminalPreSuper...)
 	if superInit := implicitSuperConstructorAssignmentWithSelf(ctx, recvName, mostDerived); superInit != nil {
 		body = append(body, superInit)
 	}
@@ -2130,6 +2137,9 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 	// Inner classes capture their enclosing instance through a synthesized
 	// leading parameter that is stored into the enclosing-instance field.
 	params := &ast.FieldList{}
+	if len(options.leadingParams) > 0 {
+		params.List = append(params.List, options.leadingParams...)
+	}
 	if enclType := enclosingInstanceType(scope); enclType != nil {
 		enclFieldName := scope.EnclosingFieldName()
 		params.List = append(params.List, &ast.Field{
@@ -2147,20 +2157,14 @@ func buildDefaultConstructorDecls(ctx Ctx) []ast.Decl {
 		body = append(body, setterCall)
 	}
 
-	if scope.HasInstanceFieldInitializers {
-		body = append(body, &ast.ExprStmt{
-			X: &ast.CallExpr{
-				Fun: &ast.SelectorExpr{
-					X:   &ast.Ident{Name: recvName},
-					Sel: &ast.Ident{Name: executionFieldInitializerMethodName()},
-				},
-				Args: []ast.Expr{&ast.Ident{Name: executionName}},
-			},
-		})
+	if initializer := constructorInitializerCall(recvName, executionName, options, ctx); initializer != nil {
+		body = append(body, initializer)
 	}
 
-	if ensure := classInitializationEnsureStmt(scope, &ast.Ident{Name: executionName}, ctx); ensure != nil {
-		body = append([]ast.Stmt{ensure}, body...)
+	if !options.skipClassInitialization {
+		if ensure := classInitializationEnsureStmt(scope, &ast.Ident{Name: executionName}, ctx); ensure != nil {
+			body = append([]ast.Stmt{ensure}, body...)
+		}
 	}
 	body = append(body, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: recvName}}})
 
@@ -3011,159 +3015,215 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 	return synthetic, rewrittenTypes
 }
 
-// ParseDecl parses a top-level declaration within a source file, including
-// but not limited to fields and methods
-func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
-	switch node.Type() {
-	case "constructor_declaration":
-		paramNode := node.ChildByFieldName("parameters")
+// constructorLoweringOptions carries the synthetic parameters and lifecycle
+// hooks needed by method-local classes. Ordinary source classes pass the zero
+// value, so their constructor lowering continues to use the same path and
+// ordering as before.
+type constructorLoweringOptions struct {
+	definition                 *symbol.Definition
+	leadingParams              []*ast.Field
+	leadingThisArgs            []ast.Expr
+	terminalPreSuper           []ast.Stmt
+	fieldInitializerMethodName string
+	skipClassInitialization    bool
+}
 
-		constructorName := node.ChildByFieldName("name").Content(source)
+func constructorInitializerCall(
+	receiverName string,
+	executionName string,
+	options constructorLoweringOptions,
+	ctx Ctx,
+) ast.Stmt {
+	methodName := options.fieldInitializerMethodName
+	if methodName == "" {
+		if ctx.currentClass == nil || !ctx.currentClass.HasInstanceFieldInitializers {
+			return nil
+		}
+		methodName = fieldInitMethodName
+	}
+	return &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{
+		X:   &ast.Ident{Name: receiverName},
+		Sel: &ast.Ident{Name: methodName + executionMethodSuffix},
+	}, Args: []ast.Expr{&ast.Ident{Name: executionName}}}}
+}
 
+// buildSourceConstructorDecls lowers one source-backed constructor. Keeping
+// local classes on this path is important: this/super delegation, most-derived
+// dispatch, ObjectInfo, execution propagation, and Java initialization order
+// must not acquire a second subtly different implementation.
+func buildSourceConstructorDecls(
+	node *sitter.Node,
+	source []byte,
+	ctx Ctx,
+	options constructorLoweringOptions,
+) []ast.Decl {
+	paramNode := node.ChildByFieldName("parameters")
+	nameNode := node.ChildByFieldName("name")
+	if paramNode == nil || nameNode == nil || ctx.currentClass == nil {
+		return nil
+	}
+
+	constructorName := nameNode.Content(source)
+	definition := options.definition
+	if definition == nil {
 		comparison := func(d *symbol.Definition) bool {
-			// The names must match
-			if constructorName != d.OriginalName {
+			if d == nil || constructorName != d.OriginalName {
 				return false
 			}
-
-			// Size of parameters must match
 			if int(paramNode.NamedChildCount()) != len(d.Parameters) {
 				return false
 			}
-
-			// Go through the types and check to see if they differ
 			for index, param := range nodeutil.NamedChildrenOf(paramNode) {
 				if !declarationParameterMatchesDefinition(param, d, index, source) {
 					return false
 				}
 			}
-
 			return true
 		}
-
-		// Search through the current class for the constructor, which is simply labeled as a method
-		ctx.localScope = ctx.currentClass.FindMethod().By(comparison)[0]
-		executionName := executionParameterName(node, source, ctx)
-		ctx.executionContextName = executionName
-
-		bodyNode := node.ChildByFieldName("body")
-		constructorInvocation := constructorInvocationFromBody(bodyNode, source, ctx)
-		var omittedInvocation *sitter.Node
-		if constructorInvocation != nil {
-			omittedInvocation = constructorInvocation.node
+		matches := ctx.currentClass.FindMethod().By(comparison)
+		if len(matches) == 0 {
+			return nil
 		}
-		body := parseStatementBlock(bodyNode, omittedInvocation, source, ctx)
+		definition = matches[0]
+	}
+	ctx.localScope = definition
 
-		// Generate the struct type for `new` call - if generic, include type params
-		var structType ast.Expr = &ast.Ident{Name: ctx.className}
-		if len(ctx.currentClass.TypeParameters) > 0 {
-			structType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
+	constructorParams := ParseNode(paramNode, source, ctx).(*ast.FieldList)
+	if constructorParams == nil {
+		constructorParams = &ast.FieldList{}
+	}
+	if len(options.leadingParams) > 0 {
+		leading := append([]*ast.Field(nil), options.leadingParams...)
+		constructorParams.List = append(leading, constructorParams.List...)
+	}
+
+	executionName := executionParameterName(node, source, ctx)
+	if len(options.leadingParams) > 0 {
+		used := affineLoopUsedNames(node, source, ctx)
+		for _, field := range options.leadingParams {
+			if field == nil {
+				continue
+			}
+			for _, name := range field.Names {
+				if name != nil {
+					used[name.Name] = struct{}{}
+				}
+			}
 		}
+		executionName = synchronizedUniqueLocalName(executionParamBase, used)
+	}
+	ctx.executionContextName = executionName
 
-		receiverName := ShortName(ctx.className)
-		usesMostDerived := constructorUsesMostDerived(ctx.currentClass, ctx)
-		var mostDerived ast.Expr
+	bodyNode := node.ChildByFieldName("body")
+	constructorInvocation := constructorInvocationFromBody(bodyNode, source, ctx)
+	var omittedInvocation *sitter.Node
+	if constructorInvocation != nil {
+		omittedInvocation = constructorInvocation.node
+	}
+	body := parseStatementBlock(bodyNode, omittedInvocation, source, ctx)
+
+	var structType ast.Expr = &ast.Ident{Name: ctx.className}
+	if len(ctx.currentClass.TypeParameters) > 0 {
+		structType = instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.TypeParameterNames()))
+	}
+
+	receiverName := ShortName(ctx.className)
+	usesMostDerived := constructorUsesMostDerived(ctx.currentClass, ctx)
+	var mostDerived ast.Expr
+	if usesMostDerived {
+		mostDerived = &ast.Ident{Name: constructorSelfParam}
+	}
+
+	userBody := body.List
+	body.List = nil
+	if constructorInvocation != nil && constructorInvocation.kind == explicitThisConstructorInvocation {
+		if delegation := explicitThisConstructorAssignment(
+			constructorInvocation,
+			receiverName,
+			usesMostDerived,
+			options.leadingThisArgs,
+			source,
+			ctx,
+		); delegation != nil {
+			body.List = append(body.List, delegation)
+		}
+	} else {
+		body.List = append(body.List, &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.Ident{Name: receiverName}},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
+		})
+		body.List = append(body.List, defaultStringFieldInitializationStmts(ctx.currentClass, receiverName, ctx)...)
 		if usesMostDerived {
-			mostDerived = &ast.Ident{Name: constructorSelfParam}
+			body.List = append(body.List, constructorMostDerivedInitStmt(receiverName))
 		}
-
-		userBody := body.List
-		body.List = nil
-		if constructorInvocation != nil && constructorInvocation.kind == explicitThisConstructorInvocation {
-			// A this(...) constructor contributes no allocation or initialization
-			// phase of its own. Its target constructor returns the one initialized
-			// receiver; bind that receiver before executing this constructor's suffix.
-			if delegation := explicitThisConstructorAssignment(
-				constructorInvocation,
-				receiverName,
-				usesMostDerived,
-				source,
-				ctx,
-			); delegation != nil {
-				body.List = append(body.List, delegation)
-			}
-		} else {
-			// Only the terminal constructor in a this(...) chain performs Java's
-			// allocation/default/superclass/field-initializer phases.
+		if identityInit := constructorObjectInfoInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); identityInit != nil {
+			body.List = append(body.List, identityInit)
+		}
+		if enclosingInstanceType(ctx.currentClass) != nil {
+			enclFieldName := ctx.currentClass.EnclosingFieldName()
 			body.List = append(body.List, &ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.Ident{Name: receiverName}},
-				Tok: token.DEFINE,
-				Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{structType}}},
+				Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: enclFieldName}}},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{&ast.Ident{Name: enclFieldName}},
 			})
-			body.List = append(body.List, defaultStringFieldInitializationStmts(ctx.currentClass, receiverName, ctx)...)
-			if usesMostDerived {
-				body.List = append(body.List, constructorMostDerivedInitStmt(receiverName))
-			}
-			if identityInit := constructorObjectInfoInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); identityInit != nil {
-				body.List = append(body.List, identityInit)
-			}
-			// An inner-class allocation captures its enclosing receiver once, at the
-			// same terminal boundary as its ordinary Java instance fields.
-			if enclosingInstanceType(ctx.currentClass) != nil {
-				enclFieldName := ctx.currentClass.EnclosingFieldName()
-				body.List = append(body.List, &ast.AssignStmt{
-					Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: enclFieldName}}},
-					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{&ast.Ident{Name: enclFieldName}},
-				})
-			}
-
-			var superInit ast.Stmt
-			if constructorInvocation != nil && constructorInvocation.kind == explicitSuperConstructorInvocation {
-				superInit = explicitSuperConstructorAssignment(constructorInvocation, receiverName, mostDerived, source, ctx)
-			} else {
-				superInit = implicitSuperConstructorAssignmentWithSelf(ctx, receiverName, mostDerived)
-			}
-			if superInit != nil {
-				body.List = append(body.List, superInit)
-			}
-
-			// For a `class X extends Thread` subclass, wire the embedded runtime
-			// Thread after its superclass storage exists and before Java body code.
-			if stmt := threadBaseWiringStmt(ctx); stmt != nil {
-				body.List = append(body.List, stmt)
-			}
-			if setterCall := classSelfSetterCallStmtWithValue(ctx, receiverName, mostDerived); setterCall != nil {
-				body.List = append(body.List, setterCall)
-			}
-			if ctx.currentClass.HasInstanceFieldInitializers {
-				body.List = append(body.List, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{
-					X:   &ast.Ident{Name: receiverName},
-					Sel: &ast.Ident{Name: executionFieldInitializerMethodName()},
-				}, Args: []ast.Expr{&ast.Ident{Name: executionName}}}})
-			}
 		}
+		body.List = append(body.List, options.terminalPreSuper...)
+
+		var superInit ast.Stmt
+		if constructorInvocation != nil && constructorInvocation.kind == explicitSuperConstructorInvocation {
+			superInit = explicitSuperConstructorAssignment(constructorInvocation, receiverName, mostDerived, source, ctx)
+		} else {
+			superInit = implicitSuperConstructorAssignmentWithSelf(ctx, receiverName, mostDerived)
+		}
+		if superInit != nil {
+			body.List = append(body.List, superInit)
+		}
+		if stmt := threadBaseWiringStmt(ctx); stmt != nil {
+			body.List = append(body.List, stmt)
+		}
+		if setterCall := classSelfSetterCallStmtWithValue(ctx, receiverName, mostDerived); setterCall != nil {
+			body.List = append(body.List, setterCall)
+		}
+		if initializer := constructorInitializerCall(receiverName, executionName, options, ctx); initializer != nil {
+			body.List = append(body.List, initializer)
+		}
+	}
+	if !options.skipClassInitialization {
 		if ensure := classInitializationEnsureStmt(ctx.currentClass, &ast.Ident{Name: executionName}, ctx); ensure != nil {
 			body.List = append([]ast.Stmt{ensure}, body.List...)
 		}
-		body.List = append(body.List, userBody...)
-		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: receiverName}}})
+	}
+	body.List = append(body.List, userBody...)
+	body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: receiverName}}})
 
-		// Build the return type: *ClassName or *ClassName[T, U, ...]
-		returnType := &ast.StarExpr{X: structType}
-
-		constructorTypeParams := symbol.MergeTypeParams(ctx.currentClass.TypeParameters, ctx.localScope.TypeParameters)
-
-		constructorParams := ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList)
-		// Inner-class constructors take the captured enclosing instance as a
-		// leading parameter.
-		if enclType := enclosingInstanceType(ctx.currentClass); enclType != nil {
-			enclParam := &ast.Field{
-				Names: []*ast.Ident{{Name: ctx.currentClass.EnclosingFieldName()}},
-				Type:  enclType,
-			}
-			constructorParams.List = append([]*ast.Field{enclParam}, constructorParams.List...)
+	returnType := &ast.StarExpr{X: structType}
+	constructorTypeParams := symbol.MergeTypeParams(ctx.currentClass.TypeParameters, ctx.localScope.TypeParameters)
+	if enclType := enclosingInstanceType(ctx.currentClass); enclType != nil {
+		enclParam := &ast.Field{
+			Names: []*ast.Ident{{Name: ctx.currentClass.EnclosingFieldName()}},
+			Type:  enclType,
 		}
+		constructorParams.List = append([]*ast.Field{enclParam}, constructorParams.List...)
+	}
 
-		return buildConstructorDeclarations(
-			ctx.localScope.Name,
-			constructorTypeParams,
-			constructorParams,
-			&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
-			body,
-			usesMostDerived,
-			ctx,
-		)
+	return buildConstructorDeclarations(
+		ctx.localScope.Name,
+		constructorTypeParams,
+		constructorParams,
+		&ast.FieldList{List: []*ast.Field{{Type: returnType}}},
+		body,
+		usesMostDerived,
+		ctx,
+	)
+}
+
+// ParseDecl parses a top-level declaration within a source file, including
+// but not limited to fields and methods
+func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
+	switch node.Type() {
+	case "constructor_declaration":
+		return buildSourceConstructorDecls(node, source, ctx, constructorLoweringOptions{})
 	case "method_declaration", "abstract_method_declaration":
 		var static bool
 		var synchronizedMethod bool
