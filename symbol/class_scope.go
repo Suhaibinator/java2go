@@ -41,6 +41,11 @@ type ClassScope struct {
 	// Enclosing is the immediately-enclosing class scope for a nested class, or
 	// nil for top-level classes. Set when the nested class is parsed.
 	Enclosing *ClassScope
+	// EnclosingField overrides the default synthesized enclosing-instance field
+	// spelling when that spelling would collide with another generated selector.
+	// It is primarily used by hoisted anonymous/local classes, whose Java member
+	// namespaces have to be reconciled with Go's single selector namespace.
+	EnclosingField string
 }
 
 // EnclosingFieldName returns the name of the synthesized field that an inner
@@ -50,7 +55,14 @@ func (cs *ClassScope) EnclosingFieldName() string {
 	if cs == nil || !cs.IsInner || cs.Enclosing == nil || cs.Enclosing.Class == nil {
 		return ""
 	}
-	return Lowercase(cs.Enclosing.Class.OriginalName)
+	if cs.EnclosingField != "" {
+		return cs.EnclosingField
+	}
+	name := Lowercase(cs.Enclosing.Class.OriginalName)
+	if IsReserved(name) {
+		name += "_"
+	}
+	return name
 }
 
 // EnumConstant represents a single enum constant and its constructor arguments.

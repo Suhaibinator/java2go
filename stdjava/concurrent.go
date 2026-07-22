@@ -148,6 +148,11 @@ func (c *ConcurrentHashMap[K, V]) Size() int32 {
 // Runnable is the Go counterpart of java.lang.Runnable: anything with a Run()
 // method. Anonymous Runnable classes and Thread subclasses (whose run() override
 // is generated as Run()) satisfy it, so they can be handed to a Thread directly.
+const (
+	RunnableTypeID TypeID = "Runnable"
+	ThreadTypeID   TypeID = "Thread"
+)
+
 type Runnable interface {
 	Run()
 }
@@ -169,18 +174,59 @@ func (f runnableFunc) Run() {
 	}
 }
 
-type executionRunnableFunc func(*Execution)
+// RunnableFuncAdapter gives a target-typed Java Runnable lambda stable object
+// identity. A raw Go function is not comparable and exposes only its shared
+// entry-code pointer through reflection, so it cannot faithfully participate in
+// Java reference equality. The pointer-backed adapter is both identity-bearing
+// and execution-aware.
+type RunnableFuncAdapter struct {
+	run func(*Execution)
+}
 
-func (f executionRunnableFunc) Run() {
-	if f != nil {
-		f(NewExecution())
+func NewRunnableFuncAdapter(run func(*Execution)) *RunnableFuncAdapter {
+	return &RunnableFuncAdapter{run: run}
+}
+
+func (f *RunnableFuncAdapter) Run() {
+	if f != nil && f.run != nil {
+		f.run(NewExecution())
 	}
 }
 
-func (f executionRunnableFunc) RunJava2goExecution(execution *Execution) {
-	if f != nil {
-		f(execution)
+func (f *RunnableFuncAdapter) RunJava2goExecution(execution *Execution) {
+	if f != nil && f.run != nil {
+		f.run(execution)
 	}
+}
+
+func (*RunnableFuncAdapter) JavaDynamicTypeID() TypeID {
+	return RunnableTypeID
+}
+
+// PlainRunnableFuncAdapter is the identity-bearing counterpart for an external
+// method reference that has only a Go func() entry point. The execution-aware
+// bridge intentionally ignores the token because no generated Java body exists
+// on the other side to receive it.
+type PlainRunnableFuncAdapter struct {
+	run func()
+}
+
+func NewPlainRunnableFuncAdapter(run func()) *PlainRunnableFuncAdapter {
+	return &PlainRunnableFuncAdapter{run: run}
+}
+
+func (f *PlainRunnableFuncAdapter) Run() {
+	if f != nil && f.run != nil {
+		f.run()
+	}
+}
+
+func (f *PlainRunnableFuncAdapter) RunJava2goExecution(_ *Execution) {
+	f.Run()
+}
+
+func (*PlainRunnableFuncAdapter) JavaDynamicTypeID() TypeID {
+	return RunnableTypeID
 }
 
 // RunRunnableExecution invokes a Runnable inside an existing logical Java
@@ -193,6 +239,14 @@ func (f executionRunnableFunc) RunJava2goExecution(execution *Execution) {
 func RunRunnableExecution(execution *Execution, value any) {
 	r := asRunnable(value)
 	if r == nil {
+		return
+	}
+	// Preserve the caller's logical execution for a direct Thread.run() without
+	// exporting an execution-aware method that Go would promote through embedded
+	// Thread subclasses. The exact type assertion deliberately excludes those
+	// subclasses so their generated/overridden Run method remains authoritative.
+	if thread, ok := r.(*Thread); ok {
+		thread.runJava2goExecution(execution)
 		return
 	}
 	if generated, ok := r.(executionRunnable); ok {
@@ -252,6 +306,22 @@ type Thread struct {
 	once sync.Once
 }
 
+// JavaDynamicTypeID lets the reified reference-array runtime recognize the
+// compact stdjava-backed representation as a java.lang.Thread. Built-in types
+// currently retain the same simple descriptor spelling emitted for unresolved
+// JDK classes by the transpiler.
+func (*Thread) JavaDynamicTypeID() TypeID {
+	return ThreadTypeID
+}
+
+func init() {
+	// Thread extends Object and implements Runnable. Register both edges so a
+	// Thread stored through Object[] or Runnable[] receives the same nominal
+	// assignment treatment as a generated source class.
+	RegisterJavaType(RunnableTypeID, ObjectTypeID)
+	RegisterJavaType(ThreadTypeID, ObjectTypeID, RunnableTypeID)
+}
+
 // NewThread builds a Thread from a Runnable. The argument is either a plain
 // func() (the lambda / method-reference form) or a value implementing Runnable
 // (an anonymous Runnable class). Other values produce a Thread that does
@@ -270,7 +340,7 @@ func asRunnable(runnable any) Runnable {
 	case func():
 		return runnableFunc(r)
 	case func(*Execution):
-		return executionRunnableFunc(r)
+		return NewRunnableFuncAdapter(r)
 	default:
 		return nil
 	}
@@ -282,6 +352,17 @@ func asRunnable(runnable any) Runnable {
 // the subclass struct.
 func NewThreadBase(self Runnable) *Thread {
 	return &Thread{run: self, done: make(chan struct{})}
+}
+
+// Run executes this Thread's target synchronously. java.lang.Thread implements
+// Runnable even when it has not been subclassed, so the runtime representation
+// must expose Run to remain a valid generated Runnable and Runnable[] view.
+func (t *Thread) Run() {
+	t.runJava2goExecution(NewExecution())
+}
+
+func (t *Thread) runJava2goExecution(execution *Execution) {
+	RunRunnableExecution(execution, t.run)
 }
 
 // Start runs the thread's Runnable in a goroutine. Calling Start more than once

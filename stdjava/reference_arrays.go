@@ -400,6 +400,13 @@ func ObjectDynamicType(value any) (TypeID, bool) {
 			return dynamicType, true
 		}
 	}
+	// Some unresolved anonymous Runnable implementations retain only their Go
+	// structural interface shape. Check this after the explicit generated/runtime
+	// carriers so a named class implementing Runnable keeps its more-specific
+	// dynamic descriptor instead of collapsing to the interface descriptor.
+	if _, ok := value.(Runnable); ok {
+		return RunnableTypeID, true
+	}
 	return "", false
 }
 

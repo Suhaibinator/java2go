@@ -137,6 +137,13 @@ type Ctx struct {
 	// the hoisted struct and threads captured locals. Shared via pointer.
 	localClasses map[string]*localClassInfo
 
+	// Anonymous classes have no source-level name, but a `var` initialized from
+	// one retains that exact anonymous type in Java. Keep each creation site's
+	// synthetic scope reachable both by its source span (for initializer type
+	// inference) and by its unique generated name (for later member lookup).
+	// The map is shared by cloned contexts while one source file is rendered.
+	anonymousClasses map[anonymousClassKey]*anonymousClassInfo
+
 	// Affine array bindings are installed only while parsing approved ordinary
 	// for-loop bodies. Call sites are keyed by their exact source span so a
 	// same-spelled selector in a header, closure, or shadowing scope cannot be
@@ -167,6 +174,26 @@ type localClassInfo struct {
 	captured                   []capturedLocal
 	scope                      *symbol.ClassScope
 	fieldInitializerMethodName string
+}
+
+type anonymousClassKey struct {
+	start uint32
+	end   uint32
+}
+
+type anonymousClassInfo struct {
+	structName                 string
+	scope                      *symbol.ClassScope
+	declaredFields             []*symbol.Definition
+	captured                   []capturedLocal
+	fieldInitializerMethodName string
+}
+
+func anonymousClassSourceKey(node *sitter.Node) (anonymousClassKey, bool) {
+	if node == nil {
+		return anonymousClassKey{}, false
+	}
+	return anonymousClassKey{start: node.StartByte(), end: node.EndByte()}, true
 }
 
 // addHoistedDecl appends a synthesized top-level declaration to be emitted at
@@ -365,6 +392,7 @@ func (c Ctx) Clone() Ctx {
 		anonClassCounter:                    c.anonClassCounter,
 		controlLabelCounter:                 c.controlLabelCounter,
 		localClasses:                        c.localClasses,
+		anonymousClasses:                    c.anonymousClasses,
 		affineArrayBindings:                 c.affineArrayBindings,
 		affineArrayCallSites:                c.affineArrayCallSites,
 		affineArrayNonNullBindings:          c.affineArrayNonNullBindings,
@@ -405,6 +433,9 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 		if ctx.localClasses == nil {
 			ctx.localClasses = make(map[string]*localClassInfo)
+		}
+		if ctx.anonymousClasses == nil {
+			ctx.anonymousClasses = make(map[anonymousClassKey]*anonymousClassInfo)
 		}
 
 		program := &ast.File{

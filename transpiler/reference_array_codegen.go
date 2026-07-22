@@ -213,6 +213,7 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	builtin := map[string]string{
 		"Object": "ObjectTypeID", "String": "StringTypeID",
 		"Throwable": "ThrowableTypeID",
+		"Thread":    "ThreadTypeID", "Runnable": "RunnableTypeID",
 		"Cloneable": "CloneableTypeID", "Serializable": "SerializableTypeID",
 		"Boolean": "BooleanTypeID", "Byte": "ByteTypeID", "Short": "ShortTypeID",
 		"Character": "CharacterTypeID", "Integer": "IntegerTypeID", "Long": "LongTypeID",
@@ -874,14 +875,6 @@ func syntheticHierarchicalReferenceIdentityDecls(
 		ctx,
 	)
 	return []ast.Decl{dynamicType, viewMethod, registration}
-}
-
-// syntheticReferenceIdentityDecls gives hoisted local/anonymous implementors a
-// nominal Java identity even though they have no source ClassScope in the
-// global symbol graph. Their structural Go interface implementation remains
-// unchanged; ReferenceArray store checks use this descriptor and registration.
-func syntheticReferenceIdentityDecls(structName, dynamicID string, superID ast.Expr, interfaceIDs []ast.Expr, ctx Ctx) []ast.Decl {
-	return syntheticReferenceIdentityDeclsWithTypeParams(structName, dynamicID, superID, interfaceIDs, nil, ctx)
 }
 
 func syntheticReferenceIdentityDeclsWithTypeParams(
