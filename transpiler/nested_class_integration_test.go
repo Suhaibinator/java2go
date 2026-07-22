@@ -441,8 +441,8 @@ public class App {
 	if !strings.Contains(flat, "type AppLocalMultiplier1 struct { factor int32 }") {
 		t.Fatalf("expected local class to be hoisted to a file-scope struct capturing the enclosing local, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "m := &AppLocalMultiplier1{factor: factor}") {
-		t.Fatalf("expected `new Multiplier()` to build the hoisted struct with captures, got:\n%s", out)
+	if !strings.Contains(flat, "m := NewAppLocalMultiplier1Java2goExecution(__java2goExecution, factor)") {
+		t.Fatalf("expected `new Multiplier()` to call the hoisted constructor with its capture, got:\n%s", out)
 	}
 }
 

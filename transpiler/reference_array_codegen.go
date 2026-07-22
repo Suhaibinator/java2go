@@ -106,6 +106,12 @@ func sourceReferenceTypeIDExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 		return nil, false
 	}
 	id := javaClassBinaryName(scope)
+	for _, local := range ctx.localClasses {
+		if local != nil && local.scope == scope && local.dynamicTypeID != "" {
+			id = local.dynamicTypeID
+			break
+		}
+	}
 	if id == "" {
 		return nil, false
 	}
@@ -710,15 +716,20 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 // lightweight nominal Java identity. These values do not need ObjectInfo's
 // class-subobject view provider.
 func fixedJavaDynamicTypeDecl(structName, dynamicID string, ctx Ctx) ast.Decl {
+	return fixedJavaDynamicTypeDeclWithTypeParams(structName, dynamicID, nil, ctx)
+}
+
+func fixedJavaDynamicTypeDeclWithTypeParams(structName, dynamicID string, typeParams []string, ctx Ctx) ast.Decl {
 	if structName == "" || dynamicID == "" {
 		return nil
 	}
 	receiverName := "synthetic"
+	receiverType := instantiateGenericType(structName, typeParamExprs(typeParams))
 	return &ast.FuncDecl{
 		Name: &ast.Ident{Name: "JavaDynamicTypeID"},
 		Recv: &ast.FieldList{List: []*ast.Field{{
 			Names: []*ast.Ident{{Name: receiverName}},
-			Type:  &ast.StarExpr{X: &ast.Ident{Name: structName}},
+			Type:  &ast.StarExpr{X: receiverType},
 		}}},
 		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: stdjavaQualifiedExpr("TypeID", ctx)}}}},
 		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
@@ -727,15 +738,16 @@ func fixedJavaDynamicTypeDecl(structName, dynamicID string, ctx Ctx) ast.Decl {
 	}
 }
 
-// syntheticReferenceIdentityDecls gives hoisted local/anonymous implementors a
-// nominal Java identity even though they have no source ClassScope in the
-// global symbol graph. Their structural Go interface implementation remains
-// unchanged; ReferenceArray store checks use this descriptor and registration.
-func syntheticReferenceIdentityDecls(structName, dynamicID string, superID ast.Expr, interfaceIDs []ast.Expr, ctx Ctx) []ast.Decl {
+func syntheticReferenceRegistrationDecl(
+	structName string,
+	dynamicID string,
+	superID ast.Expr,
+	interfaceIDs []ast.Expr,
+	ctx Ctx,
+) ast.Decl {
 	if structName == "" || dynamicID == "" {
 		return nil
 	}
-	dynamicMethod := fixedJavaDynamicTypeDecl(structName, dynamicID, ctx)
 	if superID == nil {
 		superID = stdjavaQualifiedExpr("ObjectTypeID", ctx)
 	}
@@ -749,9 +761,141 @@ func syntheticReferenceIdentityDecls(structName, dynamicID string, superID ast.E
 			&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}},
 		}},
 	}}
-	registration := &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{
+	return &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{
 		Names:  []*ast.Ident{{Name: registrationName}},
 		Values: []ast.Expr{initializer},
 	}}}
+}
+
+// syntheticHierarchicalReferenceIdentityDecls gives a hoisted local concrete
+// subclass its own nominal runtime identity while exposing each embedded source
+// superclass view. The hierarchy root owns ObjectInfo; the local child supplies
+// the most-derived descriptor and view provider captured by that root.
+func syntheticHierarchicalReferenceIdentityDecls(
+	structName string,
+	dynamicID string,
+	superScope *symbol.ClassScope,
+	directInterfaces []*symbol.ClassScope,
+	typeParams []string,
+	ctx Ctx,
+) []ast.Decl {
+	if structName == "" || dynamicID == "" || superScope == nil || superScope.Class == nil {
+		return nil
+	}
+
+	receiverName := ShortName(structName)
+	receiverExpr := ast.Expr(&ast.Ident{Name: receiverName})
+	receiverType := instantiateGenericType(structName, typeParamExprs(typeParams))
+	receiver := &ast.FieldList{List: []*ast.Field{{
+		Names: []*ast.Ident{{Name: receiverName}},
+		Type:  &ast.StarExpr{X: receiverType},
+	}}}
+	dynamicType := &ast.FuncDecl{
+		Name: &ast.Ident{Name: generatedDynamicTypeMethod},
+		Recv: receiver,
+		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{
+			Type: stdjavaQualifiedExpr("TypeID", ctx),
+		}}}},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
+			javaTypeIDLiteral(dynamicID, ctx),
+		}}}},
+	}
+
+	requestedName := "__java2goRequestedType"
+	var cases []ast.Stmt
+	seenIDs := map[string]struct{}{}
+	appendCase := func(id string, value ast.Expr) {
+		if id == "" || value == nil {
+			return
+		}
+		if _, duplicate := seenIDs[id]; duplicate {
+			return
+		}
+		seenIDs[id] = struct{}{}
+		cases = append(cases, &ast.CaseClause{
+			List: []ast.Expr{javaTypeIDLiteral(id, ctx)},
+			Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{value}}},
+		})
+	}
+	appendCase(dynamicID, receiverExpr)
+	for _, interfaceScope := range directInterfaces {
+		if interfaceScope != nil {
+			appendCase(javaClassBinaryName(interfaceScope), receiverExpr)
+			for _, inherited := range transitiveImplementedInterfaceScopes(interfaceScope, ctx) {
+				appendCase(javaClassBinaryName(inherited), receiverExpr)
+			}
+		}
+	}
+
+	view := ast.Expr(&ast.SelectorExpr{X: receiverExpr, Sel: &ast.Ident{Name: superScope.Class.Name}})
+	seenScopes := map[*symbol.ClassScope]struct{}{}
+	for current := superScope; current != nil && current.Class != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
+		if _, duplicate := seenScopes[current]; duplicate {
+			break
+		}
+		seenScopes[current] = struct{}{}
+		appendCase(javaClassBinaryName(current), view)
+		for _, interfaceScope := range transitiveImplementedInterfaceScopes(current, ctx) {
+			appendCase(javaClassBinaryName(interfaceScope), receiverExpr)
+		}
+		parent := resolveSuperclassScopeInDeclaringContext(ctx, current)
+		if parent != nil && parent.Class != nil {
+			view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: parent.Class.Name}}
+		}
+	}
+	cases = append(cases, &ast.CaseClause{Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}}})
+	viewMethod := &ast.FuncDecl{
+		Name: &ast.Ident{Name: generatedObjectViewMethod},
+		Recv: receiver,
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{List: []*ast.Field{{
+				Names: []*ast.Ident{{Name: requestedName}},
+				Type:  stdjavaQualifiedExpr("TypeID", ctx),
+			}}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "any"}}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.SwitchStmt{
+			Tag:  &ast.Ident{Name: requestedName},
+			Body: &ast.BlockStmt{List: cases},
+		}}},
+	}
+
+	interfaceIDs := make([]ast.Expr, 0, len(directInterfaces))
+	for _, interfaceScope := range directInterfaces {
+		if interfaceScope != nil && interfaceScope.Class != nil {
+			interfaceIDs = append(interfaceIDs, javaTypeIDLiteral(javaClassBinaryName(interfaceScope), ctx))
+		}
+	}
+	registration := syntheticReferenceRegistrationDecl(
+		structName,
+		dynamicID,
+		javaTypeIDLiteral(javaClassBinaryName(superScope), ctx),
+		interfaceIDs,
+		ctx,
+	)
+	return []ast.Decl{dynamicType, viewMethod, registration}
+}
+
+// syntheticReferenceIdentityDecls gives hoisted local/anonymous implementors a
+// nominal Java identity even though they have no source ClassScope in the
+// global symbol graph. Their structural Go interface implementation remains
+// unchanged; ReferenceArray store checks use this descriptor and registration.
+func syntheticReferenceIdentityDecls(structName, dynamicID string, superID ast.Expr, interfaceIDs []ast.Expr, ctx Ctx) []ast.Decl {
+	return syntheticReferenceIdentityDeclsWithTypeParams(structName, dynamicID, superID, interfaceIDs, nil, ctx)
+}
+
+func syntheticReferenceIdentityDeclsWithTypeParams(
+	structName string,
+	dynamicID string,
+	superID ast.Expr,
+	interfaceIDs []ast.Expr,
+	typeParams []string,
+	ctx Ctx,
+) []ast.Decl {
+	if structName == "" || dynamicID == "" {
+		return nil
+	}
+	dynamicMethod := fixedJavaDynamicTypeDeclWithTypeParams(structName, dynamicID, typeParams, ctx)
+	registration := syntheticReferenceRegistrationDecl(structName, dynamicID, superID, interfaceIDs, ctx)
 	return []ast.Decl{dynamicMethod, registration}
 }

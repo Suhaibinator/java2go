@@ -815,7 +815,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				if localInfo.scope != nil && ctx.currentClass == localInfo.scope && ctx.localScope != nil && !ctx.localScope.IsStatic {
 					captureValue = &ast.SelectorExpr{
 						X:   &ast.Ident{Name: ShortName(localInfo.structName)},
-						Sel: &ast.Ident{Name: capture.name},
+						Sel: &ast.Ident{Name: capturedLocalFieldName(capture)},
 					}
 				}
 				captureArgs = append(captureArgs, captureValue)
@@ -869,6 +869,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					}
 				}
 			}
+		}
+		if len(effectiveTypeArgs) == 0 && localInfo != nil && localInfo.scope != nil {
+			effectiveTypeArgs = append(effectiveTypeArgs, localInfo.scope.TypeParameterNames()...)
 		}
 
 		// Standard-library constructors (StringBuilder, ArrayList, HashMap, ...) are
@@ -1230,6 +1233,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "field_access":
 		// X.Sel
 		obj := node.ChildByFieldName("object")
+		if fieldNode := node.ChildByFieldName("field"); fieldNode != nil && fieldNode.Content(source) == "this" {
+			if qualifiedThis := qualifiedEnclosingThisExpr(obj, source, ctx); qualifiedThis != nil {
+				return qualifiedThis
+			}
+		}
 
 		// Standard-library constant access (Integer.MAX_VALUE, Math.PI, ...).
 		if fieldNode := node.ChildByFieldName("field"); fieldNode != nil {
@@ -2732,6 +2740,40 @@ func enclosingMemberFieldAccess(identName string, ctx Ctx) ast.Expr {
 		if field := encl.FindFieldByName(identName); field != nil && !field.IsStatic {
 			return &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: field.Name}}
 		}
+	}
+	return nil
+}
+
+// qualifiedEnclosingThisExpr lowers Outer.this by following synthesized
+// enclosing-instance fields from the active local/inner receiver to the named
+// lexical class.
+func qualifiedEnclosingThisExpr(objectNode *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	if objectNode == nil || ctx.currentClass == nil || !ctx.currentClass.IsInner {
+		return nil
+	}
+	requested := resolveClassScopeByQualifiedName(ctx, objectNode.Content(source))
+	if requested == nil {
+		return nil
+	}
+	receiverName := ctx.className
+	if receiverName == "" && ctx.currentClass.Class != nil {
+		receiverName = ctx.currentClass.Class.Name
+	}
+	if receiverName == "" {
+		return nil
+	}
+
+	var result ast.Expr = &ast.Ident{Name: ShortName(receiverName)}
+	seen := map[*symbol.ClassScope]struct{}{}
+	for current := ctx.currentClass; current != nil; current = current.Enclosing {
+		if current == requested {
+			return result
+		}
+		if _, duplicate := seen[current]; duplicate || !current.IsInner || current.Enclosing == nil {
+			return nil
+		}
+		seen[current] = struct{}{}
+		result = &ast.SelectorExpr{X: result, Sel: &ast.Ident{Name: current.EnclosingFieldName()}}
 	}
 	return nil
 }
@@ -4531,9 +4573,17 @@ func contextWithLambdaParameters(ctx Ctx, parameters *sitter.Node, inferredTypes
 // capturedLocal describes an enclosing local/parameter referenced inside an
 // anonymous or local class body, captured as a synthesized struct field.
 type capturedLocal struct {
-	name    string
-	goType  ast.Expr
-	javaDef *symbol.Definition
+	name      string
+	fieldName string
+	goType    ast.Expr
+	javaDef   *symbol.Definition
+}
+
+func capturedLocalFieldName(capture capturedLocal) string {
+	if capture.fieldName != "" {
+		return capture.fieldName
+	}
+	return capture.name
 }
 
 // collectCapturedLocals walks a body subtree and collects the enclosing locals
@@ -4544,18 +4594,28 @@ func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []captured
 		return nil
 	}
 
-	// Names declared inside the anonymous/local body (method params, locals, loop
-	// variables, catch params, the class's own fields) are NOT captures — only
-	// references to enclosing locals are. The enclosing method's symbol scope can
-	// contain these inner names because symbol parsing flattens nested scopes, so
-	// exclude them explicitly.
-	declaredInside := collectDeclaredNames(body, source)
+	// A declaration shadows an enclosing local only within its own member. A
+	// constructor parameter named seed must not suppress an outer seed referenced
+	// by a field initializer or sibling method. The enclosing method's symbol
+	// table flattens nested scopes, so analyze each direct class member with its
+	// own declaration set rather than using one class-wide set.
+	classFields := map[string]struct{}{}
+	for _, member := range nodeutil.NamedChildrenOf(body) {
+		if member.Type() != "field_declaration" {
+			continue
+		}
+		for _, declarator := range syntheticFieldDeclarators(member) {
+			if nameNode := declarator.ChildByFieldName("name"); nameNode != nil {
+				classFields[nameNode.Content(source)] = struct{}{}
+			}
+		}
+	}
 
 	seen := map[string]struct{}{}
 	var captured []capturedLocal
 
-	var walk func(n *sitter.Node)
-	walk = func(n *sitter.Node) {
+	var walk func(n *sitter.Node, declaredInside map[string]struct{})
+	walk = func(n *sitter.Node, declaredInside map[string]struct{}) {
 		if n == nil {
 			return
 		}
@@ -4568,18 +4628,25 @@ func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []captured
 				if def := ctx.localScope.FindVariable(name); def != nil {
 					seen[name] = struct{}{}
 					captured = append(captured, capturedLocal{
-						name:    def.Name,
-						goType:  javaTypeStringToGoTypeExpr(def.OriginalType, inScopeTypeParameters(ctx), ctx),
-						javaDef: def,
+						name:      def.Name,
+						fieldName: def.Name,
+						goType:    javaTypeStringToGoTypeExpr(def.OriginalType, inScopeTypeParameters(ctx), ctx),
+						javaDef:   def,
 					})
 				}
 			}
 		}
 		for i := 0; i < int(n.NamedChildCount()); i++ {
-			walk(n.NamedChild(i))
+			walk(n.NamedChild(i), declaredInside)
 		}
 	}
-	walk(body)
+	for _, member := range nodeutil.NamedChildrenOf(body) {
+		declaredInside := collectDeclaredNames(member, source)
+		for name := range classFields {
+			declaredInside[name] = struct{}{}
+		}
+		walk(member, declaredInside)
+	}
 	return captured
 }
 
@@ -5034,7 +5101,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	fields.List = append(fields.List, declaredAstFields...)
 	for _, cap := range captured {
 		fields.List = append(fields.List, &ast.Field{
-			Names: []*ast.Ident{{Name: cap.name}},
+			Names: []*ast.Ident{{Name: capturedLocalFieldName(cap)}},
 			Type:  cap.goType,
 		})
 	}
@@ -5106,7 +5173,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	}
 	for _, cap := range captured {
 		elts = append(elts, &ast.KeyValueExpr{
-			Key:   &ast.Ident{Name: cap.name},
+			Key:   &ast.Ident{Name: capturedLocalFieldName(cap)},
 			Value: &ast.Ident{Name: cap.name},
 		})
 	}
@@ -5220,7 +5287,9 @@ func synthAnonClassScope(
 	scope.Fields = append(scope.Fields, declaredFields...)
 	for _, cap := range captured {
 		if cap.javaDef != nil {
-			scope.Fields = append(scope.Fields, cap.javaDef)
+			captureField := *cap.javaDef
+			captureField.Name = capturedLocalFieldName(cap)
+			scope.Fields = append(scope.Fields, &captureField)
 		}
 	}
 	usedMethodNames := map[string]struct{}{}
@@ -5271,6 +5340,89 @@ type localConstructorCapture struct {
 	parameterName string
 }
 
+func javaTypeReferencesTypeParameter(javaType string, name string) bool {
+	javaType = strings.TrimSpace(javaType)
+	name = strings.TrimSpace(name)
+	if javaType == "" || name == "" {
+		return false
+	}
+	for strings.HasSuffix(javaType, "[]") {
+		javaType = strings.TrimSpace(strings.TrimSuffix(javaType, "[]"))
+	}
+	if strings.HasPrefix(javaType, "?") {
+		rest := strings.TrimSpace(strings.TrimPrefix(javaType, "?"))
+		rest = strings.TrimSpace(strings.TrimPrefix(rest, "extends"))
+		rest = strings.TrimSpace(strings.TrimPrefix(rest, "super"))
+		return javaTypeReferencesTypeParameter(rest, name)
+	}
+	base, arguments := parseJavaTypeString(javaType)
+	if stripJavaQualifier(base) == name {
+		return true
+	}
+	for _, argument := range arguments {
+		if javaTypeReferencesTypeParameter(argument, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func localClassTypeParameters(
+	classBody *sitter.Node,
+	captured []capturedLocal,
+	source []byte,
+	ctx Ctx,
+) []symbol.TypeParam {
+	var available []symbol.TypeParam
+	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
+		available = symbol.MergeTypeParams(available, ctx.currentClass.TypeParameters)
+	}
+	if ctx.localScope != nil {
+		available = symbol.MergeTypeParams(available, ctx.localScope.TypeParameters)
+	}
+	if len(available) == 0 {
+		return nil
+	}
+
+	used := map[string]struct{}{}
+	var walk func(*sitter.Node)
+	walk = func(node *sitter.Node) {
+		if node == nil {
+			return
+		}
+		if node.Type() == "type_identifier" {
+			content := node.Content(source)
+			for _, parameter := range available {
+				if content == parameter.Name {
+					used[parameter.Name] = struct{}{}
+				}
+			}
+		}
+		for _, child := range nodeutil.NamedChildrenOf(node) {
+			walk(child)
+		}
+	}
+	walk(classBody)
+	for _, capture := range captured {
+		if capture.javaDef == nil {
+			continue
+		}
+		for _, parameter := range available {
+			if javaTypeReferencesTypeParameter(capture.javaDef.OriginalType, parameter.Name) {
+				used[parameter.Name] = struct{}{}
+			}
+		}
+	}
+
+	result := make([]symbol.TypeParam, 0, len(used))
+	for _, parameter := range available {
+		if _, ok := used[parameter.Name]; ok {
+			result = append(result, parameter)
+		}
+	}
+	return result
+}
+
 func localConstructorCaptureBindings(
 	classBody *sitter.Node,
 	captured []capturedLocal,
@@ -5291,6 +5443,82 @@ func localConstructorCaptureBindings(
 		})
 	}
 	return bindings
+}
+
+func nextSyntheticMemberName(base string, used map[string]struct{}) string {
+	for suffix := 0; ; suffix++ {
+		candidate := base + strconv.Itoa(suffix)
+		if referenceIdentityReservedSelector(candidate) {
+			continue
+		}
+		if _, collision := used[candidate]; !collision {
+			return candidate
+		}
+	}
+}
+
+func reserveLocalIdentityFieldNames(definitions []*symbol.Definition, fields []*ast.Field) {
+	used := make(map[string]struct{}, len(definitions))
+	for _, definition := range definitions {
+		if definition != nil {
+			used[definition.Name] = struct{}{}
+		}
+	}
+	for index, definition := range definitions {
+		if definition == nil || !referenceIdentityReservedSelector(definition.Name) {
+			continue
+		}
+		name := nextSyntheticMemberName(definition.Name, used)
+		definition.Rename(name)
+		used[name] = struct{}{}
+		if index < len(fields) && fields[index] != nil && len(fields[index].Names) > 0 {
+			fields[index].Names[0] = &ast.Ident{Name: name}
+		}
+	}
+}
+
+func reserveLocalIdentityCaptureNames(captured []capturedLocal, declaredFields []*symbol.Definition) {
+	used := make(map[string]struct{}, len(captured)+len(declaredFields))
+	for _, field := range declaredFields {
+		if field != nil {
+			used[field.Name] = struct{}{}
+		}
+	}
+	for index := range captured {
+		name := capturedLocalFieldName(captured[index])
+		if referenceIdentityReservedSelector(name) {
+			name = nextSyntheticMemberName(name, used)
+		} else if _, collision := used[name]; collision {
+			name = nextSyntheticMemberName(name, used)
+		}
+		captured[index].fieldName = name
+		used[name] = struct{}{}
+	}
+}
+
+func reserveLocalIdentityMethodNames(scope *symbol.ClassScope) {
+	if scope == nil {
+		return
+	}
+	used := make(map[string]struct{}, len(scope.Fields)+len(scope.Methods))
+	for _, field := range scope.Fields {
+		if field != nil {
+			used[field.Name] = struct{}{}
+		}
+	}
+	for _, method := range scope.Methods {
+		if method != nil {
+			used[method.Name] = struct{}{}
+		}
+	}
+	for _, method := range scope.Methods {
+		if method == nil || method.Constructor || !referenceIdentityReservedSelector(method.Name) {
+			continue
+		}
+		name := nextSyntheticMemberName(method.Name, used)
+		method.Rename(name)
+		used[name] = struct{}{}
+	}
 }
 
 func syntheticConstructorParameterDefinitions(node *sitter.Node, source []byte) []*symbol.Definition {
@@ -5334,14 +5562,17 @@ func synthLocalClassScope(
 	declaredFields []*symbol.Definition,
 	captured []capturedLocal,
 	captureBindings []localConstructorCapture,
+	typeParameters []symbol.TypeParam,
 	methodNodes []*sitter.Node,
 	constructorNodes []*sitter.Node,
 	source []byte,
 ) *symbol.ClassScope {
 	scope := synthAnonClassScope(structName, declaredFields, captured, methodNodes, source, true)
+	reserveLocalIdentityMethodNames(scope)
 	scope.Class.OriginalName = javaName
 	scope.Class.Name = structName
 	scope.Class.DeclarationNode = classNode
+	scope.TypeParameters = append([]symbol.TypeParam(nil), typeParameters...)
 	if superclass := classNode.ChildByFieldName("superclass"); superclass != nil {
 		if types := collectTypeNodes(superclass); len(types) > 0 {
 			scope.Superclass = types[0].Content(source)
@@ -5524,9 +5755,10 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 		Body: body,
 	}
 	if !methodScope.IsStatic {
+		receiverType := instantiateGenericType(structName, typeParamExprs(syntheticScope.TypeParameterNames()))
 		decl.Recv = &ast.FieldList{List: []*ast.Field{{
 			Names: []*ast.Ident{{Name: recvName}},
-			Type:  &ast.StarExpr{X: &ast.Ident{Name: structName}},
+			Type:  &ast.StarExpr{X: receiverType},
 		}}}
 	}
 	return buildExecutionAwareFuncDecls(
@@ -5627,11 +5859,12 @@ func buildLocalClassFieldInitializerMethod(
 		return nil
 	}
 
+	receiverType := instantiateGenericType(structName, typeParamExprs(syntheticScope.TypeParameterNames()))
 	declaration := &ast.FuncDecl{
 		Name: &ast.Ident{Name: methodName},
 		Recv: &ast.FieldList{List: []*ast.Field{{
 			Names: []*ast.Ident{{Name: receiverName}},
-			Type:  &ast.StarExpr{X: &ast.Ident{Name: structName}},
+			Type:  &ast.StarExpr{X: receiverType},
 		}}},
 		Type: &ast.FuncType{Params: &ast.FieldList{}},
 		Body: &ast.BlockStmt{List: statements},
@@ -5663,7 +5896,7 @@ func localConstructorOptions(
 		options.terminalPreSuper = append(options.terminalPreSuper, &ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.SelectorExpr{
 				X:   &ast.Ident{Name: receiverName},
-				Sel: &ast.Ident{Name: binding.capture.name},
+				Sel: &ast.Ident{Name: capturedLocalFieldName(binding.capture)},
 			}},
 			Tok: token.ASSIGN,
 			Rhs: []ast.Expr{&ast.Ident{Name: binding.parameterName}},
@@ -5693,27 +5926,42 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		prefix = ctx.className
 	}
 	structName := fmt.Sprintf("%sLocal%s%d", prefix, javaName, ctx.nextAnonClassIndex())
+	ownerID := ""
+	if ctx.currentClass != nil {
+		ownerID = javaClassBinaryName(ctx.currentClass)
+	}
+	if ownerID == "" {
+		ownerID = ctx.className
+	}
+	dynamicTypeID := ownerID + "$" + structName
 
 	declaredFieldDefs, declaredAstFields := anonymousClassDeclaredFields(classBody, source, ctx)
+	reserveLocalIdentityFieldNames(declaredFieldDefs, declaredAstFields)
 	declaredFieldNames := map[string]struct{}{}
 	for _, def := range declaredFieldDefs {
-		declaredFieldNames[def.Name] = struct{}{}
+		declaredFieldNames[def.OriginalName] = struct{}{}
 	}
 
 	captured := collectCapturedLocals(classBody, source, ctx)
 	// Drop captures that collide with a declared field name to avoid duplicates.
 	deduped := captured[:0]
 	for _, cap := range captured {
-		if _, clash := declaredFieldNames[cap.name]; clash {
+		javaCaptureName := cap.name
+		if cap.javaDef != nil && cap.javaDef.OriginalName != "" {
+			javaCaptureName = cap.javaDef.OriginalName
+		}
+		if _, clash := declaredFieldNames[javaCaptureName]; clash {
 			continue
 		}
 		deduped = append(deduped, cap)
 	}
 	captured = deduped
+	reserveLocalIdentityCaptureNames(captured, declaredFieldDefs)
 
 	bodyMethods := anonymousClassMethods(classBody)
 	constructorNodes := localClassConstructors(classBody)
 	captureBindings := localConstructorCaptureBindings(classBody, captured, source)
+	typeParameters := localClassTypeParameters(classBody, captured, source, ctx)
 	syntheticScope := synthLocalClassScope(
 		node,
 		classBody,
@@ -5722,10 +5970,15 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		declaredFieldDefs,
 		captured,
 		captureBindings,
+		typeParameters,
 		bodyMethods,
 		constructorNodes,
 		source,
 	)
+	if ctx.currentClass != nil && ctx.localScope != nil && !ctx.localScope.IsStatic {
+		syntheticScope.IsInner = true
+		syntheticScope.Enclosing = ctx.currentClass
+	}
 	fieldInitializerMethod := ""
 	if syntheticScope.HasInstanceFieldInitializers {
 		fieldInitializerMethod = localClassFieldInitializerMethodName(syntheticScope)
@@ -5736,20 +5989,43 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	// method uses the same entry for `LocalType.method()`.
 	ctx.localClasses[javaName] = &localClassInfo{
 		structName:                 structName,
+		dynamicTypeID:              dynamicTypeID,
 		captured:                   captured,
 		scope:                      syntheticScope,
 		fieldInitializerMethodName: fieldInitializerMethod,
+	}
+	fieldTypeCtx := ctx.Clone()
+	fieldTypeCtx.currentClass = syntheticScope
+	fieldTypeCtx.className = structName
+	fieldTypeCtx.localScope = nil
+	for index, definition := range declaredFieldDefs {
+		if definition == nil || index >= len(declaredAstFields) || declaredAstFields[index] == nil {
+			continue
+		}
+		declaredAstFields[index].Type = javaTypeStringToGoTypeExpr(
+			definition.OriginalType,
+			syntheticScope.TypeParameterNames(),
+			fieldTypeCtx,
+		)
 	}
 
 	// Mirror ordinary class layout: an immediate user superclass is embedded so
 	// inherited fields/methods promote naturally, followed by implemented
 	// interfaces, then this class's own fields and captured locals.
 	fields := &ast.FieldList{}
+	if enclosingType := enclosingInstanceType(syntheticScope); enclosingType != nil {
+		fields.List = append(fields.List, &ast.Field{
+			Names: []*ast.Ident{{Name: syntheticScope.EnclosingFieldName()}},
+			Type:  enclosingType,
+		})
+	}
+	var superclassScope *symbol.ClassScope
 	if superclassNode := node.ChildByFieldName("superclass"); superclassNode != nil {
 		for _, superType := range collectTypeNodes(superclassNode) {
 			javaType := superType.Content(source)
 			base, _ := parseJavaTypeString(javaType)
 			builtin := stripJavaQualifier(base)
+			superclassScope = resolveClassScopeByQualifiedName(ctx, base)
 			switch {
 			case isBuiltinExceptionType(builtin) && resolveClassScopeByQualifiedName(ctx, builtin) == nil:
 				fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
@@ -5774,11 +6050,50 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	fields.List = append(fields.List, declaredAstFields...)
 	for _, capture := range captured {
 		fields.List = append(fields.List, &ast.Field{
-			Names: []*ast.Ident{{Name: capture.name}},
+			Names: []*ast.Ident{{Name: capturedLocalFieldName(capture)}},
 			Type:  capture.goType,
 		})
 	}
-	ctx.addHoistedDecl(GenStruct(structName, fields))
+	ctx.addHoistedDecl(genStructWithTypeParamsInContext(structName, fields, syntheticScope.TypeParameters, ctx))
+
+	var directInterfaceScopes []*symbol.ClassScope
+	for _, implemented := range syntheticScope.ImplementedInterfaces {
+		base, _ := parseJavaTypeString(implemented)
+		if interfaceScope := resolveClassScopeByQualifiedName(ctx, base); interfaceScope != nil {
+			directInterfaceScopes = append(directInterfaceScopes, interfaceScope)
+		}
+	}
+	if superclassScope != nil && classNeedsReferenceObjectInfo(superclassScope, ctx) {
+		for _, declaration := range syntheticHierarchicalReferenceIdentityDecls(
+			structName,
+			dynamicTypeID,
+			superclassScope,
+			directInterfaceScopes,
+			syntheticScope.TypeParameterNames(),
+			ctx,
+		) {
+			ctx.addHoistedDecl(declaration)
+		}
+	} else {
+		interfaceIDs := make([]ast.Expr, 0, len(directInterfaceScopes))
+		for _, interfaceScope := range directInterfaceScopes {
+			interfaceIDs = append(interfaceIDs, javaTypeIDLiteral(javaClassBinaryName(interfaceScope), ctx))
+		}
+		var superID ast.Expr
+		if superclassScope != nil {
+			superID = javaTypeIDLiteral(javaClassBinaryName(superclassScope), ctx)
+		}
+		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(
+			structName,
+			dynamicTypeID,
+			superID,
+			interfaceIDs,
+			syntheticScope.TypeParameterNames(),
+			ctx,
+		) {
+			ctx.addHoistedDecl(declaration)
+		}
+	}
 
 	localCtx := ctx.Clone()
 	localCtx.currentClass = syntheticScope
@@ -5809,6 +6124,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	}
 
 	constructorOptions := localConstructorOptions(structName, captureBindings, fieldInitializerMethod)
+	constructorOptions.forceMostDerived = superclassScope != nil && constructorUsesMostDerived(superclassScope, ctx)
 	for _, constructorNode := range constructorNodes {
 		constructorOptions.definition = nil
 		for _, definition := range syntheticScope.Methods {
@@ -7143,6 +7459,11 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		// apply Java numeric promotion instead of falling back to an unknown Object.
 		obj := node.ChildByFieldName("object")
 		fieldNode := node.ChildByFieldName("field")
+		if obj != nil && fieldNode != nil && fieldNode.Content(source) == "this" {
+			if resolveClassScopeByQualifiedName(ctx, obj.Content(source)) != nil {
+				return obj.Content(source), true
+			}
+		}
 		if obj != nil && fieldNode != nil && fieldNode.Content(source) == "length" && isArrayTypedExprNode(obj, ctx, source) {
 			return "int", true
 		}
@@ -7214,6 +7535,14 @@ func isArrayTypedExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
 	}
 	if node.Type() == "array_creation_expression" {
 		return true
+	}
+	if node.Type() == "identifier" && ctx.localScope != nil {
+		name := node.Content(source)
+		for index, parameter := range ctx.localScope.Parameters {
+			if parameter != nil && parameter.OriginalName == name && executionParameterIsVariadic(ctx.localScope, index) {
+				return true
+			}
+		}
 	}
 	if javaType, ok := inferExprJavaType(node, ctx, source); ok {
 		return strings.HasSuffix(strings.TrimSpace(javaType), "[]")

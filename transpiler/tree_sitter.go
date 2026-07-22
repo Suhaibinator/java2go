@@ -163,6 +163,7 @@ type Ctx struct {
 // localClassInfo records how a local class was hoisted to file scope.
 type localClassInfo struct {
 	structName                 string
+	dynamicTypeID              string
 	captured                   []capturedLocal
 	scope                      *symbol.ClassScope
 	fieldInitializerMethodName string

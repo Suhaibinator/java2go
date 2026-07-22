@@ -2104,7 +2104,7 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 	}
 
 	recvName := ShortName(ctx.className)
-	usesMostDerived := constructorUsesMostDerived(scope, ctx)
+	usesMostDerived := options.forceMostDerived || constructorUsesMostDerived(scope, ctx)
 	body := []ast.Stmt{
 		&ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.Ident{Name: recvName}},
@@ -2123,23 +2123,11 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 	if identityInit := constructorObjectInfoInitStmt(scope, recvName, mostDerived, ctx); identityInit != nil {
 		body = append(body, identityInit)
 	}
-	body = append(body, options.terminalPreSuper...)
-	if superInit := implicitSuperConstructorAssignmentWithSelf(ctx, recvName, mostDerived); superInit != nil {
-		body = append(body, superInit)
-	}
 
-	// A Thread subclass with no explicit constructor still needs its embedded
-	// *stdjava.Thread wired so Start() dispatches to this instance's Run().
-	if stmt := threadBaseWiringStmt(ctx); stmt != nil {
-		body = append(body, stmt)
-	}
-
-	// Inner classes capture their enclosing instance through a synthesized
-	// leading parameter that is stored into the enclosing-instance field.
+	// Inner classes receive their enclosing instance first, matching explicit
+	// constructors and object-creation call sites. Store it before superclass
+	// construction so synthetic local/inner constructor arguments may use it.
 	params := &ast.FieldList{}
-	if len(options.leadingParams) > 0 {
-		params.List = append(params.List, options.leadingParams...)
-	}
 	if enclType := enclosingInstanceType(scope); enclType != nil {
 		enclFieldName := scope.EnclosingFieldName()
 		params.List = append(params.List, &ast.Field{
@@ -2151,6 +2139,19 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 			Tok: token.ASSIGN,
 			Rhs: []ast.Expr{&ast.Ident{Name: enclFieldName}},
 		})
+	}
+	if len(options.leadingParams) > 0 {
+		params.List = append(params.List, options.leadingParams...)
+	}
+	body = append(body, options.terminalPreSuper...)
+	if superInit := implicitSuperConstructorAssignmentWithSelf(ctx, recvName, mostDerived); superInit != nil {
+		body = append(body, superInit)
+	}
+
+	// A Thread subclass with no explicit constructor still needs its embedded
+	// *stdjava.Thread wired so Start() dispatches to this instance's Run().
+	if stmt := threadBaseWiringStmt(ctx); stmt != nil {
+		body = append(body, stmt)
 	}
 
 	if setterCall := classSelfSetterCallStmtWithValue(ctx, recvName, mostDerived); setterCall != nil {
@@ -3025,6 +3026,7 @@ type constructorLoweringOptions struct {
 	leadingThisArgs            []ast.Expr
 	terminalPreSuper           []ast.Stmt
 	fieldInitializerMethodName string
+	forceMostDerived           bool
 	skipClassInitialization    bool
 }
 
@@ -3128,7 +3130,7 @@ func buildSourceConstructorDecls(
 	}
 
 	receiverName := ShortName(ctx.className)
-	usesMostDerived := constructorUsesMostDerived(ctx.currentClass, ctx)
+	usesMostDerived := options.forceMostDerived || constructorUsesMostDerived(ctx.currentClass, ctx)
 	var mostDerived ast.Expr
 	if usesMostDerived {
 		mostDerived = &ast.Ident{Name: constructorSelfParam}
