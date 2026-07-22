@@ -31,6 +31,13 @@ type ClassScope struct {
 	EnumConstants []EnumConstant
 	// Type parameters for generic classes (e.g., ["T", "U"] for class Foo<T, U>)
 	TypeParameters []TypeParam
+	// DeclaredTypeParameters contains only the parameters written on this class's
+	// declaration. TypeParameters is the generated ABI view and may additionally
+	// carry parameters from an enclosing class for a non-static member class.
+	// Keeping the source arity separate is required because Java spells
+	// Outer<T>.Inner<U> with only U at an Inner use site, while the generated Go
+	// type must be instantiated with both T and U.
+	DeclaredTypeParameters []TypeParam
 	// Whether this class contains included (non-static, non-excluded) field initializers.
 	// This is set during transpilation pass and used to wire constructor initialization.
 	HasInstanceFieldInitializers bool
