@@ -226,7 +226,10 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 
 	// Merge parent type parameters (for nested classes), applying shadowing:
 	// class Outer<T> { class Inner<T> { } } where Inner's T shadows Outer's T.
-	scope.DeclaredTypeParameters = append([]TypeParam(nil), ownTypeParams...)
+	// Preserve a non-nil empty slice: it distinguishes a parsed non-generic
+	// member class that only carries enclosing parameters from a synthetic scope
+	// which has not supplied declared-arity metadata yet.
+	scope.DeclaredTypeParameters = append([]TypeParam{}, ownTypeParams...)
 	scope.TypeParameters = MergeTypeParams(parentTypeParams, ownTypeParams)
 
 	// Track implemented or extended interfaces. Tree-sitter uses

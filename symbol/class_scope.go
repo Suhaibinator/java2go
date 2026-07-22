@@ -95,6 +95,22 @@ func (cs *ClassScope) TypeParameterNames() []string {
 	return TypeParamNames(cs.TypeParameters)
 }
 
+// OwnTypeParameters returns the source-declared parameters for a parsed class.
+// A non-nil empty DeclaredTypeParameters slice intentionally means the class
+// declared no parameters even when its generated ABI carries enclosing ones.
+// Synthetic scopes created by older lowering paths leave the field nil and
+// continue to treat all TypeParameters as their own until they provide the
+// richer metadata explicitly.
+func (cs *ClassScope) OwnTypeParameters() []TypeParam {
+	if cs == nil {
+		return nil
+	}
+	if cs.DeclaredTypeParameters != nil {
+		return cs.DeclaredTypeParameters
+	}
+	return cs.TypeParameters
+}
+
 // FindMethod searches through the immediate class's methods find a specific method
 func (cs *ClassScope) FindMethod() Finder {
 	cm := classMethodFinder(*cs)

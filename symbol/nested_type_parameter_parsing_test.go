@@ -12,6 +12,7 @@ func TestParseSymbols_SeparatesNestedDeclaredAndCarriedTypeParameters(t *testing
 	src := `
 class Outer<T> {
     class Inner<U> {}
+    class Leaf {}
 }
 `
 	file := parsing.SourceFile{Name: "Outer.java", Source: []byte(src)}
@@ -21,8 +22,8 @@ class Outer<T> {
 
 	symbols := file.ParseSymbols()
 	outer := symbols.FindClassScope("Outer")
-	if outer == nil || len(outer.Subclasses) != 1 {
-		t.Fatalf("expected Outer with one nested class, got %#v", outer)
+	if outer == nil || len(outer.Subclasses) != 2 {
+		t.Fatalf("expected Outer with two nested classes, got %#v", outer)
 	}
 	inner := outer.Subclasses[0]
 	if got, want := inner.TypeParameterNames(), []string{"T", "U"}; !reflect.DeepEqual(got, want) {
@@ -30,5 +31,13 @@ class Outer<T> {
 	}
 	if got, want := symbol.TypeParamNames(inner.DeclaredTypeParameters), []string{"U"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("Inner declared parameters = %#v, want %#v", got, want)
+	}
+
+	leaf := outer.Subclasses[1]
+	if got, want := leaf.TypeParameterNames(), []string{"T"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("Leaf carried parameters = %#v, want %#v", got, want)
+	}
+	if leaf.DeclaredTypeParameters == nil || len(leaf.OwnTypeParameters()) != 0 {
+		t.Fatalf("Leaf must record an explicit empty declared-parameter set, got %#v", leaf.DeclaredTypeParameters)
 	}
 }
