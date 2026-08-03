@@ -389,6 +389,43 @@ func addReferenceArrayDefinitionSeeds(definition *symbol.Definition, owner *symb
 	}
 }
 
+// addDirectOwnerTypeParameterIdentitySeed records the source hierarchy that
+// may have to supply a concrete view after reading a class-owned type parameter
+// through its erased ABI storage. Declaration identity is essential here: a
+// method-owned T may shadow the class-owned T with an unrelated erasure.
+//
+// The ordinary reference-identity closure expands a source bound to every
+// assignable implementation/subclass. Object is handled separately because an
+// unbounded class parameter may be instantiated with any concrete source type.
+func addDirectOwnerTypeParameterIdentitySeed(
+	definition *symbol.Definition,
+	owner *symbol.ClassScope,
+	ctx Ctx,
+	seeds map[*symbol.ClassScope]struct{},
+	objectErasure *bool,
+) {
+	erasure, ok := directOwnerTypeParameterErasure(owner, definition)
+	if !ok {
+		return
+	}
+
+	base, _ := parseJavaTypeString(strings.TrimSpace(erasure))
+	if stripJavaQualifier(base) == "Object" {
+		*objectErasure = true
+		return
+	}
+
+	declarationCtx := ctx.Clone()
+	declarationCtx.currentClass = owner
+	declarationCtx.localScope = nil
+	if file := findFileScopeForClassScope(owner); file != nil {
+		declarationCtx.currentFile = file
+	}
+	if erasedScope := resolveClassScopeByQualifiedName(declarationCtx, base); erasedScope != nil {
+		seeds[erasedScope] = struct{}{}
+	}
+}
+
 func addReferenceArrayCreationSeeds(node *sitter.Node, source []byte, owner *symbol.ClassScope, ctx Ctx, seeds map[*symbol.ClassScope]struct{}, objectComponent *bool) {
 	if node == nil {
 		return
@@ -419,31 +456,36 @@ func classDirectlyReferencesRelevantInterface(scope *symbol.ClassScope, relevant
 func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 	allScopes := allSourceClassScopes()
 	relevant := map[*symbol.ClassScope]struct{}{}
-	objectComponent := false
+	objectErasure := false
 	for _, scope := range allScopes {
 		for _, field := range scope.Fields {
 			fieldCtx := ctx.Clone()
 			fieldCtx.currentClass = scope
 			fieldCtx.localScope = nil
-			addReferenceArrayDefinitionSeeds(field, scope, fieldCtx, relevant, &objectComponent)
+			addReferenceArrayDefinitionSeeds(field, scope, fieldCtx, relevant, &objectErasure)
+			addDirectOwnerTypeParameterIdentitySeed(field, scope, fieldCtx, relevant, &objectErasure)
 		}
 		for _, method := range scope.Methods {
 			methodCtx := ctx.Clone()
 			methodCtx.currentClass = scope
 			methodCtx.localScope = method
-			addReferenceArrayDefinitionSeeds(method, scope, methodCtx, relevant, &objectComponent)
+			addReferenceArrayDefinitionSeeds(method, scope, methodCtx, relevant, &objectErasure)
+			addDirectOwnerTypeParameterIdentitySeed(method, scope, methodCtx, relevant, &objectErasure)
+			for _, parameter := range method.Parameters {
+				addDirectOwnerTypeParameterIdentitySeed(parameter, scope, methodCtx, relevant, &objectErasure)
+			}
 		}
 		if scope.Class != nil && scope.Class.DeclarationNode != nil {
 			if file := findFileScopeForClassScope(scope); file != nil {
-				addReferenceArrayCreationSeeds(scope.Class.DeclarationNode, file.Source, scope, ctx, relevant, &objectComponent)
+				addReferenceArrayCreationSeeds(scope.Class.DeclarationNode, file.Source, scope, ctx, relevant, &objectErasure)
 			}
 		}
 	}
-	if objectComponent {
-		// Object[] (and an unbounded T[]) may receive an instance of any concrete
-		// source class even when no corresponding Foo[] declaration exists. Keep
-		// this conservative expansion conditional on such an erased component so
-		// programs without reference arrays retain their historical Go shape.
+	if objectErasure {
+		// Object[] and unbounded T ABI storage may receive an instance of any
+		// concrete source class even when no narrower source declaration names it.
+		// Keep this conservative expansion conditional on an actual Object-erased
+		// use so unrelated programs retain their historical Go shape.
 		for _, scope := range allScopes {
 			if scope != nil && !scope.IsInterface && !scope.IsAbstract {
 				relevant[scope] = struct{}{}
