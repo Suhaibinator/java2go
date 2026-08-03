@@ -1,8 +1,5 @@
 {
   "main_class": "parity.nullablecompound.NullableStringCompoundApplication",
   "module_path": "parity/nullablecompound",
-  "status": "known_gap",
-  "known_gap": "Java String += applies String conversion to a null left operand and produces text beginning with null, but generated nullable-local lowering dereferences null and generated field storage starts as an empty string.",
-  "expected_failure_stage": "output",
-  "expected_failure_contains": "--- quoted go stdout ---\n\"local-panic|x\\n\""
+  "status": "passing"
 }

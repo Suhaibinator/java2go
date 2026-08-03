@@ -1,8 +1,5 @@
 {
   "main_class": "parity.synchronizedreentrant.SynchronizedReentrantMonitorApplication",
   "module_path": "parity/synchronizedreentrant",
-  "status": "known_gap",
-  "known_gap": "Java intrinsic monitors are reentrant for the owning thread, but generated Go maps each object to a non-reentrant sync.Mutex and deadlocks when nested synchronized blocks acquire the same object.",
-  "expected_failure_stage": "go_run",
-  "expected_failure_contains": "fatal error: all goroutines are asleep - deadlock!"
+  "status": "passing"
 }

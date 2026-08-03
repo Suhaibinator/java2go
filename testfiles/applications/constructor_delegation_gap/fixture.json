@@ -1,8 +1,5 @@
 {
   "main_class": "parity.constructordelegation.ConstructorDelegationApplication",
   "module_path": "parity/constructordelegation",
-  "status": "known_gap",
-  "known_gap": "A Java this(...) constructor delegation initializes one object and runs instance field initializers exactly once before the target constructor body, but generated Go emits an unresolved delegating-constructor call.",
-  "expected_failure_stage": "go_compile",
-  "expected_failure_contains": "undefined: NewconstructorTrace"
+  "status": "passing"
 }

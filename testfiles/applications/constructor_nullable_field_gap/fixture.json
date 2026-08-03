@@ -1,8 +1,5 @@
 {
   "main_class": "parity.nullablefield.ConstructorNullableFieldApplication",
   "module_path": "parity/nullablefield",
-  "status": "known_gap",
-  "known_gap": "Java String fields remain null through superclass field initialization and construction, including across a String-returning method boundary, but generated Go value storage exposes the empty-string zero value during constructor-time virtual dispatch.",
-  "expected_failure_stage": "output",
-  "expected_failure_contains": "--- quoted go stdout ---\n\"base-initializer=/\\nbase-constructor=/\\nchild-initializer=ready/ready\\nchild-constructor=ready/ready\\nready/ready\\n\""
+  "status": "passing"
 }

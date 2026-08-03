@@ -1,8 +1,5 @@
 {
   "main_class": "parity.lazyclassinit.LazyClassInitializationApplication",
   "module_path": "parity/lazyclassinit",
-  "status": "known_gap",
-  "known_gap": "Java initializes a class on its first active use and does not initialize an otherwise unused class merely because it shares a package or source file, but generated Go eagerly runs every translated class initializer at package initialization time.",
-  "expected_failure_stage": "output",
-  "expected_failure_contains": "--- quoted go stdout ---\n\"TRACE=MD\\nMARKER=1\\n\""
+  "status": "passing"
 }

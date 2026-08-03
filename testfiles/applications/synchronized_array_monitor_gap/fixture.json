@@ -1,8 +1,5 @@
 {
   "main_class": "parity.synchronizedarray.SynchronizedArrayMonitorApplication",
   "module_path": "parity/synchronizedarray",
-  "status": "known_gap",
-  "known_gap": "Java arrays are valid non-null monitor objects, but generated Go passes a slice to a monitor registry keyed by interface identity and panics because slices are not hashable.",
-  "expected_failure_stage": "go_run",
-  "expected_failure_contains": "panic: hash of unhashable type: []int32"
+  "status": "passing"
 }
