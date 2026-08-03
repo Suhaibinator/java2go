@@ -2,13 +2,14 @@ package transpiler
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/NickyBoy89/java2go/symbol"
 )
 
 func TestGenericCast_TypedConstructionRoundTripsThroughObject(t *testing.T) {
-	assertGeneratedLocalConstructorResult(t, `
+	source := `
 public class GenericTypedCastProgram {
     interface Numbered {
         int number();
@@ -42,7 +43,65 @@ public class GenericTypedCastProgram {
         return "value=" + restored.value.number();
     }
 }
-`, "value=7")
+`
+	assertGeneratedLocalConstructorResult(t, source, "value=7")
+
+	generated := normalizeSpaces(renderGoFileFromJava(t, source))
+	if !strings.Contains(generated, "restored := any(erased).(") {
+		t.Fatalf("Object-to-parameterized cast lost its runtime check:\n%s", generated)
+	}
+}
+
+func TestGenericCast_RawSameClassPreservesExistingRepresentation(t *testing.T) {
+	source := `
+public class GenericRawSameClassCastProgram {
+    interface Numbered {
+        int number();
+    }
+
+    static class First implements Numbered {
+        final int value;
+
+        First(int value) {
+            this.value = value;
+        }
+
+        public int number() {
+            return value;
+        }
+    }
+
+    static class Box<T extends Numbered> {
+        final T value;
+
+        Box(T value) {
+            this.value = value;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static String run() {
+        Box raw = new Box(new First(7));
+        Box<First> typed = (Box<First>) raw;
+
+        Box nullRaw = null;
+        Box<First> nullTyped = (Box<First>) nullRaw;
+
+        return ((First) typed.value).value + ":" + (nullTyped == typed);
+    }
+}
+`
+	assertGeneratedLocalConstructorResult(t, source, "7:false")
+
+	generated := normalizeSpaces(renderGoFileFromJava(t, source))
+	for _, preserved := range []string{"typed := raw", "nullTyped := nullRaw"} {
+		if !strings.Contains(generated, preserved) {
+			t.Fatalf("raw same-class cast did not preserve %q:\n%s", preserved, generated)
+		}
+	}
+	if strings.Contains(generated, "any(raw).(") || strings.Contains(generated, "any(nullRaw).(") {
+		t.Fatalf("raw same-class cast emitted an invariant Go assertion:\n%s", generated)
+	}
 }
 
 func TestPlanGenericClassRepresentation_UsesCanonicalDeclarationErasures(t *testing.T) {

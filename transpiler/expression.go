@@ -547,6 +547,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 			if instanceResolution != nil {
+				objectExpr = narrowDirectOwnerMethodResultReceiver(
+					objectExpr,
+					objectNode,
+					instanceResolution,
+					ctx,
+					source,
+				)
+			}
+			if instanceResolution != nil {
 				expectedArgTypes = definitionParameterOriginalTypes(instanceResolution.def)
 				if genericArrayFormalNeedsExplicitTypeArguments(instanceResolution.def) {
 					expectedArgTypes = genericArrayInvocationExpectedTypes(instanceResolution.def, node, ctx, source)
@@ -1337,12 +1346,18 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		return buildTernaryExpressionIIFE(node, source, ctx)
 	case "cast_expression":
 		targetJavaType := node.NamedChild(0).Content(source)
-		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
 		valueNode := node.NamedChild(1)
 		if isJavaStringType(targetJavaType) && isStaticallyNullReference(valueNode) {
 			return javaNullStringExpr()
 		}
 		valueExpr := ParseExpr(valueNode, source, ctx)
+		if rawGenericCastCanPreserveLocalRepresentation(node) {
+			if sourceJavaType, ok := castOperandSourceJavaType(valueNode, ctx, source); ok &&
+				uncheckedRawToParameterizedSameGeneratedClassCast(sourceJavaType, targetJavaType, ctx) {
+				return valueExpr
+			}
+		}
+		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
 		if _, rank := javaArrayTypeParts(targetJavaType); rank > 0 {
 			if descriptor, ok := javaTypeDescriptorExpr(targetJavaType, ctx); ok {
 				return stdjavaGenericCall(ctx, "JavaArrayCast", []ast.Expr{targetType}, []ast.Expr{valueExpr, descriptor})
