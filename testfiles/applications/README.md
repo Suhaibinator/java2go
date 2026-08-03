@@ -40,27 +40,27 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `do_while_continue_gap` | `continue` through `finally` targeting the condition phase of a Java do-while loop | Passing |
 | `synchronized_loop_control_gap` | Monitor cleanup plus abrupt control crossing the generated synchronized closure boundary | Passing |
 | `synchronized_null_monitor_gap` | Null monitor evaluation, exception identity, and proof that the synchronized body does not run | Passing |
-| `synchronized_array_monitor_gap` | Non-null Java array monitor identity, aliasing, single lock-expression evaluation, and mutation visibility | Known gap (`go_run`) |
-| `synchronized_reentrant_monitor_gap` | Nested synchronization on the same object and Java monitor reentrancy | Known gap (`go_run`) |
+| `synchronized_array_monitor_gap` | Non-null Java array monitor identity, aliasing, single lock-expression evaluation, and mutation visibility | Passing |
+| `synchronized_reentrant_monitor_gap` | Nested synchronization on the same object and Java monitor reentrancy | Passing |
 | `resource_suppressed_exception_gap` | Competing body/close exceptions in try-with-resources and Java suppressed-exception precedence | Passing |
 | `resource_suppression_semantics` | Multiple-resource close order, suppression order, close-only failure, return override, and throwable identity | Passing |
 | `array_assignment_timing_gap` | Null-array assignment evaluation order, index/RHS side effects, and exception identity | Passing |
 | `multidimensional_array_evaluation_gap` | Left-to-right, exactly-once dimension evaluation before negative-size checks and nested allocation | Passing |
-| `covariant_array_store_gap` | Reified reference-array component checks, covariant aliases, store side effects, recursion, and mutation | Known gap (`output`) |
-| `constructor_nullable_field_gap` | Constructor-time virtual dispatch observing Java's pre-initializer null field value | Known gap (`output`) |
-| `string_field_null_comparison_gap` | Comparing an uninitialized Java String field with `null` | Known gap (`go_compile`) |
-| `nullable_string_compound_gap` | String `+=` conversion of null locals and default-null fields | Known gap (`output`) |
-| `constructor_delegation_gap` | Same-object `this(...)` delegation, initializer count, and constructor order | Known gap (`go_compile`) |
+| `covariant_array_store_gap` | Reified reference-array component checks, covariant aliases, store side effects, recursion, and mutation | Passing |
+| `constructor_nullable_field_gap` | Constructor-time virtual dispatch observing Java's pre-initializer null field value | Passing |
+| `string_field_null_comparison_gap` | Comparing an uninitialized Java String field with `null` | Passing |
+| `nullable_string_compound_gap` | String `+=` conversion of null locals and default-null fields | Passing |
+| `constructor_delegation_gap` | Same-object `this(...)` delegation, initializer count, and constructor order | Passing |
 | `recursive_object_model` | Mutual recursion, recursive generic graphs, constructor dispatch, hiding, and inherited interface defaults | Passing |
 | `static_method_hiding_gap` | Parent/child static-method hiding and declaring-class selection | Passing |
-| `lazy_class_initialization_gap` | Java first-active-use class initialization versus eager generated-Go package initialization | Known gap (`output`) |
+| `lazy_class_initialization_gap` | Java first-active-use class initialization versus eager generated-Go package initialization | Passing |
 | `local_class_recursion_gap` | Capturing local class with a recursive instance method | Passing |
 | `anonymous_class_recursion_gap` | Recursive override in a synthesized anonymous subclass | Passing |
 | `synthetic_member_collision_gap` | Local-class field and method sharing one Java identifier | Passing |
 | `local_static_method_gap` | Type-qualified static overloads declared by a method-local class | Passing |
 | `local_class_field_initializer_gap` | Ordered declared-field initialization in a method-local class | Passing |
-| `local_class_constructor_gap` | Local-class constructor arguments, body effects, and field assignment | Known gap (`output`) |
-| `anonymous_member_collision_gap` | Anonymous-class field and method sharing one Java identifier | Known gap (`go_compile`) |
+| `local_class_constructor_gap` | Local-class constructor arguments, body effects, and field assignment | Passing |
+| `anonymous_member_collision_gap` | Anonymous-class field and method sharing one Java identifier | Passing |
 
 Known-gap fixtures are not skipped. In normal mode they must still have valid
 Java behavior and must fail at the exact declared stage for a pinned diagnostic

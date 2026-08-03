@@ -6,6 +6,6 @@ operands. A null left operand therefore contributes the four characters
 
 This application exercises that rule for both a null-initialized local and an
 implicitly null instance field. A Java `try`/`catch` around the local operation
-turns the generated null panic into deterministic output and lets the field case
-run too. The Java oracle is `nullx|nullx`; current generated Go reports the
-caught local failure and treats the field's empty Go zero value as text.
+made the former generated null panic deterministic and allowed the field case
+to run too. The fixture now passes and guards the exact `nullx|nullx` oracle,
+including null conversion for both local and default field storage.

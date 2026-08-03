@@ -9,12 +9,11 @@ the state is visible consistently across class and method-ABI boundaries. Java
 passes `null` to `String.valueOf` in both early calls, then observes `ready` from
 the subsequent child initializer and constructor body.
 
-The current generated representation stores ordinary Java `String` fields as
-Go `string` values. Before initialization that storage contains `""`, so both
-early `field/method` pairs render as `/` instead of `null/null`. The fixture is
-intentionally pinned as an output-stage `known_gap`, giving a byte-exact TDD
-target for a future nullable field and method representation. Keeping the later
-child-initializer and constructor observations in the same oracle also prevents
-a fix from delaying initialization too far or reordering the field initializer.
+This formerly failed when generated storage exposed Go's empty-string zero
+value before Java field initialization, making both early `field/method` pairs
+render as `/` instead of `null/null`. The fixture now passes and guards nullable
+field and method-boundary behavior. Keeping the later child-initializer and
+constructor observations in the same oracle also prevents a regression from
+delaying initialization too far or reordering the field initializer.
 
 The program is deterministic and has no external inputs or dependencies.
