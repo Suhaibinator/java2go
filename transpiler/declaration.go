@@ -211,6 +211,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fieldDef.OriginalType,
 					ctx,
 				)
+				field.Type = directOwnerTypeParameterFieldStorageType(ctx.currentClass, fieldDef, field.Type)
 
 				if staticField {
 					spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}

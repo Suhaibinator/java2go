@@ -1406,16 +1406,30 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		fieldName := node.ChildByFieldName("field").Content(source)
 		var owner *symbol.ClassScope
 		ownerJavaType := ""
+		var ownerTypeArgs []string
+		rawReceiver := false
 		switch obj.Type() {
 		case "this":
 			owner = ctx.currentClass
+			if owner != nil {
+				ownerTypeArgs = owner.GoTypeParameterNames()
+			}
 		case "super":
 			owner = resolveSuperclassScope(ctx, ctx.currentClass)
+			if ctx.currentClass != nil {
+				_, ownerTypeArgs = parseJavaTypeString(ctx.currentClass.Superclass)
+			}
 		default:
 			if inferredOwnerType, ok := inferExprJavaType(obj, ctx, source); ok {
 				ownerJavaType = inferredOwnerType
-				base, _ := parseJavaTypeString(inferredOwnerType)
+				base, typeArgs := parseJavaTypeString(inferredOwnerType)
 				owner = resolveClassScopeByQualifiedName(ctx, base)
+				ownerTypeArgs = typeArgs
+			}
+			if obj.Type() == "identifier" {
+				if original, ok := identifierJavaTypeBeforeRepresentationRewrite(obj.Content(source), ctx); ok {
+					rawReceiver = javaTypeOmitsGenericArguments(original, ctx)
+				}
 			}
 			if owner == nil {
 				if target := resolveInvocationTarget(obj, ctx, source); target != nil {
@@ -1440,10 +1454,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if field != nil && ownerJavaType != "" {
 			parsedObject = projectDependentTypeParameterReceiver(parsedObject, obj, field.owner, ctx, source)
 		}
-		return &ast.SelectorExpr{
+		storage := ast.Expr(&ast.SelectorExpr{
 			X:   parsedObject,
 			Sel: &ast.Ident{Name: selName},
+		})
+		if field == nil || field.def == nil {
+			return storage
 		}
+		readJavaType := instantiatedFieldJavaType(owner, ownerTypeArgs, field, ctx)
+		if rawReceiver {
+			if erased, ok := directOwnerTypeParameterErasure(field.owner, field.def); ok {
+				readJavaType = qualifyJavaTypeInDeclaringContext(erased, field.owner)
+			}
+		}
+		return directOwnerTypeParameterFieldRead(storage, node, field, readJavaType, ctx)
 	case "array_access":
 		arrayNode := node.ChildByFieldName("array")
 		indexNode := node.ChildByFieldName("index")
@@ -1496,28 +1520,35 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			return lowerStaticFieldRead(access, source, ctx)
 		}
 		if ctx.currentClass != nil {
-			if field := findFieldInHierarchy(ctx.currentClass, identName, ctx); field != nil {
-				if field.IsStatic {
-					return &ast.Ident{Name: field.Name}
+			if field := findFieldResolutionInHierarchy(ctx.currentClass, identName, ctx); field != nil && field.def != nil {
+				if field.def.IsStatic {
+					return &ast.Ident{Name: field.def.Name}
 				}
 				if ctx.localScope != nil && ctx.localScope.IsStatic {
-					return &ast.Ident{Name: field.Name}
+					return &ast.Ident{Name: field.def.Name}
 				}
 				recvName := ctx.className
 				if recvName == "" && ctx.currentClass.Class != nil {
 					recvName = ctx.currentClass.Class.Name
 				}
 				if recvName != "" {
-					return &ast.SelectorExpr{
+					storage := ast.Expr(&ast.SelectorExpr{
 						X:   &ast.Ident{Name: ShortName(recvName)},
-						Sel: &ast.Ident{Name: field.Name},
-					}
+						Sel: &ast.Ident{Name: field.def.Name},
+					})
+					readJavaType := instantiatedFieldJavaType(
+						ctx.currentClass,
+						ctx.currentClass.GoTypeParameterNames(),
+						field,
+						ctx,
+					)
+					return directOwnerTypeParameterFieldRead(storage, node, field, readJavaType, ctx)
 				}
 			}
 			// Unqualified access to an enclosing class's instance field from inside
 			// an inner class goes through the synthesized enclosing-instance field:
 			// `base` -> `or.outer.base`.
-			if enclAccess := enclosingMemberFieldAccess(identName, ctx); enclAccess != nil {
+			if enclAccess := enclosingMemberFieldAccess(identName, node, ctx); enclAccess != nil {
 				return enclAccess
 			}
 		}
@@ -2435,10 +2466,12 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	targetValueType := javaTypeStringToGoTypeExpr(lhsJavaType, inScopeTypeParameters(ctx), ctx)
 	targetStorageType := targetValueType
 	nullableValueStorage := isNullableValueBackedLocal(lhsNode, ctx, source)
-	if nullableValueStorage {
+	if nullableValueStorage || directOwnerTypeParameterFieldLvalue(lhsNode, source, ctx) {
 		targetStorageType = &ast.Ident{Name: "any"}
 	}
-	targetAddress := &ast.UnaryExpr{Op: token.AND, X: ParseExpr(lhsNode, source, ctx)}
+	lvalueCtx := ctx.Clone()
+	lvalueCtx.erasedFieldStorageTarget = lhsNode
+	targetAddress := &ast.UnaryExpr{Op: token.AND, X: ParseExpr(lhsNode, source, lvalueCtx)}
 	operator := opNode.Content(source)
 	if compound, ok := lowerReferenceArrayCompoundAssignment(node, lhsJavaType, operator, source, ctx); ok {
 		return compound
@@ -2854,7 +2887,7 @@ func abstractClassToInterface(expr ast.Expr, javaType string, ctx Ctx) ast.Expr 
 // each synthesized enclosing-instance field, e.g. recv.outer.base. Returns nil
 // if the identifier does not resolve to an enclosing instance field, or if the
 // current scope is static.
-func enclosingMemberFieldAccess(identName string, ctx Ctx) ast.Expr {
+func enclosingMemberFieldAccess(identName string, node *sitter.Node, ctx Ctx) ast.Expr {
 	scope := ctx.currentClass
 	if scope == nil || !scope.IsInner {
 		return nil
@@ -2878,7 +2911,10 @@ func enclosingMemberFieldAccess(identName string, ctx Ctx) ast.Expr {
 			break
 		}
 		if field := encl.FindFieldByName(identName); field != nil && !field.IsStatic {
-			return &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: field.Name}}
+			storage := ast.Expr(&ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: field.Name}})
+			resolution := &fieldResolution{def: field, owner: encl}
+			readJavaType := instantiatedFieldJavaType(encl, encl.GoTypeParameterNames(), resolution, ctx)
+			return directOwnerTypeParameterFieldRead(storage, node, resolution, readJavaType, ctx)
 		}
 	}
 	return nil
@@ -8737,6 +8773,70 @@ func instantiatedFieldJavaType(
 	return readableWildcardProjection(fallback)
 }
 
+// directOwnerTypeParameterFieldLvalue recognizes an assignment target backed
+// by one erased class-owned field slot. It is intentionally separate from
+// ParseExpr's read conversion: assignment-expression staging needs the physical
+// *any address type even though the expression result retains its Java static
+// value type.
+func directOwnerTypeParameterFieldLvalue(node *sitter.Node, source []byte, ctx Ctx) bool {
+	if node == nil {
+		return false
+	}
+	var resolution *fieldResolution
+	switch node.Type() {
+	case "identifier":
+		name := node.Content(source)
+		if identifierHasLocalBinding(name, ctx) {
+			return false
+		}
+		resolution = findFieldResolutionInHierarchy(ctx.currentClass, name, ctx)
+		if resolution == nil && ctx.currentClass != nil && ctx.currentClass.IsInner {
+			for current := ctx.currentClass; current != nil && current.IsInner; current = current.Enclosing {
+				enclosing := current.Enclosing
+				if enclosing == nil {
+					break
+				}
+				if field := enclosing.FindFieldByName(name); field != nil && !field.IsStatic {
+					resolution = &fieldResolution{def: field, owner: enclosing}
+					break
+				}
+			}
+		}
+	case "field_access":
+		if _, static := resolveStaticFieldAccess(node, source, ctx); static {
+			return false
+		}
+		object := node.ChildByFieldName("object")
+		field := node.ChildByFieldName("field")
+		if object == nil || field == nil {
+			return false
+		}
+		var owner *symbol.ClassScope
+		switch object.Type() {
+		case "this":
+			owner = ctx.currentClass
+		case "super":
+			owner = resolveSuperclassScope(ctx, ctx.currentClass)
+		default:
+			if javaType, ok := inferExprJavaType(object, ctx, source); ok {
+				base, _ := parseJavaTypeString(javaType)
+				owner = resolveClassScopeByQualifiedName(ctx, base)
+			}
+			if owner == nil {
+				if target := resolveInvocationTarget(object, ctx, source); target != nil {
+					owner = target.classScope
+				}
+			}
+		}
+		resolution = findFieldResolutionInHierarchy(owner, field.Content(source), ctx)
+	}
+	if resolution == nil || resolution.def == nil || resolution.def.IsStatic {
+		return false
+	}
+	_, erased := directOwnerTypeParameterForDefinition(resolution.owner, resolution.def)
+	return erased
+}
+
 // readableWildcardProjection returns the Java type available when reading a
 // value through a wildcard capture. `? extends Root` is readable as Root;
 // unbounded and lower-bounded wildcards are only safely readable as Object.
@@ -9222,6 +9322,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 
 		var owner *symbol.ClassScope
 		var ownerTypeArgs []string
+		rawReceiver := false
 		switch obj.Type() {
 		case "this":
 			owner = ctx.currentClass
@@ -9243,9 +9344,19 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 				// Static field access through a class name.
 				owner = resolveClassScopeByIdentifier(ctx, source, obj)
 			}
+			if obj.Type() == "identifier" {
+				if original, ok := identifierJavaTypeBeforeRepresentationRewrite(obj.Content(source), ctx); ok {
+					rawReceiver = javaTypeOmitsGenericArguments(original, ctx)
+				}
+			}
 		}
 
 		if field := findFieldResolutionInHierarchy(owner, fieldNode.Content(source), ctx); field != nil && field.def != nil && field.def.OriginalType != "" {
+			if rawReceiver {
+				if erased, ok := directOwnerTypeParameterErasure(field.owner, field.def); ok {
+					return qualifyJavaTypeInDeclaringContext(erased, field.owner), true
+				}
+			}
 			return instantiatedFieldJavaType(owner, ownerTypeArgs, field, ctx), true
 		}
 	}

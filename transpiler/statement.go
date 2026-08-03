@@ -627,7 +627,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		lhsNode := node.Child(0)
 		rhsNode := node.Child(2)
-		assignVar := ParseExpr(lhsNode, source, ctx)
+		lvalueCtx := ctx.Clone()
+		lvalueCtx.erasedFieldStorageTarget = lhsNode
+		assignVar := ParseExpr(lhsNode, source, lvalueCtx)
 		rhsCtx := ctx.Clone()
 		if lhsJavaType, ok := inferExprJavaType(lhsNode, ctx, source); ok {
 			rhsCtx.expectedType = lhsJavaType

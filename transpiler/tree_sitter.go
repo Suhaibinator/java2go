@@ -72,6 +72,14 @@ type Ctx struct {
 	// expressions can otherwise change the conditional's standalone type.
 	expectedTypeRoot *sitter.Node
 
+	// erasedFieldStorageTarget marks the outermost field expression currently
+	// being lowered as an assignment lvalue. Bare class type-parameter fields are
+	// physically stored as any, while ordinary reads pass through ObjectView.
+	// Restricting the marker to one source site keeps receiver subexpressions on
+	// their normal read path (for example holder.box.value = next still narrows
+	// holder.box before taking the address of value).
+	erasedFieldStorageTarget *sitter.Node
+
 	// Additional type parameters synthesized for a generated top-level function.
 	// Java raw generic parameters can accept every instantiation, while Go has no
 	// equivalent raw generic type. Static Java methods that receive a raw generic
@@ -387,6 +395,7 @@ func (c Ctx) Clone() Ctx {
 		lastType:                            c.lastType,
 		expectedType:                        c.expectedType,
 		expectedTypeRoot:                    c.expectedTypeRoot,
+		erasedFieldStorageTarget:            c.erasedFieldStorageTarget,
 		syntheticTypeParameters:             c.syntheticTypeParameters,
 		rawGenericParameterTypes:            c.rawGenericParameterTypes,
 		dependentTypeWitnesses:              c.dependentTypeWitnesses,
