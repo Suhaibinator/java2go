@@ -8,7 +8,7 @@ type referenceIdentityProbe struct {
 
 func TestReferenceRequireNonNullPreservesExactTypeAndRejectsTypedNil(t *testing.T) {
 	value := &referenceIdentityProbe{value: 7}
-	var exact *referenceIdentityProbe = ReferenceRequireNonNull(value)
+	exact := ReferenceRequireNonNull(value)
 	if exact != value {
 		t.Fatal("non-null reference did not retain its exact value")
 	}
