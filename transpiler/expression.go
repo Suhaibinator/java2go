@@ -562,12 +562,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if selectedResolution == nil {
 				selectedResolution = staticResolution
 			}
-			args, expandVarargsArray := parseResolvedInvocationArguments(selectedResolution, argListNode, source, ctx, expectedArgTypes)
 			typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx), ctx)
 			if len(typeArgs) == 0 && staticResolution != nil &&
 				(genericMethodNeedsExplicitTypeArguments(staticResolution.def) || methodUsesConcreteDependentTypeWitnesses(staticResolution.def, ctx)) {
 				typeArgs = inferMethodTypeArguments(staticResolution.def, node, ctx, source)
 			}
+			args, expandVarargsArray := parseResolvedInvocationArguments(
+				selectedResolution,
+				argListNode,
+				source,
+				ctx,
+				expectedArgTypes,
+				invocationOwnerTypeArguments(target, selectedResolution, ctx),
+				node,
+			)
 			if staticResolution != nil {
 				witnesses := dependentTypeWitnessInvocationArguments(staticResolution.def, node, ctx, source)
 				args = append(witnesses, args...)
@@ -707,12 +715,28 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if selectedResolution == nil {
 			selectedResolution = implicitStaticResolution
 		}
-		args, expandVarargsArray := parseResolvedInvocationArguments(selectedResolution, argListNode, source, ctx, expectedArgTypes)
 		typeArgs := explicitTypeArgumentExprs(node, source, inScopeTypeParameters(ctx), ctx)
 		if len(typeArgs) == 0 && implicitStaticResolution != nil &&
 			(genericMethodNeedsExplicitTypeArguments(implicitStaticResolution.def) || methodUsesConcreteDependentTypeWitnesses(implicitStaticResolution.def, ctx)) {
 			typeArgs = inferMethodTypeArguments(implicitStaticResolution.def, node, ctx, source)
 		}
+		var implicitTarget *invocationTargetInfo
+		if implicitInstanceResolution != nil && ctx.currentClass != nil {
+			implicitTarget = &invocationTargetInfo{
+				classScope:        ctx.currentClass,
+				classTypeArgs:     typeParamExprs(ctx.currentClass.GoTypeParameterNames()),
+				classJavaTypeArgs: ctx.currentClass.GoTypeParameterNames(),
+			}
+		}
+		args, expandVarargsArray := parseResolvedInvocationArguments(
+			selectedResolution,
+			argListNode,
+			source,
+			ctx,
+			expectedArgTypes,
+			invocationOwnerTypeArguments(implicitTarget, selectedResolution, ctx),
+			node,
+		)
 		if implicitStaticResolution != nil {
 			witnesses := dependentTypeWitnessInvocationArguments(implicitStaticResolution.def, node, ctx, source)
 			args = append(witnesses, args...)
@@ -723,10 +747,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// variable exists.
 		if ctx.currentClass != nil && ctx.localScope != nil && ctx.localScope.OriginalName != "" && !ctx.localScope.IsStatic {
 			recv := &ast.Ident{Name: ShortName(ctx.className)}
-			target := &invocationTargetInfo{
-				classScope:    ctx.currentClass,
-				classTypeArgs: typeParamExprs(ctx.currentClass.GoTypeParameterNames()),
-			}
+			target := implicitTarget
 			if rewritten := maybeRewriteInstanceGenericMethodInvocationWithTarget(target, implicitInstanceResolution, recv, methodName, args, node, ctx, source); rewritten != nil {
 				markDirectVarargsExpansionExpr(rewritten, expandVarargsArray)
 				return rewritten
@@ -915,7 +936,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		} else if stripJavaQualifier(className) == "Thread" && resolveClassScopeByQualifiedName(ctx, className) == nil {
 			expectedArgumentTypes = []string{"Runnable"}
 		}
-		arguments, expandVarargsArray := parseResolvedInvocationArguments(constructorResolution, objectArguments, source, ctx, expectedArgumentTypes)
+		arguments, expandVarargsArray := parseResolvedInvocationArguments(
+			constructorResolution,
+			objectArguments,
+			source,
+			ctx,
+			expectedArgumentTypes,
+			effectiveTypeArgs,
+			node,
+		)
 		if inferRawQualifiedClassTypeArgs {
 			arguments = addRawInnerOwnTypeArgumentHints(arguments, constructor, targetScope, expectedArgumentTypes, ctx)
 		}
@@ -4667,6 +4696,83 @@ func addRawInnerOwnTypeArgumentHints(
 	return arguments
 }
 
+// invocationOwnerTypeArguments maps the receiver's concrete generated type
+// arguments onto the class that declares the selected method. An inherited
+// method may mention an ancestor parameter whose spelling is unrelated to the
+// receiver's binder, so positional mapping across the receiver hierarchy is
+// required before constructing a zero-element varargs slice.
+func invocationOwnerTypeArguments(
+	target *invocationTargetInfo,
+	resolution *methodResolution,
+	ctx Ctx,
+) []string {
+	if target == nil || target.classScope == nil || resolution == nil || resolution.owner == nil {
+		return nil
+	}
+	if target.classScope == resolution.owner {
+		return normalizeClassTypeArguments(
+			resolution.owner,
+			target.classJavaTypeArgs,
+			target.classScope,
+			target.classJavaTypeArgs,
+		)
+	}
+	return mapClassTypeArgumentStringsToAncestor(
+		target.classScope,
+		target.classJavaTypeArgs,
+		resolution.owner,
+		ctx,
+	)
+}
+
+// instantiatedVarargsElementType returns the concrete Go element type accepted
+// by the selected variadic ABI. The declaration type is converted with its
+// collision-free class/method binder names and those binders are then replaced
+// with this invocation's actual type arguments. This keeps an empty call valid
+// for ordinary, raw, parameterized, inherited, and method-generic receivers.
+func instantiatedVarargsElementType(
+	resolution *methodResolution,
+	classTypeArguments []string,
+	methodTypeArguments []string,
+	ctx Ctx,
+) ast.Expr {
+	if resolution == nil || resolution.def == nil || len(resolution.def.Parameters) == 0 {
+		return nil
+	}
+	def := resolution.def
+	last := len(def.Parameters) - 1
+	if !executionParameterIsVariadic(def, last) || def.Parameters[last] == nil {
+		return nil
+	}
+
+	var classParameters []symbol.TypeParam
+	if resolution.owner != nil {
+		classParameters = resolution.owner.TypeParameters
+	}
+	replacements := make(map[string]string, len(classParameters)+len(def.TypeParameters))
+	if len(classTypeArguments) == len(classParameters) {
+		for index, parameter := range classParameters {
+			replacements[parameter.EmittedName()] = classTypeArguments[index]
+			if parameter.Declaration == nil {
+				replacements[parameter.Name] = classTypeArguments[index]
+			}
+		}
+	}
+	if len(methodTypeArguments) == len(def.TypeParameters) {
+		for index, parameter := range def.TypeParameters {
+			replacements[parameter.EmittedName()] = methodTypeArguments[index]
+			if parameter.Declaration == nil {
+				replacements[parameter.Name] = methodTypeArguments[index]
+			}
+		}
+	}
+	elementJavaType := substituteJavaTypeParameters(
+		definitionJavaType(def.Parameters[last]),
+		replacements,
+	)
+	return javaTypeStringToGoTypeExpr(elementJavaType, inScopeTypeParameters(ctx), ctx)
+}
+
 // parseResolvedInvocationArguments applies Java's two varargs call modes to the
 // generated Go ABI. Element-style calls keep their individual arguments. A
 // fixed-arity Java call whose final argument is already an array instead passes
@@ -4677,6 +4783,8 @@ func parseResolvedInvocationArguments(
 	source []byte,
 	ctx Ctx,
 	expectedTypes []string,
+	classTypeArguments []string,
+	invocationNode *sitter.Node,
 ) ([]ast.Expr, bool) {
 	if resolution == nil || resolution.def == nil {
 		return parseArgumentListWithExpectedTypes(argsNode, source, ctx, expectedTypes), false
@@ -4711,6 +4819,32 @@ func parseResolvedInvocationArguments(
 	}
 
 	args := parseArgumentListWithExpectedTypes(argsNode, source, ctx, expectedTypes)
+	if len(def.Parameters) > 0 &&
+		executionParameterIsVariadic(def, len(def.Parameters)-1) &&
+		!resolution.expandVarargsArray &&
+		argumentCount == len(def.Parameters)-1 {
+		// Java allocates a fresh, non-null array for every variable-arity
+		// invocation, including the zero-element form. Calling a Go variadic
+		// function without a final argument instead supplies a nil slice, which
+		// makes `values == null` observe the wrong result in the Java body.
+		//
+		// Keep fixed-arity null/array calls out of this branch: those already carry
+		// one source argument, must preserve nullness, and stay on the existing
+		// fixed-arity conversion path.
+		emptyVarargsElementType := instantiatedVarargsElementType(
+			resolution,
+			classTypeArguments,
+			methodInvocationTypeArgumentJavaTypes(def, invocationNode, ctx, source),
+			ctx,
+		)
+		args = append(args, stdjavaGenericCall(
+			ctx,
+			"ArrayLiteral",
+			[]ast.Expr{emptyVarargsElementType},
+			nil,
+		))
+		return args, true
+	}
 	if !resolution.expandVarargsArray || len(args) == 0 || len(def.Parameters) == 0 {
 		return args, false
 	}
@@ -6164,12 +6298,15 @@ func anonymousSuperclassConstructorExpr(
 			expectedTypes[index] = substituteJavaTypeParameters(expectedTypes[index], bindings)
 		}
 	}
+	varargsClassArgumentStrings := normalizeClassTypeArguments(superScope, typeArgs, ctx.currentClass, nil)
 	args, expandVarargsArray := parseResolvedInvocationArguments(
 		resolution,
 		argsNode,
 		source,
 		ctx,
 		expectedTypes,
+		varargsClassArgumentStrings,
+		node,
 	)
 	usesMostDerived := mostDerived != nil && constructorUsesMostDerived(superScope, ctx)
 	if usesMostDerived {
@@ -9346,15 +9483,17 @@ func applyTypeArguments(fun ast.Expr, args []ast.Expr) ast.Expr {
 }
 
 type invocationTargetInfo struct {
-	classScope     *symbol.ClassScope
-	classTypeArgs  []ast.Expr
-	boundViews     []invocationTargetBoundView
-	rawGenericView bool
+	classScope        *symbol.ClassScope
+	classTypeArgs     []ast.Expr
+	classJavaTypeArgs []string
+	boundViews        []invocationTargetBoundView
+	rawGenericView    bool
 }
 
 type invocationTargetBoundView struct {
-	classScope    *symbol.ClassScope
-	classTypeArgs []ast.Expr
+	classScope        *symbol.ClassScope
+	classTypeArgs     []ast.Expr
+	classJavaTypeArgs []string
 }
 
 func invocationTargetScopes(target *invocationTargetInfo) []*symbol.ClassScope {
@@ -9382,6 +9521,7 @@ func invocationTargetForReceiverScope(target *invocationTargetInfo, receiverScop
 			selected := *target
 			selected.classScope = view.classScope
 			selected.classTypeArgs = append([]ast.Expr(nil), view.classTypeArgs...)
+			selected.classJavaTypeArgs = append([]string(nil), view.classJavaTypeArgs...)
 			return &selected
 		}
 	}
@@ -9510,9 +9650,10 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 	}
 
 	target := &invocationTargetInfo{
-		classScope:     classScope,
-		classTypeArgs:  classTypeArgExprs,
-		rawGenericView: rawGenericView,
+		classScope:        classScope,
+		classTypeArgs:     classTypeArgExprs,
+		classJavaTypeArgs: append([]string(nil), classTypeArgs...),
+		rawGenericView:    rawGenericView,
 	}
 	if len(boundTypes) > 0 {
 		seen := map[*symbol.ClassScope]struct{}{}
@@ -9531,8 +9672,9 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 				args = append(args, javaTypeStringToGoTypeExpr(argument, scopeTypeParams, ctx))
 			}
 			target.boundViews = append(target.boundViews, invocationTargetBoundView{
-				classScope:    scope,
-				classTypeArgs: args,
+				classScope:        scope,
+				classTypeArgs:     args,
+				classJavaTypeArgs: append([]string(nil), arguments...),
 			})
 		}
 	}

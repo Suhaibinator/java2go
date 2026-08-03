@@ -39,6 +39,10 @@ func TestArrayLiteralPreservesElementsAndEmptyIdentityStorage(t *testing.T) {
 	if len(empty) != 0 || cap(empty) != 1 {
 		t.Fatalf("empty ArrayLiteral shape = len %d cap %d, want len 0 cap 1", len(empty), cap(empty))
 	}
+	secondEmpty := ArrayLiteral[int32]()
+	if &empty[:1][0] == &secondEmpty[:1][0] {
+		t.Fatal("separate empty ArrayLiteral calls reused backing identity")
+	}
 
 	values := ArrayLiteral[int32](1, 2, 3)
 	if len(values) != 3 || values[0] != 1 || values[2] != 3 {

@@ -232,9 +232,9 @@ func diamondClassTypeArgumentPrefix(
 }
 
 // mapClassTypeArgumentStringsToAncestor resolves the concrete generic view of
-// ancestor as observed through child. Each superclass edge is interpreted in
-// its declaring scope and then substituted positionally using that scope's
-// actual arguments. This is the string-level counterpart of
+// ancestor as observed through child. Each superclass or implemented-interface
+// edge is interpreted in its declaring scope and then substituted positionally
+// using that scope's actual arguments. This is the string-level counterpart of
 // mapClassTypeArgsToAncestor and is used before Go AST type expressions exist.
 //
 // Keeping this walk declaration/position based matters for inherited member
@@ -250,57 +250,75 @@ func mapClassTypeArgumentStringsToAncestor(
 	if child == nil || ancestor == nil {
 		return nil
 	}
-	current := child
-	currentArguments := append([]string(nil), childTypeArguments...)
-	if len(current.TypeParameters) > 0 && len(currentArguments) != len(current.TypeParameters) {
-		currentArguments = normalizeClassTypeArguments(current, currentArguments, ctx.currentClass, nil)
+	type classTypeArgumentView struct {
+		scope     *symbol.ClassScope
+		arguments []string
 	}
+	initialArguments := append([]string(nil), childTypeArguments...)
+	if len(child.TypeParameters) > 0 && len(initialArguments) != len(child.TypeParameters) {
+		initialArguments = normalizeClassTypeArguments(child, initialArguments, ctx.currentClass, nil)
+	}
+	queue := []classTypeArgumentView{{scope: child, arguments: initialArguments}}
 	seen := map[*symbol.ClassScope]struct{}{}
 
-	for current != ancestor {
+	for len(queue) > 0 {
+		view := queue[0]
+		queue = queue[1:]
+		current := view.scope
+		currentArguments := view.arguments
+		if current == ancestor {
+			return currentArguments
+		}
 		if _, duplicate := seen[current]; duplicate {
-			return nil
+			continue
 		}
 		seen[current] = struct{}{}
 
-		superType := strings.TrimSpace(current.Superclass)
-		if superType == "" {
-			return nil
+		declarationCtx := ctx.Clone()
+		if file := findFileScopeForClassScope(current); file != nil {
+			declarationCtx.currentFile = file
+			declarationCtx.currentClass = current
 		}
-		_, declaredParentArguments := parseJavaTypeString(superType)
-		parent := resolveSuperclassScopeInDeclaringContext(ctx, current)
-		if parent == nil {
-			return nil
+		parentTypes := make([]string, 0, 1+len(current.ImplementedInterfaces))
+		if superType := strings.TrimSpace(current.Superclass); superType != "" {
+			parentTypes = append(parentTypes, superType)
 		}
+		parentTypes = append(parentTypes, current.ImplementedInterfaces...)
 
-		// TypeParameters is ordered outermost-to-innermost, so assigning source
-		// spellings in order intentionally lets the nearest declaration win Java
-		// lexical shadowing. Emitted names remain unique and are also accepted.
-		bindings := make(map[string]string, len(current.TypeParameters)*2)
-		for index, parameter := range current.TypeParameters {
-			if index >= len(currentArguments) {
+		for _, parentType := range parentTypes {
+			base, declaredParentArguments := parseJavaTypeString(parentType)
+			parent := resolveClassScopeByQualifiedName(declarationCtx, base)
+			if parent == nil {
 				continue
 			}
-			bindings[parameter.Name] = currentArguments[index]
-			bindings[parameter.EmittedName()] = currentArguments[index]
-		}
 
-		normalizedParentArguments := normalizeClassTypeArguments(
-			parent,
-			declaredParentArguments,
-			current,
-			currentArguments,
-		)
-		parentArguments := make([]string, len(normalizedParentArguments))
-		for index, argument := range normalizedParentArguments {
-			parentArguments[index] = substituteJavaTypeParameters(argument, bindings)
-		}
+			// TypeParameters is ordered outermost-to-innermost, so assigning source
+			// spellings in order intentionally lets the nearest declaration win Java
+			// lexical shadowing. Emitted names remain unique and are also accepted.
+			bindings := make(map[string]string, len(current.TypeParameters)*2)
+			for index, parameter := range current.TypeParameters {
+				if index >= len(currentArguments) {
+					continue
+				}
+				bindings[parameter.Name] = currentArguments[index]
+				bindings[parameter.EmittedName()] = currentArguments[index]
+			}
 
-		current = parent
-		currentArguments = parentArguments
+			normalizedParentArguments := normalizeClassTypeArguments(
+				parent,
+				declaredParentArguments,
+				current,
+				currentArguments,
+			)
+			parentArguments := make([]string, len(normalizedParentArguments))
+			for index, argument := range normalizedParentArguments {
+				parentArguments[index] = substituteJavaTypeParameters(argument, bindings)
+			}
+			queue = append(queue, classTypeArgumentView{scope: parent, arguments: parentArguments})
+		}
 	}
 
-	return currentArguments
+	return nil
 }
 
 // rawTypeParameterErasure implements Java's first-bound erasure for a missing

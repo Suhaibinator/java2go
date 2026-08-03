@@ -2091,6 +2091,44 @@ func constructorInvocationMethodTypeArgs(invocation *explicitConstructorInvocati
 	return nil
 }
 
+// emptyConstructorVarargsArgument models the synthetic empty array created by
+// a variable-arity constructor invocation that supplies no values for its
+// trailing spread parameter. A bare Go variadic call would pass nil instead,
+// which is observable from the Java constructor body.
+func emptyConstructorVarargsArgument(
+	target *symbol.Definition,
+	owner *symbol.ClassScope,
+	arguments *sitter.Node,
+	invocationNode *sitter.Node,
+	classTypeArguments []string,
+	source []byte,
+	ctx Ctx,
+) (ast.Expr, bool) {
+	if target == nil || len(target.Parameters) == 0 ||
+		!executionParameterIsVariadic(target, len(target.Parameters)-1) {
+		return nil, false
+	}
+	argumentCount := 0
+	if arguments != nil {
+		argumentCount = int(arguments.NamedChildCount())
+	}
+	if argumentCount != len(target.Parameters)-1 {
+		return nil, false
+	}
+
+	methodTypeArguments := methodInvocationTypeArgumentJavaTypes(target, invocationNode, ctx, source)
+	elementType := instantiatedVarargsElementType(
+		&methodResolution{def: target, owner: owner},
+		classTypeArguments,
+		methodTypeArguments,
+		ctx,
+	)
+	if elementType == nil {
+		return nil, false
+	}
+	return stdjavaGenericCall(ctx, "ArrayLiteral", []ast.Expr{elementType}, nil), true
+}
+
 func explicitThisConstructorAssignment(
 	invocation *explicitConstructorInvocation,
 	receiverName string,
@@ -2138,10 +2176,23 @@ func explicitThisConstructorAssignment(
 	}
 	args = append(args, leadingArgs...)
 	args = append(args, invocation.parsedArgs...)
+	call := &ast.CallExpr{Fun: constructor, Args: args}
+	if emptyVarargs, ok := emptyConstructorVarargsArgument(
+		invocation.target,
+		ctx.currentClass,
+		invocation.arguments,
+		invocation.node,
+		ctx.currentClass.GoTypeParameterNames(),
+		source,
+		ctx,
+	); ok {
+		call.Args = append(call.Args, emptyVarargs)
+		call.Ellipsis = token.Pos(1)
+	}
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.Ident{Name: receiverName}},
 		Tok: token.DEFINE,
-		Rhs: []ast.Expr{&ast.CallExpr{Fun: constructor, Args: args}},
+		Rhs: []ast.Expr{call},
 	}
 }
 
@@ -2168,6 +2219,7 @@ func explicitSuperConstructorAssignment(
 
 	constructorName := "New" + superName
 	constructor := ast.Expr(nil)
+	var constructorClassTypeArgs []string
 	if isBuiltinExceptionType(stripJavaQualifier(base)) && parent == nil {
 		constructor = stdjavaQualifiedExpr(constructorName, ctx)
 	} else {
@@ -2184,9 +2236,9 @@ func explicitSuperConstructorAssignment(
 		if invocation.target != nil {
 			methodTypeArgCapacity = len(invocation.target.TypeParameters)
 		}
-		effectiveSuperArgs := classTypeArgumentsWithRawFallback(parent, superArgStrs, ctx.currentClass)
-		args := make([]ast.Expr, 0, len(effectiveSuperArgs)+methodTypeArgCapacity)
-		for _, arg := range effectiveSuperArgs {
+		constructorClassTypeArgs = classTypeArgumentsWithRawFallback(parent, superArgStrs, ctx.currentClass)
+		args := make([]ast.Expr, 0, len(constructorClassTypeArgs)+methodTypeArgCapacity)
+		for _, arg := range constructorClassTypeArgs {
 			args = append(args, javaTypeStringToGoTypeExpr(arg, inScopeTypeParameters(ctx), ctx))
 		}
 		args = append(args, constructorInvocationMethodTypeArgs(invocation, source, ctx)...)
@@ -2215,13 +2267,26 @@ func explicitSuperConstructorAssignment(
 	if execution := executionExpr(ctx); execution != nil && parent != nil {
 		callArgs = append([]ast.Expr{execution}, callArgs...)
 	}
+	call := &ast.CallExpr{Fun: constructor, Args: callArgs}
+	if emptyVarargs, ok := emptyConstructorVarargsArgument(
+		invocation.target,
+		parent,
+		invocation.arguments,
+		invocation.node,
+		constructorClassTypeArgs,
+		source,
+		ctx,
+	); ok {
+		call.Args = append(call.Args, emptyVarargs)
+		call.Ellipsis = token.Pos(1)
+	}
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.SelectorExpr{
 			X:   &ast.Ident{Name: receiverName},
 			Sel: &ast.Ident{Name: superName},
 		}},
 		Tok: token.ASSIGN,
-		Rhs: []ast.Expr{&ast.CallExpr{Fun: constructor, Args: callArgs}},
+		Rhs: []ast.Expr{call},
 	}
 }
 
@@ -2235,8 +2300,15 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 		return nil
 	}
 	constructorName := noArgConstructorName(parent)
+	var varargsTarget *symbol.Definition
 	if constructorName == "" {
-		return nil
+		resolution := findBestConstructor(parent, nil, ctx, nil)
+		if resolution == nil || resolution.def == nil || len(resolution.def.Parameters) != 1 ||
+			!executionParameterIsVariadic(resolution.def, 0) {
+			return nil
+		}
+		constructorName = resolution.def.Name
+		varargsTarget = resolution.def
 	}
 	args := []ast.Expr{}
 	if mostDerived != nil && constructorUsesMostDerived(parent, ctx) {
@@ -2268,13 +2340,26 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 		}
 		constructor = applyTypeArguments(constructor, goTypeArgs)
 	}
+	call := &ast.CallExpr{Fun: constructor, Args: args}
+	if emptyVarargs, ok := emptyConstructorVarargsArgument(
+		varargsTarget,
+		parent,
+		nil,
+		nil,
+		typeArgs,
+		nil,
+		ctx,
+	); ok {
+		call.Args = append(call.Args, emptyVarargs)
+		call.Ellipsis = token.Pos(1)
+	}
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.SelectorExpr{
 			X:   &ast.Ident{Name: receiverName},
 			Sel: &ast.Ident{Name: parent.Class.Name},
 		}},
 		Tok: token.ASSIGN,
-		Rhs: []ast.Expr{&ast.CallExpr{Fun: constructor, Args: args}},
+		Rhs: []ast.Expr{call},
 	}
 }
 
