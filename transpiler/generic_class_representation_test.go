@@ -7,6 +7,44 @@ import (
 	"github.com/NickyBoy89/java2go/symbol"
 )
 
+func TestGenericCast_TypedConstructionRoundTripsThroughObject(t *testing.T) {
+	assertGeneratedLocalConstructorResult(t, `
+public class GenericTypedCastProgram {
+    interface Numbered {
+        int number();
+    }
+
+    static class First implements Numbered {
+        final int value;
+
+        First(int value) {
+            this.value = value;
+        }
+
+        public int number() {
+            return value;
+        }
+    }
+
+    static class Box<T extends Numbered> {
+        final T value;
+
+        Box(T value) {
+            this.value = value;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static String run() {
+        Box<First> original = new Box<>(new First(7));
+        Object erased = original;
+        Box<First> restored = (Box<First>) erased;
+        return "value=" + restored.value.number();
+    }
+}
+`, "value=7")
+}
+
 func TestPlanGenericClassRepresentation_UsesCanonicalDeclarationErasures(t *testing.T) {
 	tests := []struct {
 		name        string
