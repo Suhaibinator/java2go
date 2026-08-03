@@ -2,6 +2,36 @@ package stdjava
 
 import "reflect"
 
+// ReferenceRequireNonNull returns value without changing its exact Go type and
+// throws Java's NullPointerException when value represents a null reference.
+// Keeping T in both the parameter and result is important at generated generic
+// boundaries: converting through any would erase the concrete instantiation
+// that Go needs for type inference.
+func ReferenceRequireNonNull[T any](value T) T {
+	if javaReferenceIsNull(value) {
+		panic(NewNullPointerException("null reference"))
+	}
+	return value
+}
+
+// ReferenceTypeHint widens value to an explicitly selected generated Java
+// reference view while preserving Java null. Generated calls use the result
+// type to guide Go's generic inference when Java erased a member-class type
+// argument that Go must still instantiate.
+func ReferenceTypeHint[T any](value T) T {
+	if !javaReferenceIsNull(value) {
+		return value
+	}
+	// A generated String slot uses NullString's sentinel because Go's concrete
+	// string type has no nil value. Other reference views use their zero value.
+	target := reflect.TypeOf((*T)(nil)).Elem()
+	if target.Kind() == reflect.String {
+		return value
+	}
+	var zero T
+	return zero
+}
+
 // JavaReferenceEqual compares two values using the identity available in the
 // generated Java-reference representations. It deliberately avoids Go's raw
 // interface == operator: that operator treats a typed nil pointer as non-nil

@@ -6,6 +6,42 @@ type referenceIdentityProbe struct {
 	value int
 }
 
+func TestReferenceRequireNonNullPreservesExactTypeAndRejectsTypedNil(t *testing.T) {
+	value := &referenceIdentityProbe{value: 7}
+	var exact *referenceIdentityProbe = ReferenceRequireNonNull(value)
+	if exact != value {
+		t.Fatal("non-null reference did not retain its exact value")
+	}
+
+	defer func() {
+		recovered := recover()
+		if !CaughtAs(recovered, "NullPointerException") {
+			t.Fatalf("typed nil panic = %T (%v), want NullPointerException", recovered, recovered)
+		}
+	}()
+	var absent *referenceIdentityProbe
+	ReferenceRequireNonNull(absent)
+}
+
+func TestReferenceTypeHintWidensAndNormalizesTypedNil(t *testing.T) {
+	type view interface{ marker() }
+	typePointer := &referenceTypeHintProbe{}
+	if got := ReferenceTypeHint[view](typePointer); got != typePointer {
+		t.Fatal("type hint did not preserve the widened reference")
+	}
+	var absent *referenceTypeHintProbe
+	if got := ReferenceTypeHint[view](absent); got != nil {
+		t.Fatalf("typed nil hint = %#v, want nil interface", got)
+	}
+	if got := ReferenceTypeHint[string](NullString()); !StringIsNull(got) {
+		t.Fatalf("String null hint = %q, want null sentinel", got)
+	}
+}
+
+type referenceTypeHintProbe struct{}
+
+func (*referenceTypeHintProbe) marker() {}
+
 func TestJavaReferenceEqualNormalizesTypedNil(t *testing.T) {
 	var pointer *referenceIdentityProbe
 	var mapping map[string]int

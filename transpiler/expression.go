@@ -891,7 +891,18 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 		constructorMethodTypeArgs := methodInvocationTypeArgumentJavaTypes(constructor, node, ctx, source)
-		constructorFunctionTypeArgs := append(append([]string(nil), effectiveTypeArgs...), constructorMethodTypeArgs...)
+		constructionClassTypeArgs := effectiveTypeArgs
+		inferRawQualifiedClassTypeArgs := false
+		// A statically raw qualifier is still an alias of its concrete object. For
+		// a raw member-class creation, omit the generated class arguments so Go can
+		// infer the carried enclosing instantiation from the hidden first argument.
+		// Explicitly spelling Java's erasures here would require converting the
+		// same object to an invariant, incompatible Go generic instantiation.
+		if enclosingView != nil && enclosingView.rawGenericQualifier && len(typeArgs) == 0 && !isDiamond && len(constructorMethodTypeArgs) == 0 {
+			constructionClassTypeArgs = nil
+			inferRawQualifiedClassTypeArgs = true
+		}
+		constructorFunctionTypeArgs := append(append([]string(nil), constructionClassTypeArgs...), constructorMethodTypeArgs...)
 
 		var expectedArgumentTypes []string
 		if constructor != nil {
@@ -905,6 +916,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			expectedArgumentTypes = []string{"Runnable"}
 		}
 		arguments, expandVarargsArray := parseResolvedInvocationArguments(constructorResolution, objectArguments, source, ctx, expectedArgumentTypes)
+		if inferRawQualifiedClassTypeArgs {
+			arguments = addRawInnerOwnTypeArgumentHints(arguments, constructor, targetScope, expectedArgumentTypes, ctx)
+		}
 		if constructor != nil {
 			witnesses := dependentTypeWitnessInvocationArguments(constructor, node, ctx, source)
 			arguments = append(witnesses, arguments...)
@@ -1006,7 +1020,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				ctorName = executionConstructorImplementationName(ctorName, targetScope)
 				callArgs = prependExecutionArgument(ctx, callArgs)
 			}
-			funExpr := addTypeArgs(qualifiedNameExpr(ctorName, targetPkg, ctx), effectiveTypeArgs)
+			funExpr := addTypeArgs(qualifiedNameExpr(ctorName, targetPkg, ctx), constructionClassTypeArgs)
 			call := &ast.CallExpr{
 				Fun:  funExpr,
 				Args: callArgs,
@@ -2939,9 +2953,10 @@ func enclosingMemberMethodSelector(methodName string, argCount int, ctx Ctx) (as
 }
 
 type objectCreationEnclosingView struct {
-	expression    ast.Expr
-	scope         *symbol.ClassScope
-	typeArguments []string
+	expression          ast.Expr
+	scope               *symbol.ClassScope
+	typeArguments       []string
+	rawGenericQualifier bool
 }
 
 // resolveObjectCreationEnclosingView computes the enclosing-instance expression
@@ -2996,6 +3011,7 @@ func resolveObjectCreationEnclosingView(
 				if sourceScope == nil || !javaReferenceTypeAssignable(sourceScope, desired, ctx) {
 					return nil
 				}
+				rawGenericQualifier := isRawGenericObjectCreationQualifier(first, sourceScope, arguments, source, ctx)
 				sourceArguments := normalizeClassTypeArguments(sourceScope, arguments, ctx.currentClass, nil)
 				expression := ParseExpr(first, source, ctx)
 				if sourceScope != desired {
@@ -3005,11 +3021,19 @@ func resolveObjectCreationEnclosingView(
 					}
 				}
 				mappedArguments := mapClassTypeArgumentStringsToAncestor(sourceScope, sourceArguments, desired, ctx)
-				expression = requireNonNullEnclosingInstance(expression, desired, mappedArguments, ctx)
+				if rawGenericQualifier {
+					// The Java raw view does not change the object. Preserve the exact Go
+					// instantiation carried by the qualifier expression so the inner
+					// constructor can infer its hidden enclosing type arguments.
+					expression = stdjavaCall(ctx, "ReferenceRequireNonNull", expression)
+				} else {
+					expression = requireNonNullEnclosingInstance(expression, desired, mappedArguments, ctx)
+				}
 				return &objectCreationEnclosingView{
-					expression:    expression,
-					scope:         desired,
-					typeArguments: mappedArguments,
+					expression:          expression,
+					scope:               desired,
+					typeArguments:       mappedArguments,
+					rawGenericQualifier: rawGenericQualifier,
 				}
 			}
 		}
@@ -3054,6 +3078,39 @@ func resolveObjectCreationEnclosingView(
 		currentArguments = classTypeArgumentStringsForScope(current, currentArguments, current.Enclosing)
 		current = current.Enclosing
 	}
+}
+
+// isRawGenericObjectCreationQualifier reports whether the qualifier in
+// `qualifier.new Inner()` has a statically raw Java generic type. Static method
+// parameters need the declaration check because their generated Go signature
+// may have been made generic to retain the concrete instantiation accepted at
+// each call site; that ABI rewrite must not obscure the original raw Java view.
+func isRawGenericObjectCreationQualifier(
+	node *sitter.Node,
+	scope *symbol.ClassScope,
+	inferredArguments []string,
+	source []byte,
+	ctx Ctx,
+) bool {
+	if node == nil || scope == nil || len(scope.TypeParameters) == 0 {
+		return false
+	}
+	if len(inferredArguments) == 0 {
+		return true
+	}
+	if node.Type() != "identifier" || ctx.localScope == nil {
+		return false
+	}
+	name := node.Content(source)
+	definition := ctx.localScope.ParameterByName(name)
+	if definition == nil {
+		definition = ctx.localScope.FindVariable(name)
+	}
+	if definition == nil {
+		return false
+	}
+	base, arguments := parseJavaTypeString(definition.OriginalType)
+	return len(arguments) == 0 && resolveClassScopeByQualifiedName(ctx, base) == scope
 }
 
 // requireNonNullEnclosingInstance performs the qualified-inner-creation null
@@ -4558,6 +4615,56 @@ func instantiatedConstructorParameterTypes(
 		types[index] = substituteJavaTypeParameters(definitionJavaType(parameter), bindings)
 	}
 	return types
+}
+
+// addRawInnerOwnTypeArgumentHints gives Go inference the erased views of a raw
+// member class's own type parameters. Its carried enclosing parameters remain
+// inferred from the exact qualifier argument. The helper is limited to direct
+// bare-parameter formals, where Java's erasure and the generated constructor
+// parameter describe the same assignment conversion.
+func addRawInnerOwnTypeArgumentHints(
+	arguments []ast.Expr,
+	constructor *symbol.Definition,
+	scope *symbol.ClassScope,
+	expectedTypes []string,
+	ctx Ctx,
+) []ast.Expr {
+	if len(arguments) == 0 || constructor == nil || scope == nil {
+		return arguments
+	}
+	ownDeclarations := make(map[*symbol.TypeParamDeclaration]struct{})
+	ownLegacyNames := make(map[string]struct{})
+	for _, parameter := range scope.OwnTypeParameters() {
+		if parameter.Declaration != nil {
+			ownDeclarations[parameter.Declaration] = struct{}{}
+		} else {
+			ownLegacyNames[parameter.Name] = struct{}{}
+		}
+	}
+	for index := range arguments {
+		parameterIndex := index
+		if parameterIndex >= len(constructor.Parameters) {
+			if len(constructor.Parameters) == 0 || !executionParameterIsVariadic(constructor, len(constructor.Parameters)-1) {
+				continue
+			}
+			parameterIndex = len(constructor.Parameters) - 1
+		}
+		parameter := constructor.Parameters[parameterIndex]
+		if parameter == nil {
+			continue
+		}
+		_, ownDeclaration := ownDeclarations[parameter.DirectTypeParameter]
+		_, ownLegacyName := ownLegacyNames[strings.TrimSpace(parameter.OriginalType)]
+		if !ownDeclaration && !ownLegacyName {
+			continue
+		}
+		if index >= len(expectedTypes) || strings.TrimSpace(expectedTypes[index]) == "" {
+			continue
+		}
+		hintedType := javaTypeStringToGoTypeExpr(expectedTypes[index], inScopeTypeParameters(ctx), ctx)
+		arguments[index] = stdjavaGenericCall(ctx, "ReferenceTypeHint", []ast.Expr{hintedType}, []ast.Expr{arguments[index]})
+	}
+	return arguments
 }
 
 // parseResolvedInvocationArguments applies Java's two varargs call modes to the
@@ -8462,6 +8569,40 @@ func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
 	return "", false
 }
 
+// identifierJavaTypeBeforeRepresentationRewrite returns the Java type written
+// on an identifier's declaration before raw/wildcard generic parameters are
+// rewritten into a Go-representable synthetic instantiation. Invocation
+// lowering needs both views: the rewritten type drives ordinary method
+// resolution, while the original spelling records whether this was genuinely a
+// raw Java receiver rather than an explicitly parameterized or wildcard view.
+func identifierJavaTypeBeforeRepresentationRewrite(name string, ctx Ctx) (string, bool) {
+	if ctx.localScope == nil {
+		return "", false
+	}
+	if parameter := ctx.localScope.ParameterByName(name); parameter != nil && strings.TrimSpace(parameter.OriginalType) != "" {
+		return definitionJavaType(parameter), true
+	}
+	if local := ctx.localScope.FindVariable(name); local != nil && strings.TrimSpace(local.OriginalType) != "" {
+		return definitionJavaType(local), true
+	}
+	return "", false
+}
+
+// javaTypeOmitsGenericArguments reports whether a Java static type names a
+// generic declaration while omitting every source-level type argument. It is
+// deliberately evaluated before normalizeClassTypeArguments fills Java's raw
+// erasures or synthesizeRawGenericFunctionParameters supplies inferable Go type
+// parameters. An explicit wildcard still occupies a generic slot and is not a
+// raw view.
+func javaTypeOmitsGenericArguments(javaType string, ctx Ctx) bool {
+	base, arguments := parseJavaTypeString(strings.TrimSpace(javaType))
+	if base == "" || len(arguments) != 0 {
+		return false
+	}
+	scope := resolveClassScopeByQualifiedName(ctx, base)
+	return scope != nil && len(scope.TypeParameters) > 0
+}
+
 func inferEnclosingFieldJavaType(name string, ctx Ctx) (string, bool) {
 	if ctx.currentClass == nil || !ctx.currentClass.IsInner || (ctx.localScope != nil && ctx.localScope.IsStatic) {
 		return "", false
@@ -9205,9 +9346,10 @@ func applyTypeArguments(fun ast.Expr, args []ast.Expr) ast.Expr {
 }
 
 type invocationTargetInfo struct {
-	classScope    *symbol.ClassScope
-	classTypeArgs []ast.Expr
-	boundViews    []invocationTargetBoundView
+	classScope     *symbol.ClassScope
+	classTypeArgs  []ast.Expr
+	boundViews     []invocationTargetBoundView
+	rawGenericView bool
 }
 
 type invocationTargetBoundView struct {
@@ -9305,6 +9447,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 
 	var className string
 	var classTypeArgs []string
+	rawGenericView := false
 	switch objectNode.Type() {
 	case "this":
 		if ctx.currentClass == nil {
@@ -9320,11 +9463,19 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		if superType == "" {
 			return nil
 		}
+		rawGenericView = javaTypeOmitsGenericArguments(superType, ctx)
 		className, classTypeArgs = parseJavaTypeString(superType)
 	case "identifier":
+		originalType, hasOriginalType := identifierJavaTypeBeforeRepresentationRewrite(objectNode.Content(source), ctx)
+		if hasOriginalType {
+			rawGenericView = javaTypeOmitsGenericArguments(originalType, ctx)
+		}
 		javaType, ok := inferIdentifierJavaType(objectNode.Content(source), ctx)
 		if !ok {
 			return nil
+		}
+		if !hasOriginalType {
+			rawGenericView = javaTypeOmitsGenericArguments(javaType, ctx)
 		}
 		className, classTypeArgs = parseJavaTypeString(javaType)
 	default:
@@ -9332,6 +9483,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		if !ok {
 			return nil
 		}
+		rawGenericView = javaTypeOmitsGenericArguments(javaType, ctx)
 		className, classTypeArgs = parseJavaTypeString(javaType)
 	}
 
@@ -9358,8 +9510,9 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 	}
 
 	target := &invocationTargetInfo{
-		classScope:    classScope,
-		classTypeArgs: classTypeArgExprs,
+		classScope:     classScope,
+		classTypeArgs:  classTypeArgExprs,
+		rawGenericView: rawGenericView,
 	}
 	if len(boundTypes) > 0 {
 		seen := map[*symbol.ClassScope]struct{}{}
