@@ -152,8 +152,26 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			fields.List = append([]*ast.Field{enclField}, fields.List...)
 		}
 
-		// First, look through the class's body for field declarations
+		// First, look through the class's body for field declarations and direct
+		// instance-initializer blocks. Java executes non-static field initializers
+		// and these blocks as one source-ordered phase after super construction.
 		for _, child := range nodeutil.NamedChildrenOf(classBody) {
+			if child.Type() == "block" {
+				// Preserve the block as a block statement: each Java initializer block
+				// introduces a distinct lexical scope. The synthetic method context also
+				// gives unqualified instance members and exception lowering the same
+				// receiver/execution semantics as an ordinary instance method.
+				blockCtx := ctx.Clone()
+				blockCtx.localScope = &symbol.Definition{
+					OriginalName: fieldInitMethodName,
+					Name:         fieldInitMethodName,
+				}
+				blockCtx.executionContextName = executionNameForClass(ctx.currentClass)
+				if block, ok := ParseStmt(child, source, blockCtx).(*ast.BlockStmt); ok && block != nil {
+					instanceFieldInitializers = append(instanceFieldInitializers, block)
+				}
+				continue
+			}
 			if child.Type() == "field_declaration" {
 
 				staticField := ctx.currentClass.IsInterface
