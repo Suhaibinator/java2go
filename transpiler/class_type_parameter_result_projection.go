@@ -46,8 +46,15 @@ func narrowDirectOwnerMethodResultReceiver(
 		return receiver
 	}
 	sourceView, ok = readableOwnerResultProjectionType(sourceView)
-	if !ok || visibleTypeParameterDeclarationForJavaType(sourceView, ctx) != nil {
+	if !ok {
 		return receiver
+	}
+	if visibleTypeParameterDeclarationForJavaType(sourceView, ctx) != nil {
+		memberOwner := outerResolution.receiverScope
+		if memberOwner == nil {
+			memberOwner = outerResolution.owner
+		}
+		sourceView = javaInferenceTypeName(memberOwner)
 	}
 
 	// A raw receiver normalizes its source argument to the erasure and therefore

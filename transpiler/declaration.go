@@ -211,6 +211,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fieldDef.OriginalType,
 					ctx,
 				)
+				field.Type = directOwnerTypeParameterFieldStorageType(ctx.currentClass, fieldDef, field.Type, ctx)
 
 				if staticField {
 					spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}
@@ -3912,7 +3913,12 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if strings.TrimSpace(ctx.localScope.OriginalType) != "" && strings.TrimSpace(ctx.localScope.OriginalType) != "void" {
 			results = &ast.FieldList{
 				List: []*ast.Field{
-					{Type: javaTypeStringToGoTypeExpr(ctx.localScope.OriginalType, inScopeTypeParameters(ctx), ctx)},
+					{Type: directOwnerTypeParameterMethodResultType(
+						ctx.currentClass,
+						ctx.localScope,
+						javaTypeStringToGoTypeExpr(ctx.localScope.OriginalType, inScopeTypeParameters(ctx), ctx),
+						ctx,
+					)},
 				},
 			}
 		}

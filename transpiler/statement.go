@@ -595,6 +595,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			names = append(names, identFromNode(node.NamedChild(ind), source))
 			valueNode := node.NamedChild(ind + 1)
 			value := ParseExpr(valueNode, source, ctx)
+			value = projectDirectOwnerErasedExpressionForExpected(value, valueNode, ctx, source)
 			if expectedType := strings.TrimSpace(ctx.expectedType); expectedType != "" && !isVarKeywordType(expectedType) {
 				if actualType, known := inferExprJavaType(valueNode, ctx, source); known &&
 					javaDependentTypeParameterAssignable(actualType, expectedType, ctx) {

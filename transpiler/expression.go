@@ -336,7 +336,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				if resolution, selectedTarget := findInstanceMethodForInvocationTarget(target, methodName, len(samMethod.Parameters), ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
 					target = selectedTarget
 					receiver := ParseExpr(targetNode, source, ctx)
-					if target.classScope.IsInterface || target.classScope.IsAbstract {
+					_, erasedResult := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx)
+					if target.classScope.IsInterface || target.classScope.IsAbstract || erasedResult {
 						methodExpr = executionAwareMethodReferenceForwarder(receiver, resolution, target, samType, samExecutionName, false, node, source, ctx)
 					} else {
 						selectorBase := receiver
@@ -548,6 +549,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			if instanceResolution != nil {
 				objectExpr = narrowDirectOwnerMethodResultReceiver(
+					objectExpr,
+					objectNode,
+					instanceResolution,
+					ctx,
+					source,
+				)
+				objectExpr = narrowDirectOwnerFieldResultReceiver(
 					objectExpr,
 					objectNode,
 					instanceResolution,
@@ -1483,6 +1491,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		if field != nil && ownerJavaType != "" {
 			parsedObject = projectDependentTypeParameterReceiver(parsedObject, obj, field.owner, ctx, source)
+		}
+		if field != nil {
+			parsedObject = narrowDirectOwnerFieldSelectionReceiver(parsedObject, obj, field, ctx, source)
 		}
 		return &ast.SelectorExpr{
 			X:   parsedObject,
@@ -2478,6 +2489,13 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 
 	targetValueType := javaTypeStringToGoTypeExpr(lhsJavaType, inScopeTypeParameters(ctx), ctx)
 	targetStorageType := targetValueType
+	if _, erasure, erasedField := directOwnerFieldAccessView(lhsNode, ctx, source); erasedField {
+		targetStorageType = abstractClassToInterface(
+			javaTypeStringToGoTypeExpr(erasure, inScopeTypeParameters(ctx), ctx),
+			erasure,
+			ctx,
+		)
+	}
 	nullableValueStorage := isNullableValueBackedLocal(lhsNode, ctx, source)
 	if nullableValueStorage {
 		targetStorageType = &ast.Ident{Name: "any"}
@@ -4951,6 +4969,12 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	if expectedType == "" || argNode == nil {
 		return argExpr
 	}
+	projectionCtx := ctx.Clone()
+	projectionCtx.expectedType = expectedType
+	if projectionCtx.expectedTypeRoot == nil {
+		projectionCtx.expectedTypeRoot = argNode
+	}
+	argExpr = projectDirectOwnerErasedExpressionForExpected(argExpr, argNode, projectionCtx, source)
 	if isJavaStringType(expectedType) && expressionUsesNullableValueStorage(argNode, ctx, source) {
 		return stdjavaCall(ctx, "StringReferenceValue", argExpr)
 	}
@@ -7855,7 +7879,8 @@ func executionAwareMethodReferenceForwarder(
 			Args: append([]ast.Expr{execution}, javaArgs...),
 		}
 		markVariadicForwardCall(hiddenCall, resolution.def)
-		hiddenBody := []ast.Stmt{invocationClosureCallStatement(hiddenCall, functionType.Results)}
+		hiddenResult := projectDirectOwnerErasedMethodReferenceResult(hiddenCall, resolution, ctx)
+		hiddenBody := []ast.Stmt{invocationClosureCallStatement(hiddenResult, functionType.Results)}
 		if functionType.Results == nil || len(functionType.Results.List) == 0 {
 			hiddenBody = append(hiddenBody, &ast.ReturnStmt{})
 		}
@@ -7868,7 +7893,8 @@ func executionAwareMethodReferenceForwarder(
 			Args: javaArgs,
 		}
 		markVariadicForwardCall(publicCall, resolution.def)
-		body = append(body, invocationClosureCallStatement(publicCall, functionType.Results))
+		publicResult := projectDirectOwnerErasedMethodReferenceResult(publicCall, resolution, ctx)
+		body = append(body, invocationClosureCallStatement(publicResult, functionType.Results))
 	} else {
 		if classNeedsVirtualDispatch(resolution.owner, ctx) {
 			callReceiver = &ast.SelectorExpr{X: receiver, Sel: &ast.Ident{Name: classDispatchFieldName(resolution.owner)}}
@@ -7881,7 +7907,8 @@ func executionAwareMethodReferenceForwarder(
 			Args: append([]ast.Expr{execution}, javaArgs...),
 		}
 		markVariadicForwardCall(call, resolution.def)
-		body = append(body, invocationClosureCallStatement(call, functionType.Results))
+		result := projectDirectOwnerErasedMethodReferenceResult(call, resolution, ctx)
+		body = append(body, invocationClosureCallStatement(result, functionType.Results))
 	}
 
 	innerType := &ast.FuncType{Params: params, Results: cloneFieldList(functionType.Results)}
