@@ -7934,10 +7934,6 @@ func executionAwareMethodReferenceForwarder(
 			// view instead of forcing that value into an invariant *Base[T] IIFE
 			// parameter. Atomic callable planning makes every instantiation of this
 			// dispatch contract structurally identical at the erased positions.
-			originalBoundReceiver = &ast.SelectorExpr{
-				X:   originalBoundReceiver,
-				Sel: &ast.Ident{Name: classDispatchFieldName(resolution.owner)},
-			}
 			boundDispatchReceiver = true
 		}
 		receiver = &ast.Ident{Name: boundReceiverName}
@@ -8028,57 +8024,34 @@ func executionAwareMethodReferenceForwarder(
 		return inner
 	}
 
-	var receiverType ast.Expr
+	// Stage through a short declaration so Go preserves the receiver's actual
+	// generic instantiation. A raw Java member-class view erases source type
+	// arguments but does not change the runtime object: Outer<Item>.Inner viewed
+	// as Outer.Inner must not be forced into the invariant Go type
+	// *Inner[Numbered, Numbered]. ReferenceRequireNonNull retains that inferred Go
+	// type while matching javac's immediate null check for bound references.
+	var stagedReceiver ast.Expr = stdjavaCall(ctx, "ReferenceRequireNonNull", originalBoundReceiver)
 	if boundDispatchReceiver {
-		receiverType = classDispatchTypeForInvocationTarget(target, resolution, ctx)
-		if receiverType == nil {
-			return inner
-		}
-	} else {
-		receiverJavaType, ok := inferExprJavaType(node.NamedChild(0), ctx, source)
-		if !ok {
-			return inner
-		}
-		receiverType = javaTypeStringToGoTypeExpr(receiverJavaType, inScopeTypeParameters(ctx), ctx)
-		if targetScope.IsAbstract {
-			receiverType = abstractClassToInterface(receiverType, receiverJavaType, ctx)
+		stagedReceiver = &ast.SelectorExpr{
+			X:   stagedReceiver,
+			Sel: &ast.Ident{Name: classDispatchFieldName(resolution.owner)},
 		}
 	}
 	// Rebuild the inner closure against the staged receiver so a bound primary is
 	// evaluated exactly once when the Java method reference is created.
 	return &ast.CallExpr{Fun: &ast.FuncLit{
 		Type: &ast.FuncType{
-			Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: boundReceiverName}}, Type: receiverType}}},
 			Results: &ast.FieldList{List: []*ast.Field{{Type: innerType}}},
 		},
-		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{inner}}}},
-	}, Args: []ast.Expr{originalBoundReceiver}}
-}
-
-func classDispatchTypeForInvocationTarget(
-	target *invocationTargetInfo,
-	resolution *methodResolution,
-	ctx Ctx,
-) ast.Expr {
-	if target == nil || target.classScope == nil || resolution == nil || resolution.owner == nil {
-		return nil
-	}
-	typeArgs := target.classTypeArgs
-	if target.classScope != resolution.owner {
-		typeArgs = mapClassTypeArgsToAncestor(target.classScope, target.classTypeArgs, resolution.owner, ctx)
-	}
-	if len(resolution.owner.TypeParameters) > 0 && len(typeArgs) != len(resolution.owner.TypeParameters) {
-		return nil
-	}
-	typeExpr := qualifiedNameExpr(
-		classDispatchTypeName(resolution.owner),
-		findJavaPackageForClassScope(resolution.owner),
-		ctx,
-	)
-	if len(typeArgs) > 0 {
-		typeExpr = applyTypeArguments(typeExpr, typeArgs)
-	}
-	return typeExpr
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: boundReceiverName}},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{stagedReceiver},
+			},
+			&ast.ReturnStmt{Results: []ast.Expr{inner}},
+		}},
+	}}
 }
 
 func primitiveArrayWrapperType(expr ast.Expr) bool {
