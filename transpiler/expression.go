@@ -305,7 +305,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		methodName := node.NamedChild(1).Content(source)
 		methodReferenceExecutionAware := false
 
-		if classScope := resolveClassScopeByIdentifier(ctx, source, targetNode); classScope != nil {
+		if classScope := resolveClassScopeByTypeQualifier(ctx, targetNode.Content(source)); classScope != nil {
 			if staticDef := findStaticMethodByName(classScope, methodName); staticDef != nil {
 				staticPkg := resolveJavaPackageForType(ctx, targetNode.Content(source), classScope)
 				methodName := staticDef.Name
@@ -321,7 +321,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			if samMethod != nil && samType != nil && len(samMethod.Parameters) > 0 {
 				if resolution := findInstanceMethodInHierarchy(classScope, methodName, len(samMethod.Parameters)-1, ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
-					methodExpr := executionAwareMethodReferenceForwarder(nil, resolution, &invocationTargetInfo{classScope: classScope}, samType, samExecutionName, true, node, source, ctx)
+					target := &invocationTargetInfo{
+						classScope:     classScope,
+						rawGenericView: javaTypeOmitsGenericArguments(targetNode.Content(source), ctx),
+					}
+					methodExpr := executionAwareMethodReferenceForwarder(nil, resolution, target, samType, samExecutionName, true, node, source, ctx)
 					if adapted := wrapLambdaWithFunctionalInterfaceAdapter(methodExpr, ctx.expectedType, true, ctx); adapted != nil {
 						return adapted
 					}
@@ -879,7 +883,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// Find the respective constructor (if we have symbol info for that class).
 		var constructor *symbol.Definition
 		var constructorResolution *methodResolution
-		targetScope := resolveClassScopeByQualifiedName(ctx, className)
+		targetScope := resolveObjectCreationTargetScope(node, objectType, className, source, ctx)
 		if resolution := findBestConstructor(targetScope, objectArguments, ctx, source); resolution != nil {
 			constructor = resolution.def
 			constructorResolution = resolution
@@ -3051,6 +3055,52 @@ type objectCreationEnclosingView struct {
 	scope               *symbol.ClassScope
 	typeArguments       []string
 	rawGenericQualifier bool
+}
+
+// resolveObjectCreationTargetScope preserves the declaring identity of a
+// member class selected by an explicit enclosing expression. In
+// `rightOuter.new Node()`, resolving the simple name Node across the whole file
+// can select an unrelated `leftOuter.new Node()` declaration. Java instead
+// looks up the member type from the qualifier's static class, including member
+// classes inherited from its superclass chain.
+func resolveObjectCreationTargetScope(
+	node, objectType *sitter.Node,
+	className string,
+	source []byte,
+	ctx Ctx,
+) *symbol.ClassScope {
+	fallback := resolveClassScopeByQualifiedName(ctx, className)
+	if node == nil || objectType == nil || node.NamedChildCount() == 0 {
+		return fallback
+	}
+
+	qualifierNode := node.NamedChild(0)
+	if qualifierNode == nil || qualifierNode.StartByte() == objectType.StartByte() {
+		return fallback
+	}
+	if _, isType := javaTypeNodeKinds[qualifierNode.Type()]; isType {
+		return fallback
+	}
+	qualifier := resolveInvocationTarget(qualifierNode, ctx, source)
+	if qualifier == nil || qualifier.classScope == nil {
+		return fallback
+	}
+
+	memberBase, _ := parseJavaTypeString(className)
+	memberName := stripJavaQualifier(memberBase)
+	seen := make(map[*symbol.ClassScope]struct{})
+	for owner := qualifier.classScope; owner != nil; owner = resolveSuperclassScopeInDeclaringContext(ctx, owner) {
+		if _, duplicate := seen[owner]; duplicate {
+			break
+		}
+		seen[owner] = struct{}{}
+		for _, member := range owner.Subclasses {
+			if member != nil && member.Class != nil && member.Class.OriginalName == memberName {
+				return member
+			}
+		}
+	}
+	return fallback
 }
 
 // resolveObjectCreationEnclosingView computes the enclosing-instance expression
@@ -7876,11 +7926,14 @@ func executionAwareSAMFuncType(
 		return nil, ""
 	}
 	params := &ast.FieldList{}
+	interfaceScope := classScopeOwningMethodDefinition(method)
 	for index, parameter := range method.Parameters {
 		javaType := substituteJavaTypeParams(parameter.OriginalType, bindings)
+		parameterType := executionParameterTypeExpr(method, index, javaType, inScopeTypeParameters(ctx), ctx)
+		parameterType = rawUnboundReceiverParameterType(interfaceScope, method, index, javaType, parameterType, ctx)
 		params.List = append(params.List, &ast.Field{
 			Names: []*ast.Ident{{Name: parameter.Name}},
-			Type:  executionParameterTypeExpr(method, index, javaType, inScopeTypeParameters(ctx), ctx),
+			Type:  parameterType,
 		})
 	}
 	executionName := executionParameterName(node, source, ctx)
@@ -7962,6 +8015,24 @@ func executionAwareMethodReferenceForwarder(
 	hasExecutionReceiverName := synchronizedUniqueLocalName("__java2goHasExecutionReceiver", usedNames)
 	body := []ast.Stmt{}
 	callReceiver := receiver
+	if unbound && target.rawGenericView && target.classScope == resolution.owner &&
+		rawUnboundFunctionUsesReceiverView(functionType, target.classScope) &&
+		rawUnboundReceiverMethodEligible(resolution.owner, resolution.def, ctx) {
+		call := &ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X:   receiver,
+				Sel: &ast.Ident{Name: rawUnboundReceiverEntryName(resolution.owner, resolution.def)},
+			},
+			Args: append([]ast.Expr{execution}, javaArgs...),
+		}
+		markVariadicForwardCall(call, resolution.def)
+		result := projectDirectOwnerErasedMethodReferenceResult(call, resolution, ctx)
+		body = append(body, invocationClosureCallStatement(result, functionType.Results))
+		return &ast.FuncLit{
+			Type: &ast.FuncType{Params: params, Results: cloneFieldList(functionType.Results)},
+			Body: &ast.BlockStmt{List: body},
+		}
+	}
 	if targetScope.IsInterface || targetScope.IsAbstract {
 		companionType := executionCompanionTypeExpr(target, resolution, ctx)
 		if companionType == nil {

@@ -12,7 +12,7 @@ valid through their erased bounds, while later typed reads throw
 outer and inner erasures, mutation, delayed casts, and one raw reference
 accepting multiple invariant instantiations.
 
-The fixture is deterministic and has no external inputs or dependencies. Its
-known-gap manifest pins the earliest current generated-Go compilation failure.
-It must be promoted to `passing` only when generated Go reproduces the exact
-Java output; the Java source and oracle must not be weakened to make it green.
+The fixture is deterministic and has no external inputs or dependencies. It
+now passes and guards qualification-safe erased receiver adaptation, distinct
+outer and inner bounds, heap pollution, and delayed casts. The Java source and
+oracle remain unchanged from the original red TDD target.

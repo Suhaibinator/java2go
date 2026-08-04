@@ -328,9 +328,11 @@ func generateExecutionCompanionInterface(scope *symbol.ClassScope, ctx Ctx) ast.
 		}
 		params := &ast.FieldList{}
 		for index, parameter := range method.Parameters {
+			parameterType := executionParameterTypeExpr(method, index, parameter.OriginalType, typeParams, ctx)
+			parameterType = rawUnboundReceiverParameterType(scope, method, index, parameter.OriginalType, parameterType, ctx)
 			params.List = append(params.List, &ast.Field{
 				Names: []*ast.Ident{{Name: parameter.Name}},
-				Type:  executionParameterTypeExpr(method, index, parameter.OriginalType, typeParams, ctx),
+				Type:  parameterType,
 			})
 		}
 		var results *ast.FieldList

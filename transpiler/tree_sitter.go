@@ -572,8 +572,19 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		ctx.localScope = def
 
 		parameters := &ast.FieldList{}
-		for _, param := range nodeutil.NamedChildrenOf(methodParameters) {
-			parameters.List = append(parameters.List, ParseNode(param, source, ctx).(*ast.Field))
+		for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
+			field := ParseNode(param, source, ctx).(*ast.Field)
+			if index < len(def.Parameters) && def.Parameters[index] != nil {
+				field.Type = rawUnboundReceiverParameterType(
+					ctx.currentClass,
+					def,
+					index,
+					def.Parameters[index].OriginalType,
+					field.Type,
+					ctx,
+				)
+			}
+			parameters.List = append(parameters.List, field)
 		}
 
 		var results *ast.FieldList

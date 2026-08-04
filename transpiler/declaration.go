@@ -143,7 +143,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		resolveCompileTimeConstantsForClass(ctx.currentClass, source, ctx)
 		consolidateStaticInitialization := classBodyNeedsOrderedStaticInitialization(classBody, ctx.currentClass)
 
-		ctx.className = ctx.currentFile.FindClass(node.ChildByFieldName("name").Content(source)).Name
+		// currentClass is the declaration-identity-bearing scope selected by the
+		// caller. A file-wide simple-name lookup can bind the second A.Node to the
+		// first B.Node and emit both declarations under one Go type name.
+		ctx.className = ctx.currentClass.Class.Name
 
 		// Inner (non-static nested) classes hold an implicit reference to an
 		// instance of their enclosing class. Model that as a leading struct field
@@ -293,9 +296,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if dispatchDecl := generateClassDispatchInterface(ctx); dispatchDecl != nil {
 			declarations = append(declarations, dispatchDecl)
 		}
+		if rawReceiverDecl := generateRawUnboundReceiverViewDecl(ctx); rawReceiverDecl != nil {
+			declarations = append(declarations, rawReceiverDecl)
+		}
 
 		// Add the struct for the class (with type parameters if present)
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
+		declarations = append(declarations, generateRawUnboundReceiverEntryDecls(ctx)...)
 		declarations = append(declarations, generateClassSubobjectInstallerDecls(ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
 			declarations = append(declarations, registration)
