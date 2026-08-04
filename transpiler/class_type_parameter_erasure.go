@@ -443,6 +443,15 @@ func ownerTypeParameterCallableShapeSupported(
 	found := false
 	supported := true
 	visitAllClassScopes(func(scope *symbol.ClassScope) bool {
+		for related := range declarations {
+			if !classScopeCarriesTypeParameterDeclaration(scope, related) {
+				continue
+			}
+			if !classInitializerTypeSyntaxSupportsCallableErasure(scope, related, ctx) {
+				supported = false
+				return true
+			}
+		}
 		for _, method := range scope.Methods {
 			if method == nil || method.IsStatic {
 				continue
@@ -469,7 +478,7 @@ func ownerTypeParameterCallableShapeSupported(
 					continue
 				}
 				found = true
-				if !definitionTreeUsesOnlyBareTypeParameter(method, related) ||
+				if !definitionTreeUsesOnlyBareTypeParameter(method, related, scope, false, ctx) ||
 					!directOwnerCallableMethodFamilyEligible(scope, method, ctx) {
 					supported = false
 					return true
@@ -484,7 +493,7 @@ func ownerTypeParameterCallableShapeSupported(
 				if !definitionTreeReferencesTypeParameter(field, related) {
 					continue
 				}
-				if !definitionTreeUsesOnlyBareTypeParameter(field, related) {
+				if !definitionTreeUsesOnlyBareTypeParameter(field, related, scope, false, ctx) {
 					supported = false
 					return true
 				}
@@ -544,10 +553,19 @@ func methodBodyTypeSyntaxSupportsCallableErasure(
 		switch node.Type() {
 		case "local_variable_declaration":
 			typeNode := node.ChildByFieldName("type")
-			if allowPhysicalBareUses && typeNode != nil && visibleTypeParameterDeclarationForJavaType(typeNode.Content(source), methodCtx) == declaration {
-				// explicitLocalVariableType lowers an uninitialized/null local to
-				// the erased physical interface; initialized non-null locals use :=.
-				skip = typeNode
+			if allowPhysicalBareUses && typeNode != nil {
+				typeText := typeNode.Content(source)
+				switch {
+				case visibleTypeParameterDeclarationForJavaType(typeText, methodCtx) == declaration:
+					// explicitLocalVariableType lowers an uninitialized/null local to
+					// the erased physical interface; initialized non-null locals use :=.
+					skip = typeNode
+				case javaTypeUsesVisibleDeclarationOnlyAsCarriedInnerArgument(typeText, declaration, owner, methodCtx):
+					// Outer<X>.Inner<Item> retains X only in the hidden enclosing
+					// pointer slot. Callable erasure changes member values/method
+					// descriptors, not that pointer's invariant Go instantiation.
+					skip = typeNode
+				}
 			}
 		case "cast_expression":
 			if allowPhysicalBareUses && node.NamedChildCount() > 0 {
@@ -573,6 +591,103 @@ func methodBodyTypeSyntaxSupportsCallableErasure(
 		return true
 	}
 	return walk(body)
+}
+
+// Field initializer expressions are lowered into a synthetic init method and
+// therefore sit outside every source method body audited above. An apparently
+// unrelated field type can still hide an instantiated use such as
+//
+//	Object hidden = new Holder<T>(outer);
+//
+// after outer's physical storage has moved from T to its erased interface.
+// Conservatively retain the established representation whenever initializer
+// type syntax resolves to the affected declaration. Direct initializer blocks
+// receive the same treatment even though their lowering support is currently
+// narrower than ordinary field initializers.
+func classInitializerTypeSyntaxSupportsCallableErasure(
+	owner *symbol.ClassScope,
+	declaration *symbol.TypeParamDeclaration,
+	ctx Ctx,
+) bool {
+	if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil || declaration == nil {
+		return false
+	}
+	body := owner.Class.DeclarationNode.ChildByFieldName("body")
+	file := findFileScopeForClassScope(owner)
+	if body == nil || file == nil {
+		return false
+	}
+	source := file.Source
+	initializerCtx := classScopeCtx(owner, ctx)
+
+	initializerSupported := func(root *sitter.Node) bool {
+		var walk func(*sitter.Node) bool
+		walk = func(node *sitter.Node) bool {
+			if node == nil {
+				return true
+			}
+			// A nested/local/anonymous type owns a fresh lexical type-parameter
+			// environment and may also capture this initializer's carried T. Its
+			// synthesized ClassScope is not guaranteed to exist during this global
+			// audit, so conservatively retain the established representation.
+			switch node.Type() {
+			case "class_declaration", "interface_declaration", "enum_declaration",
+				"record_declaration", "annotation_type_declaration":
+				return false
+			case "class_body":
+				parent := node.Parent()
+				if parent != nil && (parent.Type() == "object_creation_expression" || parent.Type() == "enum_constant") {
+					return false
+				}
+			}
+			if node.Type() == "type_identifier" &&
+				visibleTypeParameterDeclarationForJavaType(node.Content(source), initializerCtx) == declaration {
+				return false
+			}
+			for _, child := range nodeutil.NamedChildrenOf(node) {
+				if !walk(child) {
+					return false
+				}
+			}
+			return true
+		}
+		return walk(root)
+	}
+
+	var fieldInitializersSupported func(*sitter.Node) bool
+	fieldInitializersSupported = func(node *sitter.Node) bool {
+		if node == nil {
+			return true
+		}
+		if node.Type() == "variable_declarator" {
+			return initializerSupported(node.ChildByFieldName("value"))
+		}
+		for _, child := range nodeutil.NamedChildrenOf(node) {
+			if !fieldInitializersSupported(child) {
+				return false
+			}
+		}
+		return true
+	}
+
+	for _, declarationNode := range nodeutil.NamedChildrenOf(body) {
+		switch declarationNode.Type() {
+		case "field_declaration":
+			if !fieldInitializersSupported(declarationNode) {
+				return false
+			}
+		case "block":
+			if !initializerSupported(declarationNode) {
+				return false
+			}
+		case "static_initializer":
+			// Java forbids a static context from referring to a class-owned type
+			// parameter. Any same-spelled T here belongs to a nested/local declaration
+			// and must not gate the outer representation plan.
+			continue
+		}
+	}
+	return true
 }
 
 func constructorBodySupportsCallableErasure(
@@ -717,12 +832,16 @@ func definitionTreeReferencesTypeParameter(
 func definitionTreeUsesOnlyBareTypeParameter(
 	definition *symbol.Definition,
 	declaration *symbol.TypeParamDeclaration,
+	owner *symbol.ClassScope,
+	localDefinition bool,
+	ctx Ctx,
 ) bool {
 	if definition == nil || declaration == nil {
 		return true
 	}
 	usesDeclaration := definitionReferencesTypeParameterDeclaration(definition, declaration)
-	if usesDeclaration && definition.DirectTypeParameter != declaration {
+	if usesDeclaration && definition.DirectTypeParameter != declaration &&
+		(!localDefinition || !definitionUsesDeclarationOnlyAsCarriedInnerArgument(definition, declaration, owner, ctx)) {
 		return false
 	}
 	if definition.DirectTypeParameter == declaration {
@@ -733,16 +852,217 @@ func definitionTreeUsesOnlyBareTypeParameter(
 		}
 	}
 	for _, parameter := range definition.Parameters {
-		if !definitionTreeUsesOnlyBareTypeParameter(parameter, declaration) {
+		if !definitionTreeUsesOnlyBareTypeParameter(parameter, declaration, owner, false, ctx) {
 			return false
 		}
 	}
 	for _, child := range definition.Children {
-		if !definitionTreeUsesOnlyBareTypeParameter(child, declaration) {
+		if !definitionTreeUsesOnlyBareTypeParameter(child, declaration, owner, true, ctx) {
 			return false
 		}
 	}
 	return true
+}
+
+func definitionUsesDeclarationOnlyAsCarriedInnerArgument(
+	definition *symbol.Definition,
+	declaration *symbol.TypeParamDeclaration,
+	owner *symbol.ClassScope,
+	ctx Ctx,
+) bool {
+	if definition == nil || declaration == nil {
+		return false
+	}
+	classify := func(javaType string) (bool, bool) {
+		references := false
+		for spelling, binding := range definition.TypeParameterBindings {
+			if binding == declaration && javaTypeReferencesTypeParameter(javaType, spelling) {
+				references = true
+				break
+			}
+		}
+		if !references {
+			return false, false
+		}
+		component, rank := javaArrayTypeParts(strings.TrimSpace(javaType))
+		base, arguments := parseJavaTypeString(component)
+		base = strings.TrimSpace(base)
+		return true, rank == 0 && len(arguments) == 0 && !strings.Contains(base, ".") &&
+			definition.TypeParameterBindings[base] == declaration
+	}
+	return javaTypeUsesOnlyCarriedInnerArguments(definition.OriginalType, declaration, owner, ctx, classify)
+}
+
+func javaTypeUsesVisibleDeclarationOnlyAsCarriedInnerArgument(
+	javaType string,
+	declaration *symbol.TypeParamDeclaration,
+	owner *symbol.ClassScope,
+	ctx Ctx,
+) bool {
+	if declaration == nil {
+		return false
+	}
+	classify := func(candidate string) (bool, bool) {
+		references := false
+		for _, spelling := range []string{declaration.SourceName, declaration.GoName} {
+			if !javaTypeReferencesTypeParameter(candidate, spelling) {
+				continue
+			}
+			if visibleTypeParameterDeclarationForJavaType(spelling, ctx) == declaration {
+				references = true
+				break
+			}
+		}
+		if !references {
+			return false, false
+		}
+		return true, visibleTypeParameterDeclarationForJavaType(candidate, ctx) == declaration
+	}
+	return javaTypeUsesOnlyCarriedInnerArguments(javaType, declaration, owner, ctx, classify)
+}
+
+func javaTypeUsesOnlyCarriedInnerArguments(
+	javaType string,
+	declaration *symbol.TypeParamDeclaration,
+	owner *symbol.ClassScope,
+	ctx Ctx,
+	classify func(string) (references bool, bare bool),
+) bool {
+	component, rank := javaArrayTypeParts(strings.TrimSpace(javaType))
+	if rank != 0 || declaration == nil || classify == nil {
+		return false
+	}
+	base, arguments := parseJavaTypeString(component)
+	target := resolveClassScopeByQualifiedName(classScopeCtx(owner, ctx), base)
+	if target == nil || !target.IsInner || target.Class == nil || target.Enclosing == nil ||
+		target.Enclosing.Class == nil || len(arguments) == 0 ||
+		!strings.HasSuffix(strings.TrimSpace(base), target.Enclosing.Class.OriginalName+"."+target.Class.OriginalName) {
+		return false
+	}
+	hiddenCount := len(target.TypeParameters) - len(target.OwnTypeParameters())
+	if hiddenCount <= 0 {
+		return false
+	}
+	related := callableTypeParameterDeclarationClosure(declaration, ctx)
+	found := false
+	for index, argument := range arguments {
+		references, bare := classify(argument)
+		if !references {
+			continue
+		}
+		found = true
+		if !bare {
+			return false
+		}
+		targetParameter := genericTargetParameterForArgument(target, len(arguments), index)
+		if targetParameter == nil || targetParameter.Declaration == nil {
+			return false
+		}
+		targetIndex := -1
+		for parameterIndex := range target.TypeParameters {
+			if target.TypeParameters[parameterIndex].Declaration == targetParameter.Declaration {
+				targetIndex = parameterIndex
+				break
+			}
+		}
+		if targetIndex < 0 || targetIndex >= hiddenCount {
+			return false
+		}
+		if _, connected := related[targetParameter.Declaration]; !connected {
+			return false
+		}
+		if innerConstructorFormalReferencesDeclaration(target, targetParameter.Declaration) {
+			return false
+		}
+		if innerSuperclassConstructorFormalConsumesCarriedDeclaration(target, targetParameter.Declaration, ctx) {
+			return false
+		}
+	}
+	return found
+}
+
+func innerConstructorFormalReferencesDeclaration(
+	target *symbol.ClassScope,
+	declaration *symbol.TypeParamDeclaration,
+) bool {
+	if target == nil || declaration == nil {
+		return true
+	}
+	for _, constructor := range target.Methods {
+		if constructor == nil || !constructor.Constructor {
+			continue
+		}
+		for _, parameter := range constructor.Parameters {
+			if definitionTreeReferencesTypeParameter(parameter, declaration) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func innerSuperclassConstructorFormalConsumesCarriedDeclaration(
+	target *symbol.ClassScope,
+	declaration *symbol.TypeParamDeclaration,
+	ctx Ctx,
+) bool {
+	if target == nil || declaration == nil {
+		return true
+	}
+	var carried *symbol.TypeParam
+	for index := range target.TypeParameters {
+		if target.TypeParameters[index].Declaration == declaration {
+			carried = &target.TypeParameters[index]
+			break
+		}
+	}
+	if carried == nil {
+		return true
+	}
+
+	seen := map[*symbol.ClassScope]struct{}{}
+	for ancestor := resolveSuperclassScopeInDeclaringContext(ctx, target); ancestor != nil; ancestor = resolveSuperclassScopeInDeclaringContext(ctx, ancestor) {
+		if _, duplicate := seen[ancestor]; duplicate {
+			return true
+		}
+		seen[ancestor] = struct{}{}
+		mapped := mapClassTypeArgumentStringsToAncestor(
+			target,
+			target.GoTypeParameterNames(),
+			ancestor,
+			ctx,
+		)
+		if len(ancestor.TypeParameters) > 0 && len(mapped) != len(ancestor.TypeParameters) {
+			return true
+		}
+		affected := map[*symbol.TypeParamDeclaration]struct{}{}
+		for index, parameter := range ancestor.TypeParameters {
+			if parameter.Declaration == nil || index >= len(mapped) {
+				continue
+			}
+			argument := mapped[index]
+			if javaTypeReferencesTypeParameter(argument, carried.EmittedName()) ||
+				(carried.EmittedName() != carried.Name && javaTypeReferencesTypeParameter(argument, carried.Name)) {
+				affected[parameter.Declaration] = struct{}{}
+			}
+		}
+		if len(affected) == 0 {
+			continue
+		}
+		for _, constructor := range ancestor.Methods {
+			if constructor == nil || !constructor.Constructor {
+				continue
+			}
+			for _, formal := range constructor.Parameters {
+				for ancestorDeclaration := range affected {
+					if definitionTreeReferencesTypeParameter(formal, ancestorDeclaration) {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 // TypeParameterBindings records the complete lexical environment at a
