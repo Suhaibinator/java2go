@@ -1617,7 +1617,13 @@ func generateClassDispatchInterface(ctx Ctx) ast.Decl {
 			Names: []*ast.Ident{{Name: method.Name}},
 			Type:  &ast.FuncType{Params: params, Results: results},
 		}
-		methods.List = append(methods.List, publicMethod)
+		// A javac bridge family cannot expose both the erased and narrow source
+		// methods under one Go public selector. Generated Java dispatch always uses
+		// the stable hidden descriptor, while each concrete class keeps its exact
+		// public Go wrapper independently.
+		if !directOwnerOverrideBridgeFamilyUsesErasedHiddenOnly(scope, method, ctx) {
+			methods.List = append(methods.List, publicMethod)
+		}
 		if executionField := executionMethodField(publicMethod, method, scope, ctx); executionField != nil {
 			methods.List = append(methods.List, executionField)
 		}
@@ -3939,6 +3945,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		bodyNode := node.ChildByFieldName("body")
 		params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
+		sourceParams := cloneFieldList(params)
 		for index := range params.List {
 			params.List[index].Type = directOwnerTypeParameterMethodParameterType(
 				ctx.currentClass,
@@ -3951,13 +3958,16 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		params.List = append(dependentTypeWitnessParameterFields(ctx.dependentTypeWitnesses, ctx), params.List...)
 
 		var results *ast.FieldList
+		var sourceResults *ast.FieldList
 		if strings.TrimSpace(ctx.localScope.OriginalType) != "" && strings.TrimSpace(ctx.localScope.OriginalType) != "void" {
+			sourceResultType := javaTypeStringToGoTypeExpr(ctx.localScope.OriginalType, inScopeTypeParameters(ctx), ctx)
+			sourceResults = &ast.FieldList{List: []*ast.Field{{Type: sourceResultType}}}
 			results = &ast.FieldList{
 				List: []*ast.Field{
 					{Type: directOwnerTypeParameterMethodResultType(
 						ctx.currentClass,
 						ctx.localScope,
-						javaTypeStringToGoTypeExpr(ctx.localScope.OriginalType, inScopeTypeParameters(ctx), ctx),
+						sourceResultType,
 						ctx,
 					)},
 				},
@@ -4052,6 +4062,15 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				"class":  ctx.className,
 				"method": ctx.localScope.Name,
 			}).Warn("Instance methods with type parameters are not supported in Go; type parameters ignored")
+		}
+		if bridgeDecls, bridged := buildDirectOwnerOverrideBridgeMethodDecls(
+			funcDecl,
+			sourceParams,
+			sourceResults,
+			executionName,
+			ctx,
+		); bridged {
+			return bridgeDecls
 		}
 		return buildExecutionAwareFuncDecls(
 			funcDecl,

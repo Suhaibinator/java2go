@@ -1,6 +1,9 @@
 package transpiler
 
 import (
+	"go/ast"
+	"go/token"
+	"strconv"
 	"strings"
 
 	"github.com/NickyBoy89/java2go/symbol"
@@ -51,6 +54,19 @@ type directOwnerOverrideBridgeResultPlan struct {
 	requiresWidening bool
 }
 
+type directOwnerSpecializedOverrideBridgeSelection struct {
+	family *directOwnerOverrideBridgeFamilyPlan
+	bridge directOwnerOverrideBridgePlan
+}
+
+type directOwnerOverrideBridgeMethodVisibility uint8
+
+const (
+	directOwnerOverrideBridgePackagePrivate directOwnerOverrideBridgeMethodVisibility = iota
+	directOwnerOverrideBridgeProtected
+	directOwnerOverrideBridgePublic
+)
+
 // planDirectOwnerCallableOverrideBridgeFamily is the integration boundary for
 // the future physical-ABI and declaration passes. The unchecked method-family
 // plan first proves every override bridge locally; the representation audit
@@ -65,10 +81,246 @@ func planDirectOwnerCallableOverrideBridgeFamily(
 	if !ok || plan == nil || !plan.requiresErasedView {
 		return nil, false
 	}
+	if directOwnerOverrideBridgeHasIncompatibleDispatchFamily(plan, ctx) {
+		return nil, false
+	}
 	if !directOwnerOverrideBridgeRepresentationSupported(plan, ctx) {
 		return nil, false
 	}
 	return plan, true
+}
+
+// directOwnerOverrideBridgeHasIncompatibleDispatchFamily rejects a method that
+// simultaneously participates in bridge families which cannot share one Go
+// dispatch entry. Different JVM erasures are incompatible. So are identical
+// erasures whose generated selectors have different Go identities, as when a
+// package-private Java override widens to public and changes mJava2goExecution
+// into MJava2goExecution. Emitting either family alone would silently leave the
+// other dispatch path on a partially migrated ABI.
+//
+// Use unchecked plans while auditing the connected family. Calling the public
+// planner here would recurse through this same all-or-nothing gate.
+func directOwnerOverrideBridgeHasIncompatibleDispatchFamily(
+	rootPlan *directOwnerOverrideBridgeFamilyPlan,
+	ctx Ctx,
+) bool {
+	if rootPlan == nil || rootPlan.owner == nil || rootPlan.method == nil {
+		return true
+	}
+	type familyMember struct {
+		owner  *symbol.ClassScope
+		method *symbol.Definition
+	}
+	members := []familyMember{{owner: rootPlan.owner, method: rootPlan.method}}
+	membersValid := true
+	visitAllClassScopes(func(descendant *symbol.ClassScope) bool {
+		if descendant == nil || descendant == rootPlan.owner ||
+			!classScopeDescendsFrom(descendant, rootPlan.owner, ctx) {
+			return false
+		}
+		ancestorArgs := mapClassTypeArgumentStringsToAncestor(
+			descendant,
+			descendant.GoTypeParameterNames(),
+			rootPlan.owner,
+			ctx,
+		)
+		if len(ancestorArgs) != len(rootPlan.owner.TypeParameters) {
+			membersValid = false
+			return true
+		}
+		mappedParameters, mappedResult := mappedOverrideSourceSignature(
+			rootPlan.owner,
+			rootPlan.method,
+			ancestorArgs,
+		)
+		matching := directDeclaredOverrides(
+			rootPlan.owner,
+			descendant,
+			rootPlan.method,
+			mappedParameters,
+			mappedResult,
+			ctx,
+		)
+		if len(matching) > 1 {
+			membersValid = false
+			return true
+		}
+		if len(matching) == 1 {
+			// Retain declarations whose erased descriptor is unchanged. They need no
+			// javac bridge and therefore are absent from rootPlan.overrides, but an
+			// access-widening rename can still split the Go selector family.
+			members = append(members, familyMember{owner: descendant, method: matching[0]})
+		}
+		return false
+	})
+	if !membersValid {
+		return true
+	}
+
+	for _, member := range members {
+		if member.owner == nil || member.method == nil {
+			return true
+		}
+
+		// A specialized declaration can itself root a second family for its
+		// descendants. That is safe only when both families share one erased
+		// descriptor, as in a generic intermediate with an unchanged bound.
+		if member.owner != rootPlan.owner || member.method != rootPlan.method {
+			if nested, ok := planDirectOwnerCallableOverrideBridgeFamilyUnchecked(member.owner, member.method, ctx); ok &&
+				nested != nil && nested.requiresErasedView &&
+				!directOwnerOverrideBridgeDispatchFamiliesIdentical(rootPlan, nested, ctx) {
+				return true
+			}
+		}
+
+		// The root itself may already be a specialized bridge declaration for
+		// an ancestor with a wider erasure. Find only ancestor plans that
+		// actually cover this exact declaration; same-name overloads do not
+		// connect the families.
+		seen := make(map[*symbol.ClassScope]struct{})
+		memberCtx := classScopeCtx(member.owner, ctx)
+		for ancestor := resolveSuperclassScopeInDeclaringContext(memberCtx, member.owner); ancestor != nil; ancestor = resolveSuperclassScopeInDeclaringContext(memberCtx, ancestor) {
+			if _, duplicate := seen[ancestor]; duplicate {
+				return true
+			}
+			seen[ancestor] = struct{}{}
+			for _, candidate := range ancestor.Methods {
+				if candidate == nil || candidate.Constructor || candidate.IsStatic || candidate.IsPrivate ||
+					candidate.OriginalName != member.method.OriginalName ||
+					len(candidate.Parameters) != len(member.method.Parameters) {
+					continue
+				}
+				ancestorPlan, ok := planDirectOwnerCallableOverrideBridgeFamilyUnchecked(ancestor, candidate, ctx)
+				if !ok || ancestorPlan == nil || !ancestorPlan.requiresErasedView ||
+					!directOwnerOverrideBridgeFamilyDeclaresOverride(
+						ancestorPlan,
+						member.owner,
+						member.method,
+						ctx,
+					) {
+					continue
+				}
+				if !directOwnerOverrideBridgeDispatchFamiliesIdentical(rootPlan, ancestorPlan, ctx) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func directOwnerOverrideBridgeFamilyDeclaresOverride(
+	plan *directOwnerOverrideBridgeFamilyPlan,
+	overrideOwner *symbol.ClassScope,
+	overrideMethod *symbol.Definition,
+	ctx Ctx,
+) bool {
+	if plan == nil || plan.owner == nil || plan.method == nil || overrideOwner == nil || overrideMethod == nil {
+		return false
+	}
+	if plan.owner == overrideOwner && plan.method == overrideMethod {
+		return true
+	}
+	return directOwnerOverrideBridgeMethodDeclaresOverride(
+		plan.owner,
+		plan.method,
+		overrideOwner,
+		overrideMethod,
+		ctx,
+	)
+}
+
+func directOwnerOverrideBridgeMethodDeclaresOverride(
+	ancestorOwner *symbol.ClassScope,
+	ancestorMethod *symbol.Definition,
+	overrideOwner *symbol.ClassScope,
+	overrideMethod *symbol.Definition,
+	ctx Ctx,
+) bool {
+	if ancestorOwner == nil || ancestorMethod == nil || overrideOwner == nil || overrideMethod == nil ||
+		!classScopeDescendsFrom(overrideOwner, ancestorOwner, ctx) {
+		return false
+	}
+	ancestorArgs := mapClassTypeArgumentStringsToAncestor(
+		overrideOwner,
+		overrideOwner.GoTypeParameterNames(),
+		ancestorOwner,
+		ctx,
+	)
+	if len(ancestorArgs) != len(ancestorOwner.TypeParameters) {
+		return false
+	}
+	mappedParameters, mappedResult := mappedOverrideSourceSignature(ancestorOwner, ancestorMethod, ancestorArgs)
+	matching := directDeclaredOverrides(
+		ancestorOwner,
+		overrideOwner,
+		ancestorMethod,
+		mappedParameters,
+		mappedResult,
+		ctx,
+	)
+	return len(matching) == 1 && matching[0] == overrideMethod
+}
+
+func directOwnerOverrideBridgeDispatchFamiliesIdentical(
+	left *directOwnerOverrideBridgeFamilyPlan,
+	right *directOwnerOverrideBridgeFamilyPlan,
+	ctx Ctx,
+) bool {
+	return directOwnerOverrideBridgeDescriptorsIdentical(left, right, ctx) &&
+		directOwnerOverrideBridgeSelectorIdentity(left) == directOwnerOverrideBridgeSelectorIdentity(right)
+}
+
+// directOwnerOverrideBridgeSelectorIdentity models Go method identity. Exported
+// selectors are shared across packages; unexported selectors include the
+// declaring package in their identity. Use the ordinary family root name here,
+// not executionImplementationName, because that public helper consults bridge
+// selection and would recurse into this all-or-nothing compatibility gate.
+func directOwnerOverrideBridgeSelectorIdentity(plan *directOwnerOverrideBridgeFamilyPlan) string {
+	if plan == nil || plan.owner == nil || plan.method == nil {
+		return ""
+	}
+	return directOwnerOverrideBridgeMethodSelectorIdentity(plan.owner, plan.method)
+}
+
+func directOwnerOverrideBridgeMethodSelectorIdentity(owner *symbol.ClassScope, method *symbol.Definition) string {
+	if owner == nil || method == nil {
+		return ""
+	}
+	name := collisionSafeExecutionIdentifier(method.Name+executionMethodSuffix, owner)
+	if ast.IsExported(name) {
+		return "exported\x00" + name
+	}
+	return "package\x00" + findJavaPackageForClassScope(owner) + "\x00" + name
+}
+
+func directOwnerOverrideBridgeDescriptorsIdentical(
+	left *directOwnerOverrideBridgeFamilyPlan,
+	right *directOwnerOverrideBridgeFamilyPlan,
+	ctx Ctx,
+) bool {
+	if left == nil || right == nil || left.owner == nil || right.owner == nil ||
+		len(left.erasedParameters) != len(right.erasedParameters) {
+		return false
+	}
+	for index := range left.erasedParameters {
+		if !overrideBridgeJavaTypesIdentical(
+			left.erasedParameters[index],
+			left.owner,
+			right.erasedParameters[index],
+			right.owner,
+			ctx,
+		) {
+			return false
+		}
+	}
+	return overrideBridgeJavaTypesIdentical(
+		left.erasedResult,
+		left.owner,
+		right.erasedResult,
+		right.owner,
+		ctx,
+	)
 }
 
 // planDirectOwnerCallableOverrideBridgeFamilyUnchecked validates one method
@@ -143,7 +395,7 @@ func planDirectOwnerCallableOverrideBridgeFamilyUnchecked(
 		}
 
 		mappedParameters, mappedResult := mappedOverrideSourceSignature(owner, method, ancestorArgs)
-		matching := directDeclaredOverrides(descendant, method, mappedParameters, mappedResult, ctx)
+		matching := directDeclaredOverrides(owner, descendant, method, mappedParameters, mappedResult, ctx)
 		if len(matching) > 1 {
 			// A legal Java declaration cannot contain two override-equivalent methods,
 			// but conservatively reject malformed or incompletely-resolved symbols.
@@ -154,6 +406,15 @@ func planDirectOwnerCallableOverrideBridgeFamilyUnchecked(
 			// A concrete specialization without an override inherits the ancestor's
 			// erased entry and needs no synthetic bridge of its own.
 			return false
+		}
+		if directOwnerOverrideBridgeVisibility(owner, method) == directOwnerOverrideBridgeProtected &&
+			!directOwnerOverrideBridgeSamePackage(owner, descendant) {
+			// Java permits a protected override across packages, but its current
+			// generated hidden selector is unexported and therefore has a different
+			// Go package identity. Reject the entire physical family until protected
+			// execution selectors have an exported, collision-safe representation.
+			valid = false
+			return true
 		}
 
 		overridePlan, bridgeRequired, bridgeOK := planDirectOwnerSpecializedOverride(
@@ -242,13 +503,21 @@ func mappedOverrideSourceSignature(
 }
 
 func directDeclaredOverrides(
+	ancestorOwner *symbol.ClassScope,
 	owner *symbol.ClassScope,
 	ancestorMethod *symbol.Definition,
 	mappedParameters []string,
 	mappedResult string,
 	ctx Ctx,
 ) []*symbol.Definition {
-	if owner == nil || ancestorMethod == nil {
+	if ancestorOwner == nil || owner == nil || ancestorMethod == nil {
+		return nil
+	}
+	if directOwnerOverrideBridgeVisibility(ancestorOwner, ancestorMethod) == directOwnerOverrideBridgePackagePrivate &&
+		!directOwnerOverrideBridgeSamePackage(ancestorOwner, owner) {
+		// A same-signature declaration in a different Java package does not
+		// override or inherit a package-private ancestor method. The raw Base entry
+		// remains valid and dispatches to Base; do not synthesize a Child bridge.
 		return nil
 	}
 	var matches []*symbol.Definition
@@ -273,6 +542,49 @@ func directDeclaredOverrides(
 		matches = append(matches, candidate)
 	}
 	return matches
+}
+
+func directOwnerOverrideBridgeVisibility(
+	owner *symbol.ClassScope,
+	method *symbol.Definition,
+) directOwnerOverrideBridgeMethodVisibility {
+	if owner != nil && owner.IsInterface {
+		return directOwnerOverrideBridgePublic
+	}
+	if directOwnerOverrideBridgeMethodHasModifier(method, "public") {
+		return directOwnerOverrideBridgePublic
+	}
+	if directOwnerOverrideBridgeMethodHasModifier(method, "protected") {
+		return directOwnerOverrideBridgeProtected
+	}
+	return directOwnerOverrideBridgePackagePrivate
+}
+
+func directOwnerOverrideBridgeMethodHasModifier(method *symbol.Definition, want string) bool {
+	if method == nil || method.DeclarationNode == nil || want == "" {
+		return false
+	}
+	declaration := method.DeclarationNode
+	for index := 0; index < int(declaration.ChildCount()); index++ {
+		modifiers := declaration.Child(index)
+		if modifiers == nil || modifiers.Type() != "modifiers" {
+			continue
+		}
+		for modifierIndex := 0; modifierIndex < int(modifiers.ChildCount()); modifierIndex++ {
+			modifier := modifiers.Child(modifierIndex)
+			if modifier != nil && modifier.Type() == want {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func directOwnerOverrideBridgeSamePackage(left, right *symbol.ClassScope) bool {
+	if left == nil || right == nil {
+		return false
+	}
+	return findJavaPackageForClassScope(left) == findJavaPackageForClassScope(right)
 }
 
 func planDirectOwnerSpecializedOverride(
@@ -339,6 +651,13 @@ func planDirectOwnerSpecializedOverride(
 	}
 	resultDescriptorDiffers := !overrideBridgeJavaTypesIdentical(erasedResult, ancestorOwner, overrideResultDescriptor, overrideOwner, ctx)
 	resultNeedsWidening := !overrideBridgeJavaTypesIdentical(erasedResult, ancestorOwner, overrideResult, overrideOwner, ctx)
+	if resultNeedsWidening && !overrideBridgePlainResultWideningSupported(erasedResult, ancestorOwner, ctx) {
+		// Go pointers do not support Java's concrete-class covariance. Keep that
+		// wider bridge family gated until it has a representation-only superclass
+		// projection; ObjectView would add a nominal runtime check javac's areturn
+		// does not perform. Interface/Object erasures are plain Go assignments.
+		return directOwnerOverrideBridgePlan{}, false, false
+	}
 	plan.result = directOwnerOverrideBridgeResultPlan{
 		erasedJavaType:   erasedResult,
 		sourceJavaType:   qualifyJavaTypeInDeclaringContext(mappedResult, overrideOwner),
@@ -347,6 +666,19 @@ func planDirectOwnerSpecializedOverride(
 	}
 	bridgeRequired = bridgeRequired || resultDescriptorDiffers
 	return plan, bridgeRequired, true
+}
+
+func overrideBridgePlainResultWideningSupported(javaType string, owner *symbol.ClassScope, ctx Ctx) bool {
+	component, rank := javaArrayTypeParts(strings.TrimSpace(javaType))
+	if rank != 0 {
+		return false
+	}
+	base, _ := parseJavaTypeString(component)
+	if stripJavaQualifier(base) == "Object" {
+		return true
+	}
+	scope := resolveClassScopeByQualifiedName(classScopeCtx(owner, ctx), base)
+	return scope != nil && scope.IsInterface
 }
 
 func overrideBridgeCastTargetSupported(javaType string) bool {
@@ -525,4 +857,254 @@ func directOwnerOverrideBridgeErasedExecutionName(plan *directOwnerOverrideBridg
 		return ""
 	}
 	return executionImplementationName(plan.method, plan.owner)
+}
+
+// directOwnerSpecializedOverrideBridgeForMethod finds the erased ancestor
+// descriptor implemented by one narrow source override. Walking from the
+// immediate superclass keeps the exact body associated with its nearest Java
+// declaration. A deeper generic chain can expose the same erased descriptor
+// more than once; identical plans are deduplicated, while incompatible bridge
+// descriptors remain conservatively unsupported because Go cannot overload
+// one stable selector.
+func directOwnerSpecializedOverrideBridgeForMethod(
+	owner *symbol.ClassScope,
+	method *symbol.Definition,
+	ctx Ctx,
+) (directOwnerSpecializedOverrideBridgeSelection, bool) {
+	if owner == nil || method == nil || method.Constructor || method.IsStatic || method.IsPrivate {
+		return directOwnerSpecializedOverrideBridgeSelection{}, false
+	}
+	ctx = classScopeCtx(owner, ctx)
+	var selected directOwnerSpecializedOverrideBridgeSelection
+	descriptorKey := ""
+	seen := make(map[*symbol.ClassScope]struct{})
+	for ancestor := resolveSuperclassScopeInDeclaringContext(ctx, owner); ancestor != nil; ancestor = resolveSuperclassScopeInDeclaringContext(ctx, ancestor) {
+		if _, duplicate := seen[ancestor]; duplicate {
+			return directOwnerSpecializedOverrideBridgeSelection{}, false
+		}
+		seen[ancestor] = struct{}{}
+		for _, candidate := range ancestor.Methods {
+			if candidate == nil || candidate.Constructor || candidate.IsStatic || candidate.IsPrivate ||
+				candidate.OriginalName != method.OriginalName || len(candidate.Parameters) != len(method.Parameters) {
+				continue
+			}
+			family, ok := planDirectOwnerCallableOverrideBridgeFamily(ancestor, candidate, ctx)
+			if !ok || family == nil {
+				continue
+			}
+			for _, bridge := range family.overrides {
+				if bridge.owner != owner || bridge.method != method {
+					continue
+				}
+				key := overrideBridgeFamilyDescriptorKey(family, ctx)
+				if descriptorKey == "" {
+					descriptorKey = key
+					selected = directOwnerSpecializedOverrideBridgeSelection{family: family, bridge: bridge}
+					continue
+				}
+				if key != descriptorKey {
+					return directOwnerSpecializedOverrideBridgeSelection{}, false
+				}
+			}
+		}
+	}
+	return selected, selected.family != nil
+}
+
+func overrideBridgeFamilyDescriptorKey(plan *directOwnerOverrideBridgeFamilyPlan, ctx Ctx) string {
+	if plan == nil || plan.owner == nil {
+		return ""
+	}
+	declarationCtx := classScopeCtx(plan.owner, ctx)
+	descriptor := make([]string, 0, len(plan.erasedParameters)+1)
+	for _, parameter := range plan.erasedParameters {
+		descriptor = append(descriptor, callablePhysicalTypeKey(parameter, declarationCtx))
+	}
+	descriptor = append(descriptor, callablePhysicalTypeKey(plan.erasedResult, declarationCtx))
+	return strings.Join(descriptor, "\x00") + "\x01" + directOwnerOverrideBridgeSelectorIdentity(plan)
+}
+
+func directOwnerOverrideBridgeFamilyUsesErasedHiddenOnly(
+	owner *symbol.ClassScope,
+	method *symbol.Definition,
+	ctx Ctx,
+) bool {
+	_, ok := planDirectOwnerCallableOverrideBridgeFamily(owner, method, ctx)
+	return ok
+}
+
+// buildDirectOwnerOverrideBridgeMethodDecls replaces the ordinary paired
+// public/hidden method lowering only for bridge-planned families. Generic
+// ancestors keep their source-shaped Go wrapper while their hidden body uses
+// the erased JVM descriptor. Specialized overrides keep their narrow wrapper
+// and narrow hidden body, plus a stable erased bridge used by ancestor dispatch.
+func buildDirectOwnerOverrideBridgeMethodDecls(
+	declaration *ast.FuncDecl,
+	sourceParams *ast.FieldList,
+	sourceResults *ast.FieldList,
+	executionName string,
+	ctx Ctx,
+) ([]ast.Decl, bool) {
+	if declaration == nil || ctx.currentClass == nil || ctx.localScope == nil || ctx.localScope.IsStatic {
+		return nil, false
+	}
+	if family, ok := planDirectOwnerCallableOverrideBridgeFamily(ctx.currentClass, ctx.localScope, ctx); ok {
+		return buildDirectOwnerErasedFamilyMethodDecls(
+			declaration,
+			sourceParams,
+			sourceResults,
+			executionName,
+			family,
+			ctx,
+		), true
+	}
+	if selection, ok := directOwnerSpecializedOverrideBridgeForMethod(ctx.currentClass, ctx.localScope, ctx); ok {
+		exactName := directOwnerOverrideBridgeExactExecutionName(selection.bridge)
+		declarations := buildExecutionAwareFuncDecls(declaration, exactName, executionName, ctx)
+		if bridge := buildDirectOwnerSpecializedOverrideBridgeDecl(declaration, executionName, selection, ctx); bridge != nil {
+			declarations = append(declarations, bridge)
+		}
+		return declarations, true
+	}
+	return nil, false
+}
+
+func buildDirectOwnerErasedFamilyMethodDecls(
+	declaration *ast.FuncDecl,
+	sourceParams *ast.FieldList,
+	sourceResults *ast.FieldList,
+	executionName string,
+	family *directOwnerOverrideBridgeFamilyPlan,
+	ctx Ctx,
+) []ast.Decl {
+	if declaration == nil || family == nil {
+		return nil
+	}
+	implementationName := directOwnerOverrideBridgeErasedExecutionName(family)
+	declarations := buildExecutionAwareFuncDecls(declaration, implementationName, executionName, ctx)
+	if len(declarations) < 2 {
+		return declarations
+	}
+
+	arguments := append([]ast.Expr{newExecutionExpr(ctx)}, methodCallArgs(sourceParams)...)
+	call := &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: declaration.Recv.List[0].Names[0].Name},
+			Sel: &ast.Ident{Name: implementationName},
+		},
+		Args: arguments,
+	}
+	var statements []ast.Stmt
+	if sourceResults != nil && len(sourceResults.List) > 0 {
+		result := ast.Expr(call)
+		if _, direct := directOwnerTypeParameterForDefinition(family.owner, family.method); direct {
+			if descriptor, ok := javaTypeDescriptorExpr(family.erasedResult, ctx); ok {
+				result = stdjavaGenericCall(
+					ctx,
+					"ObjectView",
+					[]ast.Expr{sourceResults.List[0].Type},
+					[]ast.Expr{result, descriptor},
+				)
+			}
+		}
+		statements = append(statements, &ast.ReturnStmt{Results: []ast.Expr{result}})
+	} else {
+		statements = append(statements, &ast.ExprStmt{X: call})
+	}
+
+	declarations[0] = &ast.FuncDecl{
+		Doc:  declaration.Doc,
+		Name: &ast.Ident{Name: declaration.Name.Name},
+		Recv: cloneFieldList(declaration.Recv),
+		Type: &ast.FuncType{
+			Params:  cloneFieldList(sourceParams),
+			Results: cloneFieldList(sourceResults),
+		},
+		Body: &ast.BlockStmt{List: statements},
+	}
+	return declarations
+}
+
+func buildDirectOwnerSpecializedOverrideBridgeDecl(
+	declaration *ast.FuncDecl,
+	executionName string,
+	selection directOwnerSpecializedOverrideBridgeSelection,
+	ctx Ctx,
+) ast.Decl {
+	if declaration == nil || declaration.Recv == nil || len(declaration.Recv.List) == 0 ||
+		len(declaration.Recv.List[0].Names) == 0 || selection.family == nil || selection.bridge.method == nil {
+		return nil
+	}
+
+	bridgeCtx := classScopeCtx(selection.bridge.owner, ctx)
+	params := &ast.FieldList{List: []*ast.Field{executionParameterField(executionName, bridgeCtx)}}
+	usedNames := map[string]struct{}{executionName: {}}
+	for index, parameter := range selection.bridge.method.Parameters {
+		name := parameter.Name
+		usedNames[name] = struct{}{}
+		javaType := selection.family.erasedParameters[index]
+		parameterType := javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(bridgeCtx), bridgeCtx)
+		parameterType = abstractClassToInterface(parameterType, javaType, bridgeCtx)
+		params.List = append(params.List, &ast.Field{
+			Names: []*ast.Ident{{Name: name}},
+			Type:  parameterType,
+		})
+	}
+
+	var results *ast.FieldList
+	if selection.family.erasedResult != "void" {
+		resultType := javaTypeStringToGoTypeExpr(selection.family.erasedResult, inScopeTypeParameters(bridgeCtx), bridgeCtx)
+		resultType = abstractClassToInterface(resultType, selection.family.erasedResult, bridgeCtx)
+		results = &ast.FieldList{List: []*ast.Field{{Type: resultType}}}
+	}
+
+	receiverName := declaration.Recv.List[0].Names[0].Name
+	body := []ast.Stmt{instanceMethodNilReceiverGuard(receiverName)}
+	arguments := make([]ast.Expr, len(selection.bridge.parameters))
+	for index, parameter := range selection.bridge.parameters {
+		argument := ast.Expr(&ast.Ident{Name: selection.bridge.method.Parameters[index].Name})
+		if parameter.requiresCast {
+			castName := synchronizedUniqueLocalName("__java2goBridgeArg"+strconv.Itoa(index), usedNames)
+			targetType := javaTypeStringToGoTypeExpr(parameter.overrideJavaType, inScopeTypeParameters(bridgeCtx), bridgeCtx)
+			descriptor, ok := javaTypeDescriptorExpr(parameter.overrideJavaType, bridgeCtx)
+			if !ok {
+				return nil
+			}
+			body = append(body, &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.Ident{Name: castName}},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{stdjavaGenericCall(
+					bridgeCtx,
+					"ObjectView",
+					[]ast.Expr{targetType},
+					[]ast.Expr{argument, descriptor},
+				)},
+			})
+			argument = &ast.Ident{Name: castName}
+		}
+		arguments[index] = argument
+	}
+
+	call := &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: receiverName},
+			Sel: &ast.Ident{Name: directOwnerOverrideBridgeExactExecutionName(selection.bridge)},
+		},
+		Args: append([]ast.Expr{&ast.Ident{Name: executionName}}, arguments...),
+	}
+	if results != nil {
+		// javac's synthetic bridge returns the exact body's reference with areturn;
+		// it does not checkcast on an upcast. The planner admits only interface or
+		// Object widening here, both of which are ordinary Go assignability.
+		body = append(body, &ast.ReturnStmt{Results: []ast.Expr{call}})
+	} else {
+		body = append(body, &ast.ExprStmt{X: call})
+	}
+
+	return &ast.FuncDecl{
+		Name: &ast.Ident{Name: directOwnerOverrideBridgeErasedExecutionName(selection.family)},
+		Recv: cloneFieldList(declaration.Recv),
+		Type: &ast.FuncType{Params: params, Results: results},
+		Body: &ast.BlockStmt{List: body},
+	}
 }

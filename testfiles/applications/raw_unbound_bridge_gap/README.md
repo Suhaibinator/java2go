@@ -13,7 +13,7 @@ the override body. The final rejected call therefore throws
 proves that the successful specialized call dispatches to the override and then
 to the base body, while the plain raw call accepts and stores `Second`.
 
-The fixture is deterministic and has no external inputs or dependencies. Its
-known-gap manifest pins the current generated-Go compilation failure. It must be
-promoted to `passing` only when generated Go reproduces the exact Java output;
-the Java source and oracle must not be weakened to make the test green.
+The fixture is deterministic and has no external inputs or dependencies. It is
+a passing parity target: generated Go must reproduce the exact frozen Java
+output. The Java source and oracle remain unchanged from the original known-gap
+target.

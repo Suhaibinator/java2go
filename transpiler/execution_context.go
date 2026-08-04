@@ -45,13 +45,19 @@ func newExecutionExpr(ctx Ctx) ast.Expr {
 	return stdjavaCall(ctx, "NewExecution")
 }
 
-// executionImplementationName is stable across an override family. Checking
-// source-level generated names globally keeps a user method such as
-// FooJava2goExecution from colliding with Foo's hidden implementation, while
-// every implementation of the same Java signature still chooses one name.
+// executionImplementationName is stable across an ordinary override family.
+// A concrete generic specialization is the one deliberate split: javac gives
+// it both a narrow source body and an erased ancestor bridge, which Go cannot
+// overload under one selector. Such a body receives its collision-safe exact
+// name here; the bridge planner retains the ancestor's stable erased name.
+// Checking source-level generated names globally keeps a user method such as
+// FooJava2goExecution from colliding with either hidden implementation.
 func executionImplementationName(def *symbol.Definition, owner *symbol.ClassScope) string {
 	if def == nil {
 		return ""
+	}
+	if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(owner, def, classScopeCtx(owner, Ctx{})); bridged {
+		return directOwnerOverrideBridgeExactExecutionName(selection.bridge)
 	}
 	return collisionSafeExecutionIdentifier(def.Name+executionMethodSuffix, owner)
 }

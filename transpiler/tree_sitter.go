@@ -742,6 +742,12 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		if returnType != "" && returnType != "void" {
 			hasReturnValue = true
 			returnValueType = javaTypeStringToGoTypeExpr(returnType, inScopeTypeParameters(ctx), ctx)
+			returnValueType = directOwnerTypeParameterMethodResultType(
+				ctx.currentClass,
+				ctx.localScope,
+				returnValueType,
+				ctx,
+			)
 		}
 	}
 	returnTarget := &tryReturnTarget{

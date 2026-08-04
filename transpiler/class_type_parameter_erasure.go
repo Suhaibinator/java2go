@@ -230,20 +230,28 @@ func directOwnerMethodHasErasedCallableABI(owner *symbol.ClassScope, method *sym
 	return directOwnerMethodHasErasedParameterABI(owner, method, ctx)
 }
 
-// directOwnerCallableMethodEligible admits only concrete override families
-// whose generated callable descriptor is uniform at every declaration. A
-// concrete specialization such as Derived extends Base<First> needs a Java
-// bridge (Numbered accept(Numbered) -> First accept(First)) and is deliberately
-// excluded until that bridge is modeled. Generic interfaces and abstract or
-// interface-implementing classes are likewise kept on their established Go ABI.
+// directOwnerCallableMethodEligible admits concrete override families whose
+// physical JVM descriptor can be represented uniformly. Most families already
+// have one descriptor at every declaration. A concrete specialization such as
+// Derived extends Base<First> instead enters through the atomic override-bridge
+// planner: Base keeps its erased Numbered body while Derived receives javac's
+// cast-before-body Numbered -> First bridge. Unsupported mixed families remain
+// on their established invariant Go ABI.
 func directOwnerCallableMethodEligible(owner *symbol.ClassScope, method *symbol.Definition, ctx Ctx) bool {
-	if !directOwnerCallableMethodFamilyEligible(owner, method, ctx) {
-		return false
-	}
-	for _, declaration := range methodDirectOwnerTypeParameterDeclarations(owner, method) {
-		if !ownerTypeParameterCallableShapeSupported(declaration, ctx) {
-			return false
+	if directOwnerCallableMethodFamilyEligible(owner, method, ctx) {
+		for _, declaration := range methodDirectOwnerTypeParameterDeclarations(owner, method) {
+			if !ownerTypeParameterCallableShapeSupported(declaration, ctx) {
+				return false
+			}
 		}
+		return true
+	}
+	// Keep this full-plan query out of directOwnerCallableMethodFamilyEligible.
+	// The bridge representation audit intentionally uses that unchecked uniform
+	// predicate while classifying sibling families; calling back into the atomic
+	// plan there would recurse.
+	if _, bridgeable := planDirectOwnerCallableOverrideBridgeFamily(owner, method, ctx); !bridgeable {
+		return false
 	}
 	return true
 }
@@ -282,6 +290,29 @@ func directOwnerCallableMethodFamilyEligible(owner *symbol.ClassScope, method *s
 			}
 			got, _, candidateOK := directOwnerCallablePhysicalSignature(candidate, candidateMethod, ctx)
 			if !candidateOK || !sameStringSlice(got, want) {
+				eligible = false
+				return true
+			}
+			declaresOverride := directOwnerOverrideBridgeMethodDeclaresOverride(
+				owner,
+				method,
+				candidate,
+				candidateMethod,
+				ctx,
+			) || directOwnerOverrideBridgeMethodDeclaresOverride(
+				candidate,
+				candidateMethod,
+				owner,
+				method,
+				ctx,
+			)
+			if declaresOverride &&
+				directOwnerOverrideBridgeMethodSelectorIdentity(owner, method) !=
+					directOwnerOverrideBridgeMethodSelectorIdentity(candidate, candidateMethod) {
+				// Equal JVM descriptors are not enough for Go dispatch. A Java
+				// access-widening override can change an unexported selector into an
+				// exported one; keep that connected family on its established ABI
+				// until an explicit selector alias can be emitted atomically.
 				eligible = false
 				return true
 			}

@@ -54,6 +54,12 @@ func lowerSynchronizedStatement(node *sitter.Node, source []byte, ctx Ctx) []ast
 		if returnType != "" && returnType != "void" {
 			hasReturnValue = true
 			returnValueType = javaTypeStringToGoTypeExpr(returnType, inScopeTypeParameters(ctx), ctx)
+			returnValueType = directOwnerTypeParameterMethodResultType(
+				ctx.currentClass,
+				ctx.localScope,
+				returnValueType,
+				ctx,
+			)
 		}
 	}
 

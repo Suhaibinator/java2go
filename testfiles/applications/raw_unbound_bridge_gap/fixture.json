@@ -1,8 +1,5 @@
 {
   "main_class": "parity.rawunboundbridge.RawUnboundBridgeProbe",
   "module_path": "parity/rawunboundbridge",
-  "status": "known_gap",
-  "known_gap": "raw unbound generic receivers need a non-invariant erased view and javac-compatible specialized override bridges",
-  "expected_failure_stage": "go_compile",
-  "expected_failure_contains": "cannot use __java2goInvocationArg0 (variable of type *RawUnboundBridgeProbebase[*RawUnboundBridgeProbefirst]) as *RawUnboundBridgeProbebase[RawUnboundBridgeProbenumbered] value"
+  "status": "passing"
 }

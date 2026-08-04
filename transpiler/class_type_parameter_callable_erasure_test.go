@@ -56,12 +56,12 @@ public class ErasedCallableMethodReferenceProgram {
 `, "1:2")
 }
 
-// A concrete specialization has a narrower source override and therefore
-// requires javac's synthetic bridge. Until explicit bridges are modeled, the
-// uniform-descriptor planner must leave this family on the established ABI.
-// The full raw runtime call remains future bridge TDD because that established
-// ABI cannot yet accept the erased argument at all.
-func TestDirectOwnerCallableErasure_SpecializedOverrideRemainsBridgeGated(t *testing.T) {
+// A concrete specialization keeps both source-facing Go wrappers while Java
+// dispatch uses the ancestor's erased hidden descriptor. The specialization
+// therefore needs a distinct exact hidden body plus a stable synthetic bridge;
+// Base's dispatch interface exposes only that hidden family selector because Go
+// cannot place both invariant public signatures in one interface.
+func TestDirectOwnerCallableErasure_SpecializedOverrideEmitsExactAndErasedBridge(t *testing.T) {
 	out := normalizeSpaces(renderGoFileFromJava(t, `
 public class SpecializedOverrideBridgeProbe {
     interface Numbered { int number(); }
@@ -96,13 +96,29 @@ public class SpecializedOverrideBridgeProbe {
 	for _, want := range []string{
 		"exchange(left T, right T) T",
 		"exchange(left *SpecializedOverrideBridgeProbefirst, right *SpecializedOverrideBridgeProbefirst) *SpecializedOverrideBridgeProbefirst",
+		"exchangeJava2goExecution(__java2goExecution *stdjava.Execution, left SpecializedOverrideBridgeProbenumbered, right SpecializedOverrideBridgeProbenumbered) SpecializedOverrideBridgeProbenumbered",
+		"exchangeJava2goExactExecution(__java2goExecution *stdjava.Execution, left *SpecializedOverrideBridgeProbefirst, right *SpecializedOverrideBridgeProbefirst) *SpecializedOverrideBridgeProbefirst",
 	} {
 		if !strings.Contains(out, want) {
-			t.Fatalf("bridge-required family did not retain %q:\n%s", want, out)
+			t.Fatalf("bridge family did not emit %q:\n%s", want, out)
 		}
 	}
-	if strings.Contains(out, "exchange(left SpecializedOverrideBridgeProbenumbered, right SpecializedOverrideBridgeProbenumbered) SpecializedOverrideBridgeProbenumbered") {
-		t.Fatalf("bridge-required family was incorrectly collapsed to its erasure:\n%s", out)
+
+	dispatchStart := strings.Index(out, "type SpecializedOverrideBridgeProbebaseJava2goDispatch")
+	if dispatchStart < 0 {
+		t.Fatalf("missing Base dispatch interface:\n%s", out)
+	}
+	dispatchTail := out[dispatchStart:]
+	dispatchEnd := strings.Index(dispatchTail, "}")
+	if dispatchEnd < 0 {
+		t.Fatalf("unterminated Base dispatch interface:\n%s", out)
+	}
+	dispatch := dispatchTail[:dispatchEnd]
+	if !strings.Contains(dispatch, "exchangeJava2goExecution(") {
+		t.Fatalf("Base dispatch omitted erased hidden selector: %s", dispatch)
+	}
+	if strings.Contains(dispatch, " exchange(") {
+		t.Fatalf("Base dispatch incorrectly exposed invariant public selector: %s", dispatch)
 	}
 }
 
@@ -364,9 +380,10 @@ public class ErasedCallableInheritedResultProbe {
 }
 
 // One bridge-requiring sibling makes the owner parameter's complete physical
-// representation indivisible. Migrating safe/value while leaving bridge on T
-// would make the Base dispatch interface impossible for Specialized to satisfy.
-func TestDirectOwnerCallableErasure_SiblingBridgeGatesWholeOwnerParameter(t *testing.T) {
+// representation indivisible. The field and both hidden Base bodies migrate to
+// Numbered together, while their Go-facing wrappers retain T and Specialized
+// receives both its exact First body and the erased dispatch bridge.
+func TestDirectOwnerCallableErasure_SiblingBridgeMigratesWholeOwnerParameterAtomically(t *testing.T) {
 	out := normalizeSpaces(renderGoFileFromJava(t, `
 public class ErasedCallableSiblingBridgeGateProbe {
     interface Numbered { int number(); }
@@ -402,12 +419,16 @@ public class ErasedCallableSiblingBridgeGateProbe {
 `))
 
 	for _, want := range []string{
-		"value T",
+		"value ErasedCallableSiblingBridgeGateProbenumbered",
 		"safe(next T) T",
+		"safeJava2goExecution(__java2goExecution *stdjava.Execution, next ErasedCallableSiblingBridgeGateProbenumbered) ErasedCallableSiblingBridgeGateProbenumbered",
 		"bridge(next T) T",
+		"bridge(next *ErasedCallableSiblingBridgeGateProbefirst) *ErasedCallableSiblingBridgeGateProbefirst",
+		"bridgeJava2goExecution(__java2goExecution *stdjava.Execution, next ErasedCallableSiblingBridgeGateProbenumbered) ErasedCallableSiblingBridgeGateProbenumbered",
+		"bridgeJava2goExactExecution(__java2goExecution *stdjava.Execution, next *ErasedCallableSiblingBridgeGateProbefirst) *ErasedCallableSiblingBridgeGateProbefirst",
 	} {
 		if !strings.Contains(out, want) {
-			t.Fatalf("bridge-gated sibling did not retain %q:\n%s", want, out)
+			t.Fatalf("atomic sibling bridge family did not emit %q:\n%s", want, out)
 		}
 	}
 }

@@ -62,7 +62,7 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `local_class_constructor_gap` | Local-class constructor arguments, body effects, and field assignment | Passing |
 | `anonymous_member_collision_gap` | Anonymous-class field and method sharing one Java identifier | Passing |
 | `raw_inner_unbound_reference_gap` | Raw unbound generic inner method reference, one reference across multiple concrete instantiations, distinct outer/inner erasures, heap pollution, and delayed casts | Passing |
-| `raw_unbound_bridge_gap` | Raw unbound generic method reference, specialized override dispatch, erased bridge argument casts, and cast-before-body timing | Known gap (`go_compile`) |
+| `raw_unbound_bridge_gap` | Raw unbound generic method reference, specialized override dispatch, erased bridge argument casts, and cast-before-body timing | Passing |
 
 Known-gap fixtures are not skipped. In normal mode they must still have valid
 Java behavior and must fail at the exact declared stage for a pinned diagnostic

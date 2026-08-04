@@ -183,6 +183,120 @@ public class GenericIntermediateBridgePlanProbe {
 	if len(plan.overrides) != 1 || plan.overrides[0].owner.Class.OriginalName != "Leaf" {
 		t.Fatalf("bridges = %#v, want only concrete Leaf bridge", plan.overrides)
 	}
+	middle := overrideBridgeTestScope(t, helper, "Middle")
+	middlePlan, middleOK := planDirectOwnerCallableOverrideBridgeFamily(
+		middle,
+		overrideBridgeTestMethod(t, middle, "exchange"),
+		helper.Ctx,
+	)
+	if !middleOK || middlePlan == nil {
+		t.Fatal("same-erasure intermediate family was rejected by the multi-family gate")
+	}
+	if !directOwnerOverrideBridgeDescriptorsIdentical(plan, middlePlan, helper.Ctx) {
+		t.Fatalf("same-bound intermediate descriptors diverged: base=%#v middle=%#v", plan, middlePlan)
+	}
+}
+
+func TestDirectOwnerOverrideBridgePlanner_RejectsIncompatibleMultiErasureFamiliesAtomically(t *testing.T) {
+	helper := setupParseHelper(t, `
+public class MultiErasureBridgeRejectionProbe {
+    interface I { int number(); }
+    interface J extends I {}
+    static final class K implements J { public int number() { return 1; } }
+    static class A<T extends I> {
+        T mutate(T next) { return next; }
+    }
+    static class B<U extends J> extends A<U> {
+        @Override U mutate(U next) { return super.mutate(next); }
+    }
+    static final class C extends B<K> {
+        @Override K mutate(K next) { return super.mutate(next); }
+    }
+}
+`)
+	a := overrideBridgeTestScope(t, helper, "A")
+	b := overrideBridgeTestScope(t, helper, "B")
+	c := overrideBridgeTestScope(t, helper, "C")
+
+	for _, candidate := range []struct {
+		name   string
+		owner  *symbol.ClassScope
+		method *symbol.Definition
+	}{
+		{name: "ancestor I descriptor", owner: a, method: overrideBridgeTestMethod(t, a, "mutate")},
+		{name: "intermediate J descriptor", owner: b, method: overrideBridgeTestMethod(t, b, "mutate")},
+	} {
+		if plan, ok := planDirectOwnerCallableOverrideBridgeFamily(candidate.owner, candidate.method, helper.Ctx); ok || plan != nil {
+			t.Errorf("%s escaped as a partial bridge plan: %#v", candidate.name, plan)
+		}
+		if directOwnerCallableMethodEligible(candidate.owner, candidate.method, helper.Ctx) {
+			t.Errorf("%s migrated off the established invariant ABI", candidate.name)
+		}
+	}
+	if selection, ok := directOwnerSpecializedOverrideBridgeForMethod(
+		c,
+		overrideBridgeTestMethod(t, c, "mutate"),
+		helper.Ctx,
+	); ok || selection.family != nil {
+		t.Fatalf("concrete leaf received an ambiguous partial bridge selection: %#v", selection)
+	}
+}
+
+func TestDirectOwnerOverrideBridgePlanner_RejectsAccessWidenedSelectorFamiliesAtomically(t *testing.T) {
+	helper := setupParseHelper(t, `
+public class AccessWideningBridgeRejectionProbe {
+    interface Numbered { int number(); }
+    static final class First implements Numbered {
+        public int number() { return 1; }
+    }
+    static class A<T extends Numbered> {
+        T mutate(T next) { return next; }
+    }
+    static class B<U extends Numbered> extends A<U> {
+        @Override public U mutate(U next) { return super.mutate(next); }
+    }
+    static final class C extends B<First> {
+        @Override public First mutate(First next) { return super.mutate(next); }
+    }
+}
+`)
+	a := overrideBridgeTestScope(t, helper, "A")
+	b := overrideBridgeTestScope(t, helper, "B")
+	c := overrideBridgeTestScope(t, helper, "C")
+	aMethod := overrideBridgeTestMethod(t, a, "mutate")
+	bMethod := overrideBridgeTestMethod(t, b, "mutate")
+	cMethod := overrideBridgeTestMethod(t, c, "mutate")
+
+	aUnchecked, aUncheckedOK := planDirectOwnerCallableOverrideBridgeFamilyUnchecked(a, aMethod, helper.Ctx)
+	bUnchecked, bUncheckedOK := planDirectOwnerCallableOverrideBridgeFamilyUnchecked(b, bMethod, helper.Ctx)
+	if !aUncheckedOK || aUnchecked == nil || !bUncheckedOK || bUnchecked == nil {
+		t.Fatalf("access-widened families did not expose the unsafe unchecked plans: A=%#v B=%#v", aUnchecked, bUnchecked)
+	}
+	if !directOwnerOverrideBridgeDescriptorsIdentical(aUnchecked, bUnchecked, helper.Ctx) {
+		t.Fatalf("access-widened families should share the Numbered descriptor: A=%#v B=%#v", aUnchecked, bUnchecked)
+	}
+	if left, right := directOwnerOverrideBridgeSelectorIdentity(aUnchecked), directOwnerOverrideBridgeSelectorIdentity(bUnchecked); left == right {
+		t.Fatalf("package-private/public execution selectors unexpectedly share Go identity %q", left)
+	}
+
+	for _, candidate := range []struct {
+		name   string
+		owner  *symbol.ClassScope
+		method *symbol.Definition
+	}{
+		{name: "package-private ancestor selector", owner: a, method: aMethod},
+		{name: "public intermediate selector", owner: b, method: bMethod},
+	} {
+		if plan, ok := planDirectOwnerCallableOverrideBridgeFamily(candidate.owner, candidate.method, helper.Ctx); ok || plan != nil {
+			t.Errorf("%s escaped as a partial same-descriptor plan: %#v", candidate.name, plan)
+		}
+		if directOwnerCallableMethodEligible(candidate.owner, candidate.method, helper.Ctx) {
+			t.Errorf("%s migrated despite incompatible Go selector identity", candidate.name)
+		}
+	}
+	if selection, ok := directOwnerSpecializedOverrideBridgeForMethod(c, cMethod, helper.Ctx); ok || selection.family != nil {
+		t.Fatalf("concrete leaf received one of two incompatible selector families: %#v", selection)
+	}
 }
 
 func TestDirectOwnerOverrideBridgePlanner_CovariantResultAloneRequiresBridge(t *testing.T) {
