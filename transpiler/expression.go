@@ -337,7 +337,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					target = selectedTarget
 					receiver := ParseExpr(targetNode, source, ctx)
 					_, erasedResult := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx)
-					if target.classScope.IsInterface || target.classScope.IsAbstract || erasedResult {
+					erasedParameters := directOwnerMethodHasErasedParameterABI(resolution.owner, resolution.def, ctx)
+					if target.classScope.IsInterface || target.classScope.IsAbstract || erasedResult || erasedParameters {
 						methodExpr = executionAwareMethodReferenceForwarder(receiver, resolution, target, samType, samExecutionName, false, node, source, ctx)
 					} else {
 						selectorBase := receiver
@@ -565,6 +566,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			if instanceResolution != nil {
 				expectedArgTypes = definitionParameterOriginalTypes(instanceResolution.def)
+				if directOwnerMethodHasErasedCallableABI(instanceResolution.owner, instanceResolution.def, ctx) {
+					expectedArgTypes = instantiatedMethodParameterTypes(
+						instanceResolution,
+						invocationOwnerTypeArguments(target, instanceResolution, ctx),
+					)
+				}
 				if genericArrayFormalNeedsExplicitTypeArguments(instanceResolution.def) {
 					expectedArgTypes = genericArrayInvocationExpectedTypes(instanceResolution.def, node, ctx, source)
 				}
@@ -743,6 +750,15 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				classScope:        ctx.currentClass,
 				classTypeArgs:     typeParamExprs(ctx.currentClass.GoTypeParameterNames()),
 				classJavaTypeArgs: ctx.currentClass.GoTypeParameterNames(),
+			}
+			if directOwnerMethodHasErasedCallableABI(implicitInstanceResolution.owner, implicitInstanceResolution.def, ctx) {
+				expectedArgTypes = instantiatedMethodParameterTypes(
+					implicitInstanceResolution,
+					invocationOwnerTypeArguments(implicitTarget, implicitInstanceResolution, ctx),
+				)
+			}
+			if genericArrayFormalNeedsExplicitTypeArguments(implicitInstanceResolution.def) {
+				expectedArgTypes = genericArrayInvocationExpectedTypes(implicitInstanceResolution.def, node, ctx, source)
 			}
 		}
 		args, expandVarargsArray := parseResolvedInvocationArguments(
@@ -1358,12 +1374,25 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if isJavaStringType(targetJavaType) && isStaticallyNullReference(valueNode) {
 			return javaNullStringExpr()
 		}
+		if _, erased := currentErasedCallableOwnerTypeParameterErasure(targetJavaType, ctx); erased &&
+			isStaticallyNullReference(valueNode) {
+			// checkcast(null) succeeds and produces null; a Go type assertion on a
+			// nil interface would panic before the generic method can return it.
+			return &ast.Ident{Name: "nil"}
+		}
 		valueExpr := ParseExpr(valueNode, source, ctx)
 		if rawGenericCastCanPreserveLocalRepresentation(node) {
 			if sourceJavaType, ok := castOperandSourceJavaType(valueNode, ctx, source); ok &&
 				uncheckedRawToParameterizedSameGeneratedClassCast(sourceJavaType, targetJavaType, ctx) {
 				return valueExpr
 			}
+		}
+		// A cast to the current class parameter is a cast to that parameter's
+		// erasure in JVM bytecode. Once this method family uses the erased physical
+		// ABI, retaining Go's instantiated T here would introduce an eager concrete
+		// check which Java does not perform inside the generic body.
+		if erasure, ok := currentErasedCallableOwnerTypeParameterErasure(targetJavaType, ctx); ok {
+			targetJavaType = erasure
 		}
 		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
 		if _, rank := javaArrayTypeParts(targetJavaType); rank > 0 {
@@ -1676,6 +1705,9 @@ func buildTernaryExpressionIIFE(node *sitter.Node, source []byte, ctx Ctx) ast.E
 	resultJavaType, known := inferTernaryResultJavaType(node, ctx, source)
 	if !known {
 		resultJavaType = "Object"
+	}
+	if erasure, ok := currentErasedCallableOwnerTypeParameterErasure(resultJavaType, ctx); ok {
+		resultJavaType = erasure
 	}
 	resultGoType := ternaryResultGoType(resultJavaType, consequenceNode, alternativeNode, ctx)
 
@@ -3518,12 +3550,7 @@ func stageVirtualDispatchInvocation(
 	argumentNodes := nodeutil.NamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
 	for index, argument := range args {
 		name := synchronizedUniqueLocalName("__java2goInvocationArg"+strconv.Itoa(index), usedNames)
-		javaType := ""
-		if index < len(resolution.def.Parameters) && resolution.def.Parameters[index] != nil {
-			javaType = resolution.def.Parameters[index].OriginalType
-		} else if len(resolution.def.Parameters) > 0 && executionParameterIsVariadic(resolution.def, len(resolution.def.Parameters)-1) {
-			javaType = resolution.def.Parameters[len(resolution.def.Parameters)-1].OriginalType
-		}
+		javaType := invocationPhysicalParameterJavaType(resolution, index, ctx)
 		var argumentNode *sitter.Node
 		if index < len(argumentNodes) {
 			argumentNode = argumentNodes[index]
@@ -3583,12 +3610,7 @@ func executionCompanionDispatchInvocation(
 	argumentNodes := nodeutil.NamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
 	for index, argument := range args {
 		name := synchronizedUniqueLocalName("__java2goInvocationArg"+strconv.Itoa(index), usedNames)
-		javaType := ""
-		if index < len(resolution.def.Parameters) && resolution.def.Parameters[index] != nil {
-			javaType = resolution.def.Parameters[index].OriginalType
-		} else if len(resolution.def.Parameters) > 0 && executionParameterIsVariadic(resolution.def, len(resolution.def.Parameters)-1) {
-			javaType = resolution.def.Parameters[len(resolution.def.Parameters)-1].OriginalType
-		}
+		javaType := invocationPhysicalParameterJavaType(resolution, index, ctx)
 		var argumentNode *sitter.Node
 		if index < len(argumentNodes) {
 			argumentNode = argumentNodes[index]
@@ -3704,6 +3726,33 @@ func stagedInvocationArgumentLocal(
 	}}, true
 }
 
+func invocationPhysicalParameterJavaType(resolution *methodResolution, argumentIndex int, ctx Ctx) string {
+	if resolution == nil || resolution.def == nil || argumentIndex < 0 {
+		return ""
+	}
+	parameterIndex := argumentIndex
+	if parameterIndex >= len(resolution.def.Parameters) {
+		if len(resolution.def.Parameters) == 0 ||
+			!executionParameterIsVariadic(resolution.def, len(resolution.def.Parameters)-1) {
+			return ""
+		}
+		parameterIndex = len(resolution.def.Parameters) - 1
+	}
+	parameter := resolution.def.Parameters[parameterIndex]
+	if parameter == nil {
+		return ""
+	}
+	if erasure, ok := directOwnerMethodParameterInterfaceErasure(
+		resolution.owner,
+		resolution.def,
+		parameterIndex,
+		ctx,
+	); ok {
+		return erasure
+	}
+	return parameter.OriginalType
+}
+
 func invocationArgumentNeedsContextualType(value ast.Expr, valueNode *sitter.Node) bool {
 	if valueNode != nil {
 		switch valueNode.Type() {
@@ -3766,7 +3815,9 @@ func invocationClosureResults(invocationNode *sitter.Node, resolution *methodRes
 		return nil, true
 	}
 	javaType := declared
-	if inferred, ok := inferExprJavaType(invocationNode, ctx, source); ok && inferred != ternaryNullJavaType {
+	if erasure, erased := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx); erased {
+		javaType = erasure
+	} else if inferred, ok := inferExprJavaType(invocationNode, ctx, source); ok && inferred != ternaryNullJavaType {
 		javaType = inferred
 	}
 	if invocationTypeUsesMethodParameter(javaType, resolution) {
@@ -4623,6 +4674,52 @@ func definitionParameterOriginalTypes(def *symbol.Definition) []string {
 			continue
 		}
 		types[ind] = param.OriginalType
+	}
+	return types
+}
+
+// instantiatedMethodParameterTypes keeps Java's source-view conversions
+// separate from the generated callable descriptor. A method declared as
+// accept(T) on Sink<T>, invoked through Sink<First>, has a First argument
+// conversion even when its physical Go parameter is the erased Numbered bound.
+// Raw receivers already normalize their owner arguments to the erasures.
+func instantiatedMethodParameterTypes(
+	resolution *methodResolution,
+	ownerTypeArguments []string,
+) []string {
+	if resolution == nil || resolution.def == nil {
+		return nil
+	}
+	types := make([]string, len(resolution.def.Parameters))
+	if resolution.owner == nil || len(ownerTypeArguments) != len(resolution.owner.TypeParameters) {
+		return definitionParameterOriginalTypes(resolution.def)
+	}
+	for index, definition := range resolution.def.Parameters {
+		if definition == nil {
+			continue
+		}
+		replacements := map[string]string{}
+		for spelling, declaration := range definition.TypeParameterBindings {
+			if !javaTypeReferencesTypeParameter(definition.OriginalType, spelling) {
+				continue
+			}
+			for ownerIndex, ownerParameter := range resolution.owner.TypeParameters {
+				if ownerParameter.Declaration == declaration {
+					replacements[spelling] = ownerTypeArguments[ownerIndex]
+					break
+				}
+			}
+		}
+		if definition.DirectTypeParameter != nil {
+			for ownerIndex, ownerParameter := range resolution.owner.TypeParameters {
+				if ownerParameter.Declaration == definition.DirectTypeParameter {
+					replacements[ownerParameter.Name] = ownerTypeArguments[ownerIndex]
+					replacements[ownerParameter.EmittedName()] = ownerTypeArguments[ownerIndex]
+					break
+				}
+			}
+		}
+		types[index] = substituteJavaTypeParameters(definition.OriginalType, replacements)
 	}
 	return types
 }
@@ -7827,8 +7924,22 @@ func executionAwareMethodReferenceForwarder(
 	originalBoundReceiver := boundReceiver
 	boundReceiverName := ""
 	receiver := boundReceiver
+	boundDispatchReceiver := false
 	if !unbound {
 		boundReceiverName = synchronizedUniqueLocalName("__java2goMethodReferenceReceiver", usedNames)
+		if classNeedsVirtualDispatch(resolution.owner, ctx) &&
+			directOwnerMethodHasErasedCallableABI(resolution.owner, resolution.def, ctx) {
+			// A Base-typed Java local may intentionally retain a physical *Derived
+			// Go value for virtual identity. Capture the already-wired Base dispatch
+			// view instead of forcing that value into an invariant *Base[T] IIFE
+			// parameter. Atomic callable planning makes every instantiation of this
+			// dispatch contract structurally identical at the erased positions.
+			originalBoundReceiver = &ast.SelectorExpr{
+				X:   originalBoundReceiver,
+				Sel: &ast.Ident{Name: classDispatchFieldName(resolution.owner)},
+			}
+			boundDispatchReceiver = true
+		}
 		receiver = &ast.Ident{Name: boundReceiverName}
 	}
 	if unbound {
@@ -7896,7 +8007,7 @@ func executionAwareMethodReferenceForwarder(
 		publicResult := projectDirectOwnerErasedMethodReferenceResult(publicCall, resolution, ctx)
 		body = append(body, invocationClosureCallStatement(publicResult, functionType.Results))
 	} else {
-		if classNeedsVirtualDispatch(resolution.owner, ctx) {
+		if classNeedsVirtualDispatch(resolution.owner, ctx) && !boundDispatchReceiver {
 			callReceiver = &ast.SelectorExpr{X: receiver, Sel: &ast.Ident{Name: classDispatchFieldName(resolution.owner)}}
 		}
 		call := &ast.CallExpr{
@@ -7917,13 +8028,21 @@ func executionAwareMethodReferenceForwarder(
 		return inner
 	}
 
-	receiverJavaType, ok := inferExprJavaType(node.NamedChild(0), ctx, source)
-	if !ok {
-		return inner
-	}
-	receiverType := javaTypeStringToGoTypeExpr(receiverJavaType, inScopeTypeParameters(ctx), ctx)
-	if targetScope.IsAbstract {
-		receiverType = abstractClassToInterface(receiverType, receiverJavaType, ctx)
+	var receiverType ast.Expr
+	if boundDispatchReceiver {
+		receiverType = classDispatchTypeForInvocationTarget(target, resolution, ctx)
+		if receiverType == nil {
+			return inner
+		}
+	} else {
+		receiverJavaType, ok := inferExprJavaType(node.NamedChild(0), ctx, source)
+		if !ok {
+			return inner
+		}
+		receiverType = javaTypeStringToGoTypeExpr(receiverJavaType, inScopeTypeParameters(ctx), ctx)
+		if targetScope.IsAbstract {
+			receiverType = abstractClassToInterface(receiverType, receiverJavaType, ctx)
+		}
 	}
 	// Rebuild the inner closure against the staged receiver so a bound primary is
 	// evaluated exactly once when the Java method reference is created.
@@ -7934,6 +8053,32 @@ func executionAwareMethodReferenceForwarder(
 		},
 		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{inner}}}},
 	}, Args: []ast.Expr{originalBoundReceiver}}
+}
+
+func classDispatchTypeForInvocationTarget(
+	target *invocationTargetInfo,
+	resolution *methodResolution,
+	ctx Ctx,
+) ast.Expr {
+	if target == nil || target.classScope == nil || resolution == nil || resolution.owner == nil {
+		return nil
+	}
+	typeArgs := target.classTypeArgs
+	if target.classScope != resolution.owner {
+		typeArgs = mapClassTypeArgsToAncestor(target.classScope, target.classTypeArgs, resolution.owner, ctx)
+	}
+	if len(resolution.owner.TypeParameters) > 0 && len(typeArgs) != len(resolution.owner.TypeParameters) {
+		return nil
+	}
+	typeExpr := qualifiedNameExpr(
+		classDispatchTypeName(resolution.owner),
+		findJavaPackageForClassScope(resolution.owner),
+		ctx,
+	)
+	if len(typeArgs) > 0 {
+		typeExpr = applyTypeArguments(typeExpr, typeArgs)
+	}
+	return typeExpr
 }
 
 func primitiveArrayWrapperType(expr ast.Expr) bool {
@@ -9055,10 +9200,18 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 	}
 	if resolution.owner != nil {
 		bindings := make(map[string]string)
-		for index, tp := range resolution.owner.TypeParameterNames() {
-			if resolution.owner == scope && index < len(receiverTypeArgs) {
-				bindings[tp] = receiverTypeArgs[index]
+		ownerTypeArgs := receiverTypeArgs
+		if invocationTarget != nil {
+			ownerTypeArgs = invocationOwnerTypeArguments(invocationTarget, resolution, ctx)
+		} else if resolution.owner == scope && len(ownerTypeArgs) == 0 && scope == ctx.currentClass {
+			ownerTypeArgs = scope.GoTypeParameterNames()
+		}
+		for index, tp := range resolution.owner.TypeParameters {
+			if index >= len(ownerTypeArgs) {
+				continue
 			}
+			bindings[tp.Name] = ownerTypeArgs[index]
+			bindings[tp.EmittedName()] = ownerTypeArgs[index]
 		}
 		if substituted := substituteJavaTypeParameters(rt, bindings); substituted != rt {
 			rt = substituted

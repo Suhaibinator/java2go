@@ -80,6 +80,12 @@ func projectDirectOwnerErasedExpressionForExpected(
 		!expectedTypeTargetsExpression(ctx, node) {
 		return expr
 	}
+	if currentErasedCallableOwnerTypeParameter(ctx.expectedType, ctx) {
+		// A local/return target spelled with the current generic declaration's
+		// own parameter has the same erased JVM representation. Narrow only when
+		// that value later leaves the generic body through a concrete source view.
+		return expr
+	}
 	node = unwrapParenthesizedExpressionNode(node)
 	if node == nil {
 		return expr
@@ -97,6 +103,38 @@ func projectDirectOwnerErasedExpressionForExpected(
 		return expr
 	}
 	return projectDirectOwnerErasedView(expr, ctx.expectedType, erasure, ctx)
+}
+
+func currentErasedCallableOwnerTypeParameter(javaType string, ctx Ctx) bool {
+	_, ok := currentErasedCallableOwnerTypeParameterErasure(javaType, ctx)
+	return ok
+}
+
+func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (string, bool) {
+	if ctx.currentClass == nil || ctx.localScope == nil ||
+		!directOwnerCallableMethodEligible(ctx.currentClass, ctx.localScope, ctx) {
+		return "", false
+	}
+	declaration := visibleTypeParameterDeclarationForJavaType(javaType, ctx)
+	if declaration == nil || !methodDirectlyUsesTypeParameterDeclaration(ctx.localScope, declaration) ||
+		!ownerTypeParameterCallableShapeSupported(declaration, ctx) {
+		return "", false
+	}
+	for _, parameter := range ctx.currentClass.TypeParameters {
+		if parameter.Declaration == declaration {
+			erasure := qualifyJavaTypeInDeclaringContext(
+				rawTypeParameterErasure(parameter, ctx.currentClass.TypeParameters),
+				ctx.currentClass,
+			)
+			base, _ := parseJavaTypeString(erasure)
+			erasureScope := resolveClassScopeByQualifiedName(ctx, base)
+			if erasureScope == nil || !erasureScope.IsInterface {
+				return "", false
+			}
+			return erasure, true
+		}
+	}
+	return "", false
 }
 
 func projectDirectOwnerErasedMethodReferenceResult(
@@ -169,8 +207,7 @@ func directOwnerMethodResultView(
 	source []byte,
 ) (string, string, bool) {
 	target, resolution := resolvedInstanceInvocation(node, ctx, source)
-	if target == nil || resolution == nil || resolution.owner == nil || resolution.def == nil ||
-		target.classScope != resolution.owner {
+	if target == nil || resolution == nil || resolution.owner == nil || resolution.def == nil {
 		return "", "", false
 	}
 	erasure, ok := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx)

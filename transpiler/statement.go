@@ -1214,6 +1214,10 @@ func unwrapParenthesizedExpressionNode(node *sitter.Node) *sitter.Node {
 // initializer). Short declarations should not call this helper: resolving their
 // source type can register imports that never appear in the emitted Go code.
 func explicitLocalVariableType(originalType string, ctx Ctx) ast.Expr {
+	if erasure, ok := currentErasedCallableOwnerTypeParameterErasure(originalType, ctx); ok {
+		physical := javaTypeStringToGoTypeExpr(erasure, inScopeTypeParameters(ctx), ctx)
+		return abstractClassToInterface(physical, erasure, ctx)
+	}
 	return abstractClassToInterface(
 		javaTypeStringToGoTypeExpr(originalType, inScopeTypeParameters(ctx), ctx),
 		originalType,

@@ -1570,15 +1570,22 @@ func generateClassDispatchInterface(ctx Ctx) ast.Decl {
 		}
 		params := &ast.FieldList{}
 		for index, param := range method.Parameters {
+			parameterType := executionParameterTypeExpr(method, index, param.OriginalType, typeParams, ctx)
+			parameterType = directOwnerTypeParameterMethodParameterType(scope, method, index, parameterType, ctx)
 			params.List = append(params.List, &ast.Field{
 				Names: []*ast.Ident{{Name: param.Name}},
-				Type:  executionParameterTypeExpr(method, index, param.OriginalType, typeParams, ctx),
+				Type:  parameterType,
 			})
 		}
 		var results *ast.FieldList
 		if strings.TrimSpace(method.OriginalType) != "" && strings.TrimSpace(method.OriginalType) != "void" {
 			results = &ast.FieldList{List: []*ast.Field{{
-				Type: javaTypeStringToGoTypeExpr(method.OriginalType, typeParams, ctx),
+				Type: directOwnerTypeParameterMethodResultType(
+					scope,
+					method,
+					javaTypeStringToGoTypeExpr(method.OriginalType, typeParams, ctx),
+					ctx,
+				),
 			}}}
 		}
 		publicMethod := &ast.Field{
@@ -3907,6 +3914,15 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		bodyNode := node.ChildByFieldName("body")
 		params := ParseNode(methodParameters, source, ctx).(*ast.FieldList)
+		for index := range params.List {
+			params.List[index].Type = directOwnerTypeParameterMethodParameterType(
+				ctx.currentClass,
+				ctx.localScope,
+				index,
+				params.List[index].Type,
+				ctx,
+			)
+		}
 		params.List = append(dependentTypeWitnessParameterFields(ctx.dependentTypeWitnesses, ctx), params.List...)
 
 		var results *ast.FieldList

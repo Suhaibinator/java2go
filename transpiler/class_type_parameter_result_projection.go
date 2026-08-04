@@ -29,12 +29,6 @@ func narrowDirectOwnerMethodResultReceiver(
 	if innerTarget == nil || innerResolution == nil || innerResolution.def == nil || innerResolution.owner == nil {
 		return receiver
 	}
-	// Inherited source arguments need declaration-site qualification while they
-	// are mapped across the hierarchy. Keep this first projection slice on direct
-	// owner methods until that mapping carries qualified provenance end to end.
-	if innerTarget.classScope != innerResolution.owner {
-		return receiver
-	}
 	use, ok := directOwnerTypeParameterForDefinition(innerResolution.owner, innerResolution.def)
 	if !ok {
 		return receiver
@@ -110,7 +104,7 @@ func resolvedInstanceInvocation(
 	if target == nil {
 		return nil, nil
 	}
-	resolution, selectedTarget := findBestMethodForInvocationTarget(
+	resolution, _ := findBestMethodForInvocationTarget(
 		target,
 		nameNode.Content(source),
 		node.ChildByFieldName("arguments"),
@@ -119,9 +113,6 @@ func resolvedInstanceInvocation(
 		ctx,
 		source,
 	)
-	if selectedTarget != nil {
-		target = selectedTarget
-	}
 	if resolution == nil || resolution.def == nil || resolution.def.IsStatic {
 		return nil, nil
 	}
