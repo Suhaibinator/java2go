@@ -40,7 +40,7 @@ func runGeneratedWithStdjava(t *testing.T, generatedGo, goTestSource string) {
 	root := repoRoot(t)
 	tempDir := t.TempDir()
 
-	goMod := "module generated\n\ngo 1.26.0\n\n" +
+	goMod := "module generated\n\ngo 1.27.0\n\n" +
 		"require github.com/NickyBoy89/java2go v0.0.0\n\n" +
 		"replace github.com/NickyBoy89/java2go => " + root + "\n"
 	if err := os.WriteFile(filepath.Join(tempDir, "go.mod"), []byte(goMod), 0644); err != nil {

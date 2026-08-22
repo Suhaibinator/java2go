@@ -54,7 +54,7 @@ public class App {
 	if !strings.Contains(flat, "module example.com/generated/app") {
 		t.Fatalf("expected module path in go.mod, got:\n%s", flat)
 	}
-	if !strings.Contains(flat, "go 1.25.0") {
+	if !strings.Contains(flat, "go 1.27.0") {
 		t.Fatalf("expected go version in go.mod, got:\n%s", flat)
 	}
 }
@@ -70,7 +70,7 @@ public class Main {}
 		t.Fatalf("failed creating output dir: %v", err)
 	}
 
-	existing := "module keep/me\n\ngo 1.25.0\n"
+	existing := "module keep/me\n\ngo 1.27.0\n"
 	goModPath := filepath.Join(outputDir, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(existing), 0644); err != nil {
 		t.Fatalf("failed writing existing go.mod: %v", err)

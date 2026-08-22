@@ -348,7 +348,7 @@ func ensureGoModFile(outputDirectory string, modulePath string) error {
 		return fmt.Errorf("error checking go.mod at %s: %w", goModPath, err)
 	}
 
-	content := fmt.Sprintf("module %s\n\ngo 1.25.0\n", modulePath)
+	content := fmt.Sprintf("module %s\n\ngo 1.27.0\n", modulePath)
 	if err := os.WriteFile(goModPath, []byte(content), 0644); err != nil {
 		return fmt.Errorf("error writing go.mod at %s: %w", goModPath, err)
 	}

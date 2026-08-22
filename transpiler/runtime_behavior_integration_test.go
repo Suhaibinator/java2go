@@ -15,7 +15,7 @@ func runGoTestInTempModule(t *testing.T, generatedGo string, goTestSource string
 
 	// Generated code may import the stdjava runtime (try/catch lowering,
 	// intrinsics), so resolve it against this repository's copy.
-	goMod := "module generated\n\ngo 1.25.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => " + repoRootDir(t) + "\n"
+	goMod := "module generated\n\ngo 1.27.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => " + repoRootDir(t) + "\n"
 	if err := os.WriteFile(filepath.Join(tempDir, "go.mod"), []byte(goMod), 0644); err != nil {
 		t.Fatalf("failed writing temp go.mod: %v", err)
 	}

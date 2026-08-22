@@ -266,7 +266,7 @@ public final class Application {
 
 	outputs := convertJavaProjectDir(t, sourceRoot)
 	moduleRoot := t.TempDir()
-	goMod := "module collision\n\ngo 1.25.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => " + repoRootDir(t) + "\n"
+	goMod := "module collision\n\ngo 1.27.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => " + repoRootDir(t) + "\n"
 	if err := os.WriteFile(filepath.Join(moduleRoot, "go.mod"), []byte(goMod), 0o644); err != nil {
 		t.Fatalf("write collision go.mod: %v", err)
 	}

@@ -581,7 +581,7 @@ public class App {
 	}
 
 	moduleRoot := t.TempDir()
-	if err := os.WriteFile(filepath.Join(moduleRoot, "go.mod"), []byte("module rowcollision\n\ngo 1.25.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => "+repoRootDir(t)+"\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(moduleRoot, "go.mod"), []byte("module rowcollision\n\ngo 1.27.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => "+repoRootDir(t)+"\n"), 0o644); err != nil {
 		t.Fatalf("write go.mod: %v", err)
 	}
 	for relative, generated := range outputs {

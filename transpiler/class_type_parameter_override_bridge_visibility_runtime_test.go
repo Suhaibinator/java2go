@@ -111,7 +111,7 @@ public final class Second implements Numbered {
 func runOverrideBridgeVisibilityProject(t *testing.T, outputs map[string]string, want string) {
 	t.Helper()
 	moduleDir := t.TempDir()
-	goMod := "module audit\n\ngo 1.26.0\n\n" +
+	goMod := "module audit\n\ngo 1.27.0\n\n" +
 		"require github.com/NickyBoy89/java2go v0.0.0\n\n" +
 		"replace github.com/NickyBoy89/java2go => " + repoRoot(t) + "\n"
 	if err := os.WriteFile(filepath.Join(moduleDir, "go.mod"), []byte(goMod), 0o600); err != nil {
