@@ -146,20 +146,13 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 	// lambda parameter from the receiver's element type and give the closure the
 	// result type the functional interface requires (predicate -> bool, consumer
 	// -> void, mapper -> the value's type), so the generated Go is well-typed.
-	if kind, ok := elementLambdaMethods[methodName]; ok {
+	if kind, ok := lookupLambdaShape(receiverType, methodName); ok {
 		if elem := receiverElementTypeExpr(objectNode, ctx, source); elem != nil {
-			var mappedResult ast.Expr
-			if methodName == "map" {
-				if receiverJavaType, inferred := inferExprJavaType(objectNode, ctx, source); inferred {
-					_, receiverArgs := parseJavaTypeString(receiverJavaType)
-					if parent := objectNode.Parent(); parent != nil {
-						if resultJavaType, inferred := inferStreamMapResultType(parent, receiverArgs, ctx, source); inferred {
-							mappedResult = javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx)
-						}
-					}
-				}
-			}
+			elementJavaTypes := receiverElementJavaTypes(objectNode, ctx, source)
 			for i, a := range args {
+				// A mapper's result type comes from the lambda body, which has to be
+				// inferred per argument rather than once for the whole call.
+				mappedResult := intrinsicLambdaResultTypeExpr(objectNode, i, elementJavaTypes, kind, ctx, source)
 				args[i] = retypeElementLambda(a, elem, mappedResult, kind)
 			}
 		}
@@ -263,34 +256,78 @@ const (
 	lambdaResultBool
 	// lambdaResultVoid: the closure returns nothing (Consumer<T>).
 	lambdaResultVoid
+	// lambdaResultInferred: the result type is whatever the lambda body evaluates
+	// to (Function<T,R> where R genuinely differs from T, e.g. flatMap's element
+	// type, a groupingBy classifier, or a Comparator.comparing key extractor).
+	lambdaResultInferred
+	// lambdaResultInt32 / lambdaResultInt64 / lambdaResultFloat64: the functional
+	// interface pins the result to a Java primitive (ToIntFunction, Comparator's
+	// int, comparingDouble, ...) regardless of what the body would infer to.
+	lambdaResultInt32
+	lambdaResultInt64
+	lambdaResultFloat64
 )
 
-// elementLambdaMethods maps an intrinsic instance method to the result kind of
-// its element-typed lambda argument.
-var elementLambdaMethods = map[string]lambdaResultKind{
-	"map":       lambdaResultElement,
-	"reduce":    lambdaResultElement,
-	"ifPresent": lambdaResultVoid,
-	"forEach":   lambdaResultVoid,
-	"filter":    lambdaResultBool,
-	"anyMatch":  lambdaResultBool,
-	"allMatch":  lambdaResultBool,
-	"noneMatch": lambdaResultBool,
+// lambdaShapes records, per (receiver type, method), the result type of that
+// intrinsic's element-typed lambda argument.
+//
+// The key includes the receiver type because the same method name means
+// different things on different types: Optional.map and Stream.map have
+// different element types, and a name-only key would collide as soon as a second
+// type registers the same method.
+var lambdaShapes = map[intrinsicKey]lambdaResultKind{}
+
+// registerLambdaShape declares that typeName.methodName takes element-typed
+// lambda arguments whose closures return result. Call it next to the matching
+// registerInstanceIntrinsic so the two stay in sync.
+func registerLambdaShape(typeName, methodName string, result lambdaResultKind) {
+	lambdaShapes[intrinsicKey{typeName, methodName}] = result
 }
 
-// receiverElementTypeExpr returns the Go type expression for a single-type-arg
-// receiver's element type (e.g. for an Optional<Integer> receiver, int32), or nil
-// when it cannot be determined.
-func receiverElementTypeExpr(objectNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+// lookupLambdaShape returns the declared lambda result kind for a call, if any.
+func lookupLambdaShape(typeName, methodName string) (lambdaResultKind, bool) {
+	kind, ok := lambdaShapes[intrinsicKey{typeName, methodName}]
+	return kind, ok
+}
+
+// primitiveStreamElementJavaTypes maps the primitive stream types onto the Java
+// element type they iterate. Unlike Stream<T> these carry no type argument, so
+// their element type cannot be read off the receiver's type arguments.
+var primitiveStreamElementJavaTypes = map[string]string{
+	"IntStream":    "int",
+	"LongStream":   "long",
+	"DoubleStream": "double",
+}
+
+// receiverElementJavaTypes returns the Java element type(s) of a receiver: its
+// type arguments for a generic type (one for Stream<T>/Optional<T>, two for
+// Map<K,V>), or the implied element type for a primitive stream. It returns nil
+// when the receiver's type is unknown or carries no element type.
+func receiverElementJavaTypes(objectNode *sitter.Node, ctx Ctx, source []byte) []string {
 	javaType, ok := inferExprJavaType(objectNode, ctx, source)
 	if !ok {
 		return nil
 	}
-	_, typeArgs := parseJavaTypeString(javaType)
-	if len(typeArgs) != 1 {
+	base, typeArgs := parseJavaTypeString(javaType)
+	if len(typeArgs) > 0 {
+		return typeArgs
+	}
+	if element, ok := primitiveStreamElementJavaTypes[stripJavaQualifier(base)]; ok {
+		return []string{element}
+	}
+	return nil
+}
+
+// receiverElementTypeExpr returns the Go type expression for a single-element
+// receiver's element type (e.g. int32 for Optional<Integer> or for IntStream), or
+// nil when it cannot be determined. Receivers with several type arguments (a
+// Map's key and value) have no single element type and return nil.
+func receiverElementTypeExpr(objectNode *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	elementTypes := receiverElementJavaTypes(objectNode, ctx, source)
+	if len(elementTypes) != 1 {
 		return nil
 	}
-	return javaTypeStringToGoTypeExpr(typeArgs[0], inScopeTypeParameters(ctx), ctx)
+	return javaTypeStringToGoTypeExpr(elementTypes[0], inScopeTypeParameters(ctx), ctx)
 }
 
 // retypeElementLambda rewrites a parsed lambda whose parameter types are the
@@ -318,11 +355,15 @@ func retypeElementLambda(arg, elementType, mappedResult ast.Expr, kind lambdaRes
 	switch kind {
 	case lambdaResultBool:
 		resultType = &ast.Ident{Name: "bool"}
-	case lambdaResultElement:
-		// A mapper (Function<T,R>) may change the type. Infer R from the body's Go
-		// expression where recognizable (e.g. a string concatenation lowers to
-		// fmt.Sprintf and is a string); otherwise default to the element type,
-		// which is correct for identity/arithmetic maps.
+	case lambdaResultVoid:
+		resultType = nil
+	default:
+		// A mapper (Function<T,R>) may change the type, and a primitive-result
+		// interface (ToIntFunction, Comparator) pins it outright; both arrive as a
+		// non-nil mappedResult. Otherwise infer R from the body's Go expression
+		// where recognizable (e.g. a string concatenation lowers to fmt.Sprintf and
+		// is a string), and fall back to the element type, which is correct for
+		// identity/arithmetic maps and for the operator interfaces.
 		resultType = elementType
 		if mappedResult != nil {
 			resultType = mappedResult
@@ -333,8 +374,6 @@ func retypeElementLambda(arg, elementType, mappedResult ast.Expr, kind lambdaRes
 				}
 			}
 		}
-	case lambdaResultVoid:
-		resultType = nil
 	}
 
 	if resultType != nil {
@@ -348,6 +387,53 @@ func retypeElementLambda(arg, elementType, mappedResult ast.Expr, kind lambdaRes
 		}
 	}
 	return arg
+}
+
+// invocationArgumentNode returns the index'th argument node of a method
+// invocation, or nil when there is no such argument.
+func invocationArgumentNode(invocation *sitter.Node, index int) *sitter.Node {
+	if invocation == nil || index < 0 {
+		return nil
+	}
+	argsNode := invocation.ChildByFieldName("arguments")
+	if argsNode == nil || index >= int(argsNode.NamedChildCount()) {
+		return nil
+	}
+	return argsNode.NamedChild(index)
+}
+
+// intrinsicLambdaResultTypeExpr returns the Go type that the index'th lambda
+// argument's closure must return, or nil to let retypeElementLambda apply its
+// own default (the receiver's element type, refined by goExprResultType).
+//
+// A primitive-result functional interface pins the type outright. A free result
+// type (Function<T,R>) is recovered by binding the lambda's parameters to the
+// receiver's element types and inferring what its body evaluates to.
+func intrinsicLambdaResultTypeExpr(objectNode *sitter.Node, argIndex int, elementJavaTypes []string, kind lambdaResultKind, ctx Ctx, source []byte) ast.Expr {
+	switch kind {
+	case lambdaResultInt32:
+		return &ast.Ident{Name: "int32"}
+	case lambdaResultInt64:
+		return &ast.Ident{Name: "int64"}
+	case lambdaResultFloat64:
+		return &ast.Ident{Name: "float64"}
+	case lambdaResultInferred:
+		// Handled below.
+	default:
+		// lambdaResultElement pins the result to the element type, and bool/void
+		// carry no inference; none of them consult the lambda body.
+		return nil
+	}
+
+	lambda := invocationArgumentNode(objectNode.Parent(), argIndex)
+	if lambda == nil {
+		return nil
+	}
+	resultJavaType, ok := inferLambdaResultJavaType(lambda, elementJavaTypes, ctx, source)
+	if !ok {
+		return nil
+	}
+	return javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx)
 }
 
 // goExprResultType returns a Go type expression for a lowered Go expression when
@@ -433,9 +519,13 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 		return nil
 	}
 	argListNode := parent.ChildByFieldName("arguments")
-	if _, elementLambda := elementLambdaMethods[methodName]; elementLambda && argListNode != nil {
-		if receiverJavaType, inferred := inferExprJavaType(objectNode, ctx, source); inferred {
-			_, receiverArgs := parseJavaTypeString(receiverJavaType)
+	elementLambda := false
+	if receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source); ok {
+		_, elementLambda = lookupLambdaShape(receiverType, methodName)
+	}
+	if elementLambda && argListNode != nil {
+		{
+			receiverArgs := receiverElementJavaTypes(objectNode, ctx, source)
 			if len(receiverArgs) == 1 {
 				args := make([]ast.Expr, 0, argListNode.NamedChildCount())
 				for _, argNode := range nodeutil.NamedChildrenOf(argListNode) {

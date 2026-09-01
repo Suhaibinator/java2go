@@ -255,6 +255,8 @@ func registerOptionalIntrinsics() {
 		}
 		return methodCall(recv, "OrElse", args[0])
 	})
+	registerLambdaShape("Optional", "ifPresent", lambdaResultVoid)
+	registerLambdaShape("Optional", "map", lambdaResultInferred)
 	registerInstanceIntrinsic("Optional", "ifPresent", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil

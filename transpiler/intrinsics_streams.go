@@ -36,6 +36,17 @@ func registerStreamIntrinsics() {
 	})
 
 	for _, t := range streamTypeNames {
+		// Lambda argument shapes, declared alongside the intrinsics they belong to.
+		// map's result type is free (Function<T,R>) and is recovered from the
+		// mapper's body; reduce's is pinned to the element type (BinaryOperator<T>).
+		registerLambdaShape(t, "filter", lambdaResultBool)
+		registerLambdaShape(t, "anyMatch", lambdaResultBool)
+		registerLambdaShape(t, "allMatch", lambdaResultBool)
+		registerLambdaShape(t, "noneMatch", lambdaResultBool)
+		registerLambdaShape(t, "forEach", lambdaResultVoid)
+		registerLambdaShape(t, "map", lambdaResultInferred)
+		registerLambdaShape(t, "reduce", lambdaResultElement)
+
 		// Method-form terminal/intermediate operations that keep the element type.
 		registerInstanceIntrinsic(t, "filter", streamMethod("Filter", 1))
 		registerInstanceIntrinsic(t, "forEach", streamMethod("ForEach", 1))
