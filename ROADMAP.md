@@ -27,7 +27,7 @@ roughly in suggested priority order. See file references for where each gap live
 - [x] Iterators / `Iterable` protocol — enhanced-for ranges over collection `.Slice()` views
 - [x] Wire `java.util.Optional` to `stdjava.Optional[T]` (of/empty/ofNullable/get/isPresent/orElse/map/ifPresent; lambda-param inference for `map` is a §2-remainder follow-up)
 - [ ] `java.util.stream.*` (Streams API) — map to loops or a `stdjava` stream shim
-- [ ] `java.io.*` basics (`File`, readers/writers, `Scanner`) → `os` / `bufio` / `io`
+- [x] `java.io.*` / `java.nio.file.*` (`File`, `Path`/`Paths`, `Files`, readers/writers, byte and in-memory streams, `Scanner`) → `os` / `bufio` / `io` (`stdjava/io.go`, `stdjava/nio.go`). Out of scope: `RandomAccessFile`, object serialization, NIO channels/buffers/selectors, `WatchService`, charset- and option-selecting overloads, file permissions/attributes
 - [x] `java.lang.Math`, boxed-type statics (`Integer.parseInt`, `Long.MAX_VALUE`, ...) — type-preserving generics in `stdjava/math.go`, `stdjava/convert.go`
 - [x] Expand the `stdjava` runtime package to back anything with no direct Go analogue (ongoing as features land)
 
