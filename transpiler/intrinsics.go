@@ -339,6 +339,49 @@ func lookupLambdaShape(typeName, methodName string) (lambdaResultKind, bool) {
 	return kind, ok
 }
 
+// elementFromEnclosingTarget is an elementArg sentinel meaning the element type
+// comes from the call this one is an argument to, rather than from one of this
+// call's own arguments. Comparator.comparing is the motivating case: the key
+// extractor's parameter type is fixed by the collection being sorted, which is
+// only visible one level up.
+const elementFromEnclosingTarget = -1
+
+// enclosingTargetElementJavaTypes resolves the element type of the call that
+// invocation is an argument to: the receiver's element type for an instance
+// call, or its first argument's for a static one.
+func enclosingTargetElementJavaTypes(invocation *sitter.Node, ctx Ctx, source []byte) []string {
+	if invocation == nil {
+		return nil
+	}
+	argumentList := invocation.Parent()
+	if argumentList == nil || argumentList.Type() != "argument_list" {
+		return nil
+	}
+	enclosing := argumentList.Parent()
+	if enclosing == nil || enclosing.Type() != "method_invocation" {
+		return nil
+	}
+	if object := enclosing.ChildByFieldName("object"); object != nil {
+		if types := receiverElementJavaTypes(object, ctx, source); len(types) > 0 {
+			return types
+		}
+	}
+	return staticIntrinsicElementJavaTypes(enclosing, 0, ctx, source)
+}
+
+// targetElementJavaTypes resolves the element type a target-typed factory should
+// take: from the call it is an argument to, or, when it is not an argument at
+// all, from the type it is being assigned to. `Comparator<Integer> c =
+// Comparator.naturalOrder()` has no enclosing call but does have a declared
+// type, and that is the only place its element type appears.
+func targetElementJavaTypes(invocation *sitter.Node, ctx Ctx, source []byte) []string {
+	if types := enclosingTargetElementJavaTypes(invocation, ctx, source); len(types) > 0 {
+		return types
+	}
+	_, typeArgs := parseJavaTypeString(ctx.expectedType)
+	return typeArgs
+}
+
 // staticLambdaShape describes a static intrinsic whose lambda arguments cannot
 // be typed from a receiver, because there is none, and are typed from the
 // element type of one of the call's other arguments instead:
@@ -389,6 +432,9 @@ func javaContainerElementTypes(javaType string) []string {
 // staticIntrinsicElementJavaTypes resolves the element type(s) that a static
 // intrinsic's lambda arguments should be typed from.
 func staticIntrinsicElementJavaTypes(invocation *sitter.Node, elementArg int, ctx Ctx, source []byte) []string {
+	if elementArg == elementFromEnclosingTarget {
+		return targetElementJavaTypes(invocation, ctx, source)
+	}
 	argNode := invocationArgumentNode(invocation, elementArg)
 	if argNode == nil {
 		return nil
@@ -518,20 +564,27 @@ func pinnedPrimitiveLambdaResult(kind lambdaResultKind) bool {
 	return false
 }
 
-// convertLambdaReturns wraps every value returned directly by a closure body in
-// a conversion to resultType. Nested function literals are left alone, since
-// their returns belong to a different closure.
+// convertLambdaReturns wraps every value this closure returns in a conversion to
+// resultType, including returns nested inside an if, loop or switch. Returns
+// belonging to a nested function literal are left alone, since those are a
+// different closure's.
 func convertLambdaReturns(body *ast.BlockStmt, resultType ast.Expr) {
 	if body == nil {
 		return
 	}
-	for _, stmt := range body.List {
-		returnStmt, ok := stmt.(*ast.ReturnStmt)
-		if !ok || len(returnStmt.Results) != 1 {
-			continue
+	ast.Inspect(body, func(node ast.Node) bool {
+		switch typed := node.(type) {
+		case *ast.FuncLit:
+			// A nested closure has its own result type; do not descend.
+			return false
+		case *ast.ReturnStmt:
+			if len(typed.Results) == 1 {
+				typed.Results[0] = &ast.CallExpr{Fun: resultType, Args: []ast.Expr{typed.Results[0]}}
+			}
+			return false
 		}
-		returnStmt.Results[0] = &ast.CallExpr{Fun: resultType, Args: []ast.Expr{returnStmt.Results[0]}}
-	}
+		return true
+	})
 }
 
 // invocationArgumentNode returns the index'th argument node of a method

@@ -51,24 +51,6 @@ func ComparatorComparing[T any, K cmp.Ordered](key func(T) K) Comparator[T] {
 	}
 }
 
-// ComparatorComparingReversed is Comparator.comparing(key).reversed(), provided
-// directly because the transpiler can recognize the fused form.
-func ComparatorComparingReversed[T any, K cmp.Ordered](key func(T) K) Comparator[T] {
-	return func(a, b T) int32 {
-		return javaOrderedCompare(key(b), key(a))
-	}
-}
-
-// ComparatorNaturalOf returns the natural-order comparator for values that are
-// only known to be Comparable at runtime, matching a raw Comparator.naturalOrder
-// applied to generated reference types. It defers to the same CompareTo bridge
-// the reflective array sort uses.
-func ComparatorNaturalOf[T any]() Comparator[T] {
-	return func(a, b T) int32 {
-		return javaCompareValues(a, b)
-	}
-}
-
 // Reversed returns a comparator imposing the reverse of this ordering, matching
 // Comparator.reversed().
 func (c Comparator[T]) Reversed() Comparator[T] {

@@ -142,12 +142,6 @@ func TestStreamReduceArities(t *testing.T) {
 	if got := StreamReduce(NewStream[int32](1, 2, 3), 10, add); got != 16 {
 		t.Fatalf("StreamReduce = %d, want 16", got)
 	}
-	combined := StreamReduceCombining(NewStream("a", "bb"), 0,
-		func(acc int32, s string) int32 { return acc + int32(len(s)) },
-		func(a, b int32) int32 { return a + b })
-	if combined != 3 {
-		t.Fatalf("StreamReduceCombining = %d, want 3", combined)
-	}
 }
 
 func TestStreamParallelIsSequential(t *testing.T) {

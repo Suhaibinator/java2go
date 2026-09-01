@@ -180,62 +180,121 @@ func StreamAsDoubleStream[T JavaNumber](s Stream[T]) Stream[float64] {
 	return Stream[float64]{elements: out}
 }
 
-// IntSummaryStatistics is the result of IntStream.summaryStatistics. The long
-// and double forms share it, since the accessors Java exposes are the same
-// shape; the count and sum are held at their widest Java type.
-type IntSummaryStatistics struct {
+// SummaryStatistics is the result of IntStream.summaryStatistics and its long
+// and double siblings.
+//
+// Java has three distinct classes here and their accessors differ in type:
+// IntSummaryStatistics.getMin returns int while LongSummaryStatistics.getMin
+// returns long, and DoubleSummaryStatistics reports its sum and extremes as
+// double with infinite empty sentinels. One generic type carries all three, so
+// the element type decides what the accessors return.
+//
+// The sum is accumulated at the element's own width rather than in float64,
+// which would silently lose precision above 2^53 for a long stream.
+type SummaryStatistics[T JavaNumber] struct {
 	count int64
-	sum   float64
-	min   float64
-	max   float64
+	sum   T
+	min   T
+	max   T
+	empty bool
 }
 
-// StreamSummaryStatistics collects count, sum, min, max and average in one
-// pass, matching IntStream.summaryStatistics. An empty stream reports Java's
-// documented sentinels: a zero count and sum, with min and max at the element
-// type's extremes.
-func StreamSummaryStatistics[T JavaNumber](s Stream[T]) *IntSummaryStatistics {
-	stats := &IntSummaryStatistics{
-		min: math.Inf(1),
-		max: math.Inf(-1),
-	}
+// StreamSummaryStatistics collects count, sum, min and max in one pass,
+// matching IntStream.summaryStatistics.
+func StreamSummaryStatistics[T JavaNumber](s Stream[T]) *SummaryStatistics[T] {
+	stats := &SummaryStatistics[T]{empty: true}
 	for _, e := range s.elements {
-		value := float64(e)
+		if stats.empty {
+			stats.min = e
+			stats.max = e
+			stats.empty = false
+		} else {
+			if javaCompareValues(e, stats.min) < 0 {
+				stats.min = e
+			}
+			if javaCompareValues(e, stats.max) > 0 {
+				stats.max = e
+			}
+		}
 		stats.count++
-		stats.sum += value
-		if value < stats.min {
-			stats.min = value
-		}
-		if value > stats.max {
-			stats.max = value
-		}
+		stats.sum += e
 	}
 	return stats
 }
 
-func (s *IntSummaryStatistics) GetCount() int64 { return s.count }
-func (s *IntSummaryStatistics) GetSum() int64   { return int64(s.sum) }
+// GetCount matches getCount on all three Java classes.
+func (s *SummaryStatistics[T]) GetCount() int64 { return s.count }
 
-// GetMin and GetMax report Java's empty-stream sentinels, Integer.MAX_VALUE and
-// Integer.MIN_VALUE, when no element was seen.
-func (s *IntSummaryStatistics) GetMin() int32 {
-	if s.count == 0 {
-		return math.MaxInt32
+// GetSum returns the sum at the element's own width. Java widens an int stream's
+// sum to long, which the transpiler reflects in the call's declared result type.
+func (s *SummaryStatistics[T]) GetSum() T { return s.sum }
+
+// GetMin and GetMax report Java's empty-stream sentinels: the element type's
+// extremes, which for a double stream are the infinities.
+func (s *SummaryStatistics[T]) GetMin() T {
+	if s.empty {
+		return summaryEmptyMin[T]()
 	}
-	return int32(s.min)
+	return s.min
 }
 
-func (s *IntSummaryStatistics) GetMax() int32 {
-	if s.count == 0 {
-		return math.MinInt32
+func (s *SummaryStatistics[T]) GetMax() T {
+	if s.empty {
+		return summaryEmptyMax[T]()
 	}
-	return int32(s.max)
+	return s.max
 }
 
-// GetAverage is zero for an empty stream, as Java's is.
-func (s *IntSummaryStatistics) GetAverage() float64 {
+// GetAverage is zero for an empty stream, as Java's is, and is computed in
+// double as Java computes it.
+func (s *SummaryStatistics[T]) GetAverage() float64 {
 	if s.count == 0 {
 		return 0
 	}
-	return s.sum / float64(s.count)
+	return float64(s.sum) / float64(s.count)
+}
+
+// summaryEmptyMin and summaryEmptyMax return the sentinel Java reports for an
+// empty stream: Integer.MAX_VALUE / MIN_VALUE for an int stream, the long
+// equivalents for a long stream, and the infinities for a double stream.
+func summaryEmptyMin[T JavaNumber]() T {
+	var zero T
+	switch any(zero).(type) {
+	case float32:
+		return T(float32(math.Inf(1)))
+	case float64:
+		return T(math.Inf(1))
+	}
+	// Routed through a variable because a constant conversion inside a generic
+	// must fit every type in the constraint's type set, and these do not.
+	sentinel := int64(math.MaxInt32)
+	switch any(zero).(type) {
+	case int64:
+		sentinel = math.MaxInt64
+	case int16:
+		sentinel = math.MaxInt16
+	case int8:
+		sentinel = math.MaxInt8
+	}
+	return T(sentinel)
+}
+
+func summaryEmptyMax[T JavaNumber]() T {
+	var zero T
+	switch any(zero).(type) {
+	case float32:
+		return T(float32(math.Inf(-1)))
+	case float64:
+		return T(math.Inf(-1))
+	}
+	sentinel := int64(math.MinInt32)
+	switch any(zero).(type) {
+	case int64:
+		sentinel = math.MinInt64
+	case int16:
+		sentinel = math.MinInt16
+	case int8:
+		sentinel = math.MinInt8
+	}
+	return T(sentinel)
 }

@@ -126,6 +126,14 @@ func registerNumericStreamConversions() {
 	}
 }
 
+// summaryStatisticsTypeNames are the Java classes an IntStream-family
+// summaryStatistics() result may be declared as.
+var summaryStatisticsTypeNames = []string{
+	"IntSummaryStatistics",
+	"LongSummaryStatistics",
+	"DoubleSummaryStatistics",
+}
+
 func registerNumericStreamTerminals() {
 	for _, t := range streamTypeNames {
 		registerInstanceIntrinsic(t, "sum", numericTerminal("StreamSum"))
@@ -139,6 +147,13 @@ func registerNumericStreamTerminals() {
 		registerInstanceIntrinsicResultType(t, "average", "Optional<Double>")
 	}
 
+	// Without a result type a chained or var-typed summaryStatistics call cannot
+	// resolve its accessors.
+	registerInstanceIntrinsicResultType("IntStream", "summaryStatistics", "IntSummaryStatistics")
+	registerInstanceIntrinsicResultType("LongStream", "summaryStatistics", "LongSummaryStatistics")
+	registerInstanceIntrinsicResultType("DoubleStream", "summaryStatistics", "DoubleSummaryStatistics")
+	registerInstanceIntrinsicResultType("Stream", "summaryStatistics", "IntSummaryStatistics")
+
 	// The summary-statistics accessors.
 	for method, goName := range map[string]string{
 		"getCount":   "GetCount",
@@ -147,18 +162,34 @@ func registerNumericStreamTerminals() {
 		"getMax":     "GetMax",
 		"getAverage": "GetAverage",
 	} {
-		registerInstanceIntrinsic("IntSummaryStatistics", method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-			if !expectArgs(args, 0) {
-				return nil
-			}
-			return methodCall(recv, goName)
-		})
+		for _, statsType := range summaryStatisticsTypeNames {
+			registerInstanceIntrinsic(statsType, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if !expectArgs(args, 0) {
+					return nil
+				}
+				return methodCall(recv, goName)
+			})
+		}
 	}
-	registerInstanceIntrinsicResultType("IntSummaryStatistics", "getCount", "long")
-	registerInstanceIntrinsicResultType("IntSummaryStatistics", "getSum", "long")
-	registerInstanceIntrinsicResultType("IntSummaryStatistics", "getMin", "int")
-	registerInstanceIntrinsicResultType("IntSummaryStatistics", "getMax", "int")
-	registerInstanceIntrinsicResultType("IntSummaryStatistics", "getAverage", "double")
+	// getCount and getAverage have the same type for all three; getSum, getMin and
+	// getMax widen with the element type, as Java's do.
+	for _, statsType := range summaryStatisticsTypeNames {
+		registerInstanceIntrinsicResultType(statsType, "getCount", "long")
+		registerInstanceIntrinsicResultType(statsType, "getAverage", "double")
+	}
+	for statsType, elementType := range map[string]string{
+		"IntSummaryStatistics":    "int",
+		"LongSummaryStatistics":   "long",
+		"DoubleSummaryStatistics": "double",
+	} {
+		sumType := "long"
+		if statsType == "DoubleSummaryStatistics" {
+			sumType = "double"
+		}
+		registerInstanceIntrinsicResultType(statsType, "getSum", sumType)
+		registerInstanceIntrinsicResultType(statsType, "getMin", elementType)
+		registerInstanceIntrinsicResultType(statsType, "getMax", elementType)
+	}
 }
 
 // numericRange builds a two-argument range generator.

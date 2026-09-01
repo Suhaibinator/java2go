@@ -165,5 +165,31 @@ public class Comparators {
 
         // compare() called directly on a comparator value.
         System.out.println("compare " + byAge.compare(tied.get(0), tied.get(2)));
+
+        // The comparator factories: their element type is not visible from the
+        // call itself, so it comes from the enclosing sort or the declared type.
+        List<Integer> factorySorted = new ArrayList<Integer>();
+        factorySorted.add(4);
+        factorySorted.add(1);
+        factorySorted.add(3);
+        Collections.sort(factorySorted, Comparator.naturalOrder());
+        System.out.println(factorySorted);
+        Collections.sort(factorySorted, Comparator.reverseOrder());
+        System.out.println(factorySorted);
+        factorySorted.sort(Comparator.naturalOrder());
+        System.out.println(factorySorted);
+
+        Comparator<Integer> declaredNatural = Comparator.naturalOrder();
+        System.out.println("declared " + declaredNatural.compare(1, 2));
+
+        // comparing() builds a comparator from a sort key.
+        List<Person> byKey = new ArrayList<Person>();
+        byKey.add(new Person("carol", 30));
+        byKey.add(new Person("alice", 25));
+        byKey.add(new Person("bob", 35));
+        byKey.sort(Comparator.comparing((Person p) -> p.name));
+        System.out.println(renderPeople(byKey));
+        byKey.sort(Comparator.comparingInt((Person p) -> p.age));
+        System.out.println(renderPeople(byKey));
     }
 }

@@ -296,15 +296,3 @@ func StreamReduceOptional[T any](s Stream[T], accumulator func(T, T) T) Optional
 	}
 	return OptionalOf(result)
 }
-
-// StreamReduceCombining performs a reduction to a different result type,
-// matching Stream.reduce(identity, accumulator, combiner). The combiner exists
-// in Java only to merge partial results across parallel splits; evaluation here
-// is sequential, so it is accepted and never invoked.
-func StreamReduceCombining[T, R any](s Stream[T], identity R, accumulator func(R, T) R, combiner func(R, R) R) R {
-	result := identity
-	for _, e := range s.elements {
-		result = accumulator(result, e)
-	}
-	return result
-}

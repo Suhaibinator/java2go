@@ -143,9 +143,11 @@ public class OrderFactoryProgram {
     }
 }
 `
-	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.NaturalOrder()")
-	assertContains(t, out, "stdjava.ReverseOrder()")
+	// The element type is spelled out: Go cannot infer it from an argument-free
+	// factory, so an un-parameterized call would not compile.
+	out := assertGeneratedCompiles(t, src)
+	assertContains(t, out, "stdjava.NaturalOrder[int32]()")
+	assertContains(t, out, "stdjava.ReverseOrder[int32]()")
 }
 
 // A class implementing Comparable must not embed a nonexistent Comparable type;

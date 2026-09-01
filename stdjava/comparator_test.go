@@ -58,9 +58,6 @@ func TestComparatorComparingAndReversed(t *testing.T) {
 	if got := byAge.Reversed()(young, old); got <= 0 {
 		t.Fatalf("byAge.Reversed()(young, old) = %d, want positive", got)
 	}
-	if got := ComparatorComparingReversed(func(p comparatorPerson) int32 { return p.age })(young, old); got <= 0 {
-		t.Fatalf("ComparatorComparingReversed(young, old) = %d, want positive", got)
-	}
 }
 
 func TestComparatorThenComparing(t *testing.T) {

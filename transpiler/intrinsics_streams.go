@@ -88,16 +88,28 @@ func registerStreamIntrinsics() {
 			}
 			return nil
 		})
-		// reduce has three arities: no identity (returns Optional), identity plus
-		// accumulator, and the parallel-splitting form with a combiner.
+		// reduce's first two arities keep the element type: reduce(accumulator)
+		// returns an Optional, reduce(identity, accumulator) a plain value.
+		//
+		// The three-argument form is deliberately NOT registered. Its signature is
+		// `<U> U reduce(U, BiFunction<U,T,U>, BinaryOperator<U>)`, so its two
+		// lambdas have different parameter shapes and a result type unrelated to
+		// the stream's element type, which the element-typed lambda machinery
+		// cannot express — it gives every parameter of every lambda the one
+		// element type.
+		//
+		// Both registering it and leaving it out yield Go that does not compile
+		// (an unregistered stdlib method falls through to a plain call on the
+		// runtime type); leaving it out at least keeps the wrong typing out of
+		// the emitted lambdas. Supporting it properly needs per-argument,
+		// per-parameter lambda types, which the Collectors work requires anyway.
+		// See KNOWN_ISSUES K18.
 		registerInstanceIntrinsic(t, "reduce", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			switch len(args) {
 			case 1:
 				return stdjavaCall(ctx, "StreamReduceOptional", recv, args[0])
 			case 2:
 				return stdjavaCall(ctx, "StreamReduce", recv, args[0], args[1])
-			case 3:
-				return stdjavaCall(ctx, "StreamReduceCombining", recv, args[0], args[1], args[2])
 			}
 			return nil
 		})

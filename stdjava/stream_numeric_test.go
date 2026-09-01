@@ -1,6 +1,9 @@
 package stdjava
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestIntStreamRanges(t *testing.T) {
 	assertInt32Slice(t, IntStreamRange(0, 4).ToSlice(), 0, 1, 2, 3)
@@ -123,7 +126,7 @@ func TestStreamSummaryStatistics(t *testing.T) {
 	}
 }
 
-// Java reports Integer.MAX_VALUE / MIN_VALUE for an empty stream's min/max.
+// Java reports Integer.MAX_VALUE / MIN_VALUE for an empty int stream's min/max.
 func TestStreamSummaryStatisticsEmptySentinels(t *testing.T) {
 	stats := StreamSummaryStatistics(NewStream[int32]())
 	if stats.GetCount() != 0 || stats.GetSum() != 0 {
@@ -137,5 +140,46 @@ func TestStreamSummaryStatisticsEmptySentinels(t *testing.T) {
 	}
 	if stats.GetAverage() != 0 {
 		t.Fatalf("empty GetAverage = %v, want 0", stats.GetAverage())
+	}
+}
+
+// The sum must be accumulated at the element's own width. Held in a float64 it
+// silently lost precision above 2^53, and the extremes were truncated to int32.
+func TestStreamSummaryStatisticsLongPrecision(t *testing.T) {
+	const large int64 = 1 << 60
+	stats := StreamSummaryStatistics(NewStream[int64](large, 1))
+	if got := stats.GetSum(); got != large+1 {
+		t.Fatalf("GetSum = %d, want %d", got, large+1)
+	}
+	if got := stats.GetMax(); got != large {
+		t.Fatalf("GetMax = %d, want %d", got, large)
+	}
+	if got := stats.GetMin(); got != 1 {
+		t.Fatalf("GetMin = %d, want 1", got)
+	}
+}
+
+// Java's LongSummaryStatistics and DoubleSummaryStatistics report their own
+// empty sentinels, the latter being the infinities.
+func TestStreamSummaryStatisticsEmptySentinelsPerElementType(t *testing.T) {
+	longStats := StreamSummaryStatistics(NewStream[int64]())
+	if longStats.GetMin() != math.MaxInt64 || longStats.GetMax() != math.MinInt64 {
+		t.Fatalf("empty long sentinels = %d/%d, want Long.MAX_VALUE/MIN_VALUE",
+			longStats.GetMin(), longStats.GetMax())
+	}
+	doubleStats := StreamSummaryStatistics(NewStream[float64]())
+	if !math.IsInf(doubleStats.GetMin(), 1) || !math.IsInf(doubleStats.GetMax(), -1) {
+		t.Fatalf("empty double sentinels = %v/%v, want +Inf/-Inf",
+			doubleStats.GetMin(), doubleStats.GetMax())
+	}
+}
+
+func TestStreamSummaryStatisticsDouble(t *testing.T) {
+	stats := StreamSummaryStatistics(NewStream[float64](1.5, 2.5))
+	if got := stats.GetSum(); got != 4.0 {
+		t.Fatalf("GetSum = %v, want 4", got)
+	}
+	if got := stats.GetAverage(); got != 2.0 {
+		t.Fatalf("GetAverage = %v, want 2", got)
 	}
 }
