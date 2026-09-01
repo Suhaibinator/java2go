@@ -1,0 +1,4 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_106/out
+fuzz/.fuzzbuild/seed_106/out/Gen.go:56:9: cannot use (stdjava.Ternary((-2147483648 <= i5), -1, 256)) / 1 (value of type int) as int32 value in assignment
+fuzz/.fuzzbuild/seed_106/out/Gen.go:65:2: declared and not used: i11

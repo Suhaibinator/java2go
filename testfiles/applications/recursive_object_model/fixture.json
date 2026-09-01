@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.objectmodel.app.RecursiveObjectModelApplication",
+  "module_path": "parity/objectmodel",
+  "status": "passing"
+}

@@ -1,0 +1,3 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_225/out
+fuzz/.fuzzbuild/seed_225/out/Gen.go:51:15: -2.5 (untyped float constant) truncated to int32

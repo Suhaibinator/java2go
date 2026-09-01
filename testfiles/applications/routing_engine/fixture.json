@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.routing.app.RoutingApplication",
+  "module_path": "parity/routing",
+  "status": "passing"
+}

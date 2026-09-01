@@ -1,0 +1,6 @@
+ROUTING REPORT
+nodes=7,edges=10
+standard|0->2->1->3->4->5|cost=13|hops=5
+risk-adjusted|0->1->3->4->5|cost=20|hops=4
+standard|unreachable|cost=-1|hops=0
+checksum=41

@@ -1,31 +1,124 @@
 package symbol
 
+import sitter "github.com/smacker/go-tree-sitter"
+
 // ClassScope represents a single defined class, and the declarations in it
 type ClassScope struct {
 	// The definition for the class defined within the class
 	Class *Definition
+	// Whether this class was declared as an interface.
+	IsInterface bool
 	// Every class that is nested within the base class
 	Subclasses []*ClassScope
+	// Superclass (as written in source, may include type arguments), if any.
+	// Example: "Animal" or "Base<T>".
+	Superclass string
+	// Whether this class was declared abstract.
+	IsAbstract bool
 	// Any normal and static fields associated with the class
 	Fields []*Definition
 	// Methods and constructors
 	Methods []*Definition
+	// AffineArrayViews groups proven trivial accessors over the same private final
+	// backing array and private final row-stride field. It is empty unless the
+	// declaring class is final and every recorded invariant was proven from source.
+	AffineArrayViews []*AffineArrayView
 	// Whether this class is an enum
 	IsEnum bool
-	// Enum constant names (only populated if IsEnum is true)
-	EnumConstants []string
+	// Interfaces implemented by this class/enum (content as written in source)
+	ImplementedInterfaces []string
+	// Enum constants declared on the enum (only populated if IsEnum is true)
+	EnumConstants []EnumConstant
 	// Type parameters for generic classes (e.g., ["T", "U"] for class Foo<T, U>)
-	TypeParameters []string
+	TypeParameters []TypeParam
+	// DeclaredTypeParameters contains only the parameters written on this class's
+	// declaration. TypeParameters is the generated ABI view and may additionally
+	// carry parameters from an enclosing class for a non-static member class.
+	// Keeping the source arity separate is required because Java spells
+	// Outer<T>.Inner<U> with only U at an Inner use site, while the generated Go
+	// type must be instantiated with both T and U.
+	DeclaredTypeParameters []TypeParam
+	// Whether this class contains included (non-static, non-excluded) field initializers.
+	// This is set during transpilation pass and used to wire constructor initialization.
+	HasInstanceFieldInitializers bool
+	// IsInner is true for a non-static nested class (an "inner" class in Java
+	// terms). Inner classes hold an implicit reference to an instance of their
+	// enclosing class, which is modeled as a synthesized field.
+	IsInner bool
+	// Enclosing is the immediately-enclosing class scope for a nested class, or
+	// nil for top-level classes. Set when the nested class is parsed.
+	Enclosing *ClassScope
+	// EnclosingField overrides the default synthesized enclosing-instance field
+	// spelling when that spelling would collide with another generated selector.
+	// It is primarily used by hoisted anonymous/local classes, whose Java member
+	// namespaces have to be reconciled with Go's single selector namespace.
+	EnclosingField string
+}
+
+// EnclosingFieldName returns the name of the synthesized field that an inner
+// class uses to hold its enclosing instance (e.g. an inner class of Outer gets
+// a field named "outer"). Empty for non-inner classes.
+func (cs *ClassScope) EnclosingFieldName() string {
+	if cs == nil || !cs.IsInner || cs.Enclosing == nil || cs.Enclosing.Class == nil {
+		return ""
+	}
+	if cs.EnclosingField != "" {
+		return cs.EnclosingField
+	}
+	name := Lowercase(cs.Enclosing.Class.OriginalName)
+	if IsReserved(name) {
+		name += "_"
+	}
+	return name
+}
+
+// EnumConstant represents a single enum constant and its constructor arguments.
+// Arguments are stored as tree-sitter nodes so they can later be converted into
+// Go expressions during code generation.
+type EnumConstant struct {
+	Name      string
+	Arguments []*sitter.Node
+	Body      *sitter.Node
 }
 
 // IsTypeParameter checks if a given name is a type parameter of this class
 func (cs *ClassScope) IsTypeParameter(name string) bool {
 	for _, tp := range cs.TypeParameters {
-		if tp == name {
+		if tp.Name == name {
 			return true
 		}
 	}
 	return false
+}
+
+func (cs *ClassScope) TypeParameterNames() []string {
+	return TypeParamNames(cs.TypeParameters)
+}
+
+// GoTypeParameterNames returns collision-free generated binder spellings.
+// TypeParameterNames intentionally remains the Java source-name view used for
+// lexical lookup and substitution.
+func (cs *ClassScope) GoTypeParameterNames() []string {
+	if cs == nil {
+		return nil
+	}
+	return GoTypeParamNames(cs.TypeParameters)
+}
+
+// OwnTypeParameters returns the source-declared parameters for a parsed class.
+// A non-nil empty DeclaredTypeParameters slice intentionally means the class
+// declared no parameters even when its generated ABI carries enclosing ones.
+// Synthetic scopes created by older lowering paths leave the field nil and
+// continue to treat all TypeParameters as their own until they provide the
+// richer metadata explicitly.
+func (cs *ClassScope) OwnTypeParameters() []TypeParam {
+	if cs == nil {
+		return nil
+	}
+	if cs.DeclaredTypeParameters != nil {
+		return cs.DeclaredTypeParameters
+	}
+	return cs.TypeParameters
 }
 
 // FindMethod searches through the immediate class's methods find a specific method
@@ -135,6 +228,19 @@ func (cs *ClassScope) FindClass(name string) *Definition {
 		class := subclass.FindClass(name)
 		if class != nil {
 			return class
+		}
+	}
+	return nil
+}
+
+// FindClassScope searches for the class scope by its original name.
+func (cs *ClassScope) FindClassScope(name string) *ClassScope {
+	if cs.Class.OriginalName == name {
+		return cs
+	}
+	for _, subclass := range cs.Subclasses {
+		if scope := subclass.FindClassScope(name); scope != nil {
+			return scope
 		}
 	}
 	return nil

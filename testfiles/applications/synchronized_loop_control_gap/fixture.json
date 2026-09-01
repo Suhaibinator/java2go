@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.synchronizedcontrol.SynchronizedLoopControlApplication",
+  "module_path": "parity/synchronizedcontrol",
+  "status": "passing"
+}

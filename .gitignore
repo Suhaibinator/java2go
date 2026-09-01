@@ -1,5 +1,5 @@
-# Main binary
-java2go
+# Main binary (anchored so it doesn't ignore cmd/java2go/)
+/java2go
 
 # Intemediary decompiled directories
 quiltflower-src/
@@ -17,3 +17,8 @@ namedSrc/
 
 # Compiled test files
 *.class
+transpiler/zz_*_test.go
+.claude/
+
+# Agent verification artifacts
+.e2e_v/

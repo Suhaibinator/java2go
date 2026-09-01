@@ -1,0 +1,5 @@
+{
+  "category": "allocation_gc",
+  "description": "Short-lived array allocation, retained cyclic object graphs, and cohort replacement",
+  "iterations": 1
+}

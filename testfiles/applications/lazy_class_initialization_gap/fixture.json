@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.lazyclassinit.LazyClassInitializationApplication",
+  "module_path": "parity/lazyclassinit",
+  "status": "passing"
+}

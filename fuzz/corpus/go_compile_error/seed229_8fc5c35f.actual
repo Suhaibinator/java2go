@@ -1,0 +1,4 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_229/out
+fuzz/.fuzzbuild/seed_229/out/Gen.go:43:7: invalid operation: (stdjava.UnsignedRightShift((stdjava.Ternary(true, 100, -2)), 0)) * (stdjava.Ternary((-2 == -146), 256, i1)) (mismatched types int and int32)
+fuzz/.fuzzbuild/seed_229/out/Gen.go:72:2: undefined: UnsignedRightShiftAssignment

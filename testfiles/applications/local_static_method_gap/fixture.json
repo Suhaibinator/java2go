@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.localstatic.LocalStaticMethodApplication",
+  "module_path": "parity/localstatic",
+  "status": "passing"
+}

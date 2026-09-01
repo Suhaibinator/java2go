@@ -3,9 +3,50 @@ package astutil
 import (
 	"fmt"
 	"go/ast"
+	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
+
+func autoCloseableInterfaceType() ast.Expr {
+	return &ast.InterfaceType{
+		Methods: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{{Name: "Close"}},
+					Type: &ast.FuncType{
+						Params: &ast.FieldList{},
+					},
+				},
+			},
+		},
+	}
+}
+
+// boxedPrimitiveType maps a Java boxed wrapper type name to its Go primitive
+// equivalent. The value form is used; Java's wrapper nullability is not modelled.
+// A Java int is int32 in this codebase, so Integer maps to int32.
+func boxedPrimitiveType(name string) (ast.Expr, bool) {
+	switch name {
+	case "Integer":
+		return &ast.Ident{Name: "int32"}, true
+	case "Long":
+		return &ast.Ident{Name: "int64"}, true
+	case "Short":
+		return &ast.Ident{Name: "int16"}, true
+	case "Byte":
+		return &ast.Ident{Name: "int8"}, true
+	case "Character":
+		return &ast.Ident{Name: "rune"}, true
+	case "Float":
+		return &ast.Ident{Name: "float32"}, true
+	case "Double":
+		return &ast.Ident{Name: "float64"}, true
+	case "Boolean":
+		return &ast.Ident{Name: "bool"}, true
+	}
+	return nil, false
+}
 
 // ParseType parses a Java type node and converts it to a Go AST expression.
 // This version does not handle type parameters - use ParseTypeWithTypeParams for generic contexts.
@@ -38,7 +79,8 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		case "char":
 			return &ast.Ident{Name: "rune"}
 		case "byte":
-			return &ast.Ident{Name: node.Content(source)}
+			// Java byte is signed; Go's predeclared byte is an alias for uint8.
+			return &ast.Ident{Name: "int8"}
 		}
 
 		panic(fmt.Errorf("unknown integral type: %v", node.Child(0).Type()))
@@ -128,7 +170,7 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 			}
 		}
 
-		var arrayType ast.Expr = elemType
+		arrayType := elemType
 		for i := 0; i < dimensionCount; i++ {
 			arrayType = &ast.ArrayType{Elt: arrayType}
 		}
@@ -139,6 +181,20 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		// Special case for strings, because in Go, these are primitive types
 		if typeName == "String" {
 			return &ast.Ident{Name: "string"}
+		}
+		// Java's Object is the universal supertype, which maps to Go's any.
+		if typeName == "Object" {
+			return &ast.Ident{Name: "any"}
+		}
+		if typeName == "AutoCloseable" {
+			return autoCloseableInterfaceType()
+		}
+		// Boxed wrapper types map to their Go primitive (value form; nullability
+		// is not modelled). This covers boxed declared types (Integer x) and boxed
+		// type arguments (List<Integer>), which would otherwise emit an undefined
+		// *Integer.
+		if boxed, ok := boxedPrimitiveType(typeName); ok {
+			return boxed
 		}
 
 		// If this is a type parameter, don't wrap it in a pointer
@@ -152,7 +208,24 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 	case "scoped_type_identifier":
 		// This contains a reference to the type of a nested class
 		// Ex: LinkedList.Node
+		if strings.HasSuffix(node.Content(source), ".AutoCloseable") {
+			return autoCloseableInterfaceType()
+		}
 		return &ast.StarExpr{X: &ast.Ident{Name: node.Content(source)}}
+	case "wildcard":
+		// Java wildcards are approximated. ? and ? super T become any;
+		// ? extends T maps to T's parsed type.
+		content := node.Content(source)
+		if strings.Contains(content, "super") {
+			return &ast.Ident{Name: "any"}
+		}
+		if node.NamedChildCount() > 0 {
+			last := node.NamedChild(int(node.NamedChildCount()) - 1)
+			if last != nil && last.Type() != "super" {
+				return ParseTypeWithTypeParams(last, source, typeParams)
+			}
+		}
+		return &ast.Ident{Name: "any"}
 	}
 	panic("Unknown type to convert: " + node.Type())
 }

@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.synchronizedreentrant.SynchronizedReentrantMonitorApplication",
+  "module_path": "parity/synchronizedreentrant",
+  "status": "passing"
+}

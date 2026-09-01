@@ -1,0 +1,4 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_219/out
+fuzz/.fuzzbuild/seed_219/out/Gen.go:30:9: invalid operation: i3 / d1 (mismatched types int32 and float64)
+fuzz/.fuzzbuild/seed_219/out/Gen.go:53:14: constant 4295032831 overflows int32

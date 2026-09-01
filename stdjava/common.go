@@ -18,14 +18,58 @@ func Ternary[T any](condition bool, result1, result2 T) T {
 // operation where a number is shifted over the number of times specified, but
 // the topmost bits are always filled in with zeroes
 func UnsignedRightShift[V, A constraints.Integer](value V, amount A) V {
-	return V(uint32(value) >> amount)
+	// Java applies >>> to either a 32-bit int or a 64-bit long. Generated Go
+	// uses int32/int64 for those types; untyped/direct int calls retain the
+	// historical Java-int behavior.
+	switch any(value).(type) {
+	case int64, uint64:
+		return V(uint64(value) >> uint64(amount))
+	default:
+		return V(uint32(value) >> uint32(amount))
+	}
 }
 
 // UnsignedRightShiftAssignment represents a right-shift assignment (`>>>=`)
 // where a value is assigned the result of an unsigned right shift
-func UnsignedRightShiftAssignment[A any, V constraints.Integer](assignTo *A, value V) {
-	// TODO: Fix this conversion hack, and change the function to take proper values
-	*assignTo = interface{}(UnsignedRightShift(value, 2)).(A)
+func UnsignedRightShiftAssignment[V, A constraints.Integer](assignTo *V, amount A) {
+	*assignTo = UnsignedRightShift(*assignTo, amount)
+}
+
+// number covers the Java primitive numeric types that support the ++ and --
+// operators.
+type number interface {
+	constraints.Integer | constraints.Float
+}
+
+// PostIncrement implements Java's post-increment (`x++`) in expression position:
+// it increments the pointed-to value and returns the value from before the
+// increment.
+func PostIncrement[T number](p *T) T {
+	old := *p
+	*p++
+	return old
+}
+
+// PreIncrement implements Java's pre-increment (`++x`): it increments the
+// pointed-to value and returns the new value.
+func PreIncrement[T number](p *T) T {
+	*p++
+	return *p
+}
+
+// PostDecrement implements Java's post-decrement (`x--`): it decrements the
+// pointed-to value and returns the value from before the decrement.
+func PostDecrement[T number](p *T) T {
+	old := *p
+	*p--
+	return old
+}
+
+// PreDecrement implements Java's pre-decrement (`--x`): it decrements the
+// pointed-to value and returns the new value.
+func PreDecrement[T number](p *T) T {
+	*p--
+	return *p
 }
 
 // HashCode is an implementation of Java's String `hashCode` method

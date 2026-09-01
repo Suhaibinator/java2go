@@ -1,0 +1,5 @@
+found 5
+app: zero id
+not-found: no id -1
+caught-as-runtime: missing -7
+ok 3

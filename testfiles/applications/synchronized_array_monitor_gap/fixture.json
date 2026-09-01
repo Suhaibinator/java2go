@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.synchronizedarray.SynchronizedArrayMonitorApplication",
+  "module_path": "parity/synchronizedarray",
+  "status": "passing"
+}

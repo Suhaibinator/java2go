@@ -1,0 +1,17 @@
+ANALYTICS PIPELINE v1
+SOURCE rows=20
+ACCEPTED count=15 rejected=5
+REJECTION row=6 code=FIELD_COUNT detail=expected_6_fields_got_2
+REJECTION row=10 code=INVALID_NUMBER detail=latency_oops
+REJECTION row=16 code=INVALID_BOOLEAN detail=success_maybe
+REJECTION row=17 code=NEGATIVE_UNITS detail=units_-2
+REJECTION row=20 code=INVALID_ACTION detail=action_UNKNOWN
+TOTAL events=15 successes=11 failures=4 units=37 avgLatency=251 score=179
+RANK 1 segment=north events=4 successRate=75 avgLatency=257 range=120..410 units=10 score=56 index=610
+RANK 2 segment=east events=3 successRate=66 avgLatency=220 range=140..360 units=9 score=49 index=534
+RANK 3 segment=south events=3 successRate=100 avgLatency=195 range=80..275 units=4 score=33 index=411
+RANK 4 segment=west events=3 successRate=66 avgLatency=353 range=90..520 units=10 score=26 index=291
+RANK 5 segment=central events=2 successRate=50 avgLatency=220 range=110..330 units=4 score=15 index=178
+HOTSPOT segment=west spread=430
+CHECKSUM value=84014
+END analytics-v1

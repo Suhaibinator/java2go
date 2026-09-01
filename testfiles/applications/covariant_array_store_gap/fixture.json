@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.arraycovariance.CovariantArrayStoreApplication",
+  "module_path": "parity/arraycovariance",
+  "status": "passing"
+}

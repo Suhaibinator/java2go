@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.arraytiming.ArrayAssignmentTimingApplication",
+  "module_path": "parity/arraytiming",
+  "status": "passing"
+}

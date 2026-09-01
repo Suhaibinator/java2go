@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.rawunboundbridge.RawUnboundBridgeProbe",
+  "module_path": "parity/rawunboundbridge",
+  "status": "passing"
+}

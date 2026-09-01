@@ -1,0 +1,9 @@
+BODY_TRACE=B21
+BODY_PRIMARY=body
+BODY_SUPPRESSED=2:close-2:close-1
+CLOSE_TRACE=B21
+CLOSE_PRIMARY=close-2
+CLOSE_SUPPRESSED=1:close-1
+RETURN=BC:close-C
+SELF=Self-suppression not permitted:0:true:shared
+DISTINCT=true:1:true

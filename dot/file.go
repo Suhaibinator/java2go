@@ -16,7 +16,7 @@ func (d Dotfile) Name() string {
 }
 
 func (d *Dotfile) DeleteSubgraph(name string) {
-	delete(d.SubGraph.subgraphs, name)
+	delete(d.subgraphs, name)
 }
 
 type GraphPrinter interface {
@@ -162,7 +162,7 @@ func (d *Dotfile) WriteToFile() {
 
 	// Then, go through the nodes
 	for name, node := range d.nodes {
-		fmt.Fprintf(d, "  \"%s\" -> {%s}\n", name, commaSeparatedString(node.edges))
+		_, _ = fmt.Fprintf(d, "  \"%s\" -> {%s}\n", name, commaSeparatedString(node.edges))
 	}
 
 	// Finally, connect all the edges from everything else
@@ -175,7 +175,7 @@ func (d *Dotfile) WriteToFile() {
 		if edge.From == "" {
 			continue
 		}
-		fmt.Fprintf(d, "\"%s\" -> {%s}\n", edge.From, commaSeparatedString(edge.To))
+		_, _ = fmt.Fprintf(d, "\"%s\" -> {%s}\n", edge.From, commaSeparatedString(edge.To))
 	}
 	_, _ = d.WriteString("}")
 }

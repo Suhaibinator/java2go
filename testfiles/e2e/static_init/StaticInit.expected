@@ -1,0 +1,7 @@
+init a
+block1
+init b
+init c
+block2 sees a=1 b=2 c=3
+main
+6

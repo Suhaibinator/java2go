@@ -15,25 +15,100 @@ It does this through several steps:
 
 Note: Java2go is still in development, and as such, please expect many bugs
 
-Currently, the following features are not implemented
+Currently, the following features are not implemented (or only partially implemented):
 
-* [ ] Enum classes (Fully)
-* [ ] Generic types
-* [ ] Any type of inheritance
-    * [ ] Abstract classes
-    * [ ] Lambda interfaces
-    * [ ] Inheritance
-* [ ] Decorators
+* [x] Abstract classes (abstract methods in enums are supported)
+* [ ] Decorators / annotations (beyond passthrough as comments and optional exclusion)
 * [ ] Anything that checks `instanceof`
 * [ ] Types for lambda expressions
+
+## Enum support
+
+Java2go provides comprehensive enum support, converting Java enums to Go structs with singleton instances:
+
+* Basic enum constants become pointer variables to struct instances
+* Enums with fields and constructors are fully supported
+* Standard enum methods are generated:
+  * `EnumNameValues()` returns all enum constants as a slice
+  * `EnumNameValueOf(name string)` converts a string to an enum constant
+  * `Name()` and `Ordinal()` accessors
+  * `CompareTo(other)` for comparing enum constants
+* Enums implementing interfaces embed those interfaces in the generated struct
+* Constant-specific class bodies (method overrides per constant) are supported via dispatch wrappers
+* Abstract methods in enums generate wrappers that panic for unimplemented constants
+
+## Generics support
+
+Java2go supports Go 1.18+ generics for many common Java patterns:
+
+* Generic classes (e.g. `class Box<T>`) become parameterized Go types (e.g. `type Box[T any] struct { ... }`).
+* Java type parameter bounds (e.g. `<T extends Number & Comparable<T>>`) are converted into Go constraint expressions on structs, functions, and generated helpers/constructors.
+* Generic constructors and `new` calls support explicit type arguments and the diamond operator (`<>`) when the expected type is known from a local variable declaration.
+* Nested generic types are handled (e.g. `Map<String, List<Integer>>`).
+* Static generic methods are emitted as generic Go functions.
+* Instance generic methods are modeled via generated helper types (since Go methods can’t declare their own type parameters).
+
+Current limitations:
+
+* Complex bound combinations or wildcard/variance semantics may still be approximated when translated into Go constraints.
+* Wildcards and variance (`?`, `? extends`, `? super`) are approximated (often as `any`).
+* Generic interfaces are emitted as parameterized Go interfaces, including constraints derived from Java bounds.
 
 ## Usage
 
 * Clone the repo
 
-* `go build` to build the java2go binary
+* `go build ./cmd/java2go` to build the java2go binary
 
-* `./java2go <files>` to parse a list of files or directories
+* `./java2go <files>` to parse a list of files or directories (or run directly with `go run ./cmd/java2go <files>`)
+
+## Application parity tests
+
+The project includes deterministic, multi-package Java applications that are
+compiled and run with a real JDK, transpiled as complete source trees, compiled
+as Go, and compared byte for byte:
+
+```sh
+go test ./e2e -run '^TestApplicationParity$' -v
+```
+
+Passing applications enforce regressions immediately. Known-gap applications
+must reproduce a pinned failure and become strict TDD targets with:
+
+```sh
+JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
+```
+
+Two additional live-oracle suites protect the existing corpus. The first runs
+all programs below `testfiles/e2e`; the second automatically discovers older
+runnable Java programs elsewhere under `testfiles`. Both compile and run Java
+and generated Go in isolated directories, then compare exit status, stdout, and
+stderr exactly:
+
+```sh
+go test ./e2e -run '^(TestE2EPrograms|TestLegacyApplicationParity)$' -v
+```
+
+CI sets `JAVA2GO_PARITY_STRICT=1`, so a known-gap application cannot be accepted
+on the protected test path.
+
+See [`testfiles/applications/README.md`](testfiles/applications/README.md) for
+the fixture contract, current application matrix, and promotion workflow.
+
+CPU-intensive fixtures also carry `benchmark.json`. The benchmark harness
+builds both implementations outside the timer, performs an untimed validation
+run, then verifies the exact parity oracle after every measured process:
+
+```sh
+go test ./e2e -run '^$' -bench '^BenchmarkApplicationPerformance$' -benchtime=1x -count=3
+```
+
+Results include runtime startup and shutdown. The workloads are deliberately
+large enough to keep that overhead from dominating; use the reported `ns/run`
+metric to compare individual executions when a fixture batches multiple runs.
+The checked-in workloads are calibrated for roughly ten-second-or-longer Java
+runs on the reference development host while staying well below 8 GiB peak RSS.
+Those values guide workload sizing rather than acting as portable test limits.
 
 ## Options
 
@@ -50,3 +125,8 @@ Currently, the following features are not implemented
 * `-sync` parses the files in sequential order, instead of in parallel
 
 * `-exclude-annotations` specifies a list of annotations on methods and fields that will exclude them from the generated code
+
+* `-init-go-mod` creates a `go.mod` file in the output directory when writing files (`-w`)
+
+* `-module` sets the module path used by `-init-go-mod` (default: `generated`)
+  * When Java packages share that prefix (for example module `com/acme` with package `com.acme.app`), generated files are written module-relative (for example `app/MainApp.go`)

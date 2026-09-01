@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.rawinnerunbound.RawInnerUnboundReferenceProbe",
+  "module_path": "parity/rawinnerunbound",
+  "status": "passing"
+}

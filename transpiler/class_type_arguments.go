@@ -1,0 +1,356 @@
+package transpiler
+
+import (
+	"strings"
+
+	"github.com/NickyBoy89/java2go/symbol"
+)
+
+// typeParameterLookup resolves Java source references without collapsing
+// distinct same-named declarations. The source-name map is retained only as a
+// compatibility fallback for older synthetic TypeParam values that do not yet
+// carry declaration identity.
+type typeParameterLookup struct {
+	byDeclaration map[*symbol.TypeParamDeclaration]symbol.TypeParam
+	byName        map[string]symbol.TypeParam
+}
+
+func newTypeParameterLookup(parameters []symbol.TypeParam) typeParameterLookup {
+	lookup := typeParameterLookup{
+		byDeclaration: make(map[*symbol.TypeParamDeclaration]symbol.TypeParam, len(parameters)),
+		byName:        make(map[string]symbol.TypeParam, len(parameters)*2),
+	}
+	for _, parameter := range parameters {
+		if parameter.Declaration != nil {
+			lookup.byDeclaration[parameter.Declaration] = parameter
+		}
+		lookup.byName[parameter.Name] = parameter
+		lookup.byName[parameter.EmittedName()] = parameter
+	}
+	return lookup
+}
+
+func (lookup typeParameterLookup) resolve(javaType symbol.JavaType, name string) (symbol.TypeParam, bool) {
+	if declaration := javaType.TypeParameterBindings[name]; declaration != nil {
+		parameter, found := lookup.byDeclaration[declaration]
+		return parameter, found
+	}
+	parameter, found := lookup.byName[name]
+	return parameter, found
+}
+
+type typeParameterIdentityKey struct {
+	declaration *symbol.TypeParamDeclaration
+	legacyName  string
+}
+
+func identityKeyForTypeParameter(parameter symbol.TypeParam) typeParameterIdentityKey {
+	if parameter.Declaration != nil {
+		return typeParameterIdentityKey{declaration: parameter.Declaration}
+	}
+	return typeParameterIdentityKey{legacyName: parameter.Name}
+}
+
+type receiverTypeArgumentBindings struct {
+	byDeclaration  map[*symbol.TypeParamDeclaration]string
+	byUniqueName   map[string]string
+	ambiguousNames map[string]struct{}
+}
+
+func (bindings receiverTypeArgumentBindings) argumentFor(parameter symbol.TypeParam) (string, bool) {
+	if parameter.Declaration != nil {
+		if argument, found := bindings.byDeclaration[parameter.Declaration]; found {
+			return argument, true
+		}
+	}
+	if _, ambiguous := bindings.ambiguousNames[parameter.Name]; ambiguous {
+		return "", false
+	}
+	argument, found := bindings.byUniqueName[parameter.Name]
+	return argument, found
+}
+
+// normalizeClassTypeArguments converts Java's source-level type arguments into
+// the complete generated Go ABI for a class. A member class declares only its
+// own trailing parameters in source, but TypeParameters also contains the
+// leading parameters carried from its enclosing instance.
+//
+// receiverTypeArguments is nil when the receiver is the current generic
+// declaration (its parameter names are therefore the actual arguments). A
+// non-nil slice supplies a concrete receiver view, as in
+// outer<String>.new Child<Impl>().
+func normalizeClassTypeArguments(
+	scope *symbol.ClassScope,
+	sourceTypeArguments []string,
+	receiverScope *symbol.ClassScope,
+	receiverTypeArguments []string,
+) []string {
+	if scope == nil || len(scope.TypeParameters) == 0 {
+		return append([]string(nil), sourceTypeArguments...)
+	}
+	if len(sourceTypeArguments) == len(scope.TypeParameters) {
+		return append([]string(nil), sourceTypeArguments...)
+	}
+
+	declared := scope.OwnTypeParameters()
+	hiddenCount := len(scope.TypeParameters) - len(declared)
+	if hiddenCount < 0 {
+		hiddenCount = 0
+	}
+
+	available := receiverClassTypeArgumentBindings(receiverScope, receiverTypeArguments)
+	result := make([]string, 0, len(scope.TypeParameters))
+
+	// A partially-qualified member type may already supply some enclosing
+	// arguments. Arguments beyond the class's declared arity belong to leading
+	// carried slots; remaining hidden slots come from the receiver view.
+	providedHidden := len(sourceTypeArguments) - len(declared)
+	if providedHidden < 0 {
+		providedHidden = 0
+	}
+	if providedHidden > hiddenCount {
+		providedHidden = hiddenCount
+	}
+	for index := 0; index < hiddenCount; index++ {
+		parameter := scope.TypeParameters[index]
+		if index < providedHidden {
+			result = append(result, sourceTypeArguments[index])
+			continue
+		}
+		if argument, found := available.argumentFor(parameter); found && strings.TrimSpace(argument) != "" {
+			result = append(result, argument)
+			continue
+		}
+		result = append(result, rawTypeParameterErasure(parameter, scope.TypeParameters))
+	}
+
+	declaredOffset := providedHidden
+	for index, parameter := range declared {
+		argumentIndex := declaredOffset + index
+		if argumentIndex < len(sourceTypeArguments) {
+			result = append(result, sourceTypeArguments[argumentIndex])
+			continue
+		}
+		result = append(result, rawTypeParameterErasure(parameter, scope.TypeParameters))
+	}
+
+	// Synthetic scopes can expose an older, non-prefix parameter layout. Keep
+	// their ABI valid by erasing any slots not described by the declared view.
+	for len(result) < len(scope.TypeParameters) {
+		result = append(result, rawTypeParameterErasure(scope.TypeParameters[len(result)], scope.TypeParameters))
+	}
+	return result
+}
+
+func receiverClassTypeArgumentBindings(scope *symbol.ClassScope, arguments []string) receiverTypeArgumentBindings {
+	if scope == nil {
+		return receiverTypeArgumentBindings{}
+	}
+	actual := arguments
+	if actual == nil {
+		actual = scope.GoTypeParameterNames()
+	}
+	bindings := receiverTypeArgumentBindings{
+		byDeclaration:  make(map[*symbol.TypeParamDeclaration]string, len(scope.TypeParameters)),
+		byUniqueName:   make(map[string]string, len(scope.TypeParameters)),
+		ambiguousNames: make(map[string]struct{}),
+	}
+	for index, parameter := range scope.TypeParameters {
+		if index >= len(actual) || strings.TrimSpace(actual[index]) == "" {
+			continue
+		}
+		argument := actual[index]
+		if parameter.Declaration != nil {
+			bindings.byDeclaration[parameter.Declaration] = argument
+		}
+		if _, ambiguous := bindings.ambiguousNames[parameter.Name]; ambiguous {
+			continue
+		}
+		if _, duplicate := bindings.byUniqueName[parameter.Name]; duplicate {
+			delete(bindings.byUniqueName, parameter.Name)
+			bindings.ambiguousNames[parameter.Name] = struct{}{}
+			continue
+		}
+		bindings.byUniqueName[parameter.Name] = argument
+	}
+	return bindings
+}
+
+// classTypeArgumentStringsForScope projects actual arguments from one class
+// scope onto another scope that carries the same type-parameter declarations.
+// Member-class ABIs use this when following a synthetic enclosing-instance
+// field: the inner value carries its owner's parameters, but only the owner's
+// declaration slots belong in the enclosing value's type.
+func classTypeArgumentStringsForScope(
+	source *symbol.ClassScope,
+	sourceArguments []string,
+	target *symbol.ClassScope,
+) []string {
+	if target == nil || len(target.TypeParameters) == 0 {
+		return nil
+	}
+	available := receiverClassTypeArgumentBindings(source, sourceArguments)
+	result := make([]string, 0, len(target.TypeParameters))
+	for _, parameter := range target.TypeParameters {
+		if argument, found := available.argumentFor(parameter); found && strings.TrimSpace(argument) != "" {
+			result = append(result, argument)
+			continue
+		}
+		result = append(result, rawTypeParameterErasure(parameter, target.TypeParameters))
+	}
+	return result
+}
+
+// diamondClassTypeArgumentPrefix supplies only a member class's carried
+// enclosing arguments. Its own declared arguments remain omitted so Go can
+// infer them from constructor arguments, matching Java diamond inference when
+// no target type is available. Go accepts this leading partial type-argument
+// list and infers the remaining trailing parameters.
+func diamondClassTypeArgumentPrefix(
+	scope *symbol.ClassScope,
+	receiverScope *symbol.ClassScope,
+	receiverArguments []string,
+) []string {
+	if scope == nil {
+		return nil
+	}
+	hiddenCount := len(scope.TypeParameters) - len(scope.OwnTypeParameters())
+	if hiddenCount <= 0 {
+		return nil
+	}
+	available := receiverClassTypeArgumentBindings(receiverScope, receiverArguments)
+	result := make([]string, 0, hiddenCount)
+	for index := 0; index < hiddenCount; index++ {
+		parameter := scope.TypeParameters[index]
+		if argument, found := available.argumentFor(parameter); found && strings.TrimSpace(argument) != "" {
+			result = append(result, argument)
+			continue
+		}
+		result = append(result, rawTypeParameterErasure(parameter, scope.TypeParameters))
+	}
+	return result
+}
+
+// mapClassTypeArgumentStringsToAncestor resolves the concrete generic view of
+// ancestor as observed through child. Each superclass or implemented-interface
+// edge is interpreted in its declaring scope and then substituted positionally
+// using that scope's actual arguments. This is the string-level counterpart of
+// mapClassTypeArgsToAncestor and is used before Go AST type expressions exist.
+//
+// Keeping this walk declaration/position based matters for inherited member
+// construction: Sub<String>.new Inner<Integer>() must pass the embedded
+// Base<String> value and instantiate Inner's hidden Base parameter with String,
+// not with raw Object.
+func mapClassTypeArgumentStringsToAncestor(
+	child *symbol.ClassScope,
+	childTypeArguments []string,
+	ancestor *symbol.ClassScope,
+	ctx Ctx,
+) []string {
+	if child == nil || ancestor == nil {
+		return nil
+	}
+	type classTypeArgumentView struct {
+		scope     *symbol.ClassScope
+		arguments []string
+	}
+	initialArguments := append([]string(nil), childTypeArguments...)
+	if len(child.TypeParameters) > 0 && len(initialArguments) != len(child.TypeParameters) {
+		initialArguments = normalizeClassTypeArguments(child, initialArguments, ctx.currentClass, nil)
+	}
+	queue := []classTypeArgumentView{{scope: child, arguments: initialArguments}}
+	seen := map[*symbol.ClassScope]struct{}{}
+
+	for len(queue) > 0 {
+		view := queue[0]
+		queue = queue[1:]
+		current := view.scope
+		currentArguments := view.arguments
+		if current == ancestor {
+			return currentArguments
+		}
+		if _, duplicate := seen[current]; duplicate {
+			continue
+		}
+		seen[current] = struct{}{}
+
+		declarationCtx := ctx.Clone()
+		if file := findFileScopeForClassScope(current); file != nil {
+			declarationCtx.currentFile = file
+			declarationCtx.currentClass = current
+		}
+		parentTypes := make([]string, 0, 1+len(current.ImplementedInterfaces))
+		if superType := strings.TrimSpace(current.Superclass); superType != "" {
+			parentTypes = append(parentTypes, superType)
+		}
+		parentTypes = append(parentTypes, current.ImplementedInterfaces...)
+
+		for _, parentType := range parentTypes {
+			base, declaredParentArguments := parseJavaTypeString(parentType)
+			parent := resolveClassScopeByQualifiedName(declarationCtx, base)
+			if parent == nil {
+				continue
+			}
+
+			// TypeParameters is ordered outermost-to-innermost, so assigning source
+			// spellings in order intentionally lets the nearest declaration win Java
+			// lexical shadowing. Emitted names remain unique and are also accepted.
+			bindings := make(map[string]string, len(current.TypeParameters)*2)
+			for index, parameter := range current.TypeParameters {
+				if index >= len(currentArguments) {
+					continue
+				}
+				bindings[parameter.Name] = currentArguments[index]
+				bindings[parameter.EmittedName()] = currentArguments[index]
+			}
+
+			normalizedParentArguments := normalizeClassTypeArguments(
+				parent,
+				declaredParentArguments,
+				current,
+				currentArguments,
+			)
+			parentArguments := make([]string, len(normalizedParentArguments))
+			for index, argument := range normalizedParentArguments {
+				parentArguments[index] = substituteJavaTypeParameters(argument, bindings)
+			}
+			queue = append(queue, classTypeArgumentView{scope: parent, arguments: parentArguments})
+		}
+	}
+
+	return nil
+}
+
+// rawTypeParameterErasure implements Java's first-bound erasure for a missing
+// source argument. A parameter-to-parameter bound is followed transitively;
+// an unbounded or cyclic parameter erases to Object.
+func rawTypeParameterErasure(parameter symbol.TypeParam, visible []symbol.TypeParam) string {
+	lookup := newTypeParameterLookup(visible)
+	visiting := map[typeParameterIdentityKey]bool{}
+	var erase func(symbol.TypeParam) string
+	erase = func(current symbol.TypeParam) string {
+		identity := identityKeyForTypeParameter(current)
+		if visiting[identity] || len(current.Bounds) == 0 {
+			return "Object"
+		}
+		visiting[identity] = true
+		defer delete(visiting, identity)
+
+		bound := strings.TrimSpace(current.Bounds[0].Original)
+		if bound == "" {
+			return "Object"
+		}
+		base, arguments := parseJavaTypeString(bound)
+		if next, ok := lookup.resolve(current.Bounds[0], strings.TrimSpace(base)); ok && len(arguments) == 0 {
+			return erase(next)
+		}
+		// Java erasure drops the bound's own type arguments. The downstream type
+		// converter will instantiate a generated generic raw class with its own
+		// erased arguments when Go requires them.
+		if strings.TrimSpace(base) != "" {
+			return base
+		}
+		return "Object"
+	}
+	return erase(parameter)
+}

@@ -57,6 +57,20 @@ func (ps *PackageScope) AddSymbolsFromFile(symbols *FileScope) {
 	ps.Files[symbols.BaseClass.Class.Name] = symbols
 }
 
+// FindClassScope searches for a class scope by original name across all files in
+// this package (including nested classes).
+func (ps *PackageScope) FindClassScope(name string) *ClassScope {
+	for _, fileScope := range ps.Files {
+		if fileScope == nil {
+			continue
+		}
+		if scope := fileScope.FindClassScope(name); scope != nil {
+			return scope
+		}
+	}
+	return nil
+}
+
 // FindClass searches for a class in the given package and returns a scope for it
 // the class may be the subclass of another class
 func (ps *PackageScope) FindClass(name string) *ClassScope {

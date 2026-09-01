@@ -367,7 +367,7 @@ func TestParseTypeWithTypeParams_PrimitiveTypes(t *testing.T) {
 		{"short becomes int16", "class C { short field; }", "int16"},
 		{"long becomes int64", "class C { long field; }", "int64"},
 		{"char becomes rune", "class C { char field; }", "rune"},
-		{"byte stays byte", "class C { byte field; }", "byte"},
+		{"byte becomes signed int8", "class C { byte field; }", "int8"},
 		{"float becomes float32", "class C { float field; }", "float32"},
 		{"double becomes float64", "class C { double field; }", "float64"},
 		{"boolean becomes bool", "class C { boolean field; }", "bool"},
