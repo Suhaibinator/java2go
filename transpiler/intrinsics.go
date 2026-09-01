@@ -58,6 +58,10 @@ var (
 	instanceIntrinsicResultTypes    = map[intrinsicKey]string{}
 	staticIntrinsicResultTypes      = map[intrinsicKey]string{}
 	staticFieldIntrinsicResultTypes = map[intrinsicKey]string{}
+	// staticIntrinsicDerivedResultTypes holds static intrinsics whose Java result
+	// type depends on the call's arguments (Stream.of yields Stream<T> for the T
+	// of its first argument), which a fixed result-type string cannot express.
+	staticIntrinsicDerivedResultTypes = map[intrinsicKey]derivedResultType{}
 	// constructorIntrinsics is keyed by Java class name; generators select the
 	// right overload by arg count.
 	constructorIntrinsics = map[string]constructorGenerator{}
@@ -101,6 +105,34 @@ func registerInstanceIntrinsicResultType(typeName, methodName, resultType string
 
 func registerStaticIntrinsicResultType(typeName, methodName, resultType string) {
 	staticIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = resultType
+}
+
+// derivedResultType computes a static intrinsic's Java result type from its call
+// node. It returns false when the type cannot be determined.
+type derivedResultType func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool)
+
+// registerStaticIntrinsicDerivedResultType records an argument-derived result
+// type for a static intrinsic. It takes precedence over any fixed result type
+// registered for the same call.
+func registerStaticIntrinsicDerivedResultType(className, methodName string, derive derivedResultType) {
+	staticIntrinsicDerivedResultTypes[intrinsicKey{className, methodName}] = derive
+}
+
+// derivedResultTypeFromArgument builds a derivedResultType that wraps the
+// inferred Java type of one argument in a container, e.g. Stream.of(x) yields
+// "Stream<" + typeof(x) + ">".
+func derivedResultTypeFromArgument(container string, argIndex int) derivedResultType {
+	return func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+		argNode := invocationArgumentNode(invocation, argIndex)
+		if argNode == nil {
+			return "", false
+		}
+		javaType, ok := inferExprJavaType(argNode, ctx, source)
+		if !ok || strings.TrimSpace(javaType) == "" {
+			return "", false
+		}
+		return container + "<" + javaType + ">", true
+	}
 }
 
 func registerStaticFieldIntrinsicResultType(typeName, fieldName, resultType string) {
@@ -267,6 +299,9 @@ const (
 	lambdaResultInt32
 	lambdaResultInt64
 	lambdaResultFloat64
+	// lambdaResultAny: the closure returns an unconstrained value, used where the
+	// runtime accepts any Java object (Optional.orElseThrow's exception supplier).
+	lambdaResultAny
 )
 
 // lambdaShapes records, per (receiver type, method), the result type of that
@@ -399,14 +434,17 @@ func receiverElementTypeExpr(objectNode *sitter.Node, ctx Ctx, source []byte) as
 // already-typed lambdas are returned unchanged.
 func retypeElementLambda(arg, elementType, mappedResult ast.Expr, kind lambdaResultKind) ast.Expr {
 	funcLit, ok := arg.(*ast.FuncLit)
-	if !ok || funcLit.Type == nil || funcLit.Type.Params == nil || len(funcLit.Type.Params.List) == 0 {
+	if !ok || funcLit.Type == nil {
 		return arg
 	}
 	// Java requires explicitly declared lambda parameter types to match the target
 	// function, so both inferred and explicit parameters use the receiver element
-	// type here.
-	for _, field := range funcLit.Type.Params.List {
-		field.Type = elementType
+	// type here. A zero-parameter lambda is a Supplier: it has nothing to retype
+	// but still needs the result type applied below.
+	if funcLit.Type.Params != nil {
+		for _, field := range funcLit.Type.Params.List {
+			field.Type = elementType
+		}
 	}
 
 	if funcLit.Type.Results != nil {
@@ -464,6 +502,18 @@ func invocationArgumentNode(invocation *sitter.Node, index int) *sitter.Node {
 	return argsNode.NamedChild(index)
 }
 
+// invocationArgumentCount returns how many arguments a method invocation passes.
+func invocationArgumentCount(invocation *sitter.Node) int {
+	if invocation == nil {
+		return 0
+	}
+	argsNode := invocation.ChildByFieldName("arguments")
+	if argsNode == nil {
+		return 0
+	}
+	return int(argsNode.NamedChildCount())
+}
+
 // intrinsicLambdaResultTypeExpr returns the Go type that the index'th lambda
 // argument's closure must return, or nil to let retypeElementLambda apply its
 // own default (the receiver's element type, refined by goExprResultType).
@@ -479,6 +529,8 @@ func intrinsicLambdaResultTypeExpr(objectNode *sitter.Node, argIndex int, elemen
 		return &ast.Ident{Name: "int64"}
 	case lambdaResultFloat64:
 		return &ast.Ident{Name: "float64"}
+	case lambdaResultAny:
+		return &ast.Ident{Name: "any"}
 	case lambdaResultInferred:
 		// Handled below.
 	default:
@@ -582,6 +634,8 @@ func staticLambdaResultTypeExpr(invocation *sitter.Node, argIndex int, elementJa
 		return &ast.Ident{Name: "int64"}
 	case lambdaResultFloat64:
 		return &ast.Ident{Name: "float64"}
+	case lambdaResultAny:
+		return &ast.Ident{Name: "any"}
 	case lambdaResultInferred:
 		// Handled below.
 	default:
@@ -738,6 +792,11 @@ func inferIntrinsicMethodResultType(node *sitter.Node, ctx Ctx, source []byte) (
 		}
 	}
 	if className, ok := intrinsicStaticClassName(objectNode, ctx, source); ok {
+		if derive, ok := staticIntrinsicDerivedResultTypes[intrinsicKey{className, methodName}]; ok {
+			if resultType, derived := derive(node, ctx, source); derived {
+				return resultType, true
+			}
+		}
 		if resultType := staticIntrinsicResultTypes[intrinsicKey{className, methodName}]; resultType != "" {
 			return resultType, true
 		}

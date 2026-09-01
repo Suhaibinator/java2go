@@ -20,20 +20,27 @@ func init() {
 var streamTypeNames = []string{"Stream", "IntStream", "LongStream", "DoubleStream"}
 
 func registerStreamIntrinsics() {
-	// Collection.stream() -> stdjava.StreamOfSlice(coll.Slice())
+	// Collection.stream() / parallelStream() -> stdjava.StreamOfSlice(coll.Slice()).
+	// Parallel streams run sequentially here, which keeps every ordering
+	// guarantee Java makes and only forgoes the concurrency.
 	for _, t := range append(append([]string{}, listTypeNames...), setTypeNames...) {
-		registerInstanceIntrinsic(t, "stream", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-			if !expectArgs(args, 0) {
-				return nil
-			}
-			return stdjavaCall(ctx, "StreamOfSlice", methodCall(recv, "Slice"))
-		})
+		for _, method := range []string{"stream", "parallelStream"} {
+			registerInstanceIntrinsic(t, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if !expectArgs(args, 0) {
+					return nil
+				}
+				return stdjavaCall(ctx, "StreamOfSlice", methodCall(recv, "Slice"))
+			})
+		}
 	}
 
-	// Stream.of(...) -> stdjava.NewStream(...)
+	// Stream.of(...) -> stdjava.NewStream(...). Its element type comes from the
+	// first argument, so a chained call (and a flatMap mapper's result type) can
+	// be resolved.
 	registerStaticIntrinsic("Stream", "of", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		return stdjavaCall(ctx, "NewStream", args...)
 	})
+	registerStaticIntrinsicDerivedResultType("Stream", "of", derivedResultTypeFromArgument("Stream", 0))
 
 	for _, t := range streamTypeNames {
 		// Lambda argument shapes, declared alongside the intrinsics they belong to.
@@ -46,6 +53,13 @@ func registerStreamIntrinsics() {
 		registerLambdaShape(t, "forEach", lambdaResultVoid)
 		registerLambdaShape(t, "map", lambdaResultInferred)
 		registerLambdaShape(t, "reduce", lambdaResultElement)
+		registerLambdaShape(t, "peek", lambdaResultVoid)
+		// flatMap's mapper returns a Stream whose element type is free.
+		registerLambdaShape(t, "flatMap", lambdaResultInferred)
+		// sorted/min/max take a Comparator, whose closure returns Java int.
+		registerLambdaShape(t, "sorted", lambdaResultInt32)
+		registerLambdaShape(t, "min", lambdaResultInt32)
+		registerLambdaShape(t, "max", lambdaResultInt32)
 
 		// Method-form terminal/intermediate operations that keep the element type.
 		registerInstanceIntrinsic(t, "filter", streamMethod("Filter", 1))
@@ -63,20 +77,71 @@ func registerStreamIntrinsics() {
 			}
 			return stdjavaCall(ctx, "StreamMap", recv, args[0])
 		})
-		// sorted() with natural ordering needs a constraints.Ordered type param,
-		// which a Go method cannot carry, so it is the free function StreamSorted.
+		// sorted() needs a type parameter that a Go method cannot carry, so both
+		// its natural-ordering and comparator forms are free functions.
 		registerInstanceIntrinsic(t, "sorted", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			switch len(args) {
+			case 0:
+				return stdjavaCall(ctx, "StreamSorted", recv)
+			case 1:
+				return stdjavaCall(ctx, "StreamSortedWith", recv, args[0])
+			}
+			return nil
+		})
+		// reduce has three arities: no identity (returns Optional), identity plus
+		// accumulator, and the parallel-splitting form with a combiner.
+		registerInstanceIntrinsic(t, "reduce", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			switch len(args) {
+			case 1:
+				return stdjavaCall(ctx, "StreamReduceOptional", recv, args[0])
+			case 2:
+				return stdjavaCall(ctx, "StreamReduce", recv, args[0], args[1])
+			case 3:
+				return stdjavaCall(ctx, "StreamReduceCombining", recv, args[0], args[1], args[2])
+			}
+			return nil
+		})
+		// flatMap changes the element type, so it is the free function StreamFlatMap.
+		registerInstanceIntrinsic(t, "flatMap", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if !expectArgs(args, 1) {
+				return nil
+			}
+			return stdjavaCall(ctx, "StreamFlatMap", recv, args[0])
+		})
+		// distinct needs a comparable type parameter, so it is a free function too.
+		registerInstanceIntrinsic(t, "distinct", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, 0) {
 				return nil
 			}
-			return stdjavaCall(ctx, "StreamSorted", recv)
+			return stdjavaCall(ctx, "StreamDistinct", recv)
 		})
-		// reduce(identity, accumulator) -> stdjava.StreamReduce(s, identity, acc).
-		registerInstanceIntrinsic(t, "reduce", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-			if !expectArgs(args, 2) {
-				return nil
+
+		registerInstanceIntrinsic(t, "skip", streamMethod("Skip", 1))
+		registerInstanceIntrinsic(t, "peek", streamMethod("Peek", 1))
+		registerInstanceIntrinsic(t, "findFirst", streamMethod("FindFirst", 0))
+		registerInstanceIntrinsic(t, "findAny", streamMethod("FindAny", 0))
+		registerInstanceIntrinsic(t, "sequential", streamMethod("Sequential", 0))
+		registerInstanceIntrinsic(t, "parallel", streamMethod("Parallel", 0))
+		registerInstanceIntrinsic(t, "unordered", streamMethod("Unordered", 0))
+
+		// min/max return an Optional and take an optional comparator.
+		registerInstanceIntrinsic(t, "min", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			switch len(args) {
+			case 0:
+				return stdjavaCall(ctx, "StreamMin", recv)
+			case 1:
+				return stdjavaCall(ctx, "StreamMinWith", recv, args[0])
 			}
-			return stdjavaCall(ctx, "StreamReduce", recv, args[0], args[1])
+			return nil
+		})
+		registerInstanceIntrinsic(t, "max", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			switch len(args) {
+			case 0:
+				return stdjavaCall(ctx, "StreamMax", recv)
+			case 1:
+				return stdjavaCall(ctx, "StreamMaxWith", recv, args[0])
+			}
+			return nil
 		})
 		// collect(Collectors.toList()) -> s.ToList(). Only the toList collector is
 		// recognized; other collectors fall through.

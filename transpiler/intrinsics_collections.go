@@ -96,8 +96,12 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("Set", ctx), argExprs())}
 	case baseName == "Optional":
 		return applyTypeArguments(stdjavaQualifiedExpr("Optional", ctx), argExprs())
-	case baseName == "Comparator":
+	// Comparator and Stream are only mapped when their element type is known: a
+	// raw use would print an uninstantiated generic, which does not compile.
+	case baseName == "Comparator" && len(typeArgs) == 1:
 		return applyTypeArguments(stdjavaQualifiedExpr("Comparator", ctx), argExprs())
+	case baseName == "Stream" && len(typeArgs) == 1:
+		return applyTypeArguments(stdjavaQualifiedExpr("Stream", ctx), argExprs())
 	}
 	return nil
 }
@@ -258,7 +262,62 @@ func registerOptionalIntrinsics() {
 		return methodCall(recv, "OrElse", args[0])
 	})
 	registerLambdaShape("Optional", "ifPresent", lambdaResultVoid)
+	registerLambdaShape("Optional", "ifPresentOrElse", lambdaResultVoid)
 	registerLambdaShape("Optional", "map", lambdaResultInferred)
+	registerLambdaShape("Optional", "flatMap", lambdaResultInferred)
+	registerLambdaShape("Optional", "filter", lambdaResultBool)
+	// orElseGet's Supplier<T> takes no parameters and returns the element type.
+	registerLambdaShape("Optional", "orElseGet", lambdaResultElement)
+	// orElseThrow's supplier produces the throwable to panic with.
+	registerLambdaShape("Optional", "orElseThrow", lambdaResultAny)
+
+	// Optional.of / ofNullable carry the argument's type, so a chained call and a
+	// flatMap mapper's result type resolve to Optional<T> rather than bare
+	// Optional.
+	registerStaticIntrinsicDerivedResultType("Optional", "of", derivedResultTypeFromArgument("Optional", 0))
+	registerStaticIntrinsicDerivedResultType("Optional", "ofNullable", derivedResultTypeFromArgument("Optional", 0))
+
+	registerInstanceIntrinsic("Optional", "ifPresentOrElse", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 2) {
+			return nil
+		}
+		return methodCall(recv, "IfPresentOrElse", args[0], args[1])
+	})
+	registerInstanceIntrinsic("Optional", "filter", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return methodCall(recv, "Filter", args[0])
+	})
+	registerInstanceIntrinsic("Optional", "orElseGet", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return methodCall(recv, "OrElseGet", args[0])
+	})
+	// orElseThrow has a no-argument form (NoSuchElementException) and a
+	// supplier-taking one; the runtime takes a nil supplier for the former.
+	registerInstanceIntrinsic("Optional", "orElseThrow", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		switch len(args) {
+		case 0:
+			return methodCall(recv, "OrElseThrow", &ast.Ident{Name: "nil"})
+		case 1:
+			return methodCall(recv, "OrElseThrow", args[0])
+		}
+		return nil
+	})
+	registerInstanceIntrinsic("Optional", "flatMap", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "OptionalFlatMap", recv, args[0])
+	})
+	registerInstanceIntrinsic("Optional", "stream", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 0) {
+			return nil
+		}
+		return stdjavaCall(ctx, "OptionalStream", recv)
+	})
 	registerInstanceIntrinsic("Optional", "ifPresent", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil

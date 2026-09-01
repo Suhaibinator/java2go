@@ -9666,8 +9666,26 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 						// Optional.map/filter return an Optional, so a chained call
 						// (o.map(f).get()) resolves the outer receiver as an Optional.
 						switch methodName {
-						case "map", "filter":
+						case "filter":
+							// filter keeps the element type.
+							return recvType, true
+						case "map", "flatMap":
+							if r, ok := inferLambdaResultJavaType(invocationArgumentNode(node, 0), recvArgs, ctx, source); ok {
+								if methodName == "flatMap" {
+									// flatMap's mapper already yields an Optional.
+									return r, true
+								}
+								return "Optional<" + r + ">", true
+							}
 							return "Optional", true
+						case "get", "orElse", "orElseGet", "orElseThrow":
+							if len(recvArgs) == 1 {
+								return recvArgs[0], true
+							}
+						case "stream":
+							if len(recvArgs) == 1 {
+								return "Stream<" + recvArgs[0] + ">", true
+							}
 						}
 					case "File":
 						// File methods that return a String, so chained String calls
@@ -9688,7 +9706,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 					}
 					// Collection.stream() yields a Stream of the collection's element type
 					// so a chained .filter/.map lambda is typed.
-					if methodName == "stream" && len(recvArgs) == 1 &&
+					if (methodName == "stream" || methodName == "parallelStream") && len(recvArgs) == 1 &&
 						(containsString(listTypeNames, recvBase) || containsString(setTypeNames, recvBase)) {
 						return "Stream<" + recvArgs[0] + ">", true
 					}
@@ -9696,8 +9714,31 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 					// for further chaining; map changes the element type so reports bare Stream.
 					if containsString(streamTypeNames, recvBase) {
 						switch methodName {
-						case "filter", "sorted", "limit", "distinct", "skip", "peek":
+						case "filter", "sorted", "limit", "distinct", "skip", "peek",
+							"parallel", "sequential", "unordered":
 							return recvType, true
+						case "findFirst", "findAny", "min", "max":
+							// Terminal operations that wrap the element type in an Optional.
+							if len(recvArgs) == 1 {
+								return "Optional<" + recvArgs[0] + ">", true
+							}
+							return "Optional", true
+						case "reduce":
+							// Only the no-identity form returns an Optional; the other two
+							// arities reduce to a plain value.
+							if len(recvArgs) == 1 {
+								if invocationArgumentCount(node) == 1 {
+									return "Optional<" + recvArgs[0] + ">", true
+								}
+								return recvArgs[0], true
+							}
+						case "flatMap":
+							// The mapper already yields a Stream, so its inferred result type
+							// is this call's result type.
+							if r, ok := inferLambdaResultJavaType(invocationArgumentNode(node, 0), recvArgs, ctx, source); ok {
+								return r, true
+							}
+							return "Stream", true
 						case "map":
 							elementTypes := recvArgs
 							if len(elementTypes) == 0 {
