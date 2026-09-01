@@ -45,7 +45,11 @@ func classScopeHasInitializationWork(scope *symbol.ClassScope) bool {
 		return false
 	}
 	body := scope.Class.DeclarationNode.ChildByFieldName("body")
-	return classBodyNeedsOrderedStaticInitialization(body, scope)
+	var source []byte
+	if file := findFileScopeForClassScope(scope); file != nil {
+		source = file.Source
+	}
+	return classBodyNeedsOrderedStaticInitialization(body, scope, source)
 }
 
 // classInitializationNeedsCoordinator includes otherwise-empty subclasses whose
@@ -130,38 +134,36 @@ func orderedStaticInitializationStatements(body *sitter.Node, source []byte, ctx
 	for _, child := range nodeutil.NamedChildrenOf(body) {
 		switch child.Type() {
 		case "field_declaration":
-			declarator := child.ChildByFieldName("declarator")
-			if declarator == nil {
-				continue
+			for _, declarator := range nodeutil.VariableDeclarators(child) {
+				valueNode := declarator.ChildByFieldName("value")
+				nameNode := declarator.ChildByFieldName("name")
+				if valueNode == nil || nameNode == nil {
+					continue
+				}
+				fieldDefinitions := ctx.currentClass.FindField().ByOriginalName(nameNode.Content(source))
+				if len(fieldDefinitions) == 0 {
+					continue
+				}
+				fieldDefinition := fieldDefinitions[0]
+				if !fieldDefinition.IsStatic {
+					continue
+				}
+				if fieldDefinition.IsCompileTimeConstant {
+					continue
+				}
+				valueCtx := ctx.Clone()
+				valueCtx.localScope = &symbol.Definition{IsStatic: true}
+				valueCtx.executionContextName = executionName
+				valueCtx.expectedType = fieldDefinition.OriginalType
+				valueCtx.expectedTypeRoot = valueNode
+				value := ParseExpr(valueNode, source, valueCtx)
+				value = coerceArgumentToExpectedType(value, valueNode, fieldDefinition.OriginalType, valueCtx, source)
+				statements = append(statements, &ast.AssignStmt{
+					Lhs: []ast.Expr{&ast.Ident{Name: fieldDefinition.Name}},
+					Tok: token.ASSIGN,
+					Rhs: []ast.Expr{value},
+				})
 			}
-			valueNode := declarator.ChildByFieldName("value")
-			nameNode := declarator.ChildByFieldName("name")
-			if valueNode == nil || nameNode == nil {
-				continue
-			}
-			fieldDefinitions := ctx.currentClass.FindField().ByOriginalName(nameNode.Content(source))
-			if len(fieldDefinitions) == 0 {
-				continue
-			}
-			fieldDefinition := fieldDefinitions[0]
-			if !fieldDefinition.IsStatic {
-				continue
-			}
-			if fieldDefinition.IsCompileTimeConstant {
-				continue
-			}
-			valueCtx := ctx.Clone()
-			valueCtx.localScope = &symbol.Definition{IsStatic: true}
-			valueCtx.executionContextName = executionName
-			valueCtx.expectedType = fieldDefinition.OriginalType
-			valueCtx.expectedTypeRoot = valueNode
-			value := ParseExpr(valueNode, source, valueCtx)
-			value = coerceArgumentToExpectedType(value, valueNode, fieldDefinition.OriginalType, valueCtx, source)
-			statements = append(statements, &ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.Ident{Name: fieldDefinition.Name}},
-				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{value},
-			})
 		case "static_initializer":
 			staticCtx := ctx.Clone()
 			staticCtx.localScope = &symbol.Definition{IsStatic: true}

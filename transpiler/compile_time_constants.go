@@ -3,6 +3,7 @@ package transpiler
 import (
 	"strings"
 
+	"github.com/NickyBoy89/java2go/nodeutil"
 	"github.com/NickyBoy89/java2go/symbol"
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -53,16 +54,6 @@ func isCompileTimeConstantField(
 	visiting[field] = true
 	defer delete(visiting, field)
 
-	declaration := field.DeclarationNode
-	declarator := declaration.ChildByFieldName("declarator")
-	if declarator == nil {
-		return false
-	}
-	initializer := declarator.ChildByFieldName("value")
-	if initializer == nil {
-		return false
-	}
-
 	fieldCtx := ctx.Clone()
 	fieldCtx.currentClass = owner
 	if owner.Class != nil {
@@ -75,11 +66,32 @@ func isCompileTimeConstantField(
 			source = file.Source
 		}
 	}
+	declarator := declaratorForField(field, source)
+	if declarator == nil {
+		return false
+	}
+	initializer := declarator.ChildByFieldName("value")
+	if initializer == nil {
+		return false
+	}
 	if !compileTimeConstantExpression(initializer, source, fieldCtx, visiting) {
 		return false
 	}
 	field.IsCompileTimeConstant = true
 	return true
+}
+
+func declaratorForField(field *symbol.Definition, source []byte) *sitter.Node {
+	if field == nil || field.DeclarationNode == nil {
+		return nil
+	}
+	for _, declarator := range nodeutil.VariableDeclarators(field.DeclarationNode) {
+		name := declarator.ChildByFieldName("name")
+		if name != nil && name.Content(source) == field.OriginalName {
+			return declarator
+		}
+	}
+	return nil
 }
 
 func compileTimeConstantExpression(

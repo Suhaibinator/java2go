@@ -43,14 +43,14 @@ public class Pair<K extends Number, V> {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "type Pair[K *Number, V any] struct") {
+	if !strings.Contains(out, "type Pair[K stdjava.JavaNumber, V any] struct") {
 		t.Errorf("Expected generic struct with 2 type params, got:\n%s", out)
 	}
 	flat := normalizeSpaces(out)
 	if !strings.Contains(flat, "key K") || !strings.Contains(flat, "value V") {
 		t.Errorf("Expected fields to use type params K/V, got:\n%s", out)
 	}
-	if !strings.Contains(out, "func NewPair[K *Number, V any]") {
+	if !strings.Contains(out, "func NewPair[K stdjava.JavaNumber, V any]") {
 		t.Errorf("Expected generic constructor function with type params, got:\n%s", out)
 	}
 	if !strings.Contains(out, "func (pr *Pair[K, V]) GetKey()") {
@@ -141,10 +141,10 @@ public class Box<T extends Number> {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "type BoxIdentityHelper[T *Number, R *Comparable[T]] struct") {
+	if !strings.Contains(flat, "type BoxIdentityHelper[T stdjava.JavaNumber, R *Comparable[T]] struct") {
 		t.Fatalf("Expected helper struct with bounded type params, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func NewBoxIdentityHelper[T *Number, R *Comparable[T]]") {
+	if !strings.Contains(flat, "func NewBoxIdentityHelper[T stdjava.JavaNumber, R *Comparable[T]]") {
 		t.Fatalf("Expected helper constructor to propagate bounds, got:\n%s", out)
 	}
 }
@@ -179,7 +179,7 @@ public class Utils {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "func id[T *Number]") {
+	if !strings.Contains(out, "func id[T stdjava.JavaNumber]") {
 		t.Fatalf("Expected bounded type parameter on static method, got:\n%s", out)
 	}
 }

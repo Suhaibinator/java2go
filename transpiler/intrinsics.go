@@ -3,6 +3,7 @@ package transpiler
 import (
 	"go/ast"
 
+	"github.com/NickyBoy89/java2go/nodeutil"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -50,9 +51,12 @@ type intrinsicKey struct {
 type constructorGenerator func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr
 
 var (
-	instanceIntrinsics    = map[intrinsicKey]intrinsicGenerator{}
-	staticIntrinsics      = map[intrinsicKey]intrinsicGenerator{}
-	staticFieldIntrinsics = map[intrinsicKey]func(ctx Ctx) ast.Expr{}
+	instanceIntrinsics              = map[intrinsicKey]intrinsicGenerator{}
+	staticIntrinsics                = map[intrinsicKey]intrinsicGenerator{}
+	staticFieldIntrinsics           = map[intrinsicKey]func(ctx Ctx) ast.Expr{}
+	instanceIntrinsicResultTypes    = map[intrinsicKey]string{}
+	staticIntrinsicResultTypes      = map[intrinsicKey]string{}
+	staticFieldIntrinsicResultTypes = map[intrinsicKey]string{}
 	// constructorIntrinsics is keyed by Java class name; generators select the
 	// right overload by arg count.
 	constructorIntrinsics = map[string]constructorGenerator{}
@@ -88,6 +92,18 @@ func tryConstructorIntrinsic(className string, typeArgs, args []ast.Expr, ctx Ct
 // (collections) call this from their own init functions.
 func registerInstanceIntrinsic(typeName, methodName string, gen intrinsicGenerator) {
 	instanceIntrinsics[intrinsicKey{typeName, methodName}] = gen
+}
+
+func registerInstanceIntrinsicResultType(typeName, methodName, resultType string) {
+	instanceIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = resultType
+}
+
+func registerStaticIntrinsicResultType(typeName, methodName, resultType string) {
+	staticIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = resultType
+}
+
+func registerStaticFieldIntrinsicResultType(typeName, fieldName, resultType string) {
+	staticFieldIntrinsicResultTypes[intrinsicKey{typeName, fieldName}] = resultType
 }
 
 // registerStaticIntrinsic adds a static-method intrinsic.
@@ -132,8 +148,19 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 	// -> void, mapper -> the value's type), so the generated Go is well-typed.
 	if kind, ok := elementLambdaMethods[methodName]; ok {
 		if elem := receiverElementTypeExpr(objectNode, ctx, source); elem != nil {
+			var mappedResult ast.Expr
+			if methodName == "map" {
+				if receiverJavaType, inferred := inferExprJavaType(objectNode, ctx, source); inferred {
+					_, receiverArgs := parseJavaTypeString(receiverJavaType)
+					if parent := objectNode.Parent(); parent != nil {
+						if resultJavaType, inferred := inferStreamMapResultType(parent, receiverArgs, ctx, source); inferred {
+							mappedResult = javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx)
+						}
+					}
+				}
+			}
 			for i, a := range args {
-				args[i] = retypeElementLambda(a, elem, kind)
+				args[i] = retypeElementLambda(a, elem, mappedResult, kind)
 			}
 		}
 	}
@@ -271,18 +298,14 @@ func receiverElementTypeExpr(objectNode *sitter.Node, ctx Ctx, source []byte) as
 // the result type implied by kind. A single-expression body (lowered to a bare
 // ExprStmt) becomes a real return unless the kind is void. Non-lambda args and
 // already-typed lambdas are returned unchanged.
-func retypeElementLambda(arg, elementType ast.Expr, kind lambdaResultKind) ast.Expr {
+func retypeElementLambda(arg, elementType, mappedResult ast.Expr, kind lambdaResultKind) ast.Expr {
 	funcLit, ok := arg.(*ast.FuncLit)
 	if !ok || funcLit.Type == nil || funcLit.Type.Params == nil || len(funcLit.Type.Params.List) == 0 {
 		return arg
 	}
-	// Only adjust placeholder `any` parameters, so an explicitly typed lambda is
-	// left untouched.
-	for _, field := range funcLit.Type.Params.List {
-		if ident, ok := field.Type.(*ast.Ident); !ok || ident.Name != "any" {
-			return arg
-		}
-	}
+	// Java requires explicitly declared lambda parameter types to match the target
+	// function, so both inferred and explicit parameters use the receiver element
+	// type here.
 	for _, field := range funcLit.Type.Params.List {
 		field.Type = elementType
 	}
@@ -301,7 +324,9 @@ func retypeElementLambda(arg, elementType ast.Expr, kind lambdaResultKind) ast.E
 		// fmt.Sprintf and is a string); otherwise default to the element type,
 		// which is correct for identity/arithmetic maps.
 		resultType = elementType
-		if len(funcLit.Body.List) == 1 {
+		if mappedResult != nil {
+			resultType = mappedResult
+		} else if len(funcLit.Body.List) == 1 {
 			if exprStmt, ok := funcLit.Body.List[0].(*ast.ExprStmt); ok {
 				if inferred := goExprResultType(exprStmt.X); inferred != nil {
 					resultType = inferred
@@ -408,6 +433,33 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 		return nil
 	}
 	argListNode := parent.ChildByFieldName("arguments")
+	if _, elementLambda := elementLambdaMethods[methodName]; elementLambda && argListNode != nil {
+		if receiverJavaType, inferred := inferExprJavaType(objectNode, ctx, source); inferred {
+			_, receiverArgs := parseJavaTypeString(receiverJavaType)
+			if len(receiverArgs) == 1 {
+				args := make([]ast.Expr, 0, argListNode.NamedChildCount())
+				for _, argNode := range nodeutil.NamedChildrenOf(argListNode) {
+					argCtx := ctx.Clone()
+					if argNode.Type() == "lambda_expression" {
+						parameters := argNode.ChildByFieldName("parameters")
+						parameterCount := 0
+						if parameters != nil {
+							parameterCount = int(parameters.NamedChildCount())
+							if parameters.Type() != "inferred_parameters" && parameters.Type() != "formal_parameters" {
+								parameterCount = 1
+							}
+						}
+						argCtx.lambdaParameterJavaTypes = make([]string, parameterCount)
+						for index := range argCtx.lambdaParameterJavaTypes {
+							argCtx.lambdaParameterJavaTypes[index] = receiverArgs[0]
+						}
+					}
+					args = append(args, ParseExpr(argNode, source, argCtx))
+				}
+				return args
+			}
+		}
+	}
 	var expectedTypes []string
 	if (methodName == "submit" || methodName == "execute") && argListNode != nil && argListNode.NamedChildCount() == 1 {
 		if javaType, ok := inferExprJavaType(objectNode, ctx, source); ok {
@@ -430,6 +482,9 @@ func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) 
 		return "", false
 	}
 	base, _ := parseJavaTypeString(javaType)
+	if erased, bounded := javaTypeParameterErasure(base, ctx); bounded {
+		base, _ = parseJavaTypeString(erased)
+	}
 	name := stripJavaQualifier(base)
 	if name == "" {
 		return "", false
@@ -445,6 +500,47 @@ func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) 
 // intrinsicStaticClassName returns the class name for a static call when the
 // receiver is a bare identifier (e.g. `Math`, `Integer`) that is not a
 // user-defined class.
+
+func inferIntrinsicMethodResultType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+	if node == nil || node.Type() != "method_invocation" {
+		return "", false
+	}
+	objectNode := node.ChildByFieldName("object")
+	nameNode := node.ChildByFieldName("name")
+	if objectNode == nil || nameNode == nil {
+		return "", false
+	}
+	methodName := nameNode.Content(source)
+	if receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source); ok {
+		if resultType := instanceIntrinsicResultTypes[intrinsicKey{receiverType, methodName}]; resultType != "" {
+			return resultType, true
+		}
+	}
+	if className, ok := intrinsicStaticClassName(objectNode, ctx, source); ok {
+		if resultType := staticIntrinsicResultTypes[intrinsicKey{className, methodName}]; resultType != "" {
+			return resultType, true
+		}
+	}
+	return "", false
+}
+
+func inferIntrinsicFieldResultType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+	if node == nil || node.Type() != "field_access" {
+		return "", false
+	}
+	objectNode := node.ChildByFieldName("object")
+	fieldNode := node.ChildByFieldName("field")
+	if objectNode == nil || fieldNode == nil {
+		return "", false
+	}
+	className, ok := intrinsicStaticClassName(objectNode, ctx, source)
+	if !ok {
+		return "", false
+	}
+	resultType := staticFieldIntrinsicResultTypes[intrinsicKey{className, fieldNode.Content(source)}]
+	return resultType, resultType != ""
+}
+
 func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 	if objectNode == nil || objectNode.Type() != "identifier" {
 		return "", false
