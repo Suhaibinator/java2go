@@ -145,3 +145,25 @@ Method overloads use Java widening and most-specific reference selection, but
 constructor selection still primarily matches exact parameter types/arity. A
 constructor call that needs numeric widening or a reference upcast can therefore
 choose incorrectly or fail to resolve. This is retained as a TDD target.
+
+## K17 — user `toString()` ignored by the plain StringValueOf bridge (OPEN, string conversion)
+`stdjava.StringValueOf` (`stdjava/string_conversion.go`) falls through to
+`fmt.Sprint` for any non-float value, so a generated class's `toString()` is never
+consulted. Printing an object, or a collection holding one, yields Go's struct
+rendering instead of the Java text. The execution-aware variant
+`StringValueOfExecution` does bridge it (via the `executionStringer` interface and
+the reflective collision-safe path), but plain print sites and every collection's
+`String()` method call the non-execution form.
+```java
+public class K17 {
+    static class P { int v; P(int v){ this.v = v; } public String toString(){ return "P" + v; } }
+    public static void main(String[] a) {
+        System.out.println(new P(3));                       // Java P3, generated &{3}
+        java.util.List<P> l = new java.util.ArrayList<P>();
+        l.add(new P(3));
+        System.out.println(l);                              // Java [P3], generated [&{3}]
+    }
+}
+```
+Fixing it needs a decision about how collection `String()` methods, which hold no
+execution token, reach an execution-aware generated stringer.

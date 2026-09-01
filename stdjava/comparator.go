@@ -175,6 +175,39 @@ func MinWith[T any](l *List[T], c Comparator[T]) T {
 	return best
 }
 
+// SortArrayWith is the comparator-taking Arrays.sort bridge for
+// descriptor-bearing Java arrays. Java only offers this overload for reference
+// arrays (a primitive array has no boxed element to hand a comparator), so a
+// primitive array here means the source did not type-check as Java and the
+// mismatch is reported rather than silently ignored.
+//
+// The element type comes from the comparator rather than the array, because a
+// ReferenceArray erases its elements to `any`.
+func SortArrayWith[T any](array any, c Comparator[T]) {
+	if array == nil {
+		panic(NewNullPointerException("Arrays.sort on null"))
+	}
+	values, ok := array.(*ReferenceArray)
+	if !ok {
+		panic(NewIllegalArgumentException("Arrays.sort with a comparator requires a reference array"))
+	}
+	if values == nil {
+		panic(NewNullPointerException("Arrays.sort on null"))
+	}
+	if c == nil {
+		SortSliceStableNatural(values.elements)
+		return
+	}
+	sort.SliceStable(values.elements, func(i, j int) bool {
+		left, leftOK := values.elements[i].(T)
+		right, rightOK := values.elements[j].(T)
+		if !leftOK || !rightOK {
+			panic(NewClassCastException("Arrays.sort comparator does not accept the array's element type"))
+		}
+		return c(left, right) < 0
+	})
+}
+
 // javaCompareValues compares two values by Java's natural ordering, returning
 // the sign contract of Comparable.compareTo. It handles the primitive and String
 // forms directly and otherwise bridges to a generated type's own CompareTo
@@ -228,7 +261,35 @@ func javaCompareValues(left, right any) int32 {
 	if result, ok := compareViaCompareTo(left, right); ok {
 		return result
 	}
+	// A named type over a Go ordered kind (or an unsigned width the switch above
+	// does not spell) still has a natural ordering. This is checked after the
+	// CompareTo bridge so a type that defines its own ordering wins over its
+	// underlying representation.
+	if result, ok := compareViaReflectOrdering(left, right); ok {
+		return result
+	}
 	panic(NewClassCastException("value is not naturally comparable"))
+}
+
+// compareViaReflectOrdering compares two same-typed values whose Go kind has a
+// natural ordering, and reports whether it could.
+func compareViaReflectOrdering(left, right any) (int32, bool) {
+	leftValue := reflect.ValueOf(left)
+	rightValue := reflect.ValueOf(right)
+	if !leftValue.IsValid() || !rightValue.IsValid() || leftValue.Type() != rightValue.Type() {
+		return 0, false
+	}
+	switch leftValue.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return int32(cmp.Compare(leftValue.Int(), rightValue.Int())), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return int32(cmp.Compare(leftValue.Uint(), rightValue.Uint())), true
+	case reflect.Float32, reflect.Float64:
+		return int32(cmp.Compare(leftValue.Float(), rightValue.Float())), true
+	case reflect.String:
+		return int32(cmp.Compare(leftValue.String(), rightValue.String())), true
+	}
+	return 0, false
 }
 
 // compareViaCompareTo invokes a generated `CompareTo` method on left, passing

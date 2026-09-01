@@ -18,12 +18,35 @@ func ObjectsEqual[T any](a, b T) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-// SortOrdered sorts a list of ordered elements in place, matching
-// Collections.sort on a List of a Comparable type with natural ordering.
-func SortOrdered[T cmp.Ordered](l *List[T]) {
-	sort.Slice(l.elements, func(i, j int) bool {
-		return l.elements[i] < l.elements[j]
-	})
+// SortOrdered sorts a list in place by natural ordering, matching
+// Collections.sort(List) on a Comparable element type.
+//
+// The element type is not constrained to cmp.Ordered because Java's natural
+// ordering covers any Comparable, including a user class whose compareTo the
+// transpiler generates. Element types with a direct Go ordering keep a fast
+// path; everything else goes through the CompareTo bridge.
+func SortOrdered[T any](l *List[T]) {
+	if l == nil {
+		panic(NewNullPointerException("Collections.sort on null"))
+	}
+	switch elements := any(l.elements).(type) {
+	case []string:
+		SortSlice(elements)
+	case []int32:
+		SortSlice(elements)
+	case []int64:
+		SortSlice(elements)
+	case []int16:
+		SortSlice(elements)
+	case []int8:
+		SortSlice(elements)
+	case []float32:
+		SortSlice(elements)
+	case []float64:
+		SortSlice(elements)
+	default:
+		SortSliceStableNatural(l.elements)
+	}
 }
 
 // ReverseList reverses a list in place, matching Collections.reverse.
@@ -33,23 +56,31 @@ func ReverseList[T any](l *List[T]) {
 	}
 }
 
-// MaxOrdered returns the largest element of a list, matching
-// Collections.max on a Collection of a Comparable type.
-func MaxOrdered[T cmp.Ordered](l *List[T]) T {
+// MaxOrdered returns the largest element of a list by natural ordering, matching
+// Collections.max(Collection). Like Collections.max it keeps the earlier element
+// on a tie, and like SortOrdered it accepts any Comparable element type.
+func MaxOrdered[T any](l *List[T]) T {
+	if l == nil || len(l.elements) == 0 {
+		panic(NewNoSuchElementException("Collections.max on an empty collection"))
+	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if e > best {
+		if javaCompareValues(e, best) > 0 {
 			best = e
 		}
 	}
 	return best
 }
 
-// MinOrdered returns the smallest element of a list, matching Collections.min.
-func MinOrdered[T cmp.Ordered](l *List[T]) T {
+// MinOrdered returns the smallest element of a list by natural ordering,
+// matching Collections.min(Collection).
+func MinOrdered[T any](l *List[T]) T {
+	if l == nil || len(l.elements) == 0 {
+		panic(NewNoSuchElementException("Collections.min on an empty collection"))
+	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if e < best {
+		if javaCompareValues(e, best) < 0 {
 			best = e
 		}
 	}

@@ -5331,6 +5331,52 @@ func isExternalRunnableType(javaType string, ctx Ctx) bool {
 	return stripJavaQualifier(baseType) == "Runnable" && resolveClassScopeByQualifiedName(ctx, baseType) == nil
 }
 
+// builtinFunctionalInterface describes the single abstract method of a standard
+// functional interface that the transpiler models without a source scope. The
+// types are Java type strings so they flow through the same substitution and
+// type-mapping machinery as a source-declared interface.
+type builtinFunctionalInterface struct {
+	typeParameters []string
+	parameterTypes []string
+	resultType     string
+}
+
+// builtinFunctionalInterfaces maps a functional interface name to its SAM.
+var builtinFunctionalInterfaces = map[string]builtinFunctionalInterface{
+	"Comparator": {
+		typeParameters: []string{"T"},
+		parameterTypes: []string{"T", "T"},
+		resultType:     "int",
+	},
+}
+
+// builtinFunctionalInterfaceMethod synthesizes the SAM definition and type
+// bindings for a built-in functional interface. It reports false for anything
+// not in the table, and for a raw use with no type arguments, whose parameter
+// types would otherwise substitute to unbound type-parameter names.
+func builtinFunctionalInterfaceMethod(baseName string, typeArgs []string) (*symbol.Definition, map[string]string, bool) {
+	spec, ok := builtinFunctionalInterfaces[baseName]
+	if !ok || len(typeArgs) != len(spec.typeParameters) {
+		return nil, nil, false
+	}
+
+	bindings := make(map[string]string, len(spec.typeParameters))
+	for index, typeParameter := range spec.typeParameters {
+		bindings[typeParameter] = strings.TrimSpace(typeArgs[index])
+	}
+
+	parameters := make([]*symbol.Definition, 0, len(spec.parameterTypes))
+	for index, parameterType := range spec.parameterTypes {
+		name := "arg" + strconv.Itoa(index)
+		parameters = append(parameters, &symbol.Definition{
+			OriginalName: name,
+			Name:         name,
+			OriginalType: parameterType,
+		})
+	}
+	return &symbol.Definition{OriginalType: spec.resultType, Parameters: parameters}, bindings, true
+}
+
 func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Definition, map[string]string) {
 	expectedType = strings.TrimSpace(expectedType)
 	if expectedType == "" {
@@ -5344,6 +5390,13 @@ func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Def
 
 	scope := resolveClassScopeByQualifiedName(ctx, baseType)
 	if scope == nil {
+		// A built-in functional interface has no source scope to resolve against,
+		// so its single abstract method is described by a table instead. The
+		// lookup is guarded on scope == nil so a user-defined class of the same
+		// name still shadows it.
+		if method, bindings, ok := builtinFunctionalInterfaceMethod(stripJavaQualifier(baseType), typeArgs); ok {
+			return method, bindings
+		}
 		return nil, nil
 	}
 	if !scope.IsInterface {

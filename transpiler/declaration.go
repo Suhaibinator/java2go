@@ -815,8 +815,11 @@ func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx)
 	base, _ := parseJavaTypeString(javaType)
 	// Runtime interfaces are satisfied structurally by the generated methods.
 	// Embedding stdjava.Runnable would add an unnecessary interface field to every
-	// anonymous Runnable implementation and changes its zero-value behavior.
-	if stripJavaQualifier(base) == "Runnable" && resolveClassScopeByQualifiedName(ctx, base) == nil {
+	// anonymous Runnable implementation and changes its zero-value behavior; a
+	// Comparable's generated CompareTo is likewise reached directly, and
+	// reflectively by the natural-ordering bridge in stdjava/comparator.go.
+	if _, structural := structuralRuntimeInterfaces[stripJavaQualifier(base)]; structural &&
+		resolveClassScopeByQualifiedName(ctx, base) == nil {
 		return nil
 	}
 	if scope := resolveClassScopeByQualifiedName(ctx, base); interfaceHasDefaultMethods(scope, ctx) {
@@ -836,6 +839,14 @@ func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx)
 		return nil
 	}
 	return embedType
+}
+
+// structuralRuntimeInterfaces are standard-library interfaces that generated
+// code satisfies structurally through its own methods, so there is no Go type to
+// embed for them in an implements clause.
+var structuralRuntimeInterfaces = map[string]struct{}{
+	"Runnable":   {},
+	"Comparable": {},
 }
 
 // interfaceHasDefaultMethods reports whether an interface contributes concrete

@@ -2,6 +2,7 @@ package transpiler
 
 import (
 	"go/ast"
+	"strings"
 
 	"github.com/NickyBoy89/java2go/nodeutil"
 	sitter "github.com/smacker/go-tree-sitter"
@@ -290,6 +291,67 @@ func lookupLambdaShape(typeName, methodName string) (lambdaResultKind, bool) {
 	return kind, ok
 }
 
+// staticLambdaShape describes a static intrinsic whose lambda arguments cannot
+// be typed from a receiver, because there is none, and are typed from the
+// element type of one of the call's other arguments instead:
+// Collections.sort(list, (a, b) -> ...) types the comparator from list.
+type staticLambdaShape struct {
+	// elementArg is the index of the argument carrying the element type.
+	elementArg int
+	// lambdaArgs are the indexes of the arguments to retype.
+	lambdaArgs []int
+	result     lambdaResultKind
+}
+
+// staticLambdaShapes records those shapes per (class, method).
+var staticLambdaShapes = map[intrinsicKey]staticLambdaShape{}
+
+// registerStaticLambdaShape declares that className.methodName takes lambda
+// arguments at lambdaArgs whose parameters are the element type of the argument
+// at elementArg, and whose closures return result.
+func registerStaticLambdaShape(className, methodName string, elementArg int, lambdaArgs []int, result lambdaResultKind) {
+	staticLambdaShapes[intrinsicKey{className, methodName}] = staticLambdaShape{
+		elementArg: elementArg,
+		lambdaArgs: lambdaArgs,
+		result:     result,
+	}
+}
+
+// javaContainerElementTypes returns the Java element type(s) of a container
+// expression's type: the type arguments of a generic type, the component type of
+// an array, or the implied element of a primitive stream.
+func javaContainerElementTypes(javaType string) []string {
+	javaType = strings.TrimSpace(javaType)
+	if component, ok := strings.CutSuffix(javaType, "[]"); ok {
+		if component = strings.TrimSpace(component); component != "" {
+			return []string{component}
+		}
+		return nil
+	}
+	base, typeArgs := parseJavaTypeString(javaType)
+	if len(typeArgs) > 0 {
+		return typeArgs
+	}
+	if element, ok := primitiveStreamElementJavaTypes[stripJavaQualifier(base)]; ok {
+		return []string{element}
+	}
+	return nil
+}
+
+// staticIntrinsicElementJavaTypes resolves the element type(s) that a static
+// intrinsic's lambda arguments should be typed from.
+func staticIntrinsicElementJavaTypes(invocation *sitter.Node, elementArg int, ctx Ctx, source []byte) []string {
+	argNode := invocationArgumentNode(invocation, elementArg)
+	if argNode == nil {
+		return nil
+	}
+	javaType, ok := inferExprJavaType(argNode, ctx, source)
+	if !ok {
+		return nil
+	}
+	return javaContainerElementTypes(javaType)
+}
+
 // primitiveStreamElementJavaTypes maps the primitive stream types onto the Java
 // element type they iterate. Unlike Stream<T> these carry no type argument, so
 // their element type cannot be read off the receiver's type arguments.
@@ -488,10 +550,48 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 	}
 
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
+	// A static call has no receiver to take an element type from, so a declared
+	// static shape names the argument that carries it instead.
+	if shape, ok := staticLambdaShapes[intrinsicKey{className, methodName}]; ok {
+		invocation := objectNode.Parent()
+		elementJavaTypes := staticIntrinsicElementJavaTypes(invocation, shape.elementArg, ctx, source)
+		if len(elementJavaTypes) == 1 {
+			elementType := javaTypeStringToGoTypeExpr(elementJavaTypes[0], inScopeTypeParameters(ctx), ctx)
+			for _, index := range shape.lambdaArgs {
+				if index >= len(args) {
+					continue
+				}
+				mappedResult := staticLambdaResultTypeExpr(invocation, index, elementJavaTypes, shape.result, ctx, source)
+				args[index] = retypeElementLambda(args[index], elementType, mappedResult, shape.result)
+			}
+		}
+	}
 	if result := gen(nil, args, ctx); result != nil {
 		return result, true
 	}
 	return nil, false
+}
+
+// staticLambdaResultTypeExpr is intrinsicLambdaResultTypeExpr for a static call,
+// where the invocation node is reached directly rather than through a receiver.
+func staticLambdaResultTypeExpr(invocation *sitter.Node, argIndex int, elementJavaTypes []string, kind lambdaResultKind, ctx Ctx, source []byte) ast.Expr {
+	switch kind {
+	case lambdaResultInt32:
+		return &ast.Ident{Name: "int32"}
+	case lambdaResultInt64:
+		return &ast.Ident{Name: "int64"}
+	case lambdaResultFloat64:
+		return &ast.Ident{Name: "float64"}
+	case lambdaResultInferred:
+		// Handled below.
+	default:
+		return nil
+	}
+	resultJavaType, ok := inferLambdaResultJavaType(invocationArgumentNode(invocation, argIndex), elementJavaTypes, ctx, source)
+	if !ok {
+		return nil
+	}
+	return javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx)
 }
 
 // tryStaticFieldIntrinsic attempts to rewrite a static-field access such as
@@ -519,35 +619,9 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 		return nil
 	}
 	argListNode := parent.ChildByFieldName("arguments")
-	elementLambda := false
-	if receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source); ok {
-		_, elementLambda = lookupLambdaShape(receiverType, methodName)
-	}
-	if elementLambda && argListNode != nil {
-		{
-			receiverArgs := receiverElementJavaTypes(objectNode, ctx, source)
-			if len(receiverArgs) == 1 {
-				args := make([]ast.Expr, 0, argListNode.NamedChildCount())
-				for _, argNode := range nodeutil.NamedChildrenOf(argListNode) {
-					argCtx := ctx.Clone()
-					if argNode.Type() == "lambda_expression" {
-						parameters := argNode.ChildByFieldName("parameters")
-						parameterCount := 0
-						if parameters != nil {
-							parameterCount = int(parameters.NamedChildCount())
-							if parameters.Type() != "inferred_parameters" && parameters.Type() != "formal_parameters" {
-								parameterCount = 1
-							}
-						}
-						argCtx.lambdaParameterJavaTypes = make([]string, parameterCount)
-						for index := range argCtx.lambdaParameterJavaTypes {
-							argCtx.lambdaParameterJavaTypes[index] = receiverArgs[0]
-						}
-					}
-					args = append(args, ParseExpr(argNode, source, argCtx))
-				}
-				return args
-			}
+	if argListNode != nil {
+		if elementJavaType, lambdaArgs, ok := intrinsicLambdaParameterJavaType(objectNode, methodName, ctx, source); ok {
+			return parseArgumentsWithLambdaParameterType(argListNode, elementJavaType, lambdaArgs, source, ctx)
 		}
 	}
 	var expectedTypes []string
@@ -560,6 +634,63 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 		}
 	}
 	return parseArgumentListWithExpectedTypes(argListNode, source, ctx, expectedTypes)
+}
+
+// intrinsicLambdaParameterJavaType resolves the Java type an intrinsic's lambda
+// parameters take, together with the argument positions to apply it to. A nil
+// position list means every lambda argument of the call.
+//
+// A lambda argument is parsed before its target type is known, so without this
+// its parameters come back as `any` and the body cannot resolve any member
+// access on them.
+func intrinsicLambdaParameterJavaType(objectNode *sitter.Node, methodName string, ctx Ctx, source []byte) (string, []int, bool) {
+	if receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source); ok {
+		if _, declared := lookupLambdaShape(receiverType, methodName); declared {
+			if elementTypes := receiverElementJavaTypes(objectNode, ctx, source); len(elementTypes) == 1 {
+				return elementTypes[0], nil, true
+			}
+		}
+	}
+	if className, ok := intrinsicStaticClassName(objectNode, ctx, source); ok {
+		if shape, declared := staticLambdaShapes[intrinsicKey{className, methodName}]; declared {
+			elementTypes := staticIntrinsicElementJavaTypes(objectNode.Parent(), shape.elementArg, ctx, source)
+			if len(elementTypes) == 1 {
+				return elementTypes[0], shape.lambdaArgs, true
+			}
+		}
+	}
+	return "", nil, false
+}
+
+// parseArgumentsWithLambdaParameterType parses a call's arguments, seeding each
+// selected lambda argument's parse context so its parameters carry
+// elementJavaType instead of the `any` placeholder.
+func parseArgumentsWithLambdaParameterType(argListNode *sitter.Node, elementJavaType string, lambdaArgs []int, source []byte, ctx Ctx) []ast.Expr {
+	selected := func(index int) bool {
+		if lambdaArgs == nil {
+			return true
+		}
+		for _, candidate := range lambdaArgs {
+			if candidate == index {
+				return true
+			}
+		}
+		return false
+	}
+
+	args := make([]ast.Expr, 0, argListNode.NamedChildCount())
+	for index, argNode := range nodeutil.NamedChildrenOf(argListNode) {
+		argCtx := ctx.Clone()
+		if argNode.Type() == "lambda_expression" && selected(index) {
+			names := lambdaParameterNames(argNode.ChildByFieldName("parameters"), source)
+			argCtx.lambdaParameterJavaTypes = make([]string, len(names))
+			for i := range argCtx.lambdaParameterJavaTypes {
+				argCtx.lambdaParameterJavaTypes[i] = elementJavaType
+			}
+		}
+		args = append(args, ParseExpr(argNode, source, argCtx))
+	}
+	return args
 }
 
 // intrinsicReceiverTypeName resolves the unqualified Java type of a receiver

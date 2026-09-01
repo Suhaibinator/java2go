@@ -96,6 +96,8 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("Set", ctx), argExprs())}
 	case baseName == "Optional":
 		return applyTypeArguments(stdjavaQualifiedExpr("Optional", ctx), argExprs())
+	case baseName == "Comparator":
+		return applyTypeArguments(stdjavaQualifiedExpr("Comparator", ctx), argExprs())
 	}
 	return nil
 }
@@ -275,11 +277,15 @@ func registerOptionalIntrinsics() {
 
 func registerCollectionsStatics() {
 	// java.util.Collections
+	// sort/max/min each have a natural-ordering form and a comparator form.
 	registerStaticIntrinsic("Collections", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
+		switch len(args) {
+		case 1:
+			return stdjavaCall(ctx, "SortOrdered", args[0])
+		case 2:
+			return stdjavaCall(ctx, "SortWith", args[0], args[1])
 		}
-		return stdjavaCall(ctx, "SortOrdered", args[0])
+		return nil
 	})
 	registerStaticIntrinsic("Collections", "reverse", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
@@ -288,16 +294,22 @@ func registerCollectionsStatics() {
 		return stdjavaCall(ctx, "ReverseList", args[0])
 	})
 	registerStaticIntrinsic("Collections", "max", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
+		switch len(args) {
+		case 1:
+			return stdjavaCall(ctx, "MaxOrdered", args[0])
+		case 2:
+			return stdjavaCall(ctx, "MaxWith", args[0], args[1])
 		}
-		return stdjavaCall(ctx, "MaxOrdered", args[0])
+		return nil
 	})
 	registerStaticIntrinsic("Collections", "min", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
+		switch len(args) {
+		case 1:
+			return stdjavaCall(ctx, "MinOrdered", args[0])
+		case 2:
+			return stdjavaCall(ctx, "MinWith", args[0], args[1])
 		}
-		return stdjavaCall(ctx, "MinOrdered", args[0])
+		return nil
 	})
 	registerStaticIntrinsic("Collections", "emptyList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 0) {
@@ -323,10 +335,13 @@ func registerCollectionsStatics() {
 		return stdjavaCall(ctx, "AsList", args...)
 	})
 	registerStaticIntrinsic("Arrays", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
+		switch len(args) {
+		case 1:
+			return stdjavaCall(ctx, "SortArray", args[0])
+		case 2:
+			return stdjavaCall(ctx, "SortArrayWith", args[0], args[1])
 		}
-		return stdjavaCall(ctx, "SortArray", args[0])
+		return nil
 	})
 	registerStaticIntrinsic("Arrays", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
