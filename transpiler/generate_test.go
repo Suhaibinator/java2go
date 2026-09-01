@@ -206,12 +206,15 @@ func TestGenStructWithTypeParams_TypeParamBounds(t *testing.T) {
 		t.Fatalf("Expected 2 embedded bounds, got %d", got)
 	}
 
-	firstBound, ok := constraint.Methods.List[0].Type.(*ast.StarExpr)
+	firstBound, ok := constraint.Methods.List[0].Type.(*ast.SelectorExpr)
 	if !ok {
-		t.Fatalf("Expected first bound to be *ast.StarExpr, got %T", constraint.Methods.List[0].Type)
+		t.Fatalf("Expected first bound to be *ast.SelectorExpr, got %T", constraint.Methods.List[0].Type)
 	}
-	if ident, ok := firstBound.X.(*ast.Ident); !ok || ident.Name != "Number" {
-		t.Fatalf("Expected first bound identifier 'Number', got %v", firstBound.X)
+	if pkg, ok := firstBound.X.(*ast.Ident); !ok || pkg.Name != "stdjava" {
+		t.Fatalf("Expected first bound package 'stdjava', got %v", firstBound.X)
+	}
+	if firstBound.Sel == nil || firstBound.Sel.Name != "JavaNumber" {
+		t.Fatalf("Expected first bound identifier 'JavaNumber', got %v", firstBound.Sel)
 	}
 
 	secondBound, ok := constraint.Methods.List[1].Type.(*ast.StarExpr)

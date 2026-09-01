@@ -375,45 +375,40 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			isFinal = true
 		}
 
-		fieldNameNode := node.ChildByFieldName("declarator").ChildByFieldName("name")
-
-		nodeutil.AssertTypeIs(fieldNameNode, "identifier")
-
 		// TODO: Scoped type identifiers are in a format such as RemotePackage.ClassName
 		// To handle this, we remove the RemotePackage part, and depend on the later
 		// type resolution to figure things out
 
-		// The node that the field's type comes from
 		typeNode := node.ChildByFieldName("type")
-
-		// If the field is being assigned to a value
 		if typeNode.Type() == "scoped_type_identifier" {
 			typeNode = typeNode.NamedChild(int(typeNode.NamedChildCount()) - 1)
 		}
 
-		// The converted name and type of the field
-		fieldName := fieldNameNode.Content(source)
 		fieldType := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, TypeParamNames(scope.TypeParameters)))
-
-		initializer := node.ChildByFieldName("declarator").ChildByFieldName("value")
-		scope.Fields = append(scope.Fields, &Definition{
-			Name:         HandleExportStatus(public, fieldName),
-			OriginalName: fieldName,
-			Type:         fieldType,
-			OriginalType: typeNode.Content(source),
-			DirectTypeParameter: DirectTypeParamForJavaType(
-				typeNode.Content(source),
-				scope.TypeParameters,
-			),
-			TypeParameterBindings: VisibleTypeParamBindings(scope.TypeParameters),
-			IsStatic:              isStatic,
-			IsFinal:               isFinal,
-			IsPrivate:             isPrivate,
-			IsCompileTimeConstant: isStatic && isFinal &&
-				javaConstantVariableType(typeNode.Content(source)) &&
-				javaConstantExpression(initializer, source, scope),
-			DeclarationNode: node,
-		})
+		for _, declarator := range nodeutil.VariableDeclarators(node) {
+			fieldNameNode := declarator.ChildByFieldName("name")
+			nodeutil.AssertTypeIs(fieldNameNode, "identifier")
+			fieldName := fieldNameNode.Content(source)
+			initializer := declarator.ChildByFieldName("value")
+			scope.Fields = append(scope.Fields, &Definition{
+				Name:         HandleExportStatus(public, fieldName),
+				OriginalName: fieldName,
+				Type:         fieldType,
+				OriginalType: typeNode.Content(source),
+				DirectTypeParameter: DirectTypeParamForJavaType(
+					typeNode.Content(source),
+					scope.TypeParameters,
+				),
+				TypeParameterBindings: VisibleTypeParamBindings(scope.TypeParameters),
+				IsStatic:              isStatic,
+				IsFinal:               isFinal,
+				IsPrivate:             isPrivate,
+				IsCompileTimeConstant: isStatic && isFinal &&
+					javaConstantVariableType(typeNode.Content(source)) &&
+					javaConstantExpression(initializer, source, scope),
+				DeclarationNode: node,
+			})
+		}
 	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
 		var public bool
 		var isStatic bool

@@ -21,3 +21,21 @@ func UnnamedChildrenOf(node *sitter.Node) []*sitter.Node {
 	}
 	return children
 }
+
+// VariableDeclarators returns every declarator carried by a Java declaration
+// in source order.
+func VariableDeclarators(node *sitter.Node) []*sitter.Node {
+	if node == nil {
+		return nil
+	}
+	if node.Type() == "variable_declarator" {
+		return []*sitter.Node{node}
+	}
+	var declarators []*sitter.Node
+	for _, child := range NamedChildrenOf(node) {
+		if child.Type() == "variable_declarator" {
+			declarators = append(declarators, child)
+		}
+	}
+	return declarators
+}

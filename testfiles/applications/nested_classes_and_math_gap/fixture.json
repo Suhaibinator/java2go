@@ -1,8 +1,5 @@
 {
   "main_class": "parity.nestedmath.MathFractal",
   "module_path": "parity/nestedmath",
-  "status": "known_gap",
-  "known_gap": "java2go has issues with nested classes accessing fields, and type conversions",
-  "expected_failure_stage": "go_compile",
-  "expected_failure_contains": "undefined"
+  "status": "passing"
 }

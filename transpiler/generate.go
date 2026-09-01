@@ -236,16 +236,25 @@ func constraintExprInContext(bounds []symbol.JavaType, typeParams []string, ctx 
 
 	if len(bounds) == 1 {
 		javaType := substituteTypeParameterDeclarations(bounds[0].Original, bounds[0].TypeParameterBindings)
-		return javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)
+		return typeParameterBoundExpr(javaType, typeParams, ctx)
 	}
 
 	fields := make([]*ast.Field, len(bounds))
 	for i, b := range bounds {
 		javaType := substituteTypeParameterDeclarations(b.Original, b.TypeParameterBindings)
-		fields[i] = &ast.Field{Type: javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)}
+		fields[i] = &ast.Field{Type: typeParameterBoundExpr(javaType, typeParams, ctx)}
 	}
 
 	return &ast.InterfaceType{Methods: &ast.FieldList{List: fields}}
+}
+
+func typeParameterBoundExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
+	base, arguments := parseJavaTypeString(javaType)
+	if len(arguments) == 0 && stripJavaQualifier(base) == "Number" &&
+		resolveClassScopeByQualifiedName(ctx, base) == nil {
+		return stdjavaQualifiedExpr("JavaNumber", ctx)
+	}
+	return javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)
 }
 
 func genType(remaining []string) ast.Expr {

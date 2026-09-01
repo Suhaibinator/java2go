@@ -141,7 +141,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		instanceFieldInitializers := []ast.Stmt{}
 		classBody := node.ChildByFieldName("body")
 		resolveCompileTimeConstantsForClass(ctx.currentClass, source, ctx)
-		consolidateStaticInitialization := classBodyNeedsOrderedStaticInitialization(classBody, ctx.currentClass)
+		consolidateStaticInitialization := classBodyNeedsOrderedStaticInitialization(classBody, ctx.currentClass, source)
 
 		// currentClass is the declaration-identity-bearing scope selected by the
 		// caller. A file-wide simple-name lookup can bind the second A.Node to the
@@ -210,74 +210,71 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				if skipField {
 					continue
 				}
+				for _, declarator := range nodeutil.VariableDeclarators(child) {
 
-				field := &ast.Field{}
-				if len(comments) > 0 {
-					field.Doc = &ast.CommentGroup{List: comments}
-				}
-
-				declarator := child.ChildByFieldName("declarator")
-				if declarator == nil {
-					continue
-				}
-
-				fieldName := declarator.ChildByFieldName("name").Content(source)
-				fieldValueNode := declarator.ChildByFieldName("value")
-
-				fieldDef := ctx.currentClass.FindField().ByOriginalName(fieldName)[0]
-
-				field.Names = []*ast.Ident{{Name: fieldDef.Name}}
-				field.Type = abstractClassToInterface(
-					javaTypeStringToGoTypeExpr(fieldDef.OriginalType, typeParams, ctx),
-					fieldDef.OriginalType,
-					ctx,
-				)
-				field.Type = directOwnerTypeParameterFieldStorageType(ctx.currentClass, fieldDef, field.Type, ctx)
-
-				if staticField {
-					spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}
-					if isJavaStringType(fieldDef.OriginalType) {
-						// A Java String field starts as null, not Go's empty-string zero.
-						// Keep that state observable even when a later static initializer
-						// overwrites it.
-						spec.Values = []ast.Expr{javaNullStringExpr()}
+					field := &ast.Field{}
+					if len(comments) > 0 {
+						field.Doc = &ast.CommentGroup{List: comments}
 					}
-					if fieldValueNode != nil && (!consolidateStaticInitialization || fieldDef.IsCompileTimeConstant) {
-						valueCtx := ctx.Clone()
-						valueCtx.localScope = &symbol.Definition{IsStatic: true}
-						valueCtx.expectedType = fieldDef.OriginalType
-						valueCtx.expectedTypeRoot = fieldValueNode
-						value := ParseExpr(fieldValueNode, source, valueCtx)
-						value = coerceArgumentToExpectedType(value, fieldValueNode, fieldDef.OriginalType, valueCtx, source)
-						spec.Values = []ast.Expr{value}
-					}
-					globalVariables.Specs = append(globalVariables.Specs, spec)
-				} else {
-					fields.List = append(fields.List, field)
-					if fieldValueNode != nil {
-						valueCtx := ctx.Clone()
-						// Instance field initializers execute as if they were part of an
-						// instance method. They can therefore make unqualified instance
-						// calls, and those calls use normal Java virtual dispatch even
-						// while a superclass constructor is still running. The generated
-						// assignments live in __java2goInitFields, whose receiver is
-						// already wired to the most-derived object.
-						valueCtx.localScope = &symbol.Definition{OriginalName: fieldInitMethodName}
-						valueCtx.executionContextName = executionNameForClass(ctx.currentClass)
-						valueCtx.expectedType = fieldDef.OriginalType
-						valueCtx.expectedTypeRoot = fieldValueNode
-						value := ParseExpr(fieldValueNode, source, valueCtx)
-						value = coerceArgumentToExpectedType(value, fieldValueNode, fieldDef.OriginalType, valueCtx, source)
-						instanceFieldInitializers = append(instanceFieldInitializers, &ast.AssignStmt{
-							Lhs: []ast.Expr{
-								&ast.SelectorExpr{
-									X:   &ast.Ident{Name: ShortName(ctx.className)},
-									Sel: &ast.Ident{Name: fieldDef.Name},
+
+					fieldName := declarator.ChildByFieldName("name").Content(source)
+					fieldValueNode := declarator.ChildByFieldName("value")
+
+					fieldDef := ctx.currentClass.FindField().ByOriginalName(fieldName)[0]
+
+					field.Names = []*ast.Ident{{Name: fieldDef.Name}}
+					field.Type = abstractClassToInterface(
+						javaTypeStringToGoTypeExpr(fieldDef.OriginalType, typeParams, ctx),
+						fieldDef.OriginalType,
+						ctx,
+					)
+					field.Type = directOwnerTypeParameterFieldStorageType(ctx.currentClass, fieldDef, field.Type, ctx)
+
+					if staticField {
+						spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}
+						if isJavaStringType(fieldDef.OriginalType) {
+							// A Java String field starts as null, not Go's empty-string zero.
+							// Keep that state observable even when a later static initializer
+							// overwrites it.
+							spec.Values = []ast.Expr{javaNullStringExpr()}
+						}
+						if fieldValueNode != nil && (!consolidateStaticInitialization || fieldDef.IsCompileTimeConstant) {
+							valueCtx := ctx.Clone()
+							valueCtx.localScope = &symbol.Definition{IsStatic: true}
+							valueCtx.expectedType = fieldDef.OriginalType
+							valueCtx.expectedTypeRoot = fieldValueNode
+							value := ParseExpr(fieldValueNode, source, valueCtx)
+							value = coerceArgumentToExpectedType(value, fieldValueNode, fieldDef.OriginalType, valueCtx, source)
+							spec.Values = []ast.Expr{value}
+						}
+						globalVariables.Specs = append(globalVariables.Specs, spec)
+					} else {
+						fields.List = append(fields.List, field)
+						if fieldValueNode != nil {
+							valueCtx := ctx.Clone()
+							// Instance field initializers execute as if they were part of an
+							// instance method. They can therefore make unqualified instance
+							// calls, and those calls use normal Java virtual dispatch even
+							// while a superclass constructor is still running. The generated
+							// assignments live in __java2goInitFields, whose receiver is
+							// already wired to the most-derived object.
+							valueCtx.localScope = &symbol.Definition{OriginalName: fieldInitMethodName}
+							valueCtx.executionContextName = executionNameForClass(ctx.currentClass)
+							valueCtx.expectedType = fieldDef.OriginalType
+							valueCtx.expectedTypeRoot = fieldValueNode
+							value := ParseExpr(fieldValueNode, source, valueCtx)
+							value = coerceArgumentToExpectedType(value, fieldValueNode, fieldDef.OriginalType, valueCtx, source)
+							instanceFieldInitializers = append(instanceFieldInitializers, &ast.AssignStmt{
+								Lhs: []ast.Expr{
+									&ast.SelectorExpr{
+										X:   &ast.Ident{Name: ShortName(ctx.className)},
+										Sel: &ast.Ident{Name: fieldDef.Name},
+									},
 								},
-							},
-							Tok: token.ASSIGN,
-							Rhs: []ast.Expr{value},
-						})
+								Tok: token.ASSIGN,
+								Rhs: []ast.Expr{value},
+							})
+						}
 					}
 				}
 			}
@@ -703,23 +700,36 @@ func appendValidDeclarations(dst []ast.Decl, declarations []ast.Decl) []ast.Decl
 	return dst
 }
 
-func fieldDefinitionForDeclaration(scope *symbol.ClassScope, declaration *sitter.Node) *symbol.Definition {
-	if scope == nil || declaration == nil {
+func fieldDefinitionForDeclarator(scope *symbol.ClassScope, declarator *sitter.Node, source []byte) *symbol.Definition {
+	if scope == nil || declarator == nil {
 		return nil
 	}
-	for _, field := range scope.Fields {
-		if field == nil || field.DeclarationNode == nil {
-			continue
+	if int(declarator.EndByte()) > len(source) {
+		declaration := declarator.Parent()
+		for _, field := range scope.Fields {
+			if field == nil || field.DeclarationNode == nil || declaration == nil {
+				continue
+			}
+			if field.DeclarationNode.StartByte() == declaration.StartByte() &&
+				field.DeclarationNode.EndByte() == declaration.EndByte() {
+				return field
+			}
 		}
-		if field.DeclarationNode.StartByte() == declaration.StartByte() &&
-			field.DeclarationNode.EndByte() == declaration.EndByte() {
+		return nil
+	}
+	nameNode := declarator.ChildByFieldName("name")
+	if nameNode == nil {
+		return nil
+	}
+	for _, field := range scope.FindField().ByOriginalName(nameNode.Content(source)) {
+		if field != nil {
 			return field
 		}
 	}
 	return nil
 }
 
-func classBodyNeedsOrderedStaticInitialization(body *sitter.Node, scope *symbol.ClassScope) bool {
+func classBodyNeedsOrderedStaticInitialization(body *sitter.Node, scope *symbol.ClassScope, source []byte) bool {
 	if body == nil {
 		return false
 	}
@@ -728,20 +738,21 @@ func classBodyNeedsOrderedStaticInitialization(body *sitter.Node, scope *symbol.
 			return true
 		}
 		if child.Type() == "field_declaration" {
-			field := fieldDefinitionForDeclaration(scope, child)
-			if field == nil {
-				if !fieldDeclarationIsStatic(child) {
+			for _, declarator := range nodeutil.VariableDeclarators(child) {
+				field := fieldDefinitionForDeclarator(scope, declarator, source)
+				if field == nil {
+					if !fieldDeclarationIsStatic(child) {
+						continue
+					}
+				} else if !field.IsStatic {
 					continue
 				}
-			} else if !field.IsStatic {
-				continue
-			}
-			declarator := child.ChildByFieldName("declarator")
-			if declarator != nil && declarator.ChildByFieldName("value") != nil {
-				if field != nil && field.IsCompileTimeConstant {
-					continue
+				if declarator.ChildByFieldName("value") != nil {
+					if field != nil && field.IsCompileTimeConstant {
+						continue
+					}
+					return true
 				}
-				return true
 			}
 		}
 	}
@@ -2819,11 +2830,14 @@ func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symb
 		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{zeroValueForType(results.List[0].Type)}})
 	}
 
-	return &ast.FuncDecl{
-		Name: &ast.Ident{Name: funcName},
-		Type: &ast.FuncType{Params: params, Results: results},
-		Body: body,
-	}
+	return genFuncDeclWithTypeParamsInContext(
+		funcName,
+		def.TypeParameters,
+		params,
+		results,
+		body,
+		ctx,
+	)
 }
 
 func buildEnumMethodWrapper(def *symbol.Definition, overrides map[string]string, defaultImpl string, params *ast.FieldList, results *ast.FieldList, receiver *ast.FieldList, ctx Ctx) *ast.FuncDecl {
@@ -2838,18 +2852,27 @@ func buildEnumMethodWrapper(def *symbol.Definition, overrides map[string]string,
 	}
 
 	clauses := []ast.Stmt{}
-	for constName, implName := range overrides {
-		call := &ast.CallExpr{Fun: &ast.Ident{Name: implName}, Args: args}
+	typeArgs := typeParamExprs(def.GoTypeParameterNames())
+	for _, enumConst := range ctx.currentClass.EnumConstants {
+		implName, ok := overrides[enumConst.Name]
+		if !ok {
+			continue
+		}
+		var fun ast.Expr = &ast.Ident{Name: implName}
+		fun = applyTypeArguments(fun, typeArgs)
+		call := &ast.CallExpr{Fun: fun, Args: args}
 		markVariadicForwardCall(call, def)
 		clauses = append(clauses, &ast.CaseClause{
-			List: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + constName + "\""}},
+			List: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + enumConst.Name + "\""}},
 			Body: []ast.Stmt{invocationClosureCallStatement(call, results)},
 		})
 	}
 
 	defaultBody := []ast.Stmt{}
 	if defaultImpl != "" {
-		call := &ast.CallExpr{Fun: &ast.Ident{Name: defaultImpl}, Args: args}
+		var fun ast.Expr = &ast.Ident{Name: defaultImpl}
+		fun = applyTypeArguments(fun, typeArgs)
+		call := &ast.CallExpr{Fun: fun, Args: args}
 		markVariadicForwardCall(call, def)
 		defaultBody = []ast.Stmt{invocationClosureCallStatement(call, results)}
 	} else {
@@ -3935,6 +3958,9 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 
 			wrapper := buildEnumMethodWrapper(ctx.localScope, overrides, defaultImpl, params, results, receiver, ctx)
+			if ctx.localScope.RequiresHelper {
+				return append(implDecls, genInstanceGenericHelperDecls(ctx, ctx.localScope, nil, params, results, wrapper.Body, receiverBaseType)...)
+			}
 			return append(implDecls, buildExecutionAwareFuncDecls(
 				wrapper,
 				executionImplementationName(ctx.localScope, ctx.currentClass),
