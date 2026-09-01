@@ -13,6 +13,7 @@ func init() {
 	registerStringIntrinsics()
 	registerStringBuilderIntrinsics()
 	registerMathIntrinsics()
+	registerNumberIntrinsics()
 	registerBoxedTypeIntrinsics()
 }
 
@@ -313,12 +314,25 @@ func registerMathIntrinsics() {
 		return stdjavaCall(ctx, "MathMin", args[0], args[1])
 	})
 
-	// The floating-point functions map directly to the math package.
+	// Trigonometric functions use the fdlibm-compatible runtime so accumulated
+	// results retain Java StrictMath's last-bit behavior.
 	registerStaticIntrinsic("Math", "pow", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 2) {
 			return nil
 		}
 		return pkgCall(ctx, "math", "Pow", args[0], args[1])
+	})
+	registerStaticIntrinsic("Math", "sin", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "JavaMathSin", args[0])
+	})
+	registerStaticIntrinsic("Math", "cos", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "JavaMathCos", args[0])
 	})
 	registerStaticIntrinsic("Math", "sqrt", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
@@ -362,10 +376,39 @@ func registerMathIntrinsics() {
 	registerStaticFieldIntrinsic("Math", "E", func(ctx Ctx) ast.Expr {
 		return qualifiedNameExpr("E", "math", ctx)
 	})
+	for _, method := range []string{"sin", "cos", "pow", "sqrt", "floor", "ceil", "random"} {
+		registerStaticIntrinsicResultType("Math", method, "double")
+	}
+	registerStaticIntrinsicResultType("Math", "round", "long")
+	registerStaticFieldIntrinsicResultType("Math", "PI", "double")
+	registerStaticFieldIntrinsicResultType("Math", "E", "double")
+}
+
+func registerNumberIntrinsics() {
+	accessors := map[string]string{
+		"byteValue": "NumberByteValue", "shortValue": "NumberShortValue",
+		"intValue": "NumberIntValue", "longValue": "NumberLongValue",
+		"floatValue": "NumberFloatValue", "doubleValue": "NumberDoubleValue",
+	}
+	results := map[string]string{
+		"byteValue": "byte", "shortValue": "short", "intValue": "int",
+		"longValue": "long", "floatValue": "float", "doubleValue": "double",
+	}
+	for _, typeName := range []string{"Number", "Byte", "Short", "Integer", "Long", "Float", "Double"} {
+		for methodName, runtimeName := range accessors {
+			runtimeName := runtimeName
+			registerInstanceIntrinsic(typeName, methodName, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if !expectArgs(args, 0) {
+					return nil
+				}
+				return stdjavaCall(ctx, runtimeName, recv)
+			})
+			registerInstanceIntrinsicResultType(typeName, methodName, results[methodName])
+		}
+	}
 }
 
 // --- boxed types: Integer / Long / Double / Boolean / Character -------------
-
 func registerBoxedTypeIntrinsics() {
 	// Integer
 	registerStaticIntrinsic("Integer", "parseInt", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
@@ -430,8 +473,9 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "ParseDouble", args[0])
+		return stdjavaCall(ctx, "DoubleValueOf", args[0])
 	})
+	registerStaticIntrinsicResultType("Double", "valueOf", "Double")
 	registerStaticIntrinsic("Double", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil

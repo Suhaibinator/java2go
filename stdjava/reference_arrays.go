@@ -21,6 +21,7 @@ const (
 	ConstableTypeID    TypeID = "java.lang.constant.Constable"
 	ConstantDescTypeID TypeID = "java.lang.constant.ConstantDesc"
 	StringTypeID       TypeID = "java.lang.String"
+	NumberTypeID       TypeID = "java.lang.Number"
 	BooleanTypeID      TypeID = "java.lang.Boolean"
 	ByteTypeID         TypeID = "java.lang.Byte"
 	ShortTypeID        TypeID = "java.lang.Short"
@@ -159,14 +160,15 @@ var javaTypeRegistry = struct {
 				ConstantDescTypeID,
 			},
 		},
+		NumberTypeID:    {super: ObjectTypeID},
 		BooleanTypeID:   {super: ObjectTypeID},
-		ByteTypeID:      {super: ObjectTypeID},
-		ShortTypeID:     {super: ObjectTypeID},
+		ByteTypeID:      {super: NumberTypeID},
+		ShortTypeID:     {super: NumberTypeID},
 		CharacterTypeID: {super: ObjectTypeID},
-		IntegerTypeID:   {super: ObjectTypeID},
-		LongTypeID:      {super: ObjectTypeID},
-		FloatTypeID:     {super: ObjectTypeID},
-		DoubleTypeID:    {super: ObjectTypeID},
+		IntegerTypeID:   {super: NumberTypeID},
+		LongTypeID:      {super: NumberTypeID},
+		FloatTypeID:     {super: NumberTypeID},
+		DoubleTypeID:    {super: NumberTypeID},
 	},
 }
 

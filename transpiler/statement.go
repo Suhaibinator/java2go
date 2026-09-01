@@ -17,13 +17,14 @@ import (
 // must be emitted with an explicit Go type rather than `:=` inference. It covers
 // the primitives whose Go type is narrower than the type an untyped constant
 // would infer: int->int32, long->int64, short->int16, byte->int8, char->rune,
-// float->float32. double/boolean already infer to the right Go type (float64,
-// bool), so they are left to `:=`. The original Java type may carry array
-// brackets or qualifiers; only the bare primitive name is matched.
+// float->float32. Double is conditionally pinned below when an integral
+// initializer would infer Go int. Boolean already infers to bool. The original
+// Java type may carry array brackets or qualifiers; only the bare primitive name
+// is matched.
 func needsExplicitPrimitiveType(originalType string) bool {
 	base, _ := parseJavaTypeString(originalType)
 	switch strings.TrimSpace(base) {
-	case "int", "long", "short", "byte", "char", "float":
+	case "int", "long", "short", "byte", "char", "float", "double":
 		return true
 	}
 	return false
@@ -555,6 +556,16 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// valid in a for-loop init, where this same case is reached.
 		pinType := variableType
 		pin := needsExplicitPrimitiveType(strings.TrimSpace(originalType))
+		if pin && strings.TrimSpace(originalType) == "double" && initializerNode != nil {
+			// An untyped floating constant and every already-double expression infer
+			// float64 correctly. Only integral or otherwise non-double initializers
+			// need an explicit conversion for a Java double local.
+			if inferred, ok := inferExprJavaType(initializerNode, ctx, source); ok {
+				if canonical, numeric := canonicalJavaNumericType(inferred); numeric && canonical == "double" {
+					pin = false
+				}
+			}
+		}
 		// `var x = <int expr>` carries no declared type, so infer it from the
 		// initializer and pin if it is a sized integer primitive.
 		if !pin && isVarKeywordType(strings.TrimSpace(originalType)) && variableDeclarator.NamedChildCount() == 2 {

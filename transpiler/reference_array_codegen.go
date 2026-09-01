@@ -212,6 +212,7 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	baseName := stripJavaQualifier(base)
 	builtin := map[string]string{
 		"Object": "ObjectTypeID", "String": "StringTypeID",
+		"Number":    "NumberTypeID",
 		"Throwable": "ThrowableTypeID",
 		"Thread":    "ThreadTypeID", "Runnable": "RunnableTypeID",
 		"Cloneable": "CloneableTypeID", "Serializable": "SerializableTypeID",

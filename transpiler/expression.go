@@ -124,8 +124,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			X:  ParseExpr(operandNode, source, ctx),
 		})
 	case "class_literal":
-		// Class literals refer to the class directly, such as
-		// Object.class
+		javaType, ok := classLiteralJavaType(node, source)
+		if ok {
+			if descriptor, described := javaTypeDescriptorExpr(javaType, ctx); described {
+				return stdjavaCall(ctx, "ClassLiteral", descriptor)
+			}
+		}
 		return &ast.BadExpr{}
 	case "assignment_expression":
 		return lowerAssignmentExpression(node, source, ctx)
@@ -5424,6 +5428,9 @@ func inferLambdaParameterJavaTypes(ctx Ctx, parameterCount int) []string {
 	if parameterCount <= 0 {
 		return nil
 	}
+	if len(ctx.lambdaParameterJavaTypes) == parameterCount {
+		return append([]string(nil), ctx.lambdaParameterJavaTypes...)
+	}
 
 	method, typeBindings := resolveFunctionalInterfaceMethod(ctx, ctx.expectedType)
 	if method == nil || len(method.Parameters) != parameterCount {
@@ -8871,6 +8878,14 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		// and after source resolution so a user-defined class with the same simple
 		// name retains its generated type.
 		expr = stdjavaQualifiedExpr("Throwable", ctx)
+	} else if resolvedScope == nil && baseName == "Number" {
+		// Boxed numeric references use scalar Go values. An interface slot retains
+		// Number's nullable, heterogeneous value representation.
+		expr = &ast.Ident{Name: "any"}
+	} else if resolvedScope == nil && baseName == "Class" {
+		// java.lang.Class<T> is erased at runtime; every generic view shares one
+		// canonical descriptor object.
+		expr = &ast.StarExpr{X: stdjavaQualifiedExpr("Class", ctx)}
 	} else if prim, ok := primitive(baseName); ok {
 		expr = prim
 	} else if rt, ok := stdjavaRuntimeTypeExpr(baseName, typeArgs, typeParams, ctx); ok {
@@ -9270,6 +9285,18 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 	return qualifyJavaTypeInDeclaringContext(rt, resolution.owner), true
 }
 
+func classLiteralJavaType(node *sitter.Node, source []byte) (string, bool) {
+	if node == nil || node.Type() != "class_literal" {
+		return "", false
+	}
+	content := strings.TrimSpace(node.Content(source))
+	if !strings.HasSuffix(content, ".class") {
+		return "", false
+	}
+	javaType := strings.TrimSpace(strings.TrimSuffix(content, ".class"))
+	return javaType, javaType != ""
+}
+
 // inferStreamMapResultType infers the element type produced by a Stream.map(...)
 // call from the mapper lambda's body, binding the lambda parameter to the
 // receiver's element type. Returns the Java type of the result, or false when it
@@ -9306,6 +9333,11 @@ func inferStreamMapResultType(mapNode *sitter.Node, recvArgs []string, ctx Ctx, 
 
 func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 	switch node.Type() {
+	case "class_literal":
+		if javaType, ok := classLiteralJavaType(node, source); ok {
+			return "Class<" + javaType + ">", true
+		}
+		return "", false
 	case "identifier":
 		return inferIdentifierJavaType(node.Content(source), ctx)
 	case "assignment_expression":
@@ -9460,6 +9492,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			}
 		}
 	case "method_invocation":
+		if resultType, ok := inferIntrinsicMethodResultType(node, ctx, source); ok {
+			return resultType, true
+		}
 		// Chained String intrinsics: if the inner call is itself a String method
 		// that returns a String, the result type is String so the outer call also
 		// resolves (e.g. s.trim().toUpperCase()).
@@ -9566,6 +9601,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			return rt, true
 		}
 	case "field_access":
+		if resultType, ok := inferIntrinsicFieldResultType(node, ctx, source); ok {
+			return resultType, true
+		}
 		// Java arrays expose length as an int-valued pseudo-field. Preserve that
 		// static type so compound assignments such as total += values.length can
 		// apply Java numeric promotion instead of falling back to an unknown Object.

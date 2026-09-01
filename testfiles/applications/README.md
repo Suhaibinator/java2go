@@ -34,6 +34,10 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `side_effect_semantics` | Short-circuiting, nested ternaries, receiver/argument order, null invocation timing, static qualifiers, compound assignment, `finally`, and recursive side effects | Passing |
 | `numerical_kernels` | Floating-point recurrences, blocked dense matrices, iterative stencils, cache locality, allocation, numerical checksums | Passing + benchmark |
 | `allocation_gc_pressure` | Short-lived object/array churn, retained cyclic graphs, cohort rotation, traversal, mutation, reclamation pressure | Passing + benchmark |
+| `physics_simulation` | Multi-package vector and particle model, force integration, nested loops, floating-point state, and deterministic simulation summaries | Passing |
+| `streams_and_generics_gap` | Number-bounded generics, typed stream filter/map lambdas, sorting, collection, boxed numeric accessors, and exact list formatting | Passing |
+| `nested_classes_and_math_gap` | Inner and anonymous classes, multi-field declarations, outer state, virtual callbacks, and StrictMath-compatible trigonometric accumulation | Passing |
+| `complex_enums_and_generics_gap` | Constant-specific enum method bodies, abstract generic enum methods, multidimensional reference arrays, Number accessors, and class-literal identity | Passing |
 | `integer_branch_search` | Constraint search, prime sieve, branch-skewed pointer chase, bit operations, recursion, large integer arrays | Passing + benchmark |
 | `finally_loop_control_gap` | `break`/`continue` through `finally`, observable side-effect order, and loop-transfer resumption | Passing |
 | `labeled_block_break_gap` | `break` through `finally` targeting a Java labeled block rather than a loop/switch | Passing |

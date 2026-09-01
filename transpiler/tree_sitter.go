@@ -72,6 +72,12 @@ type Ctx struct {
 	// expressions can otherwise change the conditional's standalone type.
 	expectedTypeRoot *sitter.Node
 
+	// lambdaParameterJavaTypes supplies target parameter types for external
+	// functional interfaces that have no source-backed symbol scope. Stream and
+	// collection intrinsics use it while parsing a lambda body so member lookup
+	// observes generic bounds before the resulting Go closure is post-typed.
+	lambdaParameterJavaTypes []string
+
 	// Additional type parameters synthesized for a generated top-level function.
 	// Java raw generic parameters can accept every instantiation, while Go has no
 	// equivalent raw generic type. Static Java methods that receive a raw generic
@@ -387,6 +393,7 @@ func (c Ctx) Clone() Ctx {
 		lastType:                            c.lastType,
 		expectedType:                        c.expectedType,
 		expectedTypeRoot:                    c.expectedTypeRoot,
+		lambdaParameterJavaTypes:            c.lambdaParameterJavaTypes,
 		syntheticTypeParameters:             c.syntheticTypeParameters,
 		rawGenericParameterTypes:            c.rawGenericParameterTypes,
 		dependentTypeWitnesses:              c.dependentTypeWitnesses,
