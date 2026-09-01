@@ -29,6 +29,11 @@ func SortOrdered[T any](l *List[T]) {
 	if l == nil {
 		panic(NewNullPointerException("Collections.sort on null"))
 	}
+	// The floating-point types are deliberately absent from the fast path: Go's
+	// `<` is not Java's ordering for them (it leaves NaN where it lies and treats
+	// -0.0 and 0.0 as equal), so they must go through the same Java total order
+	// the slow path uses. Sorting them with `<` here would also make
+	// Collections.sort and Stream.sorted disagree within one program.
 	switch elements := any(l.elements).(type) {
 	case []string:
 		SortSlice(elements)
@@ -39,10 +44,6 @@ func SortOrdered[T any](l *List[T]) {
 	case []int16:
 		SortSlice(elements)
 	case []int8:
-		SortSlice(elements)
-	case []float32:
-		SortSlice(elements)
-	case []float64:
 		SortSlice(elements)
 	default:
 		SortSliceStableNatural(l.elements)
@@ -111,9 +112,19 @@ func AsList[T any](elements ...T) *List[T] {
 }
 
 // SortSlice sorts a slice of ordered elements in place, matching Arrays.sort.
+// It must not be used for the floating-point types, whose Java ordering differs
+// from Go's `<`; SortFloatSlice handles those.
 func SortSlice[T cmp.Ordered](elements []T) {
 	sort.Slice(elements, func(i, j int) bool {
 		return elements[i] < elements[j]
+	})
+}
+
+// SortFloatSlice sorts a floating-point slice by Java's total order, where NaN
+// sorts after every other value and -0.0 before 0.0.
+func SortFloatSlice[T ~float32 | ~float64](elements []T) {
+	sort.Slice(elements, func(i, j int) bool {
+		return javaDoubleCompare(float64(elements[i]), float64(elements[j])) < 0
 	})
 }
 
@@ -131,10 +142,12 @@ func SortArray(array any) {
 		SortSlice(values.Elements)
 	case *PrimitiveArray[int64]:
 		SortSlice(values.Elements)
+	// Arrays.sort(double[]) and (float[]) use Java's total order too, so NaN
+	// sorts last and -0.0 before 0.0; Go's `<` does neither.
 	case *PrimitiveArray[float32]:
-		SortSlice(values.Elements)
+		SortFloatSlice(values.Elements)
 	case *PrimitiveArray[float64]:
-		SortSlice(values.Elements)
+		SortFloatSlice(values.Elements)
 	case *ReferenceArray:
 		if values == nil {
 			panic(NewNullPointerException("Arrays.sort on null"))

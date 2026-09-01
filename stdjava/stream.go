@@ -50,6 +50,13 @@ func (s Stream[T]) Filter(predicate func(T) bool) Stream[T] {
 // Limit returns a stream truncated to at most maxSize elements, matching
 // Stream.limit.
 func (s Stream[T]) Limit(maxSize int32) Stream[T] {
+	// Java throws IllegalArgumentException for a negative limit. Without this
+	// check the make below fails with "makeslice: len out of range", which the
+	// panic normalizer maps to NegativeArraySizeException, so a Java
+	// `catch (IllegalArgumentException e)` would not catch it.
+	if maxSize < 0 {
+		panic(NewIllegalArgumentException("Stream.limit requires a non-negative count"))
+	}
 	if int(maxSize) >= len(s.elements) {
 		return s
 	}

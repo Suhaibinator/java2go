@@ -480,6 +480,47 @@ func registerBoxedTypeIntrinsics() {
 		return stdjavaCall(ctx, "DoubleValueOf", args[0])
 	})
 	registerStaticIntrinsicResultType("Double", "valueOf", "Double")
+
+	// The floating-point comparison statics and the special-value constants.
+	// Double.compare is a total order (NaN last, -0.0 before 0.0) that differs
+	// from Go's `<`, so it maps to the runtime's Java-compatible comparison
+	// rather than to a subtraction.
+	registerStaticIntrinsic("Double", "compare", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 2) {
+			return nil
+		}
+		return stdjavaCall(ctx, "DoubleCompare", args[0], args[1])
+	})
+	registerStaticIntrinsicResultType("Double", "compare", "int")
+	registerStaticIntrinsic("Float", "compare", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 2) {
+			return nil
+		}
+		return stdjavaCall(ctx, "FloatCompare", args[0], args[1])
+	})
+	registerStaticIntrinsicResultType("Float", "compare", "int")
+	registerStaticIntrinsic("Double", "isNaN", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "DoubleIsNaN", args[0])
+	})
+	registerStaticIntrinsicResultType("Double", "isNaN", "boolean")
+
+	for _, spec := range []struct{ field, runtime, resultType string }{
+		{"NaN", "DoubleNaN", "double"},
+		{"POSITIVE_INFINITY", "DoublePositiveInfinity", "double"},
+		{"NEGATIVE_INFINITY", "DoubleNegativeInfinity", "double"},
+	} {
+		registerStaticFieldIntrinsic("Double", spec.field, func(ctx Ctx) ast.Expr {
+			return stdjavaCall(ctx, spec.runtime)
+		})
+		registerStaticFieldIntrinsicResultType("Double", spec.field, spec.resultType)
+	}
+	registerStaticFieldIntrinsic("Float", "NaN", func(ctx Ctx) ast.Expr {
+		return stdjavaCall(ctx, "FloatNaN")
+	})
+	registerStaticFieldIntrinsicResultType("Float", "NaN", "float")
 	registerStaticIntrinsic("Double", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil

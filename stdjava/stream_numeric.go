@@ -91,6 +91,13 @@ func StreamOfArray[T any](array any) Stream[T] {
 	case nil:
 		panic(NewNullPointerException("Arrays.stream on null"))
 	case *PrimitiveArray[T]:
+		// A `null` Java array reaches here as a TYPED nil, which the `case nil`
+		// arm above does not match (that one only catches an untyped nil
+		// interface). Without this check the dereference below is a segfault
+		// rather than the NullPointerException Java throws.
+		if values == nil {
+			panic(NewNullPointerException("Arrays.stream on null"))
+		}
 		return StreamOfSlice(values.Elements)
 	case *ReferenceArray:
 		if values == nil {

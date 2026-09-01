@@ -2,6 +2,7 @@ package stdjava
 
 import (
 	"cmp"
+	"math"
 	"reflect"
 	"sort"
 )
@@ -28,7 +29,7 @@ type Comparator[T any] func(a, b T) int32
 // Comparator.naturalOrder().
 func NaturalOrder[T cmp.Ordered]() Comparator[T] {
 	return func(a, b T) int32 {
-		return int32(cmp.Compare(a, b))
+		return javaOrderedCompare(a, b)
 	}
 }
 
@@ -36,7 +37,7 @@ func NaturalOrder[T cmp.Ordered]() Comparator[T] {
 // Comparator.reverseOrder() and Collections.reverseOrder().
 func ReverseOrder[T cmp.Ordered]() Comparator[T] {
 	return func(a, b T) int32 {
-		return int32(cmp.Compare(b, a))
+		return javaOrderedCompare(b, a)
 	}
 }
 
@@ -46,7 +47,7 @@ func ReverseOrder[T cmp.Ordered]() Comparator[T] {
 // a method on Comparator.
 func ComparatorComparing[T any, K cmp.Ordered](key func(T) K) Comparator[T] {
 	return func(a, b T) int32 {
-		return int32(cmp.Compare(key(a), key(b)))
+		return javaOrderedCompare(key(a), key(b))
 	}
 }
 
@@ -54,7 +55,7 @@ func ComparatorComparing[T any, K cmp.Ordered](key func(T) K) Comparator[T] {
 // directly because the transpiler can recognize the fused form.
 func ComparatorComparingReversed[T any, K cmp.Ordered](key func(T) K) Comparator[T] {
 	return func(a, b T) int32 {
-		return int32(cmp.Compare(key(b), key(a)))
+		return javaOrderedCompare(key(b), key(a))
 	}
 }
 
@@ -100,7 +101,7 @@ func ComparatorThenComparingKey[T any, K cmp.Ordered](c Comparator[T], key func(
 		if result := c(a, b); result != 0 {
 			return result
 		}
-		return int32(cmp.Compare(key(a), key(b)))
+		return javaOrderedCompare(key(a), key(b))
 	}
 }
 
@@ -153,7 +154,7 @@ func MaxWith[T any](l *List[T], c Comparator[T]) T {
 	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if c(e, best) > 0 {
+		if compareWithNatural(c, e, best) > 0 {
 			best = e
 		}
 	}
@@ -168,7 +169,7 @@ func MinWith[T any](l *List[T], c Comparator[T]) T {
 	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if c(e, best) < 0 {
+		if compareWithNatural(c, e, best) < 0 {
 			best = e
 		}
 	}
@@ -208,6 +209,16 @@ func SortArrayWith[T any](array any, c Comparator[T]) {
 	})
 }
 
+// compareWithNatural applies a comparator, falling back to natural ordering
+// when it is nil. Java defines a null comparator as natural ordering, which
+// SortWith and SortSliceWith already honour.
+func compareWithNatural[T any](c Comparator[T], left, right T) int32 {
+	if c == nil {
+		return javaCompareValues(left, right)
+	}
+	return c(left, right)
+}
+
 // javaCompareValues compares two values by Java's natural ordering, returning
 // the sign contract of Comparable.compareTo. It handles the primitive and String
 // forms directly and otherwise bridges to a generated type's own CompareTo
@@ -240,11 +251,11 @@ func javaCompareValues(left, right any) int32 {
 		}
 	case float32:
 		if right, ok := right.(float32); ok {
-			return int32(cmp.Compare(left, right))
+			return javaFloatCompare(left, right)
 		}
 	case float64:
 		if right, ok := right.(float64); ok {
-			return int32(cmp.Compare(left, right))
+			return javaDoubleCompare(left, right)
 		}
 	case bool:
 		if right, ok := right.(bool); ok {
@@ -285,7 +296,7 @@ func compareViaReflectOrdering(left, right any) (int32, bool) {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		return int32(cmp.Compare(leftValue.Uint(), rightValue.Uint())), true
 	case reflect.Float32, reflect.Float64:
-		return int32(cmp.Compare(leftValue.Float(), rightValue.Float())), true
+		return javaDoubleCompare(leftValue.Float(), rightValue.Float()), true
 	case reflect.String:
 		return int32(cmp.Compare(leftValue.String(), rightValue.String())), true
 	}
@@ -330,3 +341,97 @@ func compareViaCompareTo(left, right any) (int32, bool) {
 	}
 	return int32(method.Call([]reflect.Value{argument})[0].Int()), true
 }
+
+// javaDoubleCompare implements java.lang.Double.compare, which is a total order
+// and therefore differs from Go's `<` and from cmp.Compare in two ways that are
+// observable through sorting: NaN compares greater than every other value
+// (including itself, so NaN sorts last rather than not moving), and -0.0
+// compares less than 0.0.
+//
+// Java realises that by falling back to the bit patterns whenever the numeric
+// comparison reports neither less nor greater, which covers exactly the equal,
+// signed-zero and NaN cases.
+func javaDoubleCompare(left, right float64) int32 {
+	if left < right {
+		return -1
+	}
+	if left > right {
+		return 1
+	}
+	leftBits := int64(math.Float64bits(canonicalNaN64(left)))
+	rightBits := int64(math.Float64bits(canonicalNaN64(right)))
+	switch {
+	case leftBits == rightBits:
+		return 0
+	case leftBits < rightBits:
+		return -1
+	default:
+		return 1
+	}
+}
+
+// javaFloatCompare is javaDoubleCompare for java.lang.Float.compare.
+func javaFloatCompare(left, right float32) int32 {
+	if left < right {
+		return -1
+	}
+	if left > right {
+		return 1
+	}
+	leftBits := int32(math.Float32bits(canonicalNaN32(left)))
+	rightBits := int32(math.Float32bits(canonicalNaN32(right)))
+	switch {
+	case leftBits == rightBits:
+		return 0
+	case leftBits < rightBits:
+		return -1
+	default:
+		return 1
+	}
+}
+
+// canonicalNaN64 and canonicalNaN32 collapse every NaN to one bit pattern, as
+// Double.doubleToLongBits and Float.floatToIntBits do, so two differently
+// encoded NaNs compare equal rather than by their payloads.
+func canonicalNaN64(value float64) float64 {
+	if math.IsNaN(value) {
+		return math.NaN()
+	}
+	return value
+}
+
+func canonicalNaN32(value float32) float32 {
+	if math.IsNaN(float64(value)) {
+		return float32(math.NaN())
+	}
+	return value
+}
+
+// javaOrderedCompare compares two values of a Go-ordered type using Java's
+// natural ordering. It exists because Go's cmp.Compare is not Java's ordering
+// for the floating-point types.
+func javaOrderedCompare[T cmp.Ordered](left, right T) int32 {
+	switch typed := any(left).(type) {
+	case float64:
+		return javaDoubleCompare(typed, any(right).(float64))
+	case float32:
+		return javaFloatCompare(typed, any(right).(float32))
+	}
+	return int32(cmp.Compare(left, right))
+}
+
+// DoubleCompare and FloatCompare are java.lang.Double.compare and
+// java.lang.Float.compare: a total order over the floating-point values, unlike
+// Go's `<`.
+func DoubleCompare(left, right float64) int32 { return javaDoubleCompare(left, right) }
+func FloatCompare(left, right float32) int32  { return javaFloatCompare(left, right) }
+
+// DoubleIsNaN matches java.lang.Double.isNaN.
+func DoubleIsNaN(value float64) bool { return math.IsNaN(value) }
+
+// The floating-point special values. They are functions rather than constants
+// because Go has no constant expression for a NaN or an infinity.
+func DoubleNaN() float64              { return math.NaN() }
+func DoublePositiveInfinity() float64 { return math.Inf(1) }
+func DoubleNegativeInfinity() float64 { return math.Inf(-1) }
+func FloatNaN() float32               { return float32(math.NaN()) }
