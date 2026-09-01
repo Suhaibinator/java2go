@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.enummath.EnumMathApplication",
+  "module_path": "parity/enummath",
+  "status": "known_gap",
+  "known_gap": "java2go has issues with complex enums with abstract methods, class literals, and generics",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "undefined"
+}

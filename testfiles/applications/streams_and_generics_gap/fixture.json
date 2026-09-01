@@ -1,0 +1,8 @@
+{
+  "main_class": "parity.streams.StreamsApplication",
+  "module_path": "parity/streams",
+  "status": "known_gap",
+  "known_gap": "java2go does not support Java streams and lambdas perfectly, causing undefined types and method resolution errors",
+  "expected_failure_stage": "go_compile",
+  "expected_failure_contains": "undefined: Number"
+}
