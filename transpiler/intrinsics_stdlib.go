@@ -190,13 +190,17 @@ func registerStringIntrinsics() {
 		return stdjavaCall(ctx, "StringSplitArray", recv, args[0])
 	})
 
-	// chars() -> stdjava.StringChars(s) (returns []rune)
+	// chars() -> stdjava.StringCharsStream(s). Java's String.chars returns an
+	// IntStream, so it must be a stream for the pipeline operations chained onto
+	// it to resolve; the previous []rune result only worked when the caller
+	// immediately ranged over it.
 	registerInstanceIntrinsic("String", "chars", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 0) {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringChars", recv)
+		return stdjavaCall(ctx, "StringCharsStream", recv)
 	})
+	registerInstanceIntrinsicResultType("String", "chars", "IntStream")
 
 	// --- static String methods ---
 

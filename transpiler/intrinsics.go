@@ -62,6 +62,9 @@ var (
 	// type depends on the call's arguments (Stream.of yields Stream<T> for the T
 	// of its first argument), which a fixed result-type string cannot express.
 	staticIntrinsicDerivedResultTypes = map[intrinsicKey]derivedResultType{}
+	// staticIntrinsicTypeArgs holds static intrinsics that need explicit Go type
+	// arguments computed from the Java call site.
+	staticIntrinsicTypeArgs = map[intrinsicKey]typeArgDeriver{}
 	// constructorIntrinsics is keyed by Java class name; generators select the
 	// right overload by arg count.
 	constructorIntrinsics = map[string]constructorGenerator{}
@@ -105,6 +108,16 @@ func registerInstanceIntrinsicResultType(typeName, methodName, resultType string
 
 func registerStaticIntrinsicResultType(typeName, methodName, resultType string) {
 	staticIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = resultType
+}
+
+// typeArgDeriver computes the explicit Go type arguments a static intrinsic
+// needs, from its call node. Returning nil leaves the call without them.
+type typeArgDeriver func(invocation *sitter.Node, ctx Ctx, source []byte) []ast.Expr
+
+// registerStaticIntrinsicTypeArgs records a type-argument deriver for a static
+// intrinsic. The result is available to the generator as ctx.intrinsicTypeArgs.
+func registerStaticIntrinsicTypeArgs(className, methodName string, derive typeArgDeriver) {
+	staticIntrinsicTypeArgs[intrinsicKey{className, methodName}] = derive
 }
 
 // derivedResultType computes a static intrinsic's Java result type from its call
@@ -485,8 +498,40 @@ func retypeElementLambda(arg, elementType, mappedResult ast.Expr, kind lambdaRes
 				funcLit.Body.List[0] = &ast.ReturnStmt{Results: []ast.Expr{exprStmt.X}}
 			}
 		}
+		// A functional interface that pins its result to a primitive applies
+		// Java's implicit widening at the return: ToLongFunction accepts a body
+		// of type int. Go has no implicit numeric conversion, so make it explicit.
+		if pinnedPrimitiveLambdaResult(kind) {
+			convertLambdaReturns(funcLit.Body, resultType)
+		}
 	}
 	return arg
+}
+
+// pinnedPrimitiveLambdaResult reports whether a result kind fixes the closure's
+// result to a Java primitive, so a body of a narrower type must be converted.
+func pinnedPrimitiveLambdaResult(kind lambdaResultKind) bool {
+	switch kind {
+	case lambdaResultInt32, lambdaResultInt64, lambdaResultFloat64:
+		return true
+	}
+	return false
+}
+
+// convertLambdaReturns wraps every value returned directly by a closure body in
+// a conversion to resultType. Nested function literals are left alone, since
+// their returns belong to a different closure.
+func convertLambdaReturns(body *ast.BlockStmt, resultType ast.Expr) {
+	if body == nil {
+		return
+	}
+	for _, stmt := range body.List {
+		returnStmt, ok := stmt.(*ast.ReturnStmt)
+		if !ok || len(returnStmt.Results) != 1 {
+			continue
+		}
+		returnStmt.Results[0] = &ast.CallExpr{Fun: resultType, Args: []ast.Expr{returnStmt.Results[0]}}
+	}
 }
 
 // invocationArgumentNode returns the index'th argument node of a method
@@ -602,6 +647,9 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 	}
 
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
+	if derive, ok := staticIntrinsicTypeArgs[intrinsicKey{className, methodName}]; ok {
+		ctx.intrinsicTypeArgs = derive(objectNode.Parent(), ctx, source)
+	}
 	// A static call has no receiver to take an element type from, so a declared
 	// static shape names the argument that carries it instead.
 	if shape, ok := staticLambdaShapes[intrinsicKey{className, methodName}]; ok {

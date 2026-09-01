@@ -78,6 +78,13 @@ type Ctx struct {
 	// observes generic bounds before the resulting Go closure is post-typed.
 	lambdaParameterJavaTypes []string
 
+	// intrinsicTypeArgs carries the explicit Go type arguments an intrinsic needs
+	// when Go cannot infer them from the call's ordinary arguments — for example
+	// Arrays.stream over a reference array, whose elements are erased to `any` at
+	// runtime, or Stream.empty, which has no argument to infer from. It is
+	// populated from the Java call site immediately before a generator runs.
+	intrinsicTypeArgs []ast.Expr
+
 	// Additional type parameters synthesized for a generated top-level function.
 	// Java raw generic parameters can accept every instantiation, while Go has no
 	// equivalent raw generic type. Static Java methods that receive a raw generic

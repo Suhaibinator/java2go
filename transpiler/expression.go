@@ -9717,6 +9717,26 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 						case "filter", "sorted", "limit", "distinct", "skip", "peek",
 							"parallel", "sequential", "unordered":
 							return recvType, true
+						case "boxed":
+							// A primitive stream boxes to a Stream of the wrapper type; a
+							// Stream is already boxed and is unchanged.
+							if element, primitive := primitiveStreamElementJavaTypes[recvBase]; primitive {
+								return "Stream<" + element + ">", true
+							}
+							return recvType, true
+						case "mapToObj":
+							// mapToObj leaves the result element type free, so it comes from
+							// the mapper's body.
+							elementTypes := recvArgs
+							if len(elementTypes) == 0 {
+								if element, primitive := primitiveStreamElementJavaTypes[recvBase]; primitive {
+									elementTypes = []string{element}
+								}
+							}
+							if r, ok := inferLambdaResultJavaType(invocationArgumentNode(node, 0), elementTypes, ctx, source); ok {
+								return "Stream<" + r + ">", true
+							}
+							return "Stream", true
 						case "findFirst", "findAny", "min", "max":
 							// Terminal operations that wrap the element type in an Optional.
 							if len(recvArgs) == 1 {

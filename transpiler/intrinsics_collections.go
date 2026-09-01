@@ -35,6 +35,15 @@ var (
 	setTypeNames  = []string{"Set", "HashSet", "TreeSet", "LinkedHashSet", "AbstractSet"}
 )
 
+// primitiveOptionalElementJavaTypes maps java.util's primitive Optional classes
+// onto the element type they hold. They carry no type argument in Java, so it
+// cannot be read off the type itself.
+var primitiveOptionalElementJavaTypes = map[string]string{
+	"OptionalInt":    "int",
+	"OptionalLong":   "long",
+	"OptionalDouble": "double",
+}
+
 func containsString(haystack []string, needle string) bool {
 	for _, s := range haystack {
 		if s == needle {
@@ -96,6 +105,12 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("Set", ctx), argExprs())}
 	case baseName == "Optional":
 		return applyTypeArguments(stdjavaQualifiedExpr("Optional", ctx), argExprs())
+	// The primitive Optionals carry no type argument in Java; their element type
+	// is implied by the class name.
+	case baseName == "OptionalInt", baseName == "OptionalLong", baseName == "OptionalDouble":
+		element := primitiveOptionalElementJavaTypes[baseName]
+		return applyTypeArguments(stdjavaQualifiedExpr("Optional", ctx),
+			[]ast.Expr{javaTypeStringToGoTypeExpr(element, scopeTypeParams, ctx)})
 	// Comparator and Stream are only mapped when their element type is known: a
 	// raw use would print an uninstantiated generic, which does not compile.
 	case baseName == "Comparator" && len(typeArgs) == 1:
@@ -270,6 +285,30 @@ func registerOptionalIntrinsics() {
 	registerLambdaShape("Optional", "orElseGet", lambdaResultElement)
 	// orElseThrow's supplier produces the throwable to panic with.
 	registerLambdaShape("Optional", "orElseThrow", lambdaResultAny)
+
+	// OptionalInt/Long/Double share the Optional runtime type, so every Optional
+	// intrinsic is registered under their names too, and their primitive-specific
+	// accessors map onto Get.
+	for optionalType := range primitiveOptionalElementJavaTypes {
+		for _, accessor := range []string{"getAsInt", "getAsLong", "getAsDouble"} {
+			registerInstanceIntrinsic(optionalType, accessor, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if !expectArgs(args, 0) {
+					return nil
+				}
+				return methodCall(recv, "Get")
+			})
+		}
+	}
+	// A primitive Optional produced by a stream terminal is typed as Optional<T>,
+	// so the accessors must resolve on Optional as well.
+	for _, accessor := range []string{"getAsInt", "getAsLong", "getAsDouble"} {
+		registerInstanceIntrinsic("Optional", accessor, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if !expectArgs(args, 0) {
+				return nil
+			}
+			return methodCall(recv, "Get")
+		})
+	}
 
 	// Optional.of / ofNullable carry the argument's type, so a chained call and a
 	// flatMap mapper's result type resolve to Optional<T> rather than bare
