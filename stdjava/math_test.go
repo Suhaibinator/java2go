@@ -35,7 +35,8 @@ func TestJavaMathTrigMatchesStrictMathRecurrence(t *testing.T) {
 	for range 10 {
 		nextX := JavaMathSin(x*math.Pi) - JavaMathCos(y*math.Pi)
 		nextY := JavaMathCos(x*math.Pi) + JavaMathSin(y*math.Pi)
-		total += math.Sqrt(math.Pow(nextX-x, 2) + math.Pow(nextY-y, 2))
+		dx, dy := nextX-x, nextY-y
+		total += math.Sqrt(dx*dx + dy*dy)
 		x, y = nextX, nextY
 	}
 	const wantBits = uint64(0x403552e8355d917d)
