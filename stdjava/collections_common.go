@@ -125,32 +125,13 @@ func SortArray(array any) {
 	}
 }
 
+// javaComparableLess reports whether left sorts before right under Java's
+// natural ordering. Values that are not one of the directly-handled primitive or
+// String forms are bridged to their own generated CompareTo method, so a user
+// class implementing Comparable sorts correctly through Arrays.sort and the
+// Collections utilities.
 func javaComparableLess(left, right any) bool {
-	switch left := left.(type) {
-	case string:
-		right, ok := right.(string)
-		return ok && left < right
-	case int8:
-		right, ok := right.(int8)
-		return ok && left < right
-	case int16:
-		right, ok := right.(int16)
-		return ok && left < right
-	case int32:
-		right, ok := right.(int32)
-		return ok && left < right
-	case int64:
-		right, ok := right.(int64)
-		return ok && left < right
-	case float32:
-		right, ok := right.(float32)
-		return ok && left < right
-	case float64:
-		right, ok := right.(float64)
-		return ok && left < right
-	default:
-		panic(NewClassCastException("array element is not naturally comparable"))
-	}
+	return javaCompareValues(left, right) < 0
 }
 
 // SliceToString returns the Java Arrays.toString form of a slice, e.g.

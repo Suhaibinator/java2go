@@ -46,7 +46,7 @@ func (o Optional[T]) IsEmpty() bool {
 // preserving Java's NoSuchElementException contract.
 func (o Optional[T]) Get() T {
 	if o.value == nil {
-		panic("Optional.get() called on an empty Optional")
+		panic(NewNoSuchElementException("No value present"))
 	}
 	return *o.value
 }
