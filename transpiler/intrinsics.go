@@ -172,8 +172,9 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 		return nil, false
 	}
 
+	_, hasNodeIntrinsic := instanceNodeIntrinsics[intrinsicKey{receiverType, methodName}]
 	gen, ok := instanceIntrinsics[intrinsicKey{receiverType, methodName}]
-	if !ok {
+	if !ok && !hasNodeIntrinsic {
 		return nil, false
 	}
 
@@ -185,7 +186,42 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 	if receiverType == "String" && !isDefinitelyNonNullStringExpression(objectNode, ctx, source) {
 		recv = stdjavaCall(ctx, "StringRequireNonNull", recv)
 	}
+	// A node-aware intrinsic parses its own arguments, since it needs their
+	// syntax rather than their parsed values.
+	if nodeGen, ok := instanceNodeIntrinsics[intrinsicKey{receiverType, methodName}]; ok {
+		if result := nodeGen(recv, objectNode.Parent(), ctx, source); result != nil {
+			return result, true
+		}
+		if gen == nil {
+			return nil, false
+		}
+	}
+
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
+
+	// An explicit per-argument typer wins over the element-typed shape, which
+	// cannot describe lambdas whose signatures differ from one another.
+	if perArgument := lookupLambdaArgumentTypes(receiverType, methodName, objectNode.Parent(), ctx, source); perArgument != nil {
+		typeParams := inScopeTypeParameters(ctx)
+		for index, types := range perArgument {
+			if index >= len(args) {
+				continue
+			}
+			paramTypes := make([]ast.Expr, 0, len(types.paramJavaTypes))
+			for _, javaType := range types.paramJavaTypes {
+				paramTypes = append(paramTypes, javaTypeStringToGoTypeExpr(javaType, typeParams, ctx))
+			}
+			var resultType ast.Expr
+			if types.resultJavaType != "" {
+				resultType = javaTypeStringToGoTypeExpr(types.resultJavaType, typeParams, ctx)
+			}
+			args[index] = retypeLambdaWithTypes(args[index], paramTypes, resultType)
+		}
+		if result := gen(recv, args, ctx); result != nil {
+			return result, true
+		}
+		return nil, false
+	}
 
 	// A lambda argument to one of these stdlib methods is parsed before its
 	// parameter type is known, so it comes back as `func(x any)`. Re-type each
@@ -316,6 +352,107 @@ const (
 	// runtime accepts any Java object (Optional.orElseThrow's exception supplier).
 	lambdaResultAny
 )
+
+// lambdaArgumentTypes gives one lambda argument its parameter types and result
+// type explicitly, rather than deriving them from a single element type.
+//
+// The element-typed shape table cannot describe a call whose lambdas differ from
+// each other: Collectors.toMap takes a key extractor, a value extractor and a
+// merge function with three different signatures, and three-argument
+// Stream.reduce takes a (U, T) -> U accumulator beside a (U, U) -> U combiner.
+type lambdaArgumentTypes struct {
+	// paramJavaTypes is one Java type per lambda parameter.
+	paramJavaTypes []string
+	// resultJavaType is the closure's result; empty means it returns nothing.
+	resultJavaType string
+}
+
+// lambdaArgumentTyper computes those types per argument index for one call, or
+// returns nil when it does not apply to that call (a different arity, say).
+type lambdaArgumentTyper func(invocation *sitter.Node, ctx Ctx, source []byte) map[int]lambdaArgumentTypes
+
+// lambdaArgumentTypers records them per (receiver type, method). An entry here
+// takes precedence over the element-typed shape table.
+var lambdaArgumentTypers = map[intrinsicKey]lambdaArgumentTyper{}
+
+func registerLambdaArgumentTyper(typeName, methodName string, typer lambdaArgumentTyper) {
+	lambdaArgumentTypers[intrinsicKey{typeName, methodName}] = typer
+}
+
+// lookupLambdaArgumentTypes runs the registered typer for a call, if any.
+func lookupLambdaArgumentTypes(receiverType, methodName string, invocation *sitter.Node, ctx Ctx, source []byte) map[int]lambdaArgumentTypes {
+	typer, ok := lambdaArgumentTypers[intrinsicKey{receiverType, methodName}]
+	if !ok {
+		return nil
+	}
+	return typer(invocation, ctx, source)
+}
+
+// retypeLambdaWithTypes gives a parsed lambda explicit parameter and result
+// types. It is the per-argument counterpart of retypeElementLambda.
+func retypeLambdaWithTypes(arg ast.Expr, paramTypes []ast.Expr, resultType ast.Expr) ast.Expr {
+	funcLit, ok := arg.(*ast.FuncLit)
+	if !ok || funcLit.Type == nil {
+		return arg
+	}
+	if funcLit.Type.Params != nil {
+		index := 0
+		for _, field := range funcLit.Type.Params.List {
+			// A parsed lambda parameter list has one name per field.
+			if index < len(paramTypes) {
+				field.Type = paramTypes[index]
+			}
+			index += max(1, len(field.Names))
+		}
+	}
+	if resultType == nil {
+		return arg
+	}
+	funcLit.Type.Results = &ast.FieldList{List: []*ast.Field{{Type: resultType}}}
+	// A single-expression body was lowered to a bare ExprStmt; it becomes a real
+	// return now that the closure has a result type.
+	if len(funcLit.Body.List) == 1 {
+		if exprStmt, ok := funcLit.Body.List[0].(*ast.ExprStmt); ok {
+			funcLit.Body.List[0] = &ast.ReturnStmt{Results: []ast.Expr{exprStmt.X}}
+		}
+	}
+	// Java widens implicitly at the return, so a ToLongFunction accepts a body of
+	// type int. Go has no implicit numeric conversion, so make it explicit — but
+	// only for the numeric primitives, where widening is what Java is doing. A
+	// conversion to any other result type would change the value rather than its
+	// width.
+	if isNumericPrimitiveTypeExpr(resultType) {
+		convertLambdaReturns(funcLit.Body, resultType)
+	}
+	return arg
+}
+
+// isNumericPrimitiveTypeExpr reports whether a Go type expression is one of the
+// numeric primitives a Java numeric widening can target.
+func isNumericPrimitiveTypeExpr(expr ast.Expr) bool {
+	ident, ok := expr.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	switch ident.Name {
+	case "int8", "int16", "int32", "int64", "float32", "float64":
+		return true
+	}
+	return false
+}
+
+// nodeIntrinsicGenerator is an instance intrinsic that needs its own call node,
+// because it inspects an argument's syntax rather than just its parsed value.
+// Stream.collect is the case: which collector was passed decides the rewrite,
+// and the collector's own lambdas have to be typed from the stream's elements.
+type nodeIntrinsicGenerator func(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr
+
+// instanceNodeIntrinsics is consulted before the ordinary instance table.
+var instanceNodeIntrinsics = map[intrinsicKey]nodeIntrinsicGenerator{}
+
+func registerInstanceNodeIntrinsic(typeName, methodName string, gen nodeIntrinsicGenerator) {
+	instanceNodeIntrinsics[intrinsicKey{typeName, methodName}] = gen
+}
 
 // lambdaShapes records, per (receiver type, method), the result type of that
 // intrinsic's element-typed lambda argument.
@@ -775,6 +912,12 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 	}
 	argListNode := parent.ChildByFieldName("arguments")
 	if argListNode != nil {
+		// A per-argument typer seeds each lambda with its own parameter types.
+		if receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source); ok {
+			if perArgument := lookupLambdaArgumentTypes(receiverType, methodName, parent, ctx, source); perArgument != nil {
+				return parseArgumentsWithPerArgumentTypes(argListNode, perArgument, source, ctx)
+			}
+		}
 		if elementJavaType, lambdaArgs, ok := intrinsicLambdaParameterJavaType(objectNode, methodName, ctx, source); ok {
 			return parseArgumentsWithLambdaParameterType(argListNode, elementJavaType, lambdaArgs, source, ctx)
 		}
@@ -842,6 +985,21 @@ func parseArgumentsWithLambdaParameterType(argListNode *sitter.Node, elementJava
 			for i := range argCtx.lambdaParameterJavaTypes {
 				argCtx.lambdaParameterJavaTypes[i] = elementJavaType
 			}
+		}
+		args = append(args, ParseExpr(argNode, source, argCtx))
+	}
+	return args
+}
+
+// parseArgumentsWithPerArgumentTypes parses a call's arguments, seeding each
+// lambda listed in perArgument with its own parameter types so its body can
+// resolve member access on them.
+func parseArgumentsWithPerArgumentTypes(argListNode *sitter.Node, perArgument map[int]lambdaArgumentTypes, source []byte, ctx Ctx) []ast.Expr {
+	args := make([]ast.Expr, 0, argListNode.NamedChildCount())
+	for index, argNode := range nodeutil.NamedChildrenOf(argListNode) {
+		argCtx := ctx.Clone()
+		if types, ok := perArgument[index]; ok && argNode.Type() == "lambda_expression" {
+			argCtx.lambdaParameterJavaTypes = append([]string(nil), types.paramJavaTypes...)
 		}
 		args = append(args, ParseExpr(argNode, source, argCtx))
 	}

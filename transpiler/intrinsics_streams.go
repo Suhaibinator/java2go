@@ -1,6 +1,10 @@
 package transpiler
 
-import "go/ast"
+import (
+	"go/ast"
+
+	sitter "github.com/smacker/go-tree-sitter"
+)
 
 // This file registers the java.util.stream intrinsics, mapping Stream pipelines
 // onto the eager slice-backed stdjava.Stream[T] runtime type (stdjava/stream.go).
@@ -88,28 +92,25 @@ func registerStreamIntrinsics() {
 			}
 			return nil
 		})
-		// reduce's first two arities keep the element type: reduce(accumulator)
-		// returns an Optional, reduce(identity, accumulator) a plain value.
+		// reduce has three arities. The first two keep the element type:
+		// reduce(accumulator) returns an Optional, reduce(identity, accumulator) a
+		// plain value.
 		//
-		// The three-argument form is deliberately NOT registered. Its signature is
-		// `<U> U reduce(U, BiFunction<U,T,U>, BinaryOperator<U>)`, so its two
-		// lambdas have different parameter shapes and a result type unrelated to
-		// the stream's element type, which the element-typed lambda machinery
-		// cannot express — it gives every parameter of every lambda the one
-		// element type.
-		//
-		// Both registering it and leaving it out yield Go that does not compile
-		// (an unregistered stdlib method falls through to a plain call on the
-		// runtime type); leaving it out at least keeps the wrong typing out of
-		// the emitted lambdas. Supporting it properly needs per-argument,
-		// per-parameter lambda types, which the Collectors work requires anyway.
-		// See KNOWN_ISSUES K18.
+		// The three-argument form is `<U> U reduce(U, BiFunction<U,T,U>,
+		// BinaryOperator<U>)`, so its accumulator takes (U, T) while its combiner
+		// takes (U, U), and U is unrelated to the element type. The element-typed
+		// shape table cannot express that — it gives every parameter of every
+		// lambda the one element type — so it uses a per-argument typer instead,
+		// with U read from the identity argument.
+		registerLambdaArgumentTyper(t, "reduce", reduceLambdaArgumentTypes)
 		registerInstanceIntrinsic(t, "reduce", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			switch len(args) {
 			case 1:
 				return stdjavaCall(ctx, "StreamReduceOptional", recv, args[0])
 			case 2:
 				return stdjavaCall(ctx, "StreamReduce", recv, args[0], args[1])
+			case 3:
+				return stdjavaCall(ctx, "StreamReduceCombining", recv, args[0], args[1], args[2])
 			}
 			return nil
 		})
@@ -155,19 +156,30 @@ func registerStreamIntrinsics() {
 			}
 			return nil
 		})
-		// collect(Collectors.toList()) -> s.ToList(). Only the toList collector is
-		// recognized; other collectors fall through.
-		registerInstanceIntrinsic(t, "collect", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-			if !expectArgs(args, 1) {
-				return nil
-			}
-			if isCollectorsToList(args[0]) {
-				return methodCall(recv, "ToList")
-			}
-			return nil
-		})
 		// toList() (Java 16+) -> s.ToList().
 		registerInstanceIntrinsic(t, "toList", streamMethod("ToList", 0))
+	}
+}
+
+// reduceLambdaArgumentTypes types the lambdas of the three-argument
+// Stream.reduce. It applies to that arity only; the other two are element-typed
+// and go through the ordinary shape table.
+func reduceLambdaArgumentTypes(invocation *sitter.Node, ctx Ctx, source []byte) map[int]lambdaArgumentTypes {
+	if invocationArgumentCount(invocation) != 3 {
+		return nil
+	}
+	identity := invocationArgumentNode(invocation, 0)
+	resultType, ok := inferExprJavaType(identity, ctx, source)
+	if !ok {
+		return nil
+	}
+	elementTypes := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
+	if len(elementTypes) != 1 {
+		return nil
+	}
+	return map[int]lambdaArgumentTypes{
+		1: {paramJavaTypes: []string{resultType, elementTypes[0]}, resultJavaType: resultType},
+		2: {paramJavaTypes: []string{resultType, resultType}, resultJavaType: resultType},
 	}
 }
 
@@ -180,22 +192,4 @@ func streamMethod(goName string, argc int) intrinsicGenerator {
 		}
 		return methodCall(recv, goName, args...)
 	}
-}
-
-// isCollectorsToList reports whether the parsed expression is a call to
-// Collectors.toList() (its argument carries no useful runtime value for the
-// slice-backed stream, so it is replaced by ToList()).
-func isCollectorsToList(arg ast.Expr) bool {
-	call, ok := arg.(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-	sel, ok := call.Fun.(*ast.SelectorExpr)
-	if !ok || sel.Sel == nil {
-		return false
-	}
-	if base, ok := sel.X.(*ast.Ident); ok && base.Name == "Collectors" {
-		return sel.Sel.Name == "toList" || sel.Sel.Name == "toUnmodifiableList"
-	}
-	return false
 }

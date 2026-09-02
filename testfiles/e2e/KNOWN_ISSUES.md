@@ -168,23 +168,21 @@ public class K17 {
 Fixing it needs a decision about how collection `String()` methods, which hold no
 execution token, reach an execution-aware generated stringer.
 
-## K18 — three-argument `Stream.reduce` is unsupported (OPEN, lambda typing)
+## K18 — three-argument `Stream.reduce` is unsupported (FIXED)
 `<U> U reduce(U identity, BiFunction<U,T,U> accumulator, BinaryOperator<U> combiner)`
 gives its two lambdas different parameter shapes — `(U, T)` and `(U, U)` — and a
 result type unrelated to the stream's element type. The element-typed lambda
 machinery in `transpiler/intrinsics.go` assigns one element type to every
 parameter of every lambda argument, so it cannot express this.
 
-The form is left unregistered. Note this does NOT degrade to an `UNSUPPORTED`
-diagnostic: an unregistered standard-library method falls through to a plain
-method call on the runtime type, so the generated Go still fails to compile
-(`stdjava.Stream[int32] has no field or method reduce`), the same way other
-unmapped stdlib calls do. Leaving it unregistered only avoids also emitting
-wrongly-typed lambdas.
+Fixed by the per-argument lambda typing added for Collectors
+(`registerLambdaArgumentTyper` in `transpiler/intrinsics.go`), which gives each
+lambda argument of a call its own parameter and result types instead of one
+shared element type. `U` is read from the identity argument.
 ```java
 List<Integer> nums = List.of(1, 2, 3);
 String s = nums.stream().reduce("", (acc, x) -> acc + x, (a, b) -> a + b); // Java "123"
 ```
-Supporting it needs per-argument, per-parameter lambda types in the shape table.
 Java offers the overload to merge partial results across parallel splits, and
-this runtime evaluates sequentially, so nothing else depends on it.
+this runtime evaluates sequentially, so the combiner is accepted and never
+invoked.
