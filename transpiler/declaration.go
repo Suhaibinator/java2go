@@ -299,6 +299,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		// Add the struct for the class (with type parameters if present)
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
+		declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
 		declarations = append(declarations, generateRawUnboundReceiverEntryDecls(ctx)...)
 		declarations = append(declarations, generateClassSubobjectInstallerDecls(ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
@@ -582,20 +583,6 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 			receiverBase := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.GoTypeParameterNames()))
 			receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBase}}}}
-			receiverName := ShortName(ctx.className)
-			stringExecutionName := executionNameForClass(ctx.currentClass)
-			stringCtx := ctx.Clone()
-			stringCtx.executionContextName = stringExecutionName
-			enumStringResult := ast.Expr(&ast.SelectorExpr{X: &ast.Ident{Name: receiverName}, Sel: &ast.Ident{Name: enumMetaNameField}})
-			if toString := findEnumToStringMethod(ctx.currentClass); toString != nil {
-				enumStringResult = &ast.CallExpr{
-					Fun: &ast.SelectorExpr{
-						X:   &ast.Ident{Name: receiverName},
-						Sel: &ast.Ident{Name: executionMethodCallName(toString, ctx.currentClass, stringCtx)},
-					},
-					Args: prependExecutionMethodArgument(stringCtx, toString, nil),
-				}
-			}
 
 			// name() accessor
 			declarations = append(declarations, &ast.FuncDecl{
@@ -608,24 +595,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			// String implements fmt.Stringer so every Go formatting path used for
 			// println, string concatenation, and String.valueOf observes Java's
 			// default Enum.toString() result instead of the backing Go struct.
-			stringDecl := &ast.FuncDecl{
-				Name: &ast.Ident{Name: "String"},
-				Recv: receiver,
-				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "string"}}}}},
-				Body: &ast.BlockStmt{List: []ast.Stmt{
-					&ast.IfStmt{
-						Cond: &ast.BinaryExpr{X: &ast.Ident{Name: receiverName}, Op: token.EQL, Y: &ast.Ident{Name: "nil"}},
-						Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: `"null"`}}}}},
-					},
-					&ast.ReturnStmt{Results: []ast.Expr{enumStringResult}},
-				}},
-			}
-			declarations = append(declarations, buildExecutionAwareFuncDecls(
-				stringDecl,
-				enumExecutionStringMethodName(ctx.currentClass),
-				stringExecutionName,
-				stringCtx,
-			)...)
+			declarations = append(declarations, buildEnumStringerBridgeDecls(ctx)...)
 
 			// ordinal() accessor
 			declarations = append(declarations, &ast.FuncDecl{
@@ -1838,6 +1808,7 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		})
 	}
 	declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, scope.TypeParameters, ctx))
+	declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
 
 	recvBase := instantiateGenericType(ctx.className, typeParamExprs(goTypeParams))
 	recvName := ShortName(ctx.className)
@@ -3276,7 +3247,7 @@ func findEnumConstructor(ctx Ctx, argumentCount int) *symbol.Definition {
 	return nil
 }
 
-func findEnumToStringMethod(scope *symbol.ClassScope) *symbol.Definition {
+func findDeclaredToStringMethod(scope *symbol.ClassScope) *symbol.Definition {
 	if scope == nil {
 		return nil
 	}
@@ -3289,6 +3260,81 @@ func findEnumToStringMethod(scope *symbol.ClassScope) *symbol.Definition {
 		}
 	}
 	return nil
+}
+
+func buildClassStringerBridgeDecls(ctx Ctx) []ast.Decl {
+	toString := findDeclaredToStringMethod(ctx.currentClass)
+	if toString == nil {
+		return nil
+	}
+	return buildStringerBridgeDecls(ctx, toString, nil)
+}
+
+func buildEnumStringerBridgeDecls(ctx Ctx) []ast.Decl {
+	receiverName := ShortName(ctx.className)
+	defaultResult := ast.Expr(&ast.SelectorExpr{
+		X:   &ast.Ident{Name: receiverName},
+		Sel: &ast.Ident{Name: enumMetaNameField},
+	})
+	return buildStringerBridgeDecls(ctx, findDeclaredToStringMethod(ctx.currentClass), defaultResult)
+}
+
+// buildStringerBridgeDecls exposes Java's toString through fmt.Stringer while
+// retaining the execution-aware entry point used by generated Java code. The
+// latter is important for synchronized toString methods invoked while their
+// receiver's monitor is already held.
+func buildStringerBridgeDecls(ctx Ctx, toString *symbol.Definition, defaultResult ast.Expr) []ast.Decl {
+	scope := ctx.currentClass
+	if scope == nil || scope.Class == nil || (toString == nil && defaultResult == nil) {
+		return nil
+	}
+
+	receiverName := ShortName(ctx.className)
+	receiverBase := instantiateGenericType(ctx.className, typeParamExprs(scope.GoTypeParameterNames()))
+	executionName := executionNameForClass(scope)
+	stringCtx := ctx.Clone()
+	stringCtx.executionContextName = executionName
+	result := defaultResult
+	if toString != nil {
+		var callReceiver ast.Expr = &ast.Ident{Name: receiverName}
+		if !scope.IsEnum && !toString.IsPrivate && !toString.RequiresHelper && classNeedsVirtualDispatch(scope, ctx) {
+			callReceiver = &ast.SelectorExpr{
+				X:   callReceiver,
+				Sel: &ast.Ident{Name: classDispatchFieldName(scope)},
+			}
+		}
+		result = &ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X:   callReceiver,
+				Sel: &ast.Ident{Name: executionMethodCallName(toString, scope, stringCtx)},
+			},
+			Args: prependExecutionMethodArgument(stringCtx, toString, nil),
+		}
+	}
+
+	declaration := &ast.FuncDecl{
+		Name: &ast.Ident{Name: "String"},
+		Recv: &ast.FieldList{List: []*ast.Field{{
+			Names: []*ast.Ident{{Name: receiverName}},
+			Type:  &ast.StarExpr{X: receiverBase},
+		}}},
+		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "string"}}}}},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			&ast.IfStmt{
+				Cond: &ast.BinaryExpr{X: &ast.Ident{Name: receiverName}, Op: token.EQL, Y: &ast.Ident{Name: "nil"}},
+				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
+					&ast.BasicLit{Kind: token.STRING, Value: `"null"`},
+				}}}},
+			},
+			&ast.ReturnStmt{Results: []ast.Expr{result}},
+		}},
+	}
+	return buildExecutionAwareFuncDecls(
+		declaration,
+		executionStringMethodName(scope),
+		executionName,
+		stringCtx,
+	)
 }
 
 func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {

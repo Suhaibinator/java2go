@@ -2830,7 +2830,7 @@ func javaStringConversionExpr(node *sitter.Node, expr ast.Expr, ctx Ctx, source 
 			base, _ := parseJavaTypeString(javaType)
 			if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.IsEnum {
 				return &ast.CallExpr{
-					Fun:  &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: enumExecutionStringMethodName(scope)}},
+					Fun:  &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: executionStringMethodName(scope)}},
 					Args: []ast.Expr{execution},
 				}
 			}
@@ -2866,7 +2866,7 @@ func javaStringConversionExpr(node *sitter.Node, expr ast.Expr, ctx Ctx, source 
 }
 
 // javaStringValueOfForType preserves the current execution when the static
-// type can erase an enum value. Generated enum String methods may synchronize,
+// type can expose a generated Stringer. Java toString methods may synchronize,
 // so calling their public fmt.Stringer wrapper from inside an already-held
 // monitor would otherwise create a fresh token and deadlock.
 func javaStringValueOfForType(javaType string, expr ast.Expr, ctx Ctx) ast.Expr {
@@ -2878,12 +2878,26 @@ func javaStringValueOfForType(javaType string, expr ast.Expr, ctx Ctx) ast.Expr 
 	base = stripJavaQualifier(base)
 	needsExecution := base == "Object" || base == "Enum"
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
-		needsExecution = needsExecution || scope.IsEnum || scope.IsInterface || scope.IsAbstract
+		needsExecution = needsExecution || scope.IsEnum || scope.IsInterface || scope.IsAbstract || classHasStringerBridge(scope, ctx)
 	}
 	if needsExecution {
 		return stdjavaCall(ctx, "StringValueOfExecution", execution, expr)
 	}
 	return stdjavaCall(ctx, "StringValueOf", expr)
+}
+
+func classHasStringerBridge(scope *symbol.ClassScope, ctx Ctx) bool {
+	seen := make(map[*symbol.ClassScope]struct{})
+	for current := scope; current != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
+		if _, duplicate := seen[current]; duplicate {
+			break
+		}
+		seen[current] = struct{}{}
+		if current.IsEnum || findDeclaredToStringMethod(current) != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func isFmtSprintfCall(expr ast.Expr) bool {
@@ -6286,6 +6300,9 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	installerCtx.currentClass = syntheticScope
 	installerCtx.className = structName
 	installerCtx.localScope = nil
+	for _, declaration := range buildClassStringerBridgeDecls(installerCtx) {
+		ctx.addHoistedDecl(declaration)
+	}
 	for _, declaration := range generateClassSubobjectInstallerDecls(installerCtx) {
 		ctx.addHoistedDecl(declaration)
 	}
@@ -7914,6 +7931,9 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	localCtx.currentClass = syntheticScope
 	localCtx.className = structName
 	localCtx.localScope = nil
+	for _, declaration := range buildClassStringerBridgeDecls(localCtx) {
+		ctx.addHoistedDecl(declaration)
+	}
 	if dispatch := generateClassDispatchInterface(localCtx); dispatch != nil {
 		ctx.addHoistedDecl(dispatch)
 	}
