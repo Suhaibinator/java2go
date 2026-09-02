@@ -820,7 +820,7 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 						return &ast.CallExpr{
 							Fun: &ast.SelectorExpr{
 								X:   ParseExpr(argumentNode, source, ctx),
-								Sel: &ast.Ident{Name: enumExecutionStringMethodName(scope)},
+								Sel: &ast.Ident{Name: executionStringMethodName(scope)},
 							},
 							Args: []ast.Expr{executionExpr(ctx)},
 						}, true

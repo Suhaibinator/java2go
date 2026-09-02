@@ -50,8 +50,8 @@ func StringReferenceValue(value any) string {
 // String.valueOf(Object) and the primitive print/concatenation operations.
 // In particular, Java keeps a decimal point for whole floating-point values,
 // spells infinities without Go's +/-Inf notation, and renders null as "null".
-// fmt.Stringer is intentionally honored so generated enums can expose Java's
-// Enum.toString default without leaking their Go struct representation.
+// fmt.Stringer is intentionally honored so generated classes and enums can
+// expose Java's toString behavior without leaking their Go struct representation.
 func StringValueOf(value any) string {
 	if StringIsNull(value) {
 		return "null"
@@ -72,9 +72,9 @@ type executionStringer interface {
 }
 
 // StringValueOfExecution is StringValueOf for generated Java code that is
-// already running inside a logical execution. Generated enum String methods
-// can acquire Java monitors, so forwarding the execution token is required when
-// an enum has been erased to Object (or another interface type) before text
+// already running inside a logical execution. Generated toString methods can
+// acquire Java monitors, so forwarding the execution token is required when a
+// value has been erased to Object (or another interface type) before text
 // conversion. Collision-renamed hidden methods are discovered structurally.
 func StringValueOfExecution(execution *Execution, value any) string {
 	if StringIsNull(value) {

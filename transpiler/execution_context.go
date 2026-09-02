@@ -176,7 +176,7 @@ func executionFieldInitializerMethodName() string {
 	return fieldInitMethodName + executionMethodSuffix
 }
 
-func enumExecutionStringMethodName(scope *symbol.ClassScope) string {
+func executionStringMethodName(scope *symbol.ClassScope) string {
 	return collisionSafeExecutionIdentifier("String"+executionMethodSuffix, scope)
 }
 

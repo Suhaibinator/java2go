@@ -26,50 +26,9 @@ public class Comparators {
             return this.minor < other.minor ? -1 : 1;
         }
 
-        // Rendered explicitly rather than through toString(), which the generated
-        // string bridge does not yet consult (KNOWN_ISSUES K17).
-        String render() {
+        public String toString() {
             return major + "." + minor;
         }
-    }
-
-    static String renderVersions(List<Version> versions) {
-        StringBuilder out = new StringBuilder();
-        out.append("[");
-        for (int i = 0; i < versions.size(); i++) {
-            if (i > 0) {
-                out.append(", ");
-            }
-            out.append(versions.get(i).render());
-        }
-        out.append("]");
-        return out.toString();
-    }
-
-    static String renderVersionArray(Version[] versions) {
-        StringBuilder out = new StringBuilder();
-        out.append("[");
-        for (int i = 0; i < versions.length; i++) {
-            if (i > 0) {
-                out.append(", ");
-            }
-            out.append(versions[i].render());
-        }
-        out.append("]");
-        return out.toString();
-    }
-
-    static String renderPeople(List<Person> people) {
-        StringBuilder out = new StringBuilder();
-        out.append("[");
-        for (int i = 0; i < people.size(); i++) {
-            if (i > 0) {
-                out.append(", ");
-            }
-            out.append(people.get(i).render());
-        }
-        out.append("]");
-        return out.toString();
     }
 
     static class Person {
@@ -81,7 +40,7 @@ public class Comparators {
             this.age = age;
         }
 
-        String render() {
+        public String toString() {
             return name + ":" + age;
         }
     }
@@ -117,11 +76,11 @@ public class Comparators {
         people.add(new Person("third", 30));
         people.add(new Person("fourth", 10));
         people.sort((a, b) -> a.age - b.age);
-        System.out.println(renderPeople(people));
+        System.out.println(people);
 
         // Collections.max / min keep the earlier element on ties.
-        System.out.println("oldest " + Collections.max(people, (a, b) -> a.age - b.age).render());
-        System.out.println("youngest " + Collections.min(people, (a, b) -> a.age - b.age).render());
+        System.out.println("oldest " + Collections.max(people, (a, b) -> a.age - b.age));
+        System.out.println("youngest " + Collections.min(people, (a, b) -> a.age - b.age));
 
         // Natural ordering of a user Comparable through Collections.sort.
         List<Version> versions = new ArrayList<Version>();
@@ -129,7 +88,7 @@ public class Comparators {
         versions.add(new Version(1, 9));
         versions.add(new Version(1, 2));
         Collections.sort(versions);
-        System.out.println(renderVersions(versions));
+        System.out.println(versions);
 
         // ...and through Arrays.sort on a reference array.
         Version[] versionArray = new Version[3];
@@ -137,7 +96,7 @@ public class Comparators {
         versionArray[1] = new Version(1, 0);
         versionArray[2] = new Version(2, 7);
         Arrays.sort(versionArray);
-        System.out.println(renderVersionArray(versionArray));
+        System.out.println(Arrays.toString(versionArray));
 
         // Arrays.sort with an explicit comparator.
         String[] words = new String[4];
@@ -161,7 +120,7 @@ public class Comparators {
         Comparator<Person> byAge = (a, b) -> a.age - b.age;
         Comparator<Person> byName = (a, b) -> a.name.compareTo(b.name);
         tied.sort(byAge.thenComparing(byName));
-        System.out.println(renderPeople(tied));
+        System.out.println(tied);
 
         // compare() called directly on a comparator value.
         System.out.println("compare " + byAge.compare(tied.get(0), tied.get(2)));
@@ -188,8 +147,8 @@ public class Comparators {
         byKey.add(new Person("alice", 25));
         byKey.add(new Person("bob", 35));
         byKey.sort(Comparator.comparing((Person p) -> p.name));
-        System.out.println(renderPeople(byKey));
+        System.out.println(byKey);
         byKey.sort(Comparator.comparingInt((Person p) -> p.age));
-        System.out.println(renderPeople(byKey));
+        System.out.println(byKey);
     }
 }
