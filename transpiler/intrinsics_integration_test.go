@@ -49,7 +49,7 @@ func TestIntrinsics_StringMethods(t *testing.T) {
 		{"strip", "s.strip()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
 		{"replace", "s.replace(\"a\", \"b\")", "stdjava.StringReplace(stdjava.StringRequireNonNull(s), \"a\", \"b\")"},
 		{"split", "s.split(\",\")", "stdjava.StringSplitArray(stdjava.StringRequireNonNull(s), \",\")"},
-		{"chars", "s.chars()", "stdjava.StringChars(stdjava.StringRequireNonNull(s))"},
+		{"chars", "s.chars()", "stdjava.StringCharsStream(stdjava.StringRequireNonNull(s))"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

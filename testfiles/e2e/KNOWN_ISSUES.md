@@ -145,3 +145,44 @@ Method overloads use Java widening and most-specific reference selection, but
 constructor selection still primarily matches exact parameter types/arity. A
 constructor call that needs numeric widening or a reference upcast can therefore
 choose incorrectly or fail to resolve. This is retained as a TDD target.
+
+## K17 — user `toString()` ignored by the plain StringValueOf bridge (OPEN, string conversion)
+`stdjava.StringValueOf` (`stdjava/string_conversion.go`) falls through to
+`fmt.Sprint` for any non-float value, so a generated class's `toString()` is never
+consulted. Printing an object, or a collection holding one, yields Go's struct
+rendering instead of the Java text. The execution-aware variant
+`StringValueOfExecution` does bridge it (via the `executionStringer` interface and
+the reflective collision-safe path), but plain print sites and every collection's
+`String()` method call the non-execution form.
+```java
+public class K17 {
+    static class P { int v; P(int v){ this.v = v; } public String toString(){ return "P" + v; } }
+    public static void main(String[] a) {
+        System.out.println(new P(3));                       // Java P3, generated &{3}
+        java.util.List<P> l = new java.util.ArrayList<P>();
+        l.add(new P(3));
+        System.out.println(l);                              // Java [P3], generated [&{3}]
+    }
+}
+```
+Fixing it needs a decision about how collection `String()` methods, which hold no
+execution token, reach an execution-aware generated stringer.
+
+## K18 — three-argument `Stream.reduce` is unsupported (FIXED)
+`<U> U reduce(U identity, BiFunction<U,T,U> accumulator, BinaryOperator<U> combiner)`
+gives its two lambdas different parameter shapes — `(U, T)` and `(U, U)` — and a
+result type unrelated to the stream's element type. The element-typed lambda
+machinery in `transpiler/intrinsics.go` assigns one element type to every
+parameter of every lambda argument, so it cannot express this.
+
+Fixed by the per-argument lambda typing added for Collectors
+(`registerLambdaArgumentTyper` in `transpiler/intrinsics.go`), which gives each
+lambda argument of a call its own parameter and result types instead of one
+shared element type. `U` is read from the identity argument.
+```java
+List<Integer> nums = List.of(1, 2, 3);
+String s = nums.stream().reduce("", (acc, x) -> acc + x, (a, b) -> a + b); // Java "123"
+```
+Java offers the overload to merge partial results across parallel splits, and
+this runtime evaluates sequentially, so the combiner is accepted and never
+invoked.

@@ -35,6 +35,15 @@ var (
 	setTypeNames  = []string{"Set", "HashSet", "TreeSet", "LinkedHashSet", "AbstractSet"}
 )
 
+// primitiveOptionalElementJavaTypes maps java.util's primitive Optional classes
+// onto the element type they hold. They carry no type argument in Java, so it
+// cannot be read off the type itself.
+var primitiveOptionalElementJavaTypes = map[string]string{
+	"OptionalInt":    "int",
+	"OptionalLong":   "long",
+	"OptionalDouble": "double",
+}
+
 func containsString(haystack []string, needle string) bool {
 	for _, s := range haystack {
 		if s == needle {
@@ -96,6 +105,18 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("Set", ctx), argExprs())}
 	case baseName == "Optional":
 		return applyTypeArguments(stdjavaQualifiedExpr("Optional", ctx), argExprs())
+	// The primitive Optionals carry no type argument in Java; their element type
+	// is implied by the class name.
+	case baseName == "OptionalInt", baseName == "OptionalLong", baseName == "OptionalDouble":
+		element := primitiveOptionalElementJavaTypes[baseName]
+		return applyTypeArguments(stdjavaQualifiedExpr("Optional", ctx),
+			[]ast.Expr{javaTypeStringToGoTypeExpr(element, scopeTypeParams, ctx)})
+	// Comparator and Stream are only mapped when their element type is known: a
+	// raw use would print an uninstantiated generic, which does not compile.
+	case baseName == "Comparator" && len(typeArgs) == 1:
+		return applyTypeArguments(stdjavaQualifiedExpr("Comparator", ctx), argExprs())
+	case baseName == "Stream" && len(typeArgs) == 1:
+		return applyTypeArguments(stdjavaQualifiedExpr("Stream", ctx), argExprs())
 	}
 	return nil
 }
@@ -255,6 +276,87 @@ func registerOptionalIntrinsics() {
 		}
 		return methodCall(recv, "OrElse", args[0])
 	})
+	registerLambdaShape("Optional", "ifPresent", lambdaResultVoid)
+	registerLambdaShape("Optional", "ifPresentOrElse", lambdaResultVoid)
+	registerLambdaShape("Optional", "map", lambdaResultInferred)
+	registerLambdaShape("Optional", "flatMap", lambdaResultInferred)
+	registerLambdaShape("Optional", "filter", lambdaResultBool)
+	// orElseGet's Supplier<T> takes no parameters and returns the element type.
+	registerLambdaShape("Optional", "orElseGet", lambdaResultElement)
+	// orElseThrow's supplier produces the throwable to panic with.
+	registerLambdaShape("Optional", "orElseThrow", lambdaResultAny)
+
+	// OptionalInt/Long/Double share the Optional runtime type, so every Optional
+	// intrinsic is registered under their names too, and their primitive-specific
+	// accessors map onto Get.
+	for optionalType := range primitiveOptionalElementJavaTypes {
+		for _, accessor := range []string{"getAsInt", "getAsLong", "getAsDouble"} {
+			registerInstanceIntrinsic(optionalType, accessor, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if !expectArgs(args, 0) {
+					return nil
+				}
+				return methodCall(recv, "Get")
+			})
+		}
+	}
+	// A primitive Optional produced by a stream terminal is typed as Optional<T>,
+	// so the accessors must resolve on Optional as well.
+	for _, accessor := range []string{"getAsInt", "getAsLong", "getAsDouble"} {
+		registerInstanceIntrinsic("Optional", accessor, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if !expectArgs(args, 0) {
+				return nil
+			}
+			return methodCall(recv, "Get")
+		})
+	}
+
+	// Optional.of / ofNullable carry the argument's type, so a chained call and a
+	// flatMap mapper's result type resolve to Optional<T> rather than bare
+	// Optional.
+	registerStaticIntrinsicDerivedResultType("Optional", "of", derivedResultTypeFromArgument("Optional", 0))
+	registerStaticIntrinsicDerivedResultType("Optional", "ofNullable", derivedResultTypeFromArgument("Optional", 0))
+
+	registerInstanceIntrinsic("Optional", "ifPresentOrElse", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 2) {
+			return nil
+		}
+		return methodCall(recv, "IfPresentOrElse", args[0], args[1])
+	})
+	registerInstanceIntrinsic("Optional", "filter", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return methodCall(recv, "Filter", args[0])
+	})
+	registerInstanceIntrinsic("Optional", "orElseGet", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return methodCall(recv, "OrElseGet", args[0])
+	})
+	// orElseThrow has a no-argument form (NoSuchElementException) and a
+	// supplier-taking one; the runtime takes a nil supplier for the former.
+	registerInstanceIntrinsic("Optional", "orElseThrow", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		switch len(args) {
+		case 0:
+			return methodCall(recv, "OrElseThrow", &ast.Ident{Name: "nil"})
+		case 1:
+			return methodCall(recv, "OrElseThrow", args[0])
+		}
+		return nil
+	})
+	registerInstanceIntrinsic("Optional", "flatMap", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "OptionalFlatMap", recv, args[0])
+	})
+	registerInstanceIntrinsic("Optional", "stream", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 0) {
+			return nil
+		}
+		return stdjavaCall(ctx, "OptionalStream", recv)
+	})
 	registerInstanceIntrinsic("Optional", "ifPresent", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil
@@ -273,11 +375,15 @@ func registerOptionalIntrinsics() {
 
 func registerCollectionsStatics() {
 	// java.util.Collections
+	// sort/max/min each have a natural-ordering form and a comparator form.
 	registerStaticIntrinsic("Collections", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
+		switch len(args) {
+		case 1:
+			return stdjavaCall(ctx, "SortOrdered", args[0])
+		case 2:
+			return stdjavaCall(ctx, "SortWith", args[0], args[1])
 		}
-		return stdjavaCall(ctx, "SortOrdered", args[0])
+		return nil
 	})
 	registerStaticIntrinsic("Collections", "reverse", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
@@ -286,16 +392,22 @@ func registerCollectionsStatics() {
 		return stdjavaCall(ctx, "ReverseList", args[0])
 	})
 	registerStaticIntrinsic("Collections", "max", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
+		switch len(args) {
+		case 1:
+			return stdjavaCall(ctx, "MaxOrdered", args[0])
+		case 2:
+			return stdjavaCall(ctx, "MaxWith", args[0], args[1])
 		}
-		return stdjavaCall(ctx, "MaxOrdered", args[0])
+		return nil
 	})
 	registerStaticIntrinsic("Collections", "min", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
+		switch len(args) {
+		case 1:
+			return stdjavaCall(ctx, "MinOrdered", args[0])
+		case 2:
+			return stdjavaCall(ctx, "MinWith", args[0], args[1])
 		}
-		return stdjavaCall(ctx, "MinOrdered", args[0])
+		return nil
 	})
 	registerStaticIntrinsic("Collections", "emptyList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 0) {
@@ -321,10 +433,13 @@ func registerCollectionsStatics() {
 		return stdjavaCall(ctx, "AsList", args...)
 	})
 	registerStaticIntrinsic("Arrays", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
+		switch len(args) {
+		case 1:
+			return stdjavaCall(ctx, "SortArray", args[0])
+		case 2:
+			return stdjavaCall(ctx, "SortArrayWith", args[0], args[1])
 		}
-		return stdjavaCall(ctx, "SortArray", args[0])
+		return nil
 	})
 	registerStaticIntrinsic("Arrays", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {

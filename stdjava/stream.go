@@ -1,10 +1,5 @@
 package stdjava
 
-import (
-	"cmp"
-	"sort"
-)
-
 // This file implements the slice-backed stream type that java.util.stream.Stream
 // is mapped onto.
 //
@@ -55,6 +50,13 @@ func (s Stream[T]) Filter(predicate func(T) bool) Stream[T] {
 // Limit returns a stream truncated to at most maxSize elements, matching
 // Stream.limit.
 func (s Stream[T]) Limit(maxSize int32) Stream[T] {
+	// Java throws IllegalArgumentException for a negative limit. Without this
+	// check the make below fails with "makeslice: len out of range", which the
+	// panic normalizer maps to NegativeArraySizeException, so a Java
+	// `catch (IllegalArgumentException e)` would not catch it.
+	if maxSize < 0 {
+		panic(NewIllegalArgumentException("Stream.limit requires a non-negative count"))
+	}
 	if int(maxSize) >= len(s.elements) {
 		return s
 	}
@@ -138,10 +140,171 @@ func StreamReduce[T any](s Stream[T], identity T, accumulator func(T, T) T) T {
 }
 
 // StreamSorted returns a stream sorted by natural ordering, matching
-// Stream.sorted() for a Comparable element type.
-func StreamSorted[T cmp.Ordered](s Stream[T]) Stream[T] {
-	out := make([]T, len(s.elements))
-	copy(out, s.elements)
-	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+// Stream.sorted(). Java's sort is stable, which is observable once the element
+// type's ordering does not distinguish every element.
+func StreamSorted[T any](s Stream[T]) Stream[T] {
+	out := s.ToSlice()
+	SortSliceStableNatural(out)
 	return Stream[T]{elements: out}
+}
+
+// StreamSortedWith returns a stream sorted by an explicit comparator, matching
+// Stream.sorted(Comparator). It is stable, as Java's is.
+func StreamSortedWith[T any](s Stream[T], c Comparator[T]) Stream[T] {
+	out := s.ToSlice()
+	SortSliceWith(out, c)
+	return Stream[T]{elements: out}
+}
+
+// Skip returns a stream with the first n elements discarded, matching
+// Stream.skip.
+func (s Stream[T]) Skip(n int64) Stream[T] {
+	if n < 0 {
+		panic(NewIllegalArgumentException("Stream.skip requires a non-negative count"))
+	}
+	if n >= int64(len(s.elements)) {
+		return Stream[T]{}
+	}
+	out := make([]T, int64(len(s.elements))-n)
+	copy(out, s.elements[n:])
+	return Stream[T]{elements: out}
+}
+
+// Peek returns an equivalent stream, invoking action on each element as it is
+// consumed, matching Stream.peek.
+//
+// Because this runtime is eager, peek's action runs over every element when the
+// pipeline stage is built, whereas Java runs it only for the elements a terminal
+// operation actually pulls. A peek with observable side effects downstream of a
+// short-circuiting terminal can therefore see more elements than in Java.
+func (s Stream[T]) Peek(action func(T)) Stream[T] {
+	for _, e := range s.elements {
+		action(e)
+	}
+	return s
+}
+
+// FindFirst returns the first element, matching Stream.findFirst.
+func (s Stream[T]) FindFirst() Optional[T] {
+	if len(s.elements) == 0 {
+		return Optional[T]{}
+	}
+	return OptionalOf(s.elements[0])
+}
+
+// FindAny returns some element, matching Stream.findAny. Evaluation here is
+// sequential, so it returns the first, which Java's contract permits.
+func (s Stream[T]) FindAny() Optional[T] {
+	return s.FindFirst()
+}
+
+// Sequential and Parallel return the stream unchanged. Parallel streams are not
+// modelled; everything runs sequentially, which preserves every ordering
+// guarantee Java makes and only forgoes the concurrency.
+func (s Stream[T]) Sequential() Stream[T] { return s }
+func (s Stream[T]) Parallel() Stream[T]   { return s }
+
+// Unordered returns the stream unchanged; this runtime always keeps encounter
+// order, which Java permits an unordered stream to do.
+func (s Stream[T]) Unordered() Stream[T] { return s }
+
+// StreamDistinct returns a stream with duplicates removed, keeping the first
+// occurrence of each, matching Stream.distinct. The element type must be a Go
+// comparable type, which is what Java's equals/hashCode contract maps onto here.
+func StreamDistinct[T comparable](s Stream[T]) Stream[T] {
+	seen := make(map[T]struct{}, len(s.elements))
+	out := make([]T, 0, len(s.elements))
+	for _, e := range s.elements {
+		if _, duplicate := seen[e]; duplicate {
+			continue
+		}
+		seen[e] = struct{}{}
+		out = append(out, e)
+	}
+	return Stream[T]{elements: out}
+}
+
+// StreamFlatMap maps each element to a stream and concatenates the results,
+// matching Stream.flatMap.
+func StreamFlatMap[T, R any](s Stream[T], mapper func(T) Stream[R]) Stream[R] {
+	out := []R{}
+	for _, e := range s.elements {
+		out = append(out, mapper(e).elements...)
+	}
+	return Stream[R]{elements: out}
+}
+
+// StreamMin and StreamMax return the smallest/largest element by natural
+// ordering, matching Stream.min/max with a natural-order comparator. Java
+// returns the first such element, so ties keep the earlier one.
+func StreamMin[T any](s Stream[T]) Optional[T] {
+	return StreamMinWith(s, nil)
+}
+
+func StreamMax[T any](s Stream[T]) Optional[T] {
+	return StreamMaxWith(s, nil)
+}
+
+// StreamMinWith returns the smallest element under an explicit comparator,
+// matching Stream.min(Comparator). A nil comparator means natural ordering.
+func StreamMinWith[T any](s Stream[T], c Comparator[T]) Optional[T] {
+	if len(s.elements) == 0 {
+		return Optional[T]{}
+	}
+	best := s.elements[0]
+	for _, e := range s.elements[1:] {
+		if streamCompare(c, e, best) < 0 {
+			best = e
+		}
+	}
+	return OptionalOf(best)
+}
+
+// StreamMaxWith returns the largest element under an explicit comparator,
+// matching Stream.max(Comparator).
+func StreamMaxWith[T any](s Stream[T], c Comparator[T]) Optional[T] {
+	if len(s.elements) == 0 {
+		return Optional[T]{}
+	}
+	best := s.elements[0]
+	for _, e := range s.elements[1:] {
+		if streamCompare(c, e, best) > 0 {
+			best = e
+		}
+	}
+	return OptionalOf(best)
+}
+
+// streamCompare applies a comparator, falling back to natural ordering when it
+// is nil.
+func streamCompare[T any](c Comparator[T], a, b T) int32 {
+	if c == nil {
+		return javaCompareValues(a, b)
+	}
+	return c(a, b)
+}
+
+// StreamReduceOptional performs a reduction with no identity value, matching
+// Stream.reduce(accumulator). An empty stream reduces to an empty Optional.
+func StreamReduceOptional[T any](s Stream[T], accumulator func(T, T) T) Optional[T] {
+	if len(s.elements) == 0 {
+		return Optional[T]{}
+	}
+	result := s.elements[0]
+	for _, e := range s.elements[1:] {
+		result = accumulator(result, e)
+	}
+	return OptionalOf(result)
+}
+
+// StreamReduceCombining performs a reduction to a result type unrelated to the
+// element type, matching Stream.reduce(identity, accumulator, combiner). The
+// combiner exists in Java only to merge partial results across parallel splits;
+// evaluation here is sequential, so it is accepted and never invoked.
+func StreamReduceCombining[T, R any](s Stream[T], identity R, accumulator func(R, T) R, combiner func(R, R) R) R {
+	result := identity
+	for _, e := range s.elements {
+		result = accumulator(result, e)
+	}
+	return result
 }

@@ -26,8 +26,8 @@ roughly in suggested priority order. See file references for where each gap live
 - [x] `java.util.Collections` utilities (`sort`, `reverse`, `max`, `min`, ...) + `Arrays.asList/sort/toString`
 - [x] Iterators / `Iterable` protocol — enhanced-for ranges over collection `.Slice()` views
 - [x] Wire `java.util.Optional` to `stdjava.Optional[T]` (of/empty/ofNullable/get/isPresent/orElse/map/ifPresent; lambda-param inference for `map` is a §2-remainder follow-up)
-- [ ] `java.util.stream.*` (Streams API) — map to loops or a `stdjava` stream shim
-- [ ] `java.io.*` basics (`File`, readers/writers, `Scanner`) → `os` / `bufio` / `io`
+- [x] `java.util.stream.*` (Streams API) — eager slice-backed `stdjava.Stream[T]`; sources (`Collection.stream`, `Stream.of/empty/concat`, `IntStream.range`, `Arrays.stream`, `String.chars`), the intermediate and terminal operations, the primitive streams, and `Collectors` (`toList/toSet/joining/counting/summing*/averaging*/toMap/groupingBy/partitioningBy/mapping`). Evaluation is eager rather than lazy, and parallel streams run sequentially — both documented in `stdjava/stream.go`
+- [x] `java.io.*` / `java.nio.file.*` (`File`, `Path`/`Paths`, `Files`, readers/writers, byte and in-memory streams, `Scanner`) → `os` / `bufio` / `io` (`stdjava/io.go`, `stdjava/nio.go`). Out of scope: `RandomAccessFile`, object serialization, NIO channels/buffers/selectors, `WatchService`, charset- and option-selecting overloads, file permissions/attributes
 - [x] `java.lang.Math`, boxed-type statics (`Integer.parseInt`, `Long.MAX_VALUE`, ...) — type-preserving generics in `stdjava/math.go`, `stdjava/convert.go`
 - [x] Expand the `stdjava` runtime package to back anything with no direct Go analogue (ongoing as features land)
 

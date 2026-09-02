@@ -18,12 +18,36 @@ func ObjectsEqual[T any](a, b T) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-// SortOrdered sorts a list of ordered elements in place, matching
-// Collections.sort on a List of a Comparable type with natural ordering.
-func SortOrdered[T cmp.Ordered](l *List[T]) {
-	sort.Slice(l.elements, func(i, j int) bool {
-		return l.elements[i] < l.elements[j]
-	})
+// SortOrdered sorts a list in place by natural ordering, matching
+// Collections.sort(List) on a Comparable element type.
+//
+// The element type is not constrained to cmp.Ordered because Java's natural
+// ordering covers any Comparable, including a user class whose compareTo the
+// transpiler generates. Element types with a direct Go ordering keep a fast
+// path; everything else goes through the CompareTo bridge.
+func SortOrdered[T any](l *List[T]) {
+	if l == nil {
+		panic(NewNullPointerException("Collections.sort on null"))
+	}
+	// The floating-point types are deliberately absent from the fast path: Go's
+	// `<` is not Java's ordering for them (it leaves NaN where it lies and treats
+	// -0.0 and 0.0 as equal), so they must go through the same Java total order
+	// the slow path uses. Sorting them with `<` here would also make
+	// Collections.sort and Stream.sorted disagree within one program.
+	switch elements := any(l.elements).(type) {
+	case []string:
+		SortSlice(elements)
+	case []int32:
+		SortSlice(elements)
+	case []int64:
+		SortSlice(elements)
+	case []int16:
+		SortSlice(elements)
+	case []int8:
+		SortSlice(elements)
+	default:
+		SortSliceStableNatural(l.elements)
+	}
 }
 
 // ReverseList reverses a list in place, matching Collections.reverse.
@@ -33,23 +57,31 @@ func ReverseList[T any](l *List[T]) {
 	}
 }
 
-// MaxOrdered returns the largest element of a list, matching
-// Collections.max on a Collection of a Comparable type.
-func MaxOrdered[T cmp.Ordered](l *List[T]) T {
+// MaxOrdered returns the largest element of a list by natural ordering, matching
+// Collections.max(Collection). Like Collections.max it keeps the earlier element
+// on a tie, and like SortOrdered it accepts any Comparable element type.
+func MaxOrdered[T any](l *List[T]) T {
+	if l == nil || len(l.elements) == 0 {
+		panic(NewNoSuchElementException("Collections.max on an empty collection"))
+	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if e > best {
+		if javaCompareValues(e, best) > 0 {
 			best = e
 		}
 	}
 	return best
 }
 
-// MinOrdered returns the smallest element of a list, matching Collections.min.
-func MinOrdered[T cmp.Ordered](l *List[T]) T {
+// MinOrdered returns the smallest element of a list by natural ordering,
+// matching Collections.min(Collection).
+func MinOrdered[T any](l *List[T]) T {
+	if l == nil || len(l.elements) == 0 {
+		panic(NewNoSuchElementException("Collections.min on an empty collection"))
+	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if e < best {
+		if javaCompareValues(e, best) < 0 {
 			best = e
 		}
 	}
@@ -80,9 +112,19 @@ func AsList[T any](elements ...T) *List[T] {
 }
 
 // SortSlice sorts a slice of ordered elements in place, matching Arrays.sort.
+// It must not be used for the floating-point types, whose Java ordering differs
+// from Go's `<`; SortFloatSlice handles those.
 func SortSlice[T cmp.Ordered](elements []T) {
 	sort.Slice(elements, func(i, j int) bool {
 		return elements[i] < elements[j]
+	})
+}
+
+// SortFloatSlice sorts a floating-point slice by Java's total order, where NaN
+// sorts after every other value and -0.0 before 0.0.
+func SortFloatSlice[T ~float32 | ~float64](elements []T) {
+	sort.Slice(elements, func(i, j int) bool {
+		return javaDoubleCompare(float64(elements[i]), float64(elements[j])) < 0
 	})
 }
 
@@ -100,10 +142,12 @@ func SortArray(array any) {
 		SortSlice(values.Elements)
 	case *PrimitiveArray[int64]:
 		SortSlice(values.Elements)
+	// Arrays.sort(double[]) and (float[]) use Java's total order too, so NaN
+	// sorts last and -0.0 before 0.0; Go's `<` does neither.
 	case *PrimitiveArray[float32]:
-		SortSlice(values.Elements)
+		SortFloatSlice(values.Elements)
 	case *PrimitiveArray[float64]:
-		SortSlice(values.Elements)
+		SortFloatSlice(values.Elements)
 	case *ReferenceArray:
 		if values == nil {
 			panic(NewNullPointerException("Arrays.sort on null"))
@@ -125,32 +169,13 @@ func SortArray(array any) {
 	}
 }
 
+// javaComparableLess reports whether left sorts before right under Java's
+// natural ordering. Values that are not one of the directly-handled primitive or
+// String forms are bridged to their own generated CompareTo method, so a user
+// class implementing Comparable sorts correctly through Arrays.sort and the
+// Collections utilities.
 func javaComparableLess(left, right any) bool {
-	switch left := left.(type) {
-	case string:
-		right, ok := right.(string)
-		return ok && left < right
-	case int8:
-		right, ok := right.(int8)
-		return ok && left < right
-	case int16:
-		right, ok := right.(int16)
-		return ok && left < right
-	case int32:
-		right, ok := right.(int32)
-		return ok && left < right
-	case int64:
-		right, ok := right.(int64)
-		return ok && left < right
-	case float32:
-		right, ok := right.(float32)
-		return ok && left < right
-	case float64:
-		right, ok := right.(float64)
-		return ok && left < right
-	default:
-		panic(NewClassCastException("array element is not naturally comparable"))
-	}
+	return javaCompareValues(left, right) < 0
 }
 
 // SliceToString returns the Java Arrays.toString form of a slice, e.g.

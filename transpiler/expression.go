@@ -5331,6 +5331,52 @@ func isExternalRunnableType(javaType string, ctx Ctx) bool {
 	return stripJavaQualifier(baseType) == "Runnable" && resolveClassScopeByQualifiedName(ctx, baseType) == nil
 }
 
+// builtinFunctionalInterface describes the single abstract method of a standard
+// functional interface that the transpiler models without a source scope. The
+// types are Java type strings so they flow through the same substitution and
+// type-mapping machinery as a source-declared interface.
+type builtinFunctionalInterface struct {
+	typeParameters []string
+	parameterTypes []string
+	resultType     string
+}
+
+// builtinFunctionalInterfaces maps a functional interface name to its SAM.
+var builtinFunctionalInterfaces = map[string]builtinFunctionalInterface{
+	"Comparator": {
+		typeParameters: []string{"T"},
+		parameterTypes: []string{"T", "T"},
+		resultType:     "int",
+	},
+}
+
+// builtinFunctionalInterfaceMethod synthesizes the SAM definition and type
+// bindings for a built-in functional interface. It reports false for anything
+// not in the table, and for a raw use with no type arguments, whose parameter
+// types would otherwise substitute to unbound type-parameter names.
+func builtinFunctionalInterfaceMethod(baseName string, typeArgs []string) (*symbol.Definition, map[string]string, bool) {
+	spec, ok := builtinFunctionalInterfaces[baseName]
+	if !ok || len(typeArgs) != len(spec.typeParameters) {
+		return nil, nil, false
+	}
+
+	bindings := make(map[string]string, len(spec.typeParameters))
+	for index, typeParameter := range spec.typeParameters {
+		bindings[typeParameter] = strings.TrimSpace(typeArgs[index])
+	}
+
+	parameters := make([]*symbol.Definition, 0, len(spec.parameterTypes))
+	for index, parameterType := range spec.parameterTypes {
+		name := "arg" + strconv.Itoa(index)
+		parameters = append(parameters, &symbol.Definition{
+			OriginalName: name,
+			Name:         name,
+			OriginalType: parameterType,
+		})
+	}
+	return &symbol.Definition{OriginalType: spec.resultType, Parameters: parameters}, bindings, true
+}
+
 func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Definition, map[string]string) {
 	expectedType = strings.TrimSpace(expectedType)
 	if expectedType == "" {
@@ -5344,6 +5390,13 @@ func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Def
 
 	scope := resolveClassScopeByQualifiedName(ctx, baseType)
 	if scope == nil {
+		// A built-in functional interface has no source scope to resolve against,
+		// so its single abstract method is described by a table instead. The
+		// lookup is guarded on scope == nil so a user-defined class of the same
+		// name still shadows it.
+		if method, bindings, ok := builtinFunctionalInterfaceMethod(stripJavaQualifier(baseType), typeArgs); ok {
+			return method, bindings
+		}
 		return nil, nil
 	}
 	if !scope.IsInterface {
@@ -9297,38 +9350,98 @@ func classLiteralJavaType(node *sitter.Node, source []byte) (string, bool) {
 	return javaType, javaType != ""
 }
 
-// inferStreamMapResultType infers the element type produced by a Stream.map(...)
-// call from the mapper lambda's body, binding the lambda parameter to the
-// receiver's element type. Returns the Java type of the result, or false when it
-// cannot be determined (the caller then falls back to a bare Stream).
-func inferStreamMapResultType(mapNode *sitter.Node, recvArgs []string, ctx Ctx, source []byte) (string, bool) {
-	if len(recvArgs) != 1 {
+// lambdaParameterNames returns a lambda's declared parameter names in order,
+// covering the three forms the grammar produces: a bare identifier (`x -> ...`),
+// inferred_parameters (`(x, y) -> ...`), and formal_parameters
+// (`(String x, int y) -> ...`).
+func lambdaParameterNames(parameters *sitter.Node, source []byte) []string {
+	if parameters == nil {
+		return nil
+	}
+	switch parameters.Type() {
+	case "inferred_parameters":
+		names := make([]string, 0, parameters.NamedChildCount())
+		for _, child := range nodeutil.NamedChildrenOf(parameters) {
+			names = append(names, child.Content(source))
+		}
+		return names
+	case "formal_parameters":
+		names := make([]string, 0, parameters.NamedChildCount())
+		for _, child := range nodeutil.NamedChildrenOf(parameters) {
+			if nameNode := child.ChildByFieldName("name"); nameNode != nil {
+				names = append(names, nameNode.Content(source))
+			}
+		}
+		return names
+	default:
+		return []string{parameters.Content(source)}
+	}
+}
+
+// singleReturnedExpression returns the returned expression of a block whose only
+// statement is `return expr;`, or nil for any other block. A block with several
+// statements has no single expression to infer a result type from.
+func singleReturnedExpression(block *sitter.Node) *sitter.Node {
+	var statement *sitter.Node
+	for _, child := range nodeutil.NamedChildrenOf(block) {
+		switch child.Type() {
+		case "line_comment", "block_comment":
+			continue
+		}
+		if statement != nil {
+			return nil
+		}
+		statement = child
+	}
+	if statement == nil || statement.Type() != "return_statement" || statement.NamedChildCount() != 1 {
+		return nil
+	}
+	return statement.NamedChild(0)
+}
+
+// inferLambdaResultJavaType binds a lambda's parameters to the given Java types
+// and infers the Java type its body evaluates to. It returns false when the
+// result cannot be determined, leaving the caller to fall back to a default.
+//
+// When fewer types than parameters are supplied the last one is reused, which is
+// what the element-typed functional interfaces need: BinaryOperator<T> and
+// Comparator<T> both take two parameters of the single element type.
+func inferLambdaResultJavaType(lambda *sitter.Node, paramJavaTypes []string, ctx Ctx, source []byte) (string, bool) {
+	if lambda == nil || lambda.Type() != "lambda_expression" || len(paramJavaTypes) == 0 {
 		return "", false
 	}
-	argsNode := mapNode.ChildByFieldName("arguments")
-	if argsNode == nil || argsNode.NamedChildCount() != 1 {
+	body := lambda.ChildByFieldName("body")
+	if body == nil {
 		return "", false
 	}
-	lambda := argsNode.NamedChild(0)
-	if lambda == nil || lambda.Type() != "lambda_expression" {
+	names := lambdaParameterNames(lambda.ChildByFieldName("parameters"), source)
+	if len(names) == 0 {
 		return "", false
 	}
-	paramNode := lambda.ChildByFieldName("parameters")
-	bodyNode := lambda.ChildByFieldName("body")
-	if paramNode == nil || bodyNode == nil || bodyNode.Type() == "block" {
-		return "", false
-	}
-	paramName := paramNode.Content(source)
-	if paramNode.NamedChildCount() == 1 {
-		paramName = paramNode.NamedChild(0).Content(source)
+
+	parameters := make([]*symbol.Definition, 0, len(names))
+	for index, name := range names {
+		javaType := paramJavaTypes[len(paramJavaTypes)-1]
+		if index < len(paramJavaTypes) {
+			javaType = paramJavaTypes[index]
+		}
+		parameters = append(parameters, &symbol.Definition{
+			OriginalName: name,
+			Name:         name,
+			OriginalType: javaType,
+		})
 	}
 	lambdaCtx := ctx.Clone()
-	lambdaCtx.localScope = &symbol.Definition{
-		Parameters: []*symbol.Definition{
-			{OriginalName: paramName, Name: paramName, OriginalType: recvArgs[0]},
-		},
+	lambdaCtx.localScope = &symbol.Definition{Parameters: parameters}
+
+	if body.Type() == "block" {
+		returned := singleReturnedExpression(body)
+		if returned == nil {
+			return "", false
+		}
+		body = returned
 	}
-	return inferExprJavaType(bodyNode, lambdaCtx, source)
+	return inferExprJavaType(body, lambdaCtx, source)
 }
 
 func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
@@ -9553,8 +9666,26 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 						// Optional.map/filter return an Optional, so a chained call
 						// (o.map(f).get()) resolves the outer receiver as an Optional.
 						switch methodName {
-						case "map", "filter":
+						case "filter":
+							// filter keeps the element type.
+							return recvType, true
+						case "map", "flatMap":
+							if r, ok := inferLambdaResultJavaType(invocationArgumentNode(node, 0), recvArgs, ctx, source); ok {
+								if methodName == "flatMap" {
+									// flatMap's mapper already yields an Optional.
+									return r, true
+								}
+								return "Optional<" + r + ">", true
+							}
 							return "Optional", true
+						case "get", "orElse", "orElseGet", "orElseThrow":
+							if len(recvArgs) == 1 {
+								return recvArgs[0], true
+							}
+						case "stream":
+							if len(recvArgs) == 1 {
+								return "Stream<" + recvArgs[0] + ">", true
+							}
 						}
 					case "File":
 						// File methods that return a String, so chained String calls
@@ -9575,7 +9706,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 					}
 					// Collection.stream() yields a Stream of the collection's element type
 					// so a chained .filter/.map lambda is typed.
-					if methodName == "stream" && len(recvArgs) == 1 &&
+					if (methodName == "stream" || methodName == "parallelStream") && len(recvArgs) == 1 &&
 						(containsString(listTypeNames, recvBase) || containsString(setTypeNames, recvBase)) {
 						return "Stream<" + recvArgs[0] + ">", true
 					}
@@ -9583,10 +9714,59 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 					// for further chaining; map changes the element type so reports bare Stream.
 					if containsString(streamTypeNames, recvBase) {
 						switch methodName {
-						case "filter", "sorted", "limit", "distinct", "skip", "peek":
+						case "filter", "sorted", "limit", "distinct", "skip", "peek",
+							"parallel", "sequential", "unordered":
 							return recvType, true
+						case "boxed":
+							// A primitive stream boxes to a Stream of the wrapper type; a
+							// Stream is already boxed and is unchanged.
+							if element, primitive := primitiveStreamElementJavaTypes[recvBase]; primitive {
+								return "Stream<" + element + ">", true
+							}
+							return recvType, true
+						case "mapToObj":
+							// mapToObj leaves the result element type free, so it comes from
+							// the mapper's body.
+							elementTypes := recvArgs
+							if len(elementTypes) == 0 {
+								if element, primitive := primitiveStreamElementJavaTypes[recvBase]; primitive {
+									elementTypes = []string{element}
+								}
+							}
+							if r, ok := inferLambdaResultJavaType(invocationArgumentNode(node, 0), elementTypes, ctx, source); ok {
+								return "Stream<" + r + ">", true
+							}
+							return "Stream", true
+						case "findFirst", "findAny", "min", "max":
+							// Terminal operations that wrap the element type in an Optional.
+							if len(recvArgs) == 1 {
+								return "Optional<" + recvArgs[0] + ">", true
+							}
+							return "Optional", true
+						case "reduce":
+							// Only the no-identity form returns an Optional; the other two
+							// arities reduce to a plain value.
+							if len(recvArgs) == 1 {
+								if invocationArgumentCount(node) == 1 {
+									return "Optional<" + recvArgs[0] + ">", true
+								}
+								return recvArgs[0], true
+							}
+						case "flatMap":
+							// The mapper already yields a Stream, so its inferred result type
+							// is this call's result type.
+							if r, ok := inferLambdaResultJavaType(invocationArgumentNode(node, 0), recvArgs, ctx, source); ok {
+								return r, true
+							}
+							return "Stream", true
 						case "map":
-							if r, ok := inferStreamMapResultType(node, recvArgs, ctx, source); ok {
+							elementTypes := recvArgs
+							if len(elementTypes) == 0 {
+								if element, ok := primitiveStreamElementJavaTypes[recvBase]; ok {
+									elementTypes = []string{element}
+								}
+							}
+							if r, ok := inferLambdaResultJavaType(invocationArgumentNode(node, 0), elementTypes, ctx, source); ok {
 								return "Stream<" + r + ">", true
 							}
 							return "Stream", true

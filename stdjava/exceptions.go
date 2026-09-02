@@ -33,27 +33,29 @@ type Throwable interface {
 var (
 	exceptionHierarchyMu sync.RWMutex
 	exceptionHierarchy   = map[string]string{
-		"Throwable":                      "",
-		"Error":                          "Throwable",
-		"AssertionError":                 "Error",
-		"LinkageError":                   "Error",
-		"ExceptionInInitializerError":    "LinkageError",
-		"NoClassDefFoundError":           "LinkageError",
-		"Exception":                      "Throwable",
-		"RuntimeException":               "Exception",
-		"IOException":                    "Exception",
-		"IllegalArgumentException":       "RuntimeException",
-		"IllegalStateException":          "RuntimeException",
-		"IllegalMonitorStateException":   "RuntimeException",
-		"NullPointerException":           "RuntimeException",
-		"NegativeArraySizeException":     "RuntimeException",
-		"IndexOutOfBoundsException":      "RuntimeException",
-		"ArrayIndexOutOfBoundsException": "IndexOutOfBoundsException",
-		"ArrayStoreException":            "RuntimeException",
-		"NumberFormatException":          "IllegalArgumentException",
-		"ArithmeticException":            "RuntimeException",
-		"ClassCastException":             "RuntimeException",
-		"UnsupportedOperationException":  "RuntimeException",
+		"Throwable":                       "",
+		"Error":                           "Throwable",
+		"AssertionError":                  "Error",
+		"LinkageError":                    "Error",
+		"ExceptionInInitializerError":     "LinkageError",
+		"NoClassDefFoundError":            "LinkageError",
+		"Exception":                       "Throwable",
+		"RuntimeException":                "Exception",
+		"IOException":                     "Exception",
+		"IllegalArgumentException":        "RuntimeException",
+		"IllegalStateException":           "RuntimeException",
+		"IllegalMonitorStateException":    "RuntimeException",
+		"NullPointerException":            "RuntimeException",
+		"NegativeArraySizeException":      "RuntimeException",
+		"IndexOutOfBoundsException":       "RuntimeException",
+		"ArrayIndexOutOfBoundsException":  "IndexOutOfBoundsException",
+		"ArrayStoreException":             "RuntimeException",
+		"NumberFormatException":           "IllegalArgumentException",
+		"ArithmeticException":             "RuntimeException",
+		"ClassCastException":              "RuntimeException",
+		"UnsupportedOperationException":   "RuntimeException",
+		"NoSuchElementException":          "RuntimeException",
+		"ConcurrentModificationException": "RuntimeException",
 	}
 )
 
@@ -477,6 +479,8 @@ type ArithmeticException struct{ ThrowableBase }
 type ClassCastException struct{ ThrowableBase }
 type UnsupportedOperationException struct{ ThrowableBase }
 type IOException struct{ ThrowableBase }
+type NoSuchElementException struct{ ThrowableBase }
+type ConcurrentModificationException struct{ ThrowableBase }
 
 // The New* constructors mirror `new X(message)` in Java. They are referenced by
 // name from generated `throw` statements.
@@ -582,6 +586,14 @@ func NewClassCastException(message string) ClassCastException {
 
 func NewUnsupportedOperationException(message string) UnsupportedOperationException {
 	return UnsupportedOperationException{newThrowableBase("UnsupportedOperationException", message)}
+}
+
+func NewNoSuchElementException(message string) NoSuchElementException {
+	return NoSuchElementException{newThrowableBase("NoSuchElementException", message)}
+}
+
+func NewConcurrentModificationException(message string) ConcurrentModificationException {
+	return ConcurrentModificationException{newThrowableBase("ConcurrentModificationException", message)}
 }
 
 func NewIOException(message string) IOException {

@@ -580,6 +580,18 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			}
 		}
 
+		// A lambda assigned to a built-in functional interface must carry that
+		// interface's named runtime type rather than the unnamed func type Go
+		// would infer from the literal, or the interface's default methods
+		// (Comparator.reversed, thenComparing, compare) are unavailable on it.
+		if named := namedFunctionalInterfaceTypeExpr(originalType, ctx); named != nil {
+			for ind, rhs := range declaration.Rhs {
+				if _, isFuncLit := rhs.(*ast.FuncLit); isFuncLit {
+					declaration.Rhs[ind] = &ast.CallExpr{Fun: named, Args: []ast.Expr{rhs}}
+				}
+			}
+		}
+
 		// A primitive stored in Object undergoes Java boxing. Pin integer literals
 		// to Java's 32-bit Integer representation before Go infers a host-sized int.
 		if expectedBase, _ := parseJavaTypeString(originalType); stripJavaQualifier(expectedBase) == "Object" {

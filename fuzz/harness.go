@@ -201,6 +201,7 @@ func (h *Harness) transpile(javaPath, outDir string) (err error) {
 func (h *Harness) runCmd(dir, name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
+	cmd.Env = deterministicEnv()
 	done := make(chan struct{})
 	var out []byte
 	var runErr error
@@ -216,6 +217,46 @@ func (h *Harness) runCmd(dir, name string, args ...string) (string, error) {
 		<-done
 		return string(out), errors.New("timeout after " + h.timeout.String())
 	}
+}
+
+// deterministicEnv returns the process environment with the entries that would
+// make a differential run depend on the invoking shell removed, mirroring the
+// e2e suite's deterministicApplicationEnv.
+//
+// This matters most for the JVM hook variables: a host that sets
+// JAVA_TOOL_OPTIONS (a proxy truststore, an agent, a container preset) makes
+// every `java` invocation print a "Picked up JAVA_TOOL_OPTIONS: ..." banner.
+// runCmd compares combined stdout+stderr, so that banner would appear on the
+// Java side only and report every corpus program as an output mismatch.
+func deterministicEnv() []string {
+	values := make(map[string]string)
+	for _, pair := range os.Environ() {
+		if key, value, ok := strings.Cut(pair, "="); ok {
+			values[key] = value
+		}
+	}
+	for _, key := range []string{
+		"JAVA_TOOL_OPTIONS",
+		"JDK_JAVA_OPTIONS",
+		"JDK_JAVAC_OPTIONS",
+		"_JAVA_OPTIONS",
+		"CLASSPATH",
+		"GOGC",
+		"GOMEMLIMIT",
+		"GODEBUG",
+		"GOMAXPROCS",
+	} {
+		delete(values, key)
+	}
+	values["LANG"] = "C"
+	values["LC_ALL"] = "C"
+	values["TZ"] = "UTC"
+
+	env := make([]string, 0, len(values))
+	for key, value := range values {
+		env = append(env, key+"="+value)
+	}
+	return env
 }
 
 // normalize trims trailing whitespace/newlines so an oracle's final newline does
