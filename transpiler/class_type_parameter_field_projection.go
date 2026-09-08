@@ -31,7 +31,7 @@ func projectDirectOwnerErasedIntrinsicReceiver(receiver ast.Expr, node *sitter.N
 		return receiver
 	}
 	_, wrapper := builtinJavaWrapperPrimitive(sourceView, ctx)
-	if !wrapper && !(stripJavaQualifier(sourceView) == "String" && resolveClassScopeByQualifiedName(ctx, sourceView) == nil) {
+	if !wrapper && (stripJavaQualifier(sourceView) != "String" || resolveClassScopeByQualifiedName(ctx, sourceView) != nil) {
 		return receiver
 	}
 	return projectDirectOwnerErasedView(receiver, sourceView, erasure, ctx)

@@ -404,7 +404,7 @@ func methodReferenceInferredBindings(definition *symbol.Definition, actualTypes 
 			actualBase, actualRank := javaArrayTypeParts(actualTypes[index])
 			_, formalRank := javaArrayTypeParts(formal)
 			_, primitive := javaPrimitiveType(actualBase)
-			if len(actualTypes) == len(definition.Parameters) && actualRank > formalRank && !(primitive && actualRank == formalRank+1) {
+			if len(actualTypes) == len(definition.Parameters) && actualRank > formalRank && (!primitive || actualRank != formalRank+1) {
 				collectGenericMethodInferenceBounds(formal+"[]", actualTypes[index], names, lowerBounds, ctx)
 			} else {
 				for _, actual := range actualTypes[index:] {

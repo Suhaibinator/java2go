@@ -1442,7 +1442,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		operator := node.Child(0).Content(source)
 		operandNode := node.Child(1)
 		operand := ParseExpr(operandNode, source, ctx)
-		if operator == "+" || operator == "-" || operator == "~" {
+		switch operator {
+		case "+", "-", "~":
 			operand = promoteJavaUnaryNumericOperand(operandNode, operand, ctx, source)
 			if operator == "-" {
 				if javaType, known := inferExprJavaType(operandNode, ctx, source); known {
@@ -1460,7 +1461,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					}
 				}
 			}
-		} else if operator == "!" {
+		case "!":
 			if javaType, known := inferExprJavaType(operandNode, ctx, source); known {
 				if primitive, boxed := javaUnboxingPrimitive(javaType, ctx); boxed && primitive == "boolean" {
 					operand = javaUnboxExpr(operand, javaType, ctx)
@@ -8472,25 +8473,6 @@ func executionAwareMethodReferenceForwarder(
 	}}
 }
 
-func primitiveArrayWrapperType(expr ast.Expr) bool {
-	pointer, ok := expr.(*ast.StarExpr)
-	if !ok || pointer == nil {
-		return false
-	}
-	indexed, ok := pointer.X.(*ast.IndexExpr)
-	if !ok || indexed == nil {
-		return false
-	}
-	switch base := indexed.X.(type) {
-	case *ast.SelectorExpr:
-		return base.Sel != nil && base.Sel.Name == "PrimitiveArray"
-	case *ast.Ident:
-		return base.Name == "PrimitiveArray"
-	default:
-		return false
-	}
-}
-
 func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType string, executionAware bool, ctx Ctx) ast.Expr {
 	method, _ := resolveFunctionalInterfaceMethod(ctx, expectedType)
 	if method == nil {
@@ -9163,9 +9145,10 @@ func lowerJavaBooleanBinary(operator string, leftNode, rightNode *sitter.Node, l
 		return &ast.BinaryExpr{X: left, Op: StrToToken(operator), Y: right}, true
 	}
 	op := token.NEQ
-	if operator == "&" {
+	switch operator {
+	case "&":
 		op = token.LAND
-	} else if operator == "|" {
+	case "|":
 		op = token.LOR
 	}
 	return javaEagerBooleanBinary(op, left, right), true
@@ -10863,7 +10846,7 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 				_, primitiveBase := javaPrimitiveType(actualBase)
 				// A primitive array cannot instantiate T[] with a primitive T.
 				// It can still be a single reference-valued T in an expanded call.
-				if known && actualRank > elementRank && !(primitiveBase && actualRank == elementRank+1) {
+				if known && actualRank > elementRank && (!primitiveBase || actualRank != elementRank+1) {
 					collectGenericMethodInferenceBounds(formal+"[]", actual, typeParameterNames, lowerBounds, ctx)
 					continue
 				}

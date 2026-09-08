@@ -20,16 +20,19 @@ func expectBoxedException(t *testing.T, name string, invoke func()) {
 
 func TestBoxedCachesAndFreshConstructors(t *testing.T) {
 	for _, value := range []bool{false, true} {
-		if BoxBoolean(value) != BoxBoolean(value) || NewBoolean(value) == BoxBoolean(value) ||
-			NewBoolean(value) == NewBoolean(value) {
+		cached, cachedAgain := BoxBoolean(value), BoxBoolean(value)
+		fresh, freshAgain := NewBoolean(value), NewBoolean(value)
+		if cached != cachedAgain || fresh == cached || fresh == freshAgain {
 			t.Fatalf("Boolean(%v) cache/constructor identity", value)
 		}
 	}
 	for value := -128; value <= 127; value++ {
-		if BoxByte(int8(value)) != BoxByte(int8(value)) ||
-			BoxShort(int16(value)) != BoxShort(int16(value)) ||
-			BoxInteger(int32(value)) != BoxInteger(int32(value)) ||
-			BoxLong(int64(value)) != BoxLong(int64(value)) {
+		firstByte, secondByte := BoxByte(int8(value)), BoxByte(int8(value))
+		firstShort, secondShort := BoxShort(int16(value)), BoxShort(int16(value))
+		firstInteger, secondInteger := BoxInteger(int32(value)), BoxInteger(int32(value))
+		firstLong, secondLong := BoxLong(int64(value)), BoxLong(int64(value))
+		if firstByte != secondByte || firstShort != secondShort ||
+			firstInteger != secondInteger || firstLong != secondLong {
 			t.Fatalf("cache did not retain identity for %d", value)
 		}
 		if NewByte(int8(value)) == BoxByte(int8(value)) ||
@@ -40,18 +43,25 @@ func TestBoxedCachesAndFreshConstructors(t *testing.T) {
 		}
 	}
 	for value := rune(0); value < 128; value++ {
-		if BoxCharacter(value) != BoxCharacter(value) || NewCharacter(value) == BoxCharacter(value) {
+		cached, cachedAgain := BoxCharacter(value), BoxCharacter(value)
+		if cached != cachedAgain || NewCharacter(value) == cached {
 			t.Fatalf("Character(%d) cache/constructor identity", value)
 		}
 	}
 	for _, value := range []int32{-129, 128, 4096} {
-		if BoxShort(int16(value)) == BoxShort(int16(value)) ||
-			BoxInteger(value) == BoxInteger(value) || BoxLong(int64(value)) == BoxLong(int64(value)) {
+		firstShort, secondShort := BoxShort(int16(value)), BoxShort(int16(value))
+		firstInteger, secondInteger := BoxInteger(value), BoxInteger(value)
+		firstLong, secondLong := BoxLong(int64(value)), BoxLong(int64(value))
+		if firstShort == secondShort || firstInteger == secondInteger || firstLong == secondLong {
 			t.Fatalf("unexpected cache beyond fixed range at %d", value)
 		}
 	}
-	if BoxCharacter(128) == BoxCharacter(128) || BoxCharacter(65535) == BoxCharacter(65535) ||
-		BoxFloat(1) == BoxFloat(1) || BoxDouble(1) == BoxDouble(1) {
+	firstCharacter, secondCharacter := BoxCharacter(128), BoxCharacter(128)
+	firstMaxCharacter, secondMaxCharacter := BoxCharacter(65535), BoxCharacter(65535)
+	firstFloat, secondFloat := BoxFloat(1), BoxFloat(1)
+	firstDouble, secondDouble := BoxDouble(1), BoxDouble(1)
+	if firstCharacter == secondCharacter || firstMaxCharacter == secondMaxCharacter ||
+		firstFloat == secondFloat || firstDouble == secondDouble {
 		t.Fatal("uncached boxing reused an object")
 	}
 	original := BoxInteger(7)
@@ -68,14 +78,18 @@ func TestBoxedCacheConcurrency(t *testing.T) {
 		go func() {
 			defer work.Done()
 			for value := -128; value <= 127; value++ {
-				if BoxByte(int8(value)) != BoxByte(int8(value)) ||
-					BoxShort(int16(value)) != BoxShort(int16(value)) ||
-					BoxInteger(int32(value)) != BoxInteger(int32(value)) ||
-					BoxLong(int64(value)) != BoxLong(int64(value)) {
+				firstByte, secondByte := BoxByte(int8(value)), BoxByte(int8(value))
+				firstShort, secondShort := BoxShort(int16(value)), BoxShort(int16(value))
+				firstInteger, secondInteger := BoxInteger(int32(value)), BoxInteger(int32(value))
+				firstLong, secondLong := BoxLong(int64(value)), BoxLong(int64(value))
+				if firstByte != secondByte || firstShort != secondShort ||
+					firstInteger != secondInteger || firstLong != secondLong {
 					t.Errorf("concurrent cached boxing lost identity at %d", value)
 					return
 				}
-				if BoxBoolean(true) != BoxBoolean(true) || BoxCharacter(65) != BoxCharacter(65) {
+				firstBoolean, secondBoolean := BoxBoolean(true), BoxBoolean(true)
+				firstCharacter, secondCharacter := BoxCharacter(65), BoxCharacter(65)
+				if firstBoolean != secondBoolean || firstCharacter != secondCharacter {
 					t.Error("concurrent nonnumeric cache lost identity")
 					return
 				}
@@ -98,7 +112,7 @@ func TestBoxedNullAccessAndUnboxing(t *testing.T) {
 		"Number interface": func() { NumberDoubleValue((*Integer)(nil)) },
 		"instance equals":  func() { (*Integer)(nil).Equals(nil) },
 		"instance hash":    func() { (*Double)(nil).HashCode() },
-		"instance text":    func() { (*Boolean)(nil).String() },
+		"instance text":    func() { _ = (*Boolean)(nil).String() },
 		"compare argument": func() { BoxLong(1).CompareTo(nil) },
 		"compare receiver": func() { (*Character)(nil).CompareTo(BoxCharacter('a')) },
 	}
@@ -146,7 +160,8 @@ func TestBoxedNominalEqualityHashAndText(t *testing.T) {
 		BoxFloat(1).Equals(BoxDouble(1)) || BoxInteger(1).Equals(int32(1)) {
 		t.Fatal("wrapper equality crossed a nominal type boundary")
 	}
-	if NewInteger(1000) == NewInteger(1000) {
+	firstInteger, secondInteger := NewInteger(1000), NewInteger(1000)
+	if firstInteger == secondInteger {
 		t.Fatal("equal fresh wrappers share reference identity")
 	}
 	if BoxByte(-128).CompareTo(BoxByte(127)) != -255 ||

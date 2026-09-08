@@ -315,12 +315,8 @@ func compareViaReflectOrdering(left, right any) (int32, bool) {
 	return 0, false
 }
 
-// compareViaCompareTo invokes a generated `CompareTo` method on left, passing
+// compareViaCompareToExecution invokes a generated `CompareTo` method on left, passing
 // right, and reports whether such a method was found and applicable.
-func compareViaCompareTo(left, right any) (int32, bool) {
-	return compareViaCompareToExecution(nil, left, right)
-}
-
 func compareViaCompareToExecution(execution *Execution, left, right any) (int32, bool) {
 	ReferenceRequireNonNull(left)
 	receiver := reflect.ValueOf(left)
@@ -463,19 +459,6 @@ func canonicalNaN32(value float32) float32 {
 		return float32(math.NaN())
 	}
 	return value
-}
-
-// javaOrderedCompare compares two values of a Go-ordered type using Java's
-// natural ordering. It exists because Go's cmp.Compare is not Java's ordering
-// for the floating-point types.
-func javaOrderedCompare[T cmp.Ordered](left, right T) int32 {
-	switch typed := any(left).(type) {
-	case float64:
-		return javaDoubleCompare(typed, any(right).(float64))
-	case float32:
-		return javaFloatCompare(typed, any(right).(float32))
-	}
-	return int32(cmp.Compare(left, right))
 }
 
 // DoubleCompare and FloatCompare are java.lang.Double.compare and
