@@ -7,6 +7,36 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+// Library intrinsics have no source methodResolution, so their receivers need
+// the same delayed field/result checkcast explicitly. Selecting Integer's
+// intValue on a polluted Box<Integer> must fail even though Number's runtime
+// accessor would also accept the Long stored through a raw alias.
+func projectDirectOwnerErasedIntrinsicReceiver(receiver ast.Expr, node *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	if receiver == nil || node == nil {
+		return receiver
+	}
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil {
+		return receiver
+	}
+	var sourceView, erasure string
+	var known bool
+	switch node.Type() {
+	case "field_access":
+		sourceView, erasure, known = directOwnerFieldAccessView(node, ctx, source)
+	case "method_invocation":
+		sourceView, erasure, known = directOwnerMethodResultView(node, ctx, source)
+	}
+	if !known {
+		return receiver
+	}
+	_, wrapper := builtinJavaWrapperPrimitive(sourceView, ctx)
+	if !wrapper && (stripJavaQualifier(sourceView) != "String" || resolveClassScopeByQualifiedName(ctx, sourceView) != nil) {
+		return receiver
+	}
+	return projectDirectOwnerErasedView(receiver, sourceView, erasure, ctx)
+}
+
 // narrowDirectOwnerFieldResultReceiver inserts the checkcast javac performs
 // when a field whose declaration type is a class-owned type parameter becomes
 // the receiver of a member selection. The complete selector is evaluated as
@@ -126,9 +156,7 @@ func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (s
 				rawTypeParameterErasure(parameter, ctx.currentClass.TypeParameters),
 				ctx.currentClass,
 			)
-			base, _ := parseJavaTypeString(erasure)
-			erasureScope := resolveClassScopeByQualifiedName(ctx, base)
-			if erasureScope == nil || !erasureScope.IsInterface {
+			if !javaTypeHasInterfaceRepresentation(erasure, ctx) {
 				return "", false
 			}
 			return erasure, true

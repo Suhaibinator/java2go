@@ -129,7 +129,7 @@ public class App {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "if s, ok := any(o).(string); ok {") {
+	if !strings.Contains(flat, "if s, ok := stdjava.ObjectPattern[string](o, stdjava.StringTypeID); ok {") {
 		t.Fatalf("expected instanceof pattern to lower to a type-assertion if-init, got:\n%s", out)
 	}
 }

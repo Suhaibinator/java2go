@@ -109,7 +109,7 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	if !strings.Contains(parseTaskOut, "common.NewMapperFuncAdapterJava2goExecution[string, string]") {
 		t.Fatalf("expected package-qualified lambda wrapper call in ParseTask:\n%s", outputs["com/acme/domain/ParseTask.go"])
 	}
-	if !strings.Contains(parseTaskOut, "any(normalized).(string)") {
+	if !strings.Contains(parseTaskOut, "stdjava.ObjectInstanceOf(normalized, stdjava.StringTypeID)") {
 		t.Fatalf("expected instanceof conversion in ParseTask:\n%s", outputs["com/acme/domain/ParseTask.go"])
 	}
 	if !strings.Contains(parseTaskOut, "stdjava.StringLength(stdjava.StringRequireNonNull(normalized))") {
@@ -123,7 +123,7 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	if !strings.Contains(pipelineOut, "func Execute(task domain.TaskI, mapper common.Mapper[string, string]) int32") {
 		t.Fatalf("expected abstract-class interface parameter in Pipeline:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
-	if !strings.Contains(pipelineOut, "any(task).(*domain.ParseTask)") {
+	if !strings.Contains(pipelineOut, `stdjava.ObjectInstanceOf(task, stdjava.TypeID("com.acme.domain.ParseTask"))`) {
 		t.Fatalf("expected package-qualified class instanceof conversion in Pipeline:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
 	if !strings.Contains(pipelineOut, "stdjava.StringLength(stdjava.StringRequireNonNull(out))") {

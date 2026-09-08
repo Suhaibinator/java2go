@@ -142,7 +142,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "total := first + second + third") {
 		t.Fatalf("expected ConcreteThing.Combine to declare total, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return total + cg.ComputeJava2goExecution(__java2goExecution, total, float64(cg.Java2goBaseThingSelf.ValueJava2goExecution(__java2goExecution)))") {
+	if !strings.Contains(flat, "return stdjava.EvaluationValue[float64](total) + cg.ComputeJava2goExecution(__java2goExecution, stdjava.EvaluationValue[float64](total), float64(cg.Java2goBaseThingSelf.ValueJava2goExecution(__java2goExecution)))") {
 		t.Fatalf("expected ConcreteThing.Combine to call compute/value, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "\"override-\"") {

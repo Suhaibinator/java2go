@@ -957,10 +957,7 @@ func buildInheritedInterfaceDefaultForwarder(
 	params := &ast.FieldList{}
 	args := []ast.Expr{}
 	for index, param := range def.Parameters {
-		paramType := mapType(param.OriginalType)
-		if executionParameterIsVariadic(def, index) {
-			paramType = &ast.Ellipsis{Elt: paramType}
-		}
+		paramType := mapType(definitionParameterJavaSignatureType(def, index))
 		params.List = append(params.List, &ast.Field{
 			Names: []*ast.Ident{{Name: param.Name}},
 			Type:  paramType,
@@ -2094,14 +2091,28 @@ func constructorInvocationFromBody(body *sitter.Node, source []byte, ctx Ctx) *e
 			}
 		}
 	}
-	if resolution := findBestConstructor(invocation.targetScope, invocation.arguments, ctx, source); resolution != nil {
+	resolution := findBestConstructor(invocation.targetScope, invocation.arguments, ctx, source)
+	if resolution != nil {
 		invocation.target = resolution.def
 	}
-	invocation.parsedArgs = parseArgumentListWithExpectedTypes(
+	var classTypeArguments []string
+	if ctx.currentClass != nil {
+		classTypeArguments = ctx.currentClass.GoTypeParameterNames()
+		if invocation.kind == explicitSuperConstructorInvocation {
+			_, classTypeArguments = parseJavaTypeString(ctx.currentClass.Superclass)
+			classTypeArguments = classTypeArgumentsWithRawFallback(invocation.targetScope, classTypeArguments, ctx.currentClass)
+		}
+	}
+	expectedTypes := instantiatedConstructorParameterTypes(invocation.target, invocation.targetScope, classTypeArguments,
+		methodInvocationTypeArgumentJavaTypes(invocation.target, invocation.node, ctx, source))
+	invocation.parsedArgs, _ = parseResolvedInvocationArguments(
+		resolution,
 		invocation.arguments,
 		source,
 		ctx,
-		definitionParameterOriginalTypes(invocation.target),
+		expectedTypes,
+		classTypeArguments,
+		invocation.node,
 	)
 	return invocation
 }
@@ -2149,16 +2160,15 @@ func emptyConstructorVarargsArgument(
 	}
 
 	methodTypeArguments := methodInvocationTypeArgumentJavaTypes(target, invocationNode, ctx, source)
-	elementType := instantiatedVarargsElementType(
+	elementJavaType := instantiatedVarargsElementJavaType(
 		&methodResolution{def: target, owner: owner},
 		classTypeArguments,
 		methodTypeArguments,
-		ctx,
 	)
-	if elementType == nil {
+	if elementJavaType == "" {
 		return nil, false
 	}
-	return stdjavaGenericCall(ctx, "ArrayLiteral", []ast.Expr{elementType}, nil), true
+	return generatedVarargsArrayLiteral(elementJavaType, nil, ctx), true
 }
 
 func explicitThisConstructorAssignment(
@@ -2209,18 +2219,6 @@ func explicitThisConstructorAssignment(
 	args = append(args, leadingArgs...)
 	args = append(args, invocation.parsedArgs...)
 	call := &ast.CallExpr{Fun: constructor, Args: args}
-	if emptyVarargs, ok := emptyConstructorVarargsArgument(
-		invocation.target,
-		ctx.currentClass,
-		invocation.arguments,
-		invocation.node,
-		ctx.currentClass.GoTypeParameterNames(),
-		source,
-		ctx,
-	); ok {
-		call.Args = append(call.Args, emptyVarargs)
-		call.Ellipsis = token.Pos(1)
-	}
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.Ident{Name: receiverName}},
 		Tok: token.DEFINE,
@@ -2300,18 +2298,6 @@ func explicitSuperConstructorAssignment(
 		callArgs = append([]ast.Expr{execution}, callArgs...)
 	}
 	call := &ast.CallExpr{Fun: constructor, Args: callArgs}
-	if emptyVarargs, ok := emptyConstructorVarargsArgument(
-		invocation.target,
-		parent,
-		invocation.arguments,
-		invocation.node,
-		constructorClassTypeArgs,
-		source,
-		ctx,
-	); ok {
-		call.Args = append(call.Args, emptyVarargs)
-		call.Ellipsis = token.Pos(1)
-	}
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.SelectorExpr{
 			X:   &ast.Ident{Name: receiverName},
@@ -2365,11 +2351,16 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 		resolveJavaPackageForType(ctx, base, parent),
 		ctx,
 	)
-	if len(typeArgs) > 0 {
-		goTypeArgs := make([]ast.Expr, 0, len(typeArgs))
-		for _, typeArg := range typeArgs {
-			goTypeArgs = append(goTypeArgs, javaTypeStringToGoTypeExpr(typeArg, scope.TypeParameterNames(), ctx))
-		}
+	goTypeArgs := make([]ast.Expr, 0, len(typeArgs))
+	for _, typeArg := range typeArgs {
+		goTypeArgs = append(goTypeArgs, javaTypeStringToGoTypeExpr(typeArg, scope.TypeParameterNames(), ctx))
+	}
+	// Generic constructor-only parameters cannot be inferred through the erased
+	// ReferenceArray ABI. Java's implicit empty invocation selects their bounds.
+	for _, typeArg := range methodInvocationTypeArgumentJavaTypes(varargsTarget, nil, ctx, nil) {
+		goTypeArgs = append(goTypeArgs, javaTypeStringToGoTypeExpr(typeArg, scope.TypeParameterNames(), ctx))
+	}
+	if len(goTypeArgs) > 0 {
 		constructor = applyTypeArguments(constructor, goTypeArgs)
 	}
 	call := &ast.CallExpr{Fun: constructor, Args: args}
@@ -2383,7 +2374,6 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 		ctx,
 	); ok {
 		call.Args = append(call.Args, emptyVarargs)
-		call.Ellipsis = token.Pos(1)
 	}
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.SelectorExpr{

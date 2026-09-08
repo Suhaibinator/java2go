@@ -58,12 +58,12 @@ func TestStreamToMapMergingOrder(t *testing.T) {
 
 func TestStreamGroupingByKeepsEncounterOrderWithinGroups(t *testing.T) {
 	grouped := StreamGroupingBy(NewStream("fig", "pear", "kiwi"), func(s string) int32 { return int32(len(s)) })
-	four := grouped.Get(4)
+	four := grouped.Get(int32(4))
 	if four.Size() != 2 || four.Get(0) != "pear" || four.Get(1) != "kiwi" {
 		t.Fatalf("group = %v, want [pear kiwi] in encounter order", four.Slice())
 	}
-	if grouped.Get(3).Size() != 1 {
-		t.Fatalf("group of length 3 = %v, want one element", grouped.Get(3).Slice())
+	if grouped.Get(int32(3)).Size() != 1 {
+		t.Fatalf("group of length 3 = %v, want one element", grouped.Get(int32(3)).Slice())
 	}
 }
 
@@ -73,10 +73,10 @@ func TestStreamGroupingByDownstream(t *testing.T) {
 		func(s string) int32 { return int32(len(s)) },
 		func(group Stream[string]) int64 { return group.Count() },
 	)
-	if got := counts.Get(4); got != 2 {
+	if got := counts.Get(int32(4)); got != 2 {
 		t.Fatalf("count for length 4 = %d, want 2", got)
 	}
-	if got := counts.Get(3); got != 1 {
+	if got := counts.Get(int32(3)); got != 1 {
 		t.Fatalf("count for length 3 = %d, want 1", got)
 	}
 }
@@ -88,13 +88,13 @@ func TestStreamPartitioningByAlwaysHasBothSides(t *testing.T) {
 	if partitioned.Size() != 2 {
 		t.Fatalf("partition size = %d, want 2", partitioned.Size())
 	}
-	if partitioned.Get(true).Size() != 0 {
-		t.Fatalf("true side = %v, want empty", partitioned.Get(true).Slice())
+	if partitioned.Get(BoxBoolean(true)).Size() != 0 {
+		t.Fatalf("true side = %v, want empty", partitioned.Get(BoxBoolean(true)).Slice())
 	}
-	if partitioned.Get(false).Size() != 2 {
-		t.Fatalf("false side = %v, want both elements", partitioned.Get(false).Slice())
+	if partitioned.Get(BoxBoolean(false)).Size() != 2 {
+		t.Fatalf("false side = %v, want both elements", partitioned.Get(BoxBoolean(false)).Slice())
 	}
-	if keys := partitioned.KeySet(); len(keys) != 2 || keys[0] != false {
+	if keys := partitioned.KeySet(); len(keys) != 2 || keys[0] != BoxBoolean(false) {
 		t.Fatalf("partition keys = %v, want false first", keys)
 	}
 }
@@ -115,8 +115,19 @@ func TestStreamSummingAndAveraging(t *testing.T) {
 }
 
 func TestStreamCounting(t *testing.T) {
-	if got := StreamCounting(NewStream("a", "b")); got != 2 {
-		t.Fatalf("StreamCounting = %d, want 2", got)
+	if got := StreamCounting(NewStream("a", "b")); got != BoxLong(2) {
+		t.Fatalf("StreamCounting = %v, want cached Long(2)", got)
+	}
+}
+
+func TestStreamPartitioningByDownstreamBoxedCount(t *testing.T) {
+	partitioned := StreamPartitioningByDownstream(NewStream("a", "bb", "ccc"),
+		func(value string) bool { return len(value) > 1 }, StreamCounting[string])
+	if got := partitioned.Get(NewBoolean(true)); got != BoxLong(2) {
+		t.Fatalf("true partition count = %v, want cached Long(2)", got)
+	}
+	if got := partitioned.Get(NewBoolean(false)); got != BoxLong(1) {
+		t.Fatalf("false partition count = %v, want cached Long(1)", got)
 	}
 }
 

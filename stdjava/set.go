@@ -11,42 +11,44 @@ import "strings"
 // Set is a generic set matching the subset of java.util.Set used by transpiled
 // code. It is a pointer type so mutations are visible to all holders.
 type Set[T comparable] struct {
-	backing map[T]struct{}
+	backing map[any]struct{}
 	// order preserves insertion order for deterministic iteration.
 	order []T
 }
 
 // NewSet returns an empty Set, matching `new HashSet<>()` / `new TreeSet<>()`.
 func NewSet[T comparable]() *Set[T] {
-	return &Set[T]{backing: make(map[T]struct{})}
+	return &Set[T]{backing: make(map[any]struct{})}
 }
 
 // Add inserts element and returns true if it was not already present, matching
 // Set.add.
 func (s *Set[T]) Add(element T) bool {
-	if _, exists := s.backing[element]; exists {
+	key := collectionKey(element)
+	if _, exists := s.backing[key]; exists {
 		return false
 	}
-	s.backing[element] = struct{}{}
+	s.backing[key] = struct{}{}
 	s.order = append(s.order, element)
 	return true
 }
 
 // Contains reports whether element is present, matching Set.contains.
-func (s *Set[T]) Contains(element T) bool {
-	_, ok := s.backing[element]
+func (s *Set[T]) Contains(element any) bool {
+	_, ok := s.backing[collectionKey(element)]
 	return ok
 }
 
 // Remove deletes element and returns true if it was present, matching
 // Set.remove.
-func (s *Set[T]) Remove(element T) bool {
-	if _, ok := s.backing[element]; !ok {
+func (s *Set[T]) Remove(element any) bool {
+	key := collectionKey(element)
+	if _, ok := s.backing[key]; !ok {
 		return false
 	}
-	delete(s.backing, element)
+	delete(s.backing, key)
 	for i, e := range s.order {
-		if e == element {
+		if collectionKey(e) == key {
 			s.order = append(s.order[:i], s.order[i+1:]...)
 			break
 		}
@@ -66,7 +68,7 @@ func (s *Set[T]) IsEmpty() bool {
 
 // Clear removes all elements, matching Set.clear.
 func (s *Set[T]) Clear() {
-	s.backing = make(map[T]struct{})
+	s.backing = make(map[any]struct{})
 	s.order = nil
 }
 

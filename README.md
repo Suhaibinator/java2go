@@ -15,12 +15,12 @@ It does this through several steps:
 
 Note: Java2go is still in development, and as such, please expect many bugs
 
-Currently, the following features are not implemented (or only partially implemented):
-
-* [x] Abstract classes (abstract methods in enums are supported)
-* [ ] Decorators / annotations (beyond passthrough as comments and optional exclusion)
-* [ ] Anything that checks `instanceof`
-* [ ] Types for lambda expressions
+Java2go supports a growing subset of Java 21, including abstract classes,
+nominal casts and `instanceof`, and target-typed lambdas. It does not yet support
+the complete Java language or standard library. Remaining work includes
+annotations beyond comments/exclusion, general reflection and serialization,
+full Unicode String fidelity, and remaining generic/standard-library edge cases.
+See [ROADMAP.md](ROADMAP.md) and the application parity corpus for coverage.
 
 ## Enum support
 
@@ -42,7 +42,7 @@ Java2go provides comprehensive enum support, converting Java enums to Go structs
 Java2go supports Go 1.18+ generics for many common Java patterns:
 
 * Generic classes (e.g. `class Box<T>`) become parameterized Go types (e.g. `type Box[T any] struct { ... }`).
-* Java type parameter bounds (e.g. `<T extends Number & Comparable<T>>`) are converted into Go constraint expressions on structs, functions, and generated helpers/constructors.
+* Java type parameter bounds (e.g. `<T extends Number & Comparable<T>>`) are converted into Go constraint expressions on structs, functions, and generated helpers/constructors. `Number` uses the `stdjava.JavaNumber` accessor interface. Built-in `Comparable<T>` has an erased Go representation with Java type metadata retained for checked dispatch.
 * Generic constructors and `new` calls support explicit type arguments and the diamond operator (`<>`) when the expected type is known from a local variable declaration.
 * Nested generic types are handled (e.g. `Map<String, List<Integer>>`).
 * Static generic methods are emitted as generic Go functions.
@@ -53,6 +53,33 @@ Current limitations:
 * Complex bound combinations or wildcard/variance semantics may still be approximated when translated into Go constraints.
 * Wildcards and variance (`?`, `? extends`, `? super`) are approximated (often as `any`).
 * Generic interfaces are emitted as parameterized Go interfaces, including constraints derived from Java bounds.
+
+## Boxed values and generated Go compatibility
+
+All eight Java wrappers (`Boolean`, `Byte`, `Short`, `Character`, `Integer`,
+`Long`, `Float`, and `Double`) use nullable, immutable `*stdjava` objects.
+Primitive Java values remain Go scalars. Boxing preserves the supported Java
+cache identities; explicit wrapper constructors allocate fresh objects.
+Unboxing null throws `NullPointerException`. Wrapper reference comparisons,
+value equality, casts, numeric accessors, and collection keys keep their
+distinct Java semantics, including NaNs and signed zero.
+
+For example, Java `List<Integer>` becomes `*stdjava.List[*stdjava.Integer]`.
+Handwritten Go callers can use `stdjava.BoxInteger(42)` and
+`stdjava.UnboxInteger(value)`. Primitive streams and primitive Optionals keep
+scalar elements; reference streams and generic Optionals use wrapper objects.
+
+Generated Java varargs parameters use the same array wrappers as ordinary array
+parameters: `int...` becomes `*stdjava.PrimitiveArray[int32]`, and reference
+varargs use `*stdjava.ReferenceArray`. Calls with an existing array preserve its
+identity and nullness; expanded calls allocate a fresh array with runtime
+component checks.
+
+This changes the generated Go API. Regenerate the complete output tree and use
+the matching `stdjava` runtime revision, then adapt handwritten Go callers to
+the wrapper and array APIs. There is no legacy scalar-wrapper mode. Arbitrary
+user-defined collection `equals`/`hashCode`, general reflection, serialization,
+and unrelated library expansion remain separate work.
 
 ## Usage
 

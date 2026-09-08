@@ -103,16 +103,18 @@ import (
     "io"
     "os"
     "testing"
+
+    "github.com/NickyBoy89/java2go/stdjava"
 )
 
 func TestTernaryTypesAndExactOutput(t *testing.T) {
     var _ int64 = Primitive(true, int32(9))
     var _ int8 = InferredNarrow(true)
-    if _, ok := ObjectChoice(true).(int32); !ok {
-        t.Fatalf("ObjectChoice(true) has type %T, want Java Integer/int32", ObjectChoice(true))
+    if _, ok := ObjectChoice(true).(*stdjava.Integer); !ok {
+        t.Fatalf("ObjectChoice(true) has type %T, want Java Integer object", ObjectChoice(true))
     }
-    if _, ok := InferredNullablePrimitive(false).(int32); !ok {
-        t.Fatalf("InferredNullablePrimitive(false) has type %T, want Java Integer/int32", InferredNullablePrimitive(false))
+    if _, ok := InferredNullablePrimitive(false).(*stdjava.Integer); !ok {
+        t.Fatalf("InferredNullablePrimitive(false) has type %T, want Java Integer object", InferredNullablePrimitive(false))
     }
 
     original := os.Stdout
@@ -206,8 +208,8 @@ public class NullableTernaryLocalProgram {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if got := strings.Count(out, "var value any"); got < 3 {
-		t.Fatalf("nullable value-backed ternary locals using interface storage = %d, want at least 3:\n%s", got, out)
+	if got := strings.Count(out, "var value *stdjava.Integer"); got != 2 {
+		t.Fatalf("nullable wrapper locals using object storage = %d, want 2:\n%s", got, out)
 	}
 	if !strings.Contains(out, "stdjava.StringRequireNonNull(value)") {
 		t.Fatalf("nullable String receiver was not normalized before length/concat:\n%s", out)
@@ -216,7 +218,10 @@ public class NullableTernaryLocalProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestNullableTernaryLocals(t *testing.T) {
     stringCases := []struct {
@@ -244,10 +249,10 @@ func TestNullableTernaryLocals(t *testing.T) {
             t.Fatalf("BoxedCase(%v) = %q, want %q", test.choose, got, test.want)
         }
     }
-    if got := BoxedReturn(true); got != 13 {
+    if got := stdjava.UnboxInteger(BoxedReturn(true)); got != 13 {
         t.Fatalf("BoxedReturn(true) = %d, want 13", got)
     }
-    if got := BoxedReturn(false); got != 7 {
+    if got := stdjava.UnboxInteger(BoxedReturn(false)); got != 7 {
         t.Fatalf("BoxedReturn(false) = %d, want 7", got)
     }
 }

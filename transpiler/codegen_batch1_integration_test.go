@@ -159,8 +159,8 @@ public class A {
 	if !strings.Contains(flat, `stdjava.ReferenceArrayLiteralOf[string](stdjava.StringTypeID, "x", "y")`) {
 		t.Errorf("expected a String[] literal with the exact Java String descriptor, got:\n%s", out)
 	}
-	if !strings.Contains(flat, `stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID, int32(1), "z")`) {
-		t.Errorf("expected an Object[] literal with its descriptor and Java Integer-width boxing, got:\n%s", out)
+	if !strings.Contains(flat, `stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID, stdjava.BoxInteger(int32(1)), "z")`) {
+		t.Errorf("expected an Object[] literal with its descriptor and boxed Integer object, got:\n%s", out)
 	}
 }
 
@@ -214,8 +214,8 @@ public class Sh {
 	if !strings.Contains(out, "stdjava.UnsignedRightShift(") {
 		t.Errorf("expected stdjava.UnsignedRightShift for >>>, got:\n%s", out)
 	}
-	if !strings.Contains(out, "1 << n") {
-		t.Errorf("expected variable shift `1 << n` to be left as-is, got:\n%s", out)
+	if !strings.Contains(out, "1 << (n & 31)") {
+		t.Errorf("expected variable shift count to retain Java's five-bit mask, got:\n%s", out)
 	}
 }
 

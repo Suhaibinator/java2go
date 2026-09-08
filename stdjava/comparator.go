@@ -27,17 +27,17 @@ type Comparator[T any] func(a, b T) int32
 
 // NaturalOrder returns the comparator for a type's own ordering, matching
 // Comparator.naturalOrder().
-func NaturalOrder[T cmp.Ordered]() Comparator[T] {
+func NaturalOrder[T any](execution ...*Execution) Comparator[T] {
 	return func(a, b T) int32 {
-		return javaOrderedCompare(a, b)
+		return javaCompareValuesExecution(optionalComparisonExecution(execution), a, b)
 	}
 }
 
 // ReverseOrder returns the reverse of the natural ordering, matching
 // Comparator.reverseOrder() and Collections.reverseOrder().
-func ReverseOrder[T cmp.Ordered]() Comparator[T] {
+func ReverseOrder[T any](execution ...*Execution) Comparator[T] {
 	return func(a, b T) int32 {
-		return javaOrderedCompare(b, a)
+		return javaCompareValuesExecution(optionalComparisonExecution(execution), b, a)
 	}
 }
 
@@ -45,9 +45,9 @@ func ReverseOrder[T cmp.Ordered]() Comparator[T] {
 // Comparator.comparing / comparingInt / comparingLong / comparingDouble. The
 // key type is a separate type parameter, so this is a free function rather than
 // a method on Comparator.
-func ComparatorComparing[T any, K cmp.Ordered](key func(T) K) Comparator[T] {
+func ComparatorComparing[T any, K any](key func(T) K, execution ...*Execution) Comparator[T] {
 	return func(a, b T) int32 {
-		return javaOrderedCompare(key(a), key(b))
+		return javaCompareValuesExecution(optionalComparisonExecution(execution), key(a), key(b))
 	}
 }
 
@@ -78,12 +78,12 @@ func (c Comparator[T]) Compare(a, b T) int32 {
 // ComparatorThenComparingKey is Comparator.thenComparing(Function): it falls
 // back to an extracted sort key when the receiver reports equality. The key type
 // is a separate type parameter, so this cannot be a method.
-func ComparatorThenComparingKey[T any, K cmp.Ordered](c Comparator[T], key func(T) K) Comparator[T] {
+func ComparatorThenComparingKey[T any, K any](c Comparator[T], key func(T) K, execution ...*Execution) Comparator[T] {
 	return func(a, b T) int32 {
 		if result := c(a, b); result != 0 {
 			return result
 		}
-		return javaOrderedCompare(key(a), key(b))
+		return javaCompareValuesExecution(optionalComparisonExecution(execution), key(a), key(b))
 	}
 }
 
@@ -92,12 +92,12 @@ func ComparatorThenComparingKey[T any, K cmp.Ordered](c Comparator[T], key func(
 // for both, which is observable whenever the comparator examines only part of
 // the element, so this uses a stable sort rather than the unstable sort that
 // backs the natural-ordering path.
-func SortWith[T any](l *List[T], c Comparator[T]) {
+func SortWith[T any](l *List[T], c Comparator[T], execution ...*Execution) {
 	if l == nil {
 		panic(NewNullPointerException("Collections.sort on null"))
 	}
 	if c == nil {
-		SortSliceStableNatural(l.elements)
+		SortSliceStableNatural(l.elements, execution...)
 		return
 	}
 	sort.SliceStable(l.elements, func(i, j int) bool {
@@ -108,9 +108,9 @@ func SortWith[T any](l *List[T], c Comparator[T]) {
 // SortSliceWith sorts a slice with an explicit comparator, matching
 // Arrays.sort(array, cmp). Like SortWith it is stable, as Java's reference-array
 // sort is.
-func SortSliceWith[T any](elements []T, c Comparator[T]) {
+func SortSliceWith[T any](elements []T, c Comparator[T], execution ...*Execution) {
 	if c == nil {
-		SortSliceStableNatural(elements)
+		SortSliceStableNatural(elements, execution...)
 		return
 	}
 	sort.SliceStable(elements, func(i, j int) bool {
@@ -121,22 +121,29 @@ func SortSliceWith[T any](elements []T, c Comparator[T]) {
 // SortSliceStableNatural stably sorts a slice by natural ordering, used when a
 // comparator-taking Java overload is passed an explicit null comparator (which
 // Java defines as "use natural ordering").
-func SortSliceStableNatural[T any](elements []T) {
+func SortSliceStableNatural[T any](elements []T, execution ...*Execution) {
 	sort.SliceStable(elements, func(i, j int) bool {
-		return javaCompareValues(elements[i], elements[j]) < 0
+		return javaCompareValuesExecution(optionalComparisonExecution(execution), elements[i], elements[j]) < 0
 	})
+}
+
+func optionalComparisonExecution(executions []*Execution) *Execution {
+	if len(executions) != 0 {
+		return executions[0]
+	}
+	return nil
 }
 
 // MaxWith returns the largest element under an explicit comparator, matching
 // Collections.max(coll, cmp). Java returns the first maximal element, so a later
 // element replaces the incumbent only when it compares strictly greater.
-func MaxWith[T any](l *List[T], c Comparator[T]) T {
+func MaxWith[T any](l *List[T], c Comparator[T], execution ...*Execution) T {
 	if l == nil || len(l.elements) == 0 {
 		panic(NewNoSuchElementException("Collections.max on an empty collection"))
 	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if compareWithNatural(c, e, best) > 0 {
+		if compareWithNatural(c, e, best, execution...) > 0 {
 			best = e
 		}
 	}
@@ -145,13 +152,13 @@ func MaxWith[T any](l *List[T], c Comparator[T]) T {
 
 // MinWith returns the smallest element under an explicit comparator, matching
 // Collections.min(coll, cmp). As with MaxWith, ties keep the earlier element.
-func MinWith[T any](l *List[T], c Comparator[T]) T {
+func MinWith[T any](l *List[T], c Comparator[T], execution ...*Execution) T {
 	if l == nil || len(l.elements) == 0 {
 		panic(NewNoSuchElementException("Collections.min on an empty collection"))
 	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if compareWithNatural(c, e, best) < 0 {
+		if compareWithNatural(c, e, best, execution...) < 0 {
 			best = e
 		}
 	}
@@ -166,7 +173,7 @@ func MinWith[T any](l *List[T], c Comparator[T]) T {
 //
 // The element type comes from the comparator rather than the array, because a
 // ReferenceArray erases its elements to `any`.
-func SortArrayWith[T any](array any, c Comparator[T]) {
+func SortArrayWith[T any](array any, c Comparator[T], execution ...*Execution) {
 	if array == nil {
 		panic(NewNullPointerException("Arrays.sort on null"))
 	}
@@ -178,7 +185,7 @@ func SortArrayWith[T any](array any, c Comparator[T]) {
 		panic(NewNullPointerException("Arrays.sort on null"))
 	}
 	if c == nil {
-		SortSliceStableNatural(values.elements)
+		SortSliceStableNatural(values.elements, execution...)
 		return
 	}
 	sort.SliceStable(values.elements, func(i, j int) bool {
@@ -194,9 +201,9 @@ func SortArrayWith[T any](array any, c Comparator[T]) {
 // compareWithNatural applies a comparator, falling back to natural ordering
 // when it is nil. Java defines a null comparator as natural ordering, which
 // SortWith and SortSliceWith already honour.
-func compareWithNatural[T any](c Comparator[T], left, right T) int32 {
+func compareWithNatural[T any](c Comparator[T], left, right T, execution ...*Execution) int32 {
 	if c == nil {
-		return javaCompareValues(left, right)
+		return javaCompareValuesExecution(optionalComparisonExecution(execution), left, right)
 	}
 	return c(left, right)
 }
@@ -210,8 +217,31 @@ func compareWithNatural[T any](c Comparator[T], left, right T) int32 {
 // generates `CompareTo(other *Foo) int32` — the parameter is the concrete type,
 // not `any`, so no single Go interface can capture every such method.
 func javaCompareValues(left, right any) int32 {
+	return javaCompareValuesExecution(nil, left, right)
+}
+
+// ComparableCompareTo invokes an erased java.lang.Comparable receiver with
+// Java's nominal interface check, rather than Go's structural method matching.
+func ComparableCompareTo(left, right any) int32 {
+	return ComparableCompareToExecution(NewExecution(), left, right)
+}
+
+// ComparableCompareToExecution preserves the caller's logical Java execution
+// when a generated compareTo method is called through an erased interface.
+func ComparableCompareToExecution(execution *Execution, left, right any) int32 {
+	ReferenceRequireNonNull(left)
+	actual, known := ObjectDynamicType(left)
+	if !known || !JavaTypeAssignable(actual, ComparableTypeID) {
+		panic(NewClassCastException("value does not implement java.lang.Comparable"))
+	}
+	return javaCompareValuesExecution(execution, left, right)
+}
+
+func javaCompareValuesExecution(execution *Execution, left, right any) int32 {
+	ReferenceRequireNonNull(left)
 	switch left := left.(type) {
 	case string:
+		ReferenceRequireNonNull(right)
 		if right, ok := right.(string); ok {
 			return int32(cmp.Compare(left, right))
 		}
@@ -251,7 +281,7 @@ func javaCompareValues(left, right any) int32 {
 			}
 		}
 	}
-	if result, ok := compareViaCompareTo(left, right); ok {
+	if result, ok := compareViaCompareToExecution(execution, left, right); ok {
 		return result
 	}
 	// A named type over a Go ordered kind (or an unsigned width the switch above
@@ -285,43 +315,85 @@ func compareViaReflectOrdering(left, right any) (int32, bool) {
 	return 0, false
 }
 
-// compareViaCompareTo invokes a generated `CompareTo` method on left, passing
+// compareViaCompareToExecution invokes a generated `CompareTo` method on left, passing
 // right, and reports whether such a method was found and applicable.
-func compareViaCompareTo(left, right any) (int32, bool) {
-	if left == nil {
-		return 0, false
-	}
+func compareViaCompareToExecution(execution *Execution, left, right any) (int32, bool) {
+	ReferenceRequireNonNull(left)
 	receiver := reflect.ValueOf(left)
-	if !receiver.IsValid() {
-		return 0, false
-	}
-	if (receiver.Kind() == reflect.Pointer || receiver.Kind() == reflect.Interface) && receiver.IsNil() {
-		panic(NewNullPointerException("compareTo on null"))
+	executionType := reflect.TypeOf((*Execution)(nil))
+	typeOfReceiver := receiver.Type()
+	for index := 0; index < typeOfReceiver.NumMethod(); index++ {
+		candidate := typeOfReceiver.Method(index)
+		if !isCollisionSafeExecutionMethodName(candidate.Name, "CompareToJava2goExecution") {
+			continue
+		}
+		method := receiver.Method(index)
+		methodType := method.Type()
+		if methodType.NumIn() != 2 || methodType.In(0) != executionType || !compareToResultType(methodType) {
+			continue
+		}
+		argument, ok := compareToArgument(right, methodType.In(1))
+		if !ok {
+			return 0, false
+		}
+		if execution == nil {
+			execution = NewExecution()
+		}
+		return int32(method.Call([]reflect.Value{reflect.ValueOf(execution), argument})[0].Int()), true
 	}
 	method := receiver.MethodByName("CompareTo")
 	if !method.IsValid() {
 		return 0, false
 	}
 	methodType := method.Type()
-	if methodType.NumIn() != 1 || methodType.NumOut() != 1 {
+	if methodType.NumIn() != 1 || !compareToResultType(methodType) {
 		return 0, false
 	}
-	switch methodType.Out(0).Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-	default:
-		return 0, false
-	}
-	argument := reflect.ValueOf(right)
-	if !argument.IsValid() {
-		if methodType.In(0).Kind() != reflect.Pointer && methodType.In(0).Kind() != reflect.Interface {
-			return 0, false
-		}
-		argument = reflect.Zero(methodType.In(0))
-	}
-	if !argument.Type().AssignableTo(methodType.In(0)) {
+	argument, ok := compareToArgument(right, methodType.In(0))
+	if !ok {
 		return 0, false
 	}
 	return int32(method.Call([]reflect.Value{argument})[0].Int()), true
+}
+
+func compareToResultType(methodType reflect.Type) bool {
+	if methodType.NumOut() != 1 {
+		return false
+	}
+	switch methodType.Out(0).Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	default:
+		return false
+	}
+}
+
+func compareToArgument(right any, target reflect.Type) (reflect.Value, bool) {
+	if javaReferenceIsNull(right) {
+		switch target.Kind() {
+		case reflect.Pointer, reflect.Interface:
+			return reflect.Zero(target), true
+		default:
+			return reflect.Value{}, false
+		}
+	}
+	argument := reflect.ValueOf(right)
+	if argument.Type().AssignableTo(target) {
+		return argument, true
+	}
+	// An erased object may hold the most-derived pointer while compareTo takes
+	// one of its generated superclass views. Preserve that object's identity.
+	if carrier, ok := right.(JavaObjectInfoCarrier); ok {
+		if info := carrier.JavaObjectInfo(); info != nil {
+			for _, candidate := range registeredJavaViewCandidates(info.DynamicType()) {
+				view := reflect.ValueOf(info.resolveView(candidate))
+				if view.IsValid() && view.Type().AssignableTo(target) {
+					return view, true
+				}
+			}
+		}
+	}
+	return reflect.Value{}, false
 }
 
 // javaDoubleCompare implements java.lang.Double.compare, which is a total order
@@ -387,19 +459,6 @@ func canonicalNaN32(value float32) float32 {
 		return float32(math.NaN())
 	}
 	return value
-}
-
-// javaOrderedCompare compares two values of a Go-ordered type using Java's
-// natural ordering. It exists because Go's cmp.Compare is not Java's ordering
-// for the floating-point types.
-func javaOrderedCompare[T cmp.Ordered](left, right T) int32 {
-	switch typed := any(left).(type) {
-	case float64:
-		return javaDoubleCompare(typed, any(right).(float64))
-	case float32:
-		return javaFloatCompare(typed, any(right).(float32))
-	}
-	return int32(cmp.Compare(left, right))
 }
 
 // DoubleCompare and FloatCompare are java.lang.Double.compare and

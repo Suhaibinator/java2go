@@ -78,6 +78,49 @@ func TestStreamOfArray(t *testing.T) {
 	}
 }
 
+func TestStreamOfWrapperArrayPreservesNullAndIdentity(t *testing.T) {
+	value := NewInteger(500)
+	reference := ReferenceArrayLiteral(IntegerTypeID, nil, value)
+	got := StreamOfArray[*Integer](reference).ToSlice()
+	if len(got) != 2 || got[0] != nil || got[1] != value {
+		t.Fatalf("StreamOfArray wrapper elements = %v, want null and original wrapper", got)
+	}
+}
+
+func TestPrimitiveStreamBoxing(t *testing.T) {
+	ints := IntStreamBoxed(NewStream[int32](127, 127, 128, 128)).ToSlice()
+	if ints[0] != BoxInteger(127) || ints[0] != ints[1] {
+		t.Fatal("IntStream.boxed did not use cached Integer objects")
+	}
+	if ints[2] == ints[3] || !ints[2].Equals(ints[3]) {
+		t.Fatal("IntStream.boxed did not allocate equal distinct uncached Integer objects")
+	}
+	longs := LongStreamBoxed(NewStream[int64](127, 127)).ToSlice()
+	if longs[0] != BoxLong(127) || longs[0] != longs[1] {
+		t.Fatal("LongStream.boxed did not use cached Long objects")
+	}
+	doubles := DoubleStreamBoxed(NewStream[float64](1, 1)).ToSlice()
+	if doubles[0] == doubles[1] || !doubles[0].Equals(doubles[1]) {
+		t.Fatal("DoubleStream.boxed did not allocate equal distinct Double objects")
+	}
+	if IntStreamBoxed(StreamEmpty[int32]()).Count() != 0 {
+		t.Fatal("boxing an empty stream produced elements")
+	}
+}
+
+func TestStreamLimitUsesJavaLongWidth(t *testing.T) {
+	stream := NewStream[int32](1, 2, 3)
+	if got := stream.Limit(1 << 40).Count(); got != 3 {
+		t.Fatalf("large long limit retained %d elements, want 3", got)
+	}
+	defer func() {
+		if recovered := recover(); !CaughtAs(recovered, "IllegalArgumentException") {
+			t.Fatalf("negative limit panic = %v, want IllegalArgumentException", recovered)
+		}
+	}()
+	stream.Limit(-1)
+}
+
 func TestStreamOfArrayRejectsNil(t *testing.T) {
 	defer func() {
 		if recovered := recover(); recovered == nil {

@@ -70,10 +70,9 @@ func TestFullProgram_WildcardsAndVarianceGenerics(t *testing.T) {
 	outputs := convertJavaProjectDir(t, root)
 	flat := normalizeSpaces(outputs["com/acme/generics/VarianceProgram.go"])
 
-	// A wildcard Number view is erased to any because JavaNumber is a Go
-	// constraint interface and cannot be used as an ordinary list element type.
-	if !strings.Contains(flat, "source *stdjava.List[any]") {
-		t.Fatalf("expected '? extends Number' to map to an erased readable element type:\n%s", outputs["com/acme/generics/VarianceProgram.go"])
+	// Number is a runtime interface shared by the numeric wrapper objects.
+	if !strings.Contains(flat, "source *stdjava.List[stdjava.JavaNumber]") {
+		t.Fatalf("expected '? extends Number' to retain Number's readable interface:\n%s", outputs["com/acme/generics/VarianceProgram.go"])
 	}
 	if !strings.Contains(flat, "sink *stdjava.List[any]") {
 		t.Fatalf("expected '? super Integer' to be approximated as any:\n%s", outputs["com/acme/generics/VarianceProgram.go"])

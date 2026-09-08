@@ -21,7 +21,7 @@ public class SourceProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.IntStreamRange(0, 5)")
 	assertContains(t, out, "stdjava.IntStreamRangeClosed(1, 5)")
-	assertContains(t, out, "stdjava.LongStreamRange(0, 5)")
+	assertContains(t, out, "stdjava.LongStreamRange(int64(0), int64(5))")
 	// The element type is spelled out so untyped constants do not infer a
 	// host-sized Go int.
 	assertContains(t, out, "stdjava.NewStream[int32](3, 1, 2)")
@@ -65,7 +65,7 @@ public class ConversionProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.StreamBoxed(")
+	assertContains(t, out, "stdjava.IntStreamBoxed(")
 	assertContains(t, out, "stdjava.StreamAsLongStream(")
 	assertContains(t, out, "stdjava.StreamAsDoubleStream(")
 	// mapToLong pins the closure to int64, so a body of type int32 needs the

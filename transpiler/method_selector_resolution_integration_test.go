@@ -72,10 +72,10 @@ public class Application {
 
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["example/app/Application.go"]
-	if !strings.Contains(out, "engine.AddRuleJava2goExecution(__java2goExecution, rules.NewTextRuleJava2goExecution(__java2goExecution))") {
+	if !strings.Contains(out, "stdjava.EvaluationValue(engine).AddRuleJava2goExecution(__java2goExecution, rules.NewTextRuleJava2goExecution(__java2goExecution))") {
 		t.Fatalf("expected a cross-package generic receiver call to use its resolved exported Go name, got:\n%s", out)
 	}
-	if strings.Contains(out, "engine.addRuleJava2goExecution(") {
+	if strings.Contains(out, ".addRuleJava2goExecution(") {
 		t.Fatalf("cross-package generic receiver call retained Java casing:\n%s", out)
 	}
 }

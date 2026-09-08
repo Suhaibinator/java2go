@@ -88,6 +88,14 @@ func registerNumericStreamSources() {
 		if !ok {
 			return "", false
 		}
+		switch component {
+		case "int":
+			return "IntStream", true
+		case "long":
+			return "LongStream", true
+		case "double":
+			return "DoubleStream", true
+		}
 		return "Stream<" + component + ">", true
 	})
 }
@@ -111,18 +119,19 @@ func registerNumericStreamConversions() {
 		registerInstanceIntrinsicResultType(t, "mapToLong", "LongStream")
 		registerInstanceIntrinsicResultType(t, "mapToDouble", "DoubleStream")
 
-		// boxed is an identity: a primitive stream is already a Stream of the
-		// boxed type's Go counterpart.
-		registerInstanceIntrinsic(t, "boxed", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-			if !expectArgs(args, 0) {
-				return nil
-			}
-			return stdjavaCall(ctx, "StreamBoxed", recv)
-		})
 		registerInstanceIntrinsic(t, "asLongStream", numericConversion("StreamAsLongStream"))
 		registerInstanceIntrinsic(t, "asDoubleStream", numericConversion("StreamAsDoubleStream"))
 		registerInstanceIntrinsicResultType(t, "asLongStream", "LongStream")
 		registerInstanceIntrinsicResultType(t, "asDoubleStream", "DoubleStream")
+	}
+	for streamType, wrapperType := range map[string]string{
+		"IntStream": "Integer", "LongStream": "Long", "DoubleStream": "Double",
+	} {
+		// Primitive map is an IntUnaryOperator/LongUnaryOperator/DoubleUnaryOperator,
+		// so its result remains primitive even though Stream.map boxes its result.
+		registerLambdaShape(streamType, "map", lambdaResultElement)
+		registerInstanceIntrinsic(streamType, "boxed", numericConversion(streamType+"Boxed"))
+		registerInstanceIntrinsicResultType(streamType, "boxed", "Stream<java.lang."+wrapperType+">")
 	}
 }
 
@@ -144,7 +153,7 @@ func registerNumericStreamTerminals() {
 	registerInstanceIntrinsicResultType("LongStream", "sum", "long")
 	registerInstanceIntrinsicResultType("DoubleStream", "sum", "double")
 	for _, t := range streamTypeNames {
-		registerInstanceIntrinsicResultType(t, "average", "Optional<Double>")
+		registerInstanceIntrinsicResultType(t, "average", "OptionalDouble")
 	}
 
 	// Without a result type a chained or var-typed summaryStatistics call cannot
@@ -239,6 +248,18 @@ func primitiveStreamEmptyTypeArgs(streamType string) typeArgDeriver {
 		}
 		return []ast.Expr{javaTypeStringToGoTypeExpr(element, inScopeTypeParameters(ctx), ctx)}
 	}
+}
+
+func primitiveStreamOptionalJavaType(streamType string) string {
+	switch streamType {
+	case "IntStream":
+		return "OptionalInt"
+	case "LongStream":
+		return "OptionalLong"
+	case "DoubleStream":
+		return "OptionalDouble"
+	}
+	return ""
 }
 
 // expectedElementTypeArgs reads Stream.empty()'s element type off the type the

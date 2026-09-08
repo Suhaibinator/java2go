@@ -532,9 +532,9 @@ func TestAffineArrayLoopFastPath_ConservativeFallbackShape(t *testing.T) {
 	out := normalizeSpaces(renderGoFileFromJava(t, affineLoopProgramSource))
 	for _, fragment := range []string{
 		"current = replacement return current.getJava2goExecution(__java2goExecution, 0, 0)",
-		"grid.setJava2goExecution(__java2goExecution, nextJava2goExecution(__java2goExecution), nextJava2goExecution(__java2goExecution), 1.0)",
-		"grid.setJava2goExecution(__java2goExecution, markIndexJava2goExecution(__java2goExecution, 1), markIndexJava2goExecution(__java2goExecution, 2), markValueJava2goExecution(__java2goExecution, 3))",
-		"return grid.getJava2goExecution(__java2goExecution, 1/func() int32 { AffineLoopProgramJava2goEnsureInitialized(__java2goExecution) return zero }(), 0)",
+		"stdjava.EvaluationValue(grid).setJava2goExecution(__java2goExecution, nextJava2goExecution(__java2goExecution), nextJava2goExecution(__java2goExecution), 1.0)",
+		"stdjava.EvaluationValue(grid).setJava2goExecution(__java2goExecution, markIndexJava2goExecution(__java2goExecution, 1), markIndexJava2goExecution(__java2goExecution, 2), markValueJava2goExecution(__java2goExecution, 3))",
+		"return stdjava.EvaluationValue(grid).getJava2goExecution(__java2goExecution, 1/func() int32 { AffineLoopProgramJava2goEnsureInitialized(__java2goExecution) return zero }(), 0)",
 		"for once := int32(0); once < 1; once++ { func(dst *float64)",
 		"(&total)(grid.getJava2goExecution(__java2goExecution, 0, 0)) continue __java2goLabel_",
 		"for once := int32(0); once < 1; once++ { total = grid.getJava2goExecution(__java2goExecution, 0, 0) break __java2goLabel_",
@@ -614,7 +614,7 @@ public class ScopedLoopProgram {
 	}
 	for _, ordinary := range []string{
 		"grid.getJava2goExecution(__java2goExecution, 0, 0)",
-		"grid.getJava2goExecution(__java2goExecution, func() int32 { ScopedLoopProgramJava2goEnsureInitialized(__java2goExecution) return index }(), 0)",
+		"stdjava.EvaluationValue(grid).getJava2goExecution(__java2goExecution, func() int32 { ScopedLoopProgramJava2goEnsureInitialized(__java2goExecution) return index }(), 0)",
 		"func() *scopedGrid { ScopedLoopProgramJava2goEnsureInitialized(__java2goExecution) return current }().getJava2goExecution(__java2goExecution, 0, 0)",
 	} {
 		if !strings.Contains(out, ordinary) {
@@ -941,16 +941,19 @@ public class TypeParameterLoopProgram<panic> {
 	}
 	runGoTestInTempModule(t, out, `
 package main
-import "testing"
+import (
+    "testing"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestTypeParameterFallback(t *testing.T) {
     grid := Grid()
-    if got := Program().ClassRuntime(grid, int32(0)); got != 0 {
+    if got := Program().ClassRuntime(grid, stdjava.BoxInteger(0)); got != 0 {
         t.Fatalf("ClassRuntime() = %d, want 0", got)
     }
-    if got := MethodRuntime(grid, int32(0)); got != 0 {
+    if got := MethodRuntime(grid, stdjava.BoxInteger(0)); got != 0 {
         t.Fatalf("MethodRuntime() = %d, want 0", got)
     }
-    MethodType(DoubleGrid(), int32(0))
+    MethodType(DoubleGrid(), stdjava.BoxInteger(0))
 }
 `)
 }

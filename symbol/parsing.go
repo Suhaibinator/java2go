@@ -375,15 +375,9 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			isFinal = true
 		}
 
-		// TODO: Scoped type identifiers are in a format such as RemotePackage.ClassName
-		// To handle this, we remove the RemotePackage part, and depend on the later
-		// type resolution to figure things out
-
 		typeNode := node.ChildByFieldName("type")
-		if typeNode.Type() == "scoped_type_identifier" {
-			typeNode = typeNode.NamedChild(int(typeNode.NamedChildCount()) - 1)
-		}
-
+		// Preserve explicit qualification for later lexical resolution: a field
+		// of java.lang.Integer is distinct from a source-defined Integer class.
 		fieldType := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, TypeParamNames(scope.TypeParameters)))
 		for _, declarator := range nodeutil.VariableDeclarators(node) {
 			fieldNameNode := declarator.ChildByFieldName("name")

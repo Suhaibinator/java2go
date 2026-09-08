@@ -60,7 +60,7 @@ public class RawGenericProgram<T> {
 		"next *RawGenericProgramNode[T]",
 		"return *new(T)",
 		"func assertValue[ListT any](list *RawGenericProgram[ListT], expected int32)",
-		"any(list.getJava2goExecution(__java2goExecution)).(int32)",
+		"stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](list.getJava2goExecution(__java2goExecution), stdjava.IntegerTypeID))",
 		"stdjava.StringValueOfExecution(__java2goExecution, rhs)",
 	} {
 		if !strings.Contains(flat, expected) {

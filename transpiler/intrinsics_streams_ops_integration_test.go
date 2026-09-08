@@ -22,11 +22,11 @@ public class OpsProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.StreamDistinct(")
 	assertContains(t, out, ".Skip(")
-	assertContains(t, out, ".Peek(func(n int32) {")
+	assertContains(t, out, ".Peek(func(n *stdjava.Integer) {")
 	assertContains(t, out, "stdjava.StreamSorted(")
 	assertContains(t, out, "stdjava.StreamSortedWith(")
 	// The comparator's closure returns Java int, not the element type.
-	assertContains(t, out, "func(a int32, b int32) int32")
+	assertContains(t, out, "func(a *stdjava.Integer, b *stdjava.Integer) int32")
 }
 
 func TestStreamOps_TerminalOperationsReturningOptional(t *testing.T) {
@@ -103,7 +103,7 @@ public class ParallelProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.StreamSorted(stdjava.StreamOfSlice(xs.Slice())).Count()")
+	assertContains(t, out, "stdjava.StreamSorted(stdjava.StreamOfSlice(xs.Slice()), __java2goExecution).Count()")
 	assertContains(t, out, ".Parallel().Sequential().Count()")
 }
 

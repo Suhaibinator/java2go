@@ -50,6 +50,58 @@ func lowerCollectCall(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []
 	return collected
 }
 
+// inferCollectorJavaType mirrors collector composition without generating its
+// callbacks. These are reference result types even for primitive accumulation.
+func inferCollectorJavaType(collector *sitter.Node, elementJavaType string, ctx Ctx, source []byte) (string, bool) {
+	name, ok := collectorFactoryName(collector, source)
+	if !ok {
+		return "", false
+	}
+	switch name {
+	case "toList", "toUnmodifiableList":
+		return "List<" + elementJavaType + ">", true
+	case "toSet", "toUnmodifiableSet":
+		return "Set<" + elementJavaType + ">", true
+	case "counting":
+		return "java.lang.Long", true
+	case "joining":
+		return "String", true
+	case "summingInt", "summingLong", "summingDouble":
+		return "java.lang." + ternaryBoxedJavaType(numericCollectorJavaType(name)), true
+	case "averagingInt", "averagingLong", "averagingDouble":
+		return "java.lang.Double", true
+	case "toMap":
+		key := collectorLambdaResultJavaType(collector, 0, elementJavaType, ctx, source)
+		value := collectorLambdaResultJavaType(collector, 1, elementJavaType, ctx, source)
+		if key != "" && value != "" {
+			return "Map<" + key + "," + value + ">", true
+		}
+	case "groupingBy", "partitioningBy":
+		key := "java.lang.Boolean"
+		if name == "groupingBy" {
+			key = collectorLambdaResultJavaType(collector, 0, elementJavaType, ctx, source)
+		}
+		if key == "" {
+			return "", false
+		}
+		value := "List<" + elementJavaType + ">"
+		if invocationArgumentCount(collector) == 2 {
+			var ok bool
+			value, ok = inferCollectorJavaType(invocationArgumentNode(collector, 1), elementJavaType, ctx, source)
+			if !ok {
+				return "", false
+			}
+		}
+		return "Map<" + key + "," + value + ">", true
+	case "mapping":
+		mapped := collectorLambdaResultJavaType(collector, 0, elementJavaType, ctx, source)
+		if mapped != "" {
+			return inferCollectorJavaType(invocationArgumentNode(collector, 1), mapped, ctx, source)
+		}
+	}
+	return "", false
+}
+
 // lowerCollector rewrites one Collectors factory call applied to streamExpr,
 // whose elements are elementJavaType. It returns the expression and the Java
 // type it produces, or nil when the collector is not recognized.
@@ -77,7 +129,7 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		if arity != 0 {
 			return nil, ""
 		}
-		return stdjavaCall(ctx, "StreamCounting", streamExpr), "long"
+		return stdjavaCall(ctx, "StreamCounting", streamExpr), "java.lang.Long"
 
 	case "joining":
 		// joining() / joining(sep) / joining(sep, prefix, suffix); the runtime
@@ -102,14 +154,15 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		}
 		resultType := numericCollectorJavaType(name)
 		value := parseCollectorLambda(collector, 0, []string{elementJavaType}, resultType, ctx, source)
-		return stdjavaCall(ctx, "StreamSummingOf", streamExpr, value), resultType
+		boxedType := ternaryBoxedJavaType(resultType)
+		return stdjavaCall(ctx, "Box"+boxedType, stdjavaCall(ctx, "StreamSummingOf", streamExpr, value)), "java.lang." + boxedType
 
 	case "averagingInt", "averagingLong", "averagingDouble":
 		if arity != 1 {
 			return nil, ""
 		}
 		value := parseCollectorLambda(collector, 0, []string{elementJavaType}, numericCollectorJavaType(name), ctx, source)
-		return stdjavaCall(ctx, "StreamAveragingOf", streamExpr, value), "double"
+		return stdjavaCall(ctx, "BoxDouble", stdjavaCall(ctx, "StreamAveragingOf", streamExpr, value)), "java.lang.Double"
 
 	case "toMap":
 		if arity != 2 && arity != 3 {
@@ -157,14 +210,14 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		predicate := parseCollectorLambda(collector, 0, []string{elementJavaType}, "boolean", ctx, source)
 		if arity == 1 {
 			return stdjavaCall(ctx, "StreamPartitioningBy", streamExpr, predicate),
-				"Map<Boolean,List<" + elementJavaType + ">>"
+				"Map<java.lang.Boolean,List<" + elementJavaType + ">>"
 		}
 		downstream, downstreamType := lowerDownstreamCollector(collector, 1, elementJavaType, ctx, source)
 		if downstream == nil {
 			return nil, ""
 		}
 		return stdjavaCall(ctx, "StreamPartitioningByDownstream", streamExpr, predicate, downstream),
-			"Map<Boolean," + downstreamType + ">"
+			"Map<java.lang.Boolean," + downstreamType + ">"
 
 	case "mapping":
 		// mapping(mapper, downstream) maps each element before collecting, so it
@@ -232,8 +285,7 @@ func parseCollectorLambda(collector *sitter.Node, argIndex int, paramJavaTypes [
 	if argNode == nil {
 		return nil
 	}
-	argCtx := ctx.Clone()
-	argCtx.lambdaParameterJavaTypes = append([]string(nil), paramJavaTypes...)
+	argCtx := intrinsicLambdaParseContext(ctx, argNode, lambdaArgumentTypes{paramJavaTypes: paramJavaTypes, resultJavaType: resultJavaType})
 	parsed := ParseExpr(argNode, source, argCtx)
 
 	typeParams := inScopeTypeParameters(ctx)
@@ -255,6 +307,9 @@ func collectorLambdaResultJavaType(collector *sitter.Node, argIndex int, element
 		invocationArgumentNode(collector, argIndex), []string{elementJavaType}, ctx, source)
 	if !ok {
 		return ""
+	}
+	if boxed := ternaryBoxedJavaType(resultType); boxed != "" {
+		return "java.lang." + boxed
 	}
 	return resultType
 }

@@ -268,24 +268,44 @@ func lowerStaticFieldAssignment(node *sitter.Node, source []byte, ctx Ctx) (ast.
 	oldName := staticFieldTempName(node, source, ctx, "__java2goStaticFieldOld")
 	rhsName := staticFieldTempName(node, source, ctx, "__java2goStaticFieldRHS", oldName)
 	valueName := staticFieldTempName(node, source, ctx, "__java2goStaticFieldValue", oldName, rhsName)
-	body = append(body, typedLocalDeclaration(oldName, valueType, storage))
+	operationJavaType := javaType
+	oldType, oldValue := valueType, storage
+	primitive, boxed := builtinJavaWrapperPrimitive(javaType, ctx)
+	if boxed {
+		operationJavaType = primitive
+		oldType = javaTypeStringToGoTypeExpr(primitive, inScopeTypeParameters(ctx), ctx)
+		oldValue = javaUnboxExpr(storage, javaType, ctx)
+	}
+	// A boxed LHS is read and unboxed before Java evaluates the RHS.
+	// Staging only the wrapper reference would incorrectly defer a null failure.
+	body = append(body, typedLocalDeclaration(oldName, oldType, oldValue))
 
 	rhsJavaType, known := inferExprJavaType(rhsNode, ctx, source)
 	if !known || strings.TrimSpace(rhsJavaType) == "" {
 		rhsJavaType = "Object"
 	}
+	rhs := ParseExpr(rhsNode, source, ctx)
+	if _, isPrimitive := javaPrimitiveType(operationJavaType); isPrimitive {
+		if rhsPrimitive, rhsBoxed := builtinJavaWrapperPrimitive(rhsJavaType, ctx); rhsBoxed {
+			rhs = javaUnboxExpr(rhs, rhsJavaType, ctx)
+			rhsJavaType = rhsPrimitive
+		}
+	}
 	rhsType := javaTypeStringToGoTypeExpr(rhsJavaType, inScopeTypeParameters(ctx), ctx)
-	body = append(body, typedLocalDeclaration(rhsName, rhsType, ParseExpr(rhsNode, source, ctx)))
+	body = append(body, typedLocalDeclaration(rhsName, rhsType, rhs))
 	value, supported := compoundAssignmentValue(
 		operator,
 		&ast.Ident{Name: oldName},
 		&ast.Ident{Name: rhsName},
-		javaType,
+		operationJavaType,
 		rhsJavaType,
 		ctx,
 	)
 	if !supported {
 		return &ast.BadExpr{}, true
+	}
+	if boxed {
+		value = javaBoxExpr(value, primitive, ctx)
 	}
 	body = append(body,
 		typedLocalDeclaration(valueName, valueType, value),
@@ -307,6 +327,38 @@ func lowerStaticFieldUpdate(
 	access, ok := resolveStaticFieldAccess(operandNode, source, ctx)
 	if !ok {
 		return nil, false
+	}
+	javaType := qualifyJavaTypeInDeclaringContext(access.resolution.def.OriginalType, access.resolution.owner)
+	if primitive, boxed := builtinJavaWrapperPrimitive(javaType, ctx); boxed {
+		storage := staticFieldStorageExpr(access, ctx)
+		valueType := staticFieldValueType(access, ctx)
+		oldName := staticFieldTempName(node, source, ctx, "__java2goStaticFieldOld")
+		valueName := staticFieldTempName(node, source, ctx, "__java2goStaticFieldValue", oldName)
+		body := staticFieldPrelude(access, source, ctx, true)
+		body = append(body, typedLocalDeclaration(oldName, valueType, storage))
+		operator := "+="
+		if strings.HasSuffix(helper, "Decrement") {
+			operator = "-="
+		}
+		value, supported := compoundAssignmentValue(operator,
+			javaUnboxExpr(&ast.Ident{Name: oldName}, javaType, ctx),
+			&ast.BasicLit{Kind: token.INT, Value: "1"}, primitive, "int", ctx)
+		if !supported {
+			return &ast.BadExpr{}, true
+		}
+		body = append(body,
+			typedLocalDeclaration(valueName, valueType, javaBoxExpr(value, primitive, ctx)),
+			&ast.AssignStmt{Lhs: []ast.Expr{storage}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.Ident{Name: valueName}}},
+		)
+		resultName := valueName
+		if strings.HasPrefix(helper, "Post") {
+			resultName = oldName
+		}
+		body = append(body, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: resultName}}})
+		return &ast.CallExpr{Fun: &ast.FuncLit{
+			Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: valueType}}}},
+			Body: &ast.BlockStmt{List: body},
+		}}, true
 	}
 	call := stdjavaCall(ctx, helper, &ast.UnaryExpr{Op: token.AND, X: staticFieldStorageExpr(access, ctx)})
 	body := staticFieldPrelude(access, source, ctx, true)

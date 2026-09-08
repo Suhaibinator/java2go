@@ -179,9 +179,21 @@ func registerListIntrinsics() {
 	registerForTypes(listTypeNames, "indexOf", method("IndexOf", 1))
 	registerForTypes(listTypeNames, "addAll", method("AddAll", 1))
 	registerForTypes(listTypeNames, "toArray", method("ToArray", 0))
-	// remove(int) maps to RemoveAt; remove(Object) is a different overload that is
-	// not handled here (it would need element-type analysis to disambiguate).
-	registerForTypes(listTypeNames, "remove", method("RemoveAt", 1))
+	// A wrapper argument chooses remove(Object) in the strict invocation phase;
+	// only a primitive that widens to int selects the index overload.
+	for _, name := range listTypeNames {
+		registerInstanceNodeIntrinsic(name, "remove", func(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+			if invocationArgumentCount(invocation) != 1 {
+				return nil
+			}
+			goName := "RemoveObject"
+			if listRemoveUsesIndex(invocation, ctx, source) {
+				goName = "RemoveAt"
+			}
+			args := intrinsicArgs(invocation.ChildByFieldName("object"), "remove", source, ctx)
+			return methodCall(recv, goName, args...)
+		})
+	}
 }
 
 func registerMapIntrinsics() {
@@ -236,6 +248,9 @@ func registerOptionalIntrinsics() {
 		if elem := optionalElementTypeExpr(ctx); elem != nil {
 			return stdjavaGenericCall(ctx, "OptionalOf", []ast.Expr{elem}, []ast.Expr{args[0]})
 		}
+		if len(ctx.intrinsicTypeArgs) == 1 {
+			return stdjavaGenericCall(ctx, "OptionalOf", ctx.intrinsicTypeArgs, args)
+		}
 		return stdjavaCall(ctx, "OptionalOf", args[0])
 	})
 	registerStaticIntrinsic("Optional", "empty", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
@@ -248,8 +263,25 @@ func registerOptionalIntrinsics() {
 		if elem := optionalElementTypeExpr(ctx); elem != nil {
 			return stdjavaGenericCall(ctx, "OptionalEmpty", []ast.Expr{elem}, nil)
 		}
-		return stdjavaCall(ctx, "OptionalEmpty")
+		return stdjavaGenericCall(ctx, "OptionalEmpty", []ast.Expr{&ast.Ident{Name: "any"}}, nil)
 	})
+	registerStaticIntrinsic("Optional", "ofNullable", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		if elem := optionalElementTypeExpr(ctx); elem != nil {
+			return stdjavaGenericCall(ctx, "OptionalOfNullable", []ast.Expr{elem}, args)
+		}
+		if len(ctx.intrinsicTypeArgs) == 1 {
+			return stdjavaGenericCall(ctx, "OptionalOfNullable", ctx.intrinsicTypeArgs, args)
+		}
+		return stdjavaCall(ctx, "OptionalOfNullable", args...)
+	})
+	for _, method := range []string{"of", "ofNullable"} {
+		registerStaticIntrinsicTypeArgs("Optional", method, func(invocation *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
+			return []ast.Expr{javaTypeStringToGoTypeExpr(intrinsicFactoryElementJavaType(invocation, ctx, source), inScopeTypeParameters(ctx), ctx)}
+		})
+	}
 
 	// Instance methods on an Optional receiver.
 	registerInstanceIntrinsic("Optional", "isPresent", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
@@ -313,8 +345,11 @@ func registerOptionalIntrinsics() {
 	// Optional.of / ofNullable carry the argument's type, so a chained call and a
 	// flatMap mapper's result type resolve to Optional<T> rather than bare
 	// Optional.
-	registerStaticIntrinsicDerivedResultType("Optional", "of", derivedResultTypeFromArgument("Optional", 0))
-	registerStaticIntrinsicDerivedResultType("Optional", "ofNullable", derivedResultTypeFromArgument("Optional", 0))
+	for _, method := range []string{"of", "ofNullable"} {
+		registerStaticIntrinsicDerivedResultType("Optional", method, func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+			return "Optional<" + intrinsicFactoryElementJavaType(invocation, ctx, source) + ">", true
+		})
+	}
 
 	registerInstanceIntrinsic("Optional", "ifPresentOrElse", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 2) {
@@ -371,6 +406,33 @@ func registerOptionalIntrinsics() {
 		}
 		return stdjavaCall(ctx, "OptionalMap", recv, args[0])
 	})
+	for optionalType, primitive := range primitiveOptionalElementJavaTypes {
+		for _, method := range []string{"isPresent", "isEmpty", "ifPresent", "ifPresentOrElse", "orElse", "orElseGet", "orElseThrow", "stream"} {
+			if generator := instanceIntrinsics[intrinsicKey{"Optional", method}]; generator != nil {
+				registerInstanceIntrinsic(optionalType, method, generator)
+			}
+			if shape, ok := lambdaShapes[intrinsicKey{"Optional", method}]; ok {
+				registerLambdaShape(optionalType, method, shape)
+			}
+		}
+		registerStaticIntrinsic(optionalType, "of", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 1 {
+				return nil
+			}
+			return stdjavaGenericCall(ctx, "OptionalOf", []ast.Expr{javaTypeStringToGoTypeExpr(primitive, nil, ctx)}, args)
+		})
+		registerStaticIntrinsic(optionalType, "empty", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaGenericCall(ctx, "OptionalEmpty", []ast.Expr{javaTypeStringToGoTypeExpr(primitive, nil, ctx)}, nil)
+		})
+		registerStaticIntrinsicResultType(optionalType, "of", optionalType)
+		registerStaticIntrinsicResultType(optionalType, "empty", optionalType)
+		for _, method := range []string{"getAsInt", "getAsLong", "getAsDouble", "orElse", "orElseGet", "orElseThrow"} {
+			registerInstanceIntrinsicResultType(optionalType, method, primitive)
+		}
+	}
 }
 
 func registerCollectionsStatics() {
@@ -379,9 +441,9 @@ func registerCollectionsStatics() {
 	registerStaticIntrinsic("Collections", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		switch len(args) {
 		case 1:
-			return stdjavaCall(ctx, "SortOrdered", args[0])
+			return stdjavaCall(ctx, "SortOrdered", args[0], intrinsicExecutionExpr(ctx))
 		case 2:
-			return stdjavaCall(ctx, "SortWith", args[0], args[1])
+			return stdjavaCall(ctx, "SortWith", args[0], args[1], intrinsicExecutionExpr(ctx))
 		}
 		return nil
 	})
@@ -394,32 +456,48 @@ func registerCollectionsStatics() {
 	registerStaticIntrinsic("Collections", "max", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		switch len(args) {
 		case 1:
-			return stdjavaCall(ctx, "MaxOrdered", args[0])
+			return stdjavaCall(ctx, "MaxOrdered", args[0], intrinsicExecutionExpr(ctx))
 		case 2:
-			return stdjavaCall(ctx, "MaxWith", args[0], args[1])
+			return stdjavaCall(ctx, "MaxWith", args[0], args[1], intrinsicExecutionExpr(ctx))
 		}
 		return nil
 	})
 	registerStaticIntrinsic("Collections", "min", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		switch len(args) {
 		case 1:
-			return stdjavaCall(ctx, "MinOrdered", args[0])
+			return stdjavaCall(ctx, "MinOrdered", args[0], intrinsicExecutionExpr(ctx))
 		case 2:
-			return stdjavaCall(ctx, "MinWith", args[0], args[1])
+			return stdjavaCall(ctx, "MinWith", args[0], args[1], intrinsicExecutionExpr(ctx))
 		}
 		return nil
 	})
+	for _, name := range []string{"min", "max"} {
+		registerStaticIntrinsicDerivedResultType("Collections", name, func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+			if elements := staticIntrinsicElementJavaTypes(invocation, 0, ctx, source); len(elements) == 1 {
+				return elements[0], true
+			}
+			return "", false
+		})
+	}
 	registerStaticIntrinsic("Collections", "emptyList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 0) {
 			return nil
 		}
-		return stdjavaCall(ctx, "EmptyList")
+		return stdjavaGenericCall(ctx, "EmptyList", ctx.intrinsicTypeArgs, nil)
 	})
 	registerStaticIntrinsic("Collections", "singletonList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "SingletonList", args[0])
+		return stdjavaGenericCall(ctx, "SingletonList", ctx.intrinsicTypeArgs, args)
+	})
+	for _, method := range []string{"emptyList", "singletonList"} {
+		registerStaticIntrinsicTypeArgs("Collections", method, func(invocation *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
+			return []ast.Expr{javaTypeStringToGoTypeExpr(intrinsicFactoryElementJavaType(invocation, ctx, source), inScopeTypeParameters(ctx), ctx)}
+		})
+	}
+	registerStaticIntrinsicDerivedResultType("Collections", "singletonList", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+		return "List<" + intrinsicFactoryElementJavaType(invocation, ctx, source) + ">", true
 	})
 	registerStaticIntrinsic("Collections", "unmodifiableList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
@@ -430,14 +508,20 @@ func registerCollectionsStatics() {
 
 	// java.util.Arrays
 	registerStaticIntrinsic("Arrays", "asList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		return stdjavaCall(ctx, "AsList", args...)
+		return stdjavaGenericCall(ctx, "AsList", ctx.intrinsicTypeArgs, args)
+	})
+	registerStaticIntrinsicTypeArgs("Arrays", "asList", func(invocation *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
+		return []ast.Expr{javaTypeStringToGoTypeExpr(intrinsicFactoryElementJavaType(invocation, ctx, source), inScopeTypeParameters(ctx), ctx)}
+	})
+	registerStaticIntrinsicDerivedResultType("Arrays", "asList", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+		return "List<" + intrinsicFactoryElementJavaType(invocation, ctx, source) + ">", true
 	})
 	registerStaticIntrinsic("Arrays", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		switch len(args) {
 		case 1:
-			return stdjavaCall(ctx, "SortArray", args[0])
+			return stdjavaCall(ctx, "SortArray", args[0], intrinsicExecutionExpr(ctx))
 		case 2:
-			return stdjavaCall(ctx, "SortArrayWith", args[0], args[1])
+			return stdjavaCall(ctx, "SortArrayWith", args[0], args[1], intrinsicExecutionExpr(ctx))
 		}
 		return nil
 	})

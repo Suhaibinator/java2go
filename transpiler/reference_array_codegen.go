@@ -210,11 +210,16 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	}
 	base, _ := parseJavaTypeString(javaType)
 	baseName := stripJavaQualifier(base)
+	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
+		return source, true
+	}
 	builtin := map[string]string{
 		"Object": "ObjectTypeID", "String": "StringTypeID",
-		"Number":    "NumberTypeID",
-		"Throwable": "ThrowableTypeID",
-		"Thread":    "ThreadTypeID", "Runnable": "RunnableTypeID",
+		"Number":     "NumberTypeID",
+		"Comparable": "ComparableTypeID", "Constable": "ConstableTypeID", "ConstantDesc": "ConstantDescTypeID",
+		"CharSequence": "CharSequenceTypeID",
+		"Throwable":    "ThrowableTypeID",
+		"Thread":       "ThreadTypeID", "Runnable": "RunnableTypeID",
 		"Cloneable": "CloneableTypeID", "Serializable": "SerializableTypeID",
 		"Boolean": "BooleanTypeID", "Byte": "ByteTypeID", "Short": "ShortTypeID",
 		"Character": "CharacterTypeID", "Integer": "IntegerTypeID", "Long": "LongTypeID",
@@ -222,9 +227,6 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	}
 	if constant, ok := builtin[baseName]; ok {
 		return stdjavaQualifiedExpr(constant, ctx), true
-	}
-	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
-		return source, true
 	}
 	// External reference types still need stable exact descriptors. Hierarchy
 	// edges can be registered incrementally by their runtime adapters.
@@ -436,6 +438,21 @@ func addReferenceArrayCreationSeeds(node *sitter.Node, source []byte, owner *sym
 			addReferenceArrayTypeSeed(javaType, owner, ctx, seeds, objectComponent)
 		}
 	}
+	if node.Type() == "cast_expression" && node.NamedChildCount() > 0 {
+		// Ordinary downcasts need the same canonical hierarchy views as array
+		// reads. The cast must work even when no array or generic slot happens to
+		// enable shared object metadata elsewhere in the program.
+		declarationCtx := ctx.Clone()
+		declarationCtx.currentClass = owner
+		if file := findFileScopeForClassScope(owner); file != nil {
+			declarationCtx.currentFile = file
+		}
+		base, arguments := parseJavaTypeString(node.NamedChild(0).Content(source))
+		if target := resolveClassScopeByQualifiedName(declarationCtx, base); target != nil &&
+			!target.IsInterface && len(arguments) == 0 && len(target.TypeParameters) == 0 {
+			seeds[target] = struct{}{}
+		}
+	}
 	for _, child := range nodeutil.NamedChildrenOf(node) {
 		addReferenceArrayCreationSeeds(child, source, owner, ctx, seeds, objectComponent)
 	}
@@ -450,8 +467,8 @@ func classDirectlyReferencesRelevantInterface(scope *symbol.ClassScope, relevant
 	return false
 }
 
-// referenceIdentityScopes computes the smallest source hierarchy set that can
-// contribute objects to a reified rank-one reference array. Unrelated classes
+// referenceIdentityScopes computes the source hierarchy set that can require
+// canonical views through reference arrays, generic storage, or downcasts. Unrelated classes
 // retain their historical structs and constructors; this avoids imposing
 // runtime metadata or imports on programs that never use reference arrays.
 func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {

@@ -35,7 +35,7 @@ public class ObjectArrayBoxingProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	for _, boxed := range []string{`stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID, int32(21), int64(9), float32(1.5), 2.5)`, ".(int32)", ".(int64)", ".(float32)", ".(float64)"} {
+	for _, boxed := range []string{`stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID, stdjava.BoxInteger(int32(21))`, "stdjava.BoxLong(", "stdjava.BoxFloat(", "stdjava.BoxDouble(", "stdjava.ObjectPattern[*stdjava.Integer]", "stdjava.ObjectPattern[*stdjava.Long]", "stdjava.ObjectPattern[*stdjava.Float]", "stdjava.ObjectPattern[*stdjava.Double]"} {
 		if !strings.Contains(flat, boxed) {
 			t.Fatalf("expected Object[] autoboxing output to contain %q, got:\n%s", boxed, out)
 		}

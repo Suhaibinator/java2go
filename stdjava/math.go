@@ -43,7 +43,24 @@ func MathMin[T number](a, b T) T {
 // half away from zero, which differs for negative .5 values, so this is computed
 // explicitly.
 func MathRound(x float64) int64 {
-	return int64(math.Floor(x + 0.5))
+	return numberFloatLongValue(mathRoundHalfUp(x))
+}
+
+// MathRoundFloat is Java's Math.round(float), returning int and saturating at
+// its bounds. NaN returns zero for both round overloads.
+func MathRoundFloat(x float32) int32 {
+	return numberFloatIntValue(mathRoundHalfUp(float64(x)))
+}
+
+func mathRoundHalfUp(x float64) float64 {
+	floor := math.Floor(x)
+	// Adding 0.5 to x first can round an input just below a half-integer up
+	// to the tie, or change an already-integral large value. Its fractional
+	// part permits the Java tie decision without that intermediate rounding.
+	if x-floor >= 0.5 {
+		return floor + 1
+	}
+	return floor
 }
 
 // The kernels and medium-size argument reduction below are a Go port of the

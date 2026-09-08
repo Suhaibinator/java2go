@@ -376,18 +376,18 @@ import (
 )
 
 func TestVariadicSAM(t *testing.T) {
-	task := NewvariadicTaskFuncAdapter(func(values ...int32) int32 {
+	task := NewvariadicTaskFuncAdapter(func(values *stdjava.PrimitiveArray[int32]) int32 {
 		var total int32
-		for _, value := range values {
+		for _, value := range stdjava.PrimitiveArrayElements(values) {
 			total += value
 		}
 		return total
 	})
-	if got := task.Sum(1, 2, 3); got != 6 {
+	if got := task.Sum(stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 1, 2, 3)); got != 6 {
 		t.Fatalf("public Sum = %d, want 6", got)
 	}
 	executionTask := task.(variadicTaskJava2goExecution)
-	if got := executionTask.SumJava2goExecution(stdjava.NewExecution(), 4, 5, 6); got != 15 {
+	if got := executionTask.SumJava2goExecution(stdjava.NewExecution(), stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 4, 5, 6)); got != 15 {
 		t.Fatalf("execution Sum = %d, want 15", got)
 	}
 }

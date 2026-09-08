@@ -92,57 +92,92 @@ func (a *AtomicBoolean) CompareAndSet(expect, update bool) bool {
 // Java and preserves typed values without per-call assertions.
 type ConcurrentHashMap[K comparable, V any] struct {
 	mu sync.RWMutex
-	m  map[K]V
+	m  map[any]MapEntry[K, V]
 }
 
 func NewConcurrentHashMap[K comparable, V any]() *ConcurrentHashMap[K, V] {
-	return &ConcurrentHashMap[K, V]{m: make(map[K]V)}
+	return &ConcurrentHashMap[K, V]{m: make(map[any]MapEntry[K, V])}
 }
 
 // Put stores value under key and returns the previous value (or the zero value)
 // matching Java's Map.put return contract.
 func (c *ConcurrentHashMap[K, V]) Put(key K, value V) V {
+	ReferenceRequireNonNull(key)
+	ReferenceRequireNonNull(value)
+	normalized := collectionKey(key)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	prev := c.m[key]
-	c.m[key] = value
-	return prev
+	prev, exists := c.m[normalized]
+	if exists {
+		key = prev.Key
+	}
+	c.m[normalized] = MapEntry[K, V]{Key: key, Value: value}
+	return prev.Value
 }
 
 // Get returns the value for key, or the zero value if absent. (The two-result
 // form is GetOk for callers that need presence.)
-func (c *ConcurrentHashMap[K, V]) Get(key K) V {
+func (c *ConcurrentHashMap[K, V]) Get(key any) V {
+	ReferenceRequireNonNull(key)
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.m[key]
+	return c.m[collectionKey(key)].Value
 }
 
-func (c *ConcurrentHashMap[K, V]) GetOk(key K) (V, bool) {
+func (c *ConcurrentHashMap[K, V]) GetOk(key any) (V, bool) {
+	ReferenceRequireNonNull(key)
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	v, ok := c.m[key]
-	return v, ok
+	entry, ok := c.m[collectionKey(key)]
+	return entry.Value, ok
 }
 
-func (c *ConcurrentHashMap[K, V]) ContainsKey(key K) bool {
+func (c *ConcurrentHashMap[K, V]) ContainsKey(key any) bool {
+	ReferenceRequireNonNull(key)
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	_, ok := c.m[key]
+	_, ok := c.m[collectionKey(key)]
 	return ok
 }
 
-func (c *ConcurrentHashMap[K, V]) Remove(key K) V {
+func (c *ConcurrentHashMap[K, V]) ContainsValue(value any) bool {
+	ReferenceRequireNonNull(value)
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	for _, entry := range c.m {
+		if ObjectsEqual(value, entry.Value) {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *ConcurrentHashMap[K, V]) Remove(key any) V {
+	ReferenceRequireNonNull(key)
+	normalized := collectionKey(key)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	prev := c.m[key]
-	delete(c.m, key)
-	return prev
+	prev := c.m[normalized]
+	delete(c.m, normalized)
+	return prev.Value
 }
 
 func (c *ConcurrentHashMap[K, V]) Size() int32 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return int32(len(c.m))
+}
+
+// KeySet snapshots the original key objects retained by the map. Iteration
+// order is unspecified, matching ConcurrentHashMap's key view.
+func (c *ConcurrentHashMap[K, V]) KeySet() []K {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	keys := make([]K, 0, len(c.m))
+	for _, entry := range c.m {
+		keys = append(keys, entry.Key)
+	}
+	return keys
 }
 
 // Runnable is the Go counterpart of java.lang.Runnable: anything with a Run()

@@ -149,6 +149,50 @@ func TestStringBuilderBehavior(t *testing.T) {
 `)
 }
 
+func TestRuntime_StringBuilderOverloadText(t *testing.T) {
+	src := `
+public class BuilderOverloadText {
+    public static String build() {
+        int number = 0;
+        char letter = 'a';
+        Integer boxedNumber = 7;
+        Character boxedLetter = 'b';
+        Object missing = null;
+        String missingString = null;
+        float decimal = 1.5f;
+        StringBuilder sb = new StringBuilder();
+        sb.append(number);
+        sb.append(letter);
+        sb.append(boxedNumber);
+        sb.append(boxedLetter);
+        sb.append(missing);
+        sb.append(missingString);
+        sb.append(decimal);
+        StringBuffer buffer = new StringBuffer();
+        buffer.insert(0, number);
+        buffer.insert(0, letter);
+        buffer.insert(0, boxedNumber);
+        buffer.insert(0, boxedLetter);
+        buffer.insert(0, missing);
+        return sb.toString() + ";" + buffer.toString();
+    }
+}
+`
+	out := renderGoFileFromJava(t, src)
+	runGoTestWithStdjava(t, out, `
+package main
+
+import "testing"
+
+func TestBuilderOverloads(t *testing.T) {
+    const want = "0a7bnullnull1.5;nullb7a0"
+    if got := Build(); got != want {
+        t.Fatalf("Build = %q, want %q", got, want)
+    }
+}
+`)
+}
+
 func TestRuntime_MathAndBoxed(t *testing.T) {
 	src := `
 public class MathRuntime {

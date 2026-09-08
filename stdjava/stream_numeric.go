@@ -7,9 +7,8 @@ import "math"
 // Stream[float64] rather than as separate types, so every operation on
 // Stream[T] is available on them without duplication.
 //
-// The conversions between them (boxed, asLongStream, mapToInt, ...) therefore
-// either widen the element type or are identities, and are spelled out below so
-// generated code reads like the Java it came from.
+// Numeric conversions retain primitive elements; boxed() allocates Java wrapper
+// objects using the same factories as ordinary autoboxing.
 
 // IntStreamRange returns the ints from startInclusive up to but excluding
 // endExclusive, matching IntStream.range. An empty or reversed range yields no
@@ -105,11 +104,7 @@ func StreamOfArray[T any](array any) Stream[T] {
 		}
 		out := make([]T, 0, len(values.elements))
 		for _, element := range values.elements {
-			typed, ok := element.(T)
-			if !ok {
-				panic(NewClassCastException("Arrays.stream element does not match the requested type"))
-			}
-			out = append(out, typed)
+			out = append(out, ObjectView[T](element, ObjectTypeID))
 		}
 		return Stream[T]{elements: out}
 	case []T:
@@ -132,15 +127,18 @@ func StringCharsStream(s string) Stream[int32] {
 	return Stream[int32]{elements: out}
 }
 
-// StreamBoxed returns the stream unchanged, matching IntStream.boxed and its
-// siblings. A primitive stream is already a Stream of the boxed type's Go
-// counterpart here, so boxing is an identity.
-func StreamBoxed[T any](s Stream[T]) Stream[T] { return s }
+// IntStreamBoxed and its siblings box each element, preserving the wrapper
+// factories' cache and identity semantics.
+func IntStreamBoxed(s Stream[int32]) Stream[*Integer] { return StreamMap(s, BoxInteger) }
+
+func LongStreamBoxed(s Stream[int64]) Stream[*Long] { return StreamMap(s, BoxLong) }
+
+func DoubleStreamBoxed(s Stream[float64]) Stream[*Double] { return StreamMap(s, BoxDouble) }
 
 // StreamSum returns the sum of a numeric stream's elements, matching
 // IntStream.sum and its siblings. Java sums an IntStream in int arithmetic, so
 // this wraps at the element type's width exactly as Java does.
-func StreamSum[T JavaNumber](s Stream[T]) T {
+func StreamSum[T JavaPrimitiveNumber](s Stream[T]) T {
 	var total T
 	for _, e := range s.elements {
 		total += e
@@ -151,7 +149,7 @@ func StreamSum[T JavaNumber](s Stream[T]) T {
 // StreamAverage returns the arithmetic mean of a numeric stream, matching
 // IntStream.average. It is empty for an empty stream, and the sum is
 // accumulated in float64 to match Java, which averages in double.
-func StreamAverage[T JavaNumber](s Stream[T]) Optional[float64] {
+func StreamAverage[T JavaPrimitiveNumber](s Stream[T]) Optional[float64] {
 	if len(s.elements) == 0 {
 		return Optional[float64]{}
 	}
@@ -164,7 +162,7 @@ func StreamAverage[T JavaNumber](s Stream[T]) Optional[float64] {
 
 // StreamToIntSlice and friends widen a numeric stream, matching
 // IntStream.asLongStream and asDoubleStream.
-func StreamAsLongStream[T JavaNumber](s Stream[T]) Stream[int64] {
+func StreamAsLongStream[T JavaPrimitiveNumber](s Stream[T]) Stream[int64] {
 	out := make([]int64, len(s.elements))
 	for index, e := range s.elements {
 		out[index] = int64(e)
@@ -172,7 +170,7 @@ func StreamAsLongStream[T JavaNumber](s Stream[T]) Stream[int64] {
 	return Stream[int64]{elements: out}
 }
 
-func StreamAsDoubleStream[T JavaNumber](s Stream[T]) Stream[float64] {
+func StreamAsDoubleStream[T JavaPrimitiveNumber](s Stream[T]) Stream[float64] {
 	out := make([]float64, len(s.elements))
 	for index, e := range s.elements {
 		out[index] = float64(e)
@@ -191,7 +189,7 @@ func StreamAsDoubleStream[T JavaNumber](s Stream[T]) Stream[float64] {
 //
 // The sum is accumulated at the element's own width rather than in float64,
 // which would silently lose precision above 2^53 for a long stream.
-type SummaryStatistics[T JavaNumber] struct {
+type SummaryStatistics[T JavaPrimitiveNumber] struct {
 	count int64
 	sum   T
 	min   T
@@ -201,7 +199,7 @@ type SummaryStatistics[T JavaNumber] struct {
 
 // StreamSummaryStatistics collects count, sum, min and max in one pass,
 // matching IntStream.summaryStatistics.
-func StreamSummaryStatistics[T JavaNumber](s Stream[T]) *SummaryStatistics[T] {
+func StreamSummaryStatistics[T JavaPrimitiveNumber](s Stream[T]) *SummaryStatistics[T] {
 	stats := &SummaryStatistics[T]{empty: true}
 	for _, e := range s.elements {
 		if stats.empty {
@@ -257,7 +255,7 @@ func (s *SummaryStatistics[T]) GetAverage() float64 {
 // summaryEmptyMin and summaryEmptyMax return the sentinel Java reports for an
 // empty stream: Integer.MAX_VALUE / MIN_VALUE for an int stream, the long
 // equivalents for a long stream, and the infinities for a double stream.
-func summaryEmptyMin[T JavaNumber]() T {
+func summaryEmptyMin[T JavaPrimitiveNumber]() T {
 	var zero T
 	switch any(zero).(type) {
 	case float32:
@@ -279,7 +277,7 @@ func summaryEmptyMin[T JavaNumber]() T {
 	return T(sentinel)
 }
 
-func summaryEmptyMax[T JavaNumber]() T {
+func summaryEmptyMax[T JavaPrimitiveNumber]() T {
 	var zero T
 	switch any(zero).(type) {
 	case float32:

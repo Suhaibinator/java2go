@@ -61,7 +61,7 @@ import (
 )
 
 func TestGapFeaturesRuntime(t *testing.T) {
-    program := NewGapFeatures[float64](
+    program := NewGapFeatures[*stdjava.Double](
         stdjava.ClassLiteral(stdjava.DoubleTypeID),
         1.25,
         2.5,
@@ -72,9 +72,9 @@ func TestGapFeaturesRuntime(t *testing.T) {
     if got := program.Coordinates(); got != 3.75 {
         t.Fatalf("Coordinates() = %v, want 3.75", got)
     }
-    got := program.Process(stdjava.NewListFrom[float64](-1, 4))
+    got := program.Process(stdjava.NewListFrom[*stdjava.Double](stdjava.BoxDouble(-1), stdjava.BoxDouble(4)))
     values := got.Slice()
-    if len(values) != 1 || values[0] != 2*math.Pi {
+    if len(values) != 1 || values[0] == nil || values[0].DoubleValue() != 2*math.Pi {
         t.Fatalf("Process() = %v, want [%v]", values, 2*math.Pi)
     }
 }
@@ -110,11 +110,15 @@ public enum GenericOperation {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestGenericEnumRuntime(t *testing.T) {
-    helper := NewGenericOperationApplyHelper[float64](DOUBLE)
-    if got := helper.Apply(2.5); got != 5 {
+    helper := NewGenericOperationApplyHelper[*stdjava.Double](DOUBLE)
+    if got := helper.Apply(stdjava.BoxDouble(2.5)); got != 5 {
         t.Fatalf("DOUBLE.apply(2.5) = %v, want 5", got)
     }
 }

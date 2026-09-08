@@ -40,8 +40,8 @@ public class DeclProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "a *stdjava.List[string]")
-	assertContains(t, out, "b *stdjava.Map[string, int32]")
-	assertContains(t, out, "c *stdjava.Set[int64]")
+	assertContains(t, out, "b *stdjava.Map[string, *stdjava.Integer]")
+	assertContains(t, out, "c *stdjava.Set[*stdjava.Long]")
 }
 
 func TestCollections_EnhancedForRangesOverSlice(t *testing.T) {
@@ -75,8 +75,8 @@ public class MapProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.NewMap[string, int32]()")
-	assertContains(t, out, "m.Put(\"k\", 1)")
+	assertContains(t, out, "stdjava.NewMap[string, *stdjava.Integer]()")
+	assertContains(t, out, "m.Put(\"k\", stdjava.BoxInteger(int32(1)))")
 	assertContains(t, out, "m.Get(\"k\")")
 	assertContains(t, out, "m.ContainsKey(\"k\")")
 }
@@ -95,7 +95,7 @@ public class StaticsProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.SortOrdered(xs)")
+	assertContains(t, out, "stdjava.SortOrdered(xs, __java2goExecution)")
 	assertContains(t, out, "stdjava.ReverseList(xs)")
 }
 
@@ -118,7 +118,7 @@ public class KeywordProgram {
 		t.Fatalf("Go keyword `map` was not sanitized:\n%s", out)
 	}
 	assertContains(t, out, "map_ := stdjava.NewMap")
-	assertContains(t, out, "map_.Put(\"a\", 1)")
+	assertContains(t, out, "map_.Put(\"a\", stdjava.BoxInteger(int32(1)))")
 	assertContains(t, out, "map_.Get(\"a\")")
 }
 
@@ -141,12 +141,13 @@ public class OptProgram {
 	out := renderGoFileFromJava(t, src)
 	// empty() in return position gets its element type from the method return type.
 	assertContains(t, out, "stdjava.OptionalEmpty[string]()")
-	// of(10) with Optional<Integer> expected type instantiates as int32, not Go int.
-	assertContains(t, out, "stdjava.OptionalOf[int32](10)")
+	// of(10) stores a boxed Java Integer inferred from Optional<Integer>.
+	assertContains(t, out, "stdjava.OptionalOf[*stdjava.Integer](stdjava.BoxInteger(int32(10)))")
 	// map's lambda is re-typed from the element type and the chained .get() resolves.
-	assertContains(t, out, "func(n int32) int32")
-	assertContains(t, out, "return n * 2")
+	assertContains(t, out, "func(n *stdjava.Integer) *stdjava.Integer")
+	assertContains(t, out, "return stdjava.BoxInteger(int32(stdjava.UnboxInteger(n) * 2))")
 	assertContains(t, out, ").Get()")
+	assertContains(t, out, "stdjava.UnboxInteger(stdjava.OptionalMap")
 }
 
 func TestStringConcat_InfersStringType(t *testing.T) {

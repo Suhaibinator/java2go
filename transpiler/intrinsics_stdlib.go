@@ -3,6 +3,8 @@ package transpiler
 import (
 	"go/ast"
 	"go/token"
+
+	sitter "github.com/smacker/go-tree-sitter"
 )
 
 // This file registers the concrete java.lang intrinsics: String, StringBuilder /
@@ -15,6 +17,7 @@ func init() {
 	registerMathIntrinsics()
 	registerNumberIntrinsics()
 	registerBoxedTypeIntrinsics()
+	registerBoxedObjectIntrinsics()
 }
 
 // expectArgs returns true when args has exactly n elements.
@@ -113,7 +116,7 @@ func registerStringIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return &ast.BinaryExpr{X: recv, Op: token.EQL, Y: args[0]}
+		return stdjavaCall(ctx, "StringEquals", recv, args[0])
 	})
 
 	// concat(s) -> recv + s. Both operands are Java references, so normalize the
@@ -233,6 +236,20 @@ func registerStringIntrinsics() {
 		}
 		return pkgCall(ctx, "strings", "Join", args[1], args[0])
 	})
+	for _, method := range []string{"length", "indexOf", "lastIndexOf", "compareTo"} {
+		registerInstanceIntrinsicResultType("String", method, "int")
+	}
+	registerInstanceIntrinsicResultType("String", "charAt", "char")
+	for _, method := range []string{"isEmpty", "isBlank", "contains", "startsWith", "endsWith", "equals", "equalsIgnoreCase"} {
+		registerInstanceIntrinsicResultType("String", method, "boolean")
+	}
+	for _, method := range []string{"substring", "concat", "toUpperCase", "toLowerCase", "trim", "strip", "replace"} {
+		registerInstanceIntrinsicResultType("String", method, "String")
+	}
+	registerInstanceIntrinsicResultType("String", "split", "String[]")
+	for _, method := range []string{"valueOf", "format", "join"} {
+		registerStaticIntrinsicResultType("String", method, "String")
+	}
 }
 
 // --- java.lang.StringBuilder / StringBuffer ---------------------------------
@@ -255,12 +272,14 @@ func registerStringBuilderIntrinsics() {
 			}
 			return methodCall(recv, "Append", args[0])
 		})
+		registerInstanceNodeIntrinsic(typeName, "append", lowerStringBuilderTextCall("append", "Append", 0))
 		registerInstanceIntrinsic(typeName, "insert", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, 2) {
 				return nil
 			}
 			return methodCall(recv, "Insert", args[0], args[1])
 		})
+		registerInstanceNodeIntrinsic(typeName, "insert", lowerStringBuilderTextCall("insert", "Insert", 1))
 		registerInstanceIntrinsic(typeName, "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, 0) {
 				return nil
@@ -291,6 +310,33 @@ func registerStringBuilderIntrinsics() {
 			}
 			return methodCall(recv, "Reverse")
 		})
+	}
+}
+
+// Java selects append/insert overloads from the argument's static type. Go's
+// rune alias is indistinguishable from int32 at runtime, so pass the Java text
+// representation explicitly instead of letting the builder guess the overload.
+func lowerStringBuilderTextCall(javaMethod, goMethod string, valueIndex int) nodeIntrinsicGenerator {
+	return func(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+		if invocationArgumentCount(invocation) != valueIndex+1 {
+			return nil
+		}
+		object := invocation.ChildByFieldName("object")
+		if object == nil {
+			return nil
+		}
+		args := intrinsicArgs(object, javaMethod, source, ctx)
+		valueNode := invocationArgumentNode(invocation, valueIndex)
+		javaType, _ := inferExprJavaType(valueNode, ctx, source)
+		converted := javaStringConversionExpr(valueNode, args[valueIndex], ctx, source)
+		switch javaType {
+		case "byte", "short", "int", "long", "boolean":
+			// Concatenation can hand these values directly to fmt, but builders
+			// need a string to distinguish a numeric int32 from a character.
+			converted = javaStringValueOfForType(javaType, converted, ctx)
+		}
+		args[valueIndex] = converted
+		return methodCall(recv, goMethod, args...)
 	}
 }
 
@@ -384,6 +430,18 @@ func registerMathIntrinsics() {
 		registerStaticIntrinsicResultType("Math", method, "double")
 	}
 	registerStaticIntrinsicResultType("Math", "round", "long")
+	for _, method := range []string{"abs", "min", "max", "round"} {
+		registerStaticIntrinsicDerivedResultType("Math", method, func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+			parameter := intrinsicMathParameterJavaType(invocation, ctx, source)
+			if method == "round" {
+				if parameter == "float" {
+					return "int", true
+				}
+				return "long", true
+			}
+			return parameter, true
+		})
+	}
 	registerStaticFieldIntrinsicResultType("Math", "PI", "double")
 	registerStaticFieldIntrinsicResultType("Math", "E", "double")
 }
@@ -605,4 +663,232 @@ func registerBoxedTypeIntrinsics() {
 		}
 		return stdjavaCall(ctx, "CharToLowerCase", args[0])
 	})
+}
+
+// All wrappers are references. Factories and constructors must remain distinct:
+// valueOf may return a cached object, whereas new always preserves fresh identity.
+func registerBoxedObjectIntrinsics() {
+	for _, spec := range []struct{ wrapper, primitive, parser string }{
+		{"Boolean", "boolean", "ParseBoolean"}, {"Byte", "byte", "ParseByte"},
+		{"Short", "short", "ParseShort"}, {"Character", "char", ""},
+		{"Integer", "int", "ParseInt"}, {"Long", "long", "ParseLong"},
+		{"Float", "float", "ParseFloat"}, {"Double", "double", "ParseDouble"},
+	} {
+		registerStaticIntrinsic(spec.wrapper, "valueOf", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) < 1 || len(args) > 2 {
+				return nil
+			}
+			return stdjavaCall(ctx, spec.wrapper+"ValueOf", args...)
+		})
+		registerStaticIntrinsicResultType(spec.wrapper, "valueOf", "java.lang."+spec.wrapper)
+		if spec.parser != "" {
+			method := "parse" + spec.wrapper
+			if spec.wrapper == "Integer" {
+				method = "parseInt"
+			}
+			registerStaticIntrinsic(spec.wrapper, method, func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if len(args) < 1 || len(args) > 2 {
+					return nil
+				}
+				return stdjavaCall(ctx, spec.parser, args...)
+			})
+			registerStaticIntrinsicResultType(spec.wrapper, method, spec.primitive)
+		}
+		for _, method := range []struct {
+			java, goName, result string
+			count                int
+		}{
+			{"equals", "Equals", "boolean", 1}, {"hashCode", "HashCode", "int", 0},
+			{"compareTo", "CompareTo", "int", 1}, {"toString", "String", "String", 0},
+		} {
+			registerInstanceIntrinsic(spec.wrapper, method.java, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if len(args) != method.count {
+					return nil
+				}
+				return methodCall(recv, method.goName, args...)
+			})
+			registerInstanceIntrinsicResultType(spec.wrapper, method.java, method.result)
+		}
+		registerInstanceIntrinsic(spec.wrapper, "getClass", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaCall(ctx, "ObjectGetClass", recv)
+		})
+		registerInstanceIntrinsicResultType(spec.wrapper, "getClass", "Class")
+		registerStaticFieldIntrinsic(spec.wrapper, "TYPE", func(ctx Ctx) ast.Expr {
+			descriptor, ok := javaTypeDescriptorExpr(spec.primitive, ctx)
+			if !ok {
+				return nil
+			}
+			return stdjavaCall(ctx, "ClassLiteral", descriptor)
+		})
+		registerStaticFieldIntrinsicResultType(spec.wrapper, "TYPE", "Class")
+		registerStaticIntrinsic(spec.wrapper, "hashCode", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 1 {
+				return nil
+			}
+			return methodCall(stdjavaCall(ctx, "Box"+spec.wrapper, args[0]), "HashCode")
+		})
+		registerStaticIntrinsicResultType(spec.wrapper, "hashCode", "int")
+		registerStaticIntrinsicResultType(spec.wrapper, "toString", "String")
+		if spec.wrapper == "Byte" || spec.wrapper == "Short" || spec.wrapper == "Character" {
+			registerStaticIntrinsic(spec.wrapper, "toString", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if len(args) != 1 {
+					return nil
+				}
+				return methodCall(stdjavaCall(ctx, "Box"+spec.wrapper, args[0]), "String")
+			})
+		}
+		if spec.wrapper != "Float" && spec.wrapper != "Double" {
+			registerStaticIntrinsic(spec.wrapper, "compare", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if len(args) != 2 {
+					return nil
+				}
+				return methodCall(stdjavaCall(ctx, "Box"+spec.wrapper, args[0]), "CompareTo", stdjavaCall(ctx, "Box"+spec.wrapper, args[1]))
+			})
+			registerStaticIntrinsicResultType(spec.wrapper, "compare", "int")
+		}
+		if spec.wrapper == "Boolean" || spec.wrapper == "Character" {
+			method := "booleanValue"
+			if spec.wrapper == "Character" {
+				method = "charValue"
+			}
+			registerInstanceIntrinsic(spec.wrapper, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if len(args) != 0 {
+					return nil
+				}
+				return stdjavaCall(ctx, "Unbox"+spec.wrapper, recv)
+			})
+			registerInstanceIntrinsicResultType(spec.wrapper, method, spec.primitive)
+		}
+	}
+	for _, constant := range []struct{ field, value string }{{"TRUE", "true"}, {"FALSE", "false"}} {
+		registerStaticFieldIntrinsic("Boolean", constant.field, func(ctx Ctx) ast.Expr {
+			return stdjavaCall(ctx, "BoxBoolean", &ast.Ident{Name: constant.value})
+		})
+		registerStaticFieldIntrinsicResultType("Boolean", constant.field, "java.lang.Boolean")
+	}
+	for _, spec := range []struct{ wrapper, primitive, min, max string }{
+		{"Byte", "byte", "-128", "127"}, {"Short", "short", "-32768", "32767"},
+		{"Character", "char", "0", "65535"},
+	} {
+		for _, limit := range []struct{ field, value string }{{"MIN_VALUE", spec.min}, {"MAX_VALUE", spec.max}} {
+			registerStaticFieldIntrinsic(spec.wrapper, limit.field, func(ctx Ctx) ast.Expr {
+				return &ast.CallExpr{Fun: javaTypeStringToGoTypeExpr(spec.primitive, nil, ctx), Args: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: limit.value}}}
+			})
+			registerStaticFieldIntrinsicResultType(spec.wrapper, limit.field, spec.primitive)
+		}
+	}
+	for _, wrapper := range []string{"Integer", "Long"} {
+		primitive := "int"
+		if wrapper == "Long" {
+			primitive = "long"
+		}
+		registerStaticFieldIntrinsicResultType(wrapper, "MIN_VALUE", primitive)
+		registerStaticFieldIntrinsicResultType(wrapper, "MAX_VALUE", primitive)
+	}
+	for _, spec := range []struct{ wrapper, primitive, min, max, normal string }{
+		{"Float", "float", "SmallestNonzeroFloat32", "MaxFloat32", "0x1p-126"},
+		{"Double", "double", "SmallestNonzeroFloat64", "MaxFloat64", "0x1p-1022"},
+	} {
+		for _, limit := range []struct{ field, name string }{{"MIN_VALUE", spec.min}, {"MAX_VALUE", spec.max}} {
+			registerStaticFieldIntrinsic(spec.wrapper, limit.field, func(ctx Ctx) ast.Expr {
+				return &ast.CallExpr{Fun: javaTypeStringToGoTypeExpr(spec.primitive, nil, ctx), Args: []ast.Expr{qualifiedNameExpr(limit.name, "math", ctx)}}
+			})
+			registerStaticFieldIntrinsicResultType(spec.wrapper, limit.field, spec.primitive)
+		}
+		registerStaticFieldIntrinsic(spec.wrapper, "MIN_NORMAL", func(ctx Ctx) ast.Expr {
+			return &ast.CallExpr{Fun: javaTypeStringToGoTypeExpr(spec.primitive, nil, ctx), Args: []ast.Expr{&ast.BasicLit{Kind: token.FLOAT, Value: spec.normal}}}
+		})
+		registerStaticFieldIntrinsicResultType(spec.wrapper, "MIN_NORMAL", spec.primitive)
+		for _, limit := range []struct{ field, runtime string }{{"POSITIVE_INFINITY", "DoublePositiveInfinity"}, {"NEGATIVE_INFINITY", "DoubleNegativeInfinity"}} {
+			registerStaticFieldIntrinsic(spec.wrapper, limit.field, func(ctx Ctx) ast.Expr {
+				value := ast.Expr(stdjavaCall(ctx, limit.runtime))
+				if spec.wrapper == "Float" {
+					value = callIdent("float32", value)
+				}
+				return value
+			})
+			registerStaticFieldIntrinsicResultType(spec.wrapper, limit.field, spec.primitive)
+		}
+		for _, method := range []string{"isNaN", "isInfinite"} {
+			predicate := func(value ast.Expr, ctx Ctx) ast.Expr {
+				if method == "isInfinite" {
+					return pkgCall(ctx, "math", "IsInf", callIdent("float64", value), &ast.BasicLit{Kind: token.INT, Value: "0"})
+				}
+				return pkgCall(ctx, "math", "IsNaN", callIdent("float64", value))
+			}
+			if spec.wrapper != "Double" || method != "isNaN" {
+				registerStaticIntrinsic(spec.wrapper, method, func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+					if len(args) != 1 {
+						return nil
+					}
+					return predicate(args[0], ctx)
+				})
+			}
+			registerStaticIntrinsicResultType(spec.wrapper, method, "boolean")
+			registerInstanceIntrinsic(spec.wrapper, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if len(args) != 0 {
+					return nil
+				}
+				return predicate(stdjavaCall(ctx, "Unbox"+spec.wrapper, recv), ctx)
+			})
+			registerInstanceIntrinsicResultType(spec.wrapper, method, "boolean")
+		}
+	}
+	for _, method := range []string{"isDigit", "isLetter", "isLetterOrDigit", "isWhitespace", "isUpperCase", "isLowerCase"} {
+		registerStaticIntrinsicResultType("Character", method, "boolean")
+	}
+	for _, method := range []string{"toUpperCase", "toLowerCase"} {
+		registerStaticIntrinsicResultType("Character", method, "char")
+	}
+	registerInstanceIntrinsic("Comparable", "compareTo", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		execution := executionExpr(ctx)
+		if execution == nil {
+			execution = &ast.Ident{Name: "nil"}
+		}
+		return stdjavaCall(ctx, "ComparableCompareToExecution", execution, recv, args[0])
+	})
+	registerInstanceIntrinsicResultType("Comparable", "compareTo", "int")
+	for _, receiverType := range []string{"Object", "Number"} {
+		registerInstanceIntrinsic(receiverType, "equals", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 1 {
+				return nil
+			}
+			return stdjavaCall(ctx, "ObjectEqualsExecution", intrinsicExecutionExpr(ctx), recv, args[0])
+		})
+		registerInstanceIntrinsicResultType(receiverType, "equals", "boolean")
+		registerInstanceIntrinsic(receiverType, "hashCode", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaCall(ctx, "ObjectHashCodeExecution", intrinsicExecutionExpr(ctx), recv)
+		})
+		registerInstanceIntrinsicResultType(receiverType, "hashCode", "int")
+		registerInstanceIntrinsic(receiverType, "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaCall(ctx, "StringValueOfExecution", intrinsicExecutionExpr(ctx), stdjavaCall(ctx, "ReferenceRequireNonNull", recv))
+		})
+		registerInstanceIntrinsicResultType(receiverType, "toString", "String")
+		registerInstanceIntrinsic(receiverType, "getClass", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaCall(ctx, "ObjectGetClass", recv)
+		})
+		registerInstanceIntrinsicResultType(receiverType, "getClass", "Class")
+	}
+}
+
+func intrinsicExecutionExpr(ctx Ctx) ast.Expr {
+	if execution := executionExpr(ctx); execution != nil {
+		return execution
+	}
+	return &ast.Ident{Name: "nil"}
 }

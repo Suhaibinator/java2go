@@ -23,6 +23,10 @@ To use every known gap as a failing TDD target, enable strict parity mode:
 JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 ```
 
+Each parity command has a 60-second default timeout. On slower machines, set
+`JAVA2GO_PARITY_TIMEOUT=180s` alongside the test command; this accepts any positive
+Go duration and does not change benchmark timeouts or fixture workloads.
+
 ## Current applications
 
 | Fixture | Domain and coverage | Status |
@@ -32,6 +36,7 @@ JAVA2GO_PARITY_STRICT=1 go test ./e2e -run '^TestApplicationParity$' -v
 | `analytics_pipeline` | Parsing, validation, bounded generics, collections, scoring, aggregation, stable ranking, rejections, checksum | Passing |
 | `workflow_engine` | Generic workflow scheduler, rules, enums, collections, sorting, retries, failures, dependency cycles, histories, overflow | Passing |
 | `side_effect_semantics` | Short-circuiting, nested ternaries, receiver/argument order, null invocation timing, static qualifiers, compound assignment, `finally`, and recursive side effects | Passing |
+| `boxed_object_semantics` | All eight nullable wrapper objects, identity and numeric conversions, generic/overload selection, boxed collections/streams/Optionals, and varargs array aliases and store checks across three packages | Passing |
 | `numerical_kernels` | Floating-point recurrences, blocked dense matrices, iterative stencils, cache locality, allocation, numerical checksums | Passing + benchmark |
 | `allocation_gc_pressure` | Short-lived object/array churn, retained cyclic graphs, cohort rotation, traversal, mutation, reclamation pressure | Passing + benchmark |
 | `physics_simulation` | Multi-package vector and particle model, force integration, nested loops, floating-point state, and deterministic simulation summaries | Passing |

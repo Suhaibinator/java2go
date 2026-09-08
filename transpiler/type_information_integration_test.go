@@ -23,11 +23,11 @@ public class Check {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "_, ok := any(value).(Animal)") {
-		t.Fatalf("expected interface instanceof to lower to an interface type assertion, got:\n%s", out)
+	if !strings.Contains(flat, `stdjava.ObjectInstanceOf(value, stdjava.TypeID("typeinfo.instanceof.Animal"))`) {
+		t.Fatalf("expected interface instanceof to preserve its Java descriptor, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "_, ok := any(value).(*Dog)") {
-		t.Fatalf("expected class instanceof to lower to a pointer type assertion, got:\n%s", out)
+	if !strings.Contains(flat, `stdjava.ObjectInstanceOf(value, stdjava.TypeID("typeinfo.instanceof.Dog"))`) {
+		t.Fatalf("expected class instanceof to preserve its Java descriptor, got:\n%s", out)
 	}
 }
 

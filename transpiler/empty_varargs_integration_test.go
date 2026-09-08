@@ -53,10 +53,9 @@ public class EmptyVarargsProgram {
     }
 }
 `)
-	// ArrayLiteral's retained capacity gives each emitted zero-element call its
-	// own backing identity; its stdjava unit test pins that runtime property.
-	if count := strings.Count(out, "stdjava.ArrayLiteral["); count < 6 {
-		t.Fatalf("zero-element varargs calls emitted %d allocated slices, want at least 6:\n%s", count, out)
+	// Each array literal creates a distinct, non-null Java array object.
+	if count := strings.Count(out, "stdjava.PrimitiveArrayLiteral[") + strings.Count(out, "stdjava.ReferenceArrayLiteralOf["); count < 6 {
+		t.Fatalf("zero-element varargs calls emitted %d allocated arrays, want at least 6:\n%s", count, out)
 	}
 	runGeneratedWithStdjava(t, out, `
 package main
