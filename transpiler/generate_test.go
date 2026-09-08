@@ -217,19 +217,12 @@ func TestGenStructWithTypeParams_TypeParamBounds(t *testing.T) {
 		t.Fatalf("Expected first bound identifier 'JavaNumber', got %v", firstBound.Sel)
 	}
 
-	secondBound, ok := constraint.Methods.List[1].Type.(*ast.StarExpr)
-	if !ok {
-		t.Fatalf("Expected second bound to be *ast.StarExpr, got %T", constraint.Methods.List[1].Type)
+	secondBound, ok := constraint.Methods.List[1].Type.(*ast.Ident)
+	if !ok || secondBound.Name != "any" {
+		t.Fatalf("Expected Comparable's erased any representation, got %v", constraint.Methods.List[1].Type)
 	}
-	indexExpr, ok := secondBound.X.(*ast.IndexExpr)
-	if !ok {
-		t.Fatalf("Expected second bound to be *ast.IndexExpr inside *ast.StarExpr, got %T", secondBound.X)
-	}
-	if ident, ok := indexExpr.X.(*ast.Ident); !ok || ident.Name != "Comparable" {
-		t.Fatalf("Expected base identifier 'Comparable', got %v", indexExpr.X)
-	}
-	if arg, ok := indexExpr.Index.(*ast.Ident); !ok || arg.Name != "T" {
-		t.Fatalf("Expected type argument 'T', got %v", indexExpr.Index)
+	if got := typeParams[0].Bounds[1].Original; got != "Comparable<T>" {
+		t.Fatalf("nominal Java constraint was changed: %q", got)
 	}
 }
 
@@ -439,8 +432,8 @@ func TestTypeParameterConstraintFlatteningPreservesInheritedBoundBindings(t *tes
 	if err := printer.Fprint(&rendered, token.NewFileSet(), fields[2].Type); err != nil {
 		t.Fatalf("render inherited B constraint: %v", err)
 	}
-	if got := rendered.String(); !strings.Contains(got, "[A]") || strings.Contains(got, "[A2]") {
-		t.Fatalf("rendered inherited B constraint = %q, want outer A rather than inner A2", got)
+	if got := rendered.String(); got != "any" {
+		t.Fatalf("rendered inherited B constraint = %q, want erased Comparable representation any", got)
 	}
 }
 

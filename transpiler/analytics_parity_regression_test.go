@@ -49,10 +49,10 @@ public class FieldBackedCalls {
 		"__java2goInvocationReceiver := fs.parser",
 		".ParseJava2goExecution(__java2goExecution)",
 		".worker.NameJava2goExecution(__java2goExecution)",
-		".values.Add(",
+		"stdjava.EvaluationValue(fs.values).Add(",
 		".values.Get(0)",
 		".values.Size()",
-		".byKey.Put(",
+		"stdjava.EvaluationValue(fs.byKey).Put(",
 		".byKey.Get(",
 	}
 	for _, check := range checks {

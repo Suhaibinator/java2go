@@ -40,7 +40,7 @@ func TestIntrinsics_StringMethods(t *testing.T) {
 		{"contains", "s.contains(\"x\")", "strings.Contains(stdjava.StringRequireNonNull(s), \"x\")"},
 		{"startsWith", "s.startsWith(\"x\")", "strings.HasPrefix(stdjava.StringRequireNonNull(s), \"x\")"},
 		{"endsWith", "s.endsWith(\"x\")", "strings.HasSuffix(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"equals", "s.equals(\"x\")", "stdjava.StringRequireNonNull(s) == \"x\""},
+		{"equals", "s.equals(\"x\")", "stdjava.StringEquals(stdjava.StringRequireNonNull(s), \"x\")"},
 		{"equalsIgnoreCase", "s.equalsIgnoreCase(\"x\")", "stdjava.StringEqualsIgnoreCase(stdjava.StringRequireNonNull(s), \"x\")"},
 		{"compareTo", "s.compareTo(\"x\")", "stdjava.StringCompareTo(stdjava.StringRequireNonNull(s), \"x\")"},
 		{"toUpperCase", "s.toUpperCase()", "strings.ToUpper(stdjava.StringRequireNonNull(s))"},
@@ -106,7 +106,7 @@ public class SBProgram {
 `
 	out := renderIntrinsicProgram(t, src)
 	assertContains(t, out, "sb.Append(\"a\")")
-	assertContains(t, out, "sb.Append(1)")
+	assertContains(t, out, "sb.Append(stdjava.StringValueOf(1))")
 	assertContains(t, out, "sb.Insert(0, \"z\")")
 	assertContains(t, out, "sb.Reverse()")
 	assertContains(t, out, "sb.String()")
@@ -308,7 +308,7 @@ public class Importer {
 	}
 }
 
-func TestBoxedTypesMapToPrimitives(t *testing.T) {
+func TestBoxedTypesMapToObjects(t *testing.T) {
 	src := `
 public class Boxes<T> {
     private T value;
@@ -322,7 +322,10 @@ public class Boxes<T> {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "NewBoxesJava2goExecution[int32](__java2goExecution, int32(42))")
+	assertContains(t, out, "NewBoxesJava2goExecution[*stdjava.Integer](__java2goExecution, stdjava.BoxInteger(int32(42)))")
+	assertContains(t, out, "stdjava.BoxLong(")
+	assertContains(t, out, "stdjava.BoxDouble(")
+	assertContains(t, out, "stdjava.BoxBoolean(")
 	if strings.Contains(out, "*Integer") || strings.Contains(out, "*Long") || strings.Contains(out, "*Double") || strings.Contains(out, "*Boolean") {
 		t.Fatalf("boxed type leaked as an undefined pointer type:\n%s", out)
 	}

@@ -8,7 +8,7 @@ import (
 // Java constructor delegation performs an ordinary variable-arity invocation.
 // Even when this(), explicit super(), or implicit super() supplies no source
 // arguments, the target constructor observes a fresh, non-null zero-length
-// array rather than Go's nil variadic slice.
+// array.
 func TestConstructorDelegation_EmptyVarargsPreservesJavaArraySemantics(t *testing.T) {
 	out := renderGoFileFromJava(t, `
 class ThisTarget {
@@ -68,8 +68,8 @@ public class ConstructorEmptyVarargsProgram {
     }
 }
 `)
-	if count := strings.Count(out, "stdjava.ArrayLiteral[any]()..."); count < 5 {
-		t.Fatalf("empty constructor delegations emitted %d allocated varargs slices, want at least 5:\n%s", count, out)
+	if count := strings.Count(out, "stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID)"); count < 5 {
+		t.Fatalf("empty constructor delegations emitted %d allocated varargs arrays, want at least 5:\n%s", count, out)
 	}
 	runGeneratedWithStdjava(t, out, `
 package main

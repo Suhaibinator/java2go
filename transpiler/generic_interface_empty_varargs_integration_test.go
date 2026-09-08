@@ -32,11 +32,11 @@ public class GenericInterfaceEmptyVarargsProgram {
     }
 }
 `)
-	if count := strings.Count(out, "stdjava.ArrayLiteral[string]()"); count != 3 {
-		t.Fatalf("empty generic-interface varargs calls emitted %d concrete slices, want 3:\n%s", count, out)
+	if count := strings.Count(out, "stdjava.ReferenceArrayLiteralOf[string](stdjava.StringTypeID)"); count != 3 {
+		t.Fatalf("empty generic-interface varargs calls emitted %d concrete arrays, want 3:\n%s", count, out)
 	}
-	if count := strings.Count(out, "stdjava.ArrayLiteral[any]()"); count != 1 {
-		t.Fatalf("raw generic-interface bound emitted %d erased slices, want 1:\n%s", count, out)
+	if count := strings.Count(out, "stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID)"); count != 1 {
+		t.Fatalf("raw generic-interface bound emitted %d erased arrays, want 1:\n%s", count, out)
 	}
 	runGeneratedWithStdjava(t, out, `
 package main

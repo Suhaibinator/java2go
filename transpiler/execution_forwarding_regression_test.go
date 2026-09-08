@@ -93,7 +93,7 @@ func TestGeneratedAbstractReferenceCompiles(t *testing.T) {}
 `)
 }
 
-func TestExecutionForwarding_VariadicInterfaceMethodReferenceExpandsForwardedSlice(t *testing.T) {
+func TestExecutionForwarding_VariadicInterfaceMethodReferencePreservesForwardedArray(t *testing.T) {
 	src := `
 interface IntArrayTask {
     int apply(int[] values);
@@ -126,11 +126,11 @@ public class VariadicMethodReferenceProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, ".SumJava2goExecution(__java2goExecution, stdjava.PrimitiveArrayElements(values)...)") {
-		t.Fatalf("execution-aware variadic method-reference call did not unwrap and expand its forwarded PrimitiveArray:\n%s", out)
+	if !strings.Contains(flat, ".SumJava2goExecution(__java2goExecution, values)") {
+		t.Fatalf("execution-aware variadic method-reference call did not preserve its forwarded PrimitiveArray:\n%s", out)
 	}
-	if !strings.Contains(flat, ".Sum(stdjava.PrimitiveArrayElements(values)...)") {
-		t.Fatalf("public fallback for variadic method reference did not unwrap and expand its forwarded PrimitiveArray:\n%s", out)
+	if !strings.Contains(flat, ".Sum(values)") {
+		t.Fatalf("public fallback for variadic method reference did not preserve its forwarded PrimitiveArray:\n%s", out)
 	}
 	if !strings.Contains(flat, "values *stdjava.PrimitiveArray[int32]") {
 		t.Fatalf("non-variadic int[] SAM parameter lost its descriptor-bearing wrapper ABI:\n%s", out)
@@ -148,7 +148,7 @@ func TestVariadicMethodReference(t *testing.T) {
 `)
 }
 
-func TestExecutionForwarding_VariadicEnumWrapperExpandsForwardedSlice(t *testing.T) {
+func TestExecutionForwarding_VariadicEnumWrapperPreservesForwardedArray(t *testing.T) {
 	src := `
 public class VariadicEnumProgram {
     enum Calculator {
@@ -177,19 +177,23 @@ public class VariadicEnumProgram {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 	if !strings.Contains(flat, "_VariadicEnumProgramcalculator_SUM_Calculate(__java2goExecution") ||
-		strings.Count(flat, "vr, values...)") < 2 {
-		t.Fatalf("variadic enum wrapper did not expand the forwarded slice:\n%s", out)
+		strings.Count(flat, "vr, values)") < 2 {
+		t.Fatalf("variadic enum wrapper did not preserve the forwarded array:\n%s", out)
 	}
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestVariadicEnum(t *testing.T) {
-    if got := SUM.Calculate(4, 6, 8); got != 18 {
+    values := stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 4, 6, 8)
+    if got := SUM.Calculate(values); got != 18 {
         t.Fatalf("Calculate() = %d, want 18", got)
     }
-    if got := COUNT.Calculate(4, 6, 8); got != 3 {
+    if got := COUNT.Calculate(values); got != 3 {
         t.Fatalf("default Calculate() = %d, want 3", got)
     }
 }

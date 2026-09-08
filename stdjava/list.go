@@ -91,19 +91,30 @@ func (l *List[T]) ToArray() []T {
 
 // Contains reports whether the list holds an element equal to target, matching
 // List.contains. Equality uses ObjectsEqual (Java-style value equality).
-func (l *List[T]) Contains(target T) bool {
+func (l *List[T]) Contains(target any) bool {
 	return l.IndexOf(target) >= 0
 }
 
 // IndexOf returns the index of the first element equal to target, or -1,
 // matching List.indexOf.
-func (l *List[T]) IndexOf(target T) int32 {
+func (l *List[T]) IndexOf(target any) int32 {
 	for i, e := range l.elements {
-		if ObjectsEqual(e, target) {
+		if ObjectsEqual(target, e) {
 			return int32(i)
 		}
 	}
 	return -1
+}
+
+// RemoveObject removes the first equal element, matching List.remove(Object).
+// RemoveAt implements the separate Java overload that accepts an int index.
+func (l *List[T]) RemoveObject(target any) bool {
+	index := l.IndexOf(target)
+	if index < 0 {
+		return false
+	}
+	l.RemoveAt(index)
+	return true
 }
 
 // Slice returns the backing slice for iteration. The transpiler lowers an

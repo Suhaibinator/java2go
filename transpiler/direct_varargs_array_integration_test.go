@@ -6,9 +6,8 @@ import (
 )
 
 // This program is intentionally broad: Java treats a single array argument to
-// a varargs declaration as a fixed-arity invocation, while Go requires the
-// generated wrapper backing slice to be expanded explicitly. Ordinary element
-// arguments must continue to use Go's normal variadic calling convention.
+// a varargs declaration as a fixed-arity invocation. Generated methods retain
+// that array object, while ordinary element arguments create a fresh array.
 func TestDirectVarargsArrayCalls_PreserveJavaInvocationSemantics(t *testing.T) {
 	src := `
 public class DirectVarargsArrayProgram {
@@ -104,15 +103,17 @@ public class DirectVarargsArrayProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "stdjava.PrimitiveArrayElements(numbers)...") {
-		t.Fatalf("direct primitive-array varargs call was not unwrapped and expanded:\n%s", out)
+	if strings.Contains(flat, "stdjava.PrimitiveArrayElements(numbers)") ||
+		strings.Contains(flat, "stdjava.ReferenceArrayElements[string](words") {
+		t.Fatalf("fixed-arity varargs call replaced the original array with its elements:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.ReferenceArrayElements[string](words, stdjava.StringTypeID)...") {
-		t.Fatalf("direct reference-array varargs call was not converted and expanded:\n%s", out)
+	if !strings.Contains(flat, "values *stdjava.PrimitiveArray[int32]") ||
+		!strings.Contains(flat, "values *stdjava.ReferenceArray") {
+		t.Fatalf("varargs declarations did not retain the Java array ABI:\n%s", out)
 	}
-	if strings.Contains(flat, "stdjava.PrimitiveArrayElements(int32(7))") ||
-		strings.Contains(flat, "stdjava.ReferenceArrayElements[string](\"x\"") {
-		t.Fatalf("ordinary element varargs arguments were incorrectly treated as arrays:\n%s", out)
+	if !strings.Contains(flat, "stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 7, 8, 9)") ||
+		!strings.Contains(flat, "stdjava.ReferenceArrayLiteralOf[string](stdjava.StringTypeID, \"x\", \"yy\", \"zzz\")") {
+		t.Fatalf("expanded varargs calls did not allocate typed arrays:\n%s", out)
 	}
 
 	runGeneratedWithStdjava(t, out, `

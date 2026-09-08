@@ -23,27 +23,12 @@ func autoCloseableInterfaceType() ast.Expr {
 	}
 }
 
-// boxedPrimitiveType maps a Java boxed wrapper type name to its Go primitive
-// equivalent. The value form is used; Java's wrapper nullability is not modelled.
-// A Java int is int32 in this codebase, so Integer maps to int32.
+// boxedPrimitiveType maps Java's immutable, nullable wrapper objects to their
+// corresponding runtime pointer types. Primitive Java types are handled apart.
 func boxedPrimitiveType(name string) (ast.Expr, bool) {
 	switch name {
-	case "Integer":
-		return &ast.Ident{Name: "int32"}, true
-	case "Long":
-		return &ast.Ident{Name: "int64"}, true
-	case "Short":
-		return &ast.Ident{Name: "int16"}, true
-	case "Byte":
-		return &ast.Ident{Name: "int8"}, true
-	case "Character":
-		return &ast.Ident{Name: "rune"}, true
-	case "Float":
-		return &ast.Ident{Name: "float32"}, true
-	case "Double":
-		return &ast.Ident{Name: "float64"}, true
-	case "Boolean":
-		return &ast.Ident{Name: "bool"}, true
+	case "Integer", "Long", "Short", "Byte", "Character", "Float", "Double", "Boolean":
+		return &ast.StarExpr{X: &ast.SelectorExpr{X: &ast.Ident{Name: "stdjava"}, Sel: &ast.Ident{Name: name}}}, true
 	}
 	return nil, false
 }
@@ -105,6 +90,9 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 			panic(fmt.Errorf("generic_type has no base type"))
 		}
 		baseName := baseNode.Content(source)
+		if baseName == "Comparable" || baseName == "java.lang.Comparable" {
+			return &ast.Ident{Name: "any"}
+		}
 
 		// Find the type_arguments node
 		var typeArgs []ast.Expr
@@ -177,6 +165,10 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		return arrayType
 	case "type_identifier": // Any reference type
 		typeName := node.Content(source)
+		// A lexical type parameter shadows java.lang's implicit imports.
+		if isTypeParam(typeName) {
+			return &ast.Ident{Name: typeName}
+		}
 
 		// Special case for strings, because in Go, these are primitive types
 		if typeName == "String" {
@@ -186,20 +178,19 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 		if typeName == "Object" {
 			return &ast.Ident{Name: "any"}
 		}
+		if typeName == "Number" {
+			return &ast.SelectorExpr{X: &ast.Ident{Name: "stdjava"}, Sel: &ast.Ident{Name: "JavaNumber"}}
+		}
+		if typeName == "Comparable" {
+			return &ast.Ident{Name: "any"}
+		}
 		if typeName == "AutoCloseable" {
 			return autoCloseableInterfaceType()
 		}
-		// Boxed wrapper types map to their Go primitive (value form; nullability
-		// is not modelled). This covers boxed declared types (Integer x) and boxed
-		// type arguments (List<Integer>), which would otherwise emit an undefined
-		// *Integer.
+		// Preserve both reference identity and nullability in generic arguments
+		// and ordinary declarations.
 		if boxed, ok := boxedPrimitiveType(typeName); ok {
 			return boxed
-		}
-
-		// If this is a type parameter, don't wrap it in a pointer
-		if isTypeParam(typeName) {
-			return &ast.Ident{Name: typeName}
 		}
 
 		return &ast.StarExpr{
@@ -208,6 +199,20 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 	case "scoped_type_identifier":
 		// This contains a reference to the type of a nested class
 		// Ex: LinkedList.Node
+		if name, builtin := strings.CutPrefix(node.Content(source), "java.lang."); builtin {
+			if boxed, ok := boxedPrimitiveType(name); ok {
+				return boxed
+			}
+			if name == "Number" {
+				return &ast.SelectorExpr{X: &ast.Ident{Name: "stdjava"}, Sel: &ast.Ident{Name: "JavaNumber"}}
+			}
+			if name == "Comparable" || name == "Object" {
+				return &ast.Ident{Name: "any"}
+			}
+			if name == "String" {
+				return &ast.Ident{Name: "string"}
+			}
+		}
 		if strings.HasSuffix(node.Content(source), ".AutoCloseable") {
 			return autoCloseableInterfaceType()
 		}

@@ -74,7 +74,25 @@ type applicationParityFailure struct {
 
 var javaIdentifier = regexp.MustCompile(`^[A-Za-z_$][A-Za-z0-9_$]*$`)
 
+func parseApplicationParityTimeout(value string) (time.Duration, error) {
+	if value == "" {
+		return applicationFixtureTimeout, nil
+	}
+	timeout, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("JAVA2GO_PARITY_TIMEOUT=%q must be a positive Go duration (for example 180s): %w", value, err)
+	}
+	if timeout <= 0 {
+		return 0, fmt.Errorf("JAVA2GO_PARITY_TIMEOUT=%q must be a positive Go duration (for example 180s)", value)
+	}
+	return timeout, nil
+}
+
 func TestApplicationParity(t *testing.T) {
+	commandTimeout, err := parseApplicationParityTimeout(os.Getenv("JAVA2GO_PARITY_TIMEOUT"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	repositoryRoot := moduleRoot(t)
 	requireApplicationTool(t, "javac")
 	requireApplicationTool(t, "java")
@@ -88,7 +106,7 @@ func TestApplicationParity(t *testing.T) {
 	for _, fixture := range fixtures {
 		fixture := fixture
 		t.Run(fixture.name, func(t *testing.T) {
-			failure := runApplicationFixture(t, repositoryRoot, fixture)
+			failure := runApplicationFixture(t, repositoryRoot, fixture, commandTimeout)
 
 			if fixture.config.Status == "passing" {
 				if failure != nil {
@@ -270,7 +288,7 @@ func validateApplicationFixtureConfig(t testing.TB, metadataPath string, config 
 	}
 }
 
-func runApplicationFixture(t *testing.T, repositoryRoot string, fixture applicationFixture) *applicationParityFailure {
+func runApplicationFixture(t *testing.T, repositoryRoot string, fixture applicationFixture, commandTimeout time.Duration) *applicationParityFailure {
 	t.Helper()
 
 	javaSources := collectApplicationJavaSources(t, fixture.sourceRoot)
@@ -293,7 +311,7 @@ func runApplicationFixture(t *testing.T, repositoryRoot string, fixture applicat
 		"-classpath", javaClasspath,
 		"-d", javaClasses,
 	}, javaSources...)
-	javaCompile := runApplicationCommand(applicationFixtureTimeout, fixture.root, deterministicApplicationEnv(nil), "javac", javaCompileArgs...)
+	javaCompile := runApplicationCommand(commandTimeout, fixture.root, deterministicApplicationEnv(nil), "javac", javaCompileArgs...)
 	requireApplicationCommandStarted(t, "javac", javaCompile)
 	if javaCompile.timedOut || javaCompile.exitCode != 0 {
 		t.Fatalf("Java oracle did not compile (exit %d, timeout=%t)\nstdout:\n%s\nstderr:\n%s",
@@ -308,7 +326,7 @@ func runApplicationFixture(t *testing.T, repositoryRoot string, fixture applicat
 		"-cp", javaClasses,
 		fixture.config.MainClass,
 	}
-	javaResult := runApplicationCommand(applicationFixtureTimeout, javaWork, deterministicApplicationEnv(nil), "java", javaArgs...)
+	javaResult := runApplicationCommand(commandTimeout, javaWork, deterministicApplicationEnv(nil), "java", javaArgs...)
 	requireApplicationCommandStarted(t, "java", javaResult)
 	if javaResult.timedOut || javaResult.exitCode != 0 {
 		t.Fatalf("Java oracle did not exit successfully (exit %d, timeout=%t)\nstdout:\n%s\nstderr:\n%s",
@@ -338,7 +356,7 @@ func runApplicationFixture(t *testing.T, repositoryRoot string, fixture applicat
 	})
 	// Compile every converted package, including sources not reachable from main.
 	// javac validated the entire Java tree, so parity should hold that same bar.
-	goModuleCompile := runApplicationCommand(applicationFixtureTimeout, goOutput, goEnv, "go", "build", "-mod=mod", "./...")
+	goModuleCompile := runApplicationCommand(commandTimeout, goOutput, goEnv, "go", "build", "-mod=mod", "./...")
 	requireApplicationCommandStarted(t, "go build ./...", goModuleCompile)
 	if goModuleCompile.timedOut || goModuleCompile.exitCode != 0 {
 		return &applicationParityFailure{
@@ -351,7 +369,7 @@ func runApplicationFixture(t *testing.T, repositoryRoot string, fixture applicat
 	if err := writeApplicationDriver(fixture.config, goOutput); err != nil {
 		t.Fatalf("writing generated application driver: %v", err)
 	}
-	goCompile := runApplicationCommand(applicationFixtureTimeout, goOutput, goEnv, "go", "build", "-mod=mod", "-o", goBinary, "./paritydriver")
+	goCompile := runApplicationCommand(commandTimeout, goOutput, goEnv, "go", "build", "-mod=mod", "-o", goBinary, "./paritydriver")
 	requireApplicationCommandStarted(t, "go build", goCompile)
 	if goCompile.timedOut || goCompile.exitCode != 0 {
 		return &applicationParityFailure{
@@ -361,7 +379,7 @@ func runApplicationFixture(t *testing.T, repositoryRoot string, fixture applicat
 		}
 	}
 
-	goResult := runApplicationCommand(applicationFixtureTimeout, goWork, deterministicApplicationEnv(nil), goBinary)
+	goResult := runApplicationCommand(commandTimeout, goWork, deterministicApplicationEnv(nil), goBinary)
 	requireApplicationCommandStarted(t, "generated Go application", goResult)
 	if goResult.timedOut || goResult.exitCode != javaResult.exitCode {
 		return &applicationParityFailure{

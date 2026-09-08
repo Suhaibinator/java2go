@@ -405,8 +405,12 @@ public class TestParams {
 	if spreadParam.Names[0].Name != "args" {
 		t.Errorf("Expected second param 'args', got %s", spreadParam.Names[0].Name)
 	}
-	if _, ok := spreadParam.Type.(*ast.Ellipsis); !ok {
-		t.Errorf("Expected Ellipsis type for spread param, got %T", spreadParam.Type)
+	var rendered bytes.Buffer
+	if err := printer.Fprint(&rendered, token.NewFileSet(), spreadParam.Type); err != nil {
+		t.Fatal(err)
+	}
+	if got := rendered.String(); got != "*stdjava.ReferenceArray" {
+		t.Errorf("Expected Java reference-array type for spread param, got %s", got)
 	}
 }
 
@@ -566,9 +570,8 @@ public class Box<T> {
 		}
 		output := buf.String()
 
-		// Explicit type args should be preserved. Integer is a boxed type and now
-		// maps to its Go primitive (int32).
-		if !strings.Contains(output, "[Integer]") && !strings.Contains(output, "[*Integer]") && !strings.Contains(output, "[int]") && !strings.Contains(output, "[int32]") {
+		// Explicit Java wrapper arguments retain their nullable object type.
+		if !strings.Contains(output, "NewBoxJava2goExecution[*stdjava.Integer]") {
 			t.Errorf("Explicit type arguments should be preserved, got:\n%s", output)
 		}
 	})
@@ -605,10 +608,7 @@ public class Pair<K, V> {
 		}
 		output := buf.String()
 
-		if !strings.Contains(output, "NewPairJava2goExecution[String, Integer]") &&
-			!strings.Contains(output, "NewPairJava2goExecution[string, *Integer]") &&
-			!strings.Contains(output, "NewPairJava2goExecution[string,*Integer]") &&
-			!strings.Contains(output, "NewPairJava2goExecution[string, int32]") {
+		if !strings.Contains(output, "NewPairJava2goExecution[string, *stdjava.Integer]") {
 			t.Errorf("Diamond operator should infer multiple type arguments, got:\n%s", output)
 		}
 	})
@@ -966,7 +966,7 @@ public class LinkedList<E> {
 }
 
 // TestVariadicParameter_WithTypeParameter tests that variadic parameters with
-// type parameters produce *ast.Ellipsis with the correct element type (not *ast.StarExpr)
+// type parameters use the reference-array ABI, preserving the Java array object.
 func TestVariadicParameter_WithTypeParameter(t *testing.T) {
 	src := `
 package com.example;
@@ -1014,25 +1014,16 @@ public class Utils<T> {
 		t.Fatalf("Expected *ast.Field, got %T", res)
 	}
 
-	// Type should be *ast.Ellipsis, NOT *ast.StarExpr
-	ellipsis, ok := field.Type.(*ast.Ellipsis)
+	arrayPointer, ok := field.Type.(*ast.StarExpr)
 	if !ok {
-		t.Fatalf("Expected variadic parameter to have *ast.Ellipsis type, got %T", field.Type)
+		t.Fatalf("Expected variadic parameter to have array pointer type, got %T", field.Type)
 	}
-
-	// The element type should be T (an identifier), not *T (a StarExpr)
-	// Since T is a type parameter, it should not be wrapped in a pointer
-	elt, ok := ellipsis.Elt.(*ast.Ident)
-	if !ok {
-		// If it's a StarExpr with T inside, that's the bug we're testing for
-		if star, isStar := ellipsis.Elt.(*ast.StarExpr); isStar {
-			if ident, isIdent := star.X.(*ast.Ident); isIdent && ident.Name == "T" {
-				t.Errorf("Type parameter T in variadic should not be wrapped in *ast.StarExpr, got *T")
-			}
-		}
-		t.Errorf("Expected ellipsis element to be *ast.Ident for type parameter T, got %T", ellipsis.Elt)
-	} else if elt.Name != "T" {
-		t.Errorf("Expected ellipsis element name 'T', got '%s'", elt.Name)
+	arrayType, ok := arrayPointer.X.(*ast.SelectorExpr)
+	if !ok || arrayType.Sel.Name != "ReferenceArray" {
+		t.Fatalf("Expected variadic type parameter to use stdjava.ReferenceArray, got %#v", arrayPointer.X)
+	}
+	if pkg, ok := arrayType.X.(*ast.Ident); !ok || pkg.Name != "stdjava" {
+		t.Fatalf("Expected stdjava array type, got %#v", arrayType.X)
 	}
 }
 

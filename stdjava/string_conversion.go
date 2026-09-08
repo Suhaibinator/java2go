@@ -53,7 +53,7 @@ func StringReferenceValue(value any) string {
 // fmt.Stringer is intentionally honored so generated classes and enums can
 // expose Java's toString behavior without leaking their Go struct representation.
 func StringValueOf(value any) string {
-	if StringIsNull(value) {
+	if nilJavaReference(value) {
 		return "null"
 	}
 
@@ -77,7 +77,7 @@ type executionStringer interface {
 // value has been erased to Object (or another interface type) before text
 // conversion. Collision-renamed hidden methods are discovered structurally.
 func StringValueOfExecution(execution *Execution, value any) string {
-	if StringIsNull(value) {
+	if nilJavaReference(value) {
 		return "null"
 	}
 

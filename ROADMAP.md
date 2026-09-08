@@ -3,10 +3,9 @@
 A checklist of missing or partial features needed to support full Java-to-Go conversion,
 roughly in suggested priority order. See file references for where each gap lives today.
 
-> **Status (2026-06-10):** Work in progress by team `java2go-roadmap`.
-> §1 robustness-dev · §2 stdlib-dev · §3 exceptions-dev · §4–5 classes-dev · §6–7 queued ·
-> E2E test suite (testfiles/e2e/) owned by e2e-tester. Checkboxes are ticked as work is
-> reviewed and merged, not when first submitted.
+> **Status (2026-09-08):** Implemented features have focused runtime/generated-code
+> tests and application parity coverage. Checked items describe that supported
+> subset; they do not imply complete Java language or standard-library support.
 
 ## 1. Robustness / graceful degradation
 
@@ -51,16 +50,16 @@ roughly in suggested priority order. See file references for where each gap live
 
 - [x] `var` local variable type inference (verified working by e2e suite; was already covered by existing inference)
 - [x] Switch expressions with `->` arms and `yield` (Java 12+) — lowered to IIFE returning the value; arrow-form switch statements too
-- [x] `instanceof` pattern matching: `if (x instanceof String s)` → `if t, ok := any(x).(T); ok` with the bound variable scoped to the body
+- [x] `instanceof` pattern matching with the bound variable scoped to the body, including nominal checks for boxed wrapper types
 - [x] Records (Java 14+) — unexported component fields, canonical constructor, accessor methods, value-equality Equals
 - [x] Sealed classes/interfaces (Java 15+) — sealed/non-sealed/permits modifiers gracefully dropped
 - [x] Text blocks `"""..."""` (Java 13+) — JLS incidental-whitespace stripping, raw-string emission with quote fallback
 
 ## 6. Semantic fidelity in existing features
 
-- [ ] Implicit numeric widening at call sites (`int` arg → `long` param)
-- [ ] Autoboxing/unboxing (`int` ↔ `Integer`)
-- [ ] Implicit array-to-varargs conversion at call sites (declarations already work, `transpiler/tree_sitter.go:312`)
+- [x] Implicit numeric widening at call sites (`int` arg → `long` param), with strict fixed-arity, loose fixed-arity, then variable-arity overload phases
+- [x] Autoboxing/unboxing for all eight Java wrappers — immutable nullable runtime objects, cache/constructor identity, Number accessors, checked conversions, generic and collection integration, primitive/reference stream boundaries, and Optional null handling
+- [x] Java varargs array semantics — fixed-array calls preserve identity, mutation visibility, null, and covariant store checks; expanded calls allocate fresh descriptor-bearing arrays, including constructor delegation and method references
 - [ ] `? super T` wildcard currently approximated as `any` — preserve the bound where possible (`README.md:52`)
 - [ ] Static initializer ordering guarantees matching Java class-loading order
 - [x] Verify integer overflow / division / shift semantics match Java — int locals pinned to int32 (32-bit wrap), shift counts masked 31/63 by operand width, divide-by-zero → catchable ArithmeticException
@@ -76,6 +75,12 @@ roughly in suggested priority order. See file references for where each gap live
 
 ## 8. Out of scope / decide explicitly
 
-- [ ] Reflection (`getClass()`, `Class.forName()`, `java.lang.reflect.*`) — decide whether to support a subset or document as unsupported
+- [ ] General reflection (`Class.forName()`, `java.lang.reflect.*`) beyond supported class literals, wrapper `TYPE`, and runtime type identity
+- [ ] Arbitrary user-defined collection `equals`/`hashCode` semantics beyond the supported boxed-key and existing collection behavior
+- [ ] Full Unicode String fidelity and object serialization
 - [ ] Module system (`module-info.java`, Java 9+)
 - [ ] Class loading semantics / custom class loaders
+
+The boxed-object migration changes the generated Go API. Regenerate complete
+output trees together with their matching runtime; primitive-wrapper and
+variadic-slice output from older revisions is not a compatibility mode.

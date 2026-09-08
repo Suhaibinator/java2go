@@ -16,18 +16,18 @@ func TestListAddGetSize(t *testing.T) {
 }
 
 func TestListSetRemoveContains(t *testing.T) {
-	l := NewListFrom(1, 2, 3)
+	l := NewListFrom[int32](1, 2, 3)
 	if old := l.Set(0, 9); old != 1 {
 		t.Fatalf("Set returned %d, want 1", old)
 	}
 	if l.Get(0) != 9 {
 		t.Fatalf("after Set Get(0) = %d, want 9", l.Get(0))
 	}
-	if !l.Contains(2) {
+	if !l.Contains(int32(2)) {
 		t.Fatalf("Contains(2) = false, want true")
 	}
-	if l.IndexOf(3) != 2 {
-		t.Fatalf("IndexOf(3) = %d, want 2", l.IndexOf(3))
+	if l.IndexOf(int32(3)) != 2 {
+		t.Fatalf("IndexOf(3) = %d, want 2", l.IndexOf(int32(3)))
 	}
 	if removed := l.RemoveAt(1); removed != 2 {
 		t.Fatalf("RemoveAt(1) = %d, want 2", removed)

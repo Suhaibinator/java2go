@@ -38,13 +38,20 @@ func registerStreamIntrinsics() {
 		}
 	}
 
-	// Stream.of(...) -> stdjava.NewStream(...). Its element type comes from the
-	// first argument, so a chained call (and a flatMap mapper's result type) can
-	// be resolved.
+	// Stream.of(...) uses Java's inferred reference type explicitly. Go cannot
+	// infer Number from heterogeneous Integer and Long wrapper pointers.
 	registerStaticIntrinsic("Stream", "of", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(ctx.intrinsicTypeArgs) == 1 {
+			return stdjavaGenericCall(ctx, "NewStream", ctx.intrinsicTypeArgs, args)
+		}
 		return stdjavaCall(ctx, "NewStream", args...)
 	})
-	registerStaticIntrinsicDerivedResultType("Stream", "of", derivedResultTypeFromArgument("Stream", 0))
+	registerStaticIntrinsicTypeArgs("Stream", "of", func(invocation *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
+		return []ast.Expr{javaTypeStringToGoTypeExpr(intrinsicFactoryElementJavaType(invocation, ctx, source), inScopeTypeParameters(ctx), ctx)}
+	})
+	registerStaticIntrinsicDerivedResultType("Stream", "of", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+		return "Stream<" + intrinsicFactoryElementJavaType(invocation, ctx, source) + ">", true
+	})
 
 	for _, t := range streamTypeNames {
 		// Lambda argument shapes, declared alongside the intrinsics they belong to.
@@ -86,9 +93,9 @@ func registerStreamIntrinsics() {
 		registerInstanceIntrinsic(t, "sorted", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			switch len(args) {
 			case 0:
-				return stdjavaCall(ctx, "StreamSorted", recv)
+				return stdjavaCall(ctx, "StreamSorted", recv, executionExpr(ctx))
 			case 1:
-				return stdjavaCall(ctx, "StreamSortedWith", recv, args[0])
+				return stdjavaCall(ctx, "StreamSortedWith", recv, args[0], executionExpr(ctx))
 			}
 			return nil
 		})
@@ -141,18 +148,18 @@ func registerStreamIntrinsics() {
 		registerInstanceIntrinsic(t, "min", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			switch len(args) {
 			case 0:
-				return stdjavaCall(ctx, "StreamMin", recv)
+				return stdjavaCall(ctx, "StreamMin", recv, executionExpr(ctx))
 			case 1:
-				return stdjavaCall(ctx, "StreamMinWith", recv, args[0])
+				return stdjavaCall(ctx, "StreamMinWith", recv, args[0], executionExpr(ctx))
 			}
 			return nil
 		})
 		registerInstanceIntrinsic(t, "max", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			switch len(args) {
 			case 0:
-				return stdjavaCall(ctx, "StreamMax", recv)
+				return stdjavaCall(ctx, "StreamMax", recv, executionExpr(ctx))
 			case 1:
-				return stdjavaCall(ctx, "StreamMaxWith", recv, args[0])
+				return stdjavaCall(ctx, "StreamMaxWith", recv, args[0], executionExpr(ctx))
 			}
 			return nil
 		})
@@ -172,6 +179,9 @@ func reduceLambdaArgumentTypes(invocation *sitter.Node, ctx Ctx, source []byte) 
 	resultType, ok := inferExprJavaType(identity, ctx, source)
 	if !ok {
 		return nil
+	}
+	if boxed := ternaryBoxedJavaType(resultType); boxed != "" {
+		resultType = "java.lang." + boxed
 	}
 	elementTypes := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
 	if len(elementTypes) != 1 {

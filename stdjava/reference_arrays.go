@@ -160,15 +160,15 @@ var javaTypeRegistry = struct {
 				ConstantDescTypeID,
 			},
 		},
-		NumberTypeID:    {super: ObjectTypeID},
-		BooleanTypeID:   {super: ObjectTypeID},
-		ByteTypeID:      {super: NumberTypeID},
-		ShortTypeID:     {super: NumberTypeID},
-		CharacterTypeID: {super: ObjectTypeID},
-		IntegerTypeID:   {super: NumberTypeID},
-		LongTypeID:      {super: NumberTypeID},
-		FloatTypeID:     {super: NumberTypeID},
-		DoubleTypeID:    {super: NumberTypeID},
+		NumberTypeID:    {super: ObjectTypeID, interfaces: []TypeID{SerializableTypeID}},
+		BooleanTypeID:   {super: ObjectTypeID, interfaces: []TypeID{SerializableTypeID, ComparableTypeID, ConstableTypeID}},
+		ByteTypeID:      {super: NumberTypeID, interfaces: []TypeID{ComparableTypeID, ConstableTypeID}},
+		ShortTypeID:     {super: NumberTypeID, interfaces: []TypeID{ComparableTypeID, ConstableTypeID}},
+		CharacterTypeID: {super: ObjectTypeID, interfaces: []TypeID{SerializableTypeID, ComparableTypeID, ConstableTypeID}},
+		IntegerTypeID:   {super: NumberTypeID, interfaces: []TypeID{ComparableTypeID, ConstableTypeID, ConstantDescTypeID}},
+		LongTypeID:      {super: NumberTypeID, interfaces: []TypeID{ComparableTypeID, ConstableTypeID, ConstantDescTypeID}},
+		FloatTypeID:     {super: NumberTypeID, interfaces: []TypeID{ComparableTypeID, ConstableTypeID, ConstantDescTypeID}},
+		DoubleTypeID:    {super: NumberTypeID, interfaces: []TypeID{ComparableTypeID, ConstableTypeID, ConstantDescTypeID}},
 	},
 }
 
@@ -371,27 +371,9 @@ func ObjectDynamicType(value any) (TypeID, bool) {
 		}
 		return StringTypeID, true
 	}
-	// Generated boxed values currently use their fixed-width Go scalar ABI.
-	// Recording those widths here lets Object[] enforce its Java component at
-	// runtime instead of treating every boxed primitive as an untyped Go value.
-	switch value.(type) {
-	case bool:
-		return BooleanTypeID, true
-	case int8:
-		return ByteTypeID, true
-	case int16:
-		return ShortTypeID, true
-	case int32:
-		// rune and int32 are aliases in Go. Integer is the conservative erased
-		// identity; Character-specific casts require a future boxed-value ABI.
-		return IntegerTypeID, true
-	case int64:
-		return LongTypeID, true
-	case float32:
-		return FloatTypeID, true
-	case float64:
-		return DoubleTypeID, true
-	}
+	// Wrapper objects carry their nominal type through JavaDynamicTypeCarrier.
+	// Primitive Go values have no Java reference identity; callers must box at
+	// the source-language conversion boundary, including Character versus Integer.
 	if carrier, ok := value.(JavaObjectInfoCarrier); ok {
 		if info := carrier.JavaObjectInfo(); info != nil && info.DynamicType() != "" {
 			return info.DynamicType(), true
@@ -434,7 +416,7 @@ func ObjectView[T any](value any, requested TypeID) T {
 		return zero
 	}
 	actual, ok := ObjectDynamicType(value)
-	if !ok && requested == ObjectTypeID {
+	if !ok && requested == ObjectTypeID && !unboxedPrimitiveValue(value) {
 		// Some runtime-backed Java objects intentionally retain an opaque Go ABI
 		// (notably new Object() monitor tokens and generic collection pointers).
 		// Object is the one Java component for which every non-null reference is
@@ -815,7 +797,7 @@ func referenceArrayStoreAt(array *ReferenceArray, position int, value any) {
 		// values whose compact Go representation does not expose nominal metadata.
 		// Keep this exception exact: an opaque value must still be rejected by a
 		// covariant Child[] or interface[] target.
-		opaqueObjectStore := !ok && array.componentType == ObjectTypeID
+		opaqueObjectStore := !ok && array.componentType == ObjectTypeID && !unboxedPrimitiveValue(value)
 		if !opaqueObjectStore && (!ok || !JavaTypeAssignable(actualType, array.componentType)) {
 			panic(NewArrayStoreException(fmt.Sprintf("cannot store %s in %s[]", actualType, array.componentType)))
 		}
@@ -873,6 +855,22 @@ func nilJavaReference(value any) bool {
 	switch reflected.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
 		return reflected.IsNil()
+	default:
+		return false
+	}
+}
+
+// unboxedPrimitiveValue prevents an omitted boxing conversion from silently
+// entering reference storage through the opaque-runtime-object fallback.
+func unboxedPrimitiveValue(value any) bool {
+	if value == nil {
+		return false
+	}
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+		reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128:
+		return true
 	default:
 		return false
 	}

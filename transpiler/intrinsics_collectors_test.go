@@ -83,7 +83,7 @@ public class ToMapProgram {
 	assertContains(t, out, "stdjava.StreamToMap(")
 	assertContains(t, out, "stdjava.StreamToMapMerging(")
 	// The merge function takes two values, not two elements.
-	assertContains(t, out, "func(a int32, b int32) int32")
+	assertContains(t, out, "func(a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
 }
 
 func TestCollectors_GroupingByAndPartitioningBy(t *testing.T) {
@@ -168,6 +168,6 @@ public class ThreeArgReduceProgram {
 `)
 	assertContains(t, out, "stdjava.StreamReduceCombining(")
 	// The accumulator takes (U, T); the combiner takes (U, U).
-	assertContains(t, out, "func(acc string, x int32) string")
+	assertContains(t, out, "func(acc string, x *stdjava.Integer) string")
 	assertContains(t, out, "func(a string, b string) string")
 }

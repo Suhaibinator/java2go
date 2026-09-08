@@ -193,34 +193,39 @@ func lowerSimpleArrayAssignmentCall(node *sitter.Node, source []byte, ctx Ctx) (
 	rhsCtx.expectedTypeRoot = rhsNode
 	rhs := ParseExpr(rhsNode, source, rhsCtx)
 	rhs = coerceArgumentToExpectedType(rhs, rhsNode, lhsJavaType, ctx, source)
+	array := ParseExpr(arrayNode, source, ctx)
+	index := parseJavaIndexExpr(indexNode, source, ctx)
+	if javaBinaryOperandMayHaveEffects(indexNode, source, ctx) || javaBinaryOperandMayHaveEffects(rhsNode, source, ctx) {
+		array = snapshotJavaExpressionValue(array, ctx)
+	}
+	if javaBinaryOperandMayHaveEffects(rhsNode, source, ctx) {
+		index = snapshotJavaExpressionValueForType(index, "int", ctx)
+	}
 	if _, componentType, componentID, reified := expressionUsesReifiedReferenceArray(arrayNode, ctx, source); reified {
 		return stdjavaGenericCall(ctx, "ReferenceArrayAssign", []ast.Expr{componentType}, []ast.Expr{
-			ParseExpr(arrayNode, source, ctx),
-			ParseExpr(indexNode, source, ctx),
+			array,
+			index,
 			rhs,
 			componentID,
 		}), true
 	}
 	if _, componentType, _, primitive := expressionUsesPrimitiveArray(arrayNode, ctx, source); primitive {
 		return stdjavaGenericCall(ctx, "PrimitiveArrayAssign", []ast.Expr{componentType}, []ast.Expr{
-			ParseExpr(arrayNode, source, ctx),
-			ParseExpr(indexNode, source, ctx),
+			array,
+			index,
 			rhs,
 		}), true
 	}
 
 	return stdjavaCall(ctx, "ArraySet",
-		ParseExpr(arrayNode, source, ctx),
-		ParseExpr(indexNode, source, ctx),
+		array,
+		index,
 		rhs,
 	), true
 }
 
-// requireNullableValueBackedExpression converts an interface-backed nullable
-// String/boxed local back to the concrete Go value used at a method boundary.
-// A selected null consequently raises the same kind of failure as Java
-// unboxing/dereferencing; modelling nullable boxed return values themselves
-// requires a repository-wide representation change beyond local storage.
+// requireNullableValueBackedExpression preserves nullable String locals across
+// the concrete string ABI. Wrapper objects already use nullable pointers.
 func requireNullableValueBackedExpression(value ast.Expr, node *sitter.Node, expectedType string, ctx Ctx, source []byte) ast.Expr {
 	if !usesNullableValueStorage(expectedType) ||
 		!expressionUsesNullableValueStorage(node, ctx, source) {
@@ -246,6 +251,27 @@ func requireNullableValueBackedExpression(value ast.Expr, node *sitter.Node, exp
 func inferEnhancedForElementJavaType(valueNode *sitter.Node, source []byte, ctx Ctx) (string, bool) {
 	if valueNode == nil {
 		return "", false
+	}
+	// Map views are emitted as native slices. Their element's Java type still
+	// comes from the map arguments, including when the loop binding unboxes it.
+	if valueNode.Type() == "method_invocation" {
+		object := valueNode.ChildByFieldName("object")
+		name := valueNode.ChildByFieldName("name")
+		if object != nil && name != nil {
+			if receiver, known := intrinsicReceiverTypeName(object, ctx, source); known && (containsString(mapTypeNames, receiver) || receiver == "ConcurrentHashMap") {
+				elements := receiverElementJavaTypes(object, ctx, source)
+				switch name.Content(source) {
+				case "values":
+					if len(elements) == 2 {
+						return elements[1], true
+					}
+				case "keySet":
+					if len(elements) == 2 {
+						return elements[0], true
+					}
+				}
+			}
+		}
 	}
 	rangeType, ok := inferExprJavaType(valueNode, ctx, source)
 	if !ok {
@@ -293,13 +319,7 @@ func enhancedForReferenceElementView(
 
 	if expectedPrimitive, primitiveBinding := javaPrimitiveType(bindingJavaType); primitiveBinding {
 		value := ast.Expr(stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{componentGoType}, []ast.Expr{raw, componentTypeID}))
-		if actualPrimitive, boxed := ternaryBoxedPrimitive(componentJavaType); boxed && actualPrimitive != expectedPrimitive {
-			if _, widening := javaPrimitiveWideningDistance(actualPrimitive, expectedPrimitive); widening {
-				if conversion := goPrimitiveConversionName(expectedPrimitive); conversion != "" {
-					return &ast.CallExpr{Fun: &ast.Ident{Name: conversion}, Args: []ast.Expr{value}}
-				}
-			}
-		}
+		value, _ = convertJavaValue(value, componentJavaType, expectedPrimitive, ctx)
 		return value
 	}
 
@@ -498,9 +518,8 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		declaration := ParseStmt(variableDeclarator, source, ctx).(*ast.AssignStmt)
 
-		// A nullable String or boxed primitive needs an interface-backed local even
-		// when null is nested inside a conditional initializer rather than appearing
-		// as the declarator's direct value.
+		// Nullable initializers need an explicit type. String locals retain their
+		// interface storage while wrapper references use their ordinary pointer.
 		containsNull := expressionUsesNullableValueStorage(initializerNode, ctx, source)
 
 		names := make([]*ast.Ident, len(declaration.Lhs))
@@ -592,15 +611,13 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			}
 		}
 
-		// A primitive stored in Object undergoes Java boxing. Pin integer literals
-		// to Java's 32-bit Integer representation before Go infers a host-sized int.
-		if expectedBase, _ := parseJavaTypeString(originalType); stripJavaQualifier(expectedBase) == "Object" {
-			initializers := nodeutil.NamedChildrenOf(variableDeclarator)
-			for ind, rhs := range declaration.Rhs {
-				initializerIndex := ind*2 + 1
-				if initializerIndex < len(initializers) {
-					declaration.Rhs[ind] = boxPrimitiveForObject(rhs, initializers[initializerIndex], originalType, ctx, source)
-				}
+		base, _ := parseJavaTypeString(originalType)
+		switch stripJavaQualifier(base) {
+		case "Object", "Number", "Comparable", "Serializable", "Constable", "ConstantDesc":
+			if resolveClassScopeByQualifiedName(ctx, base) == nil {
+				return &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{
+					&ast.ValueSpec{Names: names, Type: explicitLocalVariableType(originalType, ctx), Values: declaration.Rhs},
+				}}}
 			}
 		}
 
@@ -618,12 +635,8 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			names = append(names, identFromNode(node.NamedChild(ind), source))
 			valueNode := node.NamedChild(ind + 1)
 			value := ParseExpr(valueNode, source, ctx)
-			value = projectDirectOwnerErasedExpressionForExpected(value, valueNode, ctx, source)
 			if expectedType := strings.TrimSpace(ctx.expectedType); expectedType != "" && !isVarKeywordType(expectedType) {
-				if actualType, known := inferExprJavaType(valueNode, ctx, source); known &&
-					javaDependentTypeParameterAssignable(actualType, expectedType, ctx) {
-					value = dependentTypeParameterWideningExpr(value, actualType, expectedType, ctx)
-				}
+				value = coerceArgumentToExpectedType(value, valueNode, expectedType, ctx, source)
 			}
 			values = append(values, value)
 		}
@@ -676,6 +689,11 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 		if _, ok := resolveStaticFieldAccess(operandNode, source, ctx); ok {
 			return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
+		}
+		if operandType, known := inferExprJavaType(operandNode, ctx, source); known {
+			if _, wrapper := builtinJavaWrapperPrimitive(operandType, ctx); wrapper {
+				return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
+			}
 		}
 		if node.Child(0).IsNamed() {
 			return &ast.IncDecStmt{
@@ -869,6 +887,10 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			if _, ok := body.(*ast.BlockStmt); !ok {
 				body = &ast.BlockStmt{List: []ast.Stmt{body}}
 			}
+			if name := patternNode.ChildByFieldName("name"); name != nil {
+				block := body.(*ast.BlockStmt)
+				block.List = append([]ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "_"}}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.Ident{Name: sanitizeGoIdent(name.Content(source))}}}}, block.List...)
+			}
 			return &ast.IfStmt{
 				Init: initStmt,
 				Cond: condExpr,
@@ -886,7 +908,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 
 		return &ast.IfStmt{
-			Cond: ParseExpr(node.ChildByFieldName("condition"), source, ctx),
+			Cond: parseJavaBooleanExpr(node.ChildByFieldName("condition"), source, ctx),
 			Body: body.(*ast.BlockStmt),
 			Else: other,
 		}
@@ -965,6 +987,16 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					Fun: &ast.SelectorExpr{X: rangeExpr, Sel: &ast.Ident{Name: "Slice"}},
 				}
 			}
+			if referenceBinding == nil && nameNode != nil {
+				if elementType, known := inferEnhancedForElementJavaType(valueNode, source, ctx); known {
+					rawName := fmt.Sprintf("__java2goEnhancedForElement_%d", node.StartByte())
+					rawValue := &ast.Ident{Name: rawName}
+					if converted, needed := convertJavaValue(rawValue, elementType, bindingJavaType, ctx); needed && elementType != bindingJavaType {
+						rangeValue = rawValue
+						referenceBinding = &ast.AssignStmt{Lhs: []ast.Expr{bindingValue}, Tok: token.DEFINE, Rhs: []ast.Expr{converted}}
+					}
+				}
+			}
 		}
 		rangeBody := &ast.BlockStmt{}
 		if bodyNode != nil {
@@ -1014,7 +1046,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 		var cond ast.Expr
 		if node.ChildByFieldName("condition") != nil {
-			cond = ParseExpr(node.ChildByFieldName("condition"), source, ctx)
+			cond = parseJavaBooleanExpr(node.ChildByFieldName("condition"), source, ctx)
 		}
 		// A canonical inner column loop can reuse equal-span row slices only when
 		// all selected bindings were proven non-null by an enclosing loop version.
@@ -1090,7 +1122,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			return readLineLoop
 		}
 		return &ast.ForStmt{
-			Cond: ParseExpr(node.NamedChild(0), source, ctx),
+			Cond: parseJavaBooleanExpr(node.NamedChild(0), source, ctx),
 			Body: ParseStmt(node.NamedChild(1), source, ctx).(*ast.BlockStmt),
 		}
 	case "do_statement":
@@ -1114,7 +1146,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			Cond: &ast.UnaryExpr{
 				Op: token.NOT,
 				X: &ast.ParenExpr{
-					X: ParseExpr(node.NamedChild(1), source, ctx),
+					X: parseJavaBooleanExpr(node.NamedChild(1), source, ctx),
 				},
 			},
 			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.BranchStmt{Tok: token.BREAK}}},
@@ -1149,8 +1181,12 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if blockNode == nil {
 			return &ast.SwitchStmt{Body: &ast.BlockStmt{}}
 		}
+		tag := ParseExpr(tagNode, source, ctx)
+		if javaType, known := inferExprJavaType(tagNode, ctx, source); known {
+			tag = javaUnboxExpr(tag, javaType, ctx)
+		}
 		return &ast.SwitchStmt{
-			Tag:  ParseExpr(tagNode, source, ctx),
+			Tag:  tag,
 			Body: parseSwitchBlock(blockNode, source, ctx),
 		}
 	case "switch_block":
@@ -1251,9 +1287,8 @@ func explicitLocalVariableType(originalType string, ctx Ctx) ast.Expr {
 // nullableLocalVariableType preserves null for Java reference types whose usual
 // Go representation is a non-nullable value. Most Java references already lower
 // to pointers, slices, interfaces, or maps and can therefore use their normal
-// explicit type. String and boxed primitives need an interface slot when their
-// initializer is null so later comparisons and Java text conversion can still
-// observe the distinction between null and a value-type zero.
+// explicit type. String needs an interface slot when its initializer is null;
+// boxed primitive objects already have a nullable pointer representation.
 func nullableLocalVariableType(originalType string, ctx Ctx) ast.Expr {
 	if usesNullableValueStorage(originalType) {
 		return &ast.Ident{Name: "any"}
@@ -1264,7 +1299,7 @@ func nullableLocalVariableType(originalType string, ctx Ctx) ast.Expr {
 func usesNullableValueStorage(originalType string) bool {
 	base, _ := parseJavaTypeString(originalType)
 	switch stripJavaQualifier(base) {
-	case "String", "Integer", "Long", "Short", "Byte", "Character", "Float", "Double", "Boolean":
+	case "String":
 		return true
 	default:
 		return false
@@ -1498,6 +1533,11 @@ func lowerInstanceofPattern(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt
 				descriptor,
 			})
 		}
+	}
+	if descriptor, ok := javaTypeDescriptorExpr(rightJavaType, ctx); ok && !strings.HasSuffix(strings.TrimSpace(rightJavaType), "[]") {
+		patternValue = stdjavaGenericCall(ctx, "ObjectPattern", []ast.Expr{assertType}, []ast.Expr{
+			instanceofSubjectExpr(left, rightJavaType, source, ctx), descriptor,
+		})
 	}
 
 	initStmt := &ast.AssignStmt{

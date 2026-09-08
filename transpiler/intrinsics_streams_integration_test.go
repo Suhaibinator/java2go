@@ -21,17 +21,17 @@ public class StreamProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.StreamOfSlice(xs.Slice())")
 	// predicate -> bool result, mapper -> element-type result.
-	assertContains(t, out, "Filter(func(n int32) bool")
+	assertContains(t, out, "Filter(func(n *stdjava.Integer) bool")
 	assertContains(t, out, "stdjava.StreamMap(")
-	assertContains(t, out, "func(n int32) int32")
+	assertContains(t, out, "func(n *stdjava.Integer) *stdjava.Integer")
 	assertContains(t, out, ".ToList()")
 	assertContains(t, out, ".Count()")
-	assertContains(t, out, "AnyMatch(func(n int32) bool")
+	assertContains(t, out, "AnyMatch(func(n *stdjava.Integer) bool")
 	// reduce: two element-typed params, element-typed result.
 	assertContains(t, out, "stdjava.StreamReduce(")
-	assertContains(t, out, "func(a int32, b int32) int32")
+	assertContains(t, out, "func(a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
 	// forEach: void consumer, no result type.
-	assertContains(t, out, "ForEach(func(n int32) {")
+	assertContains(t, out, "ForEach(func(n *stdjava.Integer) {")
 }
 
 func TestStreams_StreamOfStatic(t *testing.T) {
@@ -44,7 +44,7 @@ public class StreamOfProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, `stdjava.NewStream("a", "b", "c")`)
+	assertContains(t, out, `stdjava.NewStream[string]("a", "b", "c")`)
 	assertContains(t, out, ".Count()")
 }
 
@@ -60,8 +60,8 @@ public class SortedProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.StreamSorted(stdjava.StreamOfSlice(xs.Slice()))")
-	assertContains(t, out, ".Limit(2)")
+	assertContains(t, out, "stdjava.StreamSorted(stdjava.StreamOfSlice(xs.Slice()), __java2goExecution)")
+	assertContains(t, out, ".Limit(int64(2))")
 }
 
 func TestStreams_TypeChangingMap(t *testing.T) {
@@ -79,7 +79,7 @@ public class TypeMapProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	// mapper result type inferred as string from the concat body.
-	assertContains(t, out, "func(n int32) string")
+	assertContains(t, out, "func(n *stdjava.Integer) string")
 	// the consumer after the type-changing map takes a string.
 	assertContains(t, out, "ForEach(func(s string) {")
 }

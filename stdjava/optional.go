@@ -7,8 +7,9 @@ type Optional[T any] struct {
 }
 
 // OptionalOf returns an Optional describing the given value, matching
-// Optional.of. Java throws on a null argument; that null-check is not modelled.
+// Optional.of, including rejection of an erased or typed null reference.
 func OptionalOf[T any](value T) Optional[T] {
+	ReferenceRequireNonNull(value)
 	return Optional[T]{value: &value}
 }
 
@@ -17,11 +18,11 @@ func OptionalEmpty[T any]() Optional[T] {
 	return Optional[T]{}
 }
 
-// OptionalOfNullable returns an empty Optional if present is false, otherwise an
-// Optional of value, matching Optional.ofNullable. Because Go non-pointer values
-// are not nullable, callers pass an explicit presence flag.
-func OptionalOfNullable[T any](value T, present bool) Optional[T] {
-	if !present {
+// OptionalOfNullable returns an empty Optional for a Java null reference.
+// The optional presence argument preserves compatibility with older generated
+// callers; null itself always means empty.
+func OptionalOfNullable[T any](value T, present ...bool) Optional[T] {
+	if javaReferenceIsNull(value) || (len(present) > 0 && !present[0]) {
 		return Optional[T]{}
 	}
 	return Optional[T]{value: &value}
@@ -116,7 +117,7 @@ func OptionalMap[T, R any](o Optional[T], mapper func(T) R) Optional[R] {
 	if o.value == nil {
 		return Optional[R]{}
 	}
-	return OptionalOf(mapper(*o.value))
+	return OptionalOfNullable(mapper(*o.value))
 }
 
 // OptionalFlatMap applies an Optional-returning mapper to the contained value if

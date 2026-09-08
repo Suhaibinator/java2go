@@ -49,7 +49,7 @@ func (s Stream[T]) Filter(predicate func(T) bool) Stream[T] {
 
 // Limit returns a stream truncated to at most maxSize elements, matching
 // Stream.limit.
-func (s Stream[T]) Limit(maxSize int32) Stream[T] {
+func (s Stream[T]) Limit(maxSize int64) Stream[T] {
 	// Java throws IllegalArgumentException for a negative limit. Without this
 	// check the make below fails with "makeslice: len out of range", which the
 	// panic normalizer maps to NegativeArraySizeException, so a Java
@@ -57,7 +57,7 @@ func (s Stream[T]) Limit(maxSize int32) Stream[T] {
 	if maxSize < 0 {
 		panic(NewIllegalArgumentException("Stream.limit requires a non-negative count"))
 	}
-	if int(maxSize) >= len(s.elements) {
+	if maxSize >= int64(len(s.elements)) {
 		return s
 	}
 	out := make([]T, maxSize)
@@ -142,17 +142,21 @@ func StreamReduce[T any](s Stream[T], identity T, accumulator func(T, T) T) T {
 // StreamSorted returns a stream sorted by natural ordering, matching
 // Stream.sorted(). Java's sort is stable, which is observable once the element
 // type's ordering does not distinguish every element.
-func StreamSorted[T any](s Stream[T]) Stream[T] {
+func StreamSorted[T any](s Stream[T], execution ...*Execution) Stream[T] {
 	out := s.ToSlice()
-	SortSliceStableNatural(out)
+	SortSliceStableNatural(out, execution...)
 	return Stream[T]{elements: out}
 }
 
 // StreamSortedWith returns a stream sorted by an explicit comparator, matching
 // Stream.sorted(Comparator). It is stable, as Java's is.
-func StreamSortedWith[T any](s Stream[T], c Comparator[T]) Stream[T] {
+func StreamSortedWith[T any](s Stream[T], c Comparator[T], execution ...*Execution) Stream[T] {
 	out := s.ToSlice()
-	SortSliceWith(out, c)
+	if c == nil {
+		SortSliceStableNatural(out, execution...)
+	} else {
+		SortSliceWith(out, c)
+	}
 	return Stream[T]{elements: out}
 }
 
@@ -209,16 +213,17 @@ func (s Stream[T]) Parallel() Stream[T]   { return s }
 func (s Stream[T]) Unordered() Stream[T] { return s }
 
 // StreamDistinct returns a stream with duplicates removed, keeping the first
-// occurrence of each, matching Stream.distinct. The element type must be a Go
-// comparable type, which is what Java's equals/hashCode contract maps onto here.
+// occurrence of each, matching Stream.distinct. Wrapper objects use Java value
+// equality while the output preserves the identity of the first occurrence.
 func StreamDistinct[T comparable](s Stream[T]) Stream[T] {
-	seen := make(map[T]struct{}, len(s.elements))
+	seen := make(map[any]struct{}, len(s.elements))
 	out := make([]T, 0, len(s.elements))
 	for _, e := range s.elements {
-		if _, duplicate := seen[e]; duplicate {
+		key := collectionKey(e)
+		if _, duplicate := seen[key]; duplicate {
 			continue
 		}
-		seen[e] = struct{}{}
+		seen[key] = struct{}{}
 		out = append(out, e)
 	}
 	return Stream[T]{elements: out}
@@ -237,23 +242,23 @@ func StreamFlatMap[T, R any](s Stream[T], mapper func(T) Stream[R]) Stream[R] {
 // StreamMin and StreamMax return the smallest/largest element by natural
 // ordering, matching Stream.min/max with a natural-order comparator. Java
 // returns the first such element, so ties keep the earlier one.
-func StreamMin[T any](s Stream[T]) Optional[T] {
-	return StreamMinWith(s, nil)
+func StreamMin[T any](s Stream[T], execution ...*Execution) Optional[T] {
+	return StreamMinWith(s, nil, execution...)
 }
 
-func StreamMax[T any](s Stream[T]) Optional[T] {
-	return StreamMaxWith(s, nil)
+func StreamMax[T any](s Stream[T], execution ...*Execution) Optional[T] {
+	return StreamMaxWith(s, nil, execution...)
 }
 
 // StreamMinWith returns the smallest element under an explicit comparator,
 // matching Stream.min(Comparator). A nil comparator means natural ordering.
-func StreamMinWith[T any](s Stream[T], c Comparator[T]) Optional[T] {
+func StreamMinWith[T any](s Stream[T], c Comparator[T], execution ...*Execution) Optional[T] {
 	if len(s.elements) == 0 {
 		return Optional[T]{}
 	}
 	best := s.elements[0]
 	for _, e := range s.elements[1:] {
-		if streamCompare(c, e, best) < 0 {
+		if streamCompare(c, e, best, optionalComparisonExecution(execution)) < 0 {
 			best = e
 		}
 	}
@@ -262,13 +267,13 @@ func StreamMinWith[T any](s Stream[T], c Comparator[T]) Optional[T] {
 
 // StreamMaxWith returns the largest element under an explicit comparator,
 // matching Stream.max(Comparator).
-func StreamMaxWith[T any](s Stream[T], c Comparator[T]) Optional[T] {
+func StreamMaxWith[T any](s Stream[T], c Comparator[T], execution ...*Execution) Optional[T] {
 	if len(s.elements) == 0 {
 		return Optional[T]{}
 	}
 	best := s.elements[0]
 	for _, e := range s.elements[1:] {
-		if streamCompare(c, e, best) > 0 {
+		if streamCompare(c, e, best, optionalComparisonExecution(execution)) > 0 {
 			best = e
 		}
 	}
@@ -277,9 +282,9 @@ func StreamMaxWith[T any](s Stream[T], c Comparator[T]) Optional[T] {
 
 // streamCompare applies a comparator, falling back to natural ordering when it
 // is nil.
-func streamCompare[T any](c Comparator[T], a, b T) int32 {
+func streamCompare[T any](c Comparator[T], a, b T, execution *Execution) int32 {
 	if c == nil {
-		return javaCompareValues(a, b)
+		return javaCompareValuesExecution(execution, a, b)
 	}
 	return c(a, b)
 }

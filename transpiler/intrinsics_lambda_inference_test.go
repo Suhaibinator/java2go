@@ -23,9 +23,9 @@ public class ShapeProgram {
 	out := renderGoFileFromJava(t, src)
 	// Optional<String>.map takes a string parameter...
 	assertContains(t, out, "stdjava.OptionalMap(name, func(s string)")
-	// ...while Stream<Integer>.map takes an int32 one.
+	// ...while Stream<Integer>.map receives and returns Integer references.
 	assertContains(t, out, "stdjava.StreamMap(")
-	assertContains(t, out, "func(n int32) int32")
+	assertContains(t, out, "func(n *stdjava.Integer) *stdjava.Integer")
 }
 
 // A block-bodied mapper used to defeat result inference entirely, because the
@@ -45,7 +45,7 @@ public class BlockMapperProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "func(n int32) string")
+	assertContains(t, out, "func(n *stdjava.Integer) string")
 }
 
 // The expression form must keep working exactly as before.
@@ -61,7 +61,7 @@ public class ExprMapperProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "func(n int32) string")
+	assertContains(t, out, "func(n *stdjava.Integer) string")
 }
 
 // A multi-statement block has no single expression to infer from, so the mapper
@@ -81,7 +81,7 @@ public class MultiStatementProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "func(n int32) int32")
+	assertContains(t, out, "func(n *stdjava.Integer) *stdjava.Integer")
 }
 
 // reduce takes a BinaryOperator<T>, whose result is pinned to the element type
@@ -99,7 +99,7 @@ public class ReduceProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "func(a int32, b int32) int32")
+	assertContains(t, out, "func(a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
 }
 
 func TestLambdaParameterNames(t *testing.T) {

@@ -254,11 +254,10 @@ func executionMethodField(public *ast.Field, def *symbol.Definition, owner *symb
 }
 
 func executionParameterTypeExpr(def *symbol.Definition, index int, javaType string, typeParams []string, ctx Ctx) ast.Expr {
-	typeExpr := javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)
 	if executionParameterIsVariadic(def, index) {
-		return &ast.Ellipsis{Elt: typeExpr}
+		javaType += "[]"
 	}
-	return typeExpr
+	return javaTypeStringToGoTypeExpr(javaType, typeParams, ctx)
 }
 
 func executionParameterIsVariadic(def *symbol.Definition, index int) bool {
@@ -289,16 +288,15 @@ func definitionParameterJavaSignatureType(def *symbol.Definition, index int) str
 	return javaType
 }
 
-// markVariadicForwardCall expands the final slice when a generated forwarding
-// call targets a Java varargs declaration. The forwarded parameter is already
-// represented as a Go slice in the wrapper or closure; omitting Ellipsis would
-// pass that slice as one vararg element (and usually fail to type-check).
+// markVariadicForwardCall preserves the array argument in generated forwarding
+// calls. Java varargs declarations use the same descriptor-bearing array ABI as
+// an ordinary array parameter, including its identity, nullness, and store checks.
 func markVariadicForwardCall(call *ast.CallExpr, def *symbol.Definition) {
 	if call == nil || def == nil || len(def.Parameters) == 0 {
 		return
 	}
 	if executionParameterIsVariadic(def, len(def.Parameters)-1) {
-		call.Ellipsis = token.Pos(1)
+		call.Ellipsis = token.NoPos
 	}
 }
 

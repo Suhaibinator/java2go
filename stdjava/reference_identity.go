@@ -43,8 +43,8 @@ func ReferenceTypeHint[T any](value T) T {
 // pointer when they appear behind an erased interface. Function values do not
 // expose closure-instance identity in Go; two non-nil functions are therefore
 // conservatively distinct instead of being collapsed by their shared code
-// pointer. String and boxed primitive values retain the value-backed identity
-// approximation already used by the generated ABI.
+// pointer. Boxed primitives have distinct pointer types and retain object
+// identity; Strings retain the existing value-backed identity approximation.
 func JavaReferenceEqual(left, right any) bool {
 	leftNull := javaReferenceIsNull(left)
 	rightNull := javaReferenceIsNull(right)

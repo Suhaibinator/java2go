@@ -77,6 +77,7 @@ type Ctx struct {
 	// collection intrinsics use it while parsing a lambda body so member lookup
 	// observes generic bounds before the resulting Go closure is post-typed.
 	lambdaParameterJavaTypes []string
+	lambdaResultJavaType     string
 
 	// intrinsicTypeArgs carries the explicit Go type arguments an intrinsic needs
 	// when Go cannot infer them from the call's ordinary arguments — for example
@@ -401,6 +402,7 @@ func (c Ctx) Clone() Ctx {
 		expectedType:                        c.expectedType,
 		expectedTypeRoot:                    c.expectedTypeRoot,
 		lambdaParameterJavaTypes:            c.lambdaParameterJavaTypes,
+		lambdaResultJavaType:                c.lambdaResultJavaType,
 		syntheticTypeParameters:             c.syntheticTypeParameters,
 		rawGenericParameterTypes:            c.rawGenericParameterTypes,
 		dependentTypeWitnesses:              c.dependentTypeWitnesses,
@@ -675,17 +677,13 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			Type:  abstractClassToInterface(javaTypeStringToGoTypeExpr(fallbackType, inScopeTypeParameters(ctx), ctx), fallbackType, ctx),
 		}
 	case "spread_parameter":
-		// The spread paramater takes a list and separates it into multiple elements
-		// Ex: addElements([]int elements...)
-
+		// Java varargs parameters are array references inside the callee.
 		spreadType := node.NamedChild(0)
 		spreadDeclarator := node.NamedChild(1)
 
 		return &ast.Field{
 			Names: []*ast.Ident{identFromNode(spreadDeclarator.ChildByFieldName("name"), source)},
-			Type: &ast.Ellipsis{
-				Elt: javaTypeStringToGoTypeExpr(spreadType.Content(source), inScopeTypeParameters(ctx), ctx),
-			},
+			Type:  javaTypeStringToGoTypeExpr(spreadType.Content(source)+"[]", inScopeTypeParameters(ctx), ctx),
 		}
 	case "inferred_parameters":
 		params := &ast.FieldList{}

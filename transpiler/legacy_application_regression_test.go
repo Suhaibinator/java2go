@@ -84,7 +84,7 @@ public class DiamondAssignmentProgram {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.NewMap[string, int32]()") {
+	if !strings.Contains(out, "stdjava.NewMap[string, *stdjava.Integer]()") {
 		t.Fatalf("expected assignment-target generics to type the diamond constructor, got:\n%s", out)
 	}
 	runGoTestInTempModule(t, out, `

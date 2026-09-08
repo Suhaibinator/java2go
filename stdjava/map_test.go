@@ -29,7 +29,7 @@ func TestMapGetOrDefaultAndValueOps(t *testing.T) {
 	if m.GetOrDefault("z", -1) != -1 {
 		t.Fatalf("GetOrDefault absent = %d, want -1", m.GetOrDefault("z", -1))
 	}
-	if !m.ContainsValue(5) {
+	if !m.ContainsValue(int32(5)) {
 		t.Fatalf("ContainsValue(5) = false, want true")
 	}
 	if old := m.Remove("a"); old != 5 {

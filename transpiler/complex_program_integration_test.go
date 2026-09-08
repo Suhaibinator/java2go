@@ -66,10 +66,10 @@ public class App {
 	if !strings.Contains(flat, "NewMapperFuncAdapterJava2goExecution[string, string](func(__java2goExecution *stdjava.Execution, v string) string") {
 		t.Fatalf("expected lambda in main to be wrapped and typed, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "any(task).(*ParseTask)") {
+	if !strings.Contains(flat, `stdjava.ObjectInstanceOf(task, stdjava.TypeID("complex.workflow.ParseTask"))`) {
 		t.Fatalf("expected class instanceof conversion in execute(), got:\n%s", out)
 	}
-	if !strings.Contains(flat, "any(normalized).(string)") {
+	if !strings.Contains(flat, "stdjava.ObjectInstanceOf(normalized, stdjava.StringTypeID)") {
 		t.Fatalf("expected String instanceof conversion in run(), got:\n%s", out)
 	}
 	if !strings.Contains(flat, "ModeValueOf(\"FAST\")") {

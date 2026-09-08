@@ -1,13 +1,47 @@
 package astutil
 
 import (
+	"bytes"
 	"context"
 	"go/ast"
+	"go/printer"
+	"go/token"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/java"
 )
+
+func TestParseTypeWithTypeParams_WrapperObjects(t *testing.T) {
+	for _, wrapper := range []string{"Boolean", "Byte", "Short", "Character", "Integer", "Long", "Float", "Double"} {
+		for _, qualifier := range []string{"", "java.lang."} {
+			t.Run(qualifier+wrapper, func(t *testing.T) {
+				source := "class C { " + qualifier + wrapper + " field; }"
+				root := parseJavaType(t, source)
+				field := findNode(root, "field_declaration")
+				result := ParseType(field.ChildByFieldName("type"), []byte(source))
+				var rendered bytes.Buffer
+				if err := printer.Fprint(&rendered, token.NewFileSet(), result); err != nil {
+					t.Fatal(err)
+				}
+				if got, want := rendered.String(), "*stdjava."+wrapper; got != want {
+					t.Fatalf("type = %s, want %s", got, want)
+				}
+			})
+		}
+	}
+}
+
+func TestParseTypeWithTypeParams_WrapperNameCanBeTypeParameter(t *testing.T) {
+	source := "class C<Integer> { Integer field; }"
+	root := parseJavaType(t, source)
+	field := findNode(root, "field_declaration")
+	result := ParseTypeWithTypeParams(field.ChildByFieldName("type"), []byte(source), []string{"Integer"})
+	identifier, ok := result.(*ast.Ident)
+	if !ok || identifier.Name != "Integer" {
+		t.Fatalf("shadowing type parameter = %#v", result)
+	}
+}
 
 // parseJavaType parses a Java source file and finds the type node for a field declaration.
 func parseJavaType(t *testing.T, source string) *sitter.Node {

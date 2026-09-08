@@ -47,14 +47,14 @@ public class Pair<K extends Number, V> {
 		t.Errorf("Expected generic struct with 2 type params, got:\n%s", out)
 	}
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "key K") || !strings.Contains(flat, "value V") {
-		t.Errorf("Expected fields to use type params K/V, got:\n%s", out)
+	if !strings.Contains(flat, "key stdjava.JavaNumber") || !strings.Contains(flat, "value V") {
+		t.Errorf("Expected bounded key storage to retain Java's Number erasure and unbounded value storage V, got:\n%s", out)
 	}
 	if !strings.Contains(out, "func NewPair[K stdjava.JavaNumber, V any]") {
 		t.Errorf("Expected generic constructor function with type params, got:\n%s", out)
 	}
-	if !strings.Contains(out, "func (pr *Pair[K, V]) GetKey()") {
-		t.Errorf("Expected method receiver to use instantiated type params, got:\n%s", out)
+	if !strings.Contains(out, "func (pr *Pair[K, V]) GetKey() stdjava.JavaNumber") {
+		t.Errorf("Expected instantiated method receiver and erased Number result, got:\n%s", out)
 	}
 }
 
@@ -68,10 +68,9 @@ public class Container {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	// java.util.Map/List map to the stdjava runtime types; Integer is a boxed
-	// type and maps to its Go primitive (int32).
-	if !strings.Contains(out, "m *stdjava.Map[string, *stdjava.List[int32]]") {
-		t.Errorf("Expected nested generic field type '*stdjava.Map[string, *stdjava.List[int32]]', got:\n%s", out)
+	// Nested Java generic arguments retain wrapper reference identity.
+	if !strings.Contains(out, "m *stdjava.Map[string, *stdjava.List[*stdjava.Integer]]") {
+		t.Errorf("Expected nested generic field with Integer object elements, got:\n%s", out)
 	}
 }
 
@@ -92,10 +91,7 @@ public class Box<T> {
 	if !strings.Contains(out, "NewBoxJava2goExecution[string](__java2goExecution)") {
 		t.Errorf("Expected diamond operator to infer 'string' type arg, got:\n%s", out)
 	}
-	// Integer is a boxed type and maps to its Go primitive (int32).
-	if !strings.Contains(out, "NewBoxJava2goExecution[*Integer](__java2goExecution)") &&
-		!strings.Contains(out, "NewBoxJava2goExecution[Integer](__java2goExecution)") &&
-		!strings.Contains(out, "NewBoxJava2goExecution[int32](__java2goExecution)") {
+	if !strings.Contains(out, "NewBoxJava2goExecution[*stdjava.Integer](__java2goExecution)") {
 		t.Errorf("Expected explicit type args on constructor call, got:\n%s", out)
 	}
 	if !strings.Contains(out, "raw := NewBoxJava2goExecution[any](__java2goExecution)") &&
@@ -141,10 +137,10 @@ public class Box<T extends Number> {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "type BoxIdentityHelper[T stdjava.JavaNumber, R *Comparable[T]] struct") {
+	if !strings.Contains(flat, "type BoxIdentityHelper[T stdjava.JavaNumber, R any] struct") {
 		t.Fatalf("Expected helper struct with bounded type params, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func NewBoxIdentityHelper[T stdjava.JavaNumber, R *Comparable[T]]") {
+	if !strings.Contains(flat, "func NewBoxIdentityHelper[T stdjava.JavaNumber, R any]") {
 		t.Fatalf("Expected helper constructor to propagate bounds, got:\n%s", out)
 	}
 }

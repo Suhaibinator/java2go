@@ -21,10 +21,10 @@ func TestNumberAccessorsAndDoubleValueOf(t *testing.T) {
 	if got := NumberByteValue(int32(130)); got != -126 {
 		t.Fatalf("NumberByteValue(130) = %v, want -126", got)
 	}
-	if got := DoubleValueOf("2.5"); got != 2.5 {
+	if got := DoubleValueOf("2.5").DoubleValue(); got != 2.5 {
 		t.Fatalf("DoubleValueOf(string) = %v, want 2.5", got)
 	}
-	if got := DoubleValueOf(float32(3.5)); got != 3.5 {
+	if got := DoubleValueOf(float32(3.5)).DoubleValue(); got != 3.5 {
 		t.Fatalf("DoubleValueOf(float32) = %v, want 3.5", got)
 	}
 }

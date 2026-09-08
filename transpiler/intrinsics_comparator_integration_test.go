@@ -26,7 +26,7 @@ public class SortProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	// The element type comes from argument 0, since a static call has no receiver.
-	assertContains(t, out, "stdjava.SortWith(xs, func(a int32, b int32) int32")
+	assertContains(t, out, "stdjava.SortWith(xs, func(a *stdjava.Integer, b *stdjava.Integer) int32")
 }
 
 func TestComparator_CollectionsSortNaturalOrderingIsUnchanged(t *testing.T) {
@@ -42,7 +42,7 @@ public class NaturalSortProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.SortOrdered(xs)")
+	assertContains(t, out, "stdjava.SortOrdered(xs, __java2goExecution)")
 }
 
 func TestComparator_CollectionsMaxMinOverloads(t *testing.T) {
@@ -61,10 +61,10 @@ public class MaxMinProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.MaxOrdered(xs)")
-	assertContains(t, out, "stdjava.MaxWith(xs, func(a int32, b int32) int32")
-	assertContains(t, out, "stdjava.MinOrdered(xs)")
-	assertContains(t, out, "stdjava.MinWith(xs, func(a int32, b int32) int32")
+	assertContains(t, out, "stdjava.MaxOrdered(xs, __java2goExecution)")
+	assertContains(t, out, "stdjava.MaxWith(xs, func(a *stdjava.Integer, b *stdjava.Integer) int32")
+	assertContains(t, out, "stdjava.MinOrdered(xs, __java2goExecution)")
+	assertContains(t, out, "stdjava.MinWith(xs, func(a *stdjava.Integer, b *stdjava.Integer) int32")
 }
 
 func TestComparator_ListSortTypesTheLambdaFromTheReceiver(t *testing.T) {
@@ -94,7 +94,7 @@ public class ArraySortProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.SortArray(words)")
+	assertContains(t, out, "stdjava.SortArray(words, __java2goExecution)")
 	assertContains(t, out, "stdjava.SortArrayWith(words, func(a string, b string) int32")
 }
 
@@ -112,7 +112,7 @@ public class ComparatorLocalProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.Comparator[int32](func(a int32, b int32) int32")
+	assertContains(t, out, "stdjava.Comparator[*stdjava.Integer](func(a *stdjava.Integer, b *stdjava.Integer) int32")
 	assertContains(t, out, "ascending.Reversed()")
 	assertContains(t, out, "ascending.Compare(")
 }
@@ -146,8 +146,8 @@ public class OrderFactoryProgram {
 	// The element type is spelled out: Go cannot infer it from an argument-free
 	// factory, so an un-parameterized call would not compile.
 	out := assertGeneratedCompiles(t, src)
-	assertContains(t, out, "stdjava.NaturalOrder[int32]()")
-	assertContains(t, out, "stdjava.ReverseOrder[int32]()")
+	assertContains(t, out, "stdjava.NaturalOrder[*stdjava.Integer](__java2goExecution)")
+	assertContains(t, out, "stdjava.ReverseOrder[*stdjava.Integer](__java2goExecution)")
 }
 
 // A class implementing Comparable must not embed a nonexistent Comparable type;

@@ -88,9 +88,7 @@ func directOwnerInterfaceErasure(
 		return "", false
 	}
 	erasure := qualifyJavaTypeInDeclaringContext(use.erasure, owner)
-	base, _ := parseJavaTypeString(erasure)
-	erasureScope := resolveClassScopeByQualifiedName(ctx, base)
-	if erasureScope == nil || !erasureScope.IsInterface {
+	if !javaTypeHasInterfaceRepresentation(erasure, ctx) {
 		return "", false
 	}
 	return erasure, true

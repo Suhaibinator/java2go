@@ -144,7 +144,7 @@ func derivedResultTypeFromArgument(container string, argIndex int) derivedResult
 		if !ok || strings.TrimSpace(javaType) == "" {
 			return "", false
 		}
-		return container + "<" + javaType + ">", true
+		return container + "<" + intrinsicReferenceJavaType(javaType) + ">", true
 	}
 }
 
@@ -179,6 +179,10 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 	}
 
 	recv := ParseExpr(objectNode, source, ctx)
+	recv = projectDirectOwnerErasedIntrinsicReceiver(recv, objectNode, ctx, source)
+	if intrinsicLaterArgumentsMayWrite(objectNode.Parent(), -1) {
+		recv = snapshotJavaExpressionValue(recv, ctx)
+	}
 	// Fields, parameters, and method results can carry the concrete null String
 	// sentinel, while explicitly nullable locals can carry interface nil.
 	// Normalize every String receiver through the runtime bridge so dereferencing
@@ -563,6 +567,9 @@ func javaContainerElementTypes(javaType string) []string {
 	if element, ok := primitiveStreamElementJavaTypes[stripJavaQualifier(base)]; ok {
 		return []string{element}
 	}
+	if element, ok := primitiveOptionalElementJavaTypes[stripJavaQualifier(base)]; ok {
+		return []string{element}
+	}
 	return nil
 }
 
@@ -606,6 +613,9 @@ func receiverElementJavaTypes(objectNode *sitter.Node, ctx Ctx, source []byte) [
 		return typeArgs
 	}
 	if element, ok := primitiveStreamElementJavaTypes[stripJavaQualifier(base)]; ok {
+		return []string{element}
+	}
+	if element, ok := primitiveOptionalElementJavaTypes[stripJavaQualifier(base)]; ok {
 		return []string{element}
 	}
 	return nil
@@ -837,6 +847,19 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 	}
 
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
+	if className == "Math" && methodName == "round" && len(args) == 1 && intrinsicMathParameterJavaType(objectNode.Parent(), ctx, source) == "float" {
+		return stdjavaCall(ctx, "MathRoundFloat", args[0]), true
+	}
+	if _, wrapper := builtinJavaWrapperPrimitive("java.lang."+className, ctx); wrapper && methodName == "valueOf" {
+		if !wrapperValueOfApplicable(objectNode.Parent(), className, ctx, source) {
+			return unsupportedIntrinsicValue(objectNode.Parent(), "java.lang."+className, source, ctx), true
+		}
+		actual, _ := inferExprJavaType(invocationArgumentNode(objectNode.Parent(), 0), ctx, source)
+		if isJavaStringType(actual) || actual == "null" {
+			return stdjavaCall(ctx, className+"ValueOfString", args...), true
+		}
+		return stdjavaCall(ctx, "Box"+className, args...), true
+	}
 	if derive, ok := staticIntrinsicTypeArgs[intrinsicKey{className, methodName}]; ok {
 		ctx.intrinsicTypeArgs = derive(objectNode.Parent(), ctx, source)
 	}
@@ -910,28 +933,7 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 	if parent == nil {
 		return nil
 	}
-	argListNode := parent.ChildByFieldName("arguments")
-	if argListNode != nil {
-		// A per-argument typer seeds each lambda with its own parameter types.
-		if receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source); ok {
-			if perArgument := lookupLambdaArgumentTypes(receiverType, methodName, parent, ctx, source); perArgument != nil {
-				return parseArgumentsWithPerArgumentTypes(argListNode, perArgument, source, ctx)
-			}
-		}
-		if elementJavaType, lambdaArgs, ok := intrinsicLambdaParameterJavaType(objectNode, methodName, ctx, source); ok {
-			return parseArgumentsWithLambdaParameterType(argListNode, elementJavaType, lambdaArgs, source, ctx)
-		}
-	}
-	var expectedTypes []string
-	if (methodName == "submit" || methodName == "execute") && argListNode != nil && argListNode.NamedChildCount() == 1 {
-		if javaType, ok := inferExprJavaType(objectNode, ctx, source); ok {
-			base, _ := parseJavaTypeString(javaType)
-			if stripJavaQualifier(base) == "ExecutorService" && resolveClassScopeByQualifiedName(ctx, base) == nil {
-				expectedTypes = []string{"Runnable"}
-			}
-		}
-	}
-	return parseArgumentListWithExpectedTypes(argListNode, source, ctx, expectedTypes)
+	return parseTypedIntrinsicArguments(objectNode, methodName, source, ctx)
 }
 
 // intrinsicLambdaParameterJavaType resolves the Java type an intrinsic's lambda
@@ -1046,6 +1048,9 @@ func inferIntrinsicMethodResultType(node *sitter.Node, ctx Ctx, source []byte) (
 	}
 	methodName := nameNode.Content(source)
 	if receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source); ok {
+		if resultType, known := intrinsicCollectionMethodResultType(node, receiverType, ctx, source); known {
+			return resultType, true
+		}
 		if resultType := instanceIntrinsicResultTypes[intrinsicKey{receiverType, methodName}]; resultType != "" {
 			return resultType, true
 		}
@@ -1081,10 +1086,22 @@ func inferIntrinsicFieldResultType(node *sitter.Node, ctx Ctx, source []byte) (s
 }
 
 func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (string, bool) {
-	if objectNode == nil || objectNode.Type() != "identifier" {
+	if objectNode == nil {
 		return "", false
 	}
 	name := objectNode.Content(source)
+	if objectNode.Type() != "identifier" {
+		if objectNode.Type() != "field_access" && objectNode.Type() != "scoped_identifier" {
+			return "", false
+		}
+		if !strings.HasPrefix(name, "java.lang.") && !strings.HasPrefix(name, "java.util.") {
+			return "", false
+		}
+		if resolveClassScopeByQualifiedName(ctx, name) != nil {
+			return "", false
+		}
+		return stripJavaQualifier(name), true
+	}
 	if name == "" {
 		return "", false
 	}

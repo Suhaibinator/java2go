@@ -11,10 +11,19 @@ import (
 // utility methods of java.util.Collections and java.util.Arrays.
 
 // ObjectsEqual reports whether two values are equal using Java-style value
-// equality. It approximates Object.equals with reflect.DeepEqual, which matches
-// equals() for strings, boxed numbers, and value structs; it does not invoke a
-// user-defined equals() method.
-func ObjectsEqual[T any](a, b T) bool {
+// equality. Boxed primitives compare by wrapper kind and canonical payload;
+// Java null compares equally across all erased and typed null representations.
+// Other values retain the existing reflect.DeepEqual approximation; generated
+// user-defined equals methods are not invoked here.
+func ObjectsEqual(a, b any) bool {
+	aNull, bNull := javaReferenceIsNull(a), javaReferenceIsNull(b)
+	if aNull || bNull {
+		return aNull && bNull
+	}
+	if left, boxed := wrapperCollectionKey(a); boxed {
+		right, otherBoxed := wrapperCollectionKey(b)
+		return otherBoxed && left == right
+	}
 	return reflect.DeepEqual(a, b)
 }
 
@@ -25,7 +34,7 @@ func ObjectsEqual[T any](a, b T) bool {
 // ordering covers any Comparable, including a user class whose compareTo the
 // transpiler generates. Element types with a direct Go ordering keep a fast
 // path; everything else goes through the CompareTo bridge.
-func SortOrdered[T any](l *List[T]) {
+func SortOrdered[T any](l *List[T], execution ...*Execution) {
 	if l == nil {
 		panic(NewNullPointerException("Collections.sort on null"))
 	}
@@ -46,7 +55,7 @@ func SortOrdered[T any](l *List[T]) {
 	case []int8:
 		SortSlice(elements)
 	default:
-		SortSliceStableNatural(l.elements)
+		SortSliceStableNatural(l.elements, execution...)
 	}
 }
 
@@ -60,13 +69,13 @@ func ReverseList[T any](l *List[T]) {
 // MaxOrdered returns the largest element of a list by natural ordering, matching
 // Collections.max(Collection). Like Collections.max it keeps the earlier element
 // on a tie, and like SortOrdered it accepts any Comparable element type.
-func MaxOrdered[T any](l *List[T]) T {
+func MaxOrdered[T any](l *List[T], execution ...*Execution) T {
 	if l == nil || len(l.elements) == 0 {
 		panic(NewNoSuchElementException("Collections.max on an empty collection"))
 	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if javaCompareValues(e, best) > 0 {
+		if javaCompareValuesExecution(optionalComparisonExecution(execution), e, best) > 0 {
 			best = e
 		}
 	}
@@ -75,13 +84,13 @@ func MaxOrdered[T any](l *List[T]) T {
 
 // MinOrdered returns the smallest element of a list by natural ordering,
 // matching Collections.min(Collection).
-func MinOrdered[T any](l *List[T]) T {
+func MinOrdered[T any](l *List[T], execution ...*Execution) T {
 	if l == nil || len(l.elements) == 0 {
 		panic(NewNoSuchElementException("Collections.min on an empty collection"))
 	}
 	best := l.elements[0]
 	for _, e := range l.elements[1:] {
-		if javaCompareValues(e, best) < 0 {
+		if javaCompareValuesExecution(optionalComparisonExecution(execution), e, best) < 0 {
 			best = e
 		}
 	}
@@ -132,7 +141,7 @@ func SortFloatSlice[T ~float32 | ~float64](elements []T) {
 // arrays. Primitive wrappers retain a direct native-slice sort; reference
 // arrays support the value-backed comparable types currently emitted by the
 // transpiler (String and boxed primitive scalars).
-func SortArray(array any) {
+func SortArray(array any, execution ...*Execution) {
 	switch values := array.(type) {
 	case *PrimitiveArray[int8]:
 		SortSlice(values.Elements)
@@ -153,7 +162,7 @@ func SortArray(array any) {
 			panic(NewNullPointerException("Arrays.sort on null"))
 		}
 		sort.SliceStable(values.elements, func(i, j int) bool {
-			return javaComparableLess(values.elements[i], values.elements[j])
+			return javaCompareValuesExecution(optionalComparisonExecution(execution), values.elements[i], values.elements[j]) < 0
 		})
 	default:
 		reflected := reflect.ValueOf(array)
@@ -164,7 +173,7 @@ func SortArray(array any) {
 			panic(NewIllegalArgumentException("Arrays.sort requires an array"))
 		}
 		sort.Slice(array, func(i, j int) bool {
-			return javaComparableLess(reflected.Index(i).Interface(), reflected.Index(j).Interface())
+			return javaCompareValuesExecution(optionalComparisonExecution(execution), reflected.Index(i).Interface(), reflected.Index(j).Interface()) < 0
 		})
 	}
 }

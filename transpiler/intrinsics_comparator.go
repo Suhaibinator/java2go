@@ -75,7 +75,7 @@ func registerComparatorIntrinsics() {
 			if !expectArgs(args, 1) {
 				return nil
 			}
-			return stdjavaCall(ctx, "ComparatorComparing", args[0])
+			return stdjavaCall(ctx, "ComparatorComparing", args[0], intrinsicExecutionExpr(ctx))
 		})
 		registerStaticLambdaShape("Comparator", name, elementFromEnclosingTarget, []int{0}, resultKind)
 	}
@@ -126,7 +126,7 @@ func registerComparatorIntrinsics() {
 				return nil
 			}
 			if isKeyExtractorExpr(args[0]) {
-				return stdjavaCall(ctx, "ComparatorThenComparingKey", recv, args[0])
+				return stdjavaCall(ctx, "ComparatorThenComparingKey", recv, args[0], intrinsicExecutionExpr(ctx))
 			}
 			return methodCall(recv, "ThenComparing", args[0])
 		})
@@ -141,7 +141,7 @@ func orderFactory(runtimeName string) intrinsicGenerator {
 		if !expectArgs(args, 0) || len(ctx.intrinsicTypeArgs) != 1 {
 			return nil
 		}
-		return stdjavaGenericCall(ctx, runtimeName, ctx.intrinsicTypeArgs, nil)
+		return stdjavaGenericCall(ctx, runtimeName, ctx.intrinsicTypeArgs, []ast.Expr{intrinsicExecutionExpr(ctx)})
 	}
 }
 
@@ -192,7 +192,7 @@ func registerComparatorSortIntrinsics() {
 			if !expectArgs(args, 1) {
 				return nil
 			}
-			return stdjavaCall(ctx, "SortWith", recv, args[0])
+			return stdjavaCall(ctx, "SortWith", recv, args[0], intrinsicExecutionExpr(ctx))
 		})
 	}
 }

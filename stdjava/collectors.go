@@ -109,37 +109,37 @@ func StreamGroupingByDownstream[T any, K comparable, D any](s Stream[T], classif
 // StreamPartitioningBy splits the elements on a predicate, matching
 // Collectors.partitioningBy. Java always returns both the false and true
 // entries, even when one side is empty, and in that order.
-func StreamPartitioningBy[T any](s Stream[T], predicate func(T) bool) *Map[bool, *List[T]] {
-	out := NewMap[bool, *List[T]]()
-	out.Put(false, NewList[T]())
-	out.Put(true, NewList[T]())
+func StreamPartitioningBy[T any](s Stream[T], predicate func(T) bool) *Map[*Boolean, *List[T]] {
+	out := NewMap[*Boolean, *List[T]]()
+	out.Put(BoxBoolean(false), NewList[T]())
+	out.Put(BoxBoolean(true), NewList[T]())
 	for _, e := range s.elements {
-		out.Get(predicate(e)).Add(e)
+		out.Get(BoxBoolean(predicate(e))).Add(e)
 	}
 	return out
 }
 
 // StreamPartitioningByDownstream is partitioningBy with a downstream collector
 // applied to each side.
-func StreamPartitioningByDownstream[T any, D any](s Stream[T], predicate func(T) bool, downstream func(Stream[T]) D) *Map[bool, D] {
+func StreamPartitioningByDownstream[T any, D any](s Stream[T], predicate func(T) bool, downstream func(Stream[T]) D) *Map[*Boolean, D] {
 	partitioned := StreamPartitioningBy(s, predicate)
-	out := NewMap[bool, D]()
-	out.Put(false, downstream(StreamOfSlice(partitioned.Get(false).Slice())))
-	out.Put(true, downstream(StreamOfSlice(partitioned.Get(true).Slice())))
+	out := NewMap[*Boolean, D]()
+	out.Put(BoxBoolean(false), downstream(StreamOfSlice(partitioned.Get(BoxBoolean(false)).Slice())))
+	out.Put(BoxBoolean(true), downstream(StreamOfSlice(partitioned.Get(BoxBoolean(true)).Slice())))
 	return out
 }
 
-// StreamCounting is Collectors.counting, which counts elements as a long.
-func StreamCounting[T any](s Stream[T]) int64 { return s.Count() }
+// StreamCounting is Collectors.counting, whose result is a boxed Long.
+func StreamCounting[T any](s Stream[T]) *Long { return BoxLong(s.Count()) }
 
 // StreamAveragingOf and StreamSummingOf back the averaging*/summing* collectors
 // by mapping each element to its numeric contribution first. They exist so the
 // lowering does not have to compose two calls at the call site.
-func StreamSummingOf[T any, N JavaNumber](s Stream[T], value func(T) N) N {
+func StreamSummingOf[T any, N JavaPrimitiveNumber](s Stream[T], value func(T) N) N {
 	return StreamSum(StreamMap(s, value))
 }
 
-func StreamAveragingOf[T any, N JavaNumber](s Stream[T], value func(T) N) float64 {
+func StreamAveragingOf[T any, N JavaPrimitiveNumber](s Stream[T], value func(T) N) float64 {
 	// Java's averaging collectors report 0.0 for an empty stream, unlike
 	// IntStream.average, which reports an empty OptionalDouble.
 	return StreamAverage(StreamMap(s, value)).OrElse(0)

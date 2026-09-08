@@ -71,7 +71,7 @@ func TestConcurrentHashMap_ConcurrentPut(t *testing.T) {
 	if got := m.Size(); got != n {
 		t.Fatalf("map size = %d, want %d", got, n)
 	}
-	if v, ok := m.GetOk(100); !ok || v != 200 {
+	if v, ok := m.GetOk(int32(100)); !ok || v != 200 {
 		t.Fatalf("Get(100) = %d, %v; want 200, true", v, ok)
 	}
 }

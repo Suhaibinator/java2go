@@ -24,3 +24,16 @@ func (class *Class) TypeID() TypeID {
 	}
 	return class.typeID
 }
+
+// ObjectGetClass implements getClass on a reference with a reified Java type.
+// It uses the same descriptors as casts and reference-array store checks.
+func ObjectGetClass(value any) *Class {
+	if nilJavaReference(value) {
+		panic(NewNullPointerException("getClass on null"))
+	}
+	id, ok := ObjectDynamicType(value)
+	if !ok {
+		panic(NewIllegalArgumentException("reference has no Java class descriptor"))
+	}
+	return ClassLiteral(id)
+}
