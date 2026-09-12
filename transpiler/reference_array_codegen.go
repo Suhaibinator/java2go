@@ -501,6 +501,24 @@ func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 			methodCtx := ctx.Clone()
 			methodCtx.currentClass = scope
 			methodCtx.localScope = method
+			if genericMethodHasErasedEntry(method) {
+				// Erased virtual results introduce a nominal check even when
+				// the Java source contains no explicit cast. Any implementation
+				// of the result's erased bound can cross this boundary.
+				for _, parameter := range method.TypeParameters {
+					result := strings.TrimSpace(method.OriginalType)
+					if result != parameter.Name && result != parameter.EmittedName() {
+						continue
+					}
+					erasure := rawTypeParameterErasure(parameter, method.TypeParameters)
+					base, _ := parseJavaTypeString(erasure)
+					if stripJavaQualifier(base) == "Object" {
+						objectErasure = true
+					} else if bound := resolveClassScopeByQualifiedName(classScopeCtx(scope, ctx), base); bound != nil {
+						relevant[bound] = struct{}{}
+					}
+				}
+			}
 			addReferenceArrayDefinitionSeeds(method, scope, methodCtx, relevant, &objectErasure)
 			addDirectOwnerTypeParameterIdentitySeed(method, scope, methodCtx, relevant, &objectErasure)
 			for _, parameter := range method.Parameters {

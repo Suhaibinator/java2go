@@ -3,6 +3,7 @@ package transpiler
 import (
 	"go/ast"
 	"strings"
+	"unicode"
 
 	"github.com/NickyBoy89/java2go/symbol"
 )
@@ -37,7 +38,7 @@ func genericMethodHasErasedEntry(def *symbol.Definition) bool {
 
 func javaTypeContainsParameter(typ, name string) bool {
 	for _, part := range strings.FieldsFunc(typ, func(r rune) bool {
-		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '$')
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' && r != '$'
 	}) {
 		if part == name {
 			return true
@@ -89,15 +90,23 @@ func genericMethodErasedEntryDecls(ctx Ctx, def *symbol.Definition, params, resu
 // and throws Java ClassCastException when an unchecked body pollutes its result.
 // Use the inferred Java descriptor as well as its Go view: structural Go
 // interface satisfaction alone cannot prove nominal Java assignability.
-func genericMethodProjectedResult(call ast.Expr, def *symbol.Definition, typeArgs []ast.Expr, javaBindings map[string]string, ctx Ctx) ast.Expr {
+func genericMethodProjectedResult(call ast.Expr, def *symbol.Definition, typeArgs []ast.Expr, javaBindings map[string]string, consumingJavaType string, ctx Ctx) ast.Expr {
 	for i, tp := range def.TypeParameters {
 		if (strings.TrimSpace(def.OriginalType) == tp.Name || strings.TrimSpace(def.OriginalType) == tp.EmittedName()) && i < len(typeArgs) {
 			targetJavaType := javaBindings[tp.Name]
+			targetType := typeArgs[i]
+			if _, primitive := javaPrimitiveType(consumingJavaType); consumingJavaType != "" && !primitive {
+				// javac casts an erased invocation result to its consuming
+				// reference view. A broader assignment must not introduce a
+				// checkcast to the narrower argument-inferred type.
+				targetJavaType = consumingJavaType
+				targetType = javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
+			}
 			if targetJavaType == "" {
 				targetJavaType = rawTypeParameterErasure(tp, def.TypeParameters)
 			}
 			descriptor, _ := javaTypeDescriptorExpr(targetJavaType, ctx)
-			return stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{typeArgs[i]}, []ast.Expr{call, descriptor})
+			return stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{targetType}, []ast.Expr{call, descriptor})
 		}
 	}
 	return call

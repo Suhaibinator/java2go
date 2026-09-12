@@ -11385,7 +11385,11 @@ func maybeRewriteInstanceGenericMethodInvocationWithTarget(target *invocationTar
 		if parent := invocationNode.Parent(); parent != nil && parent.Type() == "expression_statement" {
 			return call
 		}
-		return genericMethodProjectedResult(call, helperDef, methodTypeArgs, genericArrayInvocationTypeBindings(helperDef, invocationNode, ctx, source), ctx)
+		consumingJavaType := ""
+		if expectedTypeTargetsExpression(ctx, invocationNode) {
+			consumingJavaType = ctx.expectedType
+		}
+		return genericMethodProjectedResult(call, helperDef, methodTypeArgs, genericArrayInvocationTypeBindings(helperDef, invocationNode, ctx, source), consumingJavaType, ctx)
 	}
 
 	helperTypeArgs := append(classTypeArgs, methodTypeArgs...)

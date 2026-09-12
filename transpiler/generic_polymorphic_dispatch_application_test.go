@@ -45,3 +45,11 @@ func TestBoundedGenericDispatchApplication(t *testing.T) {
 	}
 	assertGeneratedLocalConstructorResult(t, strings.SplitN(string(source), "\n", 2)[1], "7:9:16")
 }
+
+func TestGenericPolymorphicDispatchAssignmentView(t *testing.T) {
+	source, err := os.ReadFile("../testfiles/applications/generic_polymorphic_dispatch/src/parity/dispatch/targetview/GenericTargetProbe.java")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertGeneratedLocalConstructorResult(t, strings.SplitN(string(source), "\n", 2)[1], "2")
+}
