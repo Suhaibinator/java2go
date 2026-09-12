@@ -51,6 +51,7 @@ func TestDiscoverRejectsUnimplementedMavenSemantics(t *testing.T) {
 		{"missing sources", `<dependencies><dependency><groupId>vendor</groupId><artifactId>lib</artifactId><version>1</version></dependency></dependencies>`, "-dependency-source vendor:lib="},
 		{"profiles", `<profiles><profile><id>production</id></profile></profiles>`, "profiles"},
 		{"plugins", `<build><plugins><plugin><artifactId>generator</artifactId></plugin></plugins></build>`, "build plugins"},
+		{"managed plugins", `<build><pluginManagement><plugins><plugin><artifactId>maven-compiler-plugin</artifactId></plugin></plugins></pluginManagement></build>`, "build plugins"},
 		{"filtering", `<build><resources><resource><directory>assets</directory><filtering>true</filtering></resource></resources></build>`, "filtered resources"},
 		{"escaping target", `<build><resources><resource><directory>assets</directory><targetPath>../../escape</targetPath></resource></resources></build>`, "within resources"},
 		{"undefined property", `<build><sourceDirectory>${unknown}/src</sourceDirectory></build>`, "unresolved Maven property"},

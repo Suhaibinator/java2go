@@ -57,6 +57,7 @@ type pom struct {
 		SourceDirectory string     `xml:"sourceDirectory"`
 		Resources       []resource `xml:"resources>resource"`
 		Plugins         []struct{} `xml:"plugins>plugin"`
+		ManagedPlugins  []struct{} `xml:"pluginManagement>plugins>plugin"`
 		Extensions      []struct{} `xml:"extensions>extension"`
 	} `xml:"build"`
 }
@@ -210,7 +211,7 @@ func (r *resolver) read(path string) (*Module, error) {
 		return nil, fmt.Errorf("parse %s/pom.xml: %w", path, err)
 	}
 	p := &m.model
-	if len(p.Profiles) > 0 || len(p.Build.Plugins) > 0 || len(p.Build.Extensions) > 0 {
+	if len(p.Profiles) > 0 || len(p.Build.Plugins) > 0 || len(p.Build.ManagedPlugins) > 0 || len(p.Build.Extensions) > 0 {
 		return nil, fmt.Errorf("%s: Maven profiles, build plugins and extensions are unsupported; supply a source-only POM with generated sources already materialized", path)
 	}
 	if p.Parent != nil {

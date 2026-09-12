@@ -169,7 +169,7 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	previous := symbol.GlobalScope
 	symbol.GlobalScope = &symbol.GlobalSymbols{Packages: map[string]*symbol.PackageScope{}}
 	defer func() { symbol.GlobalScope = previous }()
-	args := []string{"-w", "-strict", "-sync", "-output", generated, "-module", "__java2go_project_stage__", "-exclude-annotations", excluded, inputs}
+	args := []string{"-w", "-strict", "-sync", "-output", generated, "-module", "", "-exclude-annotations", excluded, inputs}
 	if err = runInternal(args, stdout, true); err != nil {
 		return err
 	}
