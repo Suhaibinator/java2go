@@ -41,6 +41,8 @@ func identFromNode(node *sitter.Node, source []byte) *ast.Ident {
 
 // A Ctx is all the context that is needed to parse a single source file
 type Ctx struct {
+	// Project entrypoints retain their Java signature and receive argv from a launcher.
+	projectMode bool
 	// Used to generate the names of all the methods, as well as the names
 	// of the constructors
 	className string
@@ -393,6 +395,7 @@ func transferTargetInsideBoundary(transfer *tryControlTransfer, boundary *sitter
 // pointing at the same things as the previous Ctx
 func (c Ctx) Clone() Ctx {
 	return Ctx{
+		projectMode:                         c.projectMode,
 		className:                           c.className,
 		currentFile:                         c.currentFile,
 		currentClass:                        c.currentClass,

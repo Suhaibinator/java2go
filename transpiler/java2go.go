@@ -26,6 +26,10 @@ func Run(args []string) error {
 }
 
 func run(args []string, stdout io.Writer) error {
+	return runInternal(args, stdout, false)
+}
+
+func runInternal(args []string, stdout io.Writer, projectMode bool) error {
 	var writeFiles bool
 	var dryRun bool
 	var displayAST bool
@@ -37,6 +41,8 @@ func run(args []string, stdout io.Writer) error {
 	var modulePath string
 	var ignoredAnnotations string
 	var inputRoots []string
+	var mavenRoot, mainClass, runtimeRoot string
+	var dependencySources repeatedFlag
 
 	flagSet := flag.NewFlagSet("java2go", flag.ContinueOnError)
 	flagSet.BoolVar(&writeFiles, "w", false, "Whether to write the files to disk instead of stdout")
@@ -52,11 +58,25 @@ or to fix crashes with the symbol handling`,
 	flagSet.StringVar(&outputDirectory, "output", ".", "Specify a directory for the generated files")
 	flagSet.StringVar(&modulePath, "module", "generated", "Module path to use when creating go.mod")
 	flagSet.StringVar(&ignoredAnnotations, "exclude-annotations", "", "A comma-separated list of annotations to exclude from the final code generation")
+	flagSet.StringVar(&mavenRoot, "maven", "", "Convert a local Maven reactor (offline, source dependencies only)")
+	flagSet.StringVar(&mainClass, "main-class", "", "Fully qualified Java application main class for -maven")
+	flagSet.StringVar(&runtimeRoot, "runtime", "", "Local java2go repository providing stdjava for -maven")
+	flagSet.Var(&dependencySources, "dependency-source", "Map groupId:artifactId=/path/to/Maven/source/project (repeatable)")
 	if err := flagSet.Parse(args); err != nil {
 		return err
 	}
 
 	resetDiagnostics()
+	if mavenRoot != "" {
+		if len(flagSet.Args()) != 0 || dryRun || displayAST || !symbolAware {
+			return fmt.Errorf("-maven requires symbol conversion and cannot combine with positional inputs, -q, -ast or -symbols=false")
+		}
+		return runMavenProject(mavenRoot, dependencySources, mainClass, runtimeRoot, outputDirectory, modulePath, ignoredAnnotations, stdout)
+	}
+	if mainClass != "" || runtimeRoot != "" || len(dependencySources) > 0 {
+		return fmt.Errorf("-main-class, -runtime and -dependency-source require -maven")
+	}
+
 	setStrictMode(strict)
 
 	excludedAnnotations = make(map[string]bool)
@@ -157,6 +177,10 @@ or to fix crashes with the symbol handling`,
 		}
 	}
 
+	if projectMode {
+		prepareProjectEntrypoints(files)
+	}
+
 	// Transpile the files
 
 	log.Info("Converting files...")
@@ -188,7 +212,7 @@ or to fix crashes with the symbol handling`,
 		}
 
 		// The converted AST, in Go's AST representation
-		var initialContext Ctx
+		initialContext := Ctx{projectMode: projectMode}
 		if symbolAware {
 			initialContext.currentFile = file.Symbols
 			initialContext.currentClass = file.Symbols.BaseClass
