@@ -1,6 +1,7 @@
 package stdjava
 
 import (
+	"math"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -336,9 +337,9 @@ func decimalSuffix(name, prefix string) bool {
 // finishes. Java's Thread is far richer (priorities, interruption, daemon status,
 // fairness); those are out of scope and documented as such.
 type Thread struct {
-	run  Runnable
-	done chan struct{}
-	once sync.Once
+	run     Runnable
+	done    chan struct{}
+	started atomic.Bool
 }
 
 // JavaDynamicTypeID lets the reified reference-array runtime recognize the
@@ -400,27 +401,67 @@ func (t *Thread) runJava2goExecution(execution *Execution) {
 	RunRunnableExecution(execution, t.run)
 }
 
-// Start runs the thread's Runnable in a goroutine. Calling Start more than once
-// is a no-op after the first, approximating Java's IllegalThreadStateException
-// without panicking. There is no scheduling fairness or interruption.
+// Start can transition a Thread from NEW to alive only once.
 func (t *Thread) Start() {
-	t.once.Do(func() {
-		go func() {
-			defer close(t.done)
-			RunRunnableExecution(NewExecution(), t.run)
-		}()
-	})
+	if !t.started.CompareAndSwap(false, true) {
+		panic(NewIllegalThreadStateException("thread already started"))
+	}
+	go func() {
+		defer close(t.done)
+		defer reportUncaughtTaskException()
+		RunRunnableExecution(NewExecution(), t.run)
+	}()
 }
 
-// Join blocks until the thread's Runnable has finished. A Thread that was never
-// started returns immediately, since its done channel is closed by Start.
+// Join on a NEW or terminated Thread returns immediately, as in Java.
 func (t *Thread) Join() {
-	<-t.done
+	if t.started.Load() {
+		<-t.done
+	}
+}
+func (t *Thread) IsAlive() bool {
+	if !t.started.Load() {
+		return false
+	}
+	select {
+	case <-t.done:
+		return false
+	default:
+		return true
+	}
+}
+func (t *Thread) JoinTimed(millis int64, nanos ...int32) {
+	extra := int32(0)
+	if len(nanos) > 0 {
+		extra = nanos[0]
+	}
+	if millis < 0 || extra < 0 || extra > 999999 {
+		panic(NewIllegalArgumentException("invalid join timeout"))
+	}
+	if extra > 0 && millis < math.MaxInt64 {
+		millis++
+	}
+	if millis == 0 {
+		t.Join()
+		return
+	}
+	if !t.IsAlive() {
+		return
+	}
+	timer := time.NewTimer(MILLISECONDS.duration(millis))
+	defer timer.Stop()
+	select {
+	case <-t.done:
+	case <-timer.C:
+	}
 }
 
-// ThreadSleep mirrors Thread.sleep(millis). The Java method takes milliseconds.
+// ThreadSleep mirrors Thread.sleep(millis), including negative-time rejection.
 func ThreadSleep(millis int64) {
-	time.Sleep(time.Duration(millis) * time.Millisecond)
+	if millis < 0 {
+		panic(NewIllegalArgumentException("timeout value is negative"))
+	}
+	time.Sleep(MILLISECONDS.duration(millis))
 }
 
 // NewObject mirrors `new Object()`, which in Java is most often used purely as a
@@ -744,60 +785,4 @@ func ClassMonitorEnter(className string) *sync.Mutex {
 // The name is the generated Go type name, unique per class within the program.
 func ClassMonitorEnterExecution(execution *Execution, className string) *MonitorGuard {
 	return MonitorEnterExecution(execution, classMonitorReference{name: className})
-}
-
-// ExecutorService is a minimal fixed-size worker pool mirroring the
-// ExecutorService methods transpiled code commonly uses: submit a Runnable,
-// shutdown, and awaitTermination. Tasks are plain func() values.
-type ExecutorService struct {
-	tasks   chan Runnable
-	wg      sync.WaitGroup
-	workers sync.WaitGroup
-	once    sync.Once
-}
-
-// NewFixedThreadPool mirrors Executors.newFixedThreadPool(n): it starts n worker
-// goroutines that drain a task queue.
-func NewFixedThreadPool(n int32) *ExecutorService {
-	if n < 1 {
-		n = 1
-	}
-	e := &ExecutorService{tasks: make(chan Runnable, 64)}
-	for i := int32(0); i < n; i++ {
-		e.workers.Add(1)
-		go func() {
-			defer e.workers.Done()
-			execution := NewExecution()
-			for task := range e.tasks {
-				func() {
-					defer e.wg.Done()
-					RunRunnableExecution(execution, task)
-				}()
-			}
-		}()
-	}
-	return e
-}
-
-// Submit enqueues a task for execution by the pool. The task is either a func()
-// (lambda / method reference) or a value implementing Runnable (an anonymous
-// Runnable class), matching the forms ExecutorService.submit accepts in Java.
-func (e *ExecutorService) Submit(task any) {
-	r := asRunnable(task)
-	e.wg.Add(1)
-	e.tasks <- r
-}
-
-// Shutdown stops accepting new tasks and lets the workers drain the queue.
-// Calling it more than once is safe.
-func (e *ExecutorService) Shutdown() {
-	e.once.Do(func() { close(e.tasks) })
-}
-
-// AwaitTermination blocks until all submitted tasks have completed. It must be
-// preceded by Shutdown for the workers to exit; it waits for both queued work
-// and worker shutdown.
-func (e *ExecutorService) AwaitTermination() {
-	e.wg.Wait()
-	e.workers.Wait()
 }

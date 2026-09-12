@@ -132,7 +132,7 @@ func TestThreadSubclass_StartDoesNotRecurseThroughEmbed(t *testing.T) {
 	w := &countingThreadSubclass{counter: &runs}
 	w.Thread = NewThreadBase(w)
 	w.Start()
-	w.Start() // once-guarded: a second Start is a no-op
+	futurePanic(t, "IllegalThreadStateException", w.Start)
 	w.Join()
 	if got := runs.Load(); got != 1 {
 		t.Fatalf("Run() executed %d times, want exactly 1", got)
@@ -164,10 +164,9 @@ func TestThread_StartJoinRunsRunnable(t *testing.T) {
 }
 
 func TestThread_JoinWithoutStartDoesNotBlock(t *testing.T) {
-	// A Thread is only joinable after Start; this documents that Join on a
-	// started thread completes. (Join before Start would block forever, matching
-	// the note in the implementation, so we only test the started path.)
+	// A Java Thread in the NEW state is not alive, so join returns immediately.
 	th := NewThread(func() {})
+	th.Join()
 	th.Start()
 	th.Join()
 }

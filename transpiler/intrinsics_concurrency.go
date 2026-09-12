@@ -24,6 +24,7 @@ var concurrencyRuntimeTypes = map[string]bool{
 	"AtomicBoolean":     false,
 	"Thread":            false,
 	"ExecutorService":   false,
+	"Future":            true,
 	"ConcurrentHashMap": true,
 }
 
@@ -46,6 +47,18 @@ func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx 
 		return stdjavaQualifiedExpr("Runnable", ctx), true
 	}
 
+	if baseName == "TimeUnit" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr("TimeUnit", ctx)}, true
+	}
+	if baseName == "Callable" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+		if len(typeArgs) == 0 {
+			typeArgs = []string{"Object"}
+		}
+		return applyTypeArguments(stdjavaQualifiedExpr("Callable", ctx), []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], typeParams, ctx)}), true
+	}
+	if baseName == "Future" && len(typeArgs) == 0 {
+		typeArgs = []string{"Object"}
+	}
 	generic, ok := concurrencyRuntimeTypes[baseName]
 	if !ok {
 		return nil, false
@@ -313,9 +326,13 @@ func registerAtomicIntrinsics() {
 }
 
 func registerThreadIntrinsics() {
+	registerInstanceIntrinsicResultType("Thread", "isAlive", "boolean")
 	// new Thread(runnable) -> stdjava.NewThread(runnable). The Runnable argument
 	// is already a func() in generated code (lambda or method reference).
 	registerConstructorIntrinsic("Thread", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 0 {
+			return stdjavaCall(ctx, "NewThread", &ast.Ident{Name: "nil"})
+		}
 		if len(args) != 1 {
 			return nil
 		}
@@ -330,10 +347,16 @@ func registerThreadIntrinsics() {
 		return stdjavaCall(ctx, "ThreadSleep", args[0])
 	})
 
-	for javaMethod, goMethod := range map[string]string{"start": "Start", "join": "Join"} {
+	for javaMethod, goMethod := range map[string]string{"start": "Start", "join": "Join", "isAlive": "IsAlive"} {
 		goMethod := goMethod
 		registerInstanceIntrinsic("Thread", javaMethod, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-			if recv == nil || len(args) != 0 {
+			if recv == nil {
+				return nil
+			}
+			if goMethod == "Join" && len(args) > 0 {
+				return selectorCall(recv, "JoinTimed", args)
+			}
+			if len(args) != 0 {
 				return nil
 			}
 			return selectorCall(recv, goMethod, nil)
@@ -370,31 +393,17 @@ func registerExecutorIntrinsics() {
 		return stdjavaCall(ctx, "NewFixedThreadPool", intLit(1))
 	})
 
+	registerFutureIntrinsics()
 	for javaMethod, goMethod := range map[string]string{
-		"submit":           "Submit",
-		"execute":          "Submit",
-		"shutdown":         "Shutdown",
-		"awaitTermination": "AwaitTermination",
+		"execute": "Execute", "shutdown": "Shutdown", "awaitTermination": "AwaitTerminationTimed",
+		"isShutdown": "IsShutdown", "isTerminated": "IsTerminated",
 	} {
 		goMethod := goMethod
 		registerInstanceIntrinsic("ExecutorService", javaMethod, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-			if recv == nil {
-				return nil
-			}
-			// awaitTermination(timeout, unit) in Java takes args; the stdjava shim
-			// waits unconditionally, so drop them.
-			if goMethod == "AwaitTermination" {
-				return selectorCall(recv, goMethod, nil)
-			}
-			if goMethod == "Submit" {
-				if len(args) != 1 {
-					return nil
-				}
-				return selectorCall(recv, goMethod, args)
-			}
-			return selectorCall(recv, goMethod, nil)
+			return selectorCall(recv, goMethod, args)
 		})
 	}
+
 }
 
 func registerConcurrentMapIntrinsics() {

@@ -184,7 +184,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		lambdaCtx.expectedType = lambdaReturnType
 		expectedBase, _ := parseJavaTypeString(ctx.expectedType)
 		expectedScope := resolveClassScopeByQualifiedName(ctx, expectedBase)
-		executionAwareSAM := samMethod != nil && expectedScope != nil && expectedScope.IsInterface
+		executionAwareSAM := samMethod != nil && (expectedScope != nil && expectedScope.IsInterface || isExternalCallableType(ctx.expectedType, ctx))
 		executionAwareRunnable := samMethod == nil && expectedScope == nil && stripJavaQualifier(expectedBase) == "Runnable"
 
 		var lambdaParameters *ast.FieldList
@@ -5586,6 +5586,7 @@ type builtinFunctionalInterface struct {
 var builtinFunctionalInterfaces = map[string]builtinFunctionalInterface{
 	"Function":         {typeParameters: []string{"T", "R"}, parameterTypes: []string{"T"}, resultType: "R"},
 	"BiFunction":       {typeParameters: []string{"T", "U", "R"}, parameterTypes: []string{"T", "U"}, resultType: "R"},
+	"Callable":         {typeParameters: []string{"T"}, resultType: "T"},
 	"Supplier":         {typeParameters: []string{"T"}, resultType: "T"},
 	"Consumer":         {typeParameters: []string{"T"}, parameterTypes: []string{"T"}, resultType: "void"},
 	"BiConsumer":       {typeParameters: []string{"T", "U"}, parameterTypes: []string{"T", "U"}, resultType: "void"},
@@ -8480,6 +8481,13 @@ func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType 
 	}
 
 	baseType, typeArgs := parseJavaTypeString(expectedType)
+	if isExternalCallableType(expectedType, ctx) {
+		constructor := "NewPlainCallableFuncAdapter"
+		if executionAware {
+			constructor = "NewCallableFuncAdapter"
+		}
+		return stdjavaGenericCall(ctx, constructor, []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], inScopeTypeParameters(ctx), ctx)}, []ast.Expr{lambdaExpr})
+	}
 	interfaceScope := resolveClassScopeByQualifiedName(ctx, baseType)
 	if interfaceScope == nil || interfaceScope.Class == nil || interfaceScope.Class.Name == "" {
 		return nil

@@ -37,7 +37,7 @@ func methodReferenceJavaSignature(ctx Ctx) ([]string, string) {
 func methodReferenceUsesExecutionSAM(ctx Ctx) bool {
 	base, _ := parseJavaTypeString(ctx.expectedType)
 	scope := resolveClassScopeByQualifiedName(ctx, base)
-	return scope != nil && scope.IsInterface || isExternalRunnableType(ctx.expectedType, ctx)
+	return scope != nil && scope.IsInterface || isExternalRunnableType(ctx.expectedType, ctx) || isExternalCallableType(ctx.expectedType, ctx)
 }
 
 func methodReferenceResultConversion(value ast.Expr, actualType string, ctx Ctx) ast.Expr {
