@@ -25,6 +25,7 @@ func init() {
 	registerSetIntrinsics()
 	registerOptionalIntrinsics()
 	registerCollectionsStatics()
+	registerCollectionObjectMethods()
 }
 
 // listTypeNames are the Java types that a List-valued receiver may be declared
@@ -132,8 +133,8 @@ func registerCollectionConstructors() {
 			return stdjavaGenericCall(ctx, "NewList", typeArgs, nil)
 		})
 	}
-	// new HashMap<K,V>() / new TreeMap<K,V>() -> stdjava.NewMap[K,V]()
-	for _, name := range []string{"HashMap", "TreeMap", "LinkedHashMap"} {
+	// Hash-based implementations use Java hashCode/equals collision buckets.
+	for _, name := range []string{"HashMap", "LinkedHashMap"} {
 		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) != 0 {
 				return nil
@@ -141,8 +142,8 @@ func registerCollectionConstructors() {
 			return stdjavaGenericCall(ctx, "NewMap", typeArgs, nil)
 		})
 	}
-	// new HashSet<T>() / new TreeSet<T>() -> stdjava.NewSet[T]()
-	for _, name := range []string{"HashSet", "TreeSet", "LinkedHashSet"} {
+	// HashSet and LinkedHashSet share deterministic hash-set storage.
+	for _, name := range []string{"HashSet", "LinkedHashSet"} {
 		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) != 0 {
 				return nil
@@ -150,6 +151,18 @@ func registerCollectionConstructors() {
 			return stdjavaGenericCall(ctx, "NewSet", typeArgs, nil)
 		})
 	}
+	for _, name := range []string{"TreeMap", "TreeSet"} {
+		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+			constructor := "New" + name
+			if len(args) == 1 {
+				constructor += "With"
+			} else if len(args) != 0 {
+				return nil
+			}
+			return stdjavaGenericCall(ctx, constructor, typeArgs, args)
+		})
+	}
+
 }
 
 // registerForTypes registers the same instance-method generator under each of
@@ -165,6 +178,9 @@ func registerListIntrinsics() {
 		return func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, argc) {
 				return nil
+			}
+			if goName == "Contains" || goName == "IndexOf" {
+				args = append(args, intrinsicExecutionExpr(ctx))
 			}
 			return methodCall(recv, goName, args...)
 		}
@@ -191,6 +207,9 @@ func registerListIntrinsics() {
 				goName = "RemoveAt"
 			}
 			args := intrinsicArgs(invocation.ChildByFieldName("object"), "remove", source, ctx)
+			if goName == "RemoveObject" {
+				args = append(args, intrinsicExecutionExpr(ctx))
+			}
 			return methodCall(recv, goName, args...)
 		})
 	}
@@ -201,6 +220,9 @@ func registerMapIntrinsics() {
 		return func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, argc) {
 				return nil
+			}
+			if goName == "Put" || goName == "Get" || goName == "GetOrDefault" || goName == "ContainsKey" || goName == "ContainsValue" || goName == "Remove" {
+				args = append(args, intrinsicExecutionExpr(ctx))
 			}
 			return methodCall(recv, goName, args...)
 		}
@@ -224,6 +246,9 @@ func registerSetIntrinsics() {
 		return func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, argc) {
 				return nil
+			}
+			if goName == "Add" || goName == "Contains" || goName == "Remove" {
+				args = append(args, intrinsicExecutionExpr(ctx))
 			}
 			return methodCall(recv, goName, args...)
 		}
@@ -537,4 +562,26 @@ func registerCollectionsStatics() {
 		}
 		return stdjavaCall(ctx, "ArrayDeepToString", args[0])
 	})
+}
+
+// Collection equals/hashCode are inherited Object methods, with structural
+// List/Set/Map implementations provided by the runtime.
+func registerCollectionObjectMethods() {
+	names := append(append(append([]string{}, listTypeNames...), mapTypeNames...), setTypeNames...)
+	for _, name := range names {
+		registerInstanceIntrinsic(name, "equals", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 1 {
+				return nil
+			}
+			return stdjavaCall(ctx, "ObjectEqualsExecution", intrinsicExecutionExpr(ctx), recv, args[0])
+		})
+		registerInstanceIntrinsicResultType(name, "equals", "boolean")
+		registerInstanceIntrinsic(name, "hashCode", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaCall(ctx, "ObjectHashCodeExecution", intrinsicExecutionExpr(ctx), recv)
+		})
+		registerInstanceIntrinsicResultType(name, "hashCode", "int")
+	}
 }

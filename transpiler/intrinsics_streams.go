@@ -128,12 +128,12 @@ func registerStreamIntrinsics() {
 			}
 			return stdjavaCall(ctx, "StreamFlatMap", recv, args[0])
 		})
-		// distinct needs a comparable type parameter, so it is a free function too.
+		// distinct uses Java equality/hashCode for any reference representation.
 		registerInstanceIntrinsic(t, "distinct", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, 0) {
 				return nil
 			}
-			return stdjavaCall(ctx, "StreamDistinct", recv)
+			return stdjavaCall(ctx, "StreamDistinct", recv, intrinsicExecutionExpr(ctx))
 		})
 
 		registerInstanceIntrinsic(t, "skip", streamMethod("Skip", 1))

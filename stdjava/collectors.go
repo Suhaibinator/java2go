@@ -21,10 +21,10 @@ import "strings"
 // StreamToSet collects the elements into a Set, matching
 // Collectors.toSet / toUnmodifiableSet. Java gives no ordering guarantee for
 // toSet; stdjava.Set preserves insertion order.
-func StreamToSet[T comparable](s Stream[T]) *Set[T] {
+func StreamToSet[T any](s Stream[T], execution ...*Execution) *Set[T] {
 	out := NewSet[T]()
 	for _, e := range s.elements {
-		out.Add(e)
+		out.Add(e, execution...)
 	}
 	return out
 }
@@ -49,14 +49,14 @@ func StreamJoining(s Stream[string], separator, prefix, suffix string) string {
 // extractors, matching Collectors.toMap(keyMapper, valueMapper). Java throws
 // IllegalStateException on a duplicate key rather than overwriting, so this
 // does too; the three-argument form supplies a merge function instead.
-func StreamToMap[T any, K comparable, V any](s Stream[T], key func(T) K, value func(T) V) *Map[K, V] {
+func StreamToMap[T any, K any, V any](s Stream[T], key func(T) K, value func(T) V, execution ...*Execution) *Map[K, V] {
 	out := NewMap[K, V]()
 	for _, e := range s.elements {
 		k := key(e)
-		if out.ContainsKey(k) {
+		if out.ContainsKey(k, execution...) {
 			panic(NewIllegalStateException("Duplicate key"))
 		}
-		out.Put(k, value(e))
+		out.Put(k, value(e), execution...)
 	}
 	return out
 }
@@ -64,29 +64,29 @@ func StreamToMap[T any, K comparable, V any](s Stream[T], key func(T) K, value f
 // StreamToMapMerging is toMap with a merge function resolving duplicate keys,
 // matching Collectors.toMap(keyMapper, valueMapper, mergeFunction). The merge
 // receives the existing value first, as Java's does.
-func StreamToMapMerging[T any, K comparable, V any](s Stream[T], key func(T) K, value func(T) V, merge func(V, V) V) *Map[K, V] {
+func StreamToMapMerging[T any, K any, V any](s Stream[T], key func(T) K, value func(T) V, merge func(V, V) V, execution ...*Execution) *Map[K, V] {
 	out := NewMap[K, V]()
 	for _, e := range s.elements {
 		k := key(e)
 		v := value(e)
-		if out.ContainsKey(k) {
-			v = merge(out.Get(k), v)
+		if out.ContainsKey(k, execution...) {
+			v = merge(out.Get(k, execution...), v)
 		}
-		out.Put(k, v)
+		out.Put(k, v, execution...)
 	}
 	return out
 }
 
 // StreamGroupingBy groups the elements by a classifier, matching
 // Collectors.groupingBy(classifier). Each group keeps encounter order.
-func StreamGroupingBy[T any, K comparable](s Stream[T], classifier func(T) K) *Map[K, *List[T]] {
+func StreamGroupingBy[T any, K any](s Stream[T], classifier func(T) K, execution ...*Execution) *Map[K, *List[T]] {
 	out := NewMap[K, *List[T]]()
 	for _, e := range s.elements {
 		k := classifier(e)
-		group := out.Get(k)
-		if !out.ContainsKey(k) {
+		group := out.Get(k, execution...)
+		if !out.ContainsKey(k, execution...) {
 			group = NewList[T]()
-			out.Put(k, group)
+			out.Put(k, group, execution...)
 		}
 		group.Add(e)
 	}
@@ -97,11 +97,11 @@ func StreamGroupingBy[T any, K comparable](s Stream[T], classifier func(T) K) *M
 // collector to each group, matching
 // Collectors.groupingBy(classifier, downstream). The downstream is a function
 // from the group's own stream to its collected result.
-func StreamGroupingByDownstream[T any, K comparable, D any](s Stream[T], classifier func(T) K, downstream func(Stream[T]) D) *Map[K, D] {
-	grouped := StreamGroupingBy(s, classifier)
+func StreamGroupingByDownstream[T any, K any, D any](s Stream[T], classifier func(T) K, downstream func(Stream[T]) D, execution ...*Execution) *Map[K, D] {
+	grouped := StreamGroupingBy(s, classifier, execution...)
 	out := NewMap[K, D]()
 	for _, key := range grouped.KeySet() {
-		out.Put(key, downstream(StreamOfSlice(grouped.Get(key).Slice())))
+		out.Put(key, downstream(StreamOfSlice(grouped.Get(key, execution...).Slice())), execution...)
 	}
 	return out
 }

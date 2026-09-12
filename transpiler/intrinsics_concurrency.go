@@ -408,16 +408,20 @@ func registerConcurrentMapIntrinsics() {
 	})
 
 	for javaMethod, goMethod := range map[string]string{
-		"put":         "Put",
-		"get":         "Get",
-		"remove":      "Remove",
-		"containsKey": "ContainsKey",
-		"size":        "Size",
+		"put":           "Put",
+		"get":           "Get",
+		"remove":        "Remove",
+		"containsKey":   "ContainsKey",
+		"containsValue": "ContainsValue",
+		"size":          "Size",
 	} {
 		goMethod := goMethod
 		registerInstanceIntrinsic("ConcurrentHashMap", javaMethod, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if recv == nil {
 				return nil
+			}
+			if goMethod != "Size" {
+				args = append(args, intrinsicExecutionExpr(ctx))
 			}
 			return selectorCall(recv, goMethod, args)
 		})
