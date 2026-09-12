@@ -24,7 +24,7 @@ public class ListProgram {
 	assertContains(t, out, "xs.Add(\"a\")")
 	assertContains(t, out, "xs.Get(0)")
 	assertContains(t, out, "xs.Size()")
-	assertContains(t, out, "xs.Contains(\"a\")")
+	assertContains(t, out, "xs.Contains(\"a\", __java2goExecution)")
 }
 
 func TestCollections_DeclaredTypeMapsToStdjava(t *testing.T) {
@@ -76,9 +76,9 @@ public class MapProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.NewMap[string, *stdjava.Integer]()")
-	assertContains(t, out, "m.Put(\"k\", stdjava.BoxInteger(int32(1)))")
-	assertContains(t, out, "m.Get(\"k\")")
-	assertContains(t, out, "m.ContainsKey(\"k\")")
+	assertContains(t, out, "m.Put(\"k\", stdjava.BoxInteger(int32(1)), __java2goExecution)")
+	assertContains(t, out, "m.Get(\"k\", __java2goExecution)")
+	assertContains(t, out, "m.ContainsKey(\"k\", __java2goExecution)")
 }
 
 func TestCollections_StaticsAndArrays(t *testing.T) {
@@ -118,8 +118,8 @@ public class KeywordProgram {
 		t.Fatalf("Go keyword `map` was not sanitized:\n%s", out)
 	}
 	assertContains(t, out, "map_ := stdjava.NewMap")
-	assertContains(t, out, "map_.Put(\"a\", stdjava.BoxInteger(int32(1)))")
-	assertContains(t, out, "map_.Get(\"a\")")
+	assertContains(t, out, "map_.Put(\"a\", stdjava.BoxInteger(int32(1)), __java2goExecution)")
+	assertContains(t, out, "map_.Get(\"a\", __java2goExecution)")
 }
 
 func TestOptional_LambdaAndTypeInference(t *testing.T) {

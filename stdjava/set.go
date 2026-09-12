@@ -2,90 +2,33 @@ package stdjava
 
 import "strings"
 
-// This file implements the set type that java.util.Set implementations
-// (HashSet, TreeSet) are mapped onto. HashSet and TreeSet share one Go type;
-// TreeSet's sorted iteration is not faithfully modelled (insertion order is
-// used). Elements must be comparable, which holds for the Java types used as set
-// elements in practice.
+// Set shares Map's Java equality/hash and sorted-key semantics. Hash sets keep
+// encounter order; tree sets use comparison equality and sorted iteration.
+type Set[T any] struct{ backing *Map[T, bool] }
 
-// Set is a generic set matching the subset of java.util.Set used by transpiled
-// code. It is a pointer type so mutations are visible to all holders.
-type Set[T comparable] struct {
-	backing map[any]struct{}
-	// order preserves insertion order for deterministic iteration.
-	order []T
+func NewSet[T any]() *Set[T]     { return &Set[T]{backing: NewMap[T, bool]()} }
+func NewTreeSet[T any]() *Set[T] { return NewTreeSetWith[T](nil) }
+func NewTreeSetWith[T any](comparator Comparator[T]) *Set[T] {
+	return &Set[T]{backing: NewTreeMapWith[T, bool](comparator)}
 }
-
-// NewSet returns an empty Set, matching `new HashSet<>()` / `new TreeSet<>()`.
-func NewSet[T comparable]() *Set[T] {
-	return &Set[T]{backing: make(map[any]struct{})}
+func (s *Set[T]) Add(element T, execution ...*Execution) bool {
+	return !s.backing.Put(element, true, execution...)
 }
-
-// Add inserts element and returns true if it was not already present, matching
-// Set.add.
-func (s *Set[T]) Add(element T) bool {
-	key := collectionKey(element)
-	if _, exists := s.backing[key]; exists {
-		return false
-	}
-	s.backing[key] = struct{}{}
-	s.order = append(s.order, element)
-	return true
+func (s *Set[T]) Contains(element any, execution ...*Execution) bool {
+	return s.backing.ContainsKey(element, execution...)
 }
-
-// Contains reports whether element is present, matching Set.contains.
-func (s *Set[T]) Contains(element any) bool {
-	_, ok := s.backing[collectionKey(element)]
-	return ok
+func (s *Set[T]) Remove(element any, execution ...*Execution) bool {
+	return s.backing.Remove(element, execution...)
 }
-
-// Remove deletes element and returns true if it was present, matching
-// Set.remove.
-func (s *Set[T]) Remove(element any) bool {
-	key := collectionKey(element)
-	if _, ok := s.backing[key]; !ok {
-		return false
-	}
-	delete(s.backing, key)
-	for i, e := range s.order {
-		if collectionKey(e) == key {
-			s.order = append(s.order[:i], s.order[i+1:]...)
-			break
-		}
-	}
-	return true
-}
-
-// Size returns the number of elements, matching Set.size.
-func (s *Set[T]) Size() int32 {
-	return int32(len(s.backing))
-}
-
-// IsEmpty reports whether the set has no elements, matching Set.isEmpty.
-func (s *Set[T]) IsEmpty() bool {
-	return len(s.backing) == 0
-}
-
-// Clear removes all elements, matching Set.clear.
-func (s *Set[T]) Clear() {
-	s.backing = make(map[any]struct{})
-	s.order = nil
-}
-
-// Slice returns the elements in insertion order for iteration. The transpiler
-// lowers an enhanced-for over a Set to a range over this.
-func (s *Set[T]) Slice() []T {
-	cp := make([]T, len(s.order))
-	copy(cp, s.order)
-	return cp
-}
-
-// String returns the Java AbstractCollection.toString form, e.g. "[a, b]", in
-// insertion order, so a Set printed via fmt matches Java's output.
+func (s *Set[T]) Size() int32   { return s.backing.Size() }
+func (s *Set[T]) IsEmpty() bool { return s.backing.IsEmpty() }
+func (s *Set[T]) Clear()        { s.backing.Clear() }
+func (s *Set[T]) Slice() []T    { return s.backing.KeySet() }
 func (s *Set[T]) String() string {
-	parts := make([]string, len(s.order))
-	for i, e := range s.order {
-		parts[i] = StringValueOf(e)
+	elements := s.Slice()
+	parts := make([]string, len(elements))
+	for i, element := range elements {
+		parts[i] = StringValueOf(element)
 	}
 	return "[" + strings.Join(parts, ", ") + "]"
 }

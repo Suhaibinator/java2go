@@ -72,7 +72,7 @@ func TestObjectsEqual(t *testing.T) {
 	if !ObjectsEqual("a", "a") || ObjectsEqual("a", "b") {
 		t.Fatalf("ObjectsEqual string failed")
 	}
-	if !ObjectsEqual([]int{1, 2}, []int{1, 2}) {
-		t.Fatalf("ObjectsEqual deep failed")
+	if ObjectsEqual([]int{1, 2}, []int{1, 2}) {
+		t.Fatalf("distinct arrays must use identity, not deep equality")
 	}
 }

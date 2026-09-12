@@ -36,6 +36,8 @@ Go duration and does not change benchmark timeouts or fixture workloads.
 | `analytics_pipeline` | Parsing, validation, bounded generics, collections, scoring, aggregation, stable ranking, rejections, checksum | Passing |
 | `workflow_engine` | Generic workflow scheduler, rules, enums, collections, sorting, retries, failures, dependency cycles, histories, overflow | Passing |
 | `side_effect_semantics` | Short-circuiting, nested ternaries, receiver/argument order, null invocation timing, static qualifiers, compound assignment, `finally`, and recursive side effects | Passing |
+| `java_collection_contracts` | Custom equality/hash collisions, retained keys, list identity, distinct/collectors, sorted sets and concurrent maps | Passing |
+| `java_collection_values` | Nested collection keys, erased structural equality/hashCode, null map values, comparison equality and sorted maps | Passing |
 | `boxed_object_semantics` | All eight nullable wrapper objects, identity and numeric conversions, generic/overload selection, boxed collections/streams/Optionals, and varargs array aliases and store checks across three packages | Passing |
 | `numerical_kernels` | Floating-point recurrences, blocked dense matrices, iterative stencils, cache locality, allocation, numerical checksums | Passing + benchmark |
 | `allocation_gc_pressure` | Short-lived object/array churn, retained cyclic graphs, cohort rotation, traversal, mutation, reclamation pressure | Passing + benchmark |

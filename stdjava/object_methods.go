@@ -32,6 +32,10 @@ func ObjectPattern[T any](value any, expected TypeID) (T, bool) {
 // or Number. Its arguments are evaluated before the receiver's null check.
 func ObjectEqualsExecution(execution *Execution, left, right any) bool {
 	ReferenceRequireNonNull(left)
+	left, right = collectionObjectView(left), collectionObjectView(right)
+	if javaReferenceIsNull(right) {
+		right = nil
+	}
 	if result, ok := objectExecutionMethod(execution, left, "EqualsJava2goExecution", []any{right}); ok {
 		return result.Bool()
 	}
@@ -57,6 +61,7 @@ func StringEquals(left string, right any) bool {
 // by Java. Boxed values expose the exact per-wrapper hash instead.
 func ObjectHashCodeExecution(execution *Execution, value any) int32 {
 	ReferenceRequireNonNull(value)
+	value = collectionObjectView(value)
 	if result, ok := objectExecutionMethod(execution, value, "HashCodeJava2goExecution", nil); ok {
 		return int32(result.Int())
 	}
@@ -69,6 +74,12 @@ func ObjectHashCodeExecution(execution *Execution, value any) int32 {
 			hash = hash*31 + int32(unit)
 		}
 		return hash
+	}
+	if carrier, ok := value.(JavaObjectInfoCarrier); ok {
+		if info := carrier.JavaObjectInfo(); info != nil {
+			pointer := uint64(reflect.ValueOf(info).Pointer())
+			return int32(pointer ^ (pointer >> 32))
+		}
 	}
 	reflected := reflect.ValueOf(value)
 	switch reflected.Kind() {
@@ -99,6 +110,11 @@ func objectExecutionMethod(execution *Execution, receiver any, name string, args
 			(name == "HashCodeJava2goExecution" && signature.Out(0).Kind() != reflect.Int32) {
 			continue
 		}
+		// equals(SomeClass) is an overload, not Object.equals(Object).
+		// Only the erased Object parameter participates in virtual equality.
+		if name == "EqualsJava2goExecution" && signature.In(1) != reflect.TypeOf((*any)(nil)).Elem() {
+			continue
+		}
 		parameters := []reflect.Value{reflect.ValueOf(execution)}
 		compatible := true
 		for argumentIndex, arg := range args {
@@ -117,4 +133,20 @@ func objectExecutionMethod(execution *Execution, receiver any, name string, args
 		}
 	}
 	return reflect.Value{}, false
+}
+
+// Every generated superclass view shares ObjectInfo with its most-derived
+// object. Resolve that receiver before invoking virtual Object methods so an
+// erased/base-typed key observes the override and the same default identity.
+func collectionObjectView(value any) any {
+	if !javaReferenceIsNull(value) {
+		if carrier, ok := value.(JavaObjectInfoCarrier); ok {
+			if info := carrier.JavaObjectInfo(); info != nil {
+				if dynamic := info.resolveView(info.DynamicType()); !javaReferenceIsNull(dynamic) {
+					return dynamic
+				}
+			}
+		}
+	}
+	return value
 }

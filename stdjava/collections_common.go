@@ -10,21 +10,46 @@ import (
 // This file holds shared helpers for the collection types and the static
 // utility methods of java.util.Collections and java.util.Arrays.
 
-// ObjectsEqual reports whether two values are equal using Java-style value
-// equality. Boxed primitives compare by wrapper kind and canonical payload;
-// Java null compares equally across all erased and typed null representations.
-// Other values retain the existing reflect.DeepEqual approximation; generated
-// user-defined equals methods are not invoked here.
-func ObjectsEqual(a, b any) bool {
+// ObjectsEqual implements Objects.equals, including virtual dispatch to a
+// generated equals(Object) override. Arrays and ordinary objects use identity.
+func ObjectsEqual(a, b any, execution ...*Execution) bool {
 	aNull, bNull := javaReferenceIsNull(a), javaReferenceIsNull(b)
-	if aNull || bNull {
-		return aNull && bNull
+	if aNull {
+		return bNull
 	}
-	if left, boxed := wrapperCollectionKey(a); boxed {
-		right, otherBoxed := wrapperCollectionKey(b)
-		return otherBoxed && left == right
+	if JavaReferenceEqual(collectionObjectView(a), collectionObjectView(b)) {
+		return true
 	}
-	return reflect.DeepEqual(a, b)
+	return ObjectEqualsExecution(optionalComparisonExecution(execution), a, b)
+}
+
+// ObjectsHashCode implements Objects.hashCode (null has hash zero). Primitive
+// scalars are accepted for runtime callers and primitive stream operations.
+func ObjectsHashCode(value any, execution ...*Execution) int32 {
+	if javaReferenceIsNull(value) {
+		return 0
+	}
+	switch v := value.(type) {
+	case bool:
+		return BoxBoolean(v).HashCode()
+	case int:
+		return int32(v)
+	case int8:
+		return int32(v)
+	case int16:
+		return int32(v)
+	case int32:
+		return v
+	case int64:
+		return int32(v ^ (v >> 32))
+	case uint16:
+		return int32(v)
+	case float32:
+		return BoxFloat(v).HashCode()
+	case float64:
+		return BoxDouble(v).HashCode()
+	}
+	return ObjectHashCodeExecution(optionalComparisonExecution(execution), value)
 }
 
 // SortOrdered sorts a list in place by natural ordering, matching

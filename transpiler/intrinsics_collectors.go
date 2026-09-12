@@ -123,7 +123,7 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		if arity != 0 {
 			return nil, ""
 		}
-		return stdjavaCall(ctx, "StreamToSet", streamExpr), "Set<" + elementJavaType + ">"
+		return stdjavaCall(ctx, "StreamToSet", streamExpr, intrinsicExecutionExpr(ctx)), "Set<" + elementJavaType + ">"
 
 	case "counting":
 		if arity != 0 {
@@ -176,11 +176,11 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		key := parseCollectorLambda(collector, 0, []string{elementJavaType}, keyType, ctx, source)
 		value := parseCollectorLambda(collector, 1, []string{elementJavaType}, valueType, ctx, source)
 		if arity == 2 {
-			return stdjavaCall(ctx, "StreamToMap", streamExpr, key, value), "Map<" + keyType + "," + valueType + ">"
+			return stdjavaCall(ctx, "StreamToMap", streamExpr, key, value, intrinsicExecutionExpr(ctx)), "Map<" + keyType + "," + valueType + ">"
 		}
 		// The merge function resolves duplicate keys: (V, V) -> V.
 		merge := parseCollectorLambda(collector, 2, []string{valueType, valueType}, valueType, ctx, source)
-		return stdjavaCall(ctx, "StreamToMapMerging", streamExpr, key, value, merge),
+		return stdjavaCall(ctx, "StreamToMapMerging", streamExpr, key, value, merge, intrinsicExecutionExpr(ctx)),
 			"Map<" + keyType + "," + valueType + ">"
 
 	case "groupingBy":
@@ -193,14 +193,14 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		}
 		classifier := parseCollectorLambda(collector, 0, []string{elementJavaType}, keyType, ctx, source)
 		if arity == 1 {
-			return stdjavaCall(ctx, "StreamGroupingBy", streamExpr, classifier),
+			return stdjavaCall(ctx, "StreamGroupingBy", streamExpr, classifier, intrinsicExecutionExpr(ctx)),
 				"Map<" + keyType + ",List<" + elementJavaType + ">>"
 		}
 		downstream, downstreamType := lowerDownstreamCollector(collector, 1, elementJavaType, ctx, source)
 		if downstream == nil {
 			return nil, ""
 		}
-		return stdjavaCall(ctx, "StreamGroupingByDownstream", streamExpr, classifier, downstream),
+		return stdjavaCall(ctx, "StreamGroupingByDownstream", streamExpr, classifier, downstream, intrinsicExecutionExpr(ctx)),
 			"Map<" + keyType + "," + downstreamType + ">"
 
 	case "partitioningBy":

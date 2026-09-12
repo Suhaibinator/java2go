@@ -215,18 +215,12 @@ func (s Stream[T]) Unordered() Stream[T] { return s }
 // StreamDistinct returns a stream with duplicates removed, keeping the first
 // occurrence of each, matching Stream.distinct. Wrapper objects use Java value
 // equality while the output preserves the identity of the first occurrence.
-func StreamDistinct[T comparable](s Stream[T]) Stream[T] {
-	seen := make(map[any]struct{}, len(s.elements))
-	out := make([]T, 0, len(s.elements))
-	for _, e := range s.elements {
-		key := collectionKey(e)
-		if _, duplicate := seen[key]; duplicate {
-			continue
-		}
-		seen[key] = struct{}{}
-		out = append(out, e)
+func StreamDistinct[T any](s Stream[T], execution ...*Execution) Stream[T] {
+	seen := NewSet[T]()
+	for _, element := range s.elements {
+		seen.Add(element, execution...)
 	}
-	return Stream[T]{elements: out}
+	return Stream[T]{elements: seen.Slice()}
 }
 
 // StreamFlatMap maps each element to a stream and concatenates the results,

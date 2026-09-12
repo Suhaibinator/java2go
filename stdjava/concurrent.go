@@ -86,97 +86,137 @@ func (a *AtomicBoolean) CompareAndSet(expect, update bool) bool {
 	return a.v.CompareAndSwap(expect, update)
 }
 
-// ConcurrentHashMap is a mutex-guarded map mirroring the subset of
-// java.util.concurrent.ConcurrentHashMap that transpiled code commonly uses.
-// Keys and values are generic; a sync.RWMutex guards the backing map. A
-// dedicated type (rather than sync.Map) keeps the get/put/size API close to
-// Java and preserves typed values without per-call assertions.
-type ConcurrentHashMap[K comparable, V any] struct {
-	mu sync.RWMutex
-	m  map[any]MapEntry[K, V]
+// ConcurrentHashMap publishes immutable collision-bucket snapshots. User
+// hashCode/equals callbacks run outside the mutex, allowing reentrant reads.
+// Writers validate the snapshot version before publishing; concurrent writes
+// may cause a callback to be retried. Key/entry views are snapshots.
+type ConcurrentHashMap[K, V any] struct {
+	mu      sync.RWMutex
+	buckets map[int32][]MapEntry[K, V]
+	version uint64
+	size    int32
 }
 
-func NewConcurrentHashMap[K comparable, V any]() *ConcurrentHashMap[K, V] {
-	return &ConcurrentHashMap[K, V]{m: make(map[any]MapEntry[K, V])}
+func NewConcurrentHashMap[K, V any]() *ConcurrentHashMap[K, V] {
+	return &ConcurrentHashMap[K, V]{buckets: make(map[int32][]MapEntry[K, V])}
 }
-
-// Put stores value under key and returns the previous value (or the zero value)
-// matching Java's Map.put return contract.
-func (c *ConcurrentHashMap[K, V]) Put(key K, value V) V {
+func (c *ConcurrentHashMap[K, V]) snapshot(hash int32) ([]MapEntry[K, V], uint64) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.buckets[hash], c.version
+}
+func concurrentEntryIndex[K, V any](entries []MapEntry[K, V], key any, execution *Execution) int {
+	for i, entry := range entries {
+		if ObjectsEqual(key, entry.Key, execution) {
+			return i
+		}
+	}
+	return -1
+}
+func (c *ConcurrentHashMap[K, V]) Put(key K, value V, execution ...*Execution) V {
 	ReferenceRequireNonNull(key)
 	ReferenceRequireNonNull(value)
-	normalized := collectionKey(key)
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	prev, exists := c.m[normalized]
-	if exists {
-		key = prev.Key
+	exec := optionalComparisonExecution(execution)
+	hash := ObjectsHashCode(key, exec)
+	for {
+		entries, version := c.snapshot(hash)
+		index := concurrentEntryIndex(entries, key, exec)
+		updated := append([]MapEntry[K, V](nil), entries...)
+		previous := collectionZero[V]()
+		if index >= 0 {
+			previous = updated[index].Value
+			updated[index].Value = value
+		} else {
+			updated = append(updated, MapEntry[K, V]{Key: key, Value: value})
+		}
+		c.mu.Lock()
+		if c.version != version {
+			c.mu.Unlock()
+			continue
+		}
+		if c.buckets == nil {
+			c.buckets = make(map[int32][]MapEntry[K, V])
+		}
+		c.buckets[hash] = updated
+		c.version++
+		if index < 0 {
+			c.size++
+		}
+		c.mu.Unlock()
+		return previous
 	}
-	c.m[normalized] = MapEntry[K, V]{Key: key, Value: value}
-	return prev.Value
 }
-
-// Get returns the value for key, or the zero value if absent. (The two-result
-// form is GetOk for callers that need presence.)
-func (c *ConcurrentHashMap[K, V]) Get(key any) V {
-	ReferenceRequireNonNull(key)
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.m[collectionKey(key)].Value
+func (c *ConcurrentHashMap[K, V]) Get(key any, execution ...*Execution) V {
+	value, _ := c.GetOk(key, execution...)
+	return value
 }
-
-func (c *ConcurrentHashMap[K, V]) GetOk(key any) (V, bool) {
+func (c *ConcurrentHashMap[K, V]) GetOk(key any, execution ...*Execution) (V, bool) {
 	ReferenceRequireNonNull(key)
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	entry, ok := c.m[collectionKey(key)]
-	return entry.Value, ok
+	exec := optionalComparisonExecution(execution)
+	entries, _ := c.snapshot(ObjectsHashCode(key, exec))
+	if index := concurrentEntryIndex(entries, key, exec); index >= 0 {
+		return entries[index].Value, true
+	}
+	return collectionZero[V](), false
 }
-
-func (c *ConcurrentHashMap[K, V]) ContainsKey(key any) bool {
-	ReferenceRequireNonNull(key)
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	_, ok := c.m[collectionKey(key)]
+func (c *ConcurrentHashMap[K, V]) ContainsKey(key any, execution ...*Execution) bool {
+	_, ok := c.GetOk(key, execution...)
 	return ok
 }
-
-func (c *ConcurrentHashMap[K, V]) ContainsValue(value any) bool {
+func (c *ConcurrentHashMap[K, V]) ContainsValue(value any, execution ...*Execution) bool {
 	ReferenceRequireNonNull(value)
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	for _, entry := range c.m {
-		if ObjectsEqual(value, entry.Value) {
+	for _, entry := range c.EntrySet() {
+		if ObjectsEqual(value, entry.Value, execution...) {
 			return true
 		}
 	}
 	return false
 }
-
-func (c *ConcurrentHashMap[K, V]) Remove(key any) V {
+func (c *ConcurrentHashMap[K, V]) Remove(key any, execution ...*Execution) V {
 	ReferenceRequireNonNull(key)
-	normalized := collectionKey(key)
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	prev := c.m[normalized]
-	delete(c.m, normalized)
-	return prev.Value
+	exec := optionalComparisonExecution(execution)
+	hash := ObjectsHashCode(key, exec)
+	for {
+		entries, version := c.snapshot(hash)
+		index := concurrentEntryIndex(entries, key, exec)
+		if index < 0 {
+			return collectionZero[V]()
+		}
+		previous := entries[index].Value
+		updated := make([]MapEntry[K, V], 0, len(entries)-1)
+		updated = append(updated, entries[:index]...)
+		updated = append(updated, entries[index+1:]...)
+		c.mu.Lock()
+		if c.version != version {
+			c.mu.Unlock()
+			continue
+		}
+		if len(updated) == 0 {
+			delete(c.buckets, hash)
+		} else {
+			c.buckets[hash] = updated
+		}
+		c.version++
+		c.size--
+		c.mu.Unlock()
+		return previous
+	}
 }
-
-func (c *ConcurrentHashMap[K, V]) Size() int32 {
+func (c *ConcurrentHashMap[K, V]) Size() int32 { c.mu.RLock(); defer c.mu.RUnlock(); return c.size }
+func (c *ConcurrentHashMap[K, V]) EntrySet() []MapEntry[K, V] {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return int32(len(c.m))
+	entries := make([]MapEntry[K, V], 0, c.size)
+	for _, bucket := range c.buckets {
+		entries = append(entries, bucket...)
+	}
+	return entries
 }
-
-// KeySet snapshots the original key objects retained by the map. Iteration
-// order is unspecified, matching ConcurrentHashMap's key view.
 func (c *ConcurrentHashMap[K, V]) KeySet() []K {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	keys := make([]K, 0, len(c.m))
-	for _, entry := range c.m {
-		keys = append(keys, entry.Key)
+	entries := c.EntrySet()
+	keys := make([]K, len(entries))
+	for i, entry := range entries {
+		keys[i] = entry.Key
 	}
 	return keys
 }
