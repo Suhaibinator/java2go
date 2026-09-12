@@ -209,7 +209,7 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			DeclarationNode: root,
 		},
 		IsEnum:      root.Type() == "enum_declaration",
-		IsInterface: root.Type() == "interface_declaration",
+		IsInterface: root.Type() == "interface_declaration" || root.Type() == "annotation_type_declaration",
 		IsAbstract:  isAbstract,
 	}
 
@@ -516,7 +516,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		}
 
 		scope.Methods = append(scope.Methods, declaration)
-	case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
+	case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
 		implicitlyStatic := scope.IsInterface
 		parentTypeParams := scope.TypeParameters
 		if implicitlyStatic || node.Type() != "class_declaration" || nestedClassIsStatic(node) {

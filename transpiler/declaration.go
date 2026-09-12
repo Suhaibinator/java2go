@@ -69,6 +69,11 @@ func collectTypeNodes(node *sitter.Node) []*sitter.Node {
 // this is any class, interface, or enum declaration
 func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
+	case "annotation_type_declaration":
+		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
+			return []ast.Decl{registration}
+		}
+		return nil
 	case "record_declaration":
 		return parseRecordDecls(node, source, ctx)
 	case "class_declaration":
@@ -651,7 +656,7 @@ func parseClassBodyDeclarations(node *sitter.Node, source []byte, ctx Ctx, skipS
 					}
 				}
 			}
-		case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
+		case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
 			newCtx := ctx.Clone()
 			newCtx.currentClass = ctx.currentClass.Subclasses[subclassIndex]
 			subclassIndex++

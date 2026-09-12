@@ -9420,10 +9420,10 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		// Java's nominal generic Comparable view is retained in source metadata;
 		// runtime dispatch checks it before invoking the erased comparison call.
 		expr = &ast.Ident{Name: "any"}
-	} else if resolvedScope == nil && baseName == "Class" {
+	} else if resolvedScope == nil && (baseName == "Class" || baseName == "Constructor" || baseName == "Field" || baseName == "Method") {
 		// java.lang.Class<T> is erased at runtime; every generic view shares one
 		// canonical descriptor object.
-		expr = &ast.StarExpr{X: stdjavaQualifiedExpr("Class", ctx)}
+		expr = &ast.StarExpr{X: stdjavaQualifiedExpr(baseName, ctx)}
 	} else if prim, ok := primitive(baseName); ok && resolvedScope == nil {
 		expr = prim
 	} else if rt, ok := stdjavaRuntimeTypeExpr(baseName, typeArgs, typeParams, ctx); ok {
