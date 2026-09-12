@@ -327,7 +327,7 @@ func generateExecutionCompanionInterface(scope *symbol.ClassScope, ctx Ctx) ast.
 	typeParams := scope.TypeParameterNames()
 	methods := &ast.FieldList{}
 	for _, method := range scope.Methods {
-		if method == nil || method.Constructor || method.IsStatic || method.IsPrivate || method.RequiresHelper {
+		if method == nil || method.Constructor || method.IsStatic || method.IsPrivate || (method.RequiresHelper && !genericMethodHasErasedEntry(method)) {
 			continue
 		}
 		params := &ast.FieldList{}
@@ -345,6 +345,7 @@ func generateExecutionCompanionInterface(scope *symbol.ClassScope, ctx Ctx) ast.
 				Type: javaTypeStringToGoTypeExpr(method.OriginalType, typeParams, ctx),
 			}}}
 		}
+		eraseGenericMethodSignature(method, params, results, ctx)
 		public := &ast.Field{Type: &ast.FuncType{Params: params, Results: results}}
 		if hidden := executionMethodField(public, method, scope, ctx); hidden != nil {
 			methods.List = append(methods.List, hidden)

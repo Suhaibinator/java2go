@@ -84,7 +84,7 @@ func planDirectOwnerCallableOverrideBridgeFamily(
 	if directOwnerOverrideBridgeHasIncompatibleDispatchFamily(plan, ctx) {
 		return nil, false
 	}
-	if !directOwnerOverrideBridgeRepresentationSupported(plan, ctx) {
+	if len(methodDirectOwnerTypeParameterDeclarations(owner, method)) != 0 && !directOwnerOverrideBridgeRepresentationSupported(plan, ctx) {
 		return nil, false
 	}
 	return plan, true
@@ -331,8 +331,8 @@ func planDirectOwnerCallableOverrideBridgeFamilyUnchecked(
 	method *symbol.Definition,
 	ctx Ctx,
 ) (*directOwnerOverrideBridgeFamilyPlan, bool) {
-	if !ordinaryConcreteCallableOwner(owner) || !ordinarySourceMethod(owner, method) ||
-		len(owner.TypeParameters) == 0 || len(method.TypeParameters) != 0 ||
+	if (!ordinaryConcreteCallableOwner(owner) && !ordinaryCovariantCallableOwner(owner)) || !ordinarySourceMethod(owner, method) ||
+		len(method.TypeParameters) != 0 ||
 		executionParameterIsVariadic(method, len(method.Parameters)-1) ||
 		classHasUnmodeledCallableSubclass(owner, ctx) {
 		return nil, false
@@ -359,7 +359,7 @@ func planDirectOwnerCallableOverrideBridgeFamilyUnchecked(
 		}
 		changed = changed || direct
 	}
-	if !changed {
+	if !changed && !ordinaryCovariantCallableOwner(owner) {
 		return nil, false
 	}
 
@@ -375,7 +375,7 @@ func planDirectOwnerCallableOverrideBridgeFamilyUnchecked(
 		if descendant == nil || descendant == owner || !classScopeDescendsFrom(descendant, owner, ctx) {
 			return false
 		}
-		if !ordinaryConcreteCallableOwner(descendant) {
+		if !ordinaryConcreteCallableOwner(descendant) && !ordinaryCovariantCallableOwner(descendant) {
 			valid = false
 			return true
 		}
@@ -651,13 +651,11 @@ func planDirectOwnerSpecializedOverride(
 	}
 	resultDescriptorDiffers := !overrideBridgeJavaTypesIdentical(erasedResult, ancestorOwner, overrideResultDescriptor, overrideOwner, ctx)
 	resultNeedsWidening := !overrideBridgeJavaTypesIdentical(erasedResult, ancestorOwner, overrideResult, overrideOwner, ctx)
-	if resultNeedsWidening && !overrideBridgePlainResultWideningSupported(erasedResult, ancestorOwner, ctx) {
-		// Go pointers do not support Java's concrete-class covariance. Keep that
-		// wider bridge family gated until it has a representation-only superclass
-		// projection; ObjectView would add a nominal runtime check javac's areturn
-		// does not perform. Interface/Object erasures are plain Go assignments.
+	if resultNeedsWidening && !overrideBridgePlainResultWideningSupported(erasedResult, ancestorOwner, ctx) &&
+		!overrideBridgeConcreteResultWideningSupported(overrideResult, overrideOwner, erasedResult, ancestorOwner, ctx) {
 		return directOwnerOverrideBridgePlan{}, false, false
 	}
+
 	plan.result = directOwnerOverrideBridgeResultPlan{
 		erasedJavaType:   erasedResult,
 		sourceJavaType:   qualifyJavaTypeInDeclaringContext(mappedResult, overrideOwner),
@@ -962,6 +960,16 @@ func buildDirectOwnerOverrideBridgeMethodDecls(
 		exactName := directOwnerOverrideBridgeExactExecutionName(selection.bridge)
 		declarations := buildExecutionAwareFuncDecls(declaration, exactName, executionName, ctx)
 		if bridge := buildDirectOwnerSpecializedOverrideBridgeDecl(declaration, executionName, selection, ctx); bridge != nil {
+			// Ordinary Java covariant methods also implement inherited interfaces.
+			// Expose the ancestor descriptor publicly; source calls retain the
+			// exact hidden result type selected above.
+			if len(selection.family.owner.TypeParameters) == 0 && len(declarations) > 0 {
+				wrapper := declarations[0].(*ast.FuncDecl)
+				wrapper.Type.Results = cloneFieldList(bridge.(*ast.FuncDecl).Type.Results)
+				if ret, ok := wrapper.Body.List[0].(*ast.ReturnStmt); ok && len(ret.Results) == 1 {
+					ret.Results[0] = overrideBridgeConcreteResultProjection(ret.Results[0], selection.bridge.result.overrideJavaType, selection.bridge.owner, selection.family.erasedResult, selection.family.owner, ctx)
+				}
+			}
 			declarations = append(declarations, bridge)
 		}
 		return declarations, true
@@ -1093,10 +1101,11 @@ func buildDirectOwnerSpecializedOverrideBridgeDecl(
 		Args: append([]ast.Expr{&ast.Ident{Name: executionName}}, arguments...),
 	}
 	if results != nil {
-		// javac's synthetic bridge returns the exact body's reference with areturn;
-		// it does not checkcast on an upcast. The planner admits only interface or
-		// Object widening here, both of which are ordinary Go assignability.
-		body = append(body, &ast.ReturnStmt{Results: []ast.Expr{call}})
+		result := ast.Expr(call)
+		if selection.bridge.result.requiresWidening && !overrideBridgePlainResultWideningSupported(selection.family.erasedResult, selection.family.owner, bridgeCtx) {
+			result = overrideBridgeConcreteResultProjection(call, selection.bridge.result.overrideJavaType, selection.bridge.owner, selection.family.erasedResult, selection.family.owner, bridgeCtx)
+		}
+		body = append(body, &ast.ReturnStmt{Results: []ast.Expr{result}})
 	} else {
 		body = append(body, &ast.ExprStmt{X: call})
 	}
@@ -1107,4 +1116,64 @@ func buildDirectOwnerSpecializedOverrideBridgeDecl(
 		Type: &ast.FuncType{Params: params, Results: results},
 		Body: &ast.BlockStmt{List: body},
 	}
+}
+
+// Concrete covariance is a representation-only superclass projection. Java's
+// areturn performs no checkcast here, and null must survive the projection.
+func overrideBridgeConcreteResultPath(actual string, actualOwner *symbol.ClassScope, expected string, expectedOwner *symbol.ClassScope, ctx Ctx) ([]string, bool) {
+	actualBase, actualArgs := parseJavaTypeString(actual)
+	expectedBase, expectedArgs := parseJavaTypeString(expected)
+	if len(actualArgs) != 0 || len(expectedArgs) != 0 {
+		return nil, false
+	}
+	current := resolveClassScopeByQualifiedName(classScopeCtx(actualOwner, ctx), actualBase)
+	target := resolveClassScopeByQualifiedName(classScopeCtx(expectedOwner, ctx), expectedBase)
+	if current == nil || target == nil || current.IsInterface || target.IsInterface || target.IsAbstract {
+		return nil, false
+	}
+	var path []string
+	seen := map[*symbol.ClassScope]bool{}
+	for current != target {
+		if current == nil || seen[current] {
+			return nil, false
+		}
+		seen[current] = true
+		current = resolveSuperclassScopeInDeclaringContext(ctx, current)
+		if current == nil || current.Class == nil {
+			return nil, false
+		}
+		path = append(path, current.Class.Name)
+	}
+	return path, true
+}
+
+func overrideBridgeConcreteResultWideningSupported(actual string, actualOwner *symbol.ClassScope, expected string, expectedOwner *symbol.ClassScope, ctx Ctx) bool {
+	_, ok := overrideBridgeConcreteResultPath(actual, actualOwner, expected, expectedOwner, ctx)
+	return ok
+}
+
+func overrideBridgeConcreteResultProjection(call ast.Expr, actual string, actualOwner *symbol.ClassScope, expected string, expectedOwner *symbol.ClassScope, ctx Ctx) ast.Expr {
+	path, _ := overrideBridgeConcreteResultPath(actual, actualOwner, expected, expectedOwner, ctx)
+	name := "__java2goCovariantResult"
+	value := ast.Expr(&ast.Ident{Name: name})
+	for _, field := range path {
+		value = &ast.SelectorExpr{X: value, Sel: &ast.Ident{Name: field}}
+	}
+	return &ast.CallExpr{Fun: &ast.FuncLit{
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: name}}, Type: javaTypeStringToGoTypeExpr(actual, inScopeTypeParameters(ctx), ctx)}}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: javaTypeStringToGoTypeExpr(expected, inScopeTypeParameters(ctx), ctx)}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			&ast.IfStmt{Cond: &ast.BinaryExpr{X: &ast.Ident{Name: name}, Op: token.EQL, Y: &ast.Ident{Name: "nil"}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}}}},
+			&ast.ReturnStmt{Results: []ast.Expr{value}},
+		}},
+	}, Args: []ast.Expr{call}}
+}
+
+// Ordinary covariance does not migrate any class parameter storage. Classes
+// implementing interfaces can participate because their public wrapper keeps
+// the ancestor descriptor and their narrow body has its own hidden selector.
+func ordinaryCovariantCallableOwner(owner *symbol.ClassScope) bool {
+	return owner != nil && owner.Class != nil && !owner.IsInterface && !owner.IsAbstract && !owner.IsEnum && len(owner.TypeParameters) == 0
 }

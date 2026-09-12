@@ -615,6 +615,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			}}
 		}
 
+		eraseGenericMethodSignature(def, parameters, results, ctx)
 		return &ast.Field{
 			Doc:   &ast.CommentGroup{List: comments},
 			Names: []*ast.Ident{&ast.Ident{Name: def.Name}},

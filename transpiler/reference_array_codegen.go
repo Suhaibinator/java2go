@@ -487,9 +487,38 @@ func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 			addDirectOwnerTypeParameterIdentitySeed(field, scope, fieldCtx, relevant, &objectErasure)
 		}
 		for _, method := range scope.Methods {
+			// Concrete covariant returns expose superclass pointer views of the
+			// same allocation. Install identity metadata for their result
+			// hierarchy so == remains Java reference equality across views.
+			if len(scope.TypeParameters) == 0 {
+				if family, ok := planDirectOwnerCallableOverrideBridgeFamilyUnchecked(scope, method, ctx); ok {
+					base, _ := parseJavaTypeString(family.erasedResult)
+					if resultScope := resolveClassScopeByQualifiedName(classScopeCtx(scope, ctx), base); resultScope != nil {
+						relevant[resultScope] = struct{}{}
+					}
+				}
+			}
 			methodCtx := ctx.Clone()
 			methodCtx.currentClass = scope
 			methodCtx.localScope = method
+			if genericMethodHasErasedEntry(method) {
+				// Erased virtual results introduce a nominal check even when
+				// the Java source contains no explicit cast. Any implementation
+				// of the result's erased bound can cross this boundary.
+				for _, parameter := range method.TypeParameters {
+					result := strings.TrimSpace(method.OriginalType)
+					if result != parameter.Name && result != parameter.EmittedName() {
+						continue
+					}
+					erasure := rawTypeParameterErasure(parameter, method.TypeParameters)
+					base, _ := parseJavaTypeString(erasure)
+					if stripJavaQualifier(base) == "Object" {
+						objectErasure = true
+					} else if bound := resolveClassScopeByQualifiedName(classScopeCtx(scope, ctx), base); bound != nil {
+						relevant[bound] = struct{}{}
+					}
+				}
+			}
 			addReferenceArrayDefinitionSeeds(method, scope, methodCtx, relevant, &objectErasure)
 			addDirectOwnerTypeParameterIdentitySeed(method, scope, methodCtx, relevant, &objectErasure)
 			for _, parameter := range method.Parameters {

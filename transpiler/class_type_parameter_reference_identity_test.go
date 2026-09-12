@@ -138,6 +138,8 @@ func TestReferenceIdentityScopes_MethodTypeParameterShadowDoesNotSeedClassErasur
 public class ShadowedErasedIdentitySeed<T extends ClassBound> {
     interface ClassBound {}
     interface MethodBound {}
+    static class ClassImpl implements ClassBound {}
+    static class ClassLeaf extends ClassImpl {}
     static class MethodImpl implements MethodBound {}
     static class MethodLeaf extends MethodImpl {}
 
@@ -146,10 +148,18 @@ public class ShadowedErasedIdentitySeed<T extends ClassBound> {
 `)
 
 	relevant := referenceIdentityScopes(helper.Ctx)
-	for _, name := range []string{"ClassBound", "MethodBound", "MethodImpl", "MethodLeaf"} {
+	for _, name := range []string{"ClassBound", "ClassImpl", "ClassLeaf"} {
 		scope := sourceScopeNamed(t, helper.File.Symbols.BaseClass, name)
 		if _, ok := relevant[scope]; ok {
 			t.Fatalf("method-shadowed type parameter incorrectly seeded %s", name)
+		}
+	}
+	// The method's own bound still needs nominal metadata for the implicit
+	// result cast introduced by its erased entrypoint, including inherited views.
+	for _, name := range []string{"MethodBound", "MethodImpl", "MethodLeaf"} {
+		scope := sourceScopeNamed(t, helper.File.Symbols.BaseClass, name)
+		if _, ok := relevant[scope]; !ok {
+			t.Fatalf("method result erasure did not seed %s", name)
 		}
 	}
 }

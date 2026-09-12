@@ -1373,9 +1373,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			_, rightPrimitive := javaPrimitiveType(rightJavaType)
 			leftBase, _ := parseJavaTypeString(leftJavaType)
 			rightBase, _ := parseJavaTypeString(rightJavaType)
+			sourceHierarchyReference := false
+			if leftBase != rightBase {
+				leftScope := resolveClassScopeByQualifiedName(ctx, leftBase)
+				rightScope := resolveClassScopeByQualifiedName(ctx, rightBase)
+				sourceHierarchyReference = leftScope != nil && rightScope != nil && (javaReferenceTypeAssignable(leftScope, rightScope, ctx) || javaReferenceTypeAssignable(rightScope, leftScope, ctx)) &&
+					classNeedsReferenceIdentity(leftScope, ctx) && classNeedsReferenceIdentity(rightScope, ctx)
+			}
 			erasedReference := stripJavaQualifier(leftBase) == "Object" || stripJavaQualifier(rightBase) == "Object" ||
 				stripJavaQualifier(leftBase) == "Number" || stripJavaQualifier(rightBase) == "Number"
-			if (leftWrapper || rightWrapper || erasedReference) && !leftPrimitive && !rightPrimitive {
+			if (leftWrapper || rightWrapper || erasedReference || sourceHierarchyReference) && !leftPrimitive && !rightPrimitive {
 				comparison := ast.Expr(stdjavaCall(ctx, "JavaReferenceEqual", leftExpr, rightExpr))
 				if operator == "!=" {
 					comparison = &ast.UnaryExpr{Op: token.NOT, X: comparison}
@@ -3768,7 +3775,7 @@ func virtualDispatchMethodCall(receiver ast.Expr, resolution *methodResolution, 
 	if receiver == nil || resolution == nil || resolution.def == nil || resolution.owner == nil {
 		return nil
 	}
-	if resolution.def.IsStatic || resolution.def.IsPrivate || resolution.def.RequiresHelper || !classNeedsVirtualDispatch(resolution.owner, ctx) {
+	if resolution.def.IsStatic || resolution.def.IsPrivate || (resolution.def.RequiresHelper && !genericMethodHasErasedEntry(resolution.def)) || !classNeedsVirtualDispatch(resolution.owner, ctx) {
 		return nil
 	}
 	return markDirectVarargsExpansion(&ast.CallExpr{
@@ -4046,6 +4053,9 @@ func invocationPhysicalParameterJavaType(resolution *methodResolution, argumentI
 	); ok {
 		return erasure
 	}
+	if genericMethodHasErasedEntry(resolution.def) {
+		return genericMethodErasedJavaType(resolution.def, definitionParameterJavaSignatureType(resolution.def, parameterIndex))
+	}
 	return definitionParameterJavaSignatureType(resolution.def, parameterIndex)
 }
 
@@ -4111,7 +4121,9 @@ func invocationClosureResults(invocationNode *sitter.Node, resolution *methodRes
 		return nil, true
 	}
 	javaType := declared
-	if erasure, erased := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx); erased {
+	if genericMethodHasErasedEntry(resolution.def) {
+		javaType = genericMethodErasedJavaType(resolution.def, declared)
+	} else if erasure, erased := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx); erased {
 		javaType = erasure
 	} else if inferred, ok := inferExprJavaType(invocationNode, ctx, source); ok && inferred != ternaryNullJavaType {
 		javaType = inferred
@@ -11350,6 +11362,36 @@ func maybeRewriteInstanceGenericMethodInvocationWithTarget(target *invocationTar
 	}
 
 	methodTypeArgs := inferMethodTypeArguments(helperDef, invocationNode, ctx, source)
+	if genericMethodHasErasedEntry(helperDef) && (ownerScope.IsInterface || ownerScope.IsAbstract || classNeedsVirtualDispatch(ownerScope, ctx)) {
+		var call ast.Expr
+		objectNode := invocationNode.ChildByFieldName("object")
+		isSuper := objectNode != nil && objectNode.Type() == "super"
+		if target.classScope.IsInterface || target.classScope.IsAbstract {
+			call = executionCompanionDispatchInvocation(invocationNode, objectNode, objectExpr, target, resolved, args, false, ctx, source)
+		} else if !isSuper {
+			call = virtualDispatchMethodCall(receiverExpr, resolved, args, false, ctx)
+			if call != nil && objectNode != nil {
+				build := func(receiver ast.Expr, callArgs []ast.Expr) ast.Expr {
+					return virtualDispatchMethodCall(receiver, resolved, callArgs, false, ctx)
+				}
+				if staged := stageVirtualDispatchInvocation(invocationNode, objectNode, receiverExpr, resolved, args, build, ctx, source); staged != nil {
+					call = staged
+				}
+			}
+		}
+		if call == nil {
+			call = &ast.CallExpr{Fun: &ast.SelectorExpr{X: receiverExpr, Sel: &ast.Ident{Name: executionMethodCallName(helperDef, ownerScope, ctx)}}, Args: prependExecutionMethodArgument(ctx, helperDef, args)}
+		}
+		if parent := invocationNode.Parent(); parent != nil && parent.Type() == "expression_statement" {
+			return call
+		}
+		consumingJavaType := ""
+		if expectedTypeTargetsExpression(ctx, invocationNode) {
+			consumingJavaType = ctx.expectedType
+		}
+		return genericMethodProjectedResult(call, helperDef, methodTypeArgs, genericArrayInvocationTypeBindings(helperDef, invocationNode, ctx, source), consumingJavaType, ctx)
+	}
+
 	helperTypeArgs := append(classTypeArgs, methodTypeArgs...)
 
 	helperPkg := findJavaPackageForClassScope(ownerScope)
