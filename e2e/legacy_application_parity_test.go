@@ -71,7 +71,11 @@ func discoverLegacyApplicationPrograms(t testing.TB, repositoryRoot string) []le
 
 	testfilesRoot := filepath.Join(repositoryRoot, "testfiles")
 	applicationFixtures := discoverApplicationFixtures(t, repositoryRoot)
-	coveredRoots := make([]string, 0, len(applicationFixtures))
+	coveredRoots := make([]string, 0, len(applicationFixtures)+1)
+	// TestMavenApplicationParity builds this reactor with mapped dependency
+	// sources, resources and argv. Its entrypoints are not standalone legacy
+	// programs and must not be re-run through the single-source harness.
+	coveredRoots = append(coveredRoots, filepath.Join(testfilesRoot, "maven_application"))
 	for _, fixture := range applicationFixtures {
 		coveredRoots = append(coveredRoots, filepath.Clean(fixture.sourceRoot))
 	}

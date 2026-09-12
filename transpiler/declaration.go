@@ -4055,7 +4055,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			body = buildAbstractMethodBody(ctx.localScope.OriginalName, results)
 		}
 
-		if methodName == "main" && bodyNode != nil {
+		if methodName == "main" && bodyNode != nil && !ctx.projectMode {
 			params = nil
 			argsAccess := qualifiedNameExpr("Args", "os", ctx)
 			body.List = append([]ast.Stmt{

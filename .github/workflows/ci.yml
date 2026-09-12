@@ -47,7 +47,7 @@ jobs:
         run: >
           go test -v -race -timeout 20m
           -coverprofile=coverage-unit.out
-          ./astutil/... ./stdjava/... ./symbol/... ./transpiler/...
+          ./astutil/... ./stdjava/... ./symbol/... ./project/... ./transpiler/...
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4

@@ -157,3 +157,56 @@ Those values guide workload sizing rather than acting as portable test limits.
 
 * `-module` sets the module path used by `-init-go-mod` (default: `generated`)
   * When Java packages share that prefix (for example module `com/acme` with package `com.acme.app`), generated files are written module-relative (for example `app/MainApp.go`)
+
+### Convert an offline Maven application
+
+Project mode discovers a local Maven reactor, compiles production Java sources
+from its modules and explicitly mapped dependency source projects together, and
+writes a Go module with a runnable `cmd/app` launcher:
+
+```bash
+go run ./cmd/java2go \
+  -maven testfiles/maven_application/reactor \
+  -dependency-source vendor:formatter=testfiles/maven_application/vendor \
+  -main-class example.app.InvoiceApp \
+  -runtime "$PWD" \
+  -module example.test/invoice \
+  -output /tmp/invoice-go
+cd /tmp/invoice-go
+go run -mod=mod ./cmd/app customer
+```
+
+The output directory must be absent or empty. Conversion stages its output and
+publishes only after dependency, source, and package-cycle checks succeed.
+`-runtime` points to the java2go checkout supplying `stdjava`; the generated
+`go.mod` contains a local replacement, so retain that checkout when building the
+output. Project mode always writes files and uses strict conversion. Go's
+`-mod=mod` permits any needed runtime dependency checksums to be recorded.
+
+The supported Maven subset includes reactor modules, local relative parents,
+properties, dependency version management, custom `sourceDirectory`, and
+unfiltered production resources. Repeat `-dependency-source groupId:artifactId=path`
+for external source projects; their declared versions must match dependencies
+exactly. Source mappings are followed transitively. Test sources and test-scoped
+dependencies are excluded. Compile, runtime, and provided dependencies require
+implementation sources; all production dependencies of each converted source
+project are required, including optional dependencies.
+
+Java packages map to generated directories with each component prefixed by
+`j_`, avoiding Go's special `vendor` and `internal` directories. Production
+resources are copied under `resources/`, preserving relative paths and any
+resource `targetPath`; run from the generated module directory when using
+relative filesystem paths. Resource collisions fail explicitly. The selected
+class must declare `public static void main(String[])`; the launcher preserves
+Java's argument array and excludes the Go executable name.
+
+This is a source-only, offline milestone. It does not download Maven artifacts,
+execute Maven/Gradle, translate JAR bytecode, or implement classpath resource
+loading. Build plugins/extensions, profiles, imported BOMs, dependency exclusions,
+classifiers, version mediation/ranges, resource filtering/patterns, JPMS,
+WAR packaging, and external parents without local POMs are unsupported.
+Inherited custom build paths must instead be declared in each child POM.
+Mutually dependent Java packages report the exact import cycle and must be
+reorganized before conversion. Java packages whose paths coincide with Go
+standard-library imports are rejected to prevent ambiguous import rewriting. Other existing Java-language/runtime conversion
+limits still apply; project discovery does not add framework implementations.
