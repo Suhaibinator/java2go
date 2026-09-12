@@ -38,8 +38,8 @@ func ReferenceTypeHint[T any](value T) T {
 // and panics when an interface contains a map, slice, function, or another
 // non-comparable dynamic value.
 //
-// Generated source objects and arrays are pointer-backed, so pointer equality
-// is their Java identity. Runtime maps/slices/channels use their stable backing
+// Generated source objects share ObjectInfo across superclass views; arrays
+// use their backing pointer as Java identity. Runtime maps/slices/channels use their stable backing
 // pointer when they appear behind an erased interface. Function values do not
 // expose closure-instance identity in Go; two non-nil functions are therefore
 // conservatively distinct instead of being collapsed by their shared code
@@ -50,6 +50,17 @@ func JavaReferenceEqual(left, right any) bool {
 	rightNull := javaReferenceIsNull(right)
 	if leftNull || rightNull {
 		return leftNull && rightNull
+	}
+
+	// A generated object has several Go superclass pointer views. They share
+	// ObjectInfo, which is the identity of the Java allocation.
+	leftCarrier, leftGenerated := left.(JavaObjectInfoCarrier)
+	rightCarrier, rightGenerated := right.(JavaObjectInfoCarrier)
+	if leftGenerated && rightGenerated {
+		leftInfo, rightInfo := leftCarrier.JavaObjectInfo(), rightCarrier.JavaObjectInfo()
+		if leftInfo != nil && rightInfo != nil {
+			return leftInfo == rightInfo
+		}
 	}
 
 	leftValue := reflect.ValueOf(left)

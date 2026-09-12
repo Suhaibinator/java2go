@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.dispatch.DispatchApplication",
+  "module_path": "parity/dispatch",
+  "status": "passing"
+}

@@ -1568,7 +1568,7 @@ func classNeedsVirtualDispatch(scope *symbol.ClassScope, ctx Ctx) bool {
 	}
 	hasDispatchableMethod := false
 	for _, method := range scope.Methods {
-		if method != nil && !method.Constructor && !method.IsStatic && !method.IsPrivate && !method.RequiresHelper {
+		if method != nil && !method.Constructor && !method.IsStatic && !method.IsPrivate && (!method.RequiresHelper || genericMethodHasErasedEntry(method)) {
 			hasDispatchableMethod = true
 			break
 		}
@@ -1585,7 +1585,7 @@ func generateClassDispatchInterface(ctx Ctx) ast.Decl {
 	methods := &ast.FieldList{}
 	typeParams := scope.TypeParameterNames()
 	for _, method := range scope.Methods {
-		if method == nil || method.Constructor || method.IsStatic || method.IsPrivate || method.RequiresHelper {
+		if method == nil || method.Constructor || method.IsStatic || method.IsPrivate || (method.RequiresHelper && !genericMethodHasErasedEntry(method)) {
 			continue
 		}
 		params := &ast.FieldList{}
@@ -1608,6 +1608,7 @@ func generateClassDispatchInterface(ctx Ctx) ast.Decl {
 				),
 			}}}
 		}
+		eraseGenericMethodSignature(method, params, results, ctx)
 		publicMethod := &ast.Field{
 			Names: []*ast.Ident{{Name: method.Name}},
 			Type:  &ast.FuncType{Params: params, Results: results},
@@ -2648,6 +2649,7 @@ func generateAbstractClassInterface(ctx Ctx) ast.Decl {
 			}
 		}
 
+		eraseGenericMethodSignature(method, params, results, ctx)
 		publicMethod := &ast.Field{
 			Names: []*ast.Ident{{Name: method.Name}},
 			Type: &ast.FuncType{
@@ -3408,6 +3410,9 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 	modifiedBody := &ast.BlockStmt{
 		List: append([]ast.Stmt{assignOriginalReceiver}, body.List...),
 	}
+	if !def.HasBody {
+		modifiedBody.List = append([]ast.Stmt{assignOriginalReceiver, instanceMethodNilReceiverGuard(receiverShortName)}, body.List...)
+	}
 
 	funcDecl := &ast.FuncDecl{
 		Doc:  doc,
@@ -3426,7 +3431,8 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 		ctx.executionContextName,
 		ctx,
 	)
-	return append([]ast.Decl{helperStruct, constructor}, methodDecls...)
+	decls := append([]ast.Decl{helperStruct, constructor}, methodDecls...)
+	return append(decls, genericMethodErasedEntryDecls(ctx, def, params, results, receiverBaseType)...)
 }
 
 // synthesizeRawGenericFunctionParameters models Java raw and wildcard generic

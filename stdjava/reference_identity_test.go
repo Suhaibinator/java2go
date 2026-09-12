@@ -121,3 +121,24 @@ func TestJavaReferenceEqualHonorsNullStringRepresentation(t *testing.T) {
 		t.Fatal("value-backed equal String representations compared unequal")
 	}
 }
+
+func TestJavaReferenceEqualSharesGeneratedSuperclassIdentity(t *testing.T) {
+	type base struct{ *ObjectInfo }
+	type child struct{ *base }
+	first := &child{&base{NewObjectInfo("identity.Child", nil)}}
+	second := &child{&base{NewObjectInfo("identity.Child", nil)}}
+	if !JavaReferenceEqual(first, first.base) || !JavaReferenceEqual(first.base, first) {
+		t.Fatal("superclass views must share Java allocation identity")
+	}
+	execution := NewExecution()
+	if ObjectHashCodeExecution(execution, first) != ObjectHashCodeExecution(execution, first.base) {
+		t.Fatal("equal superclass views must have equal default hash codes")
+	}
+	if JavaReferenceEqual(first, second.base) {
+		t.Fatal("separate allocations must remain distinct")
+	}
+	var absent *child
+	if JavaReferenceEqual(absent, first.base) || !JavaReferenceEqual(absent, nil) {
+		t.Fatal("typed null identity changed")
+	}
+}
