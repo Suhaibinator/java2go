@@ -15,7 +15,13 @@ import (
 // produces the corresponding stdjava value, and the names double as the parent
 // links recognised by stdjava.CaughtAs.
 var builtinExceptionTypes = map[string]struct{}{
-	"Throwable":                       {},
+	"Throwable":                   {},
+	"ExecutionException":          {},
+	"TimeoutException":            {},
+	"CancellationException":       {},
+	"RejectedExecutionException":  {},
+	"IllegalThreadStateException": {},
+
 	"Error":                           {},
 	"AssertionError":                  {},
 	"LinkageError":                    {},

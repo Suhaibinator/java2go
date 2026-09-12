@@ -816,6 +816,7 @@ func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx)
 // embed for them in an implements clause.
 var structuralRuntimeInterfaces = map[string]struct{}{
 	"Runnable":   {},
+	"Callable":   {},
 	"Comparable": {},
 }
 

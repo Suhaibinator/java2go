@@ -34,6 +34,11 @@ var (
 	exceptionHierarchyMu sync.RWMutex
 	exceptionHierarchy   = map[string]string{
 		"Throwable":                       "",
+		"IllegalThreadStateException":     "IllegalArgumentException",
+		"RejectedExecutionException":      "RuntimeException",
+		"CancellationException":           "IllegalStateException",
+		"TimeoutException":                "Exception",
+		"ExecutionException":              "Exception",
 		"Error":                           "Throwable",
 		"AssertionError":                  "Error",
 		"LinkageError":                    "Error",
@@ -598,4 +603,36 @@ func NewConcurrentModificationException(message string) ConcurrentModificationEx
 
 func NewIOException(message string) IOException {
 	return IOException{newThrowableBase("IOException", message)}
+}
+
+type ExecutionException struct{ ThrowableBase }
+
+func NewExecutionException(cause any) ExecutionException {
+	b := newThrowableBase("ExecutionException", errorMessage(cause))
+	b.state.cause = cause
+	return ExecutionException{b}
+}
+
+type TimeoutException struct{ ThrowableBase }
+
+func NewTimeoutException(message string) TimeoutException {
+	return TimeoutException{newThrowableBase("TimeoutException", message)}
+}
+
+type CancellationException struct{ ThrowableBase }
+
+func NewCancellationException(message string) CancellationException {
+	return CancellationException{newThrowableBase("CancellationException", message)}
+}
+
+type RejectedExecutionException struct{ ThrowableBase }
+
+func NewRejectedExecutionException(message string) RejectedExecutionException {
+	return RejectedExecutionException{newThrowableBase("RejectedExecutionException", message)}
+}
+
+type IllegalThreadStateException struct{ ThrowableBase }
+
+func NewIllegalThreadStateException(message string) IllegalThreadStateException {
+	return IllegalThreadStateException{newThrowableBase("IllegalThreadStateException", message)}
 }

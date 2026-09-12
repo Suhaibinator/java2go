@@ -177,8 +177,31 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 	if class == "Comparator" && method == "compare" {
 		return set(element(0), element(0))
 	}
-	if class == "ExecutorService" && (method == "submit" || method == "execute") && count == 1 {
-		return set("Runnable")
+	if class == "ExecutorService" {
+		if method == "execute" {
+			return set("Runnable")
+		}
+		if method == "submit" {
+			resultType, callable := executorSubmitType(invocation, ctx, source)
+			if callable {
+				return set("Callable<" + resultType + ">")
+			}
+			return set("Runnable", resultType)
+		}
+		if method == "awaitTermination" {
+			return set("long", "TimeUnit")
+		}
+	}
+	if class == "Thread" && method == "join" {
+		return set("long", "int")
+	}
+	if class == "Future" {
+		if method == "get" {
+			return set("long", "TimeUnit")
+		}
+		if method == "cancel" {
+			return set("boolean")
+		}
 	}
 	if class == "String" {
 		switch method {
@@ -337,6 +360,10 @@ func intrinsicReferenceJavaType(javaType string) string {
 
 func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver string, ctx Ctx, source []byte) (string, bool) {
 	name := invocation.ChildByFieldName("name").Content(source)
+	if receiver == "ExecutorService" && name == "submit" {
+		result, _ := executorSubmitType(invocation, ctx, source)
+		return "Future<" + result + ">", true
+	}
 	elements := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
 	if intrinsicFunctionalMethodNames[receiver] == name {
 		if sam, bindings, known := builtinFunctionalInterfaceMethod(receiver, elements); known {
@@ -348,6 +375,12 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 			return elements[index]
 		}
 		return "Object"
+	}
+	if receiver == "Future" && name == "get" {
+		return element(0), true
+	}
+	if receiver == "Callable" && name == "call" {
+		return element(0), true
 	}
 	if receiver == "Optional" || primitiveOptionalElementJavaTypes[receiver] != "" {
 		switch name {
