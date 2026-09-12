@@ -160,3 +160,41 @@ func collectionEqualityFailure(equal *bool) {
 		panic(recovered)
 	}
 }
+
+func (c *ConcurrentHashMap[K, V]) javaMapLookup(key any, execution *Execution) (any, bool) {
+	value, present := c.GetOk(key, execution)
+	return value, present
+}
+func (c *ConcurrentHashMap[K, V]) Equals(other any) bool {
+	return c.EqualsJava2goExecution(nil, other)
+}
+func (c *ConcurrentHashMap[K, V]) EqualsJava2goExecution(execution *Execution, other any) (equal bool) {
+	defer collectionEqualityFailure(&equal)
+	ReferenceRequireNonNull(c)
+	if JavaReferenceEqual(c, other) {
+		return true
+	}
+	if javaReferenceIsNull(other) {
+		return false
+	}
+	right, ok := other.(javaMapValue)
+	if !ok || c.Size() != right.Size() {
+		return false
+	}
+	for _, entry := range c.EntrySet() {
+		value, present := right.javaMapLookup(entry.Key, execution)
+		if !present || !ObjectsEqual(entry.Value, value, execution) {
+			return false
+		}
+	}
+	return true
+}
+func (c *ConcurrentHashMap[K, V]) HashCode() int32 { return c.HashCodeJava2goExecution(nil) }
+func (c *ConcurrentHashMap[K, V]) HashCodeJava2goExecution(execution *Execution) int32 {
+	ReferenceRequireNonNull(c)
+	var hash int32
+	for _, entry := range c.EntrySet() {
+		hash += entry.HashCodeJava2goExecution(execution)
+	}
+	return hash
+}

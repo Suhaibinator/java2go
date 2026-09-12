@@ -1,6 +1,7 @@
 package parity.collections;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CollectionValues {
     static class Rank implements Comparable<Rank> {
@@ -30,6 +31,10 @@ public class CollectionValues {
         TreeMap<Integer, String> ordered = new TreeMap<>();
         ordered.put(3, "c"); ordered.put(1, "a"); ordered.put(2, "b");
         result += ":" + ordered;
+        ConcurrentHashMap<String, Integer> concurrent = new ConcurrentHashMap<>();
+        concurrent.put("x", 1);
+        a.put("x", 1);
+        result += ":" + concurrent.equals(a) + ":" + a.equals(concurrent) + ":" + concurrent.hashCode();
         return result;
     }
     public static void main(String[] args) { System.out.println(run()); }

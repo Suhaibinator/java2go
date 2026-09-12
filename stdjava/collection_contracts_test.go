@@ -239,3 +239,18 @@ func TestCollectionContractsEqualsNullStillInvokesNonNullReceiver(t *testing.T) 
 		t.Fatal("null query must not call equals")
 	}
 }
+
+func TestCollectionContractsConcurrentMapValueInteroperability(t *testing.T) {
+	concurrent := NewConcurrentHashMap[string, *Integer]()
+	ordinary := NewMap[string, any]()
+	concurrent.Put("x", NewInteger(1))
+	ordinary.Put("x", BoxInteger(1))
+	if !concurrent.Equals(ordinary) || !ordinary.Equals(concurrent) || concurrent.HashCode() != ordinary.HashCode() {
+		t.Fatal("all map implementations share Java structural equality/hash")
+	}
+	outer := NewMap[any, string]()
+	outer.Put(concurrent, "nested")
+	if outer.Get(ordinary) != "nested" {
+		t.Fatal("ConcurrentHashMap as map-valued key")
+	}
+}

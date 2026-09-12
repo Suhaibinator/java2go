@@ -567,7 +567,7 @@ func registerCollectionsStatics() {
 // Collection equals/hashCode are inherited Object methods, with structural
 // List/Set/Map implementations provided by the runtime.
 func registerCollectionObjectMethods() {
-	names := append(append(append([]string{}, listTypeNames...), mapTypeNames...), setTypeNames...)
+	names := append(append(append([]string{"ConcurrentHashMap"}, listTypeNames...), mapTypeNames...), setTypeNames...)
 	for _, name := range names {
 		registerInstanceIntrinsic(name, "equals", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) != 1 {
