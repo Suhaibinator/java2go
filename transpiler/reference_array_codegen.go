@@ -225,6 +225,9 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 		"Character": "CharacterTypeID", "Integer": "IntegerTypeID", "Long": "LongTypeID",
 		"Float": "FloatTypeID", "Double": "DoubleTypeID",
 	}
+	if baseName == "Deprecated" {
+		return javaTypeIDLiteral("java.lang.Deprecated", ctx), true
+	}
 	if constant, ok := builtin[baseName]; ok {
 		return stdjavaQualifiedExpr(constant, ctx), true
 	}
@@ -552,6 +555,9 @@ func classNeedsReferenceIdentity(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil {
 		return false
 	}
+	if sourceUsesReflection() {
+		return true
+	}
 	_, ok := referenceIdentityScopes(ctx)[scope]
 	return ok
 }
@@ -645,12 +651,14 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	}
 
 	name := collisionSafeExecutionIdentifier("__java2goReferenceTypeRegistration"+scope.Class.Name, scope)
+	statements := []ast.Stmt{&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)}}
+	if metadata := sourceClassMetadataStmt(scope, ctx); metadata != nil {
+		statements = append(statements, metadata)
+	}
+	statements = append(statements, &ast.ReturnStmt{Results: []ast.Expr{ast.NewIdent("true")}})
 	initializer := &ast.CallExpr{Fun: &ast.FuncLit{
 		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "bool"}}}}},
-		Body: &ast.BlockStmt{List: []ast.Stmt{
-			&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
-			&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}},
-		}},
+		Body: &ast.BlockStmt{List: statements},
 	}}
 	return &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{
 		Names:  []*ast.Ident{{Name: name}},

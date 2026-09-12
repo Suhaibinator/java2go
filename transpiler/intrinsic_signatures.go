@@ -48,6 +48,10 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			}
 		}
 		switch class {
+		case "Class":
+			if method == "forName" {
+				return set("String")
+			}
 		case "Optional", "Collections", "Arrays", "List", "Set", "Stream":
 			switch method {
 			case "of", "ofNullable", "singletonList", "singleton", "asList":
@@ -88,6 +92,17 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 	class, ok := intrinsicReceiverTypeName(object, ctx, source)
 	if !ok {
 		return result
+	}
+	if class == "Field" {
+		if method == "set" {
+			return set("Object", "Object")
+		}
+		if method == "get" {
+			return set("Object")
+		}
+	}
+	if class == "Class" && (method == "getField" || method == "getMethod") {
+		return set("String")
 	}
 	if intrinsicFunctionalMethodNames[class] == method {
 		javaType, _ := inferExprJavaType(object, ctx, source)

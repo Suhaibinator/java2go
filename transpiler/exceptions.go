@@ -107,6 +107,10 @@ func isUserDefinedExceptionClass(ctx Ctx, scope *symbol.ClassScope) bool {
 // printStackTrace() through the runtime.
 func isExceptionJavaType(ctx Ctx, javaType string) bool {
 	base, _ := parseJavaTypeString(strings.TrimSpace(javaType))
+	switch stripJavaQualifier(base) {
+	case "ReflectiveOperationException", "ClassNotFoundException", "NoSuchMethodException", "NoSuchFieldException", "IllegalAccessException", "InvocationTargetException":
+		return true
+	}
 	if isBuiltinExceptionType(base) {
 		return true
 	}
