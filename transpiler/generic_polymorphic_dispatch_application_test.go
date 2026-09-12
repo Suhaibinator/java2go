@@ -53,3 +53,11 @@ func TestGenericPolymorphicDispatchAssignmentView(t *testing.T) {
 	}
 	assertGeneratedLocalConstructorResult(t, strings.SplitN(string(source), "\n", 2)[1], "2")
 }
+
+func TestGenericPolymorphicDispatchShadowedBounds(t *testing.T) {
+	source, err := os.ReadFile("../testfiles/applications/generic_polymorphic_dispatch/src/parity/dispatch/shadowing/ShadowedBoundsApp.java")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertGeneratedLocalConstructorResult(t, strings.SplitN(string(source), "\n", 2)[1], "9:true:true")
+}

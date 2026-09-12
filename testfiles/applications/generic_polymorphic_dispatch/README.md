@@ -1,7 +1,7 @@
 # Generic and covariant dispatch applications
 
-This fixture runs six small applications across seven Java packages. The live
-JDK oracle and the generated Go executable must print the same six lines:
+This fixture runs seven small applications across eight Java packages. The live
+JDK oracle and the generated Go executable must print the same seven lines:
 
 - Generic method calls through a base reference, an interface reference, and
   an inherited method all select the override (`base:interface:indirect:222`).
@@ -20,6 +20,8 @@ JDK oracle and the generated Go executable must print the same six lines:
 
 - A generic call consumed as an interface checks that interface, preserving a
   valid result whose concrete class differs from the argument-inferred class (`2`).
+- A method type parameter shadows a class type parameter with a different bound;
+  its result preserves subclass dispatch, reference identity, and null (`9:true:true`).
 
 These applications were written and run with javac/java before implementation.
 The original transpiler failed the generic application with undeclared `T`
