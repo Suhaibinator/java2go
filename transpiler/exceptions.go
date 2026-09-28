@@ -67,7 +67,9 @@ func builtinExceptionConstructorExpr(className string, args []ast.Expr, ctx Ctx)
 
 	name := stripJavaQualifier(className)
 	switch name {
-	case "ParseException", "Exception", "RuntimeException", "IllegalArgumentException", "IllegalStateException", "UnsupportedEncodingException":
+	case "Exception", "RuntimeException", "IllegalArgumentException", "IllegalStateException", "UnsupportedEncodingException":
+		return stdjavaCall(ctx, "New"+name+"Execution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
+	case "ParseException":
 		return &ast.CallExpr{Fun: stdjavaQualifiedExpr("New"+name, ctx), Args: args}
 	}
 	var message ast.Expr = &ast.BasicLit{Kind: token.STRING, Value: `""`}
@@ -152,6 +154,9 @@ func buildExceptionRegistrationDecl(childName, parentName string, ctx Ctx) ast.D
 			},
 		},
 	}
+	if registration := throwableMessageRegistration(ctx); registration != nil {
+		declaration.Body.List = append(declaration.Body.List, registration)
+	}
 	if registration := throwableInitCauseRegistration(ctx); registration != nil {
 		declaration.Body.List = append(declaration.Body.List, registration)
 	}
@@ -228,29 +233,11 @@ func throwsClauseComment(node *sitter.Node, source []byte) string {
 // are absent from source symbols. Source subclasses walk their declared parents;
 // a source type shadowing a JDK name is never treated as that JDK class.
 func javaExceptionReferenceAssignable(actual, expected string, ctx Ctx) bool {
-	if resolveClassScopeByQualifiedName(ctx, expected) != nil || !isBuiltinExceptionType(expected) {
+	expectedName, known := builtinThrowableReferenceName(expected, ctx)
+	if !known {
 		return false
 	}
-	expected = stripJavaQualifier(expected)
-	seen := map[string]bool{}
-	for actual != "" && !seen[actual] {
-		seen[actual] = true
-		if scope := resolveClassScopeByQualifiedName(ctx, actual); scope != nil {
-			ctx = classScopeCtx(scope, ctx)
-			actual = strings.TrimSpace(scope.Superclass)
-			continue
-		}
-		actual = stripJavaQualifier(actual)
-		parent, known := builtinExceptionTypes[actual]
-		if !known {
-			return false
-		}
-		if actual == expected {
-			return true
-		}
-		actual = parent
-	}
-	return false
+	return throwableBoundReferenceAssignable(symbol.JavaType{Original: actual}, expectedName, ctx, map[typeParameterIdentityKey]bool{}, map[*symbol.ClassScope]bool{})
 }
 
 func isThrowableInitCauseOverride(method *symbol.Definition, owner *symbol.ClassScope, ctx Ctx) bool {

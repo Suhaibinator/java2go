@@ -86,9 +86,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		if superNode := node.ChildByFieldName("superclass"); superNode != nil {
 			for _, t := range collectTypeNodes(superNode) {
+				// Resolve the written owner before reducing a builtin name. A qualified
+				// source superclass can share its simple name with a JDK class.
+				superBase, _ := parseJavaTypeString(t.Content(source))
+				superScope := resolveClassScopeByQualifiedName(ctx, superBase)
 				// A class extending a built-in exception embeds the stdjava runtime
 				// type so it inherits the Throwable method set and message storage.
-				if builtin := stripJavaQualifier(t.Content(source)); isBuiltinExceptionType(builtin) && resolveClassScopeByQualifiedName(ctx, builtin) == nil {
+				if builtin := stripJavaQualifier(t.Content(source)); isBuiltinExceptionType(builtin) && superScope == nil {
 					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
 					continue
 				}
@@ -96,14 +100,14 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fields.List = append(fields.List, &ast.Field{Type: baseType})
 					continue
 				}
-				if base := stripJavaQualifier(t.Content(source)); (base == "FilterInputStream" || base == "ByteArrayInputStream") && resolveClassScopeByQualifiedName(ctx, base) == nil {
+				if base := stripJavaQualifier(t.Content(source)); (base == "FilterInputStream" || base == "ByteArrayInputStream") && superScope == nil {
 					fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr(base, ctx)}})
 					continue
 				}
 				// A class extending java.lang.Thread embeds *stdjava.Thread so it
 				// inherits Start()/Join(); the constructor wires the embedded Thread
 				// to dispatch to this struct's Run() override.
-				if super := stripJavaQualifier(t.Content(source)); super == "Thread" && resolveClassScopeByQualifiedName(ctx, super) == nil {
+				if super := stripJavaQualifier(t.Content(source)); super == "Thread" && superScope == nil {
 					fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("Thread", ctx)}})
 					continue
 				}
@@ -113,15 +117,13 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				// type and what the super() constructor call assigns. Without this the
 				// embed would use the verbatim Java name (e.g. *Animal) while the type
 				// is generated as `animal`.
-				if base, _ := parseJavaTypeString(t.Content(source)); base != "" {
-					if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.Class != nil && scope.Class.Name != "" {
-						fields.List = append(fields.List, &ast.Field{Type: javaTypeStringToGoTypeExpr(
-							t.Content(source),
-							typeParams,
-							ctx,
-						)})
-						continue
-					}
+				if superScope != nil && superScope.Class != nil && superScope.Class.Name != "" {
+					fields.List = append(fields.List, &ast.Field{Type: javaTypeStringToGoTypeExpr(
+						t.Content(source),
+						typeParams,
+						ctx,
+					)})
+					continue
 				}
 				fields.List = append(fields.List, &ast.Field{Type: astutil.ParseTypeWithTypeParams(t, source, typeParams)})
 			}
@@ -2336,7 +2338,11 @@ func explicitSuperConstructorAssignment(
 	constructor := ast.Expr(nil)
 	var constructorClassTypeArgs []string
 	if isBuiltinExceptionType(stripJavaQualifier(base)) && parent == nil {
-		constructor = stdjavaQualifiedExpr(constructorName, ctx)
+		return &ast.AssignStmt{
+			Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(superName)}},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, invocation.parsedArgs, ctx)},
+		}
 	} else {
 		if invocation.target != nil && invocation.target.Name != "" {
 			constructorName = invocation.target.Name

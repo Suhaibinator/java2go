@@ -673,10 +673,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 									Sel: &ast.Ident{Name: superName},
 								}},
 								Tok: token.ASSIGN,
-								Rhs: []ast.Expr{&ast.CallExpr{
-									Fun:  stdjavaQualifiedExpr("New"+superName, ctx),
-									Args: args,
-								}},
+								Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, args, ctx)},
 							}
 						}
 					}

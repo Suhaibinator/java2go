@@ -82,8 +82,8 @@ public class ExProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.NewIllegalArgumentException(") {
-		t.Fatalf("expected stdjava constructor for thrown exception, got:\n%s", out)
+	if !strings.Contains(out, `stdjava.NewIllegalArgumentExceptionExecution(__java2goExecution, "negative input")`) {
+		t.Fatalf("expected thrown exception constructor to forward the invoking execution, got:\n%s", out)
 	}
 	if !strings.Contains(out, `stdjava.CaughtAs(`) {
 		t.Fatalf("expected catch dispatch via stdjava.CaughtAs, got:\n%s", out)

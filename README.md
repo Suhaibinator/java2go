@@ -202,11 +202,36 @@ Java's argument array and excludes the Go executable name.
 
 This is a source-only, offline milestone. It does not download Maven artifacts,
 execute Maven/Gradle, translate JAR bytecode, or implement classpath resource
-loading. Build plugins/extensions, profiles, imported BOMs, dependency exclusions,
+loading. Except for the bounded compiler-plugin metadata described below, build
+plugins/extensions, profiles, imported BOMs, dependency exclusions,
 classifiers, version mediation/ranges, resource filtering/patterns, JPMS,
 WAR packaging, and external parents without local POMs are unsupported.
 Inherited custom build paths must instead be declared in each child POM.
-Mutually dependent Java packages report the exact import cycle and must be
-reorganized before conversion. Java packages whose paths coincide with Go
+Mutually dependent Java packages are lowered into a shared Go package for
+each strongly connected component. Java packages whose paths coincide with Go
 standard-library imports are rejected to prevent ambiguous import rewriting. Other existing Java-language/runtime conversion
 limits still apply; project discovery does not add framework implementations.
+
+
+## Throwable and build metadata prerequisites
+
+Focused JVM regressions cover canonical builtin Throwable type names, source
+exception hierarchies and shadowing, inherited `getMessage` dispatch, and
+cause-only constructors that invoke source `toString` with the calling Java
+execution context. Generic bounds and overloaded calls retain the declaring
+context across shadowed and renamed type parameters, including boxing into
+generic method parameters. Entry-point generation also handles static
+method/type name collisions. These checks do not establish every Throwable or reflection contract.
+
+Source ingestion recognizes a bounded Maven compiler-plugin metadata form:
+version 3.16.0, Java release 21, UTF-8, and absent or disabled annotation
+processing. Unsupported plugin configuration remains a diagnostic. This metadata
+validation does not implement arbitrary Maven plugin execution.
+
+The runtime includes a separately tested immutable UTF16 String reference,
+interning and literal roots, fresh builder snapshots, and conversion adapters.
+Compiler String lowering still uses the existing representation. The retained
+String applications fail on identity, initialization, UTF16 and related behavior;
+passing runtime kernel tests does not constitute generated-application parity.
+See the frozen inputs under `campaign/reproducers/string-abi-prereq` and
+`campaign/reproducers/string-reference-prereq`.

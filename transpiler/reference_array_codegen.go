@@ -213,6 +213,9 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
 		return source, true
 	}
+	if isExceptionJavaType(ctx, base) {
+		return stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(base)}), true
+	}
 	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered {
 		return javaTypeIDLiteral(owner, ctx), true
 	}
@@ -506,6 +509,9 @@ func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 			// A Throwable override can return a declaring superclass view of
 			// its receiver through the runtime's erased callback. Preserve the
 			// allocation identity (and synchronized-body monitor) across views.
+			if isThrowableMessageOverride(method, scope, ctx) {
+				relevant[scope] = struct{}{}
+			}
 			if isThrowableInitCauseOverride(method, scope, ctx) && isUserDefinedExceptionClass(ctx, scope) {
 				relevant[scope] = struct{}{}
 			}
@@ -694,6 +700,8 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	args := []ast.Expr{javaTypeIDLiteral(id, ctx)}
 	if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(parent), ctx))
+	} else if isExceptionJavaType(classScopeCtx(scope, ctx), scope.Superclass) {
+		args = append(args, stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(scope.Superclass)}))
 	} else if constant := characterIONominalConstant(scope.Superclass, classScopeCtx(scope, ctx)); constant != "" {
 		args = append(args, stdjavaQualifiedExpr(constant, ctx))
 	} else {

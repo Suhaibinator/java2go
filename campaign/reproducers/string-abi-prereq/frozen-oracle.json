@@ -1,0 +1,117 @@
+{
+  "provenance_oracle_sha256": "8b10b586babc5c7b12221ed9873c992212a875a85528a42f1be36451c95baaa6",
+  "whole_input_before": "df50eca2adc740ba442831b82e842daecf165c136e53dd05181e6ccf608eac7c",
+  "whole_input_after": "df50eca2adc740ba442831b82e842daecf165c136e53dd05181e6ccf608eac7c",
+  "main_class": "prereq.string.app.Main",
+  "java_release": 21,
+  "observations": [
+    {
+      "args": [
+        "17"
+      ],
+      "repeat": 1,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-17.stdout",
+      "stderr": "expected.seed-17.stderr"
+    },
+    {
+      "args": [
+        "17"
+      ],
+      "repeat": 2,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-17.stdout",
+      "stderr": "expected.seed-17.stderr"
+    },
+    {
+      "args": [
+        "17"
+      ],
+      "repeat": 3,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-17.stdout",
+      "stderr": "expected.seed-17.stderr"
+    },
+    {
+      "args": [
+        "41"
+      ],
+      "repeat": 1,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-41.stdout",
+      "stderr": "expected.seed-41.stderr"
+    },
+    {
+      "args": [
+        "41"
+      ],
+      "repeat": 2,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-41.stdout",
+      "stderr": "expected.seed-41.stderr"
+    },
+    {
+      "args": [
+        "41"
+      ],
+      "repeat": 3,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-41.stdout",
+      "stderr": "expected.seed-41.stderr"
+    },
+    {
+      "args": [
+        "97"
+      ],
+      "repeat": 1,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-97.stdout",
+      "stderr": "expected.seed-97.stderr"
+    },
+    {
+      "args": [
+        "97"
+      ],
+      "repeat": 2,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-97.stdout",
+      "stderr": "expected.seed-97.stderr"
+    },
+    {
+      "args": [
+        "97"
+      ],
+      "repeat": 3,
+      "exit": 0,
+      "timeout": false,
+      "stdout": "expected.seed-97.stdout",
+      "stderr": "expected.seed-97.stderr"
+    }
+  ],
+  "files": {
+    "README.md": "62592393a72d03ad8171b481b40479beb344467de8c089489de9f654b424b170",
+    "expected.seed-17.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-17.stdout": "6434dd46312e4521176a5194672f047a03b76d861248d9d5992ca03eb4e3d42f",
+    "expected.seed-41.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-41.stdout": "2998395df2ced8990cbe74f493998301efd6b142a2050477c7c1468a8909dce8",
+    "expected.seed-97.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-97.stdout": "2e360533aa530eed59802f547ec9550071c46c47ff2cea8255a28c54ea62191c",
+    "inputs/seed-17.txt": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5",
+    "inputs/seed-41.txt": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1",
+    "inputs/seed-97.txt": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48",
+    "pom.xml": "e8d8865ec5ca97a164307a6a9af6e7c19b6cb4cb9540376e5d9161b2c1bb7f71",
+    "src/main/java/prereq/string/app/Main.java": "44c2d13f48b7ff16520f3611d3f17afdbddfff726a73c384c021e055daa5e23e",
+    "src/main/java/prereq/string/contract/Ledger.java": "0c6a228c83386891d914c8bf4b114ea830486a246a0ec689bc55c8b383887a53",
+    "src/main/java/prereq/string/contract/LiteralBank.java": "bd58f43cef6783a709096b0f30bd61f6dfc15d75b978fe44a2c8013cda2bee6f",
+    "src/main/java/prereq/string/contract/SourceValue.java": "8261f97a19bd78c0159f60b358ebf1ea6943a2fea63e1f9e3da0e103f1a2e24f",
+    "src/main/java/prereq/string/flow/StringFlow.java": "42251130746d8b5172e5215cf2c7dd3b9969b816b93bb4ca90e0b9ad3a2bca4c"
+  }
+}

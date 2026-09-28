@@ -66,27 +66,14 @@ var (
 	}
 )
 
-func registerExceptionJavaType(child, parent string) {
-	if child == "" {
-		return
-	}
-	super := ObjectTypeID
-	if parent != "" {
-		super = TypeID(parent)
-	}
-	RegisterJavaType(TypeID(child), super)
-}
-
-func init() {
-	for child, parent := range exceptionHierarchy {
-		registerExceptionJavaType(child, parent)
-	}
-}
-
 // RegisterException records that the exception type child extends parent. It is
 // called from generated init() blocks so that user-defined exception classes
 // participate in catch-by-supertype dispatch. Re-registering a type with the
-// same parent is idempotent across init ordering.
+// same parent is idempotent across init ordering. This legacy catch registry
+// does not register Java reference descriptors: a simple parent name cannot
+// distinguish a source class from a builtin shadowed by that class. Builtins
+// register their canonical descriptors separately; generated source declarations
+// register their fully resolved superclass and interface edges.
 //
 // LIMITATION: the hierarchy is keyed by simple (unqualified) type name. Two
 // user-defined exception classes with the same simple name in different Java
@@ -104,7 +91,6 @@ func RegisterException(child, parent string) {
 	}
 	exceptionHierarchy[child] = parent
 	exceptionHierarchyMu.Unlock()
-	registerExceptionJavaType(child, parent)
 }
 
 // isSubtypeOf reports whether the exception type named child is the same as, or
@@ -407,7 +393,7 @@ func (t ThrowableBase) Message() string           { return t.message }
 // JavaDynamicTypeID lets every built-in Throwable value participate in the
 // descriptor-bearing reference-array ABI. The method is promoted through each
 // concrete exception and through generated subclasses that embed one.
-func (t ThrowableBase) JavaDynamicTypeID() TypeID { return TypeID(t.typeName) }
+func (t ThrowableBase) JavaDynamicTypeID() TypeID { return BuiltinThrowableTypeID(t.typeName) }
 
 func (t ThrowableBase) Error() string {
 	if t.message == "" || StringIsNull(t.message) {
@@ -541,6 +527,13 @@ func NewException(arguments ...any) Exception {
 }
 
 func newExceptionConstructorBase(name string, arguments ...any) ThrowableBase {
+	return newExceptionConstructorBaseExecution(nil, name, arguments...)
+}
+
+func newExceptionConstructorBaseExecution(execution *Execution, name string, arguments ...any) ThrowableBase {
+	if execution == nil {
+		execution = NewExecution()
+	}
 	message := NullString()
 	var cause any
 	causeInitialized := false
@@ -553,7 +546,7 @@ func newExceptionConstructorBase(name string, arguments ...any) ThrowableBase {
 			causeInitialized = true
 			if !javaReferenceIsNull(arguments[0]) {
 				cause = arguments[0]
-				message = exceptionCauseMessage(cause)
+				message = exceptionCauseMessageExecution(execution, cause)
 			}
 		}
 	case 2:
@@ -574,16 +567,23 @@ func newExceptionConstructorBase(name string, arguments ...any) ThrowableBase {
 // A cause-only Java constructor uses cause.toString(), including the qualified
 // name of built-in exceptions. Keep Go's legacy Error formatting separate.
 func exceptionCauseMessage(cause any) string {
+	return exceptionCauseMessageExecution(nil, cause)
+}
+
+func exceptionCauseMessageExecution(execution *Execution, cause any) string {
+	if execution == nil {
+		execution = NewExecution()
+	}
 	value := reflect.TypeOf(cause)
 	if value.Kind() == reflect.Pointer {
 		value = value.Elem()
 	}
 	if value.PkgPath() != "github.com/NickyBoy89/java2go/stdjava" {
-		return StringValueOf(cause)
+		return StringValueOfExecution(execution, cause)
 	}
 	throwable, ok := cause.(Throwable)
 	if !ok {
-		return StringValueOf(cause)
+		return StringValueOfExecution(execution, cause)
 	}
 	name := throwable.ThrowableTypeName()
 	switch name {

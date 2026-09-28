@@ -402,6 +402,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 		for i := 0; symbol.IsReserved(method.Name) ||
 			(!method.IsStatic && classNeedsReferenceIdentity(class, Ctx{}) && referenceIdentityReservedSelector(method.Name)) ||
 			collidesWithGoFuncName(method) ||
+			(method.IsStatic && packageHasEmittedSourceTypeName(packageScope, method.Name)) ||
 			classHasOtherFieldName(class, method, method.Name) ||
 			(method.IsStatic && packageHasOtherStaticFieldName(packageScope, method, method.Name)) ||
 			(method.IsStatic && packageHasOtherStaticMethodName(packageScope, method, method.Name)) ||

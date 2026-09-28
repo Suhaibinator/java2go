@@ -154,14 +154,14 @@ func TestBuiltinReferenceArrayRuntimeKeepsObjectRuleNarrow(t *testing.T) {
 	if got := stdjava.ReferenceArrayGet[stdjava.Throwable](array, 0, stdjava.ThrowableTypeID); got.Message() != "suppressed" {
 		t.Fatalf("Throwable[] read = %v, want suppressed exception", got)
 	}
-	if actual, ok := stdjava.ObjectDynamicType(suppressed); !ok || actual != stdjava.TypeID("IllegalStateException") {
+	if actual, ok := stdjava.ObjectDynamicType(suppressed); !ok || actual != stdjava.TypeID("java.lang.IllegalStateException") {
 		t.Fatalf("IllegalStateException runtime type = %q, %v", actual, ok)
 	}
-	if !stdjava.JavaTypeAssignable(stdjava.TypeID("IllegalStateException"), stdjava.ThrowableTypeID) ||
-		!stdjava.JavaTypeAssignable(stdjava.TypeID("IOException"), stdjava.TypeID("Exception")) {
+	if !stdjava.JavaTypeAssignable(stdjava.TypeID("java.lang.IllegalStateException"), stdjava.ThrowableTypeID) ||
+		!stdjava.JavaTypeAssignable(stdjava.TypeID("java.io.IOException"), stdjava.TypeID("java.lang.Exception")) {
 		t.Fatal("built-in Throwable hierarchy is missing runtime assignability edges")
 	}
-	runtimeOnly := stdjava.NewReferenceArray(1, stdjava.TypeID("RuntimeException"))
+	runtimeOnly := stdjava.NewReferenceArray(1, stdjava.TypeID("java.lang.RuntimeException"))
 	_ = stdjava.ReferenceArraySet(runtimeOnly, 0, suppressed)
 	var recovered any
 	func() {

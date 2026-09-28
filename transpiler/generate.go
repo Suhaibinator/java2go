@@ -150,6 +150,7 @@ func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast
 		return nil
 	}
 
+	typeParams = qualifyTypeParameterBounds(typeParams, ctx)
 	paramNames := symbol.GoTypeParamNames(typeParams)
 	parameterLookup := newTypeParameterLookup(typeParams)
 	fields := make([]*ast.Field, len(typeParams))

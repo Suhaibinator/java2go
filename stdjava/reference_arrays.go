@@ -30,11 +30,8 @@ const (
 	LongTypeID         TypeID = "java.lang.Long"
 	FloatTypeID        TypeID = "java.lang.Float"
 	DoubleTypeID       TypeID = "java.lang.Double"
-	// ThrowableTypeID follows the descriptor spelling currently emitted for the
-	// built-in exception hierarchy. Generated source classes use qualified binary
-	// names; java.lang exception intrinsics intentionally retain their Java simple
-	// names so they also match ThrowableTypeName and catch dispatch.
-	ThrowableTypeID TypeID = "Throwable"
+	// Throwable uses its canonical Java identity, independently of catch names.
+	ThrowableTypeID TypeID = "java.lang.Throwable"
 )
 
 const (

@@ -477,6 +477,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return lowered
 			}
 
+			if lowered := throwableMessageInvocation(objectNode, methodName, ctx, source); lowered != nil {
+				return lowered
+			}
+
 			if isSystemOutSelector(objectNode, source) && (methodName == "println" || methodName == "print") {
 				argListNode := node.ChildByFieldName("arguments")
 				args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, nil)
@@ -531,7 +535,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// Throwable.getCause()/getMessage()/getSuppressed()/printStackTrace() on a caught exception are
 			// routed through the stdjava runtime, which understands both the
 			// built-in exception types and user-defined ones.
-			if argCount == 0 && (methodName == "getCause" || methodName == "getMessage" || methodName == "getSuppressed" || methodName == "printStackTrace") {
+			if argCount == 0 && (methodName == "getCause" || methodName == "getSuppressed" || methodName == "printStackTrace") {
 				if javaType, ok := inferExprJavaType(objectNode, ctx, source); ok && isExceptionJavaType(ctx, javaType) {
 					receiver := ParseExpr(objectNode, source, ctx)
 					if methodName == "getSuppressed" {
@@ -758,6 +762,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if ctx.currentClass != nil {
 			allowInstance := ctx.localScope != nil && ctx.localScope.OriginalName != "" && !ctx.localScope.IsStatic
 			selected := findBestMethodInHierarchy(ctx.currentClass, methodName, argListNode, allowInstance, true, ctx, source)
+			if inheritedBuiltinMessageSelected(node, selected, ctx, source) {
+				return stdjavaCall(ctx, "ThrowableMessageExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+			}
 			if selected != nil && selected.def != nil && selected.def.IsStatic {
 				implicitStaticResolution = selected
 			} else {
@@ -4252,8 +4259,7 @@ func findBestConstructor(scope *symbol.ClassScope, argsNode *sitter.Node, ctx Ct
 		if def == nil || !def.Constructor || !methodInvocationArityApplicable(def, len(argNodes)) {
 			continue
 		}
-		candidateTypeParams := append([]string{}, scope.TypeParameterNames()...)
-		candidateTypeParams = append(candidateTypeParams, def.TypeParameterNames()...)
+		candidateTypeParams := methodCandidateTypeParameterNames(scope, def)
 		score, applicable := scoreMethodCandidate(def, scope, candidateTypeParams, argNodes, ctx, source)
 		if !applicable {
 			continue
@@ -4334,8 +4340,7 @@ func findBestMethodInHierarchies(
 				continue
 			}
 
-			candidateTypeParams := append([]string{}, scope.TypeParameterNames()...)
-			candidateTypeParams = append(candidateTypeParams, def.TypeParameterNames()...)
+			candidateTypeParams := methodCandidateTypeParameterNames(scope, def)
 			score, applicable := scoreMethodCandidate(def, scope, candidateTypeParams, argNodes, ctx, source)
 			if !applicable {
 				continue
@@ -4410,7 +4415,7 @@ func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, cand
 	parameterCount := len(def.Parameters)
 	variadic := parameterCount > 0 && executionParameterIsVariadic(def, parameterCount-1)
 	fixedArrayInvocation := variadic && len(argNodes) == parameterCount &&
-		invocationArgumentCanTargetVarargsArray(argNodes[parameterCount-1], def.Parameters[parameterCount-1], owner, candidateTypeParams, ctx, source)
+		invocationArgumentCanTargetVarargsArray(argNodes[parameterCount-1], def.Parameters[parameterCount-1], def, owner, candidateTypeParams, ctx, source)
 
 	score := methodCandidateScore{expandVarargsArray: fixedArrayInvocation}
 	if variadic && !fixedArrayInvocation {
@@ -4433,7 +4438,7 @@ func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, cand
 		// Preserve that package provenance before resolving reference conversions;
 		// otherwise an unqualified imported type such as Rule<T> becomes invisible
 		// when Engine<T>.addRule is invoked from a different package.
-		expectedType := qualifyJavaTypeInDeclaringContext(parameter.OriginalType, owner)
+		expectedType := methodParameterReferenceType(parameter, def, owner, ctx)
 		if fixedArrayInvocation && index == parameterCount-1 {
 			expectedType += "[]"
 		}
@@ -4457,7 +4462,7 @@ func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, cand
 
 func invocationArgumentCanTargetVarargsArray(
 	argNode *sitter.Node,
-	parameter *symbol.Definition,
+	parameter, method *symbol.Definition,
 	owner *symbol.ClassScope,
 	candidateTypeParams []string,
 	ctx Ctx,
@@ -4483,7 +4488,7 @@ func invocationArgumentCanTargetVarargsArray(
 	if _, rank := javaArrayTypeParts(actualType); rank == 0 {
 		return false
 	}
-	expectedType := qualifyJavaTypeInDeclaringContext(parameter.OriginalType, owner) + "[]"
+	expectedType := methodParameterReferenceType(parameter, method, owner, ctx) + "[]"
 	_, _, applicable := javaInvocationConversionCost(argNode, expectedType, candidateTypeParams, ctx, source)
 	return applicable
 }
@@ -4505,16 +4510,14 @@ func methodResolutionMoreSpecific(candidate, current *methodResolution, ctx Ctx)
 		if candidateParam == nil || currentParam == nil {
 			return false
 		}
-		candidateType := candidateParam.OriginalType
+		candidateType := methodParameterReferenceType(candidateParam, candidate.def, candidate.owner, ctx)
 		if candidate.expandVarargsArray && executionParameterIsVariadic(candidate.def, index) {
 			candidateType += "[]"
 		}
-		currentType := currentParam.OriginalType
+		currentType := methodParameterReferenceType(currentParam, current.def, current.owner, ctx)
 		if current.expandVarargsArray && executionParameterIsVariadic(current.def, index) {
 			currentType += "[]"
 		}
-		candidateType = qualifyJavaTypeInDeclaringContext(candidateType, candidate.owner)
-		currentType = qualifyJavaTypeInDeclaringContext(currentType, current.owner)
 		atLeastAsSpecific, parameterStrict := javaParameterAtLeastAsSpecific(candidateType, currentType, ctx)
 		if !atLeastAsSpecific {
 			return false
@@ -4738,7 +4741,7 @@ func javaInvocationConversionCost(argNode *sitter.Node, expectedType string, can
 
 	actualReference := normalizeJavaReferenceType(actualType)
 	expectedReference := normalizeJavaReferenceType(expectedType)
-	if actualReference == expectedReference {
+	if actualReference == expectedReference && invocationReferenceBindersCompatible(actualType, expectedType, ctx) {
 		return 0, true, true
 	}
 
@@ -4748,7 +4751,7 @@ func javaInvocationConversionCost(argNode *sitter.Node, expectedType string, can
 	// applicable to List<T>, while List<String> is not treated as List<Object>.
 	// This check is also useful for runtime-modelled types such as List whose
 	// class scope is intentionally absent from the user symbol table.
-	if sameJavaRawType(actualBase, expectedBase) {
+	if sameJavaRawType(actualBase, expectedBase) && invocationReferenceBindersCompatible(actualType, expectedType, ctx) {
 		_, expectedArgs := parseJavaTypeString(expectedType)
 		if javaGenericArgumentsApplicable(actualArgs, expectedArgs, candidateTypeParams) {
 			return 4, false, true
@@ -9959,6 +9962,9 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 		}
 	} else {
 		resolution = findBestMethodInHierarchy(scope, methodName, argListNode, allowInstance, allowStatic, ctx, source)
+	}
+	if inheritedBuiltinMessageSelected(node, resolution, ctx, source) {
+		return "java.lang.String", true
 	}
 	if resolution == nil && node.ChildByFieldName("object") == nil {
 		resolution = findEnclosingStaticMethod(methodName, argListNode, ctx, source)
