@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Commit and push verified checkpoint16. Then run private CharSequence candidate gate; keep full Gson active. Continue Sol oracle validation and private cancellation/constants/performance TDD without changing frozen expectations.",
+  "next_action": "Finish commit/push CLI+27JVMoracles; await actualString benchmark correctness. Private bound/typednil/join repairs remain unpromoted pending concreteThrowable constructor and originalfullworkflow.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -3068,12 +3068,13 @@
         "owner": "astra_build",
         "private": "/private/tmp/java2go-string-join16-pima_tsy",
         "red_session": 25750,
-        "status": "Join runtime, List revision and outer-static field gates green. Original strict application builds pass then source CharSequence nominal cast fails; private metadata repair authorized.",
+        "status": "Original join and nominal focused green;19-file combined delta needs clean rebase onto6b5f02f; fullcauseworkflow unrun",
         "invalid_harness_run": 75032,
         "original_java_oracles_unchanged": true,
         "log": "/private/tmp/java2go-string-join16-pima_tsy/join-corrected-red.log",
         "candidate_session": 74298,
-        "candidate_evidence": "/private/tmp/java2go-outer-static-join16-muv9_9_1/tdd-evidence-4jkfw_1t/report.json"
+        "candidate_evidence": "/private/tmp/java2go-outer-static-join16-muv9_9_1/tdd-evidence-4jkfw_1t/report.json",
+        "combined_delivery": "/private/tmp/java2go-join-combined-delivery-ymmnqk5j"
       },
       "iteration_compiler_plan": "/private/tmp/java2go-iterable-compiler-plan16/compiler-plan.md",
       "string_activation_plan": "/private/tmp/java2go-string-activation16-plan-ys1ioesz/activation-plan.md",
@@ -3235,7 +3236,13 @@
       "charsequence_nominal": {
         "private": "/private/tmp/java2go-charsequence-join16-nsppxvlx",
         "baseline_session": 66075,
-        "status": "JVM exact; strict race builds pass; inherited source CharSequence cast fails. Candidate prepared and unrun."
+        "status": "private focused green19.174s,4tests and stable Go/module hashes; full original workflow pending",
+        "candidate_session": 5074,
+        "evidence": "/private/tmp/java2go-charsequence-join16-nsppxvlx/candidate-focused-result.json",
+        "bound_review": {
+          "source": "/private/tmp/java2go-charsequence-bounds-review16-00uuhi7l/repo/transpiler/campaign_charsequence_bound_review_test.go",
+          "status": "prepared unrun; actual-bound assignability review must execute after rebase"
+        }
       },
       "generic_alias_repair": {
         "owner": "astra_compiler",
@@ -3309,7 +3316,7 @@
         },
         "cancellation": {
           "owner": "astra_lint",
-          "status": "private CLI and wrapper identity-tracking repair prepared unrun; observed descendants only",
+          "status": "valid CLI baseline red, same candidate race green; helper3of4green, graceful fixture likely signal-handler reentrant wait deadlock, correction pending; not promoted",
           "private": "/private/tmp/java2go-cancellation16-4q_mb4nn"
         }
       },
@@ -3337,30 +3344,73 @@
         ]
       },
       "publication": {
-        "status": "integrated, committing and pushing",
+        "status": "committed and pushed, exact live origin verified",
         "branch": "origin/codex/adversarial-campaign",
         "source_snapshot": "/private/tmp/java2go-checkpoint16-v8-c0249l67",
         "source_manifest": "/private/tmp/java2go-checkpoint16-v8-manifest.json",
-        "integrated_files": 74
+        "integrated_files": 74,
+        "revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
+        "live_remote_verified": true,
+        "committed_source_audit": "/private/tmp/java2go-checkpoint16-commit-source-audit.json"
+      }
+    },
+    "checkpoint17": {
+      "base_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
+      "status": "CLI cancellation integrated for independent package verification; semantic join/CharSequence changes remain private",
+      "cancellation_manifest": "/private/tmp/java2go-cancellation16-4q_mb4nn/final-cli/manifest.json",
+      "supplemental_packages": [
+        "generic-binding-prereq",
+        "reflection-exception-thread-prereq",
+        "charsequence-raw-bridge"
+      ],
+      "oracle_audit": "/private/tmp/java2go-checkpoint17-oracle-audit.json",
+      "jvm_observations": 27,
+      "go_status": "supplemental packages unrun",
+      "charsequence_candidate": "/private/tmp/java2go-charsequence-boundfix17-cqnxto3s/repo",
+      "charsequence_focused": "21 tests green94.451s after valid bounded-overload and typed-null reds",
+      "full_throwable_workflow": {
+        "report": "/private/tmp/java2go-cause-workflow-final17-i9me9qj1/run-r06qbogw/report.json",
+        "status": "9exactJVM; candidate clearedjoin, go-build-all missingNewThrowable,0Goacceptance",
+        "owner": "astra_runtime"
+      },
+      "performance": "layoutfocusedgreenonly; published-base parity and actualStringcontrol benchmark unrun",
+      "cancellation_verification": {
+        "independent_session": 87520,
+        "exit_code": 0,
+        "race_pass_records": 19,
+        "failed": 0,
+        "skipped": 0,
+        "packages": [
+          "cmd/javacampaign",
+          "campaign"
+        ],
+        "stdout": "/private/tmp/java2go-checkpoint17-cli-independent.stdout",
+        "stderr": "/private/tmp/java2go-checkpoint17-cli-independent.stderr",
+        "exact_lint": "2.14.0 passed in agent candidate with identical Go sources",
+        "scope": "CLI and campaign packages; full application milestone remains6b5f02f"
+      },
+      "publication": {
+        "status": "committing CLI2files and66 oracle artifacts plusledger",
+        "branch": "origin/codex/adversarial-campaign"
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "2f98045b94aed69fd8c89980795f79f44098d6fe",
+    "last_pushed_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "checkpoint16-v8 verified",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Commit and push verified checkpoint16. Then run private CharSequence candidate gate; keep full Gson active. Continue Sol oracle validation and private cancellation/constants/performance TDD without changing frozen expectations.",
+    "next": "Finish commit/push CLI+27JVMoracles; await actualString benchmark correctness. Private bound/typednil/join repairs remain unpromoted pending concreteThrowable constructor and originalfullworkflow.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
-    "last_compatibility_revision": "16507523224fb82408859cb3d6ce8c9ffca5b106",
+    "last_compatibility_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
     "automatic_goal_controller": "usageLimited still reported; user explicitly resumed manualwork; do not markgoalcomplete",
     "checkpoint16_review_hold": {
       "status": "reflection and binder review regressions focused green; full v8 pending",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": null,
-    "heavy_session": null
+    "heavy_owner": "astra_perf_runtime",
+    "heavy_session": "actual generatedString correctness gate launching"
   }
 }

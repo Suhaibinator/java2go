@@ -1,0 +1,10 @@
+python3 run-bounded.py 300 "$probe_out/javac.stdout" "$probe_out/javac.stderr" "$probe_jdk/bin/javac" --release 21 -encoding UTF-8 -d "$probe_out/classes" src/probe/bridge/state/Trace.java src/probe/bridge/source/BaseSource.java src/probe/bridge/source/SequenceBase.java src/probe/bridge/domain/DerivedSequence.java src/probe/bridge/domain/SequenceSource.java src/probe/bridge/app/Main.java
+python3 run-bounded.py 60 "$probe_out/seed-17.repeat-1.stdout" "$probe_out/seed-17.repeat-1.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 17
+python3 run-bounded.py 60 "$probe_out/seed-17.repeat-2.stdout" "$probe_out/seed-17.repeat-2.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 17
+python3 run-bounded.py 60 "$probe_out/seed-17.repeat-3.stdout" "$probe_out/seed-17.repeat-3.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 17
+python3 run-bounded.py 60 "$probe_out/seed-41.repeat-1.stdout" "$probe_out/seed-41.repeat-1.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 41
+python3 run-bounded.py 60 "$probe_out/seed-41.repeat-2.stdout" "$probe_out/seed-41.repeat-2.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 41
+python3 run-bounded.py 60 "$probe_out/seed-41.repeat-3.stdout" "$probe_out/seed-41.repeat-3.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 41
+python3 run-bounded.py 60 "$probe_out/seed-97.repeat-1.stdout" "$probe_out/seed-97.repeat-1.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 97
+python3 run-bounded.py 60 "$probe_out/seed-97.repeat-2.stdout" "$probe_out/seed-97.repeat-2.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 97
+python3 run-bounded.py 60 "$probe_out/seed-97.repeat-3.stdout" "$probe_out/seed-97.repeat-3.stderr" "$probe_jdk/bin/java" -cp "$probe_out/classes" probe.bridge.app.Main 97

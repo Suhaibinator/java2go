@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/NickyBoy89/java2go/campaign"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -27,7 +29,9 @@ func main() {
 		fmt.Fprintln(os.Stderr, "-fixture is required")
 		os.Exit(2)
 	}
-	report, err := campaign.Run(context.Background(), c)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	report, err := campaign.Run(ctx, c)
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	_ = encoder.Encode(report)
