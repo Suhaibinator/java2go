@@ -125,7 +125,7 @@ func verifyMavenLock(root string) (string, error) {
 			return "", e
 		}
 		if hash(b) != a.SHA256 {
-			return "", fmt.Errorf("Maven artifact checksum mismatch: %s", a.File)
+			return "", fmt.Errorf("maven artifact checksum mismatch: %s", a.File)
 		}
 	}
 	b, e := os.ReadFile(path)

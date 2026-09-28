@@ -11,14 +11,20 @@ import (
 // Java overloads of read are lowered to InputStreamReadByte/Into because Go's
 // io.Reader.Read has a different result and buffer representation.
 type InputStream interface {
-	io.Reader
 	Close()
 }
 
-func InputStreamReadByte(stream InputStream) int32 {
+func InputStreamReadByte(stream InputStream) int32 { return InputStreamReadByteExecution(nil, stream) }
+func InputStreamReadByteExecution(execution *Execution, stream InputStream) int32 {
+	if execution == nil {
+		execution = NewExecution()
+	}
 	ReferenceRequireNonNull(stream)
+	if override, ok := stream.(interface{ JavaInputStreamReadByte(*Execution) int32 }); ok {
+		return override.JavaInputStreamReadByte(execution)
+	}
 	var one [1]byte
-	count, err := stream.Read(one[:])
+	count, err := inputStreamReader(execution, stream).Read(one[:])
 	if count > 0 {
 		return int32(one[0])
 	}
@@ -31,12 +37,26 @@ func InputStreamReadByte(stream InputStream) int32 {
 	return 0
 }
 func InputStreamReadInto(stream InputStream, array *PrimitiveArray[int8], bounds ...int32) int32 {
+	return InputStreamReadIntoExecution(nil, stream, array, bounds...)
+}
+func InputStreamReadIntoExecution(execution *Execution, stream InputStream, array *PrimitiveArray[int8], bounds ...int32) int32 {
+	if execution == nil {
+		execution = NewExecution()
+	}
 	ReferenceRequireNonNull(stream)
-	ReferenceRequireNonNull(array)
-	offset, length := int32(0), int32(len(array.Elements))
+	offset, length := int32(0), int32(0)
 	if len(bounds) == 2 {
 		offset, length = bounds[0], bounds[1]
+	} else {
+		ReferenceRequireNonNull(array)
+		length = int32(len(array.Elements))
 	}
+	if override, ok := stream.(interface {
+		JavaInputStreamRead(*Execution, *PrimitiveArray[int8], int32, int32) int32
+	}); ok {
+		return override.JavaInputStreamRead(execution, array, offset, length)
+	}
+	ReferenceRequireNonNull(array)
 	if offset < 0 || length < 0 || offset > int32(len(array.Elements))-length {
 		panic(NewIndexOutOfBoundsException("InputStream.read range"))
 	}
@@ -44,7 +64,7 @@ func InputStreamReadInto(stream InputStream, array *PrimitiveArray[int8], bounds
 		return 0
 	}
 	bytes := make([]byte, length)
-	count, err := stream.Read(bytes)
+	count, err := inputStreamReader(execution, stream).Read(bytes)
 	for i := 0; i < count; i++ {
 		array.Elements[int(offset)+i] = int8(bytes[i])
 	}
@@ -60,8 +80,11 @@ func InputStreamReadInto(stream InputStream, array *PrimitiveArray[int8], bounds
 	return 0
 }
 func InputStreamReadAllBytes(stream InputStream) *PrimitiveArray[int8] {
+	return InputStreamReadAllBytesExecution(nil, stream)
+}
+func InputStreamReadAllBytesExecution(execution *Execution, stream InputStream) *PrimitiveArray[int8] {
 	ReferenceRequireNonNull(stream)
-	bytes, err := io.ReadAll(stream)
+	bytes, err := io.ReadAll(inputStreamReader(execution, stream))
 	if err != nil {
 		throwIOException(err)
 	}
@@ -70,12 +93,16 @@ func InputStreamReadAllBytes(stream InputStream) *PrimitiveArray[int8] {
 
 // BufferedInputStream retains its source and closes that source exactly once.
 type BufferedInputStream struct {
-	source InputStream
-	reader *bufio.Reader
-	closed bool
+	source    InputStream
+	execution *Execution
+	reader    *bufio.Reader
+	closed    bool
 }
 
 func NewBufferedInputStream(source InputStream, size ...int32) *BufferedInputStream {
+	return NewBufferedInputStreamExecution(nil, source, size...)
+}
+func NewBufferedInputStreamExecution(execution *Execution, source InputStream, size ...int32) *BufferedInputStream {
 	capacity := int32(8192)
 	if len(size) > 0 {
 		capacity = size[0]
@@ -83,7 +110,7 @@ func NewBufferedInputStream(source InputStream, size ...int32) *BufferedInputStr
 	if capacity <= 0 {
 		panic(NewIllegalArgumentException("Buffer size <= 0"))
 	}
-	return &BufferedInputStream{source: source, reader: bufio.NewReaderSize(source, int(capacity))}
+	return &BufferedInputStream{source: source, execution: execution, reader: bufio.NewReaderSize(inputStreamReader(execution, source), int(capacity))}
 }
 func (s *BufferedInputStream) Read(bytes []byte) (int, error) {
 	if s.closed || javaReferenceIsNull(s.source) {
@@ -95,7 +122,7 @@ func (s *BufferedInputStream) Close() {
 	if !s.closed {
 		s.closed = true
 		if !javaReferenceIsNull(s.source) {
-			s.source.Close()
+			InputStreamCloseExecution(s.execution, s.source)
 		}
 	}
 }
@@ -228,7 +255,7 @@ func (r *RandomAccessFile) GetChannel() *FileChannel       { return r.channel }
 func (r *RandomAccessFile) Read(bytes []byte) (int, error) { return r.state.read(bytes) }
 func (r *RandomAccessFile) ReadByteValue() int32           { return InputStreamReadByte(r) }
 func (r *RandomAccessFile) Close()                         { r.state.close() }
-func (r *RandomAccessFile) Seek(position int64) {
+func (r *RandomAccessFile) SeekPosition(position int64) {
 	if position < 0 {
 		panic(NewIOException("Negative seek offset"))
 	}
@@ -261,11 +288,16 @@ type FileChannel struct{ state *randomAccessState }
 
 func (c *FileChannel) Read(buffer *ByteBuffer) int32 {
 	ReferenceRequireNonNull(buffer)
+	c.state.mu.Lock()
+	defer c.state.mu.Unlock()
+	if c.state.closed {
+		panic(newThrowableBase("ClosedChannelException", ""))
+	}
 	if buffer.Remaining() == 0 {
 		return 0
 	}
 	bytes := make([]byte, buffer.Remaining())
-	count, err := c.state.read(bytes)
+	count, err := c.state.file.Read(bytes)
 	for i := 0; i < count; i++ {
 		buffer.array.Elements[int(buffer.position)+i] = int8(bytes[i])
 	}
@@ -297,10 +329,12 @@ func (b *ByteBuffer) Clear() *ByteBuffer {
 func init() {
 	RegisterJavaType("InputStream", ObjectTypeID)
 	RegisterJavaType("FileInputStream", "InputStream")
+	RegisterJavaType("FilterInputStream", "InputStream")
 	RegisterJavaType("ByteArrayInputStream", "InputStream")
 	RegisterJavaType("BufferedInputStream", "InputStream")
 	RegisterJavaType("OpenOption", ObjectTypeID)
 	RegisterJavaType("StandardOpenOption", "OpenOption")
 	RegisterJavaType("RandomAccessFile", ObjectTypeID)
 	RegisterJavaType("FileChannel", ObjectTypeID)
+	RegisterException("ClosedChannelException", "IOException")
 }

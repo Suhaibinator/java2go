@@ -623,6 +623,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			constructorNode = node.NamedChild(0)
 		}
 		if constructorNode != nil && constructorNode.Type() == "super" && ctx.currentClass != nil {
+			if statement := filterInputSuperConstructor(args, ctx); statement != nil {
+				return statement
+			}
 			superType := strings.TrimSpace(ctx.currentClass.Superclass)
 			if superType != "" {
 				base, superArgStrs := parseJavaTypeString(superType)

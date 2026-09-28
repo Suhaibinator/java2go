@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 )
@@ -66,6 +65,15 @@ func TestUTF16OrderingOracle(t *testing.T) {
 `, want, want))
 }
 
+func TestCampaignRuntimeOraclePreservesWhitespace(t *testing.T) {
+	const source = `public class CampaignWhitespaceOracle {
+  public static String run() { return " \tvalue\n "; }
+ }`
+	if got := campaignRuntimeJavaOracle(t, "CampaignWhitespaceOracle", source); got != " \tvalue\n " {
+		t.Fatalf("oracle changed observable whitespace: %q", got)
+	}
+}
+
 func campaignRuntimeJavaOracle(t *testing.T, name, source string) string {
 	t.Helper()
 	home := os.Getenv("JAVA_HOME")
@@ -97,5 +105,5 @@ func campaignRuntimeJavaOracle(t *testing.T, name, source string) string {
 	if err != nil {
 		t.Fatalf("JDK oracle execution: %v\n%s", err, out)
 	}
-	return strings.TrimSpace(string(out))
+	return string(out)
 }

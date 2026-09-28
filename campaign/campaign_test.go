@@ -45,9 +45,13 @@ func TestParityIncludesExitStderrAndFiles(t *testing.T) {
 }
 func TestLockRejectsModifiedArtifact(t *testing.T) {
 	root := t.TempDir()
-	os.MkdirAll(filepath.Join(root, ".campaign/cache"), 0755)
+	if err := os.MkdirAll(filepath.Join(root, ".campaign/cache"), 0755); err != nil {
+		t.Fatal(err)
+	}
 	path := filepath.Join(root, ".campaign/cache/lib.jar")
-	os.WriteFile(path, []byte("modified"), 0644)
+	if err := os.WriteFile(path, []byte("modified"), 0644); err != nil {
+		t.Fatal(err)
+	}
 	lock := Lock{SchemaVersion: 1, Artifacts: []Artifact{{ID: "lib", File: "lib.jar", SHA256: strings.Repeat("0", 64)}}}
 	if err := lock.Verify(root); err == nil {
 		t.Fatal("accepted changed artifact")
@@ -55,7 +59,9 @@ func TestLockRejectsModifiedArtifact(t *testing.T) {
 }
 func TestLoadRejectsUnknownManifestFields(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "fixture.json"), []byte(`{"status":"known-gap"}`), 0644)
+	if err := os.WriteFile(filepath.Join(dir, "fixture.json"), []byte(`{"status":"known-gap"}`), 0644); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := LoadManifest(dir); err == nil {
 		t.Fatal("accepted passing-by-declaration field")
 	}

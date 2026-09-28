@@ -470,6 +470,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			objectNode := node.ChildByFieldName("object")
 			methodName := node.ChildByFieldName("name").Content(source)
 			methodIdent := identFromNode(node.ChildByFieldName("name"), source)
+			if lowered := filterInputSuperInvocation(objectNode, methodName, node.ChildByFieldName("arguments"), source, ctx); lowered != nil {
+				return lowered
+			}
 
 			if isSystemOutSelector(objectNode, source) && (methodName == "println" || methodName == "print") {
 				argListNode := node.ChildByFieldName("arguments")
@@ -1746,6 +1749,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if enclAccess := enclosingMemberFieldAccess(identName, ctx); enclAccess != nil {
 				return enclAccess
 			}
+		}
+		if inheritedFilterInputName(identName, ctx) {
+			return filterInputField(ctx)
 		}
 		if classScope := resolveClassScopeByQualifiedName(ctx, identName); classScope != nil {
 			if alias := markJavaPackageUsage(ctx, resolveJavaPackageForType(ctx, identName, classScope)); alias != "" {
@@ -10223,7 +10229,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 					// Collection.stream() yields a Stream of the collection's element type
 					// so a chained .filter/.map lambda is typed.
 					if (methodName == "stream" || methodName == "parallelStream") && len(recvArgs) == 1 &&
-						(containsString(listTypeNames, recvBase) || containsString(setTypeNames, recvBase)) {
+						(containsString(listTypeNames, recvBase) || containsString(setTypeNames, recvBase) || recvBase == "Collection") {
 						return "Stream<" + recvArgs[0] + ">", true
 					}
 					// Stream intermediate ops that keep the element type preserve Stream<T>

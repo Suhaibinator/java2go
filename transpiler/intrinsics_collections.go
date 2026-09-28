@@ -263,7 +263,12 @@ func registerMapIntrinsics() {
 	registerForTypes(mapTypeNames, "isEmpty", method("IsEmpty", 0))
 	registerForTypes(mapTypeNames, "clear", method("Clear", 0))
 	registerForTypes(mapTypeNames, "keySet", method("KeySet", 0))
-	registerForTypes(mapTypeNames, "values", method("Values", 0))
+	registerForTypes(mapTypeNames, "values", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "MapValuesView", recv)
+	})
 	registerForTypes(mapTypeNames, "entrySet", method("EntrySet", 0))
 }
 

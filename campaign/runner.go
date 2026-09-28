@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -237,8 +238,8 @@ func Run(ctx context.Context, c Config) (report Report, err error) {
 		if checkErr != nil || after != report.MavenLockSHA256 {
 			report.Passed = false
 			report.PriorFailure = report.Failure
-			report.Failure = &Failure{"maven-lock-changed", "Maven build dependencies changed during run"}
-			err = fmt.Errorf("Maven build dependencies changed during run")
+			report.Failure = &Failure{"maven-lock-changed", "maven build dependencies changed during run"}
+			err = fmt.Errorf("maven build dependencies changed during run")
 		}
 	}()
 	mavenProject := filepath.Join(runDir, "frozen/maven-project")
@@ -589,8 +590,7 @@ func prepare(c Config, m Manifest, lock Lock, runDir string, report *Report) (p 
 			if path == "**" {
 				all = true
 			} else if selected[path] {
-				reader.Close()
-				return p, fmt.Errorf("duplicate dependency source %s", path)
+				return p, errors.Join(fmt.Errorf("duplicate dependency source %s", path), reader.Close())
 			} else {
 				selected[path] = true
 			}
@@ -601,39 +601,36 @@ func prepare(c Config, m Manifest, lock Lock, runDir string, report *Report) (p 
 				continue
 			}
 			isJava := strings.HasSuffix(file.Name, ".java")
-			if !(isJava && (all || selected[file.Name])) && !strings.Contains(strings.ToUpper(file.Name), "LICENSE") && !strings.Contains(strings.ToUpper(file.Name), "NOTICE") {
+			if (!isJava || (!all && !selected[file.Name])) && !strings.Contains(strings.ToUpper(file.Name), "LICENSE") && !strings.Contains(strings.ToUpper(file.Name), "NOTICE") {
 				continue
 			}
 			if !safeRelative(file.Name) {
-				reader.Close()
-				return p, fmt.Errorf("unsafe archive member %q", file.Name)
+				return p, errors.Join(fmt.Errorf("unsafe archive member %q", file.Name), reader.Close())
 			}
 			stream, e := file.Open()
 			if e != nil {
-				reader.Close()
-				return p, e
+				return p, errors.Join(e, reader.Close())
 			}
 			b, e := io.ReadAll(stream)
-			stream.Close()
+			e = errors.Join(e, stream.Close())
 			if e != nil {
-				reader.Close()
-				return p, e
+				return p, errors.Join(e, reader.Close())
 			}
 			if isJava {
 				target := filepath.Join(projectRoot, "src/main/java", file.Name)
 				if e = write(target, b); e != nil {
-					reader.Close()
-					return p, e
+					return p, errors.Join(e, reader.Close())
 				}
 				p.allSources = append(p.allSources, target)
 				report.SourceHashes[id+"/"+file.Name] = hash(b)
 				found[file.Name] = true
 			} else if e = write(filepath.Join(projectRoot, "upstream-metadata", file.Name), b); e != nil {
-				reader.Close()
-				return p, e
+				return p, errors.Join(e, reader.Close())
 			}
 		}
-		reader.Close()
+		if e = reader.Close(); e != nil {
+			return p, e
+		}
 		for path := range selected {
 			if !found[path] {
 				return p, fmt.Errorf("implementation source not in locked %s archive: %s", id, path)

@@ -27,7 +27,7 @@ func registerStreamIntrinsics() {
 	// Collection.stream() / parallelStream() -> stdjava.StreamOfSlice(coll.Slice()).
 	// Parallel streams run sequentially here, which keeps every ordering
 	// guarantee Java makes and only forgoes the concurrency.
-	for _, t := range append(append([]string{}, listTypeNames...), setTypeNames...) {
+	for _, t := range append(append([]string{"Collection"}, listTypeNames...), setTypeNames...) {
 		for _, method := range []string{"stream", "parallelStream"} {
 			registerInstanceIntrinsic(t, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 				if !expectArgs(args, 0) {

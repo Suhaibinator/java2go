@@ -26,3 +26,14 @@ String message, final Object... args) {} }`. It reproduces the same panic
 with `java2go -q` and has SHA-256
 `c6b356ee5d5c3753e0d63a99b7038502f3c8db8119a34f466273235cce768aa6`.
 The full fixture remains the acceptance target.
+
+## Final verification
+
+The same frozen fixture passed the complete campaign with `-race
+-stress-runs 20`. The passing report is
+`.campaign/runs/20260928T045212Z-2423930965/report.json`: offline Maven
+build, selected source closure compilation, all three seeds repeated three
+times, and 20 additional isolated Go executions passed exact exit, stdout,
+stderr, and declared output-file comparison. Its implementation fingerprint
+was `42c82081509055c7ee6992690ee2476a4aba9030bcd320ae586519d6ce5f6d15`
+both before and after the run.

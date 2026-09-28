@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -195,9 +194,21 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	if err != nil {
 		return err
 	}
+	for _, m := range plan.Modules {
+		for _, resource := range m.Resources {
+			if err = copyProjectResources(resource, filepath.Join(generated, "resources")); err != nil {
+				return err
+			}
+		}
+	}
+	resourceImport, err := embedProjectResources(generated, module)
+	if err != nil {
+		return err
+	}
 	launcher := fmt.Sprintf(`package main
 import (
  app %q
+ %s
  "os"
  stdjava "github.com/NickyBoy89/java2go/stdjava"
 )
@@ -206,7 +217,7 @@ func main() {
  for i, value := range os.Args[1:] { stdjava.ReferenceArraySet(args, i, value) }
  app.%s(args)
 }
-`, mainImport, entry)
+`, mainImport, resourceImport, entry)
 	data, err := format.Source([]byte(launcher))
 	if err != nil {
 		return err
@@ -217,13 +228,6 @@ func main() {
 	goMod := fmt.Sprintf("module %s\n\ngo 1.27.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => %s\n", module, strconv.Quote(filepath.ToSlash(runtimeRoot)))
 	if err = writeProjectFile(filepath.Join(generated, "go.mod"), []byte(goMod)); err != nil {
 		return err
-	}
-	for _, m := range plan.Modules {
-		for _, resource := range m.Resources {
-			if err = copyProjectResources(resource, filepath.Join(generated, "resources")); err != nil {
-				return err
-			}
-		}
 	}
 	// Refuse to replace any files produced by another writer while converting.
 	if err = os.Remove(output); err != nil && !os.IsNotExist(err) {
@@ -342,49 +346,6 @@ func copyProjectResources(resource project.Resource, root string) error {
 		}
 		return writeProjectFile(target, data)
 	})
-}
-func projectImportCycle(graph map[string]map[string]bool) []string {
-	states := map[string]int{}
-	stack := []string{}
-	var visit func(string) []string
-	visit = func(node string) []string {
-		if states[node] == 1 {
-			for i, n := range stack {
-				if n == node {
-					return append(append([]string{}, stack[i:]...), node)
-				}
-			}
-		}
-		if states[node] == 2 {
-			return nil
-		}
-		states[node] = 1
-		stack = append(stack, node)
-		edges := []string{}
-		for edge := range graph[node] {
-			edges = append(edges, edge)
-		}
-		sort.Strings(edges)
-		for _, edge := range edges {
-			if cycle := visit(edge); cycle != nil {
-				return cycle
-			}
-		}
-		stack = stack[:len(stack)-1]
-		states[node] = 2
-		return nil
-	}
-	nodes := []string{}
-	for node := range graph {
-		nodes = append(nodes, node)
-	}
-	sort.Strings(nodes)
-	for _, node := range nodes {
-		if cycle := visit(node); cycle != nil {
-			return cycle
-		}
-	}
-	return nil
 }
 
 // Prefix every Java package component so vendor, internal, testdata, leading

@@ -91,7 +91,13 @@ func registerComparatorIntrinsics() {
 	// chained onto it resolves to the generated Go spelling instead of keeping
 	// its Java one.
 	for _, method := range []string{"comparing", "comparingInt", "comparingLong", "comparingDouble", "naturalOrder", "reverseOrder"} {
-		registerStaticIntrinsicResultType("Comparator", method, "Comparator")
+		registerStaticIntrinsicDerivedResultType("Comparator", method, func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+			elements := targetElementJavaTypes(invocation, ctx, source)
+			if len(elements) == 1 {
+				return "Comparator<" + elements[0] + ">", true
+			}
+			return "Comparator", true
+		})
 	}
 	registerStaticIntrinsicResultType("Collections", "reverseOrder", "Comparator")
 	for _, t := range comparatorTypeNames {

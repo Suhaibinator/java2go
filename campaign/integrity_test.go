@@ -59,7 +59,9 @@ func TestFixtureFingerprintDetectsOracleAndSourceChanges(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	os.WriteFile(path, []byte("after"), 0644)
+	if err := os.WriteFile(path, []byte("after"), 0644); err != nil {
+		t.Fatal(err)
+	}
 	after, e := fixtureHashes(root)
 	if e != nil {
 		t.Fatal(e)
@@ -67,7 +69,9 @@ func TestFixtureFingerprintDetectsOracleAndSourceChanges(t *testing.T) {
 	if before["Main.java"] == after["Main.java"] {
 		t.Fatal("source edit escaped fingerprint")
 	}
-	os.WriteFile(filepath.Join(root, "expected.seed-17.stdout"), []byte("new"), 0644)
+	if err := os.WriteFile(filepath.Join(root, "expected.seed-17.stdout"), []byte("new"), 0644); err != nil {
+		t.Fatal(err)
+	}
 	after, e = fixtureHashes(root)
 	if e != nil {
 		t.Fatal(e)
@@ -91,16 +95,22 @@ func TestImplementationFingerprintIncludesDirtyRuntime(t *testing.T) {
 		}
 	}
 	for _, name := range []string{"astutil", "nodeutil", "parsing", "project", "symbol", "stdjava", "transpiler", "cmd/java2go", "campaign", "cmd/javacampaign"} {
-		os.MkdirAll(filepath.Join(root, name), 0755)
+		if err := os.MkdirAll(filepath.Join(root, name), 0755); err != nil {
+			t.Fatal(err)
+		}
 	}
 	for _, name := range []string{"api.go", "go.mod", "go.sum", "stdjava/runtime.go"} {
-		os.WriteFile(filepath.Join(root, name), []byte("before"), 0644)
+		if err := os.WriteFile(filepath.Join(root, name), []byte("before"), 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 	before, e := implementationFingerprint(root)
 	if e != nil {
 		t.Fatal(e)
 	}
-	os.WriteFile(filepath.Join(root, "stdjava/runtime.go"), []byte("after"), 0644)
+	if err := os.WriteFile(filepath.Join(root, "stdjava/runtime.go"), []byte("after"), 0644); err != nil {
+		t.Fatal(err)
+	}
 	after, e := implementationFingerprint(root)
 	if e != nil {
 		t.Fatal(e)
@@ -120,14 +130,28 @@ func TestDependencySourceComesFromLockedArchive(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	member.Write(source)
-	zw.Close()
-	write(filepath.Join(root, ".campaign/cache/lib-sources.jar"), archive.Bytes())
-	write(filepath.Join(root, ".campaign/cache/lib.jar"), []byte("binary"))
+	if _, err := member.Write(source); err != nil {
+		t.Fatal(err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := write(filepath.Join(root, ".campaign/cache/lib-sources.jar"), archive.Bytes()); err != nil {
+		t.Fatal(err)
+	}
+	if err := write(filepath.Join(root, ".campaign/cache/lib.jar"), []byte("binary")); err != nil {
+		t.Fatal(err)
+	}
 	// A locally modified extracted cache is deliberately not trusted.
-	write(filepath.Join(root, ".campaign/sources/lib-1/vendor/Real.java"), []byte("FAKE STUB"))
-	write(filepath.Join(fixture, "src/app/Main.java"), []byte("package app; public class Main {}"))
-	write(filepath.Join(fixture, "pom.xml"), []byte("<project><dependencies><dependency><groupId>vendor</groupId><artifactId>lib</artifactId><version>1</version></dependency></dependencies></project>"))
+	if err := write(filepath.Join(root, ".campaign/sources/lib-1/vendor/Real.java"), []byte("FAKE STUB")); err != nil {
+		t.Fatal(err)
+	}
+	if err := write(filepath.Join(fixture, "src/app/Main.java"), []byte("package app; public class Main {}")); err != nil {
+		t.Fatal(err)
+	}
+	if err := write(filepath.Join(fixture, "pom.xml"), []byte("<project><dependencies><dependency><groupId>vendor</groupId><artifactId>lib</artifactId><version>1</version></dependency></dependencies></project>")); err != nil {
+		t.Fatal(err)
+	}
 	m := Manifest{Name: "test", POM: "pom.xml", SourceRoots: []string{"src"}, Dependencies: []string{"lib"}, DependencySources: map[string][]string{"lib": {"vendor/Real.java"}}}
 	lock := Lock{Artifacts: []Artifact{{ID: "lib", Kind: "binary", Group: "vendor", Version: "1", File: "lib.jar"}, {ID: "lib", Kind: "sources", Group: "vendor", Version: "1", File: "lib-sources.jar"}}}
 	report := Report{SourceHashes: map[string]string{}}

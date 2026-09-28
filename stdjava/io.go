@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // This file implements the java.io / java.util.Scanner basics that transpiled
@@ -567,6 +568,10 @@ func NewFileOutputStreamAppend(dest any, appendMode bool) *FileOutputStream {
 // FileOutputStream.write(int) and write(byte[]).
 func (s *FileOutputStream) WriteBytes(value any) {
 	switch v := value.(type) {
+	case int8:
+		_ = s.buf.WriteByte(byte(v))
+	case int16:
+		_ = s.buf.WriteByte(byte(v))
 	case int32:
 		_ = s.buf.WriteByte(byte(v))
 	case int:
@@ -666,6 +671,10 @@ func NewByteArrayOutputStream() *ByteArrayOutputStream {
 // ByteArrayOutputStream.write(int) and write(byte[]).
 func (s *ByteArrayOutputStream) WriteBytes(value any) {
 	switch v := value.(type) {
+	case int8:
+		s.buf.WriteByte(byte(v))
+	case int16:
+		s.buf.WriteByte(byte(v))
 	case int32:
 		s.buf.WriteByte(byte(v))
 	case int:
@@ -793,7 +802,9 @@ func (r *StringReader) Close() {}
 // InputStreamReader models java.io.InputStreamReader: the character view of a
 // byte stream. Only the platform UTF-8 encoding is modeled.
 type InputStreamReader struct {
-	src ioSource
+	mu     sync.Mutex
+	closed bool
+	src    ioSource
 }
 
 // NewInputStreamReader wraps a byte source for character reading, matching
@@ -811,11 +822,22 @@ func NewInputStreamReaderStdin() *InputStreamReader {
 // Read makes an InputStreamReader usable as another reader's source; this is how
 // `new BufferedReader(new InputStreamReader(System.in))` composes.
 func (r *InputStreamReader) Read(p []byte) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.closed {
+		return 0, fmt.Errorf("Stream closed")
+	}
 	return r.src.r.Read(p)
 }
 
 // Close closes the stream underneath, matching InputStreamReader.close.
 func (r *InputStreamReader) Close() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.closed {
+		return
+	}
+	r.closed = true
 	r.src.close()
 }
 

@@ -56,6 +56,9 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 	if len(expectedArguments) == 0 && javaExceptionReferenceAssignable(actualBase, expectedBase, ctx) {
 		return true
 	}
+	if len(expectedArguments) == 0 && stripJavaQualifier(expectedBase) == "InputStream" && resolveClassScopeByQualifiedName(ctx, expectedBase) == nil && sourceFilterInputStream(resolveClassScopeByQualifiedName(ctx, actualBase), ctx) {
+		return true
+	}
 	if resolveClassScopeByQualifiedName(ctx, expectedBase) != nil ||
 		resolveClassScopeByQualifiedName(ctx, actualBase) != nil {
 		return false

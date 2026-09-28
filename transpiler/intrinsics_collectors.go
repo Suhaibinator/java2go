@@ -85,9 +85,9 @@ func inferCollectorJavaType(collector *sitter.Node, elementJavaType string, ctx 
 			return "", false
 		}
 		value := "List<" + elementJavaType + ">"
-		if invocationArgumentCount(collector) == 2 {
+		if count := invocationArgumentCount(collector); count == 2 || name == "groupingBy" && count == 3 {
 			var ok bool
-			value, ok = inferCollectorJavaType(invocationArgumentNode(collector, 1), elementJavaType, ctx, source)
+			value, ok = inferCollectorJavaType(invocationArgumentNode(collector, count-1), elementJavaType, ctx, source)
 			if !ok {
 				return "", false
 			}
@@ -184,7 +184,7 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 			"Map<" + keyType + "," + valueType + ">"
 
 	case "groupingBy":
-		if arity != 1 && arity != 2 {
+		if arity != 1 && arity != 2 && arity != 3 {
 			return nil, ""
 		}
 		keyType := collectorLambdaResultJavaType(collector, 0, elementJavaType, ctx, source)
@@ -196,9 +196,17 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 			return stdjavaCall(ctx, "StreamGroupingBy", streamExpr, classifier, intrinsicExecutionExpr(ctx)),
 				"Map<" + keyType + ",List<" + elementJavaType + ">>"
 		}
-		downstream, downstreamType := lowerDownstreamCollector(collector, 1, elementJavaType, ctx, source)
+		downstream, downstreamType := lowerDownstreamCollector(collector, arity-1, elementJavaType, ctx, source)
 		if downstream == nil {
 			return nil, ""
+		}
+		if arity == 3 {
+			mapType := "Map<" + keyType + "," + downstreamType + ">"
+			factoryCtx := ctx.Clone()
+			factoryCtx.expectedType = "Supplier<" + mapType + ">"
+			factoryCtx.expectedTypeRoot = invocationArgumentNode(collector, 1)
+			factory := ParseExpr(invocationArgumentNode(collector, 1), source, factoryCtx)
+			return stdjavaCall(ctx, "StreamGroupingByDownstreamWith", streamExpr, classifier, factory, downstream, intrinsicExecutionExpr(ctx)), mapType
 		}
 		return stdjavaCall(ctx, "StreamGroupingByDownstream", streamExpr, classifier, downstream, intrinsicExecutionExpr(ctx)),
 			"Map<" + keyType + "," + downstreamType + ">"

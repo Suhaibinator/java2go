@@ -42,3 +42,12 @@ func CollectionIterationElements[T any](collection Iterable[T]) func(func(int, T
 		}
 	}
 }
+
+// Map values remain a view of the source map until consumed.
+type mapValuesIterable[K, V any] struct{ source *Map[K, V] }
+
+func (view *mapValuesIterable[K, V]) Slice() []V { return view.source.Values() }
+func MapValuesView[K, V any](source *Map[K, V]) Iterable[V] {
+	ReferenceRequireNonNull(source)
+	return &mapValuesIterable[K, V]{source: source}
+}

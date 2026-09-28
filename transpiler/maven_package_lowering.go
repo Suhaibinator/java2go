@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
+	"go/importer"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -27,6 +29,7 @@ func lowerProjectPackages(root, module, runtimeRoot string, packages map[string]
 	set := token.NewFileSet()
 	graph := map[string]map[string]bool{}
 	files := []*projectGoFile{}
+	groups := map[string][]*ast.File{}
 	paths := make([]string, 0, len(packages))
 	for path := range packages {
 		paths = append(paths, path)
@@ -39,17 +42,16 @@ func lowerProjectPackages(root, module, runtimeRoot string, packages map[string]
 		if err != nil {
 			return "", "", err
 		}
-		packageFiles := map[string]*ast.File{}
 		for _, entry := range entries {
 			if entry.IsDir() || filepath.Ext(entry.Name()) != ".go" {
 				continue
 			}
 			path := filepath.Join(dir, entry.Name())
-			file, err := parser.ParseFile(set, path, nil, parser.ParseComments)
+			file, err := parser.ParseFile(set, path, nil, parser.ParseComments|parser.SkipObjectResolution)
 			if err != nil {
 				return "", "", fmt.Errorf("parse generated Go %s: %w", path, err)
 			}
-			packageFiles[path] = file
+			groups[pkg] = append(groups[pkg], file)
 			files = append(files, &projectGoFile{path, pkg, file})
 			for _, spec := range file.Imports {
 				imported, _ := strconv.Unquote(spec.Path.Value)
@@ -58,34 +60,60 @@ func lowerProjectPackages(root, module, runtimeRoot string, packages map[string]
 				}
 			}
 		}
-		// Resolve package declarations across files as well as lexical locals. The
-		// import objects let us distinguish aliases from shadowing local variables.
-		_, _ = ast.NewPackage(set, packageFiles, func(_ map[string]*ast.Object, path string) (*ast.Object, error) {
-			obj := ast.NewObj(ast.Pkg, filepath.Base(path))
-			obj.Data = ast.NewScope(nil)
-			return obj, nil
-		}, nil)
 	}
+	// Original Java packages may cycle. Check each package's lexical scopes
+	// independently, with complete empty import namespaces for project imports.
+	// Sharing an unfinished checker's real scope can expose TypeNames whose
+	// types are still nil and violate go/types invariants. Actual cross-package
+	// types are analyzed only after the SCCs have been merged below.
+	bindings := &types.Info{Defs: map[*ast.Ident]types.Object{}, Uses: map[*ast.Ident]types.Object{}, Scopes: map[ast.Node]*types.Scope{}}
+	imports := &projectTypeAnalysis{packages: map[string]*types.Package{}, fallback: importer.Default()}
+	for _, path := range paths {
+		name := sanitizeGoIdent(filepath.Base(path))
+		if len(groups[path]) > 0 {
+			name = groups[path][0].Name.Name
+		}
+		pkg := types.NewPackage(path, name)
+		pkg.MarkComplete()
+		imports.packages[path] = pkg
+	}
+	boundPackages := map[string]*types.Package{}
+	for _, path := range paths {
+		pkg := types.NewPackage(path, imports.packages[path].Name())
+		config := types.Config{Importer: imports, Error: func(error) {}}
+		_ = types.NewChecker(&config, set, pkg, bindings).Files(groups[path])
+		boundPackages[path] = pkg
+	}
+
 	destinations, prefixes := projectPackageComponents(graph)
-	renames := map[*ast.Object]string{}
+	renames := map[types.Object]string{}
 	embeddedNames := map[string]string{}
-	for _, file := range files {
-		prefix := prefixes[file.javaPackage]
+	keyRenames := map[*ast.Ident]string{}
+	for _, path := range paths {
+		prefix := prefixes[path]
 		if prefix == "" {
 			continue
 		}
-		for name, obj := range file.file.Scope.Objects {
+		scope := boundPackages[path].Scope()
+		for _, name := range scope.Names() {
 			if name == "init" || name == "_" {
 				continue
 			}
+			obj := scope.Lookup(name)
 			renames[obj] = projectNamespacedName(prefix, name)
-			if obj.Kind == ast.Typ {
+			if _, ok := obj.(*types.TypeName); ok {
 				embeddedNames[renames[obj]] = name
 			}
 		}
 	}
 	for _, source := range files {
 		pkg, file := source.javaPackage, source.file
+		objects, keys := projectLexicalBindings(file, bindings)
+		for key := range keys {
+			if name := renames[objects[key]]; name != "" {
+				keyRenames[key] = name
+			}
+		}
 		file.Name.Name = sanitizeGoIdent(filepath.Base(destinations[pkg]))
 		// Rewrite qualified project references before removing internal imports.
 		projectRewriteAST(reflect.ValueOf(file), func(node ast.Node) ast.Node {
@@ -94,14 +122,14 @@ func lowerProjectPackages(root, module, runtimeRoot string, packages map[string]
 				return node
 			}
 			ident, ok := selector.X.(*ast.Ident)
-			if !ok || ident.Obj == nil || ident.Obj.Kind != ast.Pkg {
-				return node
-			}
-			spec, ok := ident.Obj.Decl.(*ast.ImportSpec)
 			if !ok {
 				return node
 			}
-			imported, _ := strconv.Unquote(spec.Path.Value)
+			importedPackage, ok := objects[ident].(*types.PkgName)
+			if !ok {
+				return node
+			}
+			imported := importedPackage.Imported().Path()
 			if _, ok := packages[imported]; !ok {
 				return node
 			}
@@ -112,18 +140,9 @@ func lowerProjectPackages(root, module, runtimeRoot string, packages map[string]
 			selector.Sel.Name = name
 			return node
 		})
-		keys := map[*ast.Ident]bool{}
-		ast.Inspect(file, func(node ast.Node) bool {
-			if pair, ok := node.(*ast.KeyValueExpr); ok {
-				if ident, ok := pair.Key.(*ast.Ident); ok {
-					keys[ident] = true
-				}
-			}
-			return true
-		})
 		ast.Inspect(file, func(node ast.Node) bool {
 			if ident, ok := node.(*ast.Ident); ok {
-				if name, ok := renames[ident.Obj]; ok && !keys[ident] {
+				if name := renames[objects[ident]]; name != "" && !keys[ident] {
 					ident.Name = name
 				}
 			}
@@ -158,7 +177,7 @@ func lowerProjectPackages(root, module, runtimeRoot string, packages map[string]
 		}
 		file.Decls, file.Imports = declarations, imports
 	}
-	projectRetargetEmbeddedFields(set, files, module, runtimeRoot, destinations, prefixes, embeddedNames, renames)
+	projectRetargetEmbeddedFields(set, files, module, runtimeRoot, destinations, prefixes, embeddedNames, keyRenames)
 	for _, source := range files {
 		var data bytes.Buffer
 		if err := format.Node(&data, set, source.file); err != nil {

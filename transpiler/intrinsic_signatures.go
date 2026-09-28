@@ -392,6 +392,9 @@ func intrinsicReferenceJavaType(javaType string) string {
 
 func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver string, ctx Ctx, source []byte) (string, bool) {
 	name := invocation.ChildByFieldName("name").Content(source)
+	if receiver == "Comparator" && (name == "thenComparing" || name == "reversed") {
+		return inferExprJavaType(invocation.ChildByFieldName("object"), ctx, source)
+	}
 	if receiver == "ExecutorService" && name == "submit" {
 		result, _ := executorSubmitType(invocation, ctx, source)
 		return "Future<" + result + ">", true
@@ -467,6 +470,8 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 	}
 	if containsString(mapTypeNames, receiver) || receiver == "ConcurrentHashMap" || receiver == "ConcurrentMap" {
 		switch name {
+		case "values":
+			return "Collection<" + element(1) + ">", true
 		case "get", "getOrDefault", "put", "putIfAbsent", "compute", "computeIfAbsent", "computeIfPresent", "merge":
 			return element(1), true
 		case "remove", "replace":

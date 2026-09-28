@@ -31,7 +31,7 @@ func TestDigestIOChannelSharesCursorAndClose(t *testing.T) {
 	}
 	random := NewRandomAccessFile(NewJavaFile(path), "r")
 	channel := random.GetChannel()
-	random.Seek(1)
+	random.SeekPosition(1)
 	buffer := ByteBufferAllocate(3)
 	if got := channel.Read(buffer); got != 3 {
 		t.Fatalf("count=%d", got)
@@ -57,7 +57,8 @@ func TestDigestIOChannelSharesCursorAndClose(t *testing.T) {
 	if channel.IsOpen() {
 		t.Fatal("channel stayed open")
 	}
-	assertDigestIOPanic(t, "IOException", func() { random.Seek(0) })
+	assertDigestIOPanic(t, "ClosedChannelException", func() { channel.Read(ByteBufferAllocate(0)) })
+	assertDigestIOPanic(t, "IOException", func() { random.SeekPosition(0) })
 	random.Close()
 }
 func TestDigestIOBufferedCloseAndOpenOptions(t *testing.T) {

@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"fmt"
 	"go/ast"
 	"go/build"
 	"go/importer"
@@ -15,8 +16,8 @@ import (
 // Renaming an anonymous field's named type also changes its Go field name.
 // Retarget selections by receiver type, never by selector spelling alone: an
 // ordinary field or local with the same name must retain its identity.
-func projectRetargetEmbeddedFields(set *token.FileSet, files []*projectGoFile, module, runtimeRoot string, destinations, prefixes map[string]string, embeddedNames map[string]string, renames map[*ast.Object]string) {
-	if len(embeddedNames) == 0 {
+func projectRetargetEmbeddedFields(set *token.FileSet, files []*projectGoFile, module, runtimeRoot string, destinations, prefixes map[string]string, embeddedNames map[string]string, keyRenames map[*ast.Ident]string) {
+	if len(embeddedNames) == 0 && len(keyRenames) == 0 {
 		return
 	}
 	groups := map[string][]*ast.File{}
@@ -101,8 +102,8 @@ func projectRetargetEmbeddedFields(set *token.FileSet, files []*projectGoFile, m
 				}
 				replacement := ""
 				switch actual := typ.Underlying().(type) {
-				case *types.Map:
-					replacement = renames[key.Obj]
+				case *types.Map, *types.Array, *types.Slice:
+					replacement = keyRenames[key]
 				case *types.Struct:
 					origin := origins[literal]
 					privateName := ""
@@ -143,6 +144,9 @@ type projectTypeAnalysis struct {
 
 func (a *projectTypeAnalysis) Import(path string) (*types.Package, error) {
 	if pkg := a.packages[path]; pkg != nil {
+		if !pkg.Complete() {
+			return nil, fmt.Errorf("unexpected import cycle after package lowering: %s", path)
+		}
 		return pkg, nil
 	}
 	files := a.files[path]

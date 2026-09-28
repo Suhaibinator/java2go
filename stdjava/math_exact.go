@@ -7,7 +7,7 @@ func MathAddExact[T ~int32 | ~int64](left, right T) T {
 	if (left^result)&(right^result) < 0 {
 		message := "integer overflow"
 		one := T(1)
-		if one<<32 != 0 {
+		if int64(one<<31) > 0 {
 			message = "long overflow"
 		}
 		panic(NewArithmeticException(message))

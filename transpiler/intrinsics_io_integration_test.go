@@ -239,7 +239,7 @@ public class FilesProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	for _, want := range []string{
-		"stdjava.FilesWriteString(p, \"text\")",
+		"stdjava.FilesWriteStringExecution(__java2goExecution, p, \"text\")",
 		"stdjava.FilesReadString(p)",
 		"stdjava.FilesReadAllLines(p)",
 		"stdjava.FilesLines(p).Count()",

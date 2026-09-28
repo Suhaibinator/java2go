@@ -476,11 +476,33 @@ func enclosingTargetElementJavaTypes(invocation *sitter.Node, ctx Ctx, source []
 	if invocation == nil {
 		return nil
 	}
+	// Fluent Comparator factories can be receivers of thenComparing/reversed
+	// before the chain reaches the target argument list.
+	for parent := invocation.Parent(); parent != nil && parent.Type() == "method_invocation"; parent = invocation.Parent() {
+		object := parent.ChildByFieldName("object")
+		if object == nil || object.StartByte() != invocation.StartByte() {
+			break
+		}
+		invocation = parent
+	}
 	argumentList := invocation.Parent()
 	if argumentList == nil || argumentList.Type() != "argument_list" {
 		return nil
 	}
 	enclosing := argumentList.Parent()
+	if enclosing != nil && enclosing.Type() == "object_creation_expression" {
+		if typeNode := enclosing.ChildByFieldName("type"); typeNode != nil {
+			base, args := parseJavaTypeString(typeNode.Content(source))
+			if resolveClassScopeByQualifiedName(ctx, base) == nil && (stripJavaQualifier(base) == "TreeMap" || stripJavaQualifier(base) == "TreeSet") {
+				if len(args) == 0 {
+					_, args = parseJavaTypeString(ctx.expectedType)
+				}
+				if len(args) > 0 {
+					return args[:1]
+				}
+			}
+		}
+	}
 	if enclosing == nil || enclosing.Type() != "method_invocation" {
 		return nil
 	}

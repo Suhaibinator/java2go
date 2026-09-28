@@ -20,7 +20,7 @@ func digestIORuntimeTypeExpr(baseName string, ctx Ctx) (ast.Expr, bool) {
 		name = "JavaFile"
 	case "Path":
 		name = "JavaPath"
-	case "FileInputStream", "ByteArrayInputStream", "BufferedInputStream", "RandomAccessFile", "FileChannel":
+	case "FilterInputStream", "FileInputStream", "ByteArrayInputStream", "BufferedInputStream", "RandomAccessFile", "FileChannel":
 		name = base
 	}
 	if name == "" {
@@ -32,7 +32,7 @@ func digestIOAssignable(actual, expected string) bool {
 	actual, expected = stripJavaQualifier(actual), stripJavaQualifier(expected)
 	if expected == "InputStream" {
 		switch actual {
-		case "BufferedInputStream", "FileInputStream", "ByteArrayInputStream":
+		case "FilterInputStream", "BufferedInputStream", "FileInputStream", "ByteArrayInputStream":
 			return true
 		}
 	}
@@ -42,11 +42,34 @@ func digestIOAssignable(actual, expected string) bool {
 // Called after the existing IO registrations so the read dispatcher extends
 // their no-argument overload without replacing any unrelated writer behavior.
 func registerDigestIOIntrinsics() {
+	registerStaticIntrinsic("Files", "writeString", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) < 2 {
+			return nil
+		}
+		return stdjavaCall(ctx, "FilesWriteStringExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
+	})
+	registerStaticIntrinsicResultType("Files", "writeString", "Path")
+
+	registerConstructorIntrinsic("InputStreamReader", func(_ []ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 && len(args) != 2 {
+			return nil
+		}
+		if isSystemStreamExpr(args[0], "in") {
+			if len(args) == 1 {
+				return stdjavaCall(ctx, "NewInputStreamReaderStdin")
+			}
+			return stdjavaCall(ctx, "NewInputStreamReaderStdinExecution", intrinsicExecutionExpr(ctx), args[1])
+		}
+		return stdjavaCall(ctx, "NewInputStreamReaderExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
+	})
+	registerInstanceIntrinsic("Class", "getResourceAsStream", ioMethod("GetResourceAsStream", 1))
+	registerInstanceIntrinsicResultType("Class", "getResourceAsStream", "InputStream")
+
 	registerConstructorIntrinsic("BufferedInputStream", func(_ []ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 1 && len(args) != 2 {
 			return nil
 		}
-		return stdjavaCall(ctx, "NewBufferedInputStream", args...)
+		return stdjavaCall(ctx, "NewBufferedInputStreamExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
 	})
 	registerConstructorIntrinsic("RandomAccessFile", func(_ []ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 2 {
@@ -54,17 +77,17 @@ func registerDigestIOIntrinsics() {
 		}
 		return stdjavaCall(ctx, "NewRandomAccessFile", args...)
 	})
-	for _, name := range []string{"InputStream", "FileInputStream", "ByteArrayInputStream", "BufferedInputStream", "RandomAccessFile"} {
+	for _, name := range []string{"InputStream", "FilterInputStream", "FileInputStream", "ByteArrayInputStream", "BufferedInputStream", "RandomAccessFile"} {
 		registerInstanceIntrinsic(name, "read", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			all := append([]ast.Expr{recv}, args...)
 			switch len(args) {
 			case 0:
-				if name != "InputStream" {
+				if name != "InputStream" && name != "FilterInputStream" {
 					return methodCall(recv, "ReadByteValue")
 				}
-				return stdjavaCall(ctx, "InputStreamReadByte", all...)
+				return stdjavaCall(ctx, "InputStreamReadByteExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, all...)...)
 			case 1, 3:
-				return stdjavaCall(ctx, "InputStreamReadInto", all...)
+				return stdjavaCall(ctx, "InputStreamReadIntoExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, all...)...)
 			}
 			return nil
 		})
@@ -75,10 +98,10 @@ func registerDigestIOIntrinsics() {
 				if len(args) != 0 {
 					return nil
 				}
-				if name != "InputStream" {
+				if name != "InputStream" && name != "FilterInputStream" {
 					return methodCall(recv, "ReadAllBytes")
 				}
-				return stdjavaCall(ctx, "InputStreamReadAllBytes", recv)
+				return stdjavaCall(ctx, "InputStreamReadAllBytesExecution", intrinsicExecutionExpr(ctx), recv)
 			})
 			registerInstanceIntrinsicResultType(name, "readAllBytes", "byte[]")
 		}
@@ -100,7 +123,7 @@ func registerDigestIOIntrinsics() {
 		argc                         int
 	}{
 		{"RandomAccessFile", "getChannel", "GetChannel", "FileChannel", 0},
-		{"RandomAccessFile", "seek", "Seek", "", 1},
+		{"RandomAccessFile", "seek", "SeekPosition", "", 1},
 		{"RandomAccessFile", "getFilePointer", "GetFilePointer", "long", 0},
 		{"RandomAccessFile", "length", "Length", "long", 0},
 		{"FileChannel", "read", "Read", "int", 1},

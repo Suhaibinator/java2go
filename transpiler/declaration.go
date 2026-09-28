@@ -92,6 +92,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
 					continue
 				}
+				if base := stripJavaQualifier(t.Content(source)); base == "FilterInputStream" && resolveClassScopeByQualifiedName(ctx, base) == nil {
+					fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("FilterInputStream", ctx)}})
+					continue
+				}
 				// A class extending java.lang.Thread embeds *stdjava.Thread so it
 				// inherits Start()/Join(); the constructor wires the embedded Thread
 				// to dispatch to this struct's Run() override.
@@ -305,6 +309,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Add the struct for the class (with type parameters if present)
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
 		declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
+		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
 		declarations = append(declarations, generateRawUnboundReceiverEntryDecls(ctx)...)
 		declarations = append(declarations, generateClassSubobjectInstallerDecls(ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
@@ -2266,6 +2271,9 @@ func explicitSuperConstructorAssignment(
 	superType := strings.TrimSpace(ctx.currentClass.Superclass)
 	if superType == "" {
 		return nil
+	}
+	if statement := filterInputSuperConstructor(invocation.parsedArgs, ctx); statement != nil {
+		return statement
 	}
 	base, superArgStrs := parseJavaTypeString(superType)
 	superName := stripJavaQualifier(base)

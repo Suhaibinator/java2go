@@ -163,7 +163,7 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 	}
 	primitive, wrapper := builtinJavaWrapperPrimitive(targetJavaType, ctx)
 	if constructor && !wrapper {
-		return nil, false
+		return nullaryBuiltinConstructorReference(node, class, targetJavaType, result, parameters, ctx, source)
 	}
 	staticGenerator := staticIntrinsics[intrinsicKey{class, method}]
 	instanceGenerator := instanceIntrinsics[intrinsicKey{class, method}]
