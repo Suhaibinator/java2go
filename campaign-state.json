@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "round02-five-applications-passing-gson-active",
+  "status": "usage-limited; exact resume checkpoint preserved",
   "base_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
   "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
   "round": 2,
@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Finish commit/push CLI+27JVMoracles; await actualString benchmark correctness. Private bound/typednil/join repairs remain unpromoted pending concreteThrowable constructor and originalfullworkflow.",
+  "next_action": "No live build or test jobs. Resume from checkpoint17-semantic-pending: finish concrete Throwable runtime/compiler support, rerun the unchanged full cause workflow, then run the full accumulated gates. The new Sol probes still need Go validation. Full Gson remains active. Performance resume commands are preserved separately.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -3390,27 +3390,56 @@
         "scope": "CLI and campaign packages; full application milestone remains6b5f02f"
       },
       "publication": {
-        "status": "committing CLI2files and66 oracle artifacts plusledger",
-        "branch": "origin/codex/adversarial-campaign"
-      }
+        "status": "committed and pushed, liveoriginverified",
+        "branch": "origin/codex/adversarial-campaign",
+        "revision": "0c1dbeacfd499e3ddd61615e9d104ab1d0b9bbd4",
+        "independently_verified_committed_blobs": 69
+      },
+      "durable_pending": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint17-semantic-pending",
+      "concrete_throwable": {
+        "private": "/private/tmp/java2go-throwable-concrete17-p3zejxtc",
+        "red_session": 88705,
+        "status": "Both JVM oracles passed; strict generated-package builds fail on missing NewThrowable. Two runtime files were prepared after the baseline and remain untested. Compiler hooks are unimplemented.",
+        "owner": "astra_runtime runtime; astra_compiler hooks pending coordinatorassignment",
+        "prepared_runtime_patch": "/private/tmp/java2go-throwable-concrete17-p3zejxtc/runtime-prepared.patch",
+        "runtime_tested": false
+      },
+      "performance_string_control": {
+        "private": "/private/tmp/java2go-string-fields-6b5f02f-7mjzbje2",
+        "session": 89304,
+        "status": "Nine matching JVM/generated-Go observations and three race runs; independent model and hashes agree. No timing or allocation measurements.",
+        "timing_resume": {
+          "directory": "/private/tmp/java2go-string-fields-6b5f02f-7mjzbje2/timing-prep",
+          "status": "prepared, unrun; all agents on hold, no live jobs",
+          "command": "python3 /private/tmp/java2go-string-fields-6b5f02f-7mjzbje2/timing-prep/timing.py --released",
+          "pins_sha256": "cf73fe4c1d2a2d6646e99284d3c6d3f0270ed670282a352510c8e676d63484a6"
+        }
+      },
+      "performance_marker": {
+        "private": "/private/tmp/java2go-named-interface-marker-6b5f02f",
+        "session": 34061,
+        "status": "Published-base layout tests passed. Baseline parity build failed because generated module checksums were unavailable in readonly mode; candidate parity and weak/cleanup checks did not run. Missing getDeclaredFields support is a source-review finding awaiting a corrected build.",
+        "resume": "/private/tmp/java2go-named-interface-marker-6b5f02f/RESUME.md"
+      },
+      "performance_durable_checkpoint": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/performance-next"
     }
   },
   "active_resume": {
-    "last_pushed_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
+    "last_pushed_revision": "0c1dbeacfd499e3ddd61615e9d104ab1d0b9bbd4",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "checkpoint16-v8 verified",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Finish commit/push CLI+27JVMoracles; await actualString benchmark correctness. Private bound/typednil/join repairs remain unpromoted pending concreteThrowable constructor and originalfullworkflow.",
+    "next": "No live build or test jobs. Resume from checkpoint17-semantic-pending: finish concrete Throwable runtime/compiler support, rerun the unchanged full cause workflow, then run the full accumulated gates. The new Sol probes still need Go validation. Full Gson remains active. Performance resume commands are preserved separately.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
-    "automatic_goal_controller": "usageLimited still reported; user explicitly resumed manualwork; do not markgoalcomplete",
+    "automatic_goal_controller": "get_goal confirms usageLimited; no active heavy process; no round/goal completion claimed",
     "checkpoint16_review_hold": {
-      "status": "reflection and binder review regressions focused green; full v8 pending",
+      "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "astra_perf_runtime",
-    "heavy_session": "actual generatedString correctness gate launching"
+    "heavy_owner": null,
+    "heavy_session": null
   }
 }
