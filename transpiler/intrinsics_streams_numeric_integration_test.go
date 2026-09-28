@@ -70,7 +70,7 @@ public class ConversionProgram {
 	assertContains(t, out, "stdjava.StreamAsDoubleStream(")
 	// mapToLong pins the closure to int64, so a body of type int32 needs the
 	// widening conversion Java applies implicitly.
-	assertContains(t, out, "func(w string) int64")
+	assertContains(t, out, "stdjava.FunctionCallbackExecution[string, int64](__java2goExecution, stdjava.NewFunctionFuncAdapter[string, int64](func(__java2goExecution *stdjava.Execution, w string) int64")
 	assertContains(t, out, "return int64(stdjava.StringLength(")
 }
 

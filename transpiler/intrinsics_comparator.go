@@ -131,7 +131,7 @@ func registerComparatorIntrinsics() {
 			if !expectArgs(args, 1) {
 				return nil
 			}
-			if isKeyExtractorExpr(args[0]) {
+			if isKeyExtractorExpr(args[0], ctx) {
 				return stdjavaCall(ctx, "ComparatorThenComparingKey", recv, args[0], intrinsicExecutionExpr(ctx))
 			}
 			return methodCall(recv, "ThenComparing", args[0])
@@ -164,9 +164,12 @@ func enclosingTargetTypeArgs(invocation *sitter.Node, ctx Ctx, source []byte) []
 
 // isKeyExtractorExpr reports whether a thenComparing argument is a single-
 // parameter key extractor rather than a two-parameter comparator. A non-lambda
-// argument (a comparator variable or a method reference) is treated as a
-// comparator, which is the commoner form.
-func isKeyExtractorExpr(arg ast.Expr) bool {
+// argument defaults to a comparator. Function callback adapters retain their
+// unary callable contract even though their generated syntax is a call.
+func isKeyExtractorExpr(arg ast.Expr, ctx Ctx) bool {
+	if isFunctionCallbackExpr(arg, ctx) {
+		return true
+	}
 	var functionType *ast.FuncType
 	switch expression := arg.(type) {
 	case *ast.FuncLit:

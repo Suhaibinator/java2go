@@ -316,6 +316,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
 		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
 		declarations = append(declarations, generateCharacterIOBridgeDecls(ctx)...)
+		declarations = append(declarations, generateFunctionSAMBridgeDecls(ctx)...)
 		declarations = append(declarations, generateRawUnboundReceiverEntryDecls(ctx)...)
 		declarations = append(declarations, generateClassSubobjectInstallerDecls(ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
@@ -836,6 +837,9 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) [
 // parameters from the implementing class, applies generated name casing, and
 // qualifies types that live in another generated package.
 func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
+	if isExternalFunctionType(javaType, ctx) {
+		return nil
+	}
 	base, _ := parseJavaTypeString(javaType)
 	// Runtime interfaces are satisfied structurally by the generated methods.
 	// Embedding stdjava.Runnable would add an unnecessary interface field to every
@@ -1196,12 +1200,20 @@ func generateInterfaceDefaultMethodDecls(node *sitter.Node, source []byte, ctx C
 	decls := []ast.Decl{genStructWithTypeParamsInContext(carrierName, fields, scope.TypeParameters, ctx)}
 
 	selfName := "self"
-	constructorValues := []ast.Expr{&ast.Ident{Name: selfName}}
+	constructorValues := []ast.Expr{&ast.KeyValueExpr{
+		Key:   &ast.Ident{Name: scope.Class.Name},
+		Value: &ast.Ident{Name: selfName},
+	}}
 	for _, parentType := range parentDefaultTypes {
 		if constructor := interfaceDefaultCarrierConstructorExpr(parentType, typeParamNames, ctx); constructor != nil {
-			constructorValues = append(constructorValues, &ast.CallExpr{
-				Fun:  constructor,
-				Args: []ast.Expr{&ast.Ident{Name: selfName}},
+			parentBase, _ := parseJavaTypeString(parentType)
+			parentScope := resolveClassScopeByQualifiedName(ctx, parentBase)
+			constructorValues = append(constructorValues, &ast.KeyValueExpr{
+				Key: &ast.Ident{Name: interfaceDefaultCarrierName(parentScope)},
+				Value: &ast.CallExpr{
+					Fun:  constructor,
+					Args: []ast.Expr{&ast.Ident{Name: selfName}},
+				},
 			})
 		}
 	}

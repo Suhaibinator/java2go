@@ -14,6 +14,9 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
 		return scope.IsInterface
 	}
+	if isExternalFunctionType(javaType, ctx) {
+		return true
+	}
 	if isBuiltinReflectType(javaType, ctx) {
 		return true
 	}

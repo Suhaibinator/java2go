@@ -144,7 +144,7 @@ public class OptProgram {
 	// of(10) stores a boxed Java Integer inferred from Optional<Integer>.
 	assertContains(t, out, "stdjava.OptionalOf[*stdjava.Integer](stdjava.BoxInteger(int32(10)))")
 	// map's lambda is re-typed from the element type and the chained .get() resolves.
-	assertContains(t, out, "func(n *stdjava.Integer) *stdjava.Integer")
+	assertContains(t, out, "stdjava.FunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.Integer, *stdjava.Integer](func(__java2goExecution *stdjava.Execution, n *stdjava.Integer) *stdjava.Integer")
 	assertContains(t, out, "return stdjava.BoxInteger(int32(stdjava.UnboxInteger(n) * 2))")
 	assertContains(t, out, ").Get()")
 	assertContains(t, out, "stdjava.UnboxInteger(stdjava.OptionalMap")

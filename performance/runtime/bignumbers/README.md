@@ -82,3 +82,6 @@ Use fixed seeds and identical Java inputs: small cached/noncached integers, 64-b
 Collect allocations and allocated bytes separately from retained heap. A faster conversion that retains cached text or global objects is a different tradeoff; none is proposed here. Validate concurrent reads and immutable receiver state, including distinct constructor objects and the existing BigInteger.valueOf cache behavior.
 
 Only after correctness and allocation evidence pass should the parent schedule uncontended timing: matching inputs, processor counts and comparable heap budgets, fresh separate processes, repeated trials with order variation, explicit JDK 21 path, and a warmed steady-state JVM phase reported separately from startup. Compare whole generated workloads as well as isolated operations. Until then, every expected benefit above remains a hypothesis and no JVM speedup is claimed.
+
+
+The checkpoint15 equal-scale comparison optimization has [measured allocation evidence](equal_scale_verified/README.md), exact probe inputs and focused reproduction instructions. It preserves the C-locale failure and does not claim a speedup over Java. The older `equal_scale/` preparation is excluded from this milestone.

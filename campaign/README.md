@@ -129,3 +129,10 @@ and [the erased factory design](design/nested-generic-factory.md). Passing these
 focused tests does not imply that Gson or arbitrary reflection is supported.
 The frozen Gson application remains a mandatory failing campaign gate until its
 complete translated implementation builds and matches all JVM observations.
+
+
+`Function<T,R>` also uses an execution-aware object interface. Regenerate prior
+Go output before linking the checkpoint15 runtime. Focused JVM tests cover
+nullable values, receiver/argument evaluation order, named/inherited SAM
+implementations, object identity and invoking-thread callbacks. These cases do
+not establish support for every raw/wildcard conversion or Function default API.

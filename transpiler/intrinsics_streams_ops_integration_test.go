@@ -86,7 +86,7 @@ public class FlatMapProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.StreamFlatMap(")
-	assertContains(t, out, "func(w string) stdjava.Stream[string]")
+	assertContains(t, out, "stdjava.FunctionCallbackExecution[string, stdjava.Stream[string]](__java2goExecution, stdjava.NewFunctionFuncAdapter[string, stdjava.Stream[string]](func(__java2goExecution *stdjava.Execution, w string) stdjava.Stream[string]")
 }
 
 // parallelStream and parallel() run sequentially, and must still chain.
@@ -122,8 +122,8 @@ public class OptionalOpsProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, ".Filter(func(s string) bool")
-	assertContains(t, out, "stdjava.OptionalFlatMap(name, func(s string) stdjava.Optional[string]")
+	assertContains(t, out, ".Filter(stdjava.FunctionCallbackExecution[string, bool](__java2goExecution, stdjava.NewFunctionFuncAdapter[string, bool](func(__java2goExecution *stdjava.Execution, s string) bool")
+	assertContains(t, out, "stdjava.OptionalFlatMap(name, stdjava.FunctionCallbackExecution[string, stdjava.Optional[string]](__java2goExecution, stdjava.NewFunctionFuncAdapter[string, stdjava.Optional[string]](func(__java2goExecution *stdjava.Execution, s string) stdjava.Optional[string]")
 	// Suppliers preserve result typing and receive the invocation execution.
 	assertContains(t, out, ".OrElseGet(stdjava.NewSupplierFuncAdapter[string](func(__java2goExecution *stdjava.Execution) string")
 	assertContains(t, out, ".OrElseThrow(nil, __java2goExecution)")

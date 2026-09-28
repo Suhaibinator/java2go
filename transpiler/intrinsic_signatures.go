@@ -219,7 +219,7 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 		case "replace":
 			return set(element(0), element(1), element(1))
 		case "computeIfAbsent":
-			return set(element(0), "Function<"+element(0)+","+element(1)+">")
+			return set(element(0), "java.util.function.Function<"+element(0)+","+element(1)+">")
 		case "compute", "computeIfPresent":
 			return set(element(0))
 		case "merge":
@@ -358,7 +358,7 @@ func intrinsicLambdaTargetJavaType(types lambdaArgumentTypes) string {
 	case 0:
 		return "Supplier<" + result + ">"
 	case 1:
-		return "Function<" + params[0] + "," + result + ">"
+		return "java.util.function.Function<" + params[0] + "," + result + ">"
 	case 2:
 		return "BiFunction<" + strings.Join(params, ",") + "," + result + ">"
 	}
@@ -542,6 +542,9 @@ var intrinsicFunctionalMethodNames = map[string]string{
 func init() {
 	for name, method := range intrinsicFunctionalMethodNames {
 		registerInstanceIntrinsic(name, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if name == "Function" {
+				return stdjavaCall(ctx, "CallFunctionExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx), recv}, args...)...)
+			}
 			if name == "Supplier" {
 				return stdjavaCall(ctx, "GetSupplierExecution", intrinsicExecutionExpr(ctx), recv)
 			}
@@ -680,6 +683,32 @@ func parseTypedIntrinsicArguments(object *sitter.Node, method string, source []b
 				valueType, _ = inferExprJavaType(arg, ctx, source)
 			}
 			parsed = snapshotJavaExpressionValueForType(parsed, valueType, ctx)
+		}
+		callbackType := argCtx.expectedType
+		_, callback := perArgument[index]
+		receiver, _ := intrinsicReceiverTypeName(object, ctx, source)
+		if method == "computeIfAbsent" && index == 1 && (containsString(mapTypeNames, receiver) || receiver == "ConcurrentHashMap" || receiver == "ConcurrentMap") {
+			callback = true
+		}
+		if !callback {
+			if _, shaped := lookupLambdaShape(receiver, method); shaped {
+				actual, _ := inferExprJavaType(arg, ctx, source)
+				if isExternalFunctionType(actual, ctx) {
+					callback, callbackType = true, actual
+				}
+			}
+			if class, known := intrinsicStaticClassName(object, ctx, source); known {
+				if shape, shaped := staticLambdaShapes[intrinsicKey{class, method}]; shaped {
+					for _, position := range shape.lambdaArgs {
+						if position == index {
+							callback = true
+						}
+					}
+				}
+			}
+		}
+		if callback && isExternalFunctionType(callbackType, ctx) {
+			parsed = functionCallbackExpr(parsed, callbackType, ctx)
 		}
 		args = append(args, parsed)
 	}

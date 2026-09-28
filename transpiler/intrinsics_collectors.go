@@ -305,7 +305,7 @@ func parseCollectorLambda(collector *sitter.Node, argIndex int, paramJavaTypes [
 	if resultJavaType != "" {
 		resultType = javaTypeStringToGoTypeExpr(resultJavaType, typeParams, ctx)
 	}
-	return retypeLambdaWithTypes(parsed, paramTypes, resultType)
+	return functionCallbackExpr(retypeLambdaWithTypes(parsed, paramTypes, resultType), argCtx.expectedType, ctx)
 }
 
 // collectorLambdaResultJavaType infers what a collector's lambda argument

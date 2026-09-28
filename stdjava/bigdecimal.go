@@ -27,6 +27,9 @@ func (value *BigDecimal) Equals(other any) bool {
 func (value *BigDecimal) CompareTo(other *BigDecimal) int32 {
 	ReferenceRequireNonNull(value)
 	ReferenceRequireNonNull(other)
+	if value.scale == other.scale {
+		return int32(value.coefficient.Cmp(&other.coefficient))
+	}
 	leftSign, rightSign := value.coefficient.Sign(), other.coefficient.Sign()
 	if leftSign < rightSign {
 		return -1

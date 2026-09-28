@@ -97,6 +97,7 @@ func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typ
 // (T extends Ranked -> T Ranked) from a class upper bound (T extends Base ->
 // T *Base), and to qualify bounds declared in another generated package.
 func genStructWithTypeParamsInContext(structName string, structFields *ast.FieldList, typeParams []symbol.TypeParam, ctx Ctx) ast.Decl {
+	structFields = fieldsWithAllocationIdentity(structName, structFields, typeParams, ctx)
 	if specs := canonicalGenericTypeSpecs(structName, structFields, typeParams, ctx); specs != nil {
 		return &ast.GenDecl{Tok: token.TYPE, Specs: specs}
 	}

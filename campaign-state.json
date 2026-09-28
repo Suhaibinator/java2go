@@ -63,13 +63,13 @@
         "stage": "go-build-all",
         "detail": "exit=1 error=\n\n../../../../stdjava/common.go:6:2: missing go.sum entry for module providing package golang.org/x/exp/constraints (imported by github.com/NickyBoy89/java2go/stdjava); to add:\n\tgo get github.com/NickyBoy89/java2go/stdjava@v0.0.0\n"
       },
-      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121418Z-2833906386",
+      "latest_artifact": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132639Z-1762234057",
       "verification": {
-        "checkpoint": "checkpoint14",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121418Z-2833906386/report.json",
-        "report_sha256": "c626634b882c9ac4ae05803cb4fd54ef0924232db27e12ef895d5a3d350ed345",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132639Z-1762234057/report.json",
+        "report_sha256": "08b838e3b3ab9a84549f1f7fcab107450329a1f7bc0b3d04a68dd23b1b873fad",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -79,16 +79,15 @@
       },
       "coordinator_verification": {
         "name": "round01-business",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121418Z-2833906386/report.json",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132639Z-1762234057/report.json",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations_manifest_sha256": "091f26f891a08b7d1f0cb046a4ea29c6c66eb82da4ca90b347b32cad8ef55aad",
-        "checkpoint": "checkpoint14",
-        "report_sha256": "c626634b882c9ac4ae05803cb4fd54ef0924232db27e12ef895d5a3d350ed345",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report_sha256": "08b838e3b3ab9a84549f1f7fcab107450329a1f7bc0b3d04a68dd23b1b873fad",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -96,7 +95,7 @@
         "additional_stress_runs": 20,
         "stable_implementation": true
       },
-      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
+      "acceptance": "checkpoint15 independently verified; round02 acceptance awaits full Gson",
       "historical_verification_records": [
         {
           "field": "verification",
@@ -116,6 +115,22 @@
             "report_sha256": "6a2e9b5c9178e7aa58d14320da620797a1da7ed32cda2fb7f39e592a64d1b758",
             "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
             "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint14",
+            "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121418Z-2833906386/report.json",
+            "report_sha256": "c626634b882c9ac4ae05803cb4fd54ef0924232db27e12ef895d5a3d350ed345",
+            "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+            "revision": "83ed974601091a75add0430df7bf347f2429614f",
             "passed": true,
             "race": true,
             "jvm_oracle_runs": 9,
@@ -143,13 +158,13 @@
         "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121507Z-3841301862",
+      "latest_artifact": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132729Z-840043572",
       "verification": {
-        "checkpoint": "checkpoint14",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121507Z-3841301862/report.json",
-        "report_sha256": "03cb9e3d834114eda8f6b6db0b4bab684c982e58e41f10001f90a3c8b041a290",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132729Z-840043572/report.json",
+        "report_sha256": "2d28e752197f7188d3062a306f20bff889939d6014317c107e1a6f2aa31b4347",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -159,16 +174,15 @@
       },
       "coordinator_verification": {
         "name": "round01-data",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121507Z-3841301862/report.json",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132729Z-840043572/report.json",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations_manifest_sha256": "5093cc49fe1e0c4b460d51d284f2aed9d56fa330caaa80e82cfc52aa861df140",
-        "checkpoint": "checkpoint14",
-        "report_sha256": "03cb9e3d834114eda8f6b6db0b4bab684c982e58e41f10001f90a3c8b041a290",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report_sha256": "2d28e752197f7188d3062a306f20bff889939d6014317c107e1a6f2aa31b4347",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -176,7 +190,7 @@
         "additional_stress_runs": 20,
         "stable_implementation": true
       },
-      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
+      "acceptance": "checkpoint15 independently verified; round02 acceptance awaits full Gson",
       "historical_verification_records": [
         {
           "field": "verification",
@@ -196,6 +210,22 @@
             "report_sha256": "64b5b96acebe6b335065e615c5bec1367e71260f243b610a5219e4327cbad01f",
             "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
             "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint14",
+            "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121507Z-3841301862/report.json",
+            "report_sha256": "03cb9e3d834114eda8f6b6db0b4bab684c982e58e41f10001f90a3c8b041a290",
+            "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+            "revision": "83ed974601091a75add0430df7bf347f2429614f",
             "passed": true,
             "race": true,
             "jvm_oracle_runs": 9,
@@ -223,19 +253,18 @@
         "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121545Z-611322176",
+      "latest_artifact": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132806Z-2963649769",
       "coordinator_verification": {
         "name": "round01-concurrent",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121545Z-611322176/report.json",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132806Z-2963649769/report.json",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations_manifest_sha256": "77b9eb3e5ad99e62a31a6ae4b68a61642abeef109f822f4e764df3793f255934",
-        "checkpoint": "checkpoint14",
-        "report_sha256": "668ddca875a9ee2b9d35fe370beb77f3610eb4330d55c8bab10e12010e0dd709",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report_sha256": "da804700903b0868a1d816c24d94d3c18c2832bc9c4db611c56701ea2ffe49e7",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -243,13 +272,13 @@
         "additional_stress_runs": 20,
         "stable_implementation": true
       },
-      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
+      "acceptance": "checkpoint15 independently verified; round02 acceptance awaits full Gson",
       "verification": {
-        "checkpoint": "checkpoint14",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121545Z-611322176/report.json",
-        "report_sha256": "668ddca875a9ee2b9d35fe370beb77f3610eb4330d55c8bab10e12010e0dd709",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132806Z-2963649769/report.json",
+        "report_sha256": "da804700903b0868a1d816c24d94d3c18c2832bc9c4db611c56701ea2ffe49e7",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -273,6 +302,22 @@
             "additional_stress_runs": 20,
             "stable_implementation": true
           }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint14",
+            "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121545Z-611322176/report.json",
+            "report_sha256": "668ddca875a9ee2b9d35fe370beb77f3610eb4330d55c8bab10e12010e0dd709",
+            "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+            "revision": "83ed974601091a75add0430df7bf347f2429614f",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
         }
       ]
     },
@@ -280,8 +325,8 @@
       "id": "round02/business",
       "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_business",
-      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
-      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121619Z-1981185149",
+      "acceptance": "checkpoint15 independently verified; round02 acceptance awaits full Gson",
+      "latest_artifact": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132841Z-2194706079",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -299,16 +344,15 @@
       },
       "coordinator_verification": {
         "name": "round02-business",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121619Z-1981185149/report.json",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132841Z-2194706079/report.json",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations_manifest_sha256": "07496a4dfc10a377d874d6aeb71ae85942129b69a9876d710536ba13f7366408",
-        "checkpoint": "checkpoint14",
-        "report_sha256": "219a5029f684aa44bdd5f20b9f21a449b5ee3141570d571dc823761c9e8d79cb",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report_sha256": "a525cc76192224bc0b026785e6f111fa550938c6a07f85955aa94f5d59969ec9",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -318,11 +362,11 @@
       },
       "first_artifact": ".campaign/runs/20260928T051409Z-56114146",
       "verification": {
-        "checkpoint": "checkpoint14",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121619Z-1981185149/report.json",
-        "report_sha256": "219a5029f684aa44bdd5f20b9f21a449b5ee3141570d571dc823761c9e8d79cb",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132841Z-2194706079/report.json",
+        "report_sha256": "a525cc76192224bc0b026785e6f111fa550938c6a07f85955aa94f5d59969ec9",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -346,6 +390,22 @@
             "additional_stress_runs": 20,
             "stable_implementation": true
           }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint14",
+            "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121619Z-1981185149/report.json",
+            "report_sha256": "219a5029f684aa44bdd5f20b9f21a449b5ee3141570d571dc823761c9e8d79cb",
+            "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+            "revision": "83ed974601091a75add0430df7bf347f2429614f",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
         }
       ]
     },
@@ -354,7 +414,7 @@
       "status": "strict-transpilation-passed-go-build-blocked",
       "owner": "sol_data",
       "acceptance": "active failure; nine stable JVM oracles, zero Go behavioral observations",
-      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121733Z-3954537633",
+      "latest_artifact": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132954Z-3676883061",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -368,12 +428,14 @@
       "latest_blockers": [
         "AbstractMap",
         "AbstractSet",
+        "AbstractSet",
         "ConcurrentMap",
+        "ConcurrentMap",
+        "T",
         "DateFormat",
-        "Duration",
         "Enum",
-        "Instant",
-        "T"
+        "Duration",
+        "Instant"
       ],
       "coordinator_verification": {
         "checkpoint": "checkpoint14",
@@ -449,14 +511,36 @@
         "stable_implementation": true
       },
       "latest_failure_checkpoint": "checkpoint14",
-      "strict_transpile_seconds": 109.875
+      "strict_transpile_seconds": 109.875,
+      "latest_checkpoint_audit": {
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132954Z-3676883061/report.json",
+        "report_sha256": "c4afa4ee0bd66ebe100b81d969d182b61d9e4c04676e283e2aa5d5cd10431432",
+        "transpile_ms": 119340,
+        "first_failure": "go-build-all",
+        "same_reported_missing_symbols": [
+          "AbstractMap",
+          "AbstractSet",
+          "AbstractSet",
+          "ConcurrentMap",
+          "ConcurrentMap",
+          "T",
+          "DateFormat",
+          "Enum",
+          "Duration",
+          "Instant"
+        ],
+        "jvm_oracle_runs": 9,
+        "accepted_go_runs": 0,
+        "unchanged_frozen_inputs": true,
+        "diagnostic_limit": "first compiler error batch, not exhaustive"
+      }
     },
     {
       "id": "round02/concurrent",
       "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_concurrent",
-      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
-      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121656Z-4223560271",
+      "acceptance": "checkpoint15 independently verified; round02 acceptance awaits full Gson",
+      "latest_artifact": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132918Z-3817102717",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -469,11 +553,11 @@
       },
       "latest_blockers": [],
       "verification": {
-        "checkpoint": "checkpoint14",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121656Z-4223560271/report.json",
-        "report_sha256": "989b6a6e8a29bd98feb90cb7e9dee64ae3b372f9b9ce5ec18155814223e80aad",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132918Z-3817102717/report.json",
+        "report_sha256": "f180a526a0bb8b79067bcb27b8ff89a051ce44fca0aff614f022b567ddb92d41",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -483,16 +567,15 @@
       },
       "coordinator_verification": {
         "name": "round02-concurrent",
-        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121656Z-4223560271/report.json",
-        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132918Z-3817102717/report.json",
+        "implementation_sha256": "70a27312f42d46f5f3d24915c3e29f2d693884ef73b4e41d37285a6ec872f7c3",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations_manifest_sha256": "3a9b8d624459e9243a7c7788afe273055001eff50bd848ae95d6d516acde6820",
-        "checkpoint": "checkpoint14",
-        "report_sha256": "989b6a6e8a29bd98feb90cb7e9dee64ae3b372f9b9ce5ec18155814223e80aad",
-        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "checkpoint": "checkpoint15",
+        "report_sha256": "f180a526a0bb8b79067bcb27b8ff89a051ce44fca0aff614f022b567ddb92d41",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
         "passed": true,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -527,11 +610,27 @@
             "additional_stress_runs": 20,
             "stable_implementation": true
           }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint14",
+            "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121656Z-4223560271/report.json",
+            "report_sha256": "989b6a6e8a29bd98feb90cb7e9dee64ae3b372f9b9ce5ec18155814223e80aad",
+            "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+            "revision": "83ed974601091a75add0430df7bf347f2429614f",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
         }
       ]
     }
   ],
-  "next_action": "Poll LIVE root89685 full12runner; build/lintpassed unitrunning. Root23720 combinedracegreen andinherited-v2+AssertionError patchesintegrated, sharedGo matches1427-file immutable12. Onterminal inspectallfailures; ifhistorical5apps+gatesgreen independentlyverify observations/fuzz8skipparity andfreshGson thencommitANDpushmilestone, confirmorigin. KeepfullGsonactive. ConcurrentMapcandidateprivateexistingruntimegreen only, functionalnullfocusedtests/designpendingnoheavy. Lastpushed83ed974.",
+  "next_action": "Publish verified checkpoint15 and confirm live origin. Poll build81136 source-shadow sequence to terminal; then runtime String operation baseline/green queue. Compiler inherited getMessage two tests green, source-varargs interaction preparation pending. Full Gson unchanged and active.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -616,7 +715,18 @@
     "String.hashCode typed calls and String::hashCode reuse existing Object UTF16 value hashing; JVM red/green covers supplementary values, null, erased views and single evaluation. Isolated snapshot regression passes; full live gate pending.",
     "Receiver naming follow-up retains existing field collision allocation (map0) and applies Go keyword escaping only to class definitions; new keyword/Unicode naming and existing affine-field regression both pass.",
     "Signed integral unary literal chains match Java fixed-width constants, including -9223372036854775808L and nested minimum negation; focused new/existing JVM/race literal tests pass.",
-    "StringBuilder capacity overload chooses from Java static argument types and performs boxing conversions once; negative-capacity messages, null unboxing, supplementary text and existing String constructors pass focused JVM/race tests. Full gate pending."
+    "StringBuilder capacity overload chooses from Java static argument types and performs boxing conversions once; negative-capacity messages, null unboxing, supplementary text and existing String constructors pass focused JVM/race tests. Full gate pending.",
+    {
+      "checkpoint": "checkpoint15",
+      "contracts": [
+        "Function object identity, null checks, argument staging and caller Execution",
+        "named and inherited Function SAM bridges, canonical source guards and callback boundaries",
+        "nonzero source-object identity storage including anonymous/local/default carriers",
+        "enclosing static return inference and Comparator Function callbacks",
+        "BigDecimal equal-scale coefficient comparison removes measured allocations"
+      ],
+      "limits": "No full Gson acceptance; raw/wildcard Function conversions and compose/andThen/identity APIs remain unverified."
+    }
   ],
   "verification_invalidation": "Any implementation change requires affected gates to rerun; concurrent acceptance is evidence at its recorded content digest, not current-round promotion.",
   "performance_findings": {
@@ -643,49 +753,99 @@
     "branch": "codex/adversarial-campaign",
     "remote": "origin",
     "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints.",
-    "last_pushed_revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+    "last_pushed_revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
     "last_pushed_branch": "origin/codex/adversarial-campaign"
   },
   "regression_status": {
     "unit": {
+      "checkpoint": "checkpoint15",
       "status": "passed",
-      "exit_code": 0,
-      "log": ".campaign/checkpoint04-unit-reverified.log",
-      "prior_attempt": {
-        "log": ".campaign/checkpoint04-final-unit.log",
-        "failures": "Two stale generated-cast text assertions; updated to retain runtime checks and add JVM null/identity/rejection parity. No production changes."
-      }
+      "pass_records": 1705,
+      "skip_records": 0,
+      "additional_failures_or_skips": 0,
+      "log": "/private/tmp/java2go-checkpoint15-v3-unit.log"
     },
     "e2e_other": {
+      "checkpoint": "checkpoint15",
       "status": "passed",
-      "exit_code": 0,
-      "log": ".campaign/checkpoint04-final-e2e-other.log"
+      "pass_records": 73,
+      "skip_records": 0,
+      "additional_failures_or_skips": 0,
+      "log": "/private/tmp/java2go-checkpoint15-e2e-other.log"
     },
     "e2e_strict_parity": {
+      "checkpoint": "checkpoint15",
       "status": "passed",
-      "exit_code": 0,
-      "log": ".campaign/checkpoint04-final-e2e-parity.log"
+      "pass_records": 55,
+      "skip_records": 0,
+      "additional_failures_or_skips": 0,
+      "log": "/private/tmp/java2go-checkpoint15-parity.log"
     },
     "fuzz": {
+      "checkpoint": "checkpoint15",
       "status": "passed",
-      "exit_code": 0,
-      "log": ".campaign/checkpoint04-final-fuzz.log"
+      "pass_records": 36,
+      "skip_records": 8,
+      "additional_failures_or_skips": 0,
+      "log": "/private/tmp/java2go-checkpoint15-fuzz.log"
     },
     "lint": {
+      "checkpoint": "checkpoint15",
       "status": "passed",
-      "exit_code": 0,
       "version": "2.14.0",
       "issues": 0,
-      "verified_by": "astra_lint after strengthened cast tests; exact 2.14.0 zero findings"
+      "log": "/private/tmp/java2go-checkpoint15-v3-lint.log"
     },
     "campaign": {
+      "checkpoint": "checkpoint15",
       "status": "failed-only-active-gson-challenge",
-      "exit_code": 1,
-      "log": ".campaign/checkpoint04-final-campaign.log",
       "passing_applications": 5,
       "oracle_pairs": 45,
       "additional_stress_runs": 100,
-      "race_enabled": true
+      "race_enabled": true,
+      "independent_audit": "/private/tmp/java2go-checkpoint15-independent-acceptance.json"
+    },
+    "historical_records_before_checkpoint15": {
+      "unit": {
+        "status": "passed",
+        "exit_code": 0,
+        "log": ".campaign/checkpoint04-unit-reverified.log",
+        "prior_attempt": {
+          "log": ".campaign/checkpoint04-final-unit.log",
+          "failures": "Two stale generated-cast text assertions; updated to retain runtime checks and add JVM null/identity/rejection parity. No production changes."
+        }
+      },
+      "e2e_other": {
+        "status": "passed",
+        "exit_code": 0,
+        "log": ".campaign/checkpoint04-final-e2e-other.log"
+      },
+      "e2e_strict_parity": {
+        "status": "passed",
+        "exit_code": 0,
+        "log": ".campaign/checkpoint04-final-e2e-parity.log"
+      },
+      "fuzz": {
+        "status": "passed",
+        "exit_code": 0,
+        "log": ".campaign/checkpoint04-final-fuzz.log"
+      },
+      "lint": {
+        "status": "passed",
+        "exit_code": 0,
+        "version": "2.14.0",
+        "issues": 0,
+        "verified_by": "astra_lint after strengthened cast tests; exact 2.14.0 zero findings"
+      },
+      "campaign": {
+        "status": "failed-only-active-gson-challenge",
+        "exit_code": 1,
+        "log": ".campaign/checkpoint04-final-campaign.log",
+        "passing_applications": 5,
+        "oracle_pairs": 45,
+        "additional_stress_runs": 100,
+        "race_enabled": true
+      }
     }
   },
   "lint_repair": {
@@ -1458,7 +1618,7 @@
     },
     "collection_design": "campaign/design/shared-collection-storage.md",
     "previous_complete_checkpoint": "8cb6cd529c124802d9d004ef43d41dffe16f1085",
-    "last_complete_checkpoint_id": "checkpoint10",
+    "last_complete_checkpoint_id": "checkpoint15",
     "checkpoint09": {
       "snapshot": "/private/tmp/java2go-checkpoint09-76fk92_f",
       "manifest_sha256": "a4be79313334c5d5cfc7153e98d03bc2e087b9ead77a8ef6b440ff3811be2111",
@@ -2398,10 +2558,10 @@
         "path": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq",
         "status": "prepared only; no execution or speedup claim; not included in verified implementation"
       },
-      "milestone": "verified historical regression checkpoint; publishing commit and origin branch; Gson remains active",
+      "milestone": "committed and pushed; verified historical regressions; round02 Gson still active",
       "heavy_slot": {
         "owner": null,
-        "status": "released after private Function neighboring gate14955 terminal"
+        "status": "checkpoint14 gates terminal; later private repairs are tracked separately"
       },
       "ledger_reconciliation": "/private/tmp/java2go-ledger-verification-reconciliation14.json",
       "deferred_checks": "/private/tmp/java2go-checkpoint14-deferred-checks.json",
@@ -2463,7 +2623,255 @@
           "compute": "Function representation missing from this private candidate"
         },
         "integrated": false
+      },
+      "publication": {
+        "commit": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
+        "branch": "codex/adversarial-campaign",
+        "remote": "origin",
+        "push_exit": 0,
+        "ls_remote_verified": true,
+        "source_audit": "/private/tmp/java2go-checkpoint14-commit-source-audit.json",
+        "source_build_lock_files_matching_snapshot": 580
       }
+    },
+    "after_checkpoint14": {
+      "function": {
+        "owner": "astra_compiler",
+        "private": "/private/tmp/java2go-functional-null14-scratch",
+        "frozen7_first_green": "/private/tmp/java2go-functional-null14-first-green.log",
+        "neighbors_v2": "/private/tmp/java2go-functional-null14-neighbors-v2.log",
+        "status": "v3 repairs Comparator key-extractor ABI recognition; two real and six exact-shape regressions green; Java/oracles unchanged; independent fullunit rerun live",
+        "standalone_red": "/private/tmp/java2go-enclosing-static14-red.log",
+        "standalone_red_session": 66885,
+        "standalone_red_exit": 1,
+        "source_edits": "private only; shared checkpoint14 unchanged",
+        "neighbors_v3": "/private/tmp/java2go-functional-null14-neighbors-v3.log",
+        "neighbors_v3_session": 33621,
+        "neighbors_v3_exit": 0,
+        "review_artifact": "/private/tmp/java2go-functional-null14-neighbor-green",
+        "independent_clean_base": "/private/tmp/java2go-function-independent14-pyl81pbl",
+        "exact_neighbor_session": 90170,
+        "exact_neighbor_exit": 0,
+        "exact_neighbor_run_records": 19,
+        "allocation_red_session": 83987,
+        "allocation_red_log": "/private/tmp/java2go-functional-null14-allocation-strict-red-v2.log",
+        "allocation_red_exit": 1,
+        "strict_helper": "/private/tmp/java2go-function-independent14-pyl81pbl/transpiler/campaign_strict_project_oracle_test.go",
+        "input_preservation_audit": "/private/tmp/java2go-function-independent14-input-audit.json",
+        "candidate": "/private/tmp/java2go-functional-null14-marker-candidate-v3",
+        "candidate_patch_sha256": "329d7c9b0dbed655ee19afe399240bd825c86f14adaa51e9146774bf8e9fa2ae",
+        "carrier_green_session": 13685,
+        "carrier_green_exit": 0,
+        "carrier_green_log": "/private/tmp/java2go-functional-null14-carrier-green.log",
+        "regression_green_session": 31233,
+        "regression_green_exit": 0,
+        "regression_green_log": "/private/tmp/java2go-functional-null14-comparator-green.log"
+      },
+      "concurrent_map": {
+        "owner": "astra_runtime",
+        "private": "/private/tmp/java2go-concurrentmap14-72xboww7",
+        "status": "four valid JVM probes still fail; String identity, Throwable class names, wildcard comparison, Function prerequisites; no acceptance"
+      },
+      "string_reference": {
+        "owner": "astra_runtime with sol_concurrent oracle",
+        "source": "/private/tmp/java2go-string-reference-prereq",
+        "status": "private new String core seven focused tests pass with race; all preexisting runtime/compiler files unchanged; old generated ABI still active and frozen integration remains blocked",
+        "oracle": "/private/tmp/java2go-string-reference-prereq/oracle.json",
+        "source_sha256": "493596f5e7ee478196156f1d21d0b7e79bf1b454bbaa4a5c1d4258b2a9e818fd",
+        "private": "/private/tmp/java2go-string-core-tdd-w0rf7ubj",
+        "integration_red_session": 47303,
+        "integration_red_exit": 1,
+        "integration_red_log": "/private/tmp/java2go-string-core-tdd-w0rf7ubj/string-integration-baseline-red.log",
+        "core_red_log": "/private/tmp/java2go-string-core-tdd-w0rf7ubj/string-core-baseline-red.log",
+        "design": "/private/tmp/java2go-string-abi-design-7vl_49ke/string-reference-abi.md",
+        "core_green_session": 56612,
+        "core_green_exit": 0,
+        "core_green_log": "/private/tmp/java2go-string-core-tdd-w0rf7ubj/string-core-first-green.log",
+        "next_sol_probe": "/private/tmp/java2go-string-abi-prereq",
+        "next_sol_status": "nine stable JVM observations; unchanged POM rejected at strict transpilation; build metadata prerequisite assigned",
+        "next_sol_oracle": "/private/tmp/java2go-string-abi-prereq-jvm-oracle.json",
+        "next_sol_source_hash": "df50eca2adc740ba442831b82e842daecf165c136e53dd05181e6ccf608eac7c",
+        "next_sol_red_session": 53390,
+        "next_sol_red_exit": 1,
+        "operations_red_session": 31400,
+        "operations_red_exit": 1,
+        "operations_status": "three valid JVM-first operation oracles fail missing Go APIs; private implementation authorized"
+      },
+      "throwable_metadata": {
+        "owner": "astra_build",
+        "status": "builtin canonical metadata candidate passes strict/race JVM parity; original supplemental source fixtures retained, source inherited getMessage and static method/type collision still prerequisites",
+        "private": "/private/tmp/java2go-throwable-metadata14-fwjc8h_9/repo",
+        "strict_red_session": 62331,
+        "strict_red_exit": 1,
+        "strict_red_log": "/private/tmp/java2go-throwable-metadata14-fwjc8h_9/strict-red.log",
+        "candidate": "/private/tmp/java2go-throwable-metadata14-fwjc8h_9/candidate",
+        "builtin_green_session": 96488,
+        "builtin_green_exit": 0,
+        "builtin_green_log": "/private/tmp/java2go-throwable-metadata14-fwjc8h_9/builtin-candidate-green.log",
+        "entry_collision_red_session": 35255,
+        "entry_collision_red_log": "/private/tmp/java2go-throwable-metadata14-fwjc8h_9/entry-collision-red.log",
+        "entry_collision_status": "two collision cases plus original unnamed Throwable case pass combined and isolated strict/race; harness diagnostic/global cleanup refined after green and requires revalidation; named source case still pending inherited getMessage",
+        "inherited_message_private": "/private/tmp/java2go-implicit-throwable14-2n6vlt7e/repo",
+        "inherited_message_status": "two strict JVM/race comparisons pass private candidate14656; original failed31120 preserved; source varargs interaction test preparation pending",
+        "entry_green_sessions": [
+          95417,
+          38474
+        ],
+        "entry_green_log": "/private/tmp/java2go-throwable-metadata14-fwjc8h_9/entry-candidate-isolated-query.log",
+        "unnamed_green_log": "/private/tmp/java2go-throwable-metadata14-fwjc8h_9/unnamed-alone-green.log",
+        "inherited_message_red_session": 48261,
+        "inherited_message_red_log": "/private/tmp/java2go-implicit-throwable14-red-v2.log",
+        "additional_source_shadow": "Source Child hierarchy overwritten by legacy RegisterException canonicalizing a source parent; additive unchanged Java fixture prepared for JVM-first baseline/candidate comparison, not yet executed",
+        "inherited_message_candidate": "/private/tmp/java2go-implicit-throwable14-2n6vlt7e/message-repair-green-v2"
+      },
+      "performance": {
+        "runtime": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq",
+        "codegen": "/private/tmp/java2go-integer-compare-candidate",
+        "status": "private equal-scale comparison candidate semantic and allocation gates pass for declared UTF8 configuration; coordinator added exact patch plus allocation regression to independent candidate; no shared integration or Java speedup claim",
+        "infrastructure_failed_report": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq/semantic-20260928T124303Z/summary.json",
+        "c_locale_failed_report": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq/semantic-20260928T124408Z/summary.json",
+        "semantic_pass": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq/semantic-20260928T124941Z/summary.json",
+        "semantic_session": 86003,
+        "allocation_pass": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq/allocation-20260928T125350Z/summary.json",
+        "allocation_session": 84519,
+        "promotion": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq/promotion",
+        "allocation_guard": {
+          "baseline": 6,
+          "candidate": 0
+        },
+        "encoding_proof": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq/encoding-20260928T124935Z"
+      },
+      "execution_slot": {
+        "owner": "astra_build",
+        "session": 81136,
+        "status": "source-shadow JVM-first baseline live after metadata parser red; compiler14656 green and released slot"
+      },
+      "lint_reverification": {
+        "request": "repasted original 23 findings",
+        "owner": "astra_lint",
+        "version": "2.14.0",
+        "revision": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
+        "fix_commit": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "snapshot": "/private/tmp/java2go-checkpoint14-head-lint-9biur3s6",
+        "log": "/private/tmp/java2go-checkpoint14-head-golangci-2.14.0.log",
+        "session": 36878,
+        "exit_code": 0,
+        "issues": 0,
+        "live_remote_revision_verified": true
+      },
+      "gson_contract_matrix": "/private/tmp/gson-checkpoint14-contract-matrix.md",
+      "independent_candidate15": {
+        "root": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia",
+        "source_manifest": "/private/tmp/java2go-checkpoint15-v3-manifest.json",
+        "manifest_files": 1440,
+        "contents": "Function/identity v3 plus measured BigDecimal equal-scale patch/regression",
+        "git_base": "11d55ebf2fc41aaee3b8c04913fa4bcebbee8134",
+        "fixed_independent_git_metadata": true,
+        "code_gate_script": "/private/tmp/java2go-checkpoint15-v3-gates.py",
+        "code_gate_results": "/private/tmp/java2go-checkpoint15-v3-results.json",
+        "root_session": 86380,
+        "build_exit": 0,
+        "lint_exit": 0,
+        "unit": "passed: 1705 PASS, 0 FAIL, 0 SKIP; source hashes stable",
+        "remaining_script": "/private/tmp/java2go-checkpoint15-v3-remaining.py",
+        "remaining_status": "terminal: all historical gates and five apps pass; same active Gson go-build-all failure; independent raw observation audit passed",
+        "application_cache_preparation": "/private/tmp/java2go-function-independent14-application-preparation.json",
+        "shared_production": "exact28verifiedfiles integrated, publication pending",
+        "first_code_gate": {
+          "session": 93397,
+          "unit_exit": 1,
+          "unit_seconds": 381.985,
+          "audit": "/private/tmp/java2go-function-independent14-unit-audit.json",
+          "pass_records": 1697,
+          "fail_records": 8,
+          "skip_records": 0,
+          "status": "preserved failed snapshot; two Comparator lowering failures plus six obsolete precise shape assertions, all assigned/repaired"
+        },
+        "function_patch_sha256": "329d7c9b0dbed655ee19afe399240bd825c86f14adaa51e9146774bf8e9fa2ae",
+        "preparation": "/private/tmp/java2go-checkpoint15-v3-preparation.json",
+        "unit_exit": 0,
+        "unit_audit": "/private/tmp/java2go-checkpoint15-v3-unit-audit.json",
+        "remaining_session": 64609,
+        "remaining_results": "/private/tmp/java2go-checkpoint15-v3-remaining-results.json",
+        "application_results": "/private/tmp/java2go-checkpoint15-v3-applications-results.json",
+        "regression_audit": "/private/tmp/java2go-checkpoint15-regression-audit.json",
+        "application_verifier": "/private/tmp/java2go-checkpoint15-independent-acceptance.py"
+      },
+      "maven_compiler_metadata": {
+        "owner": "astra_build",
+        "private": "/private/tmp/java2go-maven-compiler-metadata-ej8mh6yx/repo",
+        "status": "parser baseline red: exact POM plus seven intended metadata forms rejected, rejection matrix passes",
+        "red_log": "/private/tmp/java2go-maven-compiler-metadata-ej8mh6yx/parser-red.log"
+      },
+      "next_execution_queue": [
+        {
+          "owner": "astra_compiler",
+          "order": 1,
+          "baseline": "/private/tmp/java2go-message-execution-baseline-7qezk5ag/repo",
+          "candidate": "/private/tmp/java2go-implicit-throwable14-2n6vlt7e/repo",
+          "status": "new Execution/super JVM test baseline first, then frozen two-test candidate; no execution yet",
+          "patch": "/private/tmp/java2go-implicit-throwable14-2n6vlt7e/prepared-message-repair/repair.patch"
+        },
+        {
+          "owner": "astra_build",
+          "order": 2,
+          "metadata_red": "/private/tmp/java2go-maven-compiler-metadata-ej8mh6yx/repo",
+          "source_shadow": "/private/tmp/java2go-throwable-metadata14-fwjc8h_9/additive-source-shadow",
+          "status": "parser red and source hierarchy baseline/candidate red queued; not executed"
+        },
+        {
+          "owner": "astra_runtime",
+          "order": 3,
+          "status": "String operations implementation authorized after valid red; await ready signal"
+        }
+      ]
+    },
+    "checkpoint15": {
+      "snapshot": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia",
+      "manifest": "/private/tmp/java2go-checkpoint15-v3-manifest.json",
+      "manifest_files": 1440,
+      "status": "verified compatibility milestone; full Gson remains active; integrated exact28files, publication pending",
+      "code_gates": "/private/tmp/java2go-checkpoint15-v3-results.json",
+      "historical_gates": "/private/tmp/java2go-checkpoint15-v3-remaining-results.json",
+      "application_gates": "/private/tmp/java2go-checkpoint15-v3-applications-results.json",
+      "independent_acceptance": "/private/tmp/java2go-checkpoint15-independent-acceptance.json",
+      "regression_audit": "/private/tmp/java2go-checkpoint15-regression-audit.json",
+      "gson": {
+        "report": "/private/tmp/java2go-checkpoint15-v3-bwqe3zia/.campaign/runs/20260928T132954Z-3676883061/report.json",
+        "report_sha256": "c4afa4ee0bd66ebe100b81d969d182b61d9e4c04676e283e2aa5d5cd10431432",
+        "transpile_ms": 119340,
+        "first_failure": "go-build-all",
+        "same_reported_missing_symbols": [
+          "AbstractMap",
+          "AbstractSet",
+          "AbstractSet",
+          "ConcurrentMap",
+          "ConcurrentMap",
+          "T",
+          "DateFormat",
+          "Enum",
+          "Duration",
+          "Instant"
+        ],
+        "jvm_oracle_runs": 9,
+        "accepted_go_runs": 0,
+        "unchanged_frozen_inputs": true,
+        "diagnostic_limit": "first compiler error batch, not exhaustive"
+      },
+      "integration_plan": "/private/tmp/java2go-checkpoint15-integration-plan.json",
+      "source_abi": "Function now uses execution-aware object interface; all generated Go must be regenerated",
+      "performance": "equal-scale BigDecimal allocation guard 6 to0; semantic and allocation evidence under declared UTF8 configuration; no Java speedup claim",
+      "retained_failures": [
+        "Function v2 fullunit 8 failures; fixed in v3",
+        "govulncheck sandbox DNS failure; successful network retry",
+        "BigNumber C-locale encoding mismatch; retained as configuration gap"
+      ],
+      "deferred": [
+        "cold-cache dependency bootstrap not repeated",
+        "Linux not verified",
+        "String reference ABI migration remains private",
+        "Throwable metadata/dispatch and compiler plugin prerequisites remain private"
+      ]
     }
   }
 }

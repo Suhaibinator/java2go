@@ -184,7 +184,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		lambdaCtx.expectedType = lambdaReturnType
 		expectedBase, _ := parseJavaTypeString(ctx.expectedType)
 		expectedScope := resolveClassScopeByQualifiedName(ctx, expectedBase)
-		executionAwareSAM := samMethod != nil && (expectedScope != nil && expectedScope.IsInterface || isExternalCallableType(ctx.expectedType, ctx) || isExternalSupplierType(ctx.expectedType, ctx))
+		executionAwareSAM := samMethod != nil && (expectedScope != nil && expectedScope.IsInterface || isExternalCallableType(ctx.expectedType, ctx) || isExternalSupplierType(ctx.expectedType, ctx) || isExternalFunctionType(ctx.expectedType, ctx))
 		executionAwareRunnable := samMethod == nil && expectedScope == nil && stripJavaQualifier(expectedBase) == "Runnable"
 
 		var lambdaParameters *ast.FieldList
@@ -773,13 +773,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// that owner here so execution-aware calls can forward the current token
 			// instead of falling through to the public fresh-token wrapper.
 			if implicitInstanceResolution == nil && implicitStaticResolution == nil {
-				for enclosing := ctx.currentClass.Enclosing; enclosing != nil; enclosing = enclosing.Enclosing {
-					selected = findBestMethodInHierarchy(enclosing, methodName, argListNode, false, true, ctx, source)
-					if selected != nil && selected.def != nil && selected.def.IsStatic {
-						implicitStaticResolution = selected
-						expectedArgTypes = definitionParameterOriginalTypes(selected.def)
-						break
-					}
+				if selected := findEnclosingStaticMethod(methodName, argListNode, ctx, source); selected != nil {
+					implicitStaticResolution = selected
+					expectedArgTypes = definitionParameterOriginalTypes(selected.def)
 				}
 			}
 		}
@@ -1407,7 +1403,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// Builtin exception signatures use the shared Throwable interface.
 			// A source exception can arrive through a declaring-base subobject;
 			// comparing Go interface payloads would lose its Java identity.
-			erasedReference = erasedReference ||
+			erasedReference = erasedReference || isExternalFunctionType(leftJavaType, ctx) || isExternalFunctionType(rightJavaType, ctx) ||
 				(resolveClassScopeByQualifiedName(ctx, leftBase) == nil && isBuiltinExceptionType(leftBase)) ||
 				(resolveClassScopeByQualifiedName(ctx, rightBase) == nil && isBuiltinExceptionType(rightBase))
 			if (leftWrapper || rightWrapper || erasedReference || sourceHierarchyReference) && !leftPrimitive && !rightPrimitive {
@@ -5728,6 +5724,9 @@ func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Def
 
 	scope := resolveClassScopeByQualifiedName(ctx, baseType)
 	if scope == nil {
+		if stripJavaQualifier(baseType) == "Function" && !isExternalFunctionType(expectedType, ctx) {
+			return nil, nil
+		}
 		// A built-in functional interface has no source scope to resolve against,
 		// so its single abstract method is described by a table instead. The
 		// lookup is guarded on scope == nil so a user-defined class of the same
@@ -6545,6 +6544,12 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	}
 
 	supertype := objectType.Content(source)
+	if isExternalFunctionType(supertype, ctx) {
+		_, args := parseJavaTypeString(supertype)
+		if len(args) == 0 && isExternalFunctionType(ctx.expectedType, ctx) {
+			supertype = ctx.expectedType
+		}
+	}
 	baseType, _ := parseJavaTypeString(supertype)
 	superScope := resolveClassScopeByQualifiedName(ctx, baseType)
 
@@ -6599,7 +6604,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	syntheticScope.IsInner = isInner
 	syntheticScope.EnclosingField = enclosingFieldName
 	syntheticScope.TypeParameters = anonymousClassTypeParameters(node, captured, isInner, source, ctx)
-	if superScope != nil && superScope.IsInterface {
+	if superScope != nil && superScope.IsInterface || isExternalFunctionType(supertype, ctx) {
 		syntheticScope.ImplementedInterfaces = append(syntheticScope.ImplementedInterfaces, supertype)
 	} else if superScope != nil || characterIOBaseTypeExpr(supertype, ctx) != nil {
 		syntheticScope.Superclass = supertype
@@ -6646,7 +6651,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 	} else if characterBase := characterIOBaseTypeExpr(supertype, ctx); characterBase != nil {
 		fields.List = append(fields.List, &ast.Field{Type: characterBase})
-	} else if stripJavaQualifier(baseType) == "Runnable" {
+	} else if stripJavaQualifier(baseType) == "Runnable" || isExternalFunctionType(supertype, ctx) {
 		// Go interface satisfaction is structural: the exported Run method emitted
 		// below is sufficient. Embedding stdjava.Runnable would add a nil interface
 		// field and needlessly register a runtime import.
@@ -6670,6 +6675,9 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	installerCtx.className = structName
 	installerCtx.localScope = nil
 	ctx.addHoistedDecl(genStructWithTypeParamsInContext(structName, fields, syntheticScope.TypeParameters, installerCtx))
+	for _, declaration := range generateFunctionSAMBridgeDecls(installerCtx) {
+		ctx.addHoistedDecl(declaration)
+	}
 	for _, declaration := range generateCharacterIOBridgeDecls(installerCtx) {
 		ctx.addHoistedDecl(declaration)
 	}
@@ -8322,6 +8330,9 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	if dispatch := generateClassDispatchInterface(localCtx); dispatch != nil {
 		ctx.addHoistedDecl(dispatch)
 	}
+	for _, declaration := range generateFunctionSAMBridgeDecls(localCtx) {
+		ctx.addHoistedDecl(declaration)
+	}
 	for _, declaration := range generateClassSubobjectInstallerDecls(localCtx) {
 		ctx.addHoistedDecl(declaration)
 	}
@@ -8602,6 +8613,13 @@ func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType 
 	}
 
 	baseType, typeArgs := parseJavaTypeString(expectedType)
+	if isExternalFunctionType(expectedType, ctx) && len(typeArgs) == 2 {
+		constructor := "NewPlainFunctionFuncAdapter"
+		if executionAware {
+			constructor = "NewFunctionFuncAdapter"
+		}
+		return stdjavaGenericCall(ctx, constructor, []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], inScopeTypeParameters(ctx), ctx), javaTypeStringToGoTypeExpr(typeArgs[1], inScopeTypeParameters(ctx), ctx)}, []ast.Expr{lambdaExpr})
+	}
 	if isExternalSupplierType(expectedType, ctx) {
 		constructor := "NewPlainSupplierFuncAdapter"
 		if executionAware {
@@ -9877,6 +9895,22 @@ func qualifyJavaTypeInDeclaringContext(typeStr string, owner *symbol.ClassScope)
 	return qualifiedBase + arraySuffix
 }
 
+// Unqualified calls in nested classes retain the lexical static member lookup
+// for both code generation and Java result typing. The selected declaring owner
+// remains available for overload inference and return-type qualification.
+func findEnclosingStaticMethod(name string, arguments *sitter.Node, ctx Ctx, source []byte) *methodResolution {
+	if ctx.currentClass == nil {
+		return nil
+	}
+	for enclosing := ctx.currentClass.Enclosing; enclosing != nil; enclosing = enclosing.Enclosing {
+		selected := findBestMethodInHierarchy(enclosing, name, arguments, false, true, ctx, source)
+		if selected != nil && selected.def != nil && selected.def.IsStatic {
+			return selected
+		}
+	}
+	return nil
+}
+
 // inferUserMethodReturnType returns the declared Java return type of a
 // user-defined method invocation, resolving the method from the receiver's class
 // (for X.m()) or the current class (for an unqualified m()). Returns false when
@@ -9925,6 +9959,12 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 		}
 	} else {
 		resolution = findBestMethodInHierarchy(scope, methodName, argListNode, allowInstance, allowStatic, ctx, source)
+	}
+	if resolution == nil && node.ChildByFieldName("object") == nil {
+		resolution = findEnclosingStaticMethod(methodName, argListNode, ctx, source)
+		if resolution != nil {
+			scope = resolution.owner
+		}
 	}
 	if resolution == nil || resolution.def == nil {
 		return "", false
