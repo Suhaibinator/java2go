@@ -1,0 +1,237 @@
+{
+  "schema": "java2go-frozen-jvm-oracle-v1",
+  "status": "validated-jvm-only",
+  "jdk_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "java_release": 21,
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "repetitions_per_seed": 3,
+  "input_hash_algorithm": "SHA-256 over lexically sorted input-relative POSIX path bytes, NUL, exact file bytes, NUL, for every original input file",
+  "input_sha256_before": "206b89997fca211711a90e504d29dc1f314a674cfa6a63cb8f7a53037fc684cf",
+  "input_sha256_after": "206b89997fca211711a90e504d29dc1f314a674cfa6a63cb8f7a53037fc684cf",
+  "input_scope": "original README.md, inputs/*, src/main/java/**/*.java; excludes oracle/ and support/",
+  "compile": {
+    "command": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "/private/tmp/java2go-string-thread-prereq-validation/classes",
+      "/private/tmp/java2go-string-thread-prereq/src/main/java/prereq/thread/app/Main.java",
+      "/private/tmp/java2go-string-thread-prereq/src/main/java/prereq/thread/flow/Observation.java",
+      "/private/tmp/java2go-string-thread-prereq/src/main/java/prereq/thread/flow/WorkerStep.java",
+      "/private/tmp/java2go-string-thread-prereq/src/main/java/prereq/thread/literal/LateLiteral.java",
+      "/private/tmp/java2go-string-thread-prereq/src/main/java/prereq/thread/state/Contexts.java",
+      "/private/tmp/java2go-string-thread-prereq/src/main/java/prereq/thread/state/SharedState.java",
+      "/private/tmp/java2go-string-thread-prereq/src/main/java/prereq/thread/state/WorkerContext.java"
+    ],
+    "timeout_seconds": 300,
+    "exit": 0,
+    "timeout": false,
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "portable_compile": {
+    "cwd": ".",
+    "command": [
+      "<JDK21>/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "<scratch>/classes",
+      "<all seven src/main/java/**/*.java paths in lexical order>"
+    ]
+  },
+  "portable_run": {
+    "cwd": "<fresh empty scratch directory per run>",
+    "command": [
+      "<JDK21>/bin/java",
+      "-cp",
+      "<scratch>/classes",
+      "prereq.thread.app.Main",
+      "<seed>"
+    ],
+    "timeout_seconds": 60
+  },
+  "runs": [
+    {
+      "seed": 17,
+      "repetition": 1,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "5920a78b8759cfad3d9ad02c21034ef044fe28b8fd49d9367bde8df8446405a8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-17.stdout",
+      "expected_stderr": "oracle/expected.seed-17.stderr"
+    },
+    {
+      "seed": 17,
+      "repetition": 2,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "5920a78b8759cfad3d9ad02c21034ef044fe28b8fd49d9367bde8df8446405a8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-17.stdout",
+      "expected_stderr": "oracle/expected.seed-17.stderr"
+    },
+    {
+      "seed": 17,
+      "repetition": 3,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "5920a78b8759cfad3d9ad02c21034ef044fe28b8fd49d9367bde8df8446405a8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-17.stdout",
+      "expected_stderr": "oracle/expected.seed-17.stderr"
+    },
+    {
+      "seed": 41,
+      "repetition": 1,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "426c6a96607938253a50280a153a8b7c9098b0e529127622d80c75d7693392c2",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-41.stdout",
+      "expected_stderr": "oracle/expected.seed-41.stderr"
+    },
+    {
+      "seed": 41,
+      "repetition": 2,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "426c6a96607938253a50280a153a8b7c9098b0e529127622d80c75d7693392c2",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-41.stdout",
+      "expected_stderr": "oracle/expected.seed-41.stderr"
+    },
+    {
+      "seed": 41,
+      "repetition": 3,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "426c6a96607938253a50280a153a8b7c9098b0e529127622d80c75d7693392c2",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-41.stdout",
+      "expected_stderr": "oracle/expected.seed-41.stderr"
+    },
+    {
+      "seed": 97,
+      "repetition": 1,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "2fc768292e441f45bd0aa6ea8ad7ff7d7e2b4dc9593b2e993d113c801a2a595b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-97.stdout",
+      "expected_stderr": "oracle/expected.seed-97.stderr"
+    },
+    {
+      "seed": 97,
+      "repetition": 2,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "2fc768292e441f45bd0aa6ea8ad7ff7d7e2b4dc9593b2e993d113c801a2a595b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-97.stdout",
+      "expected_stderr": "oracle/expected.seed-97.stderr"
+    },
+    {
+      "seed": 97,
+      "repetition": 3,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-string-thread-prereq-validation/classes",
+        "prereq.thread.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "2fc768292e441f45bd0aa6ea8ad7ff7d7e2b4dc9593b2e993d113c801a2a595b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 275,
+      "stderr_bytes": 0,
+      "expected_stdout": "oracle/expected.seed-97.stdout",
+      "expected_stderr": "oracle/expected.seed-97.stderr"
+    }
+  ],
+  "deterministic": true
+}
