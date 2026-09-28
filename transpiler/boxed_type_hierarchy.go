@@ -48,6 +48,9 @@ func builtinJavaNumericReference(javaType string, ctx Ctx) bool {
 	if stripJavaQualifier(base) == "Number" && resolveClassScopeByQualifiedName(ctx, base) == nil {
 		return true
 	}
+	if _, ok := bigMathOwner(base, ctx); ok {
+		return true
+	}
 	primitive, wrapper := builtinJavaWrapperPrimitive(base, ctx)
 	return wrapper && primitive != "boolean" && primitive != "char"
 }
@@ -99,7 +102,8 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 	case "Number":
 		return len(expectedArguments) == 0 && builtinJavaNumericReference(actual, ctx)
 	case "Comparable":
-		if !wrapper && !stringObject {
+		_, bigNumber := bigMathOwner(actualBase, ctx)
+		if !wrapper && !stringObject && !bigNumber {
 			return false
 		}
 		if len(expectedArguments) == 0 {

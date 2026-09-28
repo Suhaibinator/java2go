@@ -63,200 +63,68 @@
         "stage": "go-build-all",
         "detail": "exit=1 error=\n\n../../../../stdjava/common.go:6:2: missing go.sum entry for module providing package golang.org/x/exp/constraints (imported by github.com/NickyBoy89/java2go/stdjava); to add:\n\tgo get github.com/NickyBoy89/java2go/stdjava@v0.0.0\n"
       },
-      "latest_artifact": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101823Z-4018989396",
+      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121418Z-2833906386",
       "verification": {
-        "implementation_sha256": "51b7dc59744f8baadf77e69cb6a502f7d103d912e68c8c0bae6b7cb981763c96",
+        "checkpoint": "checkpoint14",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121418Z-2833906386/report.json",
+        "report_sha256": "c626634b882c9ac4ae05803cb4fd54ef0924232db27e12ef895d5a3d350ed345",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
         "race": true,
+        "jvm_oracle_runs": 9,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
       },
       "coordinator_verification": {
         "name": "round01-business",
-        "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101823Z-4018989396/report.json",
-        "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121418Z-2833906386/report.json",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations": [
-          {
-            "seed": 17,
-            "repeat": 1,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 2,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 3,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 1,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 2,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 3,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 1,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 2,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 3,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 4,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 4,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 4,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 5,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 5,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 5,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 6,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 6,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 6,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 7,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 7,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 7,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 8,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 8,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 8,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 9,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 9,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 9,
-            "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 10,
-            "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 10,
-            "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-            "files": {}
-          }
-        ]
+        "observations_manifest_sha256": "091f26f891a08b7d1f0cb046a4ea29c6c66eb82da4ca90b347b32cad8ef55aad",
+        "checkpoint": "checkpoint14",
+        "report_sha256": "c626634b882c9ac4ae05803cb4fd54ef0924232db27e12ef895d5a3d350ed345",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
+        "race": true,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
       },
-      "acceptance": "checkpoint10 application parity verified; round acceptance awaits Gson"
+      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
+      "historical_verification_records": [
+        {
+          "field": "verification",
+          "value": {
+            "implementation_sha256": "51b7dc59744f8baadf77e69cb6a502f7d103d912e68c8c0bae6b7cb981763c96",
+            "race": true,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint10",
+            "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101823Z-4018989396/report.json",
+            "report_sha256": "6a2e9b5c9178e7aa58d14320da620797a1da7ed32cda2fb7f39e592a64d1b758",
+            "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+            "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        }
+      ]
     },
     {
       "id": "round01/data",
@@ -275,316 +143,68 @@
         "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101912Z-2394135210",
+      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121507Z-3841301862",
       "verification": {
-        "implementation_sha256": "42c82081509055c7ee6992690ee2476a4aba9030bcd320ae586519d6ce5f6d15",
+        "checkpoint": "checkpoint14",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121507Z-3841301862/report.json",
+        "report_sha256": "03cb9e3d834114eda8f6b6db0b4bab684c982e58e41f10001f90a3c8b041a290",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
         "race": true,
+        "jvm_oracle_runs": 9,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
       },
       "coordinator_verification": {
         "name": "round01-data",
-        "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101912Z-2394135210/report.json",
-        "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121507Z-3841301862/report.json",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations": [
-          {
-            "seed": 17,
-            "repeat": 1,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 2,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 3,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 1,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 2,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 3,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 1,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 2,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 3,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 4,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 4,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 4,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 5,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 5,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 5,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 6,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 6,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 6,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 7,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 7,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 7,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 8,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 8,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 8,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 9,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 9,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 9,
-            "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-            "files": {
-              "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-              "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-              "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 10,
-            "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-            "files": {
-              "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-              "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-              "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 10,
-            "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-            "files": {
-              "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-              "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-              "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-            }
-          }
-        ]
+        "observations_manifest_sha256": "5093cc49fe1e0c4b460d51d284f2aed9d56fa330caaa80e82cfc52aa861df140",
+        "checkpoint": "checkpoint14",
+        "report_sha256": "03cb9e3d834114eda8f6b6db0b4bab684c982e58e41f10001f90a3c8b041a290",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
+        "race": true,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
       },
-      "acceptance": "checkpoint10 application parity verified; round acceptance awaits Gson"
+      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
+      "historical_verification_records": [
+        {
+          "field": "verification",
+          "value": {
+            "implementation_sha256": "42c82081509055c7ee6992690ee2476a4aba9030bcd320ae586519d6ce5f6d15",
+            "race": true,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint10",
+            "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101912Z-2394135210/report.json",
+            "report_sha256": "64b5b96acebe6b335065e615c5bec1367e71260f243b610a5219e4327cbad01f",
+            "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+            "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        }
+      ]
     },
     {
       "id": "round01/concurrent",
@@ -603,200 +223,65 @@
         "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101950Z-454524698",
+      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121545Z-611322176",
       "coordinator_verification": {
         "name": "round01-concurrent",
-        "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101950Z-454524698/report.json",
-        "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121545Z-611322176/report.json",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations": [
-          {
-            "seed": 17,
-            "repeat": 1,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 2,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 3,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 1,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 2,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 3,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 1,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 2,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 3,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 4,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 4,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 4,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 5,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 5,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 5,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 6,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 6,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 6,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 7,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 7,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 7,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 8,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 8,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 8,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 9,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 9,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 9,
-            "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 10,
-            "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 10,
-            "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-            "files": {}
-          }
-        ]
+        "observations_manifest_sha256": "77b9eb3e5ad99e62a31a6ae4b68a61642abeef109f822f4e764df3793f255934",
+        "checkpoint": "checkpoint14",
+        "report_sha256": "668ddca875a9ee2b9d35fe370beb77f3610eb4330d55c8bab10e12010e0dd709",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
+        "race": true,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
       },
-      "acceptance": "checkpoint10 application parity verified; round acceptance awaits Gson"
+      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
+      "verification": {
+        "checkpoint": "checkpoint14",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121545Z-611322176/report.json",
+        "report_sha256": "668ddca875a9ee2b9d35fe370beb77f3610eb4330d55c8bab10e12010e0dd709",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
+        "race": true,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
+      },
+      "historical_verification_records": [
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint10",
+            "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T101950Z-454524698/report.json",
+            "report_sha256": "46425b5ea828389d29b8412702ebf5c11334a2d2c84cb9b7cffbb615a2394d1c",
+            "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+            "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        }
+      ]
     },
     {
       "id": "round02/business",
       "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_business",
-      "acceptance": "checkpoint10 application parity verified; round acceptance awaits Gson",
-      "latest_artifact": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102025Z-1189242699",
+      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
+      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121619Z-1981185149",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -814,197 +299,62 @@
       },
       "coordinator_verification": {
         "name": "round02-business",
-        "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102025Z-1189242699/report.json",
-        "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121619Z-1981185149/report.json",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations": [
-          {
-            "seed": 17,
-            "repeat": 1,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 2,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 3,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 1,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 2,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 3,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 1,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 2,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 3,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 4,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 4,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 4,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 5,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 5,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 5,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 6,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 6,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 6,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 7,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 7,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 7,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 8,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 8,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 8,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 9,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 9,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          },
-          {
-            "seed": 97,
-            "repeat": 9,
-            "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-            "files": {}
-          },
-          {
-            "seed": 17,
-            "repeat": 10,
-            "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-            "files": {}
-          },
-          {
-            "seed": 41,
-            "repeat": 10,
-            "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-            "files": {}
-          }
-        ]
+        "observations_manifest_sha256": "07496a4dfc10a377d874d6aeb71ae85942129b69a9876d710536ba13f7366408",
+        "checkpoint": "checkpoint14",
+        "report_sha256": "219a5029f684aa44bdd5f20b9f21a449b5ee3141570d571dc823761c9e8d79cb",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
+        "race": true,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
       },
-      "first_artifact": ".campaign/runs/20260928T051409Z-56114146"
+      "first_artifact": ".campaign/runs/20260928T051409Z-56114146",
+      "verification": {
+        "checkpoint": "checkpoint14",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121619Z-1981185149/report.json",
+        "report_sha256": "219a5029f684aa44bdd5f20b9f21a449b5ee3141570d571dc823761c9e8d79cb",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
+        "race": true,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
+      },
+      "historical_verification_records": [
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint10",
+            "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102025Z-1189242699/report.json",
+            "report_sha256": "8c82afe0c2f5d26eee1a53583b31705a36a72dc3cef3acb5cab6db91299523ef",
+            "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+            "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        }
+      ]
     },
     {
       "id": "round02/data",
       "status": "strict-transpilation-passed-go-build-blocked",
       "owner": "sol_data",
-      "acceptance": "active failure; no Go behavioral parity",
-      "latest_artifact": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102138Z-3808088060",
+      "acceptance": "active failure; nine stable JVM oracles, zero Go behavioral observations",
+      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121733Z-3954537633",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -1018,15 +368,19 @@
       "latest_blockers": [
         "AbstractMap",
         "AbstractSet",
-        "BigInteger",
-        "BigDecimal",
         "ConcurrentMap",
-        "ReflectionAccessFilter.FilterResult"
+        "DateFormat",
+        "Duration",
+        "Enum",
+        "Instant",
+        "T"
       ],
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T063008Z-3921335113",
-        "implementation_sha256": "6f308a25f95216db8cbd11fc0e62c353427e05801e5f9adfd868f53dd9266cc3",
-        "revision": "fcc53952f202ff236c60e0181fc70f855f856418",
+        "checkpoint": "checkpoint14",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121733Z-3954537633/report.json",
+        "report_sha256": "fcd3694fd3bea451b05174ff1f71c88712519fe88f50c1d99c44cc1edf6587bf",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
         "passed": false,
         "race": true,
         "jvm_oracle_runs": 9,
@@ -1044,15 +398,65 @@
       },
       "latest_failure": {
         "stage": "go-build-all",
-        "detail": "Overloaded generic Gson.fromJson methods emit duplicate GsonFromJsonHelper and NewGsonFromJsonHelper declarations; exact first error in immutable report."
-      }
+        "detail": "exit=1 error=\n\n# campaign.generated/round02-data-gson/java2go_scc_636f6d2f676f6f676c652f67736f6e\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_LinkedTreeMap.go:15:3: undefined: AbstractMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_LinkedTreeMap.go:987:3: undefined: AbstractSet\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_LinkedTreeMap.go:1087:3: undefined: AbstractSet\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_Gson.go:16:71: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JsonAdapterAnnotationTypeAdapterFactory.go:25:86: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_TypeAdapterFactory.go:8:118: undefined: T\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_DefaultDateTypeAdapter.go:25:89: undefined: DateFormat\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_EnumTypeAdapter.go:14:85: undefined: Enum\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JavaTimeTypeAdapters.go:267:101: undefined: Duration\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JavaTimeTypeAdapters.go:316:101: undefined: Instant\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JavaTimeTypeAdapters.go:316:101: too many errors\n"
+      },
+      "historical_verification_records": [
+        {
+          "field": "coordinator_verification",
+          "value": {
+            "artifact": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102138Z-3808088060",
+            "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+            "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": false,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 0,
+            "additional_stress_runs": 0,
+            "stable_implementation": true,
+            "checkpoint": "checkpoint10",
+            "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102138Z-3808088060/report.json",
+            "report_sha256": "02095484f3aa854d6fb0ab5418283464035f7539e02bc51f31d7a987062c201c"
+          }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint10",
+            "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102138Z-3808088060/report.json",
+            "report_sha256": "02095484f3aa854d6fb0ab5418283464035f7539e02bc51f31d7a987062c201c",
+            "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+            "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": false,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 0,
+            "additional_stress_runs": 0,
+            "stable_implementation": true
+          }
+        }
+      ],
+      "verification": {
+        "checkpoint": "checkpoint14",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121733Z-3954537633/report.json",
+        "report_sha256": "fcd3694fd3bea451b05174ff1f71c88712519fe88f50c1d99c44cc1edf6587bf",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": false,
+        "race": true,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 0,
+        "additional_stress_runs": 0,
+        "stable_implementation": true
+      },
+      "latest_failure_checkpoint": "checkpoint14",
+      "strict_transpile_seconds": 109.875
     },
     {
       "id": "round02/concurrent",
       "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_concurrent",
-      "acceptance": "checkpoint10 application parity verified; round acceptance awaits Gson",
-      "latest_artifact": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102102Z-3947780109",
+      "acceptance": "checkpoint14 application parity independently verified; round acceptance awaits Gson",
+      "latest_artifact": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121656Z-4223560271",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -1065,259 +469,69 @@
       },
       "latest_blockers": [],
       "verification": {
-        "implementation_sha256": "8bfd82c8c80e3a650bfc5909cf9ec2688455f2fc16f3501f10c1430ae3bfdbe2",
+        "checkpoint": "checkpoint14",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121656Z-4223560271/report.json",
+        "report_sha256": "989b6a6e8a29bd98feb90cb7e9dee64ae3b372f9b9ce5ec18155814223e80aad",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
         "race": true,
+        "jvm_oracle_runs": 9,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
       },
       "coordinator_verification": {
         "name": "round02-concurrent",
-        "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102102Z-3947780109/report.json",
-        "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+        "report": "/private/tmp/java2go-checkpoint14-99ppfndk/.campaign/runs/20260928T121656Z-4223560271/report.json",
+        "implementation_sha256": "f46dd02072ce4ef524890db2ea0ac64635c6396b3d92b64e6f298c720a675155",
         "normal_pairs": 9,
         "stress_runs": 20,
         "raw_streams_and_files_verified": true,
         "source_binary_oracles_verified": true,
-        "observations": [
-          {
-            "seed": 17,
-            "repeat": 1,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 2,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 3,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 1,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 2,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 3,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 1,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 2,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 3,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 4,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 4,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 4,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 5,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 5,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 5,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 6,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 6,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 6,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 7,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 7,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 7,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 8,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 8,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 8,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 9,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 9,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          },
-          {
-            "seed": 97,
-            "repeat": 9,
-            "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-            "files": {
-              "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-            }
-          },
-          {
-            "seed": 17,
-            "repeat": 10,
-            "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-            "files": {
-              "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-            }
-          },
-          {
-            "seed": 41,
-            "repeat": 10,
-            "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-            "files": {
-              "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-            }
-          }
-        ]
+        "observations_manifest_sha256": "3a9b8d624459e9243a7c7788afe273055001eff50bd848ae95d6d516acde6820",
+        "checkpoint": "checkpoint14",
+        "report_sha256": "989b6a6e8a29bd98feb90cb7e9dee64ae3b372f9b9ce5ec18155814223e80aad",
+        "revision": "83ed974601091a75add0430df7bf347f2429614f",
+        "passed": true,
+        "race": true,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
       },
-      "first_artifact": ".campaign/runs/20260928T051529Z-444414224"
+      "first_artifact": ".campaign/runs/20260928T051529Z-444414224",
+      "historical_verification_records": [
+        {
+          "field": "verification",
+          "value": {
+            "implementation_sha256": "8bfd82c8c80e3a650bfc5909cf9ec2688455f2fc16f3501f10c1430ae3bfdbe2",
+            "race": true,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        },
+        {
+          "field": "verification",
+          "value": {
+            "checkpoint": "checkpoint10",
+            "report": "/private/tmp/java2go-checkpoint10-ce234y55/.campaign/runs/20260928T102102Z-3947780109/report.json",
+            "report_sha256": "1db26f22b47056d00754fa183bc51c00b68c264bbd80ed815848c356fe9923dd",
+            "implementation_sha256": "2f3d3705992a4107f54cac4ba0acefd7d627142b25bd0f690d7d0fbd81920dda",
+            "revision": "032d3550f6710ccd50a0b205a864682cd8ec5790",
+            "passed": true,
+            "race": true,
+            "jvm_oracle_runs": 9,
+            "oracle_pairs": 9,
+            "additional_stress_runs": 20,
+            "stable_implementation": true
+          }
+        }
+      ]
     }
   ],
-  "next_action": "Commit and push verified checkpoint10. Astra build has exclusive nested-enum red slot; all other prepared work remains held. After enum red terminal, give Astra runtime big-number red slot while enum implementation proceeds privately. Gson round02 remains unaccepted.",
+  "next_action": "Poll LIVE root89685 full12runner; build/lintpassed unitrunning. Root23720 combinedracegreen andinherited-v2+AssertionError patchesintegrated, sharedGo matches1427-file immutable12. Onterminal inspectallfailures; ifhistorical5apps+gatesgreen independentlyverify observations/fuzz8skipparity andfreshGson thencommitANDpushmilestone, confirmorigin. KeepfullGsonactive. ConcurrentMapcandidateprivateexistingruntimegreen only, functionalnullfocusedtests/designpendingnoheavy. Lastpushed83ed974.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -2351,7 +1565,7 @@
       "snapshot": "/private/tmp/java2go-checkpoint10-ce234y55",
       "manifest_sha256": "bb3b57db305ed9ecfd8c54ec3dd9b64599ff9e31d3a10c8ff005e9114b11ed2c",
       "source_files": 1402,
-      "status": "verified milestone ready to commit/push; five applications accepted; Gson remains active at Go build",
+      "status": "committed and pushed; five apps verified; Gson remains go-build-blocked",
       "focused_log": "/private/tmp/java2go-checkpoint10-focused.log",
       "focused_seconds": 21.478,
       "focused_exit_code": 0,
@@ -2733,182 +1947,7 @@
             "stress_runs": 20,
             "raw_streams_and_files_verified": true,
             "source_binary_oracles_verified": true,
-            "observations": [
-              {
-                "seed": 17,
-                "repeat": 1,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 2,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 3,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 1,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 2,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 3,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 1,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 2,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 3,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 4,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 4,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 4,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 5,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 5,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 5,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 6,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 6,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 6,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 7,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 7,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 7,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 8,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 8,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 8,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 9,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 9,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 9,
-                "stdout_sha256": "976839f47202299610c60f6eb1b7f3ac4022c03b1a9fe783e77d740bb22fbacf",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 10,
-                "stdout_sha256": "4d8b58ee587e20fda14f86c686d063369f390d972fbaff65c6c36f82e3ef5810",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 10,
-                "stdout_sha256": "657b011bf03bc4d4ebaee82f556cc6575614d73daa795ed4ed878555bcb0bb33",
-                "files": {}
-              }
-            ]
+            "observations_manifest_sha256": "091f26f891a08b7d1f0cb046a4ea29c6c66eb82da4ca90b347b32cad8ef55aad"
           },
           {
             "name": "round01-data",
@@ -2918,298 +1957,7 @@
             "stress_runs": 20,
             "raw_streams_and_files_verified": true,
             "source_binary_oracles_verified": true,
-            "observations": [
-              {
-                "seed": 17,
-                "repeat": 1,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 2,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 3,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 1,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 2,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 3,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 1,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 2,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 3,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 4,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 4,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 4,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 5,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 5,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 5,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 6,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 6,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 6,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 7,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 7,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 7,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 8,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 8,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 8,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 9,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 9,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 9,
-                "stdout_sha256": "837b033df69ed500aafabc378ccdd3d0f91c1c59538357a60e19b5d8e78219dc",
-                "files": {
-                  "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
-                  "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126",
-                  "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 10,
-                "stdout_sha256": "dc2379e2c0de3fb02698a7fd38750bc3653099f0bda842bbb146ed42aa22b0d7",
-                "files": {
-                  "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
-                  "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796",
-                  "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 10,
-                "stdout_sha256": "e20a3af56fed836cf1ba572e44acb2c21d90564f74a5b6961147ff3e26def1d2",
-                "files": {
-                  "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
-                  "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0",
-                  "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224"
-                }
-              }
-            ]
+            "observations_manifest_sha256": "5093cc49fe1e0c4b460d51d284f2aed9d56fa330caaa80e82cfc52aa861df140"
           },
           {
             "name": "round01-concurrent",
@@ -3219,182 +1967,7 @@
             "stress_runs": 20,
             "raw_streams_and_files_verified": true,
             "source_binary_oracles_verified": true,
-            "observations": [
-              {
-                "seed": 17,
-                "repeat": 1,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 2,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 3,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 1,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 2,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 3,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 1,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 2,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 3,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 4,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 4,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 4,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 5,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 5,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 5,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 6,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 6,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 6,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 7,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 7,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 7,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 8,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 8,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 8,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 9,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 9,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 9,
-                "stdout_sha256": "a788e05d0747bb4f47f1b4a61ba909fee252e2bbba2179608cc7ea36630bf29b",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 10,
-                "stdout_sha256": "056fac7cbc4a69dbed8e2d8234d1ef8b9642c0bc6ab7ed4c9fabb23bea6ecf39",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 10,
-                "stdout_sha256": "5b92cdb13b90fc5e39e64e795aac1897c25a6a5ae9508e2251b32cd3cef14b79",
-                "files": {}
-              }
-            ]
+            "observations_manifest_sha256": "77b9eb3e5ad99e62a31a6ae4b68a61642abeef109f822f4e764df3793f255934"
           },
           {
             "name": "round02-business",
@@ -3404,182 +1977,7 @@
             "stress_runs": 20,
             "raw_streams_and_files_verified": true,
             "source_binary_oracles_verified": true,
-            "observations": [
-              {
-                "seed": 17,
-                "repeat": 1,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 2,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 3,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 1,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 2,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 3,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 1,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 2,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 3,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 4,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 4,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 4,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 5,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 5,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 5,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 6,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 6,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 6,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 7,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 7,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 7,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 8,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 8,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 8,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 9,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 9,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              },
-              {
-                "seed": 97,
-                "repeat": 9,
-                "stdout_sha256": "7ea5abc97d78462079a4bc30846dacfb1b75787d1e4e4d90dfdc824a2c7d5e2c",
-                "files": {}
-              },
-              {
-                "seed": 17,
-                "repeat": 10,
-                "stdout_sha256": "83a03f019223fa42251ca52487b34b69bb45d449a37b3ca96541f42155c9e52e",
-                "files": {}
-              },
-              {
-                "seed": 41,
-                "repeat": 10,
-                "stdout_sha256": "66129f1b571f5279f923116de062d23618b131c4c6e7b108af6e23c6babb7274",
-                "files": {}
-              }
-            ]
+            "observations_manifest_sha256": "07496a4dfc10a377d874d6aeb71ae85942129b69a9876d710536ba13f7366408"
           },
           {
             "name": "round02-concurrent",
@@ -3589,242 +1987,482 @@
             "stress_runs": 20,
             "raw_streams_and_files_verified": true,
             "source_binary_oracles_verified": true,
-            "observations": [
-              {
-                "seed": 17,
-                "repeat": 1,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 2,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 3,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 1,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 2,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 3,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 1,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 2,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 3,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 4,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 4,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 4,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 5,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 5,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 5,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 6,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 6,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 6,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 7,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 7,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 7,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 8,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 8,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 8,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 9,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 9,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              },
-              {
-                "seed": 97,
-                "repeat": 9,
-                "stdout_sha256": "70fd22cc87f9a1616d482f9dc208f0a0b49ebf066bc99b9e6f77163f39f7476d",
-                "files": {
-                  "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
-                }
-              },
-              {
-                "seed": 17,
-                "repeat": 10,
-                "stdout_sha256": "321b1a02fe694e80c5a6fe35ab8679f828ae03720e7c3dc124d9b586945295c9",
-                "files": {
-                  "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
-                }
-              },
-              {
-                "seed": 41,
-                "repeat": 10,
-                "stdout_sha256": "0bc6c419b6d35c1448e807561e7e1a729242a9beed8263a66c264a4f08f4afc5",
-                "files": {
-                  "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
-                }
-              }
-            ]
+            "observations_manifest_sha256": "3a9b8d624459e9243a7c7788afe273055001eff50bd848ae95d6d516acde6820"
           }
         ]
+      },
+      "commit": "83ed974601091a75add0430df7bf347f2429614f",
+      "origin_verified": true
+    },
+    "checkpoint11": {
+      "base_commit": "83ed974601091a75add0430df7bf347f2429614f",
+      "status": "integrated focused-green candidate failed four historical inner-class unit regressions; milestone held pending general repair",
+      "interface_member_types": {
+        "patch": "/private/tmp/java2go-interface-enum-repair-izhrkl4v/interface-member-types.patch",
+        "patch_sha256": "21256d67a6bb72a81d7a209d2b860a9d0d26e5e7be575707a9469fa63d8632b1",
+        "red": "/private/tmp/java2go-interface-enum-repair-izhrkl4v/red.json",
+        "agent_green": "/private/tmp/java2go-interface-enum-repair-izhrkl4v/green.json",
+        "coordinator_snapshot": "/private/tmp/java2go-enum11-verify-zs27o6ey",
+        "coordinator_log": "/private/tmp/java2go-enum11-independent.log",
+        "coordinator_exit_code": 0,
+        "coordinator_seconds": 10.45,
+        "snapshot_unchanged": true,
+        "integrated": true,
+        "full_gson_parity": false
+      },
+      "local_scope_family": {
+        "patch": "/private/tmp/java2go-local-family10-green/repair.patch",
+        "red": "/private/tmp/java2go-local-family10-red.log",
+        "green_and_literal_red": "/private/tmp/java2go-local-family10-repairs-literal-red.log",
+        "status": "full lexical family and block visibility independently green and integrated including member return-type declaration-owner correction",
+        "followup": "full regressions then unchanged collection-family prerequisite probe; no removed assertions"
+      },
+      "big_numbers": {
+        "path": "/private/tmp/java2go-bignumber-tdd-xfbyyzs9",
+        "red": "/private/tmp/java2go-bignumber-tdd-xfbyyzs9/big-number-red.log",
+        "status": "all six JVM-derived groups passed independent combined race gate; integrated, full historical regression pending",
+        "candidate_patch": "/private/tmp/java2go-bignumber-tdd-xfbyyzs9/big-number-candidate.patch",
+        "candidate_sha256": "aa745520e56e94ff1bb6d03c973dd92949ac4786088bfee27cf4eacfb4e5cf91",
+        "attempt1": "/private/tmp/java2go-bignumber-tdd-xfbyyzs9/big-number-green-attempt-1.log",
+        "attempt2": "/private/tmp/java2go-bignumber-tdd-xfbyyzs9/big-number-green-attempt-2.log",
+        "partial_literal_patch": "/private/tmp/java2go-surrogate-pair-partial.patch",
+        "partial_literal_status": "approved private diagnostic only; full eligibility parser regression remains required before promotion"
+      },
+      "interface_static_fields": {
+        "path": "/private/tmp/java2go-interface-fields-dajvzzx0",
+        "status": "integrated after independent combined JVM/race gate",
+        "patch": "/private/tmp/java2go-interface-fields-dajvzzx0/interface-fields.patch",
+        "patch_sha256": "9942a4d581fc35068dbc02444961f150809a9a304d2377fc1a81ca2e430f2bbc",
+        "red": "/private/tmp/java2go-interface-fields-dajvzzx0/red.json",
+        "green": "/private/tmp/java2go-interface-fields-dajvzzx0/green.json",
+        "coordinator_log": "/private/tmp/java2go-members-block11-independent.log",
+        "coordinator_snapshot": "/private/tmp/java2go-block11-verify-w02mv6o6",
+        "coordinator_exit_code": 0,
+        "integrated": true
+      },
+      "heavy_slot": {
+        "owner": "coordinator",
+        "session": 89685,
+        "status": "superseded by checkpoint12 fullgate; live"
+      },
+      "concurrent_map": {
+        "probe": "/private/tmp/java2go-concurrentmap-nominal-probe",
+        "jvm_oracle": "passed; expected.stdout saved by Sol; no transpiler acceptance yet",
+        "oracle_sha256": "94bddf6e283232abad4e5b214b0a39ea5f62f586db6773cb7555599117c41159",
+        "private_candidate": "/private/tmp/java2go-concurrentmap-tdd-2vmvql1l",
+        "red_log": "/private/tmp/java2go-concurrentmap-tdd-2vmvql1l/concurrentmap-red.log",
+        "red_exit_code": 1,
+        "red_session": 77706,
+        "red_seconds": 4.222,
+        "first_stage": "go-build-all",
+        "failures": [
+          "undefined ConcurrentMap",
+          "missing atomic conditional methods",
+          "ConcurrentHashMap cannot inhabit Map alias"
+        ],
+        "jvm_oracles": "both unchanged nominal/schedule exact oracles pass; strict transpilation passes; zero Go parity accepted",
+        "plan": "/private/tmp/java2go-concurrentmap-tdd-2vmvql1l/concurrentmap-plan.md",
+        "next": "candidate prepared untested; run baseline all4tests to validate added interface/collector and compute oracles, then genuine atomic candidate; no speculative erased marker; broader shared raw-storage blocker retained",
+        "baseline_all4_log": "/private/tmp/java2go-concurrentmap-baseline-sms8d_7z/concurrentmap-baseline-all4.log",
+        "baseline_all4_session": 64902,
+        "baseline_all4_exit": 1,
+        "baseline_all4_seconds": 5.28,
+        "all4_jvm_valid": true,
+        "additional_prerequisites": [
+          "raw Map[] lacks Go type arguments",
+          "wildcard Map<?,?> alias identity cannot use invariant typed views",
+          "AssertionError(Object) constructor",
+          "typed null Function representation"
+        ],
+        "candidate_status": "prepared untested private; exact4sources retained",
+        "assertion_error_owner": "astra_runtime",
+        "function_null_owner": "astra_compiler queued after historical regression repair",
+        "runtime_candidate_gate": "/private/tmp/java2go-concurrentmap-runtime-check-yju7bpsm/concurrentmap-runtime-focused.log",
+        "runtime_candidate_exit": 0,
+        "runtime_candidate_seconds": 1.514,
+        "runtime_gate_scope": "existingruntimecontracts/race only; all4 JVM application parity notestablished; privatecandidateheld"
+      },
+      "expanded_gson_diagnostics": {
+        "status": "terminal compilation failure; not parity",
+        "status_file": "/private/tmp/gson-checkpoint10-expanded-status.json",
+        "log": "/private/tmp/gson-checkpoint10-expanded-errors.log",
+        "sha256": "b55a54eea66479bc6c43e1784abc912994586c463d04185d20d5f1d845f1989b",
+        "lines": 1199,
+        "generated_sources_unchanged": true
+      },
+      "prepared_sol_probes": {
+        "collection_families": {
+          "owner": "sol_business",
+          "status": "JDK21 compilation and seeds17/41/97 x3 fresh JVMs stable, no transpile/Go acceptance",
+          "path": "/private/tmp/java2go-collection-family-prereq",
+          "oracle": "/private/tmp/java2go-collection-family-prereq-jvm-oracle.json",
+          "source_sha256": "4c506b921191f1ca68c8bcda68cfb4cc0119f9c736b5b43fc33ba51604854695",
+          "input_sha256": "0fe047a702eb080bed5559f3adf47d34684f17888f9457021aa90fa0d2a9f452",
+          "runner": "/private/tmp/java2go-collection-family-runner-bhnd657s/run.py",
+          "runner_status": "9 JVM exact, stricttranspile passed, all-package race Go build failed; no timeout or source drift",
+          "compiler_design": "/private/tmp/java2go-collection-family-compiler-design.md",
+          "report": "/private/tmp/java2go-collection-family-runner-bhnd657s/run-20260928T111354Z-73868/report.json",
+          "first_failure": "Factory and FactoryFuncAdapter leak undeclared method-scoped T into Go signatures",
+          "transpile_seconds": 0.604,
+          "go_build_seconds": 0.078
+        },
+        "concurrent_map_schedule": {
+          "owner": "sol_concurrent",
+          "path": "/private/tmp/java2go-concurrentmap-schedule-probe",
+          "status": "JDK21 compile and nine fresh fixed-schedule JVM runs exactstable; no seed parameter, no fabricated seedcoverage",
+          "oracle": "/private/tmp/java2go-concurrentmap-schedule-probe/oracle.json",
+          "source_sha256": "a6ccde1167ba7fc452d987912bdec4e2ad4a3476c891d81f1685c720a7017edb"
+        }
+      },
+      "block_visibility": {
+        "status": "integrated, independently verified",
+        "patch_source": "/private/tmp/java2go-local-family10-green/repair.patch",
+        "selected_files": [
+          "transpiler/statement.go",
+          "transpiler/local_class_visibility.go",
+          "transpiler/campaign_family_review08_block_visibility_test.go"
+        ],
+        "coordinator_log": "/private/tmp/java2go-members-block11-independent.log",
+        "coordinator_exit_code": 0,
+        "transpiler_seconds": 28.597,
+        "stdjava_seconds": 1.591,
+        "snapshot_unchanged": true,
+        "family_planner_patch_included": false
+      },
+      "combined_candidate": {
+        "snapshot": "/private/tmp/java2go-combined11-verify-qa_g92nq",
+        "manifest": "/private/tmp/java2go-combined11-verify-qa_g92nq-manifest.json",
+        "manifest_files": 1421,
+        "source_hashes_unchanged": true,
+        "log": "/private/tmp/java2go-combined11-focused.log",
+        "session": 70801,
+        "exit_code": 1,
+        "transpiler_seconds": 31.553,
+        "failures": [
+          "TestCampaignInterfaceStaticFieldsJVMParity/cross_package",
+          "TestCampaignInterfaceStaticFieldsJVMParity/package_cycle"
+        ],
+        "first_discrepancy": "generated j_app/Main.go undefined Decision after lexical resolution patch",
+        "owner": "astra_compiler",
+        "status": "initial combined red repaired; corrected candidate independently verified and integrated"
+      },
+      "unicode": {
+        "patch": "/private/tmp/java2go-unicode-green10/repair.patch",
+        "sha256": "24c2dce224d156bdc7da3eba03f213c40c0f22bc0dc6bc4b2a90ae6a0fa46036",
+        "status": "full retained eligibility, pair literals, repeated-u parser and source-map tests independently green; integrated, full historical regression pending",
+        "limitations": [
+          "general Java prelexical Unicode translation not implemented",
+          "isolated-surrogate String storage unsupported"
+        ]
+      },
+      "lint_reverification": {
+        "version": "2.14.0",
+        "log": "/private/tmp/java2go-checkpoint11-lint-iepmcn95.log",
+        "snapshot": "/private/tmp/java2go-checkpoint11-lint-iepmcn95",
+        "exit_code": 0,
+        "issues": 0,
+        "scope": "shared checkpoint11 before combined Unicode/lexical/big-number candidates",
+        "original_23_fixed": true,
+        "fix_commit": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "origin_branch_sha_verified": "83ed974601091a75add0430df7bf347f2429614f"
+      },
+      "combined_verification": {
+        "snapshot": "/private/tmp/java2go-checkpoint11-atekg_7j",
+        "manifest": "/private/tmp/java2go-checkpoint11-atekg_7j/snapshot-hashes.json",
+        "log": "/private/tmp/java2go-checkpoint11-focused.log",
+        "exit_code": 0,
+        "session": 79010,
+        "transpiler_seconds": 36.24,
+        "parsing_seconds": 1.326,
+        "stdjava_seconds": 1.3,
+        "source_hashes_unchanged": true,
+        "shared_implementation_matches_snapshot": true,
+        "integrated": true,
+        "correction_patch": "/private/tmp/java2go-lexical-resolution11-repair/repair.patch",
+        "correction_sha256": "f8204f8818505981f42f17e00c02cdee082b5105802b85e52316080b122717f4"
+      },
+      "full_gates": {
+        "runner": "/private/tmp/java2go-checkpoint11-gates.py",
+        "session": 3933,
+        "status": "terminal exit1 at unit; later gates not executed",
+        "results": "/private/tmp/java2go-checkpoint11-gate-results.json",
+        "lint_exit": 0,
+        "lint_seconds": 4.125,
+        "snapshot": "/private/tmp/java2go-checkpoint11-atekg_7j",
+        "exit_code": 1,
+        "unit_seconds": 349.167,
+        "unit_audit": "/private/tmp/java2go-checkpoint11-unit-audit.json",
+        "new_regressions": [
+          "TestObjectCreation_UnsupportedQualifierInferenceStillPassesEnclosingValue",
+          "TestGenericInnerAdversarial_InheritedImplicitCreationUsesConcreteSuperclass",
+          "TestGenericInnerSpecializedOverrideRemainsBridgeGated",
+          "TestLocalGenericEdgeAudit_InheritedMemberInnerUsesSubclassReceiver"
+        ],
+        "unit_skips": []
+      },
+      "performance_candidate": {
+        "path": "performance/runtime/bignumbers/equal_scale",
+        "status": "prepared isolated equal-scale comparison candidate; no validation/benchmark executed; no speedup claim",
+        "production_unchanged": true
+      },
+      "performance_codegen_audit": {
+        "path": "/private/tmp/java2go-checkpoint10-generated-bridge-allocation-audit.md",
+        "status": "read-only unmeasured; primitive Integer.compare candidate preparation assigned"
+      },
+      "performance_codegen_candidate": {
+        "path": "/private/tmp/java2go-integer-compare-candidate",
+        "status": "prepared unexecuted canonical Integer.compare direct lowering; includes source-shadow, sideeffect, boundary, nullable-boxed oracles; no measurement claims"
+      },
+      "inherited_member_repair": {
+        "path": "/private/tmp/java2go-inherited-member11-scratch",
+        "status": "finalv2 independentlyverified andintegrated after localpackage JVMred\u2192green",
+        "original_red_log": "/private/tmp/java2go-inherited-member11-red.log",
+        "focused_green": "/private/tmp/java2go-inherited-member11-green2.log",
+        "review_red": "/private/tmp/java2go-inherited-member11-review-red.log",
+        "review_green": "/private/tmp/java2go-inherited-member11-review-green.log",
+        "review_findings": [
+          "inheritedprivate/defaultaccess acrosspackageedges",
+          "nestedpoly switch targetroot",
+          "var switch resulttype"
+        ],
+        "var_red": "/private/tmp/java2go-inherited-member11-var-red.log",
+        "var_green": "/private/tmp/java2go-inherited-member11-var-green.log",
+        "final_gate_session": 90329,
+        "final_gate_log": "/private/tmp/java2go-inherited-member11-final-v2.log",
+        "integrated": true,
+        "additional_review": "local synthetic packageprovenance confirmedJVMred inherited-package vsGoenclosing; nearestregisteredlexicalowner fixgreen",
+        "patch": "/private/tmp/java2go-inherited-member11-repair-v2/repair.patch",
+        "patch_sha256": "9d004f7103b95fe9db58c6d086209d2a9305d44cd1f86e501ac42cc7e65a8350",
+        "local_red": "/private/tmp/java2go-inherited-member11-local-red.log",
+        "local_green": "/private/tmp/java2go-inherited-member11-local-green.log"
+      },
+      "assertion_error": {
+        "owner": "astra_runtime",
+        "candidate": "/private/tmp/java2go-assertionerror-tdd-zifza_o4",
+        "baseline_direct_log": "/private/tmp/java2go-assertionerror-tdd-zifza_o4/assertionerror-red.log",
+        "baseline_direct_exit": 1,
+        "baseline_direct_seconds": 1.148,
+        "baseline_subclass_log": "/private/tmp/java2go-assertionerror-baseline-532xzjhd/assertionerror-subclass-red.log",
+        "baseline_subclass_exit": 1,
+        "baseline_subclass_seconds": 0.812,
+        "jvm_oracles": "all3valid; unchangedsource",
+        "first_failure": "generatedGo cannotrepresent Object/primitive/nullable AssertionError overloads; missingThrowable String-return metadata",
+        "status": "all3Jvmoracles andexistingconstructor/cause tests agentgreen; combinedrootracegreen; integrated",
+        "patch": "/private/tmp/java2go-assertionerror-tdd-zifza_o4/assertionerror-candidate.patch",
+        "patch_sha256": "934fbf584a3d3bfeab72671f5290f2fbf1c1b01a81f118c6e211268bc85d9e0e",
+        "green_log": "/private/tmp/java2go-assertionerror-tdd-zifza_o4/assertionerror-green-attempt-1.log",
+        "known_unimplemented": [
+          "source-subclass virtual initCause during constructor",
+          "isolated surrogate String storage"
+        ]
+      },
+      "next_full_runner": "/private/tmp/java2go-checkpoint12-gates.py"
+    },
+    "checkpoint12": {
+      "base_commit": "83ed974601091a75add0430df7bf347f2429614f",
+      "snapshot": "/private/tmp/java2go-checkpoint12-19io94u4",
+      "manifest": "/private/tmp/java2go-checkpoint12-19io94u4/snapshot-hashes.json",
+      "manifest_files": 1427,
+      "focused": {
+        "session": 23720,
+        "log": "/private/tmp/java2go-checkpoint12-focused.log",
+        "exit_code": 0,
+        "transpiler_seconds": 56.007,
+        "parsing_seconds": 1.268,
+        "stdjava_seconds": 1.203,
+        "source_unchanged": true
+      },
+      "shared_go_matches_snapshot": true,
+      "full_gates": {
+        "session": 89685,
+        "runner": "/private/tmp/java2go-checkpoint12-gates.py",
+        "results": "/private/tmp/java2go-checkpoint12-gate-results.json",
+        "status": "terminal: unit failed with two assertion-wrapper regressions; later gates not run",
+        "build_seconds": 1.146,
+        "lint_seconds": 3.952,
+        "build_exit": 0,
+        "lint_exit": 0,
+        "unit_exit": 1,
+        "unit_seconds": 361.055,
+        "unit_audit": "/private/tmp/java2go-checkpoint12-unit-audit.json"
+      },
+      "heavy_slot": {
+        "owner": "coordinator",
+        "session": 89685,
+        "status": "released; terminal"
+      },
+      "functional_null": {
+        "owner": "astra_compiler",
+        "path": "/private/tmp/java2go-functional-null11-scratch/transpiler/campaign_functional_null_test.go",
+        "status": "preparedunexecuted; propernullableSAMobject/identity and callbackABI designpending, nofunctionalproductionpatch"
+      },
+      "milestone": "commitANDpush onlyafter completehistoricalregressionverify; fullGsonstillactive",
+      "lint_recheck": {
+        "version": "2.14.0",
+        "exit_code": 0,
+        "issues": 0,
+        "log": "/private/tmp/java2go-checkpoint12-golangci-2.14.0.log",
+        "fix_commit": "563fddbe837ba558ae3d1f57c9a947a179f845af"
+      }
+    },
+    "checkpoint13": {
+      "snapshot": "/private/tmp/java2go-checkpoint13-49705qof",
+      "manifest": "/private/tmp/java2go-checkpoint13-49705qof/snapshot-hashes.json",
+      "assertion_wrapper_fix": {
+        "patch": "/private/tmp/java2go-assertion-wrapper-fix-_hkvjt8f/assertion-wrapper-fix.patch",
+        "sha256": "ff068c2b0ab514e2b733da33020c87453eb3a7045712ae60faba903556e7d598",
+        "independent_focused_log": "/private/tmp/java2go-checkpoint13-assertion-focused.log",
+        "exit_code": 0,
+        "source_stable": true,
+        "integrated": true
+      },
+      "full_gates": {
+        "runner": "/private/tmp/java2go-checkpoint13-gates.py",
+        "results": "/private/tmp/java2go-checkpoint13-gate-results.json",
+        "status": "terminal parity exit1: nested_classes_and_math_gap Go compilation regression; later gates not run",
+        "session": 66648,
+        "build_exit": 0,
+        "lint_exit": 0,
+        "unit_exit": 0,
+        "unit_seconds": 363.733,
+        "unit_audit": "/private/tmp/java2go-checkpoint13-unit-audit.json",
+        "parity_exit": 1,
+        "parity_seconds": 256.307,
+        "parity_audit": "/private/tmp/java2go-checkpoint13-parity-audit.json"
+      },
+      "milestone": "commit and push after historical regressions pass; full Gson remains active",
+      "heavy_slot": {
+        "owner": "astra_compiler",
+        "status": "compiler repair terminal; slot now coordinator checkpoint14"
+      },
+      "independent_acceptance": {
+        "verifier": "/private/tmp/java2go-checkpoint13-independent-acceptance.py",
+        "sha256": "aad3c850a97edf9ded0ae39a53154a3f040c28e00b20353e9598e23870d2de65",
+        "status": "pending checkpoint13 reports; successfully audited checkpoint10 historical results with stronger raw output inventory checks",
+        "checkpoint10_audit": "/private/tmp/java2go-checkpoint10-expanded-acceptance-audit.json",
+        "deferred_commands": "/private/tmp/java2go-checkpoint13-deferred-checks.json"
+      },
+      "next_prerequisites": {
+        "function_tests": "/private/tmp/java2go-functional-null13-scratch/functional-null-frozen-manifest.json",
+        "function_status": "seven prepared frozen tests; unexecuted; no production implementation",
+        "concurrent_map": "/private/tmp/java2go-concurrentmap13-dw1imkcr/concurrentmap13-manifest.json",
+        "map_status": "rebased private candidate; no new test execution; Function prerequisite remains",
+        "collection_coverage_review": "/private/tmp/java2go-collection-family-coverage-review13.json"
+      },
+      "relative_member_repair": {
+        "owner": "astra_compiler",
+        "status": "red to agent green and independent root green; integrated",
+        "cause": "relative Outer.Inner in another same-package or imported file loses first segment before type lookup",
+        "scope": [
+          "transpiler/lexical_member_types.go",
+          "transpiler/expression.go",
+          "focused JVM regression tests"
+        ],
+        "original_fixture": "testfiles/applications/nested_classes_and_math_gap",
+        "no_fixture_changes": true,
+        "patch": "/private/tmp/java2go-relative-member13-repair/repair.patch",
+        "patch_sha256": "00a9e360a49c09579ab88835d226ee392668ad205a3c5532697ad8d819eecdd7",
+        "focused_log": "/private/tmp/java2go-checkpoint14-focused.log"
+      }
+    },
+    "checkpoint14": {
+      "snapshot": "/private/tmp/java2go-checkpoint14-99ppfndk",
+      "manifest": "/private/tmp/java2go-checkpoint14-99ppfndk/snapshot-hashes.json",
+      "manifest_files": 1428,
+      "focused": {
+        "session": 22222,
+        "exit_code": 0,
+        "log": "/private/tmp/java2go-checkpoint14-focused.log",
+        "source_stable": true
+      },
+      "full_gates": {
+        "runner": "/private/tmp/java2go-checkpoint14-gates.py",
+        "results": "/private/tmp/java2go-checkpoint14-gate-results.json",
+        "status": "terminal: all code gates passed; six app launches failed infrastructure implementation-freeze before observations",
+        "session": 83991,
+        "build_exit": 0,
+        "lint_exit": 0,
+        "unit_exit": 0,
+        "unit_seconds": 364.337,
+        "unit_audit": "/private/tmp/java2go-checkpoint14-unit-audit.json",
+        "parity_exit": 0,
+        "parity_seconds": 255.48,
+        "parity_audit": "/private/tmp/java2go-checkpoint14-parity-audit.json",
+        "e2e_other_exit": 0,
+        "e2e_other_seconds": 41.341,
+        "fuzz_exit": 0,
+        "fuzz_seconds": 24.301,
+        "e2e_fuzz_audit": "/private/tmp/java2go-checkpoint14-e2e-fuzz-audit.json"
+      },
+      "performance_candidate": {
+        "path": "/private/tmp/java2go-decimal-checkpoint13-jhpxebiq",
+        "status": "prepared only; no execution or speedup claim; not included in verified implementation"
+      },
+      "milestone": "verified historical regression checkpoint; publishing commit and origin branch; Gson remains active",
+      "heavy_slot": {
+        "owner": null,
+        "status": "released after private Function neighboring gate14955 terminal"
+      },
+      "ledger_reconciliation": "/private/tmp/java2go-ledger-verification-reconciliation14.json",
+      "deferred_checks": "/private/tmp/java2go-checkpoint14-deferred-checks.json",
+      "jdk_selection_audit": "/private/tmp/java2go-checkpoint14-jdk-selection-audit.json",
+      "infrastructure_repair": "/private/tmp/java2go-checkpoint14-metadata-repair.json",
+      "application_retry": {
+        "runner": "/private/tmp/java2go-checkpoint14-campaign-retry.py",
+        "results": "/private/tmp/java2go-checkpoint14-campaign-retry-results.json",
+        "session": 68868,
+        "status": "terminal: historical five accepted; Gson remains go-build-all failure",
+        "round01_business_exit": 0,
+        "round01_business_seconds": 49.265,
+        "exit_code": 1
+      },
+      "function_prerequisite": {
+        "owner": "astra_compiler",
+        "baseline": "/private/tmp/java2go-functional-null14-scratch",
+        "red_log": "/private/tmp/java2go-functional-null14-red.log",
+        "red_session": 22566,
+        "red_exit": 1,
+        "valid_jvm_oracles": 7,
+        "status": "private exact seven probes pass; wider neighboring gate failed and requires repair; not integrated",
+        "behavioral_discrepancy": "worker Function observes creator execution: Go false:true vs JVM true:false",
+        "first_green_log": "/private/tmp/java2go-functional-null14-first-green.log",
+        "first_green_session": 97783,
+        "first_green_exit": 0,
+        "neighbor_log": "/private/tmp/java2go-functional-null14-neighbors.log",
+        "neighbor_session": 14955,
+        "neighbor_exit": 1
+      },
+      "independent_acceptance": {
+        "status": "passed for historical five only",
+        "report": "/private/tmp/java2go-checkpoint14-independent-acceptance.json",
+        "verifier_sha256": "3b6d7f313a3b7c15ec74e3077f159c7cb73e5cea39e994021cba791e18dcaa03",
+        "resource_verifier_tdd": "/private/tmp/java2go-verifier14-review-a9wuc0h5/evidence.json"
+      },
+      "supplemental_checks": {
+        "tagged_compile": {
+          "exit_code": 0,
+          "log": "/private/tmp/java2go-checkpoint14-tagged-compile.log"
+        },
+        "govulncheck": {
+          "exit_code": 0,
+          "timed_out": false,
+          "duration_seconds": 2.276,
+          "log": "/private/tmp/java2go-checkpoint14-govulncheck.log"
+        }
+      },
+      "concurrent_map_prerequisite": {
+        "path": "/private/tmp/java2go-concurrentmap14-72xboww7",
+        "candidate_log": "/private/tmp/java2go-concurrentmap14-72xboww7/concurrentmap14-first-candidate.log",
+        "session": 35403,
+        "exit_code": 1,
+        "jvm_oracles_unchanged": true,
+        "failures": {
+          "nominal": "builtin exception getClass().getName is unqualified",
+          "schedule": "new String identities collapse before worker execution",
+          "interface": "wildcard Map comparison fails Go compilation",
+          "compute": "Function representation missing from this private candidate"
+        },
+        "integrated": false
       }
     }
   }

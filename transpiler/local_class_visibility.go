@@ -37,3 +37,14 @@ func localClassInDeclaration(name string, ctx Ctx) *localClassInfo {
 	}
 	return nil
 }
+
+// A block starts with the visible outer bindings and owns every subsequent
+// declaration or shadowing update. Hoisted declarations themselves stay in the
+// shared output list, independently of this lexical lookup map.
+func copyLocalClassBindings(outer map[string]*localClassInfo) map[string]*localClassInfo {
+	bindings := make(map[string]*localClassInfo, len(outer))
+	for name, info := range outer {
+		bindings[name] = info
+	}
+	return bindings
+}

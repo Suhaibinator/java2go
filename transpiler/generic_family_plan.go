@@ -47,11 +47,31 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 		binders:   map[*symbol.TypeParamDeclaration]struct{}{},
 	}
 	scopes := allSourceClassScopes()
+	localInterfaces := genericFamilyLocalInterfaceEdges(scopes, ctx)
 	// Treat implemented source interfaces as hierarchy edges too. Discovering
 	// another implementor later cannot change an already emitted method ABI.
 	changed := true
 	for changed {
 		changed = false
+		// A local implementation connects all of its source interfaces just as
+		// a named implementation does. Select one ABI for the complete component
+		// before inventorying or emitting any of its bridges.
+		for _, parents := range localInterfaces {
+			connected := false
+			for _, parent := range parents {
+				_, member := plan.members[parent]
+				connected = connected || member
+			}
+			if !connected {
+				continue
+			}
+			for _, parent := range parents {
+				if _, member := plan.members[parent]; !member {
+					plan.members[parent] = struct{}{}
+					changed = true
+				}
+			}
+		}
 		for _, scope := range scopes {
 			parents := genericFamilyParents(scope, ctx)
 			for _, parent := range parents {
@@ -115,6 +135,7 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 							body := node.ChildByFieldName("body")
 							parameters := planLocalClassTypeParameters(node, nil, file.Source, lexical)
 							local := synthLocalClassScope(node, body, node.ChildByFieldName("name").Content(file.Source), "", nil, nil, nil, parameters.carried, parameters.declared, anonymousClassMethods(body), localClassConstructors(body), nil, file.Source)
+							local.Enclosing = owner
 							localCtx := lexical.Clone()
 							localCtx.currentClass = local
 							localCtx.localScope = nil
@@ -360,4 +381,59 @@ func genericFamilyStorageLeaf(scope *symbol.ClassScope, ctx Ctx) bool {
 		}
 	}
 	return !classHasUnmodeledCallableSubclass(scope, ctx)
+}
+
+// Local classes are absent from the named symbol graph. Their implemented
+// interface lists still contribute hierarchy edges, including interfaces that
+// have no independent universal-method demand of their own.
+func genericFamilyLocalInterfaceEdges(scopes []*symbol.ClassScope, ctx Ctx) [][]*symbol.ClassScope {
+	var edges [][]*symbol.ClassScope
+	namedDeclarations := make(map[uintptr]bool, len(scopes))
+	for _, scope := range scopes {
+		if scope.Class != nil && scope.Class.DeclarationNode != nil {
+			namedDeclarations[scope.Class.DeclarationNode.ID()] = true
+		}
+	}
+	for _, owner := range scopes {
+		if owner.Class == nil || owner.Class.DeclarationNode == nil {
+			continue
+		}
+		file := findFileScopeForClassScope(owner)
+		if file == nil {
+			continue
+		}
+		declarationCtx := classScopeCtx(owner, ctx)
+		var walk func(*sitter.Node)
+		walk = func(node *sitter.Node) {
+			if node == nil {
+				return
+			}
+			if !node.Equal(owner.Class.DeclarationNode) && namedDeclarations[node.ID()] {
+				// This declaration is scanned separately in its own lexical
+				// owner context, including any interfaces shadowing outer names.
+				return
+			}
+			if node != owner.Class.DeclarationNode && node.Type() == "class_declaration" {
+				if parent := node.Parent(); parent != nil && parent.Type() != "class_body" && parent.Type() != "program" {
+					var interfaces []*symbol.ClassScope
+					if clause := node.ChildByFieldName("interfaces"); clause != nil {
+						for _, typ := range collectTypeNodes(clause) {
+							base, _ := parseJavaTypeString(typ.Content(file.Source))
+							if resolved := resolveClassScopeByQualifiedName(declarationCtx, base); resolved != nil {
+								interfaces = append(interfaces, resolved)
+							}
+						}
+					}
+					if len(interfaces) > 1 {
+						edges = append(edges, interfaces)
+					}
+				}
+			}
+			for _, child := range nodeutil.NamedChildrenOf(node) {
+				walk(child)
+			}
+		}
+		walk(owner.Class.DeclarationNode)
+	}
+	return edges
 }

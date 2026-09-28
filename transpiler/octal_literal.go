@@ -26,6 +26,18 @@ func normalizeJavaLiteralEscapes(literal string) string {
 			continue
 		}
 		first := literal[index+1]
+		if literal[0] == '"' && first == 'u' {
+			if high, afterHigh, ok := javaLiteralUnicodeUnit(literal, index); ok && high >= 0xd800 && high <= 0xdbff {
+				if low, afterLow, ok := javaLiteralUnicodeUnit(literal, afterHigh); ok && low >= 0xdc00 && low <= 0xdfff {
+					// Java's two UTF-16 code units denote one supplementary
+					// scalar. Go accepts that scalar, not surrogate escapes.
+					value := 0x10000 + (high-0xd800)*0x400 + low - 0xdc00
+					fmt.Fprintf(&result, "\\U%08x", value)
+					index = afterLow - 1
+					continue
+				}
+			}
+		}
 		if first == 's' {
 			result.WriteByte(' ')
 			index++
@@ -71,4 +83,23 @@ func normalizeJavaCharacterLiteral(literal string) string {
 		}
 	}
 	return normalized
+}
+
+// Called only at an eligible escape boundary in the one-pass literal scanner.
+// Escaped backslashes have already been copied as a pair, so a following 'u'
+// cannot accidentally start a second Unicode-decoding pass. Java accepts one
+// or more 'u' characters followed by exactly four hexadecimal digits.
+func javaLiteralUnicodeUnit(literal string, start int) (uint64, int, bool) {
+	if start < 0 || start+1 >= len(literal) || literal[start] != '\\' || literal[start+1] != 'u' {
+		return 0, start, false
+	}
+	index := start + 1
+	for index < len(literal) && literal[index] == 'u' {
+		index++
+	}
+	if index+4 > len(literal) {
+		return 0, start, false
+	}
+	value, err := strconv.ParseUint(literal[index:index+4], 16, 16)
+	return value, index + 4, err == nil
 }

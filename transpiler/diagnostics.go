@@ -101,6 +101,12 @@ func reportUnsupported(kind string, node *sitter.Node, source []byte, ctx Ctx) D
 		diag.NodeType = node.Type()
 		diag.Line = node.StartPoint().Row + 1
 		diag.Message = nodeSnippet(node, source)
+		if file := ctx.currentFile; file != nil && file.OriginalSource != nil && int(node.EndByte()) < len(file.SourceOffsets) {
+			start, end := file.SourceOffsets[node.StartByte()], file.SourceOffsets[node.EndByte()]
+			if start <= end && int(end) <= len(file.OriginalSource) {
+				diag.Message = diagnosticSnippet(string(file.OriginalSource[start:end]))
+			}
+		}
 	}
 	if ctx.suppressUnsupportedDiagnostics {
 		return diag
@@ -124,7 +130,10 @@ func nodeSnippet(node *sitter.Node, source []byte) string {
 	if node == nil || source == nil {
 		return ""
 	}
-	content := node.Content(source)
+	return diagnosticSnippet(node.Content(source))
+}
+
+func diagnosticSnippet(content string) string {
 	// Collapse to a single line so it can live inside a `//` comment.
 	const maxLen = 80
 	trimmed := make([]rune, 0, len(content))

@@ -465,6 +465,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		declarations := []ast.Decl{genInterfaceInContext(interfaceName, methods, classTypeParams, ctx)}
+		declarations = append(declarations, interfaceStaticFieldDeclarations(node.ChildByFieldName("body"), source, ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
 			declarations = append(declarations, registration)
 		}
@@ -473,6 +474,21 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 		declarations = append(declarations, generateInterfaceDefaultMethodDecls(node, source, ctx)...)
 		declarations = append(declarations, genFunctionalInterfaceAdapterDecls(interfaceName, methods, classTypeParams, ctx.currentClass, ctx)...)
+		// Member types of an interface are real implicitly static declarations.
+		// Emit them using their resolved nested scopes, just as for class bodies;
+		// otherwise signatures can reference types which are never declared.
+		if body := node.ChildByFieldName("body"); body != nil {
+			subclassIndex := 0
+			for _, member := range nodeutil.NamedChildrenOf(body) {
+				switch member.Type() {
+				case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
+					memberCtx := ctx.Clone()
+					memberCtx.currentClass = ctx.currentClass.Subclasses[subclassIndex]
+					subclassIndex++
+					declarations = append(declarations, ParseDecls(member, source, memberCtx)...)
+				}
+			}
+		}
 		return declarations
 	case "enum_declaration":
 		// Enums are modeled as structs with named singleton instances rather than integer constants.
@@ -745,7 +761,7 @@ func classBodyNeedsOrderedStaticInitialization(body *sitter.Node, scope *symbol.
 		if child.Type() == "static_initializer" {
 			return true
 		}
-		if child.Type() == "field_declaration" {
+		if child.Type() == "field_declaration" || child.Type() == "constant_declaration" {
 			for _, declarator := range nodeutil.VariableDeclarators(child) {
 				field := fieldDefinitionForDeclarator(scope, declarator, source)
 				if field == nil {
@@ -2295,6 +2311,10 @@ func explicitSuperConstructorAssignment(
 	}
 	base, superArgStrs := parseJavaTypeString(superType)
 	superName := stripJavaQualifier(base)
+	if call, ok := assertionErrorConstructorArguments(base, invocation.arguments, invocation.parsedArgs, ctx, source); ok {
+		return &ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(superName)}}, Tok: token.ASSIGN, Rhs: []ast.Expr{call}}
+	}
+
 	parent := invocation.targetScope
 	if parent != nil && parent.Class != nil && parent.Class.Name != "" {
 		superName = parent.Class.Name

@@ -498,8 +498,8 @@ func NewError(message string) Error {
 	return Error{newThrowableBase("Error", message)}
 }
 
-func NewAssertionError(message string) AssertionError {
-	return AssertionError{newThrowableBase("AssertionError", message)}
+func NewAssertionError(arguments ...any) AssertionError {
+	return NewAssertionErrorExecution(nil, arguments...)
 }
 
 func NewLinkageError(message string) LinkageError {

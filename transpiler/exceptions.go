@@ -61,6 +61,10 @@ func isBuiltinExceptionType(className string) bool {
 // built-in exception type, e.g. stdjava.NewIllegalArgumentException(args). The
 // Types with modeled cause overloads preserve the entire Java argument list.
 func builtinExceptionConstructorExpr(className string, args []ast.Expr, ctx Ctx) ast.Expr {
+	if owner, ok := canonicalIntrinsicOwner(className, ctx); ok && owner == "java.lang.AssertionError" {
+		return stdjavaCall(ctx, "NewAssertionErrorExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
+	}
+
 	name := stripJavaQualifier(className)
 	switch name {
 	case "ParseException", "Exception", "RuntimeException", "IllegalArgumentException", "IllegalStateException", "UnsupportedEncodingException":

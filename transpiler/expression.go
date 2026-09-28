@@ -925,6 +925,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			return rewritten
 		}
 
+		if rewritten, ok := tryAssertionErrorConstructor(node, className, ctx, source); ok {
+			return rewritten
+		}
+
 		// Built-in exception types (java.lang/java.io) are modelled by the stdjava
 		// runtime, so `new IllegalArgumentException("msg")` becomes a call to the
 		// corresponding stdjava constructor, preserving the detail message.
@@ -3717,6 +3721,16 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 		return scope
 	}
 
+	if scope := lexicalMemberType(name, ctx); scope != nil {
+		return scope
+	}
+	if scope := declaredFileType(name, ctx.currentFile, ctx); scope != nil {
+		return scope
+	}
+	if scope := relativeMemberType(name, ctx); scope != nil {
+		return scope
+	}
+
 	// Try fully-qualified lookup first: "pkg.path.Class".
 	if idx := strings.LastIndex(name, "."); idx >= 0 {
 		pkgPath := name[:idx]
@@ -3735,11 +3749,6 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 		name = className
 	}
 
-	// Current file.
-	if scope := ctx.currentFile.FindClassScope(name); scope != nil {
-		return scope
-	}
-
 	// A single-type import may name a nested class. Its complete owner path
 	// selects that class before package-wide simple-name lookup can find a
 	// different member type with the same name.
@@ -3756,8 +3765,10 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 
 	// Current package (other files).
 	if pkg := symbol.GlobalScope.FindPackage(ctx.currentFile.Package); pkg != nil {
-		if scope := pkg.FindClassScope(name); scope != nil {
-			return scope
+		for _, file := range pkg.Files {
+			if scope := declaredFileType(name, file, ctx); scope != nil {
+				return scope
+			}
 		}
 	}
 
@@ -6193,11 +6204,22 @@ func buildSwitchExpressionIIFE(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 		return &ast.CallExpr{Fun: &ast.Ident{Name: "panic"}, Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("%q", strings.TrimPrefix(unsupportedComment(diag), "// "))}}}
 	}
 
-	// Result type of the IIFE: prefer the expected type, else any.
-	var resultType ast.Expr = &ast.Ident{Name: "any"}
-	if strings.TrimSpace(ctx.expectedType) != "" {
-		resultType = javaTypeStringToGoTypeExpr(ctx.expectedType, inScopeTypeParameters(ctx), ctx)
+	// Uniform standalone switch arms retain their source type even when the
+	// expression is a receiver or an enclosing-instance qualifier.
+	resultJavaType := ""
+	if expectedTypeTargetsExpression(ctx, node) {
+		resultJavaType = strings.TrimSpace(ctx.expectedType)
 	}
+	if resultJavaType == "" || isVarKeywordType(resultJavaType) {
+		resultJavaType, _ = inferUniformSwitchResultJavaType(node, ctx, source)
+	}
+	var resultType ast.Expr = &ast.Ident{Name: "any"}
+	if resultJavaType != "" {
+		resultType = javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx)
+	}
+	ctx = ctx.Clone()
+	ctx.expectedType = resultJavaType
+	ctx.expectedTypeRoot = node
 
 	tag := ParseExpr(condNode, source, ctx)
 	if javaType, known := inferExprJavaType(condNode, ctx, source); known {
@@ -6267,11 +6289,11 @@ func switchArmReturnStmts(bodyNodes []*sitter.Node, source []byte, ctx Ctx) []as
 	for _, n := range bodyNodes {
 		switch n.Type() {
 		case "expression_statement":
-			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(n.NamedChild(0), source, ctx)}})
+			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{parseSwitchArmReturnValue(n.NamedChild(0), source, ctx)}})
 		case "block":
 			stmts = append(stmts, convertYieldBlock(n, source, ctx)...)
 		case "yield_statement":
-			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(n.NamedChild(0), source, ctx)}})
+			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{parseSwitchArmReturnValue(n.NamedChild(0), source, ctx)}})
 		default:
 			stmts = append(stmts, ParseStmt(n, source, ctx))
 		}
@@ -6285,7 +6307,7 @@ func convertYieldBlock(block *sitter.Node, source []byte, ctx Ctx) []ast.Stmt {
 	var stmts []ast.Stmt
 	for _, n := range nodeutil.NamedChildrenOf(block) {
 		if n.Type() == "yield_statement" {
-			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(n.NamedChild(0), source, ctx)}})
+			stmts = append(stmts, &ast.ReturnStmt{Results: []ast.Expr{parseSwitchArmReturnValue(n.NamedChild(0), source, ctx)}})
 			continue
 		}
 		if parsed := TryParseStmts(n, source, ctx); parsed != nil {
@@ -8162,9 +8184,11 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		reservedInstallerSelectors,
 		source,
 	)
+	// Lexical type lookup needs the declaring owner even in a static method;
+	// IsInner alone controls whether an enclosing instance is captured.
+	syntheticScope.Enclosing = ctx.currentClass
 	if ctx.currentClass != nil && ctx.localScope != nil && !ctx.localScope.IsStatic {
 		syntheticScope.IsInner = true
-		syntheticScope.Enclosing = ctx.currentClass
 	}
 	fieldInitializerMethod := ""
 	if syntheticScope.HasInstanceFieldInitializers {
@@ -9838,7 +9862,9 @@ func qualifyJavaTypeInDeclaringContext(typeStr string, owner *symbol.ClassScope)
 	}
 
 	qualifiedBase := base
-	declCtx := Ctx{currentFile: ownerFile}
+	// Member types in a signature are resolved in the declaring class, not
+	// merely its source file or the caller that consumes the signature.
+	declCtx := Ctx{currentFile: ownerFile, currentClass: owner}
 	if scope := resolveClassScopeByQualifiedName(declCtx, base); scope != nil {
 		if sourceName := qualifiedSourceClassName(scope); sourceName != "" {
 			qualifiedBase = sourceName
@@ -10199,6 +10225,8 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		}
 	case "ternary_expression":
 		return inferTernaryResultJavaType(node, ctx, source)
+	case "switch_expression":
+		return inferUniformSwitchResultJavaType(node, ctx, source)
 	case "binary_expression":
 		// Java's `+` is String concatenation when either operand is a String, so
 		// the whole expression is a String (e.g. `var g = "a" + n;` makes g a

@@ -44,8 +44,10 @@ type Ctx struct {
 	// Project entrypoints retain their Java signature and receive argv from a launcher.
 	projectMode bool
 	// Immutable named-family analysis shared only within this resolved file render.
-	genericFamilies  *genericFamilyAnalysis
-	localBindingBody *sitter.Node
+	genericFamilies *genericFamilyAnalysis
+	// Active member-type hierarchy lookups; extended immutably per lookup.
+	memberTypeLookupPath map[*symbol.ClassScope]bool
+	localBindingBody     *sitter.Node
 	// Used to generate the names of all the methods, as well as the names
 	// of the constructors
 	className string
@@ -403,6 +405,7 @@ func (c Ctx) Clone() Ctx {
 	return Ctx{
 		projectMode:                         c.projectMode,
 		genericFamilies:                     c.genericFamilies,
+		memberTypeLookupPath:                c.memberTypeLookupPath,
 		localBindingBody:                    c.localBindingBody,
 		className:                           c.className,
 		currentFile:                         c.currentFile,

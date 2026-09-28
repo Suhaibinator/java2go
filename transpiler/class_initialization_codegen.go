@@ -133,7 +133,7 @@ func orderedStaticInitializationStatements(body *sitter.Node, source []byte, ctx
 	var statements []ast.Stmt
 	for _, child := range nodeutil.NamedChildrenOf(body) {
 		switch child.Type() {
-		case "field_declaration":
+		case "field_declaration", "constant_declaration":
 			for _, declarator := range nodeutil.VariableDeclarators(child) {
 				valueNode := declarator.ChildByFieldName("value")
 				nameNode := declarator.ChildByFieldName("name")

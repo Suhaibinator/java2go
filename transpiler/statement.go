@@ -104,6 +104,9 @@ func parseLoopBody(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
 // ordinary Go statement (or parsed twice, which could duplicate hoisted
 // declarations in its arguments).
 func parseStatementBlock(node, omitted *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+	// Hoisted Go declarations share the file, but Java type names introduced
+	// by this block must not escape into its enclosing or sibling blocks.
+	ctx.localClasses = copyLocalClassBindings(ctx.localClasses)
 	// Row-loop LICM plans are discovered while recursively rendering an inner
 	// loop, then consumed as the recursion unwinds through these lexical blocks.
 	// Initialize the shared map before descending so cloned contexts observe
@@ -660,6 +663,10 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 							recvName = ctx.currentClass.Class.Name
 						}
 						if recvName != "" {
+							if call, ok := assertionErrorConstructorArguments(base, argsNode, args, ctx, source); ok {
+								return &ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(ShortName(recvName)), Sel: ast.NewIdent(superName)}}, Tok: token.ASSIGN, Rhs: []ast.Expr{call}}
+							}
+
 							return &ast.AssignStmt{
 								Lhs: []ast.Expr{&ast.SelectorExpr{
 									X:   &ast.Ident{Name: ShortName(recvName)},

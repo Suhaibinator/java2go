@@ -347,7 +347,7 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 // parseClassMember parses a single class member (field, method, constructor, or nested class)
 func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 	switch node.Type() {
-	case "field_declaration":
+	case "field_declaration", "constant_declaration":
 		var public bool
 		var isStatic bool
 		var isFinal bool
