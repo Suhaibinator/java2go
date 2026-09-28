@@ -954,6 +954,12 @@ func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) 
 	if !ok {
 		return "", false
 	}
+	// Every Java array inherits Object methods, independently of whether its
+	// component is primitive, external, or source-defined. Keep the runtime
+	// array object as the receiver so identity and its reified class survive.
+	if _, rank := javaArrayTypeParts(javaType); rank > 0 {
+		return "Object", true
+	}
 	base, _ := parseJavaTypeString(javaType)
 	if erased, bounded := javaTypeParameterErasure(base, ctx); bounded {
 		base, _ = parseJavaTypeString(erased)

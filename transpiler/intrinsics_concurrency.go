@@ -43,6 +43,9 @@ func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx 
 	if expression, ok := digestIORuntimeTypeExpr(baseName, ctx); ok {
 		return expression, true
 	}
+	if (baseName == "StringBuilder" || baseName == "StringBuffer") && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr("StringBuilder", ctx)}, true
+	}
 	if (baseName == "Charset" || baseName == "ByteBuffer" || baseName == "MessageDigest" || baseName == "Locale" || baseName == "BitSet" || baseName == "Random") && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
 		return &ast.StarExpr{X: stdjavaQualifiedExpr(baseName, ctx)}, true
 	}

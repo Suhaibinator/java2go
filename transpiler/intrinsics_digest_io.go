@@ -6,6 +6,9 @@ import "go/ast"
 // and result boundaries, not only at constructor call sites. Source classes
 // with these simple names retain their own representation.
 func digestIORuntimeTypeExpr(baseName string, ctx Ctx) (ast.Expr, bool) {
+	if result, ok := characterIORuntimeTypeExpr(baseName, ctx); ok {
+		return result, true
+	}
 	if resolveClassScopeByQualifiedName(ctx, baseName) != nil {
 		return nil, false
 	}

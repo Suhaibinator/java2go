@@ -641,6 +641,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			constructorNode = node.NamedChild(0)
 		}
 		if constructorNode != nil && constructorNode.Type() == "super" && ctx.currentClass != nil {
+			if statement := characterIOSuperConstructor(args, ctx); statement != nil {
+				return statement
+			}
 			if statement := filterInputSuperConstructor(args, ctx); statement != nil {
 				return statement
 			}

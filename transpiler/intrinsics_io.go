@@ -37,6 +37,7 @@ func init() {
 	registerCharsetIntrinsics()
 	registerByteBufferIntrinsics()
 	registerDigestIOIntrinsics()
+	registerCharacterIOIntrinsics()
 }
 
 func registerIOStatics() {

@@ -109,3 +109,23 @@ messages name that folder, preserving source and generated Go paths for diagnosi
 Panic unwinding also retains staging and reports its path without replacing the
 panic. Successful publication cleans staging normally. Retained diagnostic output
 is never treated as a successful conversion or parity result.
+
+## Current character and reflection boundaries
+
+Focused JVM regressions cover source and anonymous Reader/Writer subclasses,
+UTF16 `char[]` dispatch, Appendable overrides, Writer's default locking and
+reusable buffer, null-preserving reference casts, and StringBuilder UTF16 edits
+and reversal. These do not establish every JDK character-stream contract:
+builtin reader/writer adapters, Reader skip/mark/default lock behavior,
+StringBuffer synchronization and distinct class identity still need work.
+Isolated surrogate units can be stored in a builder, but conversion to the
+current String representation remains explicitly unsupported.
+
+Source implementations of ParameterizedType, GenericArrayType, WildcardType,
+TypeVariable and related protocols retain nominal checks, virtual dispatch,
+array identity and exceptions. Actual generic Class/Field metadata is a separate
+unimplemented prerequisite; see [the metadata design](design/generic-reflection.md)
+and [the erased factory design](design/nested-generic-factory.md). Passing these
+focused tests does not imply that Gson or arbitrary reflection is supported.
+The frozen Gson application remains a mandatory failing campaign gate until its
+complete translated implementation builds and matches all JVM observations.

@@ -55,6 +55,7 @@ var (
 		"NegativeArraySizeException":      "RuntimeException",
 		"IndexOutOfBoundsException":       "RuntimeException",
 		"ArrayIndexOutOfBoundsException":  "IndexOutOfBoundsException",
+		"StringIndexOutOfBoundsException": "IndexOutOfBoundsException",
 		"ArrayStoreException":             "RuntimeException",
 		"NumberFormatException":           "IllegalArgumentException",
 		"ArithmeticException":             "RuntimeException",

@@ -11,7 +11,7 @@ func (p *reflectedDefaultTypeName) StringJava2goExecution(execution *Execution) 
 
 type reflectedOverrideTypeName struct{ execution *Execution }
 
-func (p *reflectedOverrideTypeName) GetTypeNameJava2goExecution(execution *Execution) string {
+func (p *reflectedOverrideTypeName) GetTypeNameJava2goExecution7(execution *Execution) string {
 	p.execution = execution
 	return "override-name"
 }
@@ -50,4 +50,63 @@ func TestClassReflectTypeIdentity(t *testing.T) {
 	if ClassLiteral(PrimitiveIntTypeID).GetTypeName() != "int" {
 		t.Fatal("primitive name")
 	}
+}
+
+type reflectedProtocolProbe struct {
+	execution *Execution
+	arguments *ReferenceArray
+}
+
+func (*reflectedProtocolProbe) JavaDynamicTypeID() TypeID { return "test.ReflectProtocol" }
+func (p *reflectedProtocolProbe) GetRawTypeJava2goExecution7(execution *Execution) *Class {
+	p.execution = execution
+	return ClassLiteral(StringTypeID)
+}
+func (p *reflectedProtocolProbe) GetActualTypeArgumentsJava2goExecution(execution *Execution) *ReferenceArray {
+	p.execution = execution
+	return p.arguments
+}
+func (*reflectedProtocolProbe) GetOwnerTypeJava2goExecution(*Execution) ReflectType { return nil }
+func (*reflectedProtocolProbe) GetLowerBoundsJava2goExecution(*Execution) *ReferenceArray {
+	panic(NewIllegalStateException("original accessor exception"))
+}
+func (*reflectedProtocolProbe) GetGenericDeclarationJava2goExecution(*Execution) *Class {
+	return ClassLiteral(StringTypeID)
+}
+
+func TestReflectProtocolActualAccessors(t *testing.T) {
+	RegisterJavaType("test.ReflectProtocol", ObjectTypeID, ParameterizedTypeTypeID, WildcardTypeTypeID, TypeVariableTypeID)
+	execution := NewExecution()
+	array := ReferenceArrayLiteral(JavaClassTypeID, ClassLiteral(StringTypeID))
+	probe := &reflectedProtocolProbe{arguments: array}
+	if raw := ReflectTypeMemberExecution(execution, probe, ParameterizedTypeTypeID, "GetRawType"); raw != ClassLiteral(StringTypeID) || probe.execution != execution {
+		t.Fatalf("collision-safe covariant method: %v", raw)
+	}
+	if args := ReflectArrayMemberExecution(execution, probe, ParameterizedTypeTypeID, "GetActualTypeArguments", ReflectTypeTypeID); args != array {
+		t.Fatal("accessor copied or replaced returned array")
+	}
+	if owner := ReflectTypeMemberExecution(execution, probe, ParameterizedTypeTypeID, "GetOwnerType"); owner != nil {
+		t.Fatal("null owner changed")
+	}
+	if declaration := ReflectDeclarationMemberExecution(execution, probe, TypeVariableTypeID, "GetGenericDeclaration"); declaration != ClassLiteral(StringTypeID) {
+		t.Fatal("covariant declaration changed")
+	}
+	func() {
+		defer func() {
+			failure := recover()
+			if failure == nil || !CaughtAs(failure, "IllegalStateException") {
+				t.Fatalf("accessor exception wrapped or lost: %v", failure)
+			}
+		}()
+		ReflectArrayMemberExecution(execution, probe, WildcardTypeTypeID, "GetLowerBounds", ReflectTypeTypeID)
+	}()
+	func() {
+		defer func() {
+			failure := recover()
+			if failure == nil || !CaughtAs(failure, "ClassCastException") {
+				t.Fatalf("non-nominal receiver accepted: %v", failure)
+			}
+		}()
+		ReflectTypeMemberExecution(execution, ClassLiteral(StringTypeID), ParameterizedTypeTypeID, "GetRawType")
+	}()
 }

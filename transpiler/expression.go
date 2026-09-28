@@ -470,6 +470,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			objectNode := node.ChildByFieldName("object")
 			methodName := node.ChildByFieldName("name").Content(source)
 			methodIdent := identFromNode(node.ChildByFieldName("name"), source)
+			if lowered := characterIOInvocation(objectNode, methodName, node.ChildByFieldName("arguments"), source, ctx); lowered != nil {
+				return lowered
+			}
 			if lowered := filterInputSuperInvocation(objectNode, methodName, node.ChildByFieldName("arguments"), source, ctx); lowered != nil {
 				return lowered
 			}
@@ -1578,7 +1581,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
-		return typeAssert()
+		return nullableReferenceAssertion(valueExpr, targetType, targetJavaType, ctx)
 	case "field_access":
 		// X.Sel
 		obj := node.ChildByFieldName("object")
@@ -1755,6 +1758,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return enclAccess
 			}
 		}
+		if lock := inheritedCharacterIOLock(identName, ctx); lock != nil {
+			return lock
+		}
 		if inheritedFilterInputName(identName, ctx) {
 			return filterInputField(ctx)
 		}
@@ -1818,9 +1824,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if strings.HasPrefix(raw, "\"\"\"") {
 			return textBlockLiteral(raw)
 		}
-		return &ast.Ident{Name: raw}
+		return &ast.Ident{Name: normalizeJavaLiteralEscapes(raw)}
 	case "character_literal":
-		return &ast.Ident{Name: node.Content(source)}
+		return &ast.Ident{Name: normalizeJavaCharacterLiteral(node.Content(source))}
 	case "true", "false":
 		return &ast.Ident{Name: node.Content(source)}
 	}
@@ -6525,7 +6531,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	syntheticScope.TypeParameters = anonymousClassTypeParameters(node, captured, isInner, source, ctx)
 	if superScope != nil && superScope.IsInterface {
 		syntheticScope.ImplementedInterfaces = append(syntheticScope.ImplementedInterfaces, supertype)
-	} else if superScope != nil {
+	} else if superScope != nil || characterIOBaseTypeExpr(supertype, ctx) != nil {
 		syntheticScope.Superclass = supertype
 	}
 	syntheticScope.HasInstanceFieldInitializers = localClassHasInstanceFieldInitializers(classBody)
@@ -6568,6 +6574,8 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 				ctx,
 			)})
 		}
+	} else if characterBase := characterIOBaseTypeExpr(supertype, ctx); characterBase != nil {
+		fields.List = append(fields.List, &ast.Field{Type: characterBase})
 	} else if stripJavaQualifier(baseType) == "Runnable" {
 		// Go interface satisfaction is structural: the exported Run method emitted
 		// below is sufficient. Embedding stdjava.Runnable would add a nil interface
@@ -6592,6 +6600,25 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	installerCtx.currentClass = syntheticScope
 	installerCtx.className = structName
 	installerCtx.localScope = nil
+	for _, declaration := range generateCharacterIOBridgeDecls(installerCtx) {
+		ctx.addHoistedDecl(declaration)
+	}
+	if superScope == nil && characterIOBaseTypeExpr(supertype, ctx) != nil {
+		var protocolIDs []ast.Expr
+		for _, protocol := range sourceCharacterIOProtocols(syntheticScope, ctx) {
+			if constant := characterIONominalConstants[protocol]; constant != "" {
+				protocolIDs = append(protocolIDs, stdjavaQualifiedExpr(constant, ctx))
+			}
+		}
+		ownerID := ctx.className
+		if ctx.currentClass != nil {
+			ownerID = javaClassBinaryName(ctx.currentClass)
+		}
+		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(structName, ownerID+"$"+structName, stdjavaQualifiedExpr(characterIONominalConstants[stripJavaQualifier(supertype)], ctx), protocolIDs, syntheticScope.GoTypeParameterNames(), ctx) {
+			ctx.addHoistedDecl(declaration)
+		}
+	}
+
 	for _, declaration := range buildClassStringerBridgeDecls(installerCtx) {
 		ctx.addHoistedDecl(declaration)
 	}

@@ -54,6 +54,9 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 	if _, rank := javaArrayTypeParts(expected); rank != 0 {
 		return false
 	}
+	if characterIOReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
 	if builtinReflectTypeAssignable(actual, expected, ctx) {
 		return true
 	}

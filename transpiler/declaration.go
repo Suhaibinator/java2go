@@ -92,6 +92,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
 					continue
 				}
+				if baseType := characterIOBaseTypeExpr(t.Content(source), ctx); baseType != nil {
+					fields.List = append(fields.List, &ast.Field{Type: baseType})
+					continue
+				}
 				if base := stripJavaQualifier(t.Content(source)); (base == "FilterInputStream" || base == "ByteArrayInputStream") && resolveClassScopeByQualifiedName(ctx, base) == nil {
 					fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr(base, ctx)}})
 					continue
@@ -310,6 +314,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
 		declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
 		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
+		declarations = append(declarations, generateCharacterIOBridgeDecls(ctx)...)
 		declarations = append(declarations, generateRawUnboundReceiverEntryDecls(ctx)...)
 		declarations = append(declarations, generateClassSubobjectInstallerDecls(ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
@@ -2272,6 +2277,9 @@ func explicitSuperConstructorAssignment(
 	if superType == "" {
 		return nil
 	}
+	if statement := characterIOSuperConstructor(invocation.parsedArgs, ctx); statement != nil {
+		return statement
+	}
 	if statement := filterInputSuperConstructor(invocation.parsedArgs, ctx); statement != nil {
 		return statement
 	}
@@ -2636,7 +2644,10 @@ func zeroValueForType(expr ast.Expr) ast.Expr {
 	case *ast.StarExpr, *ast.ArrayType, *ast.MapType, *ast.InterfaceType, *ast.FuncType, *ast.SliceExpr, *ast.ChanType:
 		return &ast.Ident{Name: "nil"}
 	default:
-		return &ast.CompositeLit{Type: expr}
+		// Qualified names and generic instantiations can denote interfaces or
+		// aliases as well as structs. new(T) works for every such Go type; a
+		// composite literal is invalid when its underlying type is an interface.
+		return &ast.StarExpr{X: &ast.CallExpr{Fun: ast.NewIdent("new"), Args: []ast.Expr{expr}}}
 	}
 }
 

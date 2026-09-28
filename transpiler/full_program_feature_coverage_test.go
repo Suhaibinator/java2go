@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -60,9 +61,26 @@ func TestFullProgram_CastSemanticsEdgeCases(t *testing.T) {
 	if !strings.Contains(flat, "return int32(value)") {
 		t.Fatalf("expected primitive cast to use Go conversion call:\n%s", outputs["com/acme/casts/Casts.go"])
 	}
-	if !strings.Contains(flat, "return any(value).(string)") {
-		t.Fatalf("expected reference cast to use type assertion over any(...):\n%s", outputs["com/acme/casts/Casts.go"])
+	for _, required := range []string{
+		"return func(value any) string {",
+		"if stdjava.JavaReferenceEqual(value, nil)",
+		`return "\xffjava2go:null-string\x00"`,
+		"return value.(string)",
+		"}(value)",
+	} {
+		if !strings.Contains(flat, required) {
+			t.Fatalf("reference cast lost nullable checked conversion %q:\n%s", required, outputs["com/acme/casts/Casts.go"])
+		}
 	}
+	castSource, err := os.ReadFile(filepath.Join(root, "com/acme/casts/Casts.java"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	runCampaignCompilerProjectOracle(t, map[string]string{
+		"pom.xml": `<project><groupId>example</groupId><artifactId>cast-semantics</artifactId><version>1</version></project>`,
+		"src/main/java/com/acme/casts/Casts.java": string(castSource),
+		"src/main/java/example/Main.java":         `package example;import com.acme.casts.Casts;public class Main{public static void main(String[] args){System.out.println(Casts.fromDouble(2.9));System.out.println(Casts.asString("ok"));System.out.println(Casts.asString(null)==null);try{Casts.asString(42);System.out.println("wrong");}catch(ClassCastException expected){System.out.println("rejected");}}}`,
+	}, "example.Main", "2\nok\ntrue\nrejected\n")
 }
 
 func TestFullProgram_WildcardsAndVarianceGenerics(t *testing.T) {

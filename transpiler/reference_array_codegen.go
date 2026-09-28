@@ -213,8 +213,11 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
 		return source, true
 	}
-	if isBuiltinReflectType(javaType, ctx) {
-		return stdjavaQualifiedExpr("ReflectTypeTypeID", ctx), true
+	if constant := characterIONominalConstant(javaType, ctx); constant != "" {
+		return stdjavaQualifiedExpr(constant, ctx), true
+	}
+	if protocol := builtinReflectProtocol(javaType, ctx); protocol != "" {
+		return stdjavaQualifiedExpr(reflectProtocolConstants[protocol], ctx), true
 	}
 	if base == "Class" || base == "java.lang.Class" {
 		return stdjavaQualifiedExpr("JavaClassTypeID", ctx), true
@@ -593,7 +596,7 @@ func classNeedsReferenceIdentity(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil {
 		return false
 	}
-	if sourceUsesReflection() || sourceImplementsReflectType(scope, ctx) {
+	if sourceUsesReflection() || sourceImplementsReflectType(scope, ctx) || len(sourceCharacterIOProtocols(scope, ctx)) > 0 {
 		return true
 	}
 	_, ok := referenceIdentityScopes(ctx)[scope]
@@ -681,6 +684,8 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	args := []ast.Expr{javaTypeIDLiteral(id, ctx)}
 	if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(parent), ctx))
+	} else if constant := characterIONominalConstant(scope.Superclass, classScopeCtx(scope, ctx)); constant != "" {
+		args = append(args, stdjavaQualifiedExpr(constant, ctx))
 	} else {
 		args = append(args, stdjavaQualifiedExpr("ObjectTypeID", ctx))
 	}
@@ -688,8 +693,13 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(implementedScope), ctx))
 	}
 
-	if sourceDirectlyImplementsReflectType(scope, ctx) {
-		args = append(args, stdjavaQualifiedExpr("ReflectTypeTypeID", ctx))
+	for _, protocol := range sourceDirectReflectProtocols(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr(reflectProtocolConstants[protocol], ctx))
+	}
+	for _, protocol := range sourceCharacterIOProtocols(scope, ctx) {
+		if constant := characterIONominalConstants[protocol]; constant != "" {
+			args = append(args, stdjavaQualifiedExpr(constant, ctx))
+		}
 	}
 
 	name := collisionSafeExecutionIdentifier("__java2goReferenceTypeRegistration"+scope.Class.Name, scope)

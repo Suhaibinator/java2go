@@ -338,6 +338,12 @@ func lowerStringBuilderTextCall(javaMethod, goMethod string, valueIndex int) nod
 		args := intrinsicArgs(object, javaMethod, source, ctx)
 		valueNode := invocationArgumentNode(invocation, valueIndex)
 		javaType, _ := inferExprJavaType(valueNode, ctx, source)
+		if javaType == "char" {
+			return methodCall(recv, goMethod+"Char", args...)
+		}
+		if javaType == "char[]" {
+			return methodCall(recv, goMethod+"Chars", args...)
+		}
 		converted := javaStringConversionExpr(valueNode, args[valueIndex], ctx, source)
 		switch javaType {
 		case "byte", "short", "int", "long", "boolean":

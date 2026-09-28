@@ -1,26 +1,64 @@
 package transpiler
 
-import "github.com/NickyBoy89/java2go/symbol"
+import (
+	"github.com/NickyBoy89/java2go/symbol"
+	"strings"
+)
 
-func isBuiltinReflectType(javaType string, ctx Ctx) bool {
-	base, args := parseJavaTypeString(javaType)
-	return len(args) == 0 && (base == "Type" || base == "java.lang.reflect.Type") && resolveClassScopeByQualifiedName(ctx, base) == nil
+var reflectProtocolConstants = map[string]string{
+	"Type": "ReflectTypeTypeID", "ParameterizedType": "ParameterizedTypeTypeID",
+	"GenericArrayType": "GenericArrayTypeTypeID", "WildcardType": "WildcardTypeTypeID",
+	"TypeVariable": "TypeVariableTypeID", "GenericDeclaration": "GenericDeclarationTypeID",
+	"AnnotatedElement": "AnnotatedElementTypeID",
 }
 
-func sourceDirectlyImplementsReflectType(scope *symbol.ClassScope, ctx Ctx) bool {
+func builtinReflectProtocol(javaType string, ctx Ctx) string {
+	base, _ := parseJavaTypeString(javaType)
+	if resolveClassScopeByQualifiedName(ctx, base) != nil {
+		return ""
+	}
+	name := stripJavaQualifier(base)
+	if _, ok := reflectProtocolConstants[name]; !ok {
+		return ""
+	}
+	if strings.Contains(base, ".") && base != "java.lang.reflect."+name {
+		return ""
+	}
+	return name
+}
+func isBuiltinReflectType(javaType string, ctx Ctx) bool {
+	return builtinReflectProtocol(javaType, ctx) != ""
+}
+func reflectProtocolAssignable(actual, expected string) bool {
+	if actual == expected {
+		return true
+	}
+	switch expected {
+	case "Type":
+		return actual == "Class" || actual == "ParameterizedType" || actual == "GenericArrayType" || actual == "WildcardType" || actual == "TypeVariable"
+	case "GenericDeclaration":
+		return actual == "Class"
+	case "AnnotatedElement":
+		return actual == "Class" || actual == "TypeVariable" || actual == "GenericDeclaration"
+	}
+	return false
+}
+func sourceDirectReflectProtocols(scope *symbol.ClassScope, ctx Ctx) []string {
 	if scope == nil {
-		return false
+		return nil
 	}
 	declaring := classScopeCtx(scope, ctx)
-	for _, name := range scope.ImplementedInterfaces {
-		if isBuiltinReflectType(name, declaring) {
-			return true
+	names := append([]string{}, scope.ImplementedInterfaces...)
+	names = append(names, scope.Superclass)
+	var protocols []string
+	for _, name := range names {
+		if protocol := builtinReflectProtocol(name, declaring); protocol != "" {
+			protocols = append(protocols, protocol)
 		}
 	}
-	return isBuiltinReflectType(scope.Superclass, declaring)
+	return protocols
 }
-
-func sourceImplementsReflectType(scope *symbol.ClassScope, ctx Ctx) bool {
+func sourceImplementsReflectProtocol(scope *symbol.ClassScope, expected string, ctx Ctx) bool {
 	seen := map[*symbol.ClassScope]bool{}
 	var implements func(*symbol.ClassScope) bool
 	implements = func(current *symbol.ClassScope) bool {
@@ -28,8 +66,10 @@ func sourceImplementsReflectType(scope *symbol.ClassScope, ctx Ctx) bool {
 			return false
 		}
 		seen[current] = true
-		if sourceDirectlyImplementsReflectType(current, ctx) {
-			return true
+		for _, actual := range sourceDirectReflectProtocols(current, ctx) {
+			if expected == "" || reflectProtocolAssignable(actual, expected) {
+				return true
+			}
 		}
 		if implements(resolveSuperclassScopeInDeclaringContext(ctx, current)) {
 			return true
@@ -43,14 +83,21 @@ func sourceImplementsReflectType(scope *symbol.ClassScope, ctx Ctx) bool {
 	}
 	return implements(scope)
 }
-
+func sourceImplementsReflectType(scope *symbol.ClassScope, ctx Ctx) bool {
+	return sourceImplementsReflectProtocol(scope, "", ctx)
+}
 func builtinReflectTypeAssignable(actual, expected string, ctx Ctx) bool {
-	if !isBuiltinReflectType(expected, ctx) {
+	protocol := builtinReflectProtocol(expected, ctx)
+	if protocol == "" {
 		return false
 	}
 	base, _ := parseJavaTypeString(actual)
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
-		return sourceImplementsReflectType(scope, ctx)
+		return sourceImplementsReflectProtocol(scope, protocol, ctx)
 	}
-	return base == "Class" || base == "java.lang.Class" || isBuiltinReflectType(actual, ctx)
+	actualProtocol := builtinReflectProtocol(actual, ctx)
+	if base == "Class" || base == "java.lang.Class" {
+		actualProtocol = "Class"
+	}
+	return reflectProtocolAssignable(actualProtocol, protocol)
 }
