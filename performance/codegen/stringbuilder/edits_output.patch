@@ -1,0 +1,42 @@
+--- a/stdjava/stringbuilder.go
++++ b/stdjava/stringbuilder.go
+@@ -3 +3 @@
+-import "fmt"
++import ("fmt"; "unicode/utf16"; "strings")
+@@ -31 +31 @@
+-		b.buf = append(b.buf, StringChars(v)...)
++		b.appendText(v)
+@@ -61,3 +61,7 @@
+-	tail := append([]rune{}, b.buf[offset:]...)
+-	b.buf = append(b.buf[:offset], inserted...)
+-	b.buf = append(b.buf, tail...)
++	// Preserve standalone Go slice inputs too: they may alias builder storage
++	// inside this package. Java char[] wrappers cannot share this private buffer.
++	if units, ok := value.([]rune); ok { inserted = append([]rune(nil), units...) }
++	oldLength := len(b.buf)
++	b.buf = append(b.buf, make([]rune, len(inserted))...)
++	copy(b.buf[int(offset)+len(inserted):], b.buf[int(offset):oldLength])
++	copy(b.buf[offset:], inserted)
+@@ -105 +109,13 @@
+-	return StringFromChars(b.buf)
++	var out strings.Builder
++	out.Grow(len(b.buf))
++	for i := 0; i < len(b.buf); i++ {
++	 unit := b.buf[i]
++	 if utf16.IsSurrogate(unit) {
++	  if unit >= 0xdc00 || i+1 == len(b.buf) || b.buf[i+1] < 0xdc00 || b.buf[i+1] > 0xdfff {
++	   panic(NewUnsupportedOperationException("String storage does not yet preserve isolated UTF-16 surrogates"))
++	  }
++	  unit = utf16.DecodeRune(unit, b.buf[i+1]); i++
++	 }
++	 out.WriteRune(unit)
++	}
++	return out.String()
+@@ -135,0 +152,7 @@
++
++// Append UTF-16 units directly into the retained builder capacity.
++func (b *StringBuilder) appendText(s string) {
++ for _, unit := range s {
++  if unit > 0xffff { high, low := utf16.EncodeRune(unit); b.buf = append(b.buf, high, low) } else { b.buf = append(b.buf, unit) }
++ }
++}
