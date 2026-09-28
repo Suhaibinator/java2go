@@ -14,7 +14,7 @@ import (
 
 // A dynamically supplied binary name can select any source class in the
 // compilation. Enable descriptors for the complete source set in that case.
-var reflectionUsePattern = regexp.MustCompile(`\b(forName|getConstructor|getField|getMethod|isAnnotationPresent|getSuperclass|isAssignableFrom)\b`)
+var reflectionUsePattern = regexp.MustCompile(`\b(getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getMethod|isAnnotationPresent|getSuperclass|isAssignableFrom)\b`)
 
 func sourceUsesReflection() bool {
 	seen := map[*symbol.FileScope]bool{}
@@ -60,8 +60,18 @@ func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
 	if !sourceUsesReflection() {
 		return nil
 	}
+	simpleName := ""
+	if scope.Class != nil && scope.Class.DeclarationNode != nil {
+		if name := scope.Class.DeclarationNode.ChildByFieldName("name"); name != nil {
+			if file := findFileScopeForClassScope(scope); file != nil {
+				simpleName = name.Content(file.Source)
+			}
+		}
+	}
 	descriptor := &ast.CompositeLit{Type: stdjavaQualifiedExpr("ClassDescriptor", ctx), Elts: []ast.Expr{
 		metadataKey("Type", javaTypeIDLiteral(javaClassBinaryName(scope), ctx)),
+		metadataKey("SimpleName", metadataString(simpleName)),
+		metadataKey("HasSimpleName", ast.NewIdent("true")),
 		metadataKey("Interface", ast.NewIdent(strconv.FormatBool(scope.IsInterface))),
 	}}
 	execution := ast.NewIdent("execution")
@@ -148,7 +158,7 @@ func init() {
 	})
 	registerStaticIntrinsicResultType("Class", "forName", "Class")
 	for receiver, methods := range map[string]map[string]string{
-		"Class":       {"getName": "String", "getSuperclass": "Class", "isAssignableFrom": "boolean", "isAnnotationPresent": "boolean", "getConstructor": "Constructor", "getField": "Field", "getMethod": "Method"},
+		"Class":       {"getName": "String", "getSimpleName": "String", "getSuperclass": "Class", "isAssignableFrom": "boolean", "isAnnotationPresent": "boolean", "getConstructor": "Constructor", "getField": "Field", "getMethod": "Method"},
 		"Field":       {"get": "Object", "set": "void", "getName": "String"},
 		"Method":      {"invoke": "Object", "getName": "String"},
 		"Constructor": {"newInstance": "Object"},

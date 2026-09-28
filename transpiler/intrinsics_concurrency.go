@@ -20,6 +20,7 @@ func intLit(n int) ast.Expr {
 // each is generic (so its declared type takes type arguments).
 var concurrencyRuntimeTypes = map[string]bool{
 	"AtomicInteger":     false,
+	"CountDownLatch":    false,
 	"AtomicLong":        false,
 	"AtomicBoolean":     false,
 	"Thread":            false,
@@ -35,6 +36,13 @@ var concurrencyRuntimeTypes = map[string]bool{
 // the same name. Generic args are themselves lowered through
 // javaTypeStringToGoTypeExpr.
 func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+	if expression, ok := digestIORuntimeTypeExpr(baseName, ctx); ok {
+		return expression, true
+	}
+	if (baseName == "Charset" || baseName == "ByteBuffer" || baseName == "MessageDigest" || baseName == "Locale" || baseName == "BitSet" || baseName == "Random") && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr(baseName, ctx)}, true
+	}
+
 	// java.lang.Object maps to the empty interface. It commonly appears as the
 	// type of a lock token; new Object() is handled by its constructor intrinsic.
 	if baseName == "Object" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
@@ -94,6 +102,7 @@ func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx 
 
 func init() {
 	registerAtomicIntrinsics()
+	registerCountDownLatchIntrinsics()
 	registerThreadIntrinsics()
 	registerExecutorIntrinsics()
 	registerConcurrentMapIntrinsics()
@@ -333,10 +342,34 @@ func registerThreadIntrinsics() {
 		if len(args) == 0 {
 			return stdjavaCall(ctx, "NewThread", &ast.Ident{Name: "nil"})
 		}
+		if len(args) == 2 {
+			return stdjavaCall(ctx, "NewThreadNamed", args...)
+		}
 		if len(args) != 1 {
 			return nil
 		}
 		return stdjavaCall(ctx, "NewThread", args[0])
+	})
+
+	registerStaticIntrinsic("Thread", "currentThread", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "ThreadCurrentThread", intrinsicExecutionExpr(ctx))
+	})
+	registerStaticIntrinsicResultType("Thread", "currentThread", "Thread")
+	registerInstanceIntrinsic("Thread", "getName", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return selectorCall(recv, "GetName", nil)
+	})
+	registerInstanceIntrinsicResultType("Thread", "getName", "String")
+	registerInstanceIntrinsic("Thread", "run", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "RunRunnableExecution", intrinsicExecutionExpr(ctx), recv)
 	})
 
 	// Thread.sleep(ms) -> stdjava.ThreadSleep(ms)
@@ -394,8 +427,9 @@ func registerExecutorIntrinsics() {
 	})
 
 	registerFutureIntrinsics()
+	registerInstanceIntrinsicResultType("ExecutorService", "shutdownNow", "List<Runnable>")
 	for javaMethod, goMethod := range map[string]string{
-		"execute": "Execute", "shutdown": "Shutdown", "awaitTermination": "AwaitTerminationTimed",
+		"execute": "Execute", "shutdown": "Shutdown", "shutdownNow": "ShutdownNow", "awaitTermination": "AwaitTerminationTimed",
 		"isShutdown": "IsShutdown", "isTerminated": "IsTerminated",
 	} {
 		goMethod := goMethod
@@ -435,4 +469,33 @@ func registerConcurrentMapIntrinsics() {
 			return selectorCall(recv, goMethod, args)
 		})
 	}
+}
+
+func registerCountDownLatchIntrinsics() {
+	registerConstructorIntrinsic("CountDownLatch", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "NewCountDownLatch", args[0])
+	})
+	for java, goName := range map[string]string{"countDown": "CountDown", "getCount": "GetCount"} {
+		goName := goName
+		registerInstanceIntrinsic("CountDownLatch", java, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return selectorCall(recv, goName, nil)
+		})
+	}
+	registerInstanceIntrinsicResultType("CountDownLatch", "getCount", "long")
+	registerInstanceIntrinsic("CountDownLatch", "await", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 0 {
+			return selectorCall(recv, "AwaitExecution", []ast.Expr{intrinsicExecutionExpr(ctx)})
+		}
+		if len(args) == 2 {
+			return selectorCall(recv, "AwaitTimedExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...))
+		}
+		return nil
+	})
+	registerInstanceIntrinsicResultType("CountDownLatch", "await", "boolean")
 }

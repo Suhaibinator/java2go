@@ -675,6 +675,9 @@ func overrideBridgePlainResultWideningSupported(javaType string, owner *symbol.C
 	if stripJavaQualifier(base) == "Object" {
 		return true
 	}
+	if builtinJavaNumericReference(base, classScopeCtx(owner, ctx)) {
+		return stripJavaQualifier(base) == "Number"
+	}
 	scope := resolveClassScopeByQualifiedName(classScopeCtx(owner, ctx), base)
 	return scope != nil && scope.IsInterface
 }
@@ -741,6 +744,9 @@ func overrideBridgeResultCompatible(
 	}
 	actualBase, _ := parseJavaTypeString(qualifyJavaTypeInDeclaringContext(actual, actualOwner))
 	expectedBase, _ := parseJavaTypeString(qualifyJavaTypeInDeclaringContext(expected, expectedOwner))
+	if builtinJavaReferenceAssignable(actualBase, expectedBase, classScopeCtx(actualOwner, ctx)) {
+		return true
+	}
 	actualScope := resolveClassScopeByQualifiedName(classScopeCtx(actualOwner, ctx), actualBase)
 	expectedScope := resolveClassScopeByQualifiedName(classScopeCtx(expectedOwner, ctx), expectedBase)
 	return actualScope != nil && expectedScope != nil && javaReferenceTypeAssignable(actualScope, expectedScope, ctx)
@@ -906,6 +912,9 @@ func directOwnerSpecializedOverrideBridgeForMethod(
 			}
 		}
 	}
+	if selected.family == nil {
+		return specializedInterfaceCovariantBridge(owner, method, ctx)
+	}
 	return selected, selected.family != nil
 }
 
@@ -963,7 +972,7 @@ func buildDirectOwnerOverrideBridgeMethodDecls(
 			// Ordinary Java covariant methods also implement inherited interfaces.
 			// Expose the ancestor descriptor publicly; source calls retain the
 			// exact hidden result type selected above.
-			if len(selection.family.owner.TypeParameters) == 0 && len(declarations) > 0 {
+			if (len(selection.family.owner.TypeParameters) == 0 || selection.family.owner.IsInterface) && len(declarations) > 0 {
 				wrapper := declarations[0].(*ast.FuncDecl)
 				wrapper.Type.Results = cloneFieldList(bridge.(*ast.FuncDecl).Type.Results)
 				if ret, ok := wrapper.Body.List[0].(*ast.ReturnStmt); ok && len(ret.Results) == 1 {

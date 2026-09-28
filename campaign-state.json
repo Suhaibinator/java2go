@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "status": "round01-repair-two-applications-passing",
+  "base_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
+  "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "round": 1,
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "oracle_repeats": 3,
+  "pins": {
+    "maven": "3.9.16",
+    "commons-lang3": "3.20.0",
+    "commons-codec": "1.22.1",
+    "gson": "2.14.0",
+    "error_prone_annotations": "2.48.0"
+  },
+  "baseline": {
+    "checkout": "/Users/suhaib/code/java2go",
+    "artifacts": "/private/tmp/java2go-campaign-baseline",
+    "status": "passed",
+    "sessions": {
+      "unit": 88855,
+      "e2e-other": 60308,
+      "e2e-parity": 73307,
+      "fuzz": 16653
+    },
+    "results": {
+      "unit": {
+        "exit_code": 0,
+        "log": "/private/tmp/java2go-campaign-baseline/unit.log"
+      },
+      "e2e-other": {
+        "exit_code": 0,
+        "log": "/private/tmp/java2go-campaign-baseline/e2e-other.log"
+      },
+      "e2e-parity": {
+        "exit_code": 0,
+        "log": "/private/tmp/java2go-campaign-baseline/e2e-parity.log"
+      },
+      "fuzz": {
+        "exit_code": 0,
+        "log": "/private/tmp/java2go-campaign-baseline/fuzz.log"
+      }
+    }
+  },
+  "challenges": [
+    {
+      "id": "round01/business",
+      "status": "author-verified-race-and-stress-passed-coordinator-rerun-pending",
+      "owner": "sol_business",
+      "oracle_runs": 9,
+      "source_binary_oracle_parity": "passed",
+      "maven_build": "passed",
+      "latest_blockers": [],
+      "first_artifact": ".campaign/runs/20260928T034905Z-1743504877",
+      "manifest_sha256": "de764af82c27af132b3e821fdda331296a81a3d6ce79095ca3ca258cf1d1188b",
+      "dependency_lock_sha256": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+      "source_hashes_sha256": "1fe7bc06c0d4e209baa51516e6e3b255ade2a557ed0dc506b7ebf448c7d2b89f",
+      "first_failure": {
+        "stage": "go-build-all",
+        "detail": "exit=1 error=\n\n../../../../stdjava/common.go:6:2: missing go.sum entry for module providing package golang.org/x/exp/constraints (imported by github.com/NickyBoy89/java2go/stdjava); to add:\n\tgo get github.com/NickyBoy89/java2go/stdjava@v0.0.0\n"
+      },
+      "latest_artifact": ".campaign/runs/20260928T043356Z-4256548324",
+      "verification": {
+        "implementation_sha256": "51b7dc59744f8baadf77e69cb6a502f7d103d912e68c8c0bae6b7cb981763c96",
+        "race": true,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
+      }
+    },
+    {
+      "id": "round01/data",
+      "status": "frozen-jvm-validated-go-build-failing",
+      "owner": "sol_data",
+      "oracle_runs": 9,
+      "source_binary_oracle_parity": "passed",
+      "maven_build": "passed",
+      "latest_blockers": [
+        "Classpath resources and FilterInputStream subclass dispatch",
+        "Map.values collection streams, generic comparator propagation, groupingBy supplier overload"
+      ],
+      "first_artifact": ".campaign/runs/20260928T035008Z-3365945440",
+      "manifest_sha256": "c46005897347d1a3e4c73d58f37fc580e510589beb2291ab8c617c53e3d9dace",
+      "dependency_lock_sha256": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+      "source_hashes_sha256": "b7e4250cfe87f08fe9da764ea9a2823086a06671ead9a4896b7b2859ebde4fc9",
+      "first_failure": {
+        "stage": "transpile",
+        "detail": "exit=2 error=\n\npanic: runtime error: invalid memory address or nil pointer dereference\n[signal SIGSEGV: segmentation violation code=0x2 addr=0x0 pc=0x1021d33e4]\n\ngoroutine 1 [running]:\ngithub.com/NickyBoy89/java2go/symbol.parseClassMember(0x542b41619680, 0x542b416c34a0, {0x542b416e0000, 0xfb8, 0xfb9})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:482 +0x1304\ngithub.com/NickyBoy89/java2go/symbol.parseClassScopeWithParentTypeParams(0x542b416c31a0, {0x542b416e0000, 0xfb8, 0xfb9}, {0x0, 0x0, 0x0})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:289 +0xf84\ngithub.com/NickyBoy89/java2go/symbol.parseClassScope(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:177\ngithub.com/NickyBoy89/java2go/symbol.ParseSymbols(0x542b416c30b0, {0x542b416e0000, 0xfb8, 0xfb9})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:153 +0x718\ngithub.com/NickyBoy89/java2go/parsing.(*SourceFile).ParseSymbols(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/parsing/source_file.go:36\ngithub.com/NickyBoy89/java2go/transpiler.runMavenProject.func2({0x542b416a44e0, 0xc8}, {0x102831058, 0x542b4169ca80}, {0x0?, 0x0?})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/maven_project.go:129 +0x408\npath/filepath.walkDir({0x542b416a44e0, 0xc8}, {0x102831058, 0x542b4169ca80}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:311 +0x44\npath/filepath.walkDir({0x542b414c20c0, 0xb2}, {0x102831058, 0x542b4169ca00}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x542b416a2160, 0xac}, {0x102831058, 0x542b4169c9c0}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x542b416a2000, 0xa4}, {0x102831058, 0x542b4169c980}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x542b416a0460, 0x9d}, {0x102831058, 0x542b4169c940}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x542b416a0140, 0x99}, {0x1028310c8, 0x542b414c6710}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.WalkDir({0x542b416a0140, 0x99}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:401 +0x74\ngithub.com/NickyBoy89/java2go/transpiler.runMavenProject({0x16dd5704e, 0x71}, {0x542b414c64f0, 0x1, 0x1}, {0x16dd570cc, 0x16}, {0x16dd570ec, 0x37}, {0x16dd57154, ...}, ...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/maven_project.go:101 +0xb60\ngithub.com/NickyBoy89/java2go/transpiler.runInternal({0x542b414b40f0, 0xd, 0xd}, {0x10282e4d0, 0x542b414a0070}, 0x0)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:74 +0x718\ngithub.com/NickyBoy89/java2go/transpiler.run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:29\ngithub.com/NickyBoy89/java2go/transpiler.Run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:25\ngithub.com/NickyBoy89/java2go.Run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/api.go:16\nmain.main()\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/cmd/java2go/main.go:12 +0x68\n"
+      },
+      "latest_artifact": ".campaign/runs/20260928T042415Z-2802491446"
+    },
+    {
+      "id": "round01/concurrent",
+      "status": "passed-at-recorded-implementation-reverify-round-gate",
+      "owner": "sol_concurrent",
+      "oracle_runs": 9,
+      "source_binary_oracle_parity": "passed",
+      "maven_build": "passed",
+      "latest_blockers": [],
+      "first_artifact": ".campaign/runs/20260928T034930Z-1656813174",
+      "manifest_sha256": "b6f68e9ff3fd7aa078eb96fdc85c890d2d20f3192e52a7c8243f168428ff9d7b",
+      "dependency_lock_sha256": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+      "source_hashes_sha256": "35c3959d238e96b43c2ab49db5952c2c237e8055cd33f416f1fbb84d05873d68",
+      "first_failure": {
+        "stage": "transpile",
+        "detail": "exit=2 error=\n\npanic: runtime error: invalid memory address or nil pointer dereference\n[signal SIGSEGV: segmentation violation code=0x2 addr=0x0 pc=0x10053edb4]\n\ngoroutine 1 [running]:\ngithub.com/NickyBoy89/java2go/symbol.parseClassMember(0x337b5d336120, 0x337b5d314ba0, {0x337b5d368000, 0xfb8, 0xfb9})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:482 +0x1304\ngithub.com/NickyBoy89/java2go/symbol.parseClassScopeWithParentTypeParams(0x337b5d3148a0, {0x337b5d368000, 0xfb8, 0xfb9}, {0x0, 0x0, 0x0})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:289 +0xf84\ngithub.com/NickyBoy89/java2go/symbol.parseClassScope(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:177\ngithub.com/NickyBoy89/java2go/symbol.ParseSymbols(0x337b5d3147b0, {0x337b5d368000, 0xfb8, 0xfb9})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:153 +0x718\ngithub.com/NickyBoy89/java2go/parsing.(*SourceFile).ParseSymbols(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/parsing/source_file.go:36\ngithub.com/NickyBoy89/java2go/transpiler.runMavenProject.func2({0x337b5d366000, 0xc8}, {0x100a089f0, 0x337b5d27e980}, {0x0?, 0x0?})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/maven_project.go:129 +0x408\npath/filepath.walkDir({0x337b5d366000, 0xc8}, {0x100a089f0, 0x337b5d27e980}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:311 +0x44\npath/filepath.walkDir({0x337b5d28e000, 0xb2}, {0x100a089f0, 0x337b5d27e900}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x337b5d28a160, 0xac}, {0x100a089f0, 0x337b5d27e8c0}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x337b5d28a000, 0xa4}, {0x100a089f0, 0x337b5d27e880}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x337b5d288460, 0x9d}, {0x100a089f0, 0x337b5d27e840}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x337b5d288140, 0x99}, {0x100a08a60, 0x337b5d1b26a0}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.WalkDir({0x337b5d288140, 0x99}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:401 +0x74\ngithub.com/NickyBoy89/java2go/transpiler.runMavenProject({0x16f9e703e, 0x71}, {0x337b5d1b2480, 0x1, 0x1}, {0x16f9e70bc, 0x1c}, {0x16f9e70e2, 0x37}, {0x16f9e7150, ...}, ...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/maven_project.go:101 +0xb60\ngithub.com/NickyBoy89/java2go/transpiler.runInternal({0x337b5d1c4010, 0xd, 0xd}, {0x100a06ab0, 0x337b5d182048}, 0x0)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:74 +0x718\ngithub.com/NickyBoy89/java2go/transpiler.run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:29\ngithub.com/NickyBoy89/java2go/transpiler.Run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:25\ngithub.com/NickyBoy89/java2go.Run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/api.go:16\nmain.main()\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/cmd/java2go/main.go:12 +0x68\n"
+      },
+      "latest_artifact": ".campaign/runs/20260928T041811Z-2867385742",
+      "coordinator_verification": {
+        "artifact": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/runs/20260928T041811Z-2867385742",
+        "implementation_sha256": "19cdf9df9209d6250ef9261fd80bf8e51f5ebe87ea6401243140227efd8b0cc5",
+        "race": true,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
+      }
+    }
+  ],
+  "next_action": "Push first stable milestone, resume preserved data resource/stream repairs, then independently reverify all three frozen fixtures and accumulated regression gates before new Sol challenges.",
+  "performance_team": {
+    "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
+    "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only"
+  },
+  "verified_repairs": [
+    "Modified/annotated varargs parsing: symbol tests and JVM constructor/method parity",
+    "JDK exception cause overloads, signature polymorphism, final annotated catches and overload selection: coordinator JVM and race tests",
+    "Object super.toString preserves dynamic class/hashCode: coordinator JVM and race test",
+    "MessageDigest tested SHA256, SHA512/256, SHA3, reset, buffer consumption and invalid-range state preservation: coordinator JVM tests",
+    "Compiler-owned JVM tests: package cycles/privacy, protected generic ABI, inherited interface overloads, Supplier, collection views/copy and Map.putIfAbsent",
+    "Runtime-owned JVM tests: UTF16 helpers/sort, charsets/buffers, controlled thread identity/latch/shutdown, Character/CharSequence, reflection/chaining, explicit Locale and BitSet",
+    "Concurrent full source dependency closure: coordinator clean race build,9 JVM pairs plus20 additional stress comparisons"
+  ],
+  "verification_invalidation": "Any implementation change requires affected gates to rerun; concurrent acceptance is evidence at its recorded content digest, not current-round promotion.",
+  "performance_findings": {
+    "warmed_allocation_pilot": "Go/Java time geometric ratio1.831 across3 noisy pairs; all18 executions exact; no speedup claim",
+    "array_write_candidate": "Unsigned bounds predicate enables inlining in isolated runtime copy; focused timings improved, live patch not applied",
+    "list_retention": "Matched JVM/Go semantic output; empty Go list retains8-16MiB most recent payload until clear; proposed vacated-slot zeroing not applied",
+    "reports": [
+      "performance/codegen/PILOT.md",
+      "performance/codegen/array_assign_probe/README.md",
+      "performance/runtime/list_retention/README.md"
+    ]
+  },
+  "checkpoint_policy": {
+    "branch": "codex/adversarial-campaign",
+    "remote": "origin",
+    "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints."
+  },
+  "regression_status": {
+    "fuzz": "passed",
+    "e2e_other": "passed after routing new campaign corpus to mandatory campaign harness; all historical cases retained",
+    "e2e_strict_parity": "passed (333.344 seconds)",
+    "unit": "Only protected-field Go spelling assertions failed in first full run; expectations updated to new ABI and complete hierarchy independently JVM-verified. Full unit rerun pending."
+  }
+}

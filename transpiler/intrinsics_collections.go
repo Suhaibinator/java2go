@@ -81,7 +81,7 @@ func collectionNeedsSliceForRange(node *sitter.Node, ctx Ctx, source []byte) boo
 	}
 	base, _ := parseJavaTypeString(javaType)
 	name := stripJavaQualifier(base)
-	return containsString(listTypeNames, name) || containsString(setTypeNames, name)
+	return containsString(listTypeNames, name) || containsString(setTypeNames, name) || name == "Iterable" || name == "Collection"
 }
 
 // collectionTypeExpr maps a Java collection type name plus its type-argument
@@ -98,6 +98,10 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 	}
 
 	switch {
+	case (baseName == "Iterable" || baseName == "Collection") && len(typeArgs) == 1:
+		return applyTypeArguments(stdjavaQualifiedExpr("Iterable", ctx), argExprs())
+	case baseName == "Entry" && len(typeArgs) == 2:
+		return applyTypeArguments(stdjavaQualifiedExpr("MapEntry", ctx), argExprs())
 	case containsString(listTypeNames, baseName):
 		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("List", ctx), argExprs())}
 	case containsString(mapTypeNames, baseName):
@@ -126,7 +130,9 @@ func registerCollectionConstructors() {
 	// new ArrayList<T>() / new LinkedList<T>() -> stdjava.NewList[T]()
 	for _, name := range []string{"ArrayList", "LinkedList"} {
 		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
-			// Only the no-arg constructor is mapped; copy-constructors fall through.
+			if len(args) == 1 {
+				return stdjavaGenericCall(ctx, "NewListWithArgument", typeArgs, args)
+			}
 			if len(args) != 0 {
 				return nil
 			}
@@ -174,6 +180,16 @@ func registerForTypes(typeNames []string, method string, gen intrinsicGenerator)
 }
 
 func registerListIntrinsics() {
+	for _, listType := range listTypeNames {
+		registerInstanceIntrinsic(listType, "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return selectorCall(stdjavaCall(ctx, "ReferenceRequireNonNull", recv), "String", nil)
+		})
+		registerInstanceIntrinsicResultType(listType, "toString", "String")
+	}
+
 	method := func(goName string, argc int) intrinsicGenerator {
 		return func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, argc) {
@@ -221,13 +237,23 @@ func registerMapIntrinsics() {
 			if !expectArgs(args, argc) {
 				return nil
 			}
-			if goName == "Put" || goName == "Get" || goName == "GetOrDefault" || goName == "ContainsKey" || goName == "ContainsValue" || goName == "Remove" {
+			if goName == "Put" || goName == "PutIfAbsent" || goName == "Get" || goName == "GetOrDefault" || goName == "ContainsKey" || goName == "ContainsValue" || goName == "Remove" {
 				args = append(args, intrinsicExecutionExpr(ctx))
 			}
-			return methodCall(recv, goName, args...)
+			result := methodCall(recv, goName, args...)
+			if goName == "Values" || goName == "KeySet" || goName == "EntrySet" {
+				base, arguments := parseJavaTypeString(ctx.expectedType)
+				if (stripJavaQualifier(base) == "Iterable" || stripJavaQualifier(base) == "Collection") && len(arguments) == 1 {
+					return stdjavaGenericCall(ctx, "AsIterable", []ast.Expr{javaTypeStringToGoTypeExpr(arguments[0], inScopeTypeParameters(ctx), ctx)}, []ast.Expr{result})
+				}
+			}
+			return result
 		}
 	}
+	registerForTypes([]string{"Entry"}, "getKey", method("GetKey", 0))
+	registerForTypes([]string{"Entry"}, "getValue", method("GetValue", 0))
 	registerForTypes(mapTypeNames, "put", method("Put", 2))
+	registerForTypes(mapTypeNames, "putIfAbsent", method("PutIfAbsent", 2))
 	registerForTypes(mapTypeNames, "get", method("Get", 1))
 	registerForTypes(mapTypeNames, "getOrDefault", method("GetOrDefault", 2))
 	registerForTypes(mapTypeNames, "containsKey", method("ContainsKey", 1))
@@ -535,11 +561,9 @@ func registerCollectionsStatics() {
 	registerStaticIntrinsic("Arrays", "asList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		return stdjavaGenericCall(ctx, "AsList", ctx.intrinsicTypeArgs, args)
 	})
-	registerStaticIntrinsicTypeArgs("Arrays", "asList", func(invocation *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
-		return []ast.Expr{javaTypeStringToGoTypeExpr(intrinsicFactoryElementJavaType(invocation, ctx, source), inScopeTypeParameters(ctx), ctx)}
-	})
 	registerStaticIntrinsicDerivedResultType("Arrays", "asList", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
-		return "List<" + intrinsicFactoryElementJavaType(invocation, ctx, source) + ">", true
+		element, _ := arraysAsListElementType(invocation, ctx, source)
+		return "List<" + element + ">", true
 	})
 	registerStaticIntrinsic("Arrays", "sort", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		switch len(args) {

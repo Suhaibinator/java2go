@@ -48,6 +48,7 @@ func ResolveFile(file parsing.SourceFile) {
 	if file.Symbols == nil {
 		return
 	}
+	prepareBuiltinInterfaceMethods()
 	// Complete ordinary member resolution for the entire file before allocating
 	// synthesized names. A Java source may contain multiple top-level classes and
 	// arbitrarily deep nested classes; helper naming must observe their final Go
@@ -60,6 +61,7 @@ func ResolveFile(file parsing.SourceFile) {
 	// one selector namespace. Run this package-wide after each file; on the final
 	// file all ordinary names are resolved, and the pass is idempotent before
 	// then because it only renames an actual remaining collision.
+	resolveInheritedInterfaceOverloadNames()
 	resolvePromotedFieldMethodCollisions()
 	resolveAffineArrayViewHelperNames(file)
 }

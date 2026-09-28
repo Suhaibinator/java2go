@@ -14,36 +14,37 @@ import (
 // the stdjava runtime models directly. Constructing one of these with `new`
 // produces the corresponding stdjava value, and the names double as the parent
 // links recognised by stdjava.CaughtAs.
-var builtinExceptionTypes = map[string]struct{}{
-	"Throwable":                   {},
-	"ExecutionException":          {},
-	"TimeoutException":            {},
-	"CancellationException":       {},
-	"RejectedExecutionException":  {},
-	"IllegalThreadStateException": {},
-
-	"Error":                           {},
-	"AssertionError":                  {},
-	"LinkageError":                    {},
-	"ExceptionInInitializerError":     {},
-	"NoClassDefFoundError":            {},
-	"Exception":                       {},
-	"RuntimeException":                {},
-	"IllegalArgumentException":        {},
-	"IllegalStateException":           {},
-	"IllegalMonitorStateException":    {},
-	"NullPointerException":            {},
-	"NegativeArraySizeException":      {},
-	"IndexOutOfBoundsException":       {},
-	"ArrayIndexOutOfBoundsException":  {},
-	"ArrayStoreException":             {},
-	"NumberFormatException":           {},
-	"ArithmeticException":             {},
-	"ClassCastException":              {},
-	"UnsupportedOperationException":   {},
-	"IOException":                     {},
-	"NoSuchElementException":          {},
-	"ConcurrentModificationException": {},
+var builtinExceptionTypes = map[string]string{
+	"Throwable":                       "",
+	"ExecutionException":              "Exception",
+	"TimeoutException":                "Exception",
+	"CancellationException":           "IllegalStateException",
+	"RejectedExecutionException":      "RuntimeException",
+	"IllegalThreadStateException":     "IllegalArgumentException",
+	"Error":                           "Throwable",
+	"AssertionError":                  "Error",
+	"LinkageError":                    "Error",
+	"ExceptionInInitializerError":     "LinkageError",
+	"NoClassDefFoundError":            "LinkageError",
+	"Exception":                       "Throwable",
+	"RuntimeException":                "Exception",
+	"IllegalArgumentException":        "RuntimeException",
+	"IllegalStateException":           "RuntimeException",
+	"IllegalMonitorStateException":    "RuntimeException",
+	"NullPointerException":            "RuntimeException",
+	"NegativeArraySizeException":      "RuntimeException",
+	"IndexOutOfBoundsException":       "RuntimeException",
+	"ArrayIndexOutOfBoundsException":  "IndexOutOfBoundsException",
+	"ArrayStoreException":             "RuntimeException",
+	"NumberFormatException":           "IllegalArgumentException",
+	"ArithmeticException":             "RuntimeException",
+	"ClassCastException":              "RuntimeException",
+	"UnsupportedOperationException":   "RuntimeException",
+	"IOException":                     "Exception",
+	"UnsupportedEncodingException":    "IOException",
+	"NoSuchAlgorithmException":        "Exception",
+	"NoSuchElementException":          "RuntimeException",
+	"ConcurrentModificationException": "RuntimeException",
 }
 
 // isBuiltinExceptionType reports whether className (qualified or not) names one
@@ -56,11 +57,13 @@ func isBuiltinExceptionType(className string) bool {
 
 // builtinExceptionConstructorExpr builds a call to the stdjava constructor for a
 // built-in exception type, e.g. stdjava.NewIllegalArgumentException(args). The
-// stdjava constructors take a single string message; when the Java source passes
-// no argument an empty string is supplied, and any extra arguments (cause, etc.)
-// are dropped since the runtime models only the message.
+// Types with modeled cause overloads preserve the entire Java argument list.
 func builtinExceptionConstructorExpr(className string, args []ast.Expr, ctx Ctx) ast.Expr {
 	name := stripJavaQualifier(className)
+	switch name {
+	case "Exception", "RuntimeException", "IllegalArgumentException", "IllegalStateException", "UnsupportedEncodingException":
+		return &ast.CallExpr{Fun: stdjavaQualifiedExpr("New"+name, ctx), Args: args}
+	}
 	var message ast.Expr = &ast.BasicLit{Kind: token.STRING, Value: `""`}
 	if len(args) > 0 {
 		message = args[0]
@@ -208,4 +211,33 @@ func throwsClauseComment(node *sitter.Node, source []byte) string {
 		return ""
 	}
 	return "// throws " + strings.Join(types, ", ")
+}
+
+// javaExceptionReferenceAssignable supplies the external superclass edges that
+// are absent from source symbols. Source subclasses walk their declared parents;
+// a source type shadowing a JDK name is never treated as that JDK class.
+func javaExceptionReferenceAssignable(actual, expected string, ctx Ctx) bool {
+	if resolveClassScopeByQualifiedName(ctx, expected) != nil || !isBuiltinExceptionType(expected) {
+		return false
+	}
+	expected = stripJavaQualifier(expected)
+	seen := map[string]bool{}
+	for actual != "" && !seen[actual] {
+		seen[actual] = true
+		if scope := resolveClassScopeByQualifiedName(ctx, actual); scope != nil {
+			ctx = classScopeCtx(scope, ctx)
+			actual = strings.TrimSpace(scope.Superclass)
+			continue
+		}
+		actual = stripJavaQualifier(actual)
+		parent, known := builtinExceptionTypes[actual]
+		if !known {
+			return false
+		}
+		if actual == expected {
+			return true
+		}
+		actual = parent
+	}
+	return false
 }

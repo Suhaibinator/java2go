@@ -58,7 +58,7 @@ public class ForProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "range xs.Slice()")
+	assertContains(t, out, "range stdjava.CollectionIterationElements(xs)")
 }
 
 func TestCollections_MapConstructionAndMethods(t *testing.T) {

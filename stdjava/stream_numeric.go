@@ -113,11 +113,7 @@ func StreamOfArray[T any](array any) Stream[T] {
 	panic(NewIllegalArgumentException("Arrays.stream requires an array"))
 }
 
-// StringCharsStream returns a stream of the string's characters as ints,
-// matching String.chars. It reuses the existing rune view from StringChars, so
-// it inherits that function's documented approximation: Java yields one element
-// per UTF-16 code unit and this yields one per rune, which agree for BMP
-// characters.
+// StringCharsStream returns UTF-16 code units as ints, matching String.chars.
 func StringCharsStream(s string) Stream[int32] {
 	runes := StringChars(s)
 	out := make([]int32, len(runes))

@@ -487,141 +487,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		hoistLocalClass(node, source, ctx)
 		return &ast.EmptyStmt{Implicit: true}
 	case "local_variable_declaration":
-		originalType := node.ChildByFieldName("type").Content(source)
-		variableType := astutil.ParseType(node.ChildByFieldName("type"), source)
-		variableDeclarator := node.ChildByFieldName("declarator")
-
-		// If a variable is being declared, but not set to a value
-		// Ex: `int value;`
-		if variableDeclarator.NamedChildCount() == 1 {
-			return &ast.DeclStmt{
-				Decl: &ast.GenDecl{
-					Tok: token.VAR,
-					Specs: []ast.Spec{
-						&ast.ValueSpec{
-							Names: []*ast.Ident{identFromNode(variableDeclarator.ChildByFieldName("name"), source)},
-							Type:  explicitLocalVariableType(originalType, ctx),
-						},
-					},
-				},
-			}
-		}
-
-		ctx.lastType = variableType
-		// Set expected type for diamond operator inference
-		ctx.expectedType = node.ChildByFieldName("type").Content(source)
-		initializerNode := variableDeclarator.ChildByFieldName("value")
-		if initializerNode == nil && variableDeclarator.NamedChildCount() > 1 {
-			initializerNode = variableDeclarator.NamedChild(1)
-		}
-		ctx.expectedTypeRoot = initializerNode
-
-		declaration := ParseStmt(variableDeclarator, source, ctx).(*ast.AssignStmt)
-
-		// Nullable initializers need an explicit type. String locals retain their
-		// interface storage while wrapper references use their ordinary pointer.
-		containsNull := expressionUsesNullableValueStorage(initializerNode, ctx, source)
-
-		names := make([]*ast.Ident, len(declaration.Lhs))
-		for ind, decl := range declaration.Lhs {
-			ident := decl.(*ast.Ident)
-			names[ind] = ident
-			recordedOriginalType := originalType
-			// Java overload resolution uses a local's declared static type, not the
-			// concrete type of its initializer. Only `var` declarations derive their
-			// static type from the initializer.
-			if isVarKeywordType(strings.TrimSpace(originalType)) && variableDeclarator.NamedChildCount() == 2 {
-				if inferredType, ok := inferExprJavaType(variableDeclarator.NamedChild(1), ctx, source); ok && strings.TrimSpace(inferredType) != "" {
-					recordedOriginalType = inferredType
-				}
-			}
-			recordLocalVariableDefinition(ctx, ident.Name, recordedOriginalType, symbol.NodeToStr(variableType))
-		}
-
-		// If the declaration contains null, declare it with the `var` keyword instead
-		// of implicitly
-		if containsNull {
-			for _, name := range names {
-				if local := ctx.localScope.FindVariable(name.Name); local != nil && usesNullableValueStorage(local.OriginalType) {
-					markLocalVariableNullable(ctx, name.Name)
-				}
-			}
-			// Java `var` derives its static type from the conditional. Its generated
-			// IIFE already has the necessary pointer/interface result type, so retain
-			// the short declaration rather than trying to spell `var` as a Go type.
-			if isVarKeywordType(strings.TrimSpace(originalType)) {
-				return declaration
-			}
-			return &ast.DeclStmt{
-				Decl: &ast.GenDecl{
-					Tok: token.VAR,
-					Specs: []ast.Spec{
-						&ast.ValueSpec{
-							Names:  names,
-							Type:   nullableLocalVariableType(originalType, ctx),
-							Values: declaration.Rhs,
-						},
-					},
-				},
-			}
-		}
-
-		// A Java primitive whose Go type is narrower than the type an untyped
-		// constant would infer (int->int32, long->int64, char->rune, ...) must be
-		// pinned. Otherwise `int total = 0` becomes a Go `int`, losing Java's
-		// 32-bit overflow wrap and clashing with int32 fields/params. Wrap each
-		// initializer in the Go type conversion and keep the short declaration:
-		// `total := int32(0)`. Unlike `var total int32 = 0`, the `:=` form is also
-		// valid in a for-loop init, where this same case is reached.
-		pinType := variableType
-		pin := needsExplicitPrimitiveType(strings.TrimSpace(originalType))
-		if pin && strings.TrimSpace(originalType) == "double" && initializerNode != nil {
-			// An untyped floating constant and every already-double expression infer
-			// float64 correctly. Only integral or otherwise non-double initializers
-			// need an explicit conversion for a Java double local.
-			if inferred, ok := inferExprJavaType(initializerNode, ctx, source); ok {
-				if canonical, numeric := canonicalJavaNumericType(inferred); numeric && canonical == "double" {
-					pin = false
-				}
-			}
-		}
-		// `var x = <int expr>` carries no declared type, so infer it from the
-		// initializer and pin if it is a sized integer primitive.
-		if !pin && isVarKeywordType(strings.TrimSpace(originalType)) && variableDeclarator.NamedChildCount() == 2 {
-			if inferred, ok := inferExprJavaType(variableDeclarator.NamedChild(1), ctx, source); ok && needsExplicitPrimitiveType(inferred) {
-				pin = true
-				pinType = javaTypeStringToGoTypeExpr(inferred, inScopeTypeParameters(ctx), ctx)
-			}
-		}
-		if pin {
-			for ind, rhs := range declaration.Rhs {
-				declaration.Rhs[ind] = &ast.CallExpr{Fun: pinType, Args: []ast.Expr{rhs}}
-			}
-		}
-
-		// A lambda assigned to a built-in functional interface must carry that
-		// interface's named runtime type rather than the unnamed func type Go
-		// would infer from the literal, or the interface's default methods
-		// (Comparator.reversed, thenComparing, compare) are unavailable on it.
-		if named := namedFunctionalInterfaceTypeExpr(originalType, ctx); named != nil {
-			for ind, rhs := range declaration.Rhs {
-				if _, isFuncLit := rhs.(*ast.FuncLit); isFuncLit {
-					declaration.Rhs[ind] = &ast.CallExpr{Fun: named, Args: []ast.Expr{rhs}}
-				}
-			}
-		}
-
-		base, _ := parseJavaTypeString(originalType)
-		switch stripJavaQualifier(base) {
-		case "Object", "Number", "Comparable", "Serializable", "Constable", "ConstantDesc":
-			if resolveClassScopeByQualifiedName(ctx, base) == nil {
-				return &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{
-					&ast.ValueSpec{Names: names, Type: explicitLocalVariableType(originalType, ctx), Values: declaration.Rhs},
-				}}}
-			}
-		}
-
-		return declaration
+		return parseLocalVariableDeclarator(node, node.ChildByFieldName("declarator"), source, ctx)
 	case "variable_declarator":
 		var names, values []ast.Expr
 
@@ -709,6 +575,19 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "resource_specification":
 		return ParseStmt(node.NamedChild(0), source, ctx)
 	case "resource":
+		// Resource variables retain their declared Java type for overload and
+		// intrinsic dispatch inside the try body, just like ordinary locals.
+		if typeNode, nameNode := node.ChildByFieldName("type"), node.ChildByFieldName("name"); typeNode != nil && nameNode != nil {
+			originalType := typeNode.Content(source)
+			parsedType := symbol.NodeToStr(astutil.ParseType(typeNode, source))
+			if isVarKeywordType(originalType) {
+				if inferred, ok := inferExprJavaType(node.ChildByFieldName("value"), ctx, source); ok {
+					originalType = inferred
+					parsedType = symbol.NodeToStr(javaTypeStringToGoTypeExpr(inferred, inScopeTypeParameters(ctx), ctx))
+				}
+			}
+			recordLocalVariableDefinition(ctx, nameNode.Content(source), originalType, parsedType)
+		}
 		var offset int
 		if node.NamedChild(0).Type() == "modifiers" {
 			offset = 1
@@ -980,12 +859,10 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			} else if _, _, _, primitive := expressionUsesPrimitiveArray(valueNode, ctx, source); primitive {
 				rangeExpr = stdjavaCall(ctx, "PrimitiveArrayIterationElements", rangeExpr)
 			}
-			// stdjava List/Set are pointer types, not slices, so an enhanced-for
-			// over them ranges over their Slice() view instead.
+			// Collection iteration reads list slots when the iterator advances;
+			// an array-backed list must not snapshot future elements.
 			if collectionNeedsSliceForRange(valueNode, ctx, source) {
-				rangeExpr = &ast.CallExpr{
-					Fun: &ast.SelectorExpr{X: rangeExpr, Sel: &ast.Ident{Name: "Slice"}},
-				}
+				rangeExpr = stdjavaCall(ctx, "CollectionIterationElements", rangeExpr)
 			}
 			if referenceBinding == nil && nameNode != nil {
 				if elementType, known := inferEnhancedForElementJavaType(valueNode, source, ctx); known {
@@ -1038,7 +915,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		var init, post ast.Stmt
 		initNode := node.ChildByFieldName("init")
 		if initNode != nil {
-			init = ParseStmt(initNode, source, ctx)
+			init = parseForInitializer(initNode, source, ctx)
 		}
 		loopCtx, affineBindings := prepareAffineArrayLoop(node, source, ctx)
 		if node.ChildByFieldName("update") != nil {

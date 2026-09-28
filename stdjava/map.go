@@ -8,6 +8,9 @@ type MapEntry[K, V any] struct {
 	Value V
 }
 
+func (entry MapEntry[K, V]) GetKey() K   { return entry.Key }
+func (entry MapEntry[K, V]) GetValue() V { return entry.Value }
+
 type mapRecord[K, V any] struct {
 	entry MapEntry[K, V]
 }
@@ -82,11 +85,23 @@ func (m *Map[K, V]) find(key any, execution *Execution) (*mapRecord[K, V], int32
 }
 
 func (m *Map[K, V]) Put(key K, value V, execution ...*Execution) V {
-	exec := optionalComparisonExecution(execution)
+	return m.put(key, value, false, optionalComparisonExecution(execution))
+}
+
+// PutIfAbsent replaces both a missing mapping and a mapping whose Java value
+// is null. Reuse the located record so key identity and iteration order remain
+// unchanged, and user-defined hashCode/equals run only once per lookup.
+func (m *Map[K, V]) PutIfAbsent(key K, value V, execution ...*Execution) V {
+	return m.put(key, value, true, optionalComparisonExecution(execution))
+}
+
+func (m *Map[K, V]) put(key K, value V, onlyAbsent bool, exec *Execution) V {
 	record, hash, index := m.find(key, exec)
 	if record != nil {
 		old := record.entry.Value
-		record.entry.Value = value
+		if !onlyAbsent || javaReferenceIsNull(old) {
+			record.entry.Value = value
+		}
 		return old
 	}
 	if m.sorted && len(m.entries) == 0 {

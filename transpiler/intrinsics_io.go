@@ -34,6 +34,9 @@ func init() {
 	registerIOInstanceMethods()
 	registerIOStatics()
 	registerNioIntrinsics()
+	registerCharsetIntrinsics()
+	registerByteBufferIntrinsics()
+	registerDigestIOIntrinsics()
 }
 
 func registerIOStatics() {
@@ -442,4 +445,81 @@ func stdjavaCallArg(arg ast.Expr, name string) (ast.Expr, bool) {
 		return call.Args[0], true
 	}
 	return nil, false
+}
+
+func registerCharsetIntrinsics() {
+	for _, name := range []string{"US_ASCII", "ISO_8859_1", "UTF_8", "UTF_16BE", "UTF_16LE", "UTF_16"} {
+		name := name
+		registerStaticFieldIntrinsic("StandardCharsets", name, func(ctx Ctx) ast.Expr { return stdjavaQualifiedExpr(name, ctx) })
+		registerStaticFieldIntrinsicResultType("StandardCharsets", name, "Charset")
+	}
+	registerStaticIntrinsic("Charset", "forName", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "CharsetForName", args[0])
+	})
+	registerStaticIntrinsicResultType("Charset", "forName", "Charset")
+	registerInstanceIntrinsic("Charset", "name", ioMethod("Name", 0))
+	registerInstanceIntrinsicResultType("Charset", "name", "String")
+	registerInstanceIntrinsic("String", "getBytes", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) > 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "StringGetBytes", append([]ast.Expr{recv}, args...)...)
+	})
+	registerInstanceIntrinsicResultType("String", "getBytes", "byte[]")
+	registerInstanceIntrinsic("String", "toCharArray", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "StringToCharArray", recv)
+	})
+	registerInstanceIntrinsicResultType("String", "toCharArray", "char[]")
+	registerConstructorIntrinsic("String", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) > 2 {
+			return nil
+		}
+		return stdjavaCall(ctx, "StringNew", args...)
+	})
+}
+
+func registerByteBufferIntrinsics() {
+	registerStaticIntrinsic("ByteBuffer", "wrap", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 && len(args) != 3 {
+			return nil
+		}
+		return stdjavaCall(ctx, "ByteBufferWrap", args...)
+	})
+	registerStaticIntrinsicResultType("ByteBuffer", "wrap", "ByteBuffer")
+	registerStaticIntrinsic("ByteBuffer", "allocate", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "ByteBufferAllocate", args...)
+	})
+	registerStaticIntrinsicResultType("ByteBuffer", "allocate", "ByteBuffer")
+	for _, method := range []struct{ java, goName, result string }{
+		{"remaining", "Remaining", "int"}, {"hasArray", "HasArray", "boolean"}, {"array", "Array", "byte[]"},
+	} {
+		registerInstanceIntrinsic("ByteBuffer", method.java, ioMethod(method.goName, 0))
+		registerInstanceIntrinsicResultType("ByteBuffer", method.java, method.result)
+	}
+	registerInstanceIntrinsic("ByteBuffer", "position", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 0 {
+			return selectorCall(recv, "Position", nil)
+		}
+		if len(args) == 1 {
+			return selectorCall(recv, "SetPosition", args)
+		}
+		return nil
+	})
+	registerInstanceIntrinsicResultType("ByteBuffer", "position", "int")
+	registerInstanceIntrinsic("ByteBuffer", "get", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 && len(args) != 3 {
+			return nil
+		}
+		return selectorCall(recv, "GetInto", args)
+	})
+	registerInstanceIntrinsicResultType("ByteBuffer", "get", "ByteBuffer")
 }

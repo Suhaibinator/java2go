@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -96,7 +97,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "*BaseThing) Describe() string") {
 		t.Fatalf("expected BaseThing.Describe concrete method in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", stdjava.StringValueOf(bg.Java2goBaseThingSelf.IdJava2goExecution(__java2goExecution)), \":\", bg.value)") {
+	if !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", stdjava.StringValueOf(bg.Java2goBaseThingSelf.IdJava2goExecution(__java2goExecution)), \":\", bg.Value0)") {
 		t.Fatalf("expected BaseThing.Describe to use Id() and value field, got:\n%s", out)
 	}
 
@@ -130,7 +131,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "*ConcreteThing) Id() string") {
 		t.Fatalf("expected ConcreteThing.Id concrete override in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return \"concrete-\" + cg.name") && !strings.Contains(flat, "return fmt.Sprint(\"concrete-\", cg.name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", cg.name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", stdjava.StringValueOf(cg.name))") {
+	if !strings.Contains(flat, "return \"concrete-\" + cg.Name") && !strings.Contains(flat, "return fmt.Sprint(\"concrete-\", cg.Name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", cg.Name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", stdjava.StringValueOf(cg.Name))") {
 		t.Fatalf("expected ConcreteThing.Id to return the name field, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*ConcreteThing) Compute(a float64, b float64) float64") {
@@ -161,7 +162,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "func NewBaseThing(value int32) *BaseThing") {
 		t.Fatalf("expected BaseThing constructor to be emitted, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "bg.value = value") {
+	if !strings.Contains(flat, "bg.Value0 = value") {
 		t.Fatalf("expected BaseThing constructor to initialize value field, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "func NewMidThing(value int32, name string) *MidThing") {
@@ -170,7 +171,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "mg.BaseThing = NewBaseThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value)") {
 		t.Fatalf("expected MidThing constructor to call BaseThing constructor, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "mg.name = name") {
+	if !strings.Contains(flat, "mg.Name = name") {
 		t.Fatalf("expected MidThing constructor to initialize name field, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "func NewLeafThing(value int32, name string) *LeafThing") {
@@ -191,4 +192,27 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "ag.MidThing = NewMidThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value, name)") {
 		t.Fatalf("expected AltConcreteThing constructor to call MidThing constructor, got:\n%s", out)
 	}
+}
+
+// The historical parser fixture groups several public top-level declarations.
+// Make only their file layout legal for javac; keep the hierarchy and behavior
+// intact while validating the exported protected-member Go ABI.
+func TestAbstractIntegrationProtectedHierarchyJVMParity(t *testing.T) {
+	source := loadJavaTestFile(t, "../testfiles/abstract/ComplexAbstractHierarchy.java")
+	source = strings.Replace(source, "package abs.integration.complex;", "", 1)
+	source = strings.ReplaceAll(source, "public abstract class ", "abstract class ")
+	source = strings.ReplaceAll(source, "public class ", "class ")
+	source += `public class AbstractHierarchyOracle {
+  public static String run() {
+   ConcreteThing value=new ConcreteThing(7,"ink");
+   MidThing other=new AltConcreteThing(3,"paper");
+   return value.describe()+":"+value.label()+":"+value.combine(1,2,3)
+    +":"+other.describe()+":"+other.label()+":"+other.combine(6,2,1);
+  }
+ }`
+	want := campaignRuntimeJavaOracle(t, "AbstractHierarchyOracle", source)
+	generated := renderGoFileFromJava(t, source)
+	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
+ import "testing"
+ func TestHierarchy(t *testing.T) {if got:=Run();got!=%q{t.Fatalf("got %%q want %%q",got,%q)}}`, want, want))
 }

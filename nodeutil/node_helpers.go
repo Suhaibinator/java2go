@@ -39,3 +39,28 @@ func VariableDeclarators(node *sitter.Node) []*sitter.Node {
 	}
 	return declarators
 }
+
+// JavaParameterNodes returns the declared type and name of a formal or varargs
+// parameter. Varargs have a variable_declarator child; modifiers and annotations
+// may precede its type, so positional child indices are not stable.
+func JavaParameterNodes(node *sitter.Node) (typeNode, nameNode *sitter.Node) {
+	if node == nil {
+		return nil, nil
+	}
+	if node.Type() != "spread_parameter" {
+		return node.ChildByFieldName("type"), node.ChildByFieldName("name")
+	}
+	for _, child := range NamedChildrenOf(node) {
+		switch child.Type() {
+		case "modifiers", "annotation", "marker_annotation", "line_comment", "block_comment":
+			continue
+		case "variable_declarator":
+			nameNode = child.ChildByFieldName("name")
+		default:
+			if typeNode == nil {
+				typeNode = child
+			}
+		}
+	}
+	return typeNode, nameNode
+}

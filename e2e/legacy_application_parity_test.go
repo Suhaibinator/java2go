@@ -76,6 +76,12 @@ func discoverLegacyApplicationPrograms(t testing.TB, repositoryRoot string) []le
 	// sources, resources and argv. Its entrypoints are not standalone legacy
 	// programs and must not be re-run through the single-source harness.
 	coveredRoots = append(coveredRoots, filepath.Join(testfilesRoot, "maven_application"))
+	// The mandatory campaign CI job owns dependency-aware applications, which
+	// require their complete source tree, locked libraries, resources and argv.
+	// Reduced probes under the same corpus are covered by compiler JVM tests.
+	// Feeding individual main files to this standalone harness is not a valid
+	// Java oracle; every historical program outside these corpora stays here.
+	coveredRoots = append(coveredRoots, filepath.Join(testfilesRoot, "campaign"))
 	for _, fixture := range applicationFixtures {
 		coveredRoots = append(coveredRoots, filepath.Clean(fixture.sourceRoot))
 	}

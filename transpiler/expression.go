@@ -495,6 +495,16 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 
+			// Object.toString is a nonvirtual super target, but its class and
+			// hashCode observations still dispatch on the complete receiver.
+			if objectNode != nil && objectNode.Type() == "super" && methodName == "toString" && ctx.currentClass != nil {
+				parent := strings.TrimSpace(ctx.currentClass.Superclass)
+				args := node.ChildByFieldName("arguments")
+				if (parent == "" || parent == "java.lang.Object" || (parent == "Object" && resolveClassScopeByQualifiedName(ctx, parent) == nil)) && (args == nil || args.NamedChildCount() == 0) {
+					return stdjavaCall(ctx, "ObjectDefaultStringExecution", intrinsicExecutionExpr(ctx), &ast.Ident{Name: ShortName(ctx.className)})
+				}
+			}
+
 			// Standard-library intrinsics (String, StringBuilder, Math, boxed
 			// types, ...) are rewritten via a data-driven table. Instance
 			// intrinsics dispatch on the receiver's Java type; static intrinsics
@@ -1009,6 +1019,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			)
 		} else if stripJavaQualifier(className) == "Thread" && resolveClassScopeByQualifiedName(ctx, className) == nil {
 			expectedArgumentTypes = []string{"Runnable"}
+		} else if stripJavaQualifier(className) == "Random" && resolveClassScopeByQualifiedName(ctx, className) == nil {
+			expectedArgumentTypes = []string{"long"}
 		}
 		arguments, expandVarargsArray := parseResolvedInvocationArguments(
 			constructorResolution,
@@ -3712,8 +3724,11 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 }
 
 func resolveClassScopeByIdentifier(ctx Ctx, source []byte, objectNode *sitter.Node) *symbol.ClassScope {
-	if objectNode == nil || objectNode.Type() != "identifier" {
+	if objectNode == nil {
 		return nil
+	}
+	if objectNode.Type() != "identifier" {
+		return qualifiedSourceClassReceiver(ctx, source, objectNode)
 	}
 	return resolveClassScopeByQualifiedName(ctx, objectNode.Content(source))
 }
@@ -6415,14 +6430,7 @@ func scopeForAnonymousMethod(implMethod *sitter.Node, samDef *symbol.Definition,
 	}
 	paramsNode := implMethod.ChildByFieldName("parameters")
 	for _, param := range nodeutil.NamedChildrenOf(paramsNode) {
-		var nameNode, typeNode *sitter.Node
-		if param.Type() == "spread_parameter" {
-			nameNode = param.NamedChild(1).ChildByFieldName("name")
-			typeNode = param.NamedChild(0)
-		} else {
-			nameNode = param.ChildByFieldName("name")
-			typeNode = param.ChildByFieldName("type")
-		}
+		typeNode, nameNode := nodeutil.JavaParameterNodes(param)
 		if nameNode == nil || typeNode == nil {
 			continue
 		}
@@ -7567,16 +7575,7 @@ func syntheticConstructorParameterDefinitions(node *sitter.Node, source []byte) 
 	}
 	var parameters []*symbol.Definition
 	for _, parameter := range nodeutil.NamedChildrenOf(parametersNode) {
-		var nameNode, typeNode *sitter.Node
-		if parameter.Type() == "spread_parameter" {
-			if parameter.NamedChildCount() > 1 {
-				nameNode = parameter.NamedChild(1).ChildByFieldName("name")
-			}
-			typeNode = parameter.NamedChild(0)
-		} else {
-			nameNode = parameter.ChildByFieldName("name")
-			typeNode = parameter.ChildByFieldName("type")
-		}
+		typeNode, nameNode := nodeutil.JavaParameterNodes(parameter)
 		if nameNode == nil || typeNode == nil {
 			continue
 		}
@@ -7725,16 +7724,7 @@ func synthAnonClassMethodDefinition(methodNode *sitter.Node, source []byte, keep
 		DeclarationNode: methodNode,
 	}
 	for _, param := range nodeutil.NamedChildrenOf(methodNode.ChildByFieldName("parameters")) {
-		var name, javaType *sitter.Node
-		if param.Type() == "spread_parameter" {
-			if param.NamedChildCount() > 1 {
-				name = param.NamedChild(1).ChildByFieldName("name")
-			}
-			javaType = param.NamedChild(0)
-		} else {
-			name = param.ChildByFieldName("name")
-			javaType = param.ChildByFieldName("type")
-		}
+		javaType, name := nodeutil.JavaParameterNodes(param)
 		if name == nil || javaType == nil {
 			continue
 		}
@@ -9429,10 +9419,10 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		expr = &ast.Ident{Name: baseName}
 	} else if _, wrapper := builtinJavaWrapperPrimitive(base, ctx); wrapper {
 		expr = &ast.StarExpr{X: stdjavaQualifiedExpr(baseName, ctx)}
-	} else if resolvedScope == nil && baseName == "Throwable" {
-		// Throwable is the runtime's common exception interface. Keep this narrow
-		// and after source resolution so a user-defined class with the same simple
-		// name retains its generated type.
+	} else if resolvedScope == nil && isBuiltinExceptionType(baseName) {
+		// Builtin exception signatures use the common runtime interface so
+		// subclass values can cross parameter and return boundaries. Source
+		// classes with the same simple name retain their generated type.
 		expr = stdjavaQualifiedExpr("Throwable", ctx)
 	} else if resolvedScope == nil && baseName == "Number" {
 		expr = stdjavaQualifiedExpr("JavaNumber", ctx)

@@ -53,9 +53,15 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 	}
 	actualBase, _ := parseJavaTypeString(strings.TrimSpace(actual))
 	expectedBase, expectedArguments := parseJavaTypeString(strings.TrimSpace(expected))
+	if len(expectedArguments) == 0 && javaExceptionReferenceAssignable(actualBase, expectedBase, ctx) {
+		return true
+	}
 	if resolveClassScopeByQualifiedName(ctx, expectedBase) != nil ||
 		resolveClassScopeByQualifiedName(ctx, actualBase) != nil {
 		return false
+	}
+	if len(expectedArguments) == 0 && digestIOAssignable(actualBase, expectedBase) {
+		return true
 	}
 	primitive, wrapper := builtinJavaWrapperPrimitive(actualBase, ctx)
 	stringObject := stripJavaQualifier(actualBase) == "String"

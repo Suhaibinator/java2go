@@ -829,6 +829,11 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 	}
 
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
+	if className == "Arrays" && methodName == "asList" {
+		if result := arraysAsListCall(objectNode.Parent(), args, ctx, source); result != nil {
+			return result, true
+		}
+	}
 	if className == "Math" && methodName == "round" && len(args) == 1 && intrinsicMathParameterJavaType(objectNode.Parent(), ctx, source) == "float" {
 		return stdjavaCall(ctx, "MathRoundFloat", args[0]), true
 	}
@@ -1004,6 +1009,22 @@ func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (
 		if objectNode.Type() != "field_access" && objectNode.Type() != "scoped_identifier" {
 			return "", false
 		}
+		if name == "Normalizer.Form" || name == "java.text.Normalizer.Form" {
+			if _, value := inferIdentifierJavaType("Normalizer", ctx); value {
+				return "", false
+			}
+			if resolveClassScopeByQualifiedName(ctx, "Normalizer") != nil || resolveClassScopeByQualifiedName(ctx, name) != nil {
+				return "", false
+			}
+			return "Normalizer.Form", true
+		}
+		if name == "java.text.Normalizer" {
+			if resolveClassScopeByQualifiedName(ctx, name) != nil {
+				return "", false
+			}
+			return "Normalizer", true
+		}
+
 		if !strings.HasPrefix(name, "java.lang.") && !strings.HasPrefix(name, "java.util.") {
 			return "", false
 		}

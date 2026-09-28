@@ -355,7 +355,9 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		// Rename the type based on the public/static rules
 		if node.NamedChild(0).Type() == "modifiers" {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
-				if modifier.Type() == "public" {
+				// Protected members are reachable from subclasses in other Java packages.
+				// Export their Go ABI while preserving Java visibility in the declaration AST.
+				if modifier.Type() == "public" || modifier.Type() == "protected" {
 					public = true
 				}
 				if modifier.Type() == "static" {
@@ -415,7 +417,9 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		// Rename the type based on the public/static rules
 		if node.NamedChild(0).Type() == "modifiers" {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
-				if modifier.Type() == "public" {
+				// Protected members are reachable from subclasses in other Java packages.
+				// Export their Go ABI while preserving Java visibility in the declaration AST.
+				if modifier.Type() == "public" || modifier.Type() == "protected" {
 					public = true
 				}
 				if modifier.Type() == "static" {
@@ -473,18 +477,8 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		for _, parameter := range nodeutil.NamedChildrenOf(node.ChildByFieldName("parameters")) {
 
-			var paramName string
-			var paramType *sitter.Node
-
-			// If this is a spread parameter, then it will be in the format:
-			// (type) (variable_declarator name: (name))
-			if parameter.Type() == "spread_parameter" {
-				paramName = parameter.NamedChild(1).ChildByFieldName("name").Content(source)
-				paramType = parameter.NamedChild(0)
-			} else {
-				paramName = parameter.ChildByFieldName("name").Content(source)
-				paramType = parameter.ChildByFieldName("type")
-			}
+			paramType, nameNode := nodeutil.JavaParameterNodes(parameter)
+			paramName := nameNode.Content(source)
 
 			declaration.Parameters = append(declaration.Parameters, &Definition{
 				Name:         paramName,

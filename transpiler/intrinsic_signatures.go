@@ -56,6 +56,13 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			switch method {
 			case "of", "ofNullable", "singletonList", "singleton", "asList":
 				element := intrinsicFactoryElementJavaType(invocation, ctx, source)
+				if class == "Arrays" && method == "asList" {
+					var array bool
+					element, array = arraysAsListElementType(invocation, ctx, source)
+					if array {
+						return set(element + "[]")
+					}
+				}
 				for i := range result {
 					result[i] = element
 				}
@@ -79,7 +86,7 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 				for i := range result {
 					result[i] = "double"
 				}
-			case "abs", "min", "max", "round":
+			case "abs", "min", "max", "round", "addExact":
 				parameter := intrinsicMathParameterJavaType(invocation, ctx, source)
 				for i := range result {
 					result[i] = parameter
@@ -92,6 +99,16 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 	class, ok := intrinsicReceiverTypeName(object, ctx, source)
 	if !ok {
 		return result
+	}
+	if class == "Random" {
+		switch method {
+		case "setSeed":
+			return set("long")
+		case "nextInt":
+			return set("int")
+		case "nextBytes":
+			return set("byte[]")
+		}
 	}
 	if class == "Field" {
 		if method == "set" {
@@ -390,6 +407,14 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 			return elements[index]
 		}
 		return "Object"
+	}
+	if receiver == "Entry" {
+		if name == "getKey" {
+			return element(0), true
+		}
+		if name == "getValue" {
+			return element(1), true
+		}
 	}
 	if receiver == "Future" && name == "get" {
 		return element(0), true

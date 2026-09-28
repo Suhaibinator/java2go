@@ -1,0 +1,4 @@
+observed=12,23,13,24,33,33
+base=12,13
+foreign=23,24
+local=33,33

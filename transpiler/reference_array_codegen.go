@@ -387,8 +387,11 @@ func addReferenceArrayDefinitionSeeds(definition *symbol.Definition, owner *symb
 		return
 	}
 	addReferenceArrayTypeSeed(definition.OriginalType, owner, ctx, seeds, objectComponent)
-	for _, parameter := range definition.Parameters {
+	for index, parameter := range definition.Parameters {
 		addReferenceArrayDefinitionSeeds(parameter, owner, ctx, seeds, objectComponent)
+		if executionParameterIsVariadic(definition, index) {
+			addReferenceArrayTypeSeed(parameter.OriginalType+"[]", owner, ctx, seeds, objectComponent)
+		}
 	}
 	for _, child := range definition.Children {
 		addReferenceArrayDefinitionSeeds(child, owner, ctx, seeds, objectComponent)

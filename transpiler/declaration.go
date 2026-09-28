@@ -402,6 +402,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Embed any extended interfaces directly into the generated interface
 		if interfacesNode != nil {
 			for _, t := range collectTypeNodes(interfacesNode) {
+				if builtinInterfaceParentMethod(t.Content(source), ctx) != nil {
+					continue
+				}
 				embedType := javaTypeStringToGoTypeExpr(t.Content(source), typeParams, ctx)
 				if star, ok := embedType.(*ast.StarExpr); ok {
 					embedType = star.X
@@ -427,6 +430,23 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 		}
 
+		if ctx.currentClass != nil {
+			for _, method := range ctx.currentClass.Methods {
+				if method.DeclarationNode == nil && !method.IsStatic && !method.Constructor {
+					declared := false
+					for _, field := range methods.List {
+						for _, name := range field.Names {
+							if name.Name == method.Name {
+								declared = true
+							}
+						}
+					}
+					if !declared {
+						methods.List = append(methods.List, builtinInheritedMethodField(method, typeParams, ctx))
+					}
+				}
+			}
+		}
 		var classTypeParams []symbol.TypeParam
 		if ctx.currentClass != nil {
 			classTypeParams = ctx.currentClass.TypeParameters
@@ -2741,12 +2761,7 @@ func declarationParameterMatchesDefinition(param *sitter.Node, def *symbol.Defin
 		return false
 	}
 	variadic := param.Type() == "spread_parameter"
-	var typeNode *sitter.Node
-	if variadic {
-		typeNode = param.NamedChild(0)
-	} else {
-		typeNode = param.ChildByFieldName("type")
-	}
+	typeNode, _ := nodeutil.JavaParameterNodes(param)
 	return typeNode != nil &&
 		def.Parameters[index].OriginalType == typeNode.Content(source) &&
 		executionParameterIsVariadic(def, index) == variadic

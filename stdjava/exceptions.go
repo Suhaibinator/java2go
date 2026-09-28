@@ -47,6 +47,7 @@ var (
 		"Exception":                       "Throwable",
 		"RuntimeException":                "Exception",
 		"IOException":                     "Exception",
+		"UnsupportedEncodingException":    "IOException",
 		"IllegalArgumentException":        "RuntimeException",
 		"IllegalStateException":           "RuntimeException",
 		"IllegalMonitorStateException":    "RuntimeException",
@@ -375,7 +376,7 @@ func PrintStackTrace(recovered interface{}) {
 	}
 	name := throwableTypeName(recovered)
 	msg := GetMessage(recovered)
-	if msg == "" {
+	if msg == "" || StringIsNull(msg) {
 		fmt.Fprintln(os.Stderr, name)
 		return
 	}
@@ -407,7 +408,7 @@ func (t ThrowableBase) Message() string           { return t.message }
 func (t ThrowableBase) JavaDynamicTypeID() TypeID { return TypeID(t.typeName) }
 
 func (t ThrowableBase) Error() string {
-	if t.message == "" {
+	if t.message == "" || StringIsNull(t.message) {
 		return t.typeName
 	}
 	return t.typeName + ": " + t.message
@@ -484,6 +485,7 @@ type ArithmeticException struct{ ThrowableBase }
 type ClassCastException struct{ ThrowableBase }
 type UnsupportedOperationException struct{ ThrowableBase }
 type IOException struct{ ThrowableBase }
+type UnsupportedEncodingException struct{ ThrowableBase }
 type NoSuchElementException struct{ ThrowableBase }
 type ConcurrentModificationException struct{ ThrowableBase }
 
@@ -528,16 +530,78 @@ func NewNoClassDefFoundErrorWithCause(message string, cause interface{}) NoClass
 	return NoClassDefFoundError{base}
 }
 
-func NewException(message string) Exception {
-	return Exception{newThrowableBase("Exception", message)}
+// NewException implements Exception(), Exception(String), Exception(Throwable),
+// and Exception(String, Throwable). Cause storage retains the original reference.
+func NewException(arguments ...any) Exception {
+	return Exception{newExceptionConstructorBase("Exception", arguments...)}
 }
 
-func NewRuntimeException(message string) RuntimeException {
-	return RuntimeException{newThrowableBase("RuntimeException", message)}
+func newExceptionConstructorBase(name string, arguments ...any) ThrowableBase {
+	message := NullString()
+	var cause any
+	switch len(arguments) {
+	case 0:
+	case 1:
+		if text, ok := arguments[0].(string); ok {
+			message = text
+		} else if !javaReferenceIsNull(arguments[0]) {
+			cause = arguments[0]
+			message = exceptionCauseMessage(cause)
+		}
+	case 2:
+		message = StringReferenceValue(arguments[0])
+		if !javaReferenceIsNull(arguments[1]) {
+			cause = arguments[1]
+		}
+	default:
+		panic(NewIllegalArgumentException("unsupported Exception constructor arity"))
+	}
+	base := newThrowableBase(name, message)
+	base.state.cause = cause
+	return base
 }
 
-func NewIllegalArgumentException(message string) IllegalArgumentException {
-	return IllegalArgumentException{newThrowableBase("IllegalArgumentException", message)}
+// A cause-only Java constructor uses cause.toString(), including the qualified
+// name of built-in exceptions. Keep Go's legacy Error formatting separate.
+func exceptionCauseMessage(cause any) string {
+	value := reflect.TypeOf(cause)
+	if value.Kind() == reflect.Pointer {
+		value = value.Elem()
+	}
+	if value.PkgPath() != "github.com/NickyBoy89/java2go/stdjava" {
+		return StringValueOf(cause)
+	}
+	throwable, ok := cause.(Throwable)
+	if !ok {
+		return StringValueOf(cause)
+	}
+	name := throwable.ThrowableTypeName()
+	switch name {
+	case "IOException", "UnsupportedEncodingException":
+		name = "java.io." + name
+	case "NoSuchAlgorithmException":
+		name = "java.security." + name
+	case "ExecutionException", "TimeoutException", "CancellationException", "RejectedExecutionException":
+		name = "java.util.concurrent." + name
+	case "NoSuchElementException", "ConcurrentModificationException":
+		name = "java.util." + name
+	default:
+		if !strings.Contains(name, ".") {
+			name = "java.lang." + name
+		}
+	}
+	if StringIsNull(throwable.Message()) {
+		return name
+	}
+	return name + ": " + throwable.Message()
+}
+
+func NewRuntimeException(arguments ...any) RuntimeException {
+	return RuntimeException{newExceptionConstructorBase("RuntimeException", arguments...)}
+}
+
+func NewIllegalArgumentException(arguments ...any) IllegalArgumentException {
+	return IllegalArgumentException{newExceptionConstructorBase("IllegalArgumentException", arguments...)}
 }
 
 // NewIllegalArgumentExceptionWithCause mirrors the two-argument JDK
@@ -549,8 +613,8 @@ func NewIllegalArgumentExceptionWithCause(message string, cause interface{}) Ill
 	return IllegalArgumentException{base}
 }
 
-func NewIllegalStateException(message string) IllegalStateException {
-	return IllegalStateException{newThrowableBase("IllegalStateException", message)}
+func NewIllegalStateException(arguments ...any) IllegalStateException {
+	return IllegalStateException{newExceptionConstructorBase("IllegalStateException", arguments...)}
 }
 
 func NewIllegalMonitorStateException(message string) IllegalMonitorStateException {
@@ -635,4 +699,8 @@ type IllegalThreadStateException struct{ ThrowableBase }
 
 func NewIllegalThreadStateException(message string) IllegalThreadStateException {
 	return IllegalThreadStateException{newThrowableBase("IllegalThreadStateException", message)}
+}
+
+func NewUnsupportedEncodingException(arguments ...any) UnsupportedEncodingException {
+	return UnsupportedEncodingException{newExceptionConstructorBase("UnsupportedEncodingException", arguments...)}
 }

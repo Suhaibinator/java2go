@@ -7,10 +7,10 @@ package stdjava
 //
 // The token is intentionally opaque to generated programs. It owns reentrant
 // monitors today and is also the natural home for other per-Java-thread state,
-// such as recursive class-initialization tracking. Keeping it non-zero-sized
-// guarantees that distinct live executions have distinct pointer identities.
+// such as recursive class-initialization tracking and currentThread identity.
+// Keeping it non-zero-sized guarantees that distinct live executions have distinct pointer identities.
 type Execution struct {
-	_ byte
+	thread *Thread
 }
 
 // NewExecution starts an independent logical Java execution.

@@ -573,12 +573,8 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 
 			// Go through the types and check to see if they differ
 			for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
-				var paramType string
-				if param.Type() == "spread_parameter" {
-					paramType = param.NamedChild(0).Content(source)
-				} else {
-					paramType = param.ChildByFieldName("type").Content(source)
-				}
+				typeNode, _ := nodeutil.JavaParameterNodes(param)
+				paramType := typeNode.Content(source)
 				if paramType != d.Parameters[index].OriginalType {
 					return false
 				}
@@ -682,11 +678,10 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 	case "spread_parameter":
 		// Java varargs parameters are array references inside the callee.
-		spreadType := node.NamedChild(0)
-		spreadDeclarator := node.NamedChild(1)
+		spreadType, spreadName := nodeutil.JavaParameterNodes(node)
 
 		return &ast.Field{
-			Names: []*ast.Ident{identFromNode(spreadDeclarator.ChildByFieldName("name"), source)},
+			Names: []*ast.Ident{identFromNode(spreadName, source)},
 			Type:  javaTypeStringToGoTypeExpr(spreadType.Content(source)+"[]", inScopeTypeParameters(ctx), ctx),
 		}
 	case "inferred_parameters":
@@ -1095,7 +1090,7 @@ func buildCatchDispatchStmt(catches []*sitter.Node, recoveredName, didPanicName,
 			bodyStmts = append(bodyStmts, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: catchName}},
 				Tok: token.DEFINE,
-				Rhs: []ast.Expr{&ast.Ident{Name: recoveredName}},
+				Rhs: []ast.Expr{&ast.TypeAssertExpr{X: &ast.Ident{Name: recoveredName}, Type: stdjavaQualifiedExpr("Throwable", ctx)}},
 			})
 			bodyStmts = append(bodyStmts, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
@@ -1159,7 +1154,13 @@ func parseCatchParameter(catchNode *sitter.Node, source []byte) (string, []strin
 	}
 
 	catchTypes := []string{}
-	typeNode := paramNode.NamedChild(0)
+	var typeNode *sitter.Node
+	for _, child := range nodeutil.NamedChildrenOf(paramNode) {
+		if child.Type() == "catch_type" {
+			typeNode = child
+			break
+		}
+	}
 	if typeNode != nil {
 		if typeNode.Type() == "catch_type" {
 			for _, child := range nodeutil.NamedChildrenOf(typeNode) {

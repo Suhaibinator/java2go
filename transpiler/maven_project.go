@@ -1,12 +1,9 @@
 package transpiler
 
 import (
-	"bytes"
 	"fmt"
 	"go/build"
 	"go/format"
-	"go/parser"
-	"go/token"
 	"io"
 	"io/fs"
 	"os"
@@ -194,56 +191,9 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	if entry == "" {
 		return fmt.Errorf("%s must declare public static void main(String[])", mainClass)
 	}
-	graph := map[string]map[string]bool{}
-	paths := make([]string, 0, len(packages))
-	for path := range packages {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
-	for _, packagePath := range paths {
-		graph[packagePath] = map[string]bool{}
-		err = filepath.WalkDir(filepath.Join(generated, filepath.FromSlash(projectPackagePath(packagePath))), func(path string, d fs.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
-			}
-			if d.IsDir() {
-				if path != filepath.Join(generated, filepath.FromSlash(projectPackagePath(packagePath))) {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if filepath.Ext(path) != ".go" {
-				return nil
-			}
-			set := token.NewFileSet()
-			file, err := parser.ParseFile(set, path, nil, parser.ParseComments)
-			if err != nil {
-				return fmt.Errorf("parse generated Go %s: %w", path, err)
-			}
-			name := packagePath[strings.LastIndex(packagePath, "/")+1:]
-			file.Name.Name = "j_" + sanitizeGoIdent(name)
-			for _, spec := range file.Imports {
-				importPath, err := strconv.Unquote(spec.Path.Value)
-				if err != nil {
-					return err
-				}
-				if _, ok := packages[importPath]; ok {
-					graph[packagePath][importPath] = true
-					spec.Path.Value = strconv.Quote(module + "/" + projectPackagePath(importPath))
-				}
-			}
-			var data bytes.Buffer
-			if err = format.Node(&data, set, file); err != nil {
-				return err
-			}
-			return os.WriteFile(path, data.Bytes(), 0644)
-		})
-		if err != nil {
-			return err
-		}
-	}
-	if cycle := projectImportCycle(graph); len(cycle) > 0 {
-		return fmt.Errorf("java package cycle cannot be represented as Go imports: %s; move mutually dependent classes into one Java package before conversion", strings.Join(cycle, " -> "))
+	mainImport, entry, err := lowerProjectPackages(generated, module, runtimeRoot, packages, strings.ReplaceAll(mainPackage, ".", "/"), entry)
+	if err != nil {
+		return err
 	}
 	launcher := fmt.Sprintf(`package main
 import (
@@ -256,7 +206,7 @@ func main() {
  for i, value := range os.Args[1:] { stdjava.ReferenceArraySet(args, i, value) }
  app.%s(args)
 }
-`, module+"/"+projectPackagePath(strings.ReplaceAll(mainPackage, ".", "/")), entry)
+`, mainImport, entry)
 	data, err := format.Source([]byte(launcher))
 	if err != nil {
 		return err

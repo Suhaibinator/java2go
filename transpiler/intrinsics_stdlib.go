@@ -13,6 +13,7 @@ import (
 
 func init() {
 	registerStringIntrinsics()
+	registerLocaleIntrinsics()
 	registerStringBuilderIntrinsics()
 	registerMathIntrinsics()
 	registerNumberIntrinsics()
@@ -146,12 +147,18 @@ func registerStringIntrinsics() {
 
 	// toUpperCase / toLowerCase -> strings.ToUpper / ToLower
 	registerInstanceIntrinsic("String", "toUpperCase", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 1 {
+			return stdjavaCall(ctx, "StringToUpperCaseLocale", recv, args[0])
+		}
 		if !expectArgs(args, 0) {
 			return nil
 		}
 		return pkgCall(ctx, "strings", "ToUpper", recv)
 	})
 	registerInstanceIntrinsic("String", "toLowerCase", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 1 {
+			return stdjavaCall(ctx, "StringToLowerCaseLocale", recv, args[0])
+		}
 		if !expectArgs(args, 0) {
 			return nil
 		}
@@ -187,10 +194,10 @@ func registerStringIntrinsics() {
 	// regex (RE2 approximation), splits literally when the pattern has no regex
 	// metacharacters, and removes trailing empty strings like Java's one-arg split.
 	registerInstanceIntrinsic("String", "split", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
+		if len(args) != 1 && len(args) != 2 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringSplitArray", recv, args[0])
+		return stdjavaCall(ctx, "StringSplitArray", append([]ast.Expr{recv}, args...)...)
 	})
 
 	// chars() -> stdjava.StringCharsStream(s). Java's String.chars returns an
@@ -256,6 +263,12 @@ func registerStringIntrinsics() {
 
 func registerStringBuilderIntrinsics() {
 	for _, typeName := range []string{"StringBuilder", "StringBuffer"} {
+		for _, method := range []string{"append", "insert", "deleteCharAt", "reverse"} {
+			registerInstanceIntrinsicResultType(typeName, method, typeName)
+		}
+		registerInstanceIntrinsicResultType(typeName, "toString", "String")
+		registerInstanceIntrinsicResultType(typeName, "length", "int")
+		registerInstanceIntrinsicResultType(typeName, "charAt", "char")
 		// new StringBuilder() / new StringBuilder(String)
 		registerConstructorIntrinsic(typeName, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 			switch len(args) {
@@ -343,6 +356,13 @@ func lowerStringBuilderTextCall(javaMethod, goMethod string, valueIndex int) nod
 // --- java.lang.Math ---------------------------------------------------------
 
 func registerMathIntrinsics() {
+	registerStaticIntrinsic("Math", "addExact", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 2 {
+			return nil
+		}
+		return stdjavaCall(ctx, "MathAddExact", args...)
+	})
+
 	// abs is type-preserving in Java. Go's math.Abs is float64-only, so emit a
 	// stdjava generic helper that keeps the operand's numeric type.
 	registerStaticIntrinsic("Math", "abs", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
@@ -430,7 +450,7 @@ func registerMathIntrinsics() {
 		registerStaticIntrinsicResultType("Math", method, "double")
 	}
 	registerStaticIntrinsicResultType("Math", "round", "long")
-	for _, method := range []string{"abs", "min", "max", "round"} {
+	for _, method := range []string{"abs", "min", "max", "round", "addExact"} {
 		registerStaticIntrinsicDerivedResultType("Math", method, func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 			parameter := intrinsicMathParameterJavaType(invocation, ctx, source)
 			if method == "round" {
@@ -854,7 +874,16 @@ func registerBoxedObjectIntrinsics() {
 		return stdjavaCall(ctx, "ComparableCompareToExecution", execution, recv, args[0])
 	})
 	registerInstanceIntrinsicResultType("Comparable", "compareTo", "int")
-	for _, receiverType := range []string{"Object", "Number"} {
+	for receiverType := range builtinExceptionTypes {
+		registerInstanceIntrinsic(receiverType, "getClass", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return stdjavaCall(ctx, "ObjectGetClass", recv)
+		})
+		registerInstanceIntrinsicResultType(receiverType, "getClass", "Class")
+	}
+	for _, receiverType := range []string{"Object", "Number", "CharSequence"} {
 		registerInstanceIntrinsic(receiverType, "equals", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) != 1 {
 				return nil
@@ -891,4 +920,19 @@ func intrinsicExecutionExpr(ctx Ctx) ast.Expr {
 		return execution
 	}
 	return &ast.Ident{Name: "nil"}
+}
+
+func registerLocaleIntrinsics() {
+	for _, name := range []string{"ROOT", "ENGLISH", "US"} {
+		name := name
+		registerStaticFieldIntrinsic("Locale", name, func(ctx Ctx) ast.Expr { return stdjavaQualifiedExpr("Locale"+name, ctx) })
+		registerStaticFieldIntrinsicResultType("Locale", name, "Locale")
+	}
+	registerStaticIntrinsic("Locale", "forLanguageTag", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "LocaleForLanguageTag", args[0])
+	})
+	registerStaticIntrinsicResultType("Locale", "forLanguageTag", "Locale")
 }

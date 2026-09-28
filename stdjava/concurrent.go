@@ -3,6 +3,7 @@ package stdjava
 import (
 	"math"
 	"reflect"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -377,9 +378,35 @@ func decimalSuffix(name, prefix string) bool {
 // finishes. Java's Thread is far richer (priorities, interruption, daemon status,
 // fairness); those are out of scope and documented as such.
 type Thread struct {
-	run     Runnable
-	done    chan struct{}
-	started atomic.Bool
+	interruptMu     sync.Mutex
+	interrupted     bool
+	interruptSignal chan struct{}
+	name            string
+	run             Runnable
+	done            chan struct{}
+	started         atomic.Bool
+}
+
+var threadSequence atomic.Int64
+var mainThread = func() *Thread {
+	thread := newNamedThread("main")
+	thread.started.Store(true)
+	return thread
+}()
+
+// ThreadCurrentThread resolves Java thread identity from the explicit execution
+// token, including callbacks and reentrant calls on the same worker.
+func ThreadCurrentThread(execution *Execution) *Thread {
+	if execution != nil && execution.thread != nil {
+		return execution.thread
+	}
+	return mainThread
+}
+
+func (t *Thread) GetName() string { return t.name }
+
+func newNamedThread(name string) *Thread {
+	return &Thread{name: name, done: make(chan struct{})}
 }
 
 // JavaDynamicTypeID lets the reified reference-array runtime recognize the
@@ -403,7 +430,20 @@ func init() {
 // (an anonymous Runnable class). Other values produce a Thread that does
 // nothing when started.
 func NewThread(runnable any) *Thread {
-	return &Thread{run: asRunnable(runnable), done: make(chan struct{})}
+	if name, ok := runnable.(string); ok {
+		return NewThreadNamed(nil, name)
+	}
+	thread := newNamedThread("Thread-" + strconv.FormatInt(threadSequence.Add(1)-1, 10))
+	thread.run = asRunnable(runnable)
+	return thread
+}
+
+// NewThreadNamed covers Thread(Runnable, String) and Thread(String).
+func NewThreadNamed(runnable any, name string) *Thread {
+	StringRequireNonNull(name)
+	thread := newNamedThread(name)
+	thread.run = asRunnable(runnable)
+	return thread
 }
 
 // asRunnable coerces the accepted Thread argument forms into a Runnable.
@@ -427,7 +467,7 @@ func asRunnable(runnable any) Runnable {
 // Run()) so that Start() dispatches to it. It is embedded as the *Thread field of
 // the subclass struct.
 func NewThreadBase(self Runnable) *Thread {
-	return &Thread{run: self, done: make(chan struct{})}
+	return NewThread(self)
 }
 
 // Run executes this Thread's target synchronously. java.lang.Thread implements
@@ -449,7 +489,7 @@ func (t *Thread) Start() {
 	go func() {
 		defer close(t.done)
 		defer reportUncaughtTaskException()
-		RunRunnableExecution(NewExecution(), t.run)
+		RunRunnableExecution(&Execution{thread: t}, t.run)
 	}()
 }
 

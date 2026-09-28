@@ -10,6 +10,8 @@ import (
 // the transpiler. Callbacks retain Java initialization and execution semantics.
 // Descriptors are registered without constructing or initializing Java classes.
 type ClassDescriptor struct {
+	SimpleName          string
+	HasSimpleName       bool
 	Type                TypeID
 	Interface           bool
 	InheritedAnnotation bool
@@ -62,6 +64,24 @@ func ClassForName(execution *Execution, name string) *Class {
 func (class *Class) GetName() string {
 	return strings.TrimPrefix(string(class.TypeID()), primitiveTypePrefix)
 }
+
+// GetSimpleName uses source metadata for nested/local/anonymous classes and
+// recursively derives array names from their component descriptors.
+func (class *Class) GetSimpleName() string {
+	id := class.TypeID()
+	if component, ok := arrayComponentTypeID(id); ok {
+		return ClassLiteral(component).GetSimpleName() + "[]"
+	}
+	if descriptor := classDescriptor(id); descriptor.HasSimpleName {
+		return descriptor.SimpleName
+	}
+	name := strings.TrimPrefix(string(id), primitiveTypePrefix)
+	if index := strings.LastIndexAny(name, ".$"); index >= 0 {
+		name = name[index+1:]
+	}
+	return name
+}
+
 func (class *Class) GetSuperclass() *Class {
 	id := class.TypeID()
 	if classDescriptor(id).Interface {

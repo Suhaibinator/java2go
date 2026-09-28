@@ -15,8 +15,8 @@ type javaMapValue interface {
 type javaEntryValue interface{ javaEntry() (any, any) }
 
 func (l *List[T]) javaListElements() []any {
-	out := make([]any, len(l.elements))
-	for i, element := range l.elements {
+	out := make([]any, int(l.Size()))
+	for i, element := range l.Slice() {
 		out[i] = element
 	}
 	return out
@@ -35,10 +35,10 @@ func (l *List[T]) EqualsJava2goExecution(execution *Execution, other any) bool {
 		return false
 	}
 	elements := right.javaListElements()
-	if len(l.elements) != len(elements) {
+	if int(l.Size()) != len(elements) {
 		return false
 	}
-	for i, element := range l.elements {
+	for i, element := range l.Slice() {
 		if !ObjectsEqual(element, elements[i], execution) {
 			return false
 		}
@@ -49,7 +49,7 @@ func (l *List[T]) HashCode() int32 { return l.HashCodeJava2goExecution(nil) }
 func (l *List[T]) HashCodeJava2goExecution(execution *Execution) int32 {
 	ReferenceRequireNonNull(l)
 	hash := int32(1)
-	for _, element := range l.elements {
+	for _, element := range l.Slice() {
 		hash = 31*hash + ObjectsHashCode(element, execution)
 	}
 	return hash
