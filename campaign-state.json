@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Poll46581 withoutrestart; require both local compiler shards plus exact867testcoverageaudit. Retain80281timeoutfailure. Then remaininghistorical+all6applicationgates before16sourceintegration/commit/push. New fixes excluded.",
+  "next_action": "Compiler repairs confirmed reflective generic binder shadow failure from59087 in private copy, then focused green. Freeze fresh full candidate and run reviewed gate script. Existing v4 gates are historical evidence only; production promotion held. New oracle artifacts may be committed independently.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -2795,8 +2795,8 @@
       },
       "execution_slot": {
         "owner": "coordinator",
-        "session": 46581,
-        "status": "local complementary transpiler unit shards with exact coverage audit; nofixturetimeouts changed, unsplitfailure retained"
+        "session": 47922,
+        "status": "strictparity thene2e/fuzz/tag/govuln/all6dependencyapps; allagentsheavyhold"
       },
       "lint_reverification": {
         "request": "repasted original 23 findings",
@@ -3030,7 +3030,7 @@
         "root": "/private/tmp/java2go-checkpoint16-v4-pxl64zc0",
         "manifest": "/private/tmp/java2go-checkpoint16-v4-manifest.json",
         "manifest_files": 1505,
-        "status": "exception family/build/lint pass; unsplitunit20m timeout retained as failure; complementary local compiler shards running",
+        "status": "Historical gates and five accepted applications passed; unchanged Gson build failure remains. Independent reflection-message review blocks promotion pending focused red/repair.",
         "production_unchanged_from_v3": true,
         "session": 80281,
         "results": "/private/tmp/java2go-checkpoint16-v4-results.json",
@@ -3038,7 +3038,20 @@
         "unit_shards_session": 46581,
         "unit_shards_script": "/private/tmp/java2go-checkpoint16-v4-unit-shards.py",
         "unit_shards_results": "/private/tmp/java2go-checkpoint16-v4-unit-shard-results.json",
-        "actual_compiler_top_level_tests": 867
+        "actual_compiler_top_level_tests": 867,
+        "unit_shards_exit": 0,
+        "unit_shard_audit": "/private/tmp/java2go-checkpoint16-v4-unit-shard-audit.json",
+        "remaining_session": 47922,
+        "remaining_script": "/private/tmp/java2go-checkpoint16-v4-remaining-after-shards.py",
+        "remaining_results": "/private/tmp/java2go-checkpoint16-v4-remaining-results.json",
+        "remaining_exit": 1,
+        "acceptance_audit": "/private/tmp/java2go-checkpoint16-independent-acceptance.json",
+        "regression_audit": "/private/tmp/java2go-checkpoint16-regression-audit.json",
+        "gson_audit": "/private/tmp/java2go-checkpoint16-gson-audit.json",
+        "accepted_observations": {
+          "normal_pairs": 45,
+          "stress_runs": 100
+        }
       },
       "iteration_protocol": {
         "owner": "astra_runtime",
@@ -3064,7 +3077,7 @@
       "string_activation_plan": "/private/tmp/java2go-string-activation16-plan-ys1ioesz/activation-plan.md",
       "supplemental_portable_packages": "/private/tmp/java2go-checkpoint16-supplemental-packages-audit.json",
       "portable_reproducer_checkpoint": {
-        "status": "ready for artifact-only commit; no compiler/runtime implementation promotion",
+        "status": "committed and pushed, liveoriginverified",
         "packages": [
           {
             "path": "campaign/reproducers/string-constant-prereq",
@@ -3088,18 +3101,101 @@
         "jvm_observations": 27,
         "original_input_files_verified": 29,
         "go_parity": "unresolved or unrun, as recorded in each package",
-        "independent_audit": "/private/tmp/java2go-checkpoint16-supplemental-packages-audit.json"
+        "independent_audit": "/private/tmp/java2go-checkpoint16-supplemental-packages-audit.json",
+        "revision": "137e7acd0329f726db32e2e351c12a9b14610273",
+        "branch": "origin/codex/adversarial-campaign"
+      },
+      "durable_pending_source": {
+        "directory": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint16-v4",
+        "archive_sha256": "c1055a88c3733f8dad2e8fe24edb420da26f77c2ede9472c4cf0bd1ddab31b66",
+        "manifest_sha256": "3f57c915fcd3994c54e6a023a3c1472a89dc26a402986149f3afa3936207e223",
+        "files": 1505,
+        "status": "exact pending snapshot, not acceptance; private ignoredcheckpoint"
+      },
+      "outer_static_binding": {
+        "owner": "astra_build",
+        "private": "/private/tmp/java2go-outer-static-join16-muv9_9_1",
+        "patch_sha256": "e3473c9c39899e1ec9adbdf938a918681043c4ecb4706bb847c36b9667e00cea",
+        "status": "unrun newJVMshadowingtestbaseline/candidate; existing fullmutationoracle valid andGo selectorred"
+      },
+      "reflective_message_review": {
+        "owner": "astra_lint red; astra_compiler repair",
+        "baseline": "/private/tmp/java2go-reflective-message16-7tidldkp/baseline",
+        "test_sha256": "4c21c0050b35debb9f84025fe21153e1cf958ecf5b04862d8c26dcf9f0ed3a68",
+        "session": 31543,
+        "status": "Canonical and source-shadow fixtures green in private repair; new generic binder regression confirmed and repair pending",
+        "green": "/private/tmp/java2go-reflective-ancestry16-lddwzabd/green",
+        "binder_baseline": "/private/tmp/java2go-reflective-binders16-n0od2knr",
+        "binder_red_session": 59087
+      },
+      "additional_oracle_checkpoint": {
+        "status": "prepared for artifact checkpoint; no production changes",
+        "packages": [
+          {
+            "path": "campaign/reproducers/typed-constant-prereq",
+            "files": 19,
+            "jvm_observations": 9,
+            "transpiler_status": "unrun"
+          },
+          {
+            "path": "campaign/reproducers/string-join-iterable",
+            "files": 17,
+            "jvm_observations": 9,
+            "transpiler_status": "unrun"
+          }
+        ],
+        "audit": "/private/tmp/java2go-checkpoint16-additional-probe-audit.json"
+      },
+      "independent_v5": {
+        "root": "/private/tmp/java2go-checkpoint16-v5-c5pnj53f",
+        "manifest": "/private/tmp/java2go-checkpoint16-v5-manifest.json",
+        "status": "prepared but unrun; generic binder regression blocks promotion",
+        "files": 1508
+      },
+      "string_thread_differential": {
+        "status": "strict transpilation passed; generated all-package race build failed on missing String.intern; no Go executions",
+        "report": "/private/tmp/java2go-string-thread-portable-differential/artifacts/report.json",
+        "unchanged_inputs": true
+      },
+      "literal_hit_performance": {
+        "status": "private allocation TDD green; not integrated, no CPU or JVM speed claim",
+        "evidence": "/private/tmp/java2go-string-literal-hit-prep/validation-20260928T154533Z/compact-evidence.json",
+        "baseline_allocations": [
+          1,
+          2,
+          2,
+          2
+        ],
+        "candidate_allocations": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "runtime_passes": 350,
+        "race_passes": 349,
+        "native_process_observations": 18
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "16507523224fb82408859cb3d6ce8c9ffca5b106",
+    "last_pushed_revision": "137e7acd0329f726db32e2e351c12a9b14610273",
     "branch": "origin/codex/adversarial-campaign",
-    "active_root_session": 46581,
+    "active_root_session": null,
     "source_checkpoint": "checkpoint16-v4",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Poll46581 withoutrestart; require both local compiler shards plus exact867testcoverageaudit. Retain80281timeoutfailure. Then remaininghistorical+all6applicationgates before16sourceintegration/commit/push. New fixes excluded.",
-    "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded"
+    "next": "Compiler repairs confirmed reflective generic binder shadow failure from59087 in private copy, then focused green. Freeze fresh full candidate and run reviewed gate script. Existing v4 gates are historical evidence only; production promotion held. New oracle artifacts may be committed independently.",
+    "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
+    "last_compatibility_revision": "16507523224fb82408859cb3d6ce8c9ffca5b106",
+    "automatic_goal_controller": "usageLimited still reported; user explicitly resumed manualwork; do not markgoalcomplete",
+    "checkpoint16_review_hold": {
+      "status": "potential regression, focused JVM red pending",
+      "finding": "getMessage route excludes reflection exception ancestry previously recognized",
+      "owner": "astra_lint test; astra_compiler repair",
+      "frozen_verification_continues": true
+    },
+    "heavy_owner": null,
+    "heavy_session": null
   }
 }

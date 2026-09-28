@@ -1,0 +1,6 @@
+seed=41
+plain=A41|β41,calls=1/1,events=iterator#1/hasNext/next/toString:plain-a#1/hasNext/next/toString:plain-b#1/hasNext
+replacement=first-41|new-41,calls=1/0/1,size=2,events=iterator#1/hasNext/next/toString:mutator#1/set-index-1/hasNext/next/toString:new#1/hasNext
+sameSize=caught:ConcurrentModificationException,size=2,calls=1/0,events=iterator#1/hasNext/next/toString:structural#1/add-spare/remove-spare/hasNext/next
+nullText=caught:NullPointerException,calls=1/1,events=iterator#1/hasNext/next/toString:null#1/hasNext/next/toString:tail#1/hasNext
+throwing=sameMarker:true,calls=1/1/0,events=iterator#1/hasNext/next/toString:head#1/hasNext/next/toString:throw#1/finally
