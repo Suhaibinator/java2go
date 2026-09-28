@@ -83,6 +83,20 @@ func ParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	}
 }
 
+// Java loop bodies accept any statement; Go requires a block. Preserve a
+// source block's scope and wrap single or expanded statements without changing
+// the loop node targeted by break and continue.
+func parseLoopBody(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+	if isStmtListNode(node.Type()) {
+		return &ast.BlockStmt{List: ParseNode(node, source, ctx).([]ast.Stmt)}
+	}
+	statement := ParseStmt(node, source, ctx)
+	if block, ok := statement.(*ast.BlockStmt); ok {
+		return block
+	}
+	return &ast.BlockStmt{List: []ast.Stmt{statement}}
+}
+
 // parseStatementBlock renders one Java block while optionally omitting an
 // already-structured source statement. Constructor lowering uses the omission
 // for its leading this(...)/super(...) invocation: that invocation controls the
@@ -472,6 +486,10 @@ func isSideEffectFreeCompoundAssignmentRHS(node *sitter.Node) bool {
 
 func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	switch node.Type() {
+	case "assert_statement":
+		return parseAssertionStatement(node, source, ctx)
+	case ";", "empty_statement":
+		return &ast.EmptyStmt{Implicit: true}
 	case "ERROR":
 		log.WithFields(log.Fields{
 			"parsed":    node.Content(source),
@@ -961,7 +979,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		guardedCtx.disableAffineArrayRowSpecialization = true
 		guardedCtx.affineArrayRowHoists = make(map[affineArrayCallSiteKey][]*affineArrayRowHoist)
 
-		body := ParseStmt(node.ChildByFieldName("body"), source, fastCtx).(*ast.BlockStmt)
+		body := parseLoopBody(node.ChildByFieldName("body"), source, fastCtx)
 		if initNode != nil && initNode.Type() == "local_variable_declaration" {
 			body.List = append(unusedLocalDiscardStatements(init, node, source), body.List...)
 		}
@@ -977,7 +995,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			return loop
 		}
 
-		guardedBody := ParseStmt(node.ChildByFieldName("body"), source, guardedCtx).(*ast.BlockStmt)
+		guardedBody := parseLoopBody(node.ChildByFieldName("body"), source, guardedCtx)
 		if initNode != nil && initNode.Type() == "local_variable_declaration" {
 			guardedBody.List = append(unusedLocalDiscardStatements(init, node, source), guardedBody.List...)
 		}
@@ -1003,7 +1021,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 		return &ast.ForStmt{
 			Cond: parseJavaBooleanExpr(node.NamedChild(0), source, ctx),
-			Body: ParseStmt(node.NamedChild(1), source, ctx).(*ast.BlockStmt),
+			Body: parseLoopBody(node.NamedChild(1), source, ctx),
 		}
 	case "do_statement":
 		// Java continue in a do-while evaluates the condition before deciding
@@ -1020,7 +1038,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if key, ok := javaControlKey(node); ok {
 			doCtx.doWhileContinueTargets[key] = continueTarget
 		}
-		body := ParseStmt(node.NamedChild(0), source, doCtx).(*ast.BlockStmt)
+		body := parseLoopBody(node.NamedChild(0), source, doCtx)
 
 		conditionGuard := &ast.IfStmt{
 			Cond: &ast.UnaryExpr{
@@ -1137,7 +1155,7 @@ func lowerBufferedReaderReadLineWhile(node *sitter.Node, source []byte, ctx Ctx)
 	}
 	return &ast.ForStmt{
 		Cond: conditionExpr,
-		Body: ParseStmt(node.NamedChild(1), source, ctx).(*ast.BlockStmt),
+		Body: parseLoopBody(node.NamedChild(1), source, ctx),
 	}, true
 }
 

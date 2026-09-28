@@ -92,8 +92,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
 					continue
 				}
-				if base := stripJavaQualifier(t.Content(source)); base == "FilterInputStream" && resolveClassScopeByQualifiedName(ctx, base) == nil {
-					fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("FilterInputStream", ctx)}})
+				if base := stripJavaQualifier(t.Content(source)); (base == "FilterInputStream" || base == "ByteArrayInputStream") && resolveClassScopeByQualifiedName(ctx, base) == nil {
+					fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr(base, ctx)}})
 					continue
 				}
 				// A class extending java.lang.Thread embeds *stdjava.Thread so it

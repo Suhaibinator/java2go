@@ -124,8 +124,8 @@ public class OptionalOpsProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, ".Filter(func(s string) bool")
 	assertContains(t, out, "stdjava.OptionalFlatMap(name, func(s string) stdjava.Optional[string]")
-	// A zero-parameter Supplier still needs its result type applied.
-	assertContains(t, out, ".OrElseGet(func() string")
-	assertContains(t, out, ".OrElseThrow(nil)")
-	assertContains(t, out, ".OrElseThrow(func() any")
+	// Suppliers preserve result typing and receive the invocation execution.
+	assertContains(t, out, ".OrElseGet(stdjava.NewSupplierFuncAdapter[string](func(__java2goExecution *stdjava.Execution) string")
+	assertContains(t, out, ".OrElseThrow(nil, __java2goExecution)")
+	assertContains(t, out, ".OrElseThrow(stdjava.NewSupplierFuncAdapter[any](func(__java2goExecution *stdjava.Execution) any")
 }

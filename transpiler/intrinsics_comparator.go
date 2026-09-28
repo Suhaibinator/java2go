@@ -167,12 +167,23 @@ func enclosingTargetTypeArgs(invocation *sitter.Node, ctx Ctx, source []byte) []
 // argument (a comparator variable or a method reference) is treated as a
 // comparator, which is the commoner form.
 func isKeyExtractorExpr(arg ast.Expr) bool {
-	funcLit, ok := arg.(*ast.FuncLit)
-	if !ok || funcLit.Type == nil || funcLit.Type.Params == nil {
+	var functionType *ast.FuncType
+	switch expression := arg.(type) {
+	case *ast.FuncLit:
+		functionType = expression.Type
+	case *ast.CallExpr:
+		// A method reference stages its captured receiver/execution token in
+		// an IIFE returning a closure. Its callable arity remains the arity of
+		// that result, not the argument count of the staging invocation.
+		if factory, ok := expression.Fun.(*ast.FuncLit); ok && factory.Type.Results != nil && len(factory.Type.Results.List) == 1 {
+			functionType, _ = factory.Type.Results.List[0].Type.(*ast.FuncType)
+		}
+	}
+	if functionType == nil || functionType.Params == nil {
 		return false
 	}
 	parameters := 0
-	for _, field := range funcLit.Type.Params.List {
+	for _, field := range functionType.Params.List {
 		if len(field.Names) == 0 {
 			parameters++
 			continue

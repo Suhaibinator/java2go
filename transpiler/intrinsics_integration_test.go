@@ -45,8 +45,8 @@ func TestIntrinsics_StringMethods(t *testing.T) {
 		{"compareTo", "s.compareTo(\"x\")", "stdjava.StringCompareTo(stdjava.StringRequireNonNull(s), \"x\")"},
 		{"toUpperCase", "s.toUpperCase()", "strings.ToUpper(stdjava.StringRequireNonNull(s))"},
 		{"toLowerCase", "s.toLowerCase()", "strings.ToLower(stdjava.StringRequireNonNull(s))"},
-		{"trim", "s.trim()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
-		{"strip", "s.strip()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
+		{"trim", "s.trim()", "stdjava.StringTrim(stdjava.StringRequireNonNull(s))"},
+		{"strip", "s.strip()", "stdjava.StringStrip(stdjava.StringRequireNonNull(s))"},
 		{"replace", "s.replace(\"a\", \"b\")", "stdjava.StringReplace(stdjava.StringRequireNonNull(s), \"a\", \"b\")"},
 		{"split", "s.split(\",\")", "stdjava.StringSplitArray(stdjava.StringRequireNonNull(s), \",\")"},
 		{"chars", "s.chars()", "stdjava.StringCharsStream(stdjava.StringRequireNonNull(s))"},
@@ -246,7 +246,7 @@ public class LiteralReceiver {
 }
 `
 	out := renderIntrinsicProgram(t, src)
-	assertContains(t, out, `strings.TrimSpace("  hi  ")`)
+	assertContains(t, out, `stdjava.StringTrim("  hi  ")`)
 	// split returns a descriptor-bearing String[]; array.length must use the
 	// wrapper helper rather than native len so null/descriptor behavior survives.
 	assertContains(t, out, `stdjava.ReferenceArrayLength(stdjava.StringSplitArray("a,b,c", ","))`)
@@ -285,7 +285,7 @@ public class Chained {
 }
 `
 	out := renderIntrinsicProgram(t, src)
-	assertContains(t, out, "strings.ToUpper(strings.TrimSpace(stdjava.StringRequireNonNull(s)))")
+	assertContains(t, out, "strings.ToUpper(stdjava.StringTrim(stdjava.StringRequireNonNull(s)))")
 }
 
 func TestJavaStdlibImportsStripped(t *testing.T) {

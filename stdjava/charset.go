@@ -4,7 +4,8 @@ import (
 	"encoding/binary"
 	"strings"
 	"unicode/utf16"
-	"unicode/utf8"
+
+	"golang.org/x/text/transform"
 )
 
 // Charset implements the six mandatory standard charsets used by Java byte
@@ -152,48 +153,17 @@ func StringNew(args ...any) string {
 	panic(NewUnsupportedOperationException("String constructor overload is not supported"))
 }
 
+// Byte constructors and InputStreamReader use the same replacement policy for
+// malformed encoded input. This does not apply to String(char[]), whose legal
+// isolated UTF-16 surrogates must not be replaced by an encoding decoder.
 func decodeCharset(data []byte, charset *Charset) string {
-	var out []rune
-	switch charset {
-	case UTF_8:
-		for len(data) > 0 {
-			r, width := utf8.DecodeRune(data)
-			out = append(out, r)
-			data = data[width:]
-		}
-	case US_ASCII, ISO_8859_1:
-		for _, b := range data {
-			if charset == US_ASCII && b > 127 {
-				out = append(out, utf8.RuneError)
-			} else {
-				out = append(out, rune(b))
-			}
-		}
-	case UTF_16, UTF_16BE, UTF_16LE:
-		var order binary.ByteOrder = binary.BigEndian
-		if charset == UTF_16LE {
-			order = binary.LittleEndian
-		}
-		if charset == UTF_16 && len(data) >= 2 {
-			if data[0] == 0xfe && data[1] == 0xff {
-				data = data[2:]
-			} else if data[0] == 0xff && data[1] == 0xfe {
-				order = binary.LittleEndian
-				data = data[2:]
-			}
-		}
-		units := make([]uint16, len(data)/2)
-		for i := range units {
-			units[i] = order.Uint16(data[i*2:])
-		}
-		out = utf16.Decode(units)
-		if len(data)%2 != 0 {
-			out = append(out, utf8.RuneError)
-		}
-	default:
-		panic(NewUnsupportedOperationException("charset decoding is not supported"))
+	decoded, _, err := transform.Bytes(newInputStreamDecoder(charset), data)
+	if err != nil {
+		// All supported decoders replace malformed input and consume EOF tails.
+		// An error here therefore indicates a decoder implementation defect.
+		panic(err)
 	}
-	return string(out)
+	return string(decoded)
 }
 
 // The legacy String overloads translate unavailable encoding names to the

@@ -405,7 +405,7 @@ func Run(ctx context.Context, c Config) (report Report, err error) {
 		if e = seedResources(dir, p.resources); e != nil {
 			return fail("resources", e.Error())
 		}
-		result := execute(ctx, c.RunTimeout, dir, append([]string{binary}, seedArgs(m.Args, observation.Seed)...))
+		result := execute(ctx, c.RunTimeout, dir, goProgramCommand(binary, seedArgs(m.Args, observation.Seed)))
 		if e = saveExecution(filepath.Join(dir, "..", "go"), result); e != nil {
 			return fail("artifacts", e.Error())
 		}

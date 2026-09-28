@@ -1,0 +1,101 @@
+{
+  "accepted_run": "20260928T050238Z-2636650079",
+  "runtime_commit": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+  "go_version": "go version go1.27.1 darwin/arm64",
+  "observations": [
+    {
+      "seed": 17,
+      "trial": 0,
+      "allocated_bytes": 289136,
+      "mallocs": 4410
+    },
+    {
+      "seed": 17,
+      "trial": 1,
+      "allocated_bytes": 289088,
+      "mallocs": 4409
+    },
+    {
+      "seed": 17,
+      "trial": 2,
+      "allocated_bytes": 289088,
+      "mallocs": 4409
+    },
+    {
+      "seed": 41,
+      "trial": 0,
+      "allocated_bytes": 281256,
+      "mallocs": 4240
+    },
+    {
+      "seed": 41,
+      "trial": 1,
+      "allocated_bytes": 281256,
+      "mallocs": 4240
+    },
+    {
+      "seed": 41,
+      "trial": 2,
+      "allocated_bytes": 281256,
+      "mallocs": 4240
+    },
+    {
+      "seed": 97,
+      "trial": 0,
+      "allocated_bytes": 263912,
+      "mallocs": 3992
+    },
+    {
+      "seed": 97,
+      "trial": 1,
+      "allocated_bytes": 263912,
+      "mallocs": 3992
+    },
+    {
+      "seed": 97,
+      "trial": 2,
+      "allocated_bytes": 263912,
+      "mallocs": 3992
+    }
+  ],
+  "seed17_inclusive_profile": {
+    "StringCompareTo": {
+      "bytes": 11312,
+      "profile_objects": 167
+    },
+    "StringSubstringRange": {
+      "bytes": 18824,
+      "profile_objects": 138
+    },
+    "StringFromChars": {
+      "bytes": 24368,
+      "profile_objects": 158
+    },
+    "javaInputStreamReader": {
+      "bytes": 32960,
+      "profile_objects": 12
+    },
+    "InputStreamReadIntoExecution": {
+      "bytes": 16384,
+      "profile_objects": 4
+    },
+    "StreamGroupingByDownstreamWith": {
+      "bytes": 6496,
+      "profile_objects": 211
+    },
+    "StreamSortedWith": {
+      "bytes": 10512,
+      "profile_objects": 260
+    },
+    "NewStream": {
+      "bytes": 344,
+      "profile_objects": 10
+    },
+    "reflect.": {
+      "bytes": 2088,
+      "profile_objects": 46
+    }
+  },
+  "parity": "Every warm and observed Go invocation matches live Java stdout and all declared files.",
+  "note": "No timings collected; inclusive allocation stacks overlap. MemStats Mallocs differs from profile object count because of tiny allocator accounting."
+}

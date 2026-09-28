@@ -75,19 +75,18 @@ func registerStringIntrinsics() {
 		return nil
 	})
 
-	// indexOf / lastIndexOf -> rune-index helpers (only the (String) overload;
-	// the (int ch) overload falls through for now).
+	// Search overloads accept a String or int code point and optional start index.
 	registerInstanceIntrinsic("String", "indexOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
+		if len(args) < 1 || len(args) > 2 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringIndexOf", recv, args[0])
+		return stdjavaCall(ctx, "StringIndexOf", append([]ast.Expr{recv}, args...)...)
 	})
 	registerInstanceIntrinsic("String", "lastIndexOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
+		if len(args) < 1 || len(args) > 2 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringLastIndexOf", recv, args[0])
+		return stdjavaCall(ctx, "StringLastIndexOf", append([]ast.Expr{recv}, args...)...)
 	})
 
 	// contains(s) -> strings.Contains(s, sub)
@@ -165,20 +164,18 @@ func registerStringIntrinsics() {
 		return pkgCall(ctx, "strings", "ToLower", recv)
 	})
 
-	// trim / strip -> strings.TrimSpace. Java's trim strips <= U+0020 while strip
-	// is Unicode-whitespace aware; strings.TrimSpace matches strip and is a close
-	// approximation of trim for the common ASCII case.
+	// Java trim and strip use different character predicates.
 	registerInstanceIntrinsic("String", "trim", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 0) {
 			return nil
 		}
-		return pkgCall(ctx, "strings", "TrimSpace", recv)
+		return stdjavaCall(ctx, "StringTrim", recv)
 	})
 	registerInstanceIntrinsic("String", "strip", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 0) {
 			return nil
 		}
-		return pkgCall(ctx, "strings", "TrimSpace", recv)
+		return stdjavaCall(ctx, "StringStrip", recv)
 	})
 
 	// replace(old, new) -> stdjava.StringReplace (strings.ReplaceAll). Java's

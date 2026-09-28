@@ -1,6 +1,6 @@
 # Continuous adversarial campaign
 
-Status: round 01 accepted. All three frozen applications independently passed JVM/Go parity with race instrumentation and twenty additional stress runs each. All existing regression shards and golangci-lint2.14.0 passed. Base revision: `c1f1ae45cfe8d5465425efc562a54580add4f3ea`.
+Status: round 01 accepted; round 02 remains active. Five applications independently pass all nine JVM/Go comparisons plus twenty race-enabled stress runs each. All existing regression shards and exact lint pass. The frozen Gson application still fails generated-Go parsing on multiline annotations; the complete campaign suite remains red and round 02 is not accepted. Base revision: `c1f1ae45cfe8d5465425efc562a54580add4f3ea`.
 
 Three Sol agents own independent Java applications and JVM-derived oracles. Three Astra agents own compiler, runtime, and dependency/harness implementation respectively. Two additional dedicated Astra agents investigate generated-code and runtime performance; they do not implement changes or edit challenge oracles. The coordinator independently verifies every promotion. No challenge or upstream implementation may be weakened to make translation pass.
 
@@ -14,9 +14,9 @@ Work happens in the managed `adversarial-java` checkout. Existing user changes r
 
 | Agent | Model | Ownership |
 | --- | --- | --- |
-| sol_business | gpt-6-sol, high | testfiles/campaign/round01/business |
-| sol_data | gpt-6-sol, high | testfiles/campaign/round01/data |
-| sol_concurrent | gpt-6-sol, high | testfiles/campaign/round01/concurrent |
+| sol_business | gpt-6-sol, high | testfiles/campaign/round*/business |
+| sol_data | gpt-6-sol, high | testfiles/campaign/round*/data |
+| sol_concurrent | gpt-6-sol, high | testfiles/campaign/round*/concurrent |
 | astra_compiler | gpt-6-astra, high | Compiler, symbols, parsing, project lowering |
 | astra_runtime | gpt-6-astra, high | stdjava runtime and coordinated lowering |
 | astra_build | gpt-6-astra, high | Dependency bootstrap, campaign runner and harness |

@@ -26,6 +26,7 @@ var concurrencyRuntimeTypes = map[string]bool{
 	"Thread":            false,
 	"ExecutorService":   false,
 	"Future":            true,
+	"ThreadLocal":       true,
 	"ConcurrentHashMap": true,
 }
 
@@ -58,13 +59,13 @@ func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx 
 	if baseName == "TimeUnit" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
 		return &ast.StarExpr{X: stdjavaQualifiedExpr("TimeUnit", ctx)}, true
 	}
-	if baseName == "Callable" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if (baseName == "Callable" || baseName == "Supplier") && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
 		if len(typeArgs) == 0 {
 			typeArgs = []string{"Object"}
 		}
-		return applyTypeArguments(stdjavaQualifiedExpr("Callable", ctx), []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], typeParams, ctx)}), true
+		return applyTypeArguments(stdjavaQualifiedExpr(baseName, ctx), []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], typeParams, ctx)}), true
 	}
-	if baseName == "Future" && len(typeArgs) == 0 {
+	if (baseName == "Future" || baseName == "ThreadLocal") && len(typeArgs) == 0 {
 		typeArgs = []string{"Object"}
 	}
 	generic, ok := concurrencyRuntimeTypes[baseName]

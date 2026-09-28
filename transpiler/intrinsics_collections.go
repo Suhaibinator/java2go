@@ -237,7 +237,7 @@ func registerMapIntrinsics() {
 			if !expectArgs(args, argc) {
 				return nil
 			}
-			if goName == "Put" || goName == "PutIfAbsent" || goName == "Get" || goName == "GetOrDefault" || goName == "ContainsKey" || goName == "ContainsValue" || goName == "Remove" {
+			if goName == "ComputeIfAbsent" || goName == "Put" || goName == "PutIfAbsent" || goName == "Get" || goName == "GetOrDefault" || goName == "ContainsKey" || goName == "ContainsValue" || goName == "Remove" {
 				args = append(args, intrinsicExecutionExpr(ctx))
 			}
 			result := methodCall(recv, goName, args...)
@@ -254,6 +254,7 @@ func registerMapIntrinsics() {
 	registerForTypes([]string{"Entry"}, "getValue", method("GetValue", 0))
 	registerForTypes(mapTypeNames, "put", method("Put", 2))
 	registerForTypes(mapTypeNames, "putIfAbsent", method("PutIfAbsent", 2))
+	registerForTypes(mapTypeNames, "computeIfAbsent", method("ComputeIfAbsent", 2))
 	registerForTypes(mapTypeNames, "get", method("Get", 1))
 	registerForTypes(mapTypeNames, "getOrDefault", method("GetOrDefault", 2))
 	registerForTypes(mapTypeNames, "containsKey", method("ContainsKey", 1))
@@ -423,16 +424,16 @@ func registerOptionalIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return methodCall(recv, "OrElseGet", args[0])
+		return methodCall(recv, "OrElseGet", args[0], intrinsicExecutionExpr(ctx))
 	})
 	// orElseThrow has a no-argument form (NoSuchElementException) and a
 	// supplier-taking one; the runtime takes a nil supplier for the former.
 	registerInstanceIntrinsic("Optional", "orElseThrow", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		switch len(args) {
 		case 0:
-			return methodCall(recv, "OrElseThrow", &ast.Ident{Name: "nil"})
+			return methodCall(recv, "OrElseThrow", &ast.Ident{Name: "nil"}, intrinsicExecutionExpr(ctx))
 		case 1:
-			return methodCall(recv, "OrElseThrow", args[0])
+			return methodCall(recv, "OrElseThrow", args[0], intrinsicExecutionExpr(ctx))
 		}
 		return nil
 	})
@@ -563,6 +564,13 @@ func registerCollectionsStatics() {
 	})
 
 	// java.util.Arrays
+	registerStaticIntrinsic("Arrays", "equals", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 2) {
+			return nil
+		}
+		return stdjavaCall(ctx, "ArraysEqualsExecution", intrinsicExecutionExpr(ctx), args[0], args[1])
+	})
+	registerStaticIntrinsicResultType("Arrays", "equals", "boolean")
 	registerStaticIntrinsic("Arrays", "asList", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		return stdjavaGenericCall(ctx, "AsList", ctx.intrinsicTypeArgs, args)
 	})

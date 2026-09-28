@@ -990,8 +990,8 @@ func lowerAffineArrayRowLoop(
 	fallbackCtx.localScope = cloneLocalScopeDefinition(baseCtx.localScope)
 	fallbackCtx.suppressUnsupportedDiagnostics = true
 
-	specializedBody := ParseStmt(bodyNode, source, rowCtx).(*ast.BlockStmt)
-	fallbackBody := ParseStmt(bodyNode, source, fallbackCtx).(*ast.BlockStmt)
+	specializedBody := parseLoopBody(bodyNode, source, rowCtx)
+	fallbackBody := parseLoopBody(bodyNode, source, fallbackCtx)
 
 	if initNode := node.ChildByFieldName("init"); initNode != nil && initNode.Type() == "local_variable_declaration" {
 		fallbackBody.List = append(unusedLocalDiscardStatements(ordinaryInit, node, source), fallbackBody.List...)

@@ -184,7 +184,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		lambdaCtx.expectedType = lambdaReturnType
 		expectedBase, _ := parseJavaTypeString(ctx.expectedType)
 		expectedScope := resolveClassScopeByQualifiedName(ctx, expectedBase)
-		executionAwareSAM := samMethod != nil && (expectedScope != nil && expectedScope.IsInterface || isExternalCallableType(ctx.expectedType, ctx))
+		executionAwareSAM := samMethod != nil && (expectedScope != nil && expectedScope.IsInterface || isExternalCallableType(ctx.expectedType, ctx) || isExternalSupplierType(ctx.expectedType, ctx))
 		executionAwareRunnable := samMethod == nil && expectedScope == nil && stripJavaQualifier(expectedBase) == "Runnable"
 
 		var lambdaParameters *ast.FieldList
@@ -354,7 +354,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					classJavaTypeArgs: normalizeClassTypeArguments(classScope, qualifierArguments, ctx.currentClass, nil),
 					rawGenericView:    javaTypeOmitsGenericArguments(targetNode.Content(source), ctx),
 				}
-				if resolution := resolveMethodReferenceOverload(classScope, target, methodName, parameterTypes[1:], false, false, ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
+				if resolution := resolveMethodReferenceOverload(classScope, target, methodName, parameterTypes[1:], false, false, ctx); resolution != nil && resolution.def != nil {
 					methodExpr := executionAwareMethodReferenceForwarder(nil, resolution, target, samType, samExecutionName, true, node, source, ctx)
 					if adapted := wrapLambdaWithFunctionalInterfaceAdapter(methodExpr, ctx.expectedType, true, ctx); adapted != nil {
 						return adapted
@@ -368,7 +368,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		methodExpr := ast.Expr(&ast.SelectorExpr{X: ParseExpr(targetNode, source, ctx), Sel: identFromNode(node.NamedChild(int(node.NamedChildCount())-1), source)})
 		if samMethod != nil && samType != nil {
 			if target := resolveInvocationTarget(targetNode, ctx, source); target != nil && target.classScope != nil {
-				if resolution, selectedTarget := findInstanceMethodForInvocationTarget(target, methodName, len(samMethod.Parameters), ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
+				if resolution, selectedTarget := findInstanceMethodForInvocationTarget(target, methodName, len(samMethod.Parameters), ctx); resolution != nil && resolution.def != nil {
 					target = selectedTarget
 					if selected := resolveMethodReferenceOverload(target.classScope, target, methodName, parameterTypes, false, false, ctx); selected != nil {
 						resolution = selected
@@ -709,9 +709,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// Abstract Java reference types are emitted as companion Go interfaces.
 			// Calling through that interface already performs dynamic dispatch and it
 			// has no concrete class dispatch field to select.
-			abstractInterfaceReceiver := target != nil && target.classScope != nil && target.classScope.IsAbstract
+			abstractInterfaceReceiver := target != nil && target.classScope != nil && abstractClassUsesInterfaceView(target.classScope)
 			companionInterfaceReceiver := target != nil && target.classScope != nil &&
-				(target.classScope.IsInterface || target.classScope.IsAbstract)
+				(target.classScope.IsInterface || abstractInterfaceReceiver)
 			if companionInterfaceReceiver && instanceResolution != nil && executionExpr(ctx) != nil {
 				if dispatched := executionCompanionDispatchInvocation(
 					node, objectNode, objectExpr, target, instanceResolution, args, expandVarargsArray, ctx, source,
@@ -1326,11 +1326,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "dimensions_expr":
 		return parseJavaIndexExpr(node.NamedChild(0), source, ctx)
 	case "binary_expression":
-		operator := node.Child(1).Content(source)
+		operator := node.ChildByFieldName("operator").Content(source)
 		if operator == ">>>" {
-			leftNode := node.Child(0)
+			leftNode := node.ChildByFieldName("left")
 			leftExpr := ParseExpr(leftNode, source, ctx)
-			if javaBinaryOperandMayHaveEffects(node.Child(2), source, ctx) {
+			if javaBinaryOperandMayHaveEffects(node.ChildByFieldName("right"), source, ctx) {
 				leftExpr = snapshotJavaBinaryOperand(leftExpr, leftNode, source, ctx)
 			}
 			if javaType, ok := inferExprJavaType(leftNode, ctx, source); ok {
@@ -1347,11 +1347,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			return stdjavaCall(ctx, "UnsignedRightShift",
 				leftExpr,
-				maskedShiftAmount(leftNode, node.Child(2), source, ctx),
+				maskedShiftAmount(leftNode, node.ChildByFieldName("right"), source, ctx),
 			)
 		}
-		leftNode := node.Child(0)
-		rightNode := node.Child(2)
+		leftNode := node.ChildByFieldName("left")
+		rightNode := node.ChildByFieldName("right")
 		leftNull := isStaticallyNullReference(leftNode)
 		rightNull := isStaticallyNullReference(rightNode)
 		if (operator == "==" || operator == "!=") && leftNull && rightNull {
@@ -1515,6 +1515,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		valueExpr := ParseExpr(valueNode, source, ctx)
 		if cast, ok := lowerJavaBoxedCast(valueExpr, valueNode, targetJavaType, source, ctx); ok {
 			return cast
+		}
+		if sourceType, known := inferExprJavaType(valueNode, ctx, source); known {
+			if cast, ok := lowerJavaIntegralCast(valueExpr, sourceType, targetJavaType); ok {
+				return cast
+			}
 		}
 		if rawGenericCastCanPreserveLocalRepresentation(node) {
 			if sourceJavaType, ok := castOperandSourceJavaType(valueNode, ctx, source); ok &&
@@ -3048,8 +3053,8 @@ func isStringLikeExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
 	case "string_literal":
 		return true
 	case "binary_expression":
-		if node.Child(1) != nil && node.Child(1).Content(source) == "+" {
-			return isStringLikeExprNode(node.Child(0), ctx, source) || isStringLikeExprNode(node.Child(2), ctx, source)
+		if node.ChildByFieldName("operator") != nil && node.ChildByFieldName("operator").Content(source) == "+" {
+			return isStringLikeExprNode(node.ChildByFieldName("left"), ctx, source) || isStringLikeExprNode(node.ChildByFieldName("right"), ctx, source)
 		}
 	}
 
@@ -5457,7 +5462,7 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 			return projected
 		}
 	}
-	if expectedScope == nil || expectedScope.IsInterface || expectedScope.IsAbstract || expectedScope.Class == nil {
+	if expectedScope == nil || expectedScope.IsInterface || abstractClassUsesInterfaceView(expectedScope) || expectedScope.Class == nil {
 		return argExpr
 	}
 
@@ -5473,10 +5478,10 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 		return argExpr
 	}
 
-	return &ast.SelectorExpr{
-		X:   argExpr,
-		Sel: &ast.Ident{Name: expectedScope.Class.Name},
+	if expectedScope.IsAbstract {
+		return nullableEmbeddedSuperclassView(argExpr, actualType, expectedType, expectedScope.Class.Name, ctx)
 	}
+	return &ast.SelectorExpr{X: argExpr, Sel: ast.NewIdent(expectedScope.Class.Name)}
 }
 
 // javaDependentTypeParameterAssignable recognizes Java's declaration-level
@@ -8387,7 +8392,15 @@ func executionAwareMethodReferenceForwarder(
 			Body: &ast.BlockStmt{List: body},
 		}
 	}
-	if targetScope.IsInterface || targetScope.IsAbstract {
+	if resolution.def.DeclarationNode == nil {
+		// Synthesized source members (notably record accessors) have a public
+		// entry point but no execution companion. They still need a typed bound
+		// or unbound adapter rather than a package-level function selector.
+		call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(resolution.def.Name)}, Args: javaArgs}
+		markVariadicForwardCall(call, resolution.def)
+		result := methodReferenceResultConversion(call, methodReferenceDeclaredResultType(resolution, target, ctx), ctx)
+		body = append(body, invocationClosureCallStatement(result, functionType.Results))
+	} else if targetScope.IsInterface || abstractClassUsesInterfaceView(targetScope) {
 		companionType := executionCompanionTypeExpr(target, resolution, ctx)
 		if companionType == nil {
 			return nil
@@ -8489,6 +8502,13 @@ func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType 
 	}
 
 	baseType, typeArgs := parseJavaTypeString(expectedType)
+	if isExternalSupplierType(expectedType, ctx) {
+		constructor := "NewPlainSupplierFuncAdapter"
+		if executionAware {
+			constructor = "NewSupplierFuncAdapter"
+		}
+		return stdjavaGenericCall(ctx, constructor, []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], inScopeTypeParameters(ctx), ctx)}, []ast.Expr{lambdaExpr})
+	}
 	if isExternalCallableType(expectedType, ctx) {
 		constructor := "NewPlainCallableFuncAdapter"
 		if executionAware {
@@ -8642,7 +8662,7 @@ func instanceofSubjectExpr(left *sitter.Node, targetJavaType string, source []by
 	staticScope := resolveClassScopeByQualifiedName(ctx, staticBase)
 	targetScope := resolveClassScopeByQualifiedName(ctx, targetBase)
 	if staticScope == nil || targetScope == nil || staticScope == targetScope ||
-		staticScope.IsAbstract || staticScope.IsInterface || staticScope.IsEnum || targetScope.IsInterface ||
+		abstractClassUsesInterfaceView(staticScope) || staticScope.IsInterface || staticScope.IsEnum || targetScope.IsInterface ||
 		!classNeedsVirtualDispatch(staticScope, ctx) || !javaReferenceTypeAssignable(targetScope, staticScope, ctx) {
 		return leftExpr
 	}
@@ -8754,7 +8774,7 @@ func shiftOperandIsLong(node *sitter.Node, source []byte, ctx Ctx) bool {
 	case "binary_expression":
 		// A binary op is long if either side is long (Java numeric promotion).
 		if node.NamedChildCount() >= 2 {
-			return shiftOperandIsLong(node.Child(0), source, ctx) || shiftOperandIsLong(node.Child(2), source, ctx)
+			return shiftOperandIsLong(node.ChildByFieldName("left"), source, ctx) || shiftOperandIsLong(node.ChildByFieldName("right"), source, ctx)
 		}
 	}
 	if javaType, ok := inferExprJavaType(node, ctx, source); ok {
@@ -9966,6 +9986,14 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		return "", false
 	case "identifier":
 		return inferIdentifierJavaType(node.Content(source), ctx)
+	case "update_expression":
+		// Prefix and postfix update expressions retain the operand's Java type,
+		// including wrapper types. Consumers then apply boxing or unboxing at
+		// the same assignment, invocation, and return boundaries as other values.
+		if node.NamedChildCount() == 1 {
+			return inferExprJavaType(node.NamedChild(0), ctx, source)
+		}
+		return "", false
 	case "assignment_expression":
 		// Every Java assignment expression has the type of its left-hand side,
 		// including compound assignments whose operation is promoted and then
@@ -10093,21 +10121,21 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		// Java's `+` is String concatenation when either operand is a String, so
 		// the whole expression is a String (e.g. `var g = "a" + n;` makes g a
 		// String). This lets intrinsics dispatch on a concatenation result.
-		if op := node.Child(1); op != nil && op.Content(source) == "+" {
-			if isStringLikeExprNode(node.Child(0), ctx, source) || isStringLikeExprNode(node.Child(2), ctx, source) {
+		if op := node.ChildByFieldName("operator"); op != nil && op.Content(source) == "+" {
+			if isStringLikeExprNode(node.ChildByFieldName("left"), ctx, source) || isStringLikeExprNode(node.ChildByFieldName("right"), ctx, source) {
 				return "String", true
 			}
 		}
 		// For an arithmetic or bitwise binary op, infer the type chosen by Java
 		// binary numeric promotion. This lets both integer and floating-point mixed
 		// expressions drive explicit Go conversions and `var` type pinning.
-		if op := node.Child(1); op != nil {
+		if op := node.ChildByFieldName("operator"); op != nil {
 			switch op.Content(source) {
 			case "==", "!=", "<", "<=", ">", ">=", "&&", "||":
 				return "boolean", true
 			case "+", "-", "*", "/", "%", "&", "|", "^":
-				lt, lok := inferExprJavaType(node.Child(0), ctx, source)
-				rt, rok := inferExprJavaType(node.Child(2), ctx, source)
+				lt, lok := inferExprJavaType(node.ChildByFieldName("left"), ctx, source)
+				rt, rok := inferExprJavaType(node.ChildByFieldName("right"), ctx, source)
 				if lok && rok {
 					if combined, ok := javaNumericPromotionType(lt, rt, ctx); ok {
 						return combined, true
@@ -10119,7 +10147,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			case "<<", ">>", ">>>":
 				// Shift expressions have the unary-promoted type of their left side;
 				// the right operand never widens the result.
-				if leftType, ok := inferExprJavaType(node.Child(0), ctx, source); ok {
+				if leftType, ok := inferExprJavaType(node.ChildByFieldName("left"), ctx, source); ok {
 					if promoted, ok := javaNumericPromotionType(leftType, leftType, ctx); ok {
 						return promoted, true
 					}

@@ -78,7 +78,8 @@ public class GenericAbstractMethodReferenceProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, ".(genericAbstractReaderJava2goExecution[string])") {
+	if !strings.Contains(flat, "reader *genericAbstractReader[string]") ||
+		!strings.Contains(flat, ".__java2goGenericAbstractReaderSelf.ReadJava2goExecution(__java2goExecution)") {
 		t.Fatalf("bound generic abstract reference did not use the receiver's concrete type argument:\n%s", out)
 	}
 	if strings.Contains(flat, "genericAbstractReaderJava2goExecution[T]") {

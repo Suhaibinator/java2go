@@ -81,3 +81,24 @@ The runner performs these mandatory gates:
 `report.json` provides structured stages, command lines, toolchain, selected dependency mode, fingerprints, observations, and failure classification. `prior_failure` preserves the original failure when a later integrity check invalidates it. Per-stage logs and raw per-execution `.stdout`/`.stderr` files retain exact bytes, including non-UTF-8 output; JSON text is a readable summary. Generated code, JVM classes, dependency sources, Maven output, and process output files remain in the run directory for independent inspection. No cleanup removes failed artifacts.
 
 Use `-repository` for another checkout, `-artifacts` for a different artifact parent, or `-transpiler` for an already built executable; the report hashes the transpiler binary. To rerun, invoke the same fixture command after restoring its locked source/oracle files. A successful report always covers all nine Java/Go pairs.
+
+## Java assertions
+
+Generated programs support Java `assert` with a process-start setting:
+`JAVA2GO_ASSERTIONS=true` enables all translated source assertions. The default,
+and `JAVA2GO_ASSERTIONS=false`, disables them. The setting is read once during
+runtime initialization. Conditions are not evaluated when disabled; detail
+expressions and their text conversion run only for a failed enabled assertion.
+Failure throws `AssertionError`, preserving a Throwable detail as its cause.
+This is a global mode, not the JVM's per-package, per-class, system-class, or
+ClassLoader assertion configuration syntax. Those scoped modes are unimplemented.
+The campaign runner explicitly selects `false` for its default-disabled JVM
+oracle, regardless of the invoking shell's `JAVA2GO_ASSERTIONS` value. Dedicated
+JVM parity tests also exercise enabled assertions with `java -ea`.
+
+Generated Go must be regenerated whenever its compiler/runtime revision changes.
+The campaign always rebuilds against the matching local runtime. In particular,
+`Supplier<T>` now uses an execution-aware `stdjava.Supplier[T]` interface instead
+of a plain Go function, so callbacks created on one Java thread execute with
+the calling thread's identity and ThreadLocal values. Previously generated Go
+using the old Supplier ABI must be regenerated before linking this runtime.

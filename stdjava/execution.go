@@ -10,7 +10,8 @@ package stdjava
 // such as recursive class-initialization tracking and currentThread identity.
 // Keeping it non-zero-sized guarantees that distinct live executions have distinct pointer identities.
 type Execution struct {
-	thread *Thread
+	thread       *Thread
+	threadLocals map[uint64]any
 }
 
 // NewExecution starts an independent logical Java execution.

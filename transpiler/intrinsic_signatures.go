@@ -48,6 +48,10 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			}
 		}
 		switch class {
+		case "ThreadLocal":
+			if method == "withInitial" {
+				return set("Supplier<" + threadLocalElement(invocation, ctx, source) + ">")
+			}
 		case "Class":
 			if method == "forName" {
 				return set("String")
@@ -99,6 +103,13 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 	class, ok := intrinsicReceiverTypeName(object, ctx, source)
 	if !ok {
 		return result
+	}
+	if class == "ThreadLocal" && method == "set" {
+		elements := receiverElementJavaTypes(object, ctx, source)
+		if len(elements) == 1 {
+			return set(elements[0])
+		}
+		return set("Object")
 	}
 	if class == "Random" {
 		switch method {
@@ -195,7 +206,9 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			return set("Object", element(1))
 		case "replace":
 			return set(element(0), element(1), element(1))
-		case "compute", "computeIfAbsent", "computeIfPresent":
+		case "computeIfAbsent":
+			return set(element(0), "Function<"+element(0)+","+element(1)+">")
+		case "compute", "computeIfPresent":
 			return set(element(0))
 		case "merge":
 			return set(element(0), element(1))
@@ -241,7 +254,18 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			return set("int", "int")
 		case "equals":
 			return set("Object")
-		case "concat", "compareTo", "equalsIgnoreCase", "startsWith", "endsWith", "indexOf", "lastIndexOf", "split":
+		case "indexOf", "lastIndexOf":
+			target := actual(0)
+			if primitive, boxed := builtinJavaWrapperPrimitive(target, ctx); boxed {
+				target = primitive
+			}
+			switch target {
+			case "byte", "short", "char", "int":
+				return set("int", "int")
+			default:
+				return set("String", "int")
+			}
+		case "concat", "compareTo", "equalsIgnoreCase", "startsWith", "endsWith", "split":
 			return set("String", "int")
 		}
 	}
@@ -419,7 +443,7 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 			return element(1), true
 		}
 	}
-	if receiver == "Future" && name == "get" {
+	if (receiver == "Future" || receiver == "ThreadLocal") && name == "get" {
 		return element(0), true
 	}
 	if receiver == "Callable" && name == "call" {
@@ -506,6 +530,9 @@ var intrinsicFunctionalMethodNames = map[string]string{
 func init() {
 	for name, method := range intrinsicFunctionalMethodNames {
 		registerInstanceIntrinsic(name, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if name == "Supplier" {
+				return stdjavaCall(ctx, "GetSupplierExecution", intrinsicExecutionExpr(ctx), recv)
+			}
 			return &ast.CallExpr{Fun: recv, Args: args}
 		})
 	}

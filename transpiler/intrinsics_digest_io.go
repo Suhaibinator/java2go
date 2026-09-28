@@ -42,6 +42,20 @@ func digestIOAssignable(actual, expected string) bool {
 // Called after the existing IO registrations so the read dispatcher extends
 // their no-argument overload without replacing any unrelated writer behavior.
 func registerDigestIOIntrinsics() {
+	registerStaticIntrinsic("Files", "readAllBytes", filesFunction("FilesReadAllBytes", 1))
+	registerStaticIntrinsicResultType("Files", "readAllBytes", "byte[]")
+	for _, name := range []string{"ByteArrayOutputStream", "FileOutputStream"} {
+		registerInstanceIntrinsic(name, "write", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			switch len(args) {
+			case 1:
+				return methodCall(recv, "WriteBytes", args...)
+			case 3:
+				return methodCall(recv, "WriteRange", args...)
+			}
+			return nil
+		})
+	}
+
 	registerStaticIntrinsic("Files", "writeString", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) < 2 {
 			return nil

@@ -16,8 +16,6 @@ import (
 //
 // Documented approximations (Java semantics not fully reproduced):
 //   - Substring still indexes by rune, so it cannot split surrogate pairs.
-//   - StringTrim/strip: trim removes chars <= U+0020 in Java, while TrimSpace is
-//     Unicode-whitespace aware — a close but not identical approximation.
 //   - StringSplit: Java's regex flavor (java.util.regex) is approximated by Go's
 //     RE2 (regexp); patterns using Java-only constructs (backreferences,
 //     possessive quantifiers, lookaround) are rejected explicitly rather than
@@ -109,26 +107,6 @@ func StringSubstringRange(s string, beginIndex, endIndex int32) string {
 	return string([]rune(s)[beginIndex:endIndex])
 }
 
-// StringIndexOf returns the UTF-16 index of the first occurrence of substr, or
-// -1 if not present, matching Java's String.indexOf.
-func StringIndexOf(s, substr string) int32 {
-	byteIdx := strings.Index(s, substr)
-	if byteIdx < 0 {
-		return -1
-	}
-	return StringLength(s[:byteIdx])
-}
-
-// StringLastIndexOf returns the UTF-16 index of the last occurrence of substr,
-// or -1 if not present, matching Java's String.lastIndexOf.
-func StringLastIndexOf(s, substr string) int32 {
-	byteIdx := strings.LastIndex(s, substr)
-	if byteIdx < 0 {
-		return -1
-	}
-	return StringLength(s[:byteIdx])
-}
-
 // StringEqualsIgnoreCase reports whether s and other are equal ignoring case,
 // matching Java's String.equalsIgnoreCase.
 func StringEqualsIgnoreCase(s, other string) bool {
@@ -156,7 +134,30 @@ func StringReplace(s, old, replacement string) string {
 // StringIsBlank reports whether the string is empty or contains only whitespace,
 // matching Java's String.isBlank (Java 11+).
 func StringIsBlank(s string) bool {
-	return strings.TrimSpace(s) == ""
+	for _, c := range StringRequireNonNull(s) {
+		if !CharIsWhitespace(c) {
+			return false
+		}
+	}
+	return true
+}
+
+// StringTrim removes only characters at or below U+0020, as String.trim does.
+func StringTrim(s string) string {
+	StringRequireNonNull(s)
+	begin, end := 0, len(s)
+	for begin < end && s[begin] <= 0x20 {
+		begin++
+	}
+	for end > begin && s[end-1] <= 0x20 {
+		end--
+	}
+	return s[begin:end]
+}
+
+// StringStrip uses Java's whitespace predicate, which excludes nonbreaking spaces.
+func StringStrip(s string) string {
+	return strings.TrimFunc(StringRequireNonNull(s), CharIsWhitespace)
 }
 
 // StringChars returns UTF-16 code units stored as runes, matching String.chars.
@@ -193,7 +194,14 @@ func CharIsLetterOrDigit(c rune) bool {
 // CharIsWhitespace reports whether the rune is whitespace, matching
 // Character.isWhitespace.
 func CharIsWhitespace(c rune) bool {
-	return unicode.IsSpace(c)
+	// Java includes the four information separators and excludes nonbreaking
+	// spaces U+00A0/U+2007/U+202F and the next-line control U+0085.
+	switch c {
+	case '\t', '\n', '\v', '\f', '\r', 0x1c, 0x1d, 0x1e, 0x1f, ' ',
+		0x1680, 0x2028, 0x2029, 0x205f, 0x3000:
+		return true
+	}
+	return c >= 0x2000 && c <= 0x200a && c != 0x2007
 }
 
 // CharIsUpperCase reports whether the rune is uppercase, matching

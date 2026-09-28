@@ -1,0 +1,114 @@
+{
+  "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "binary_source_agreement": true,
+  "runs": [
+    {
+      "seed": 17,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=17 parsed=26 applied=13 rejected=17 orders=7 exportHash=638810bc\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "9b0118ca7ceb998b5da12e38fe65acade1b273069fd24903f13175442601ffc5",
+        "out/stats.json": "d5b2f65236d891762b0c4ef9fdf4d049deb72c27bf10fa8d57006fcc30d10e09",
+        "out/audit.tsv": "385c3c45544f276ebdb3cc179fec75fcd3a2c0c44035cfc7f8ed313186eb1d54"
+      }
+    },
+    {
+      "seed": 17,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=17 parsed=26 applied=13 rejected=17 orders=7 exportHash=638810bc\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "9b0118ca7ceb998b5da12e38fe65acade1b273069fd24903f13175442601ffc5",
+        "out/stats.json": "d5b2f65236d891762b0c4ef9fdf4d049deb72c27bf10fa8d57006fcc30d10e09",
+        "out/audit.tsv": "385c3c45544f276ebdb3cc179fec75fcd3a2c0c44035cfc7f8ed313186eb1d54"
+      }
+    },
+    {
+      "seed": 17,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=17 parsed=26 applied=13 rejected=17 orders=7 exportHash=638810bc\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "9b0118ca7ceb998b5da12e38fe65acade1b273069fd24903f13175442601ffc5",
+        "out/stats.json": "d5b2f65236d891762b0c4ef9fdf4d049deb72c27bf10fa8d57006fcc30d10e09",
+        "out/audit.tsv": "385c3c45544f276ebdb3cc179fec75fcd3a2c0c44035cfc7f8ed313186eb1d54"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=41 parsed=26 applied=13 rejected=17 orders=7 exportHash=b833bb4\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "3bbdbaa39f05b5019a281c1857c6ed4c9d775e43f6d96d335e7eafd0132f57c4",
+        "out/stats.json": "570689a57a55432139d7a874d4c2f4d9a898e886794a6a7906b62ece2e740fa3",
+        "out/audit.tsv": "5defa21e78346aed6e4e4fa1581be0d327e353470708d0c69cfbfdc8d87fb588"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=41 parsed=26 applied=13 rejected=17 orders=7 exportHash=b833bb4\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "3bbdbaa39f05b5019a281c1857c6ed4c9d775e43f6d96d335e7eafd0132f57c4",
+        "out/stats.json": "570689a57a55432139d7a874d4c2f4d9a898e886794a6a7906b62ece2e740fa3",
+        "out/audit.tsv": "5defa21e78346aed6e4e4fa1581be0d327e353470708d0c69cfbfdc8d87fb588"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=41 parsed=26 applied=13 rejected=17 orders=7 exportHash=b833bb4\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "3bbdbaa39f05b5019a281c1857c6ed4c9d775e43f6d96d335e7eafd0132f57c4",
+        "out/stats.json": "570689a57a55432139d7a874d4c2f4d9a898e886794a6a7906b62ece2e740fa3",
+        "out/audit.tsv": "5defa21e78346aed6e4e4fa1581be0d327e353470708d0c69cfbfdc8d87fb588"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=97 parsed=26 applied=10 rejected=20 orders=7 exportHash=ce86bed9\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "c3fa00a07f0c13e42cceee5bc192b30e6224cf9167ec52bc835f571cf8dd2cff",
+        "out/stats.json": "cc5b8511efcf436ce3a71251c0b2bb41f2035c711de240c57e4b6d7952e10b51",
+        "out/audit.tsv": "b14881b761b49d8d08110cc320869188fc79377b9a3509122ec81248cacc2ad9"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=97 parsed=26 applied=10 rejected=20 orders=7 exportHash=ce86bed9\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "c3fa00a07f0c13e42cceee5bc192b30e6224cf9167ec52bc835f571cf8dd2cff",
+        "out/stats.json": "cc5b8511efcf436ce3a71251c0b2bb41f2035c711de240c57e4b6d7952e10b51",
+        "out/audit.tsv": "b14881b761b49d8d08110cc320869188fc79377b9a3509122ec81248cacc2ad9"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=97 parsed=26 applied=10 rejected=20 orders=7 exportHash=ce86bed9\n",
+      "stderr": "",
+      "files": {
+        "out/orders.json": "c3fa00a07f0c13e42cceee5bc192b30e6224cf9167ec52bc835f571cf8dd2cff",
+        "out/stats.json": "cc5b8511efcf436ce3a71251c0b2bb41f2035c711de240c57e4b6d7952e10b51",
+        "out/audit.tsv": "b14881b761b49d8d08110cc320869188fc79377b9a3509122ec81248cacc2ad9"
+      }
+    }
+  ]
+}

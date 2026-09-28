@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "status": "round01-accepted",
+  "status": "round02-five-applications-passing-gson-active",
   "base_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
   "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
-  "round": 1,
+  "round": 2,
   "seeds": [
     17,
     41,
@@ -49,7 +49,7 @@
   "challenges": [
     {
       "id": "round01/business",
-      "status": "accepted-at-recorded-implementation",
+      "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_business",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
@@ -63,7 +63,7 @@
         "stage": "go-build-all",
         "detail": "exit=1 error=\n\n../../../../stdjava/common.go:6:2: missing go.sum entry for module providing package golang.org/x/exp/constraints (imported by github.com/NickyBoy89/java2go/stdjava); to add:\n\tgo get github.com/NickyBoy89/java2go/stdjava@v0.0.0\n"
       },
-      "latest_artifact": ".campaign/runs/20260928T050111Z-1146077186",
+      "latest_artifact": ".campaign/runs/20260928T053316Z-2416120059",
       "verification": {
         "implementation_sha256": "51b7dc59744f8baadf77e69cb6a502f7d103d912e68c8c0bae6b7cb981763c96",
         "race": true,
@@ -72,9 +72,9 @@
         "stable_implementation": true
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T050111Z-1146077186",
-        "implementation_sha256": "fef2913def766cd4b7b6620a7e0e26f6e0a658eb86a8faa31db4936720e3fc60",
-        "revision": "5539d53832954a49d70d3fe715d337459f7cdea7",
+        "artifact": ".campaign/runs/20260928T053316Z-2416120059",
+        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
+        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
         "passed": true,
         "race": true,
         "oracle_pairs": 9,
@@ -84,7 +84,7 @@
     },
     {
       "id": "round01/data",
-      "status": "accepted-at-recorded-implementation",
+      "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_data",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
@@ -96,9 +96,10 @@
       "source_hashes_sha256": "b7e4250cfe87f08fe9da764ea9a2823086a06671ead9a4896b7b2859ebde4fc9",
       "first_failure": {
         "stage": "transpile",
-        "detail": "exit=2 error=\n\npanic: runtime error: invalid memory address or nil pointer dereference\n[signal SIGSEGV: segmentation violation code=0x2 addr=0x0 pc=0x1021d33e4]\n\ngoroutine 1 [running]:\ngithub.com/NickyBoy89/java2go/symbol.parseClassMember(0x542b41619680, 0x542b416c34a0, {0x542b416e0000, 0xfb8, 0xfb9})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:482 +0x1304\ngithub.com/NickyBoy89/java2go/symbol.parseClassScopeWithParentTypeParams(0x542b416c31a0, {0x542b416e0000, 0xfb8, 0xfb9}, {0x0, 0x0, 0x0})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:289 +0xf84\ngithub.com/NickyBoy89/java2go/symbol.parseClassScope(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:177\ngithub.com/NickyBoy89/java2go/symbol.ParseSymbols(0x542b416c30b0, {0x542b416e0000, 0xfb8, 0xfb9})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:153 +0x718\ngithub.com/NickyBoy89/java2go/parsing.(*SourceFile).ParseSymbols(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/parsing/source_file.go:36\ngithub.com/NickyBoy89/java2go/transpiler.runMavenProject.func2({0x542b416a44e0, 0xc8}, {0x102831058, 0x542b4169ca80}, {0x0?, 0x0?})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/maven_project.go:129 +0x408\npath/filepath.walkDir({0x542b416a44e0, 0xc8}, {0x102831058, 0x542b4169ca80}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:311 +0x44\npath/filepath.walkDir({0x542b414c20c0, 0xb2}, {0x102831058, 0x542b4169ca00}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x542b416a2160, 0xac}, {0x102831058, 0x542b4169c9c0}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x542b416a2000, 0xa4}, {0x102831058, 0x542b4169c980}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x542b416a0460, 0x9d}, {0x102831058, 0x542b4169c940}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x542b416a0140, 0x99}, {0x1028310c8, 0x542b414c6710}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.WalkDir({0x542b416a0140, 0x99}, 0x542b414cb5c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:401 +0x74\ngithub.com/NickyBoy89/java2go/transpiler.runMavenProject({0x16dd5704e, 0x71}, {0x542b414c64f0, 0x1, 0x1}, {0x16dd570cc, 0x16}, {0x16dd570ec, 0x37}, {0x16dd57154, ...}, ...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/maven_project.go:101 +0xb60\ngithub.com/NickyBoy89/java2go/transpiler.runInternal({0x542b414b40f0, 0xd, 0xd}, {0x10282e4d0, 0x542b414a0070}, 0x0)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:74 +0x718\ngithub.com/NickyBoy89/java2go/transpiler.run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:29\ngithub.com/NickyBoy89/java2go/transpiler.Run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:25\ngithub.com/NickyBoy89/java2go.Run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/api.go:16\nmain.main()\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/cmd/java2go/main.go:12 +0x68\n"
+        "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
+        "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": ".campaign/runs/20260928T050238Z-2636650079",
+      "latest_artifact": ".campaign/runs/20260928T053442Z-1890760263",
       "verification": {
         "implementation_sha256": "42c82081509055c7ee6992690ee2476a4aba9030bcd320ae586519d6ce5f6d15",
         "race": true,
@@ -107,9 +108,9 @@
         "stable_implementation": true
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T050238Z-2636650079",
-        "implementation_sha256": "fef2913def766cd4b7b6620a7e0e26f6e0a658eb86a8faa31db4936720e3fc60",
-        "revision": "5539d53832954a49d70d3fe715d337459f7cdea7",
+        "artifact": ".campaign/runs/20260928T053442Z-1890760263",
+        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
+        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
         "passed": true,
         "race": true,
         "oracle_pairs": 9,
@@ -119,7 +120,7 @@
     },
     {
       "id": "round01/concurrent",
-      "status": "accepted-at-recorded-implementation",
+      "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_concurrent",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
@@ -131,22 +132,123 @@
       "source_hashes_sha256": "35c3959d238e96b43c2ab49db5952c2c237e8055cd33f416f1fbb84d05873d68",
       "first_failure": {
         "stage": "transpile",
-        "detail": "exit=2 error=\n\npanic: runtime error: invalid memory address or nil pointer dereference\n[signal SIGSEGV: segmentation violation code=0x2 addr=0x0 pc=0x10053edb4]\n\ngoroutine 1 [running]:\ngithub.com/NickyBoy89/java2go/symbol.parseClassMember(0x337b5d336120, 0x337b5d314ba0, {0x337b5d368000, 0xfb8, 0xfb9})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:482 +0x1304\ngithub.com/NickyBoy89/java2go/symbol.parseClassScopeWithParentTypeParams(0x337b5d3148a0, {0x337b5d368000, 0xfb8, 0xfb9}, {0x0, 0x0, 0x0})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:289 +0xf84\ngithub.com/NickyBoy89/java2go/symbol.parseClassScope(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:177\ngithub.com/NickyBoy89/java2go/symbol.ParseSymbols(0x337b5d3147b0, {0x337b5d368000, 0xfb8, 0xfb9})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/symbol/parsing.go:153 +0x718\ngithub.com/NickyBoy89/java2go/parsing.(*SourceFile).ParseSymbols(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/parsing/source_file.go:36\ngithub.com/NickyBoy89/java2go/transpiler.runMavenProject.func2({0x337b5d366000, 0xc8}, {0x100a089f0, 0x337b5d27e980}, {0x0?, 0x0?})\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/maven_project.go:129 +0x408\npath/filepath.walkDir({0x337b5d366000, 0xc8}, {0x100a089f0, 0x337b5d27e980}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:311 +0x44\npath/filepath.walkDir({0x337b5d28e000, 0xb2}, {0x100a089f0, 0x337b5d27e900}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x337b5d28a160, 0xac}, {0x100a089f0, 0x337b5d27e8c0}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x337b5d28a000, 0xa4}, {0x100a089f0, 0x337b5d27e880}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x337b5d288460, 0x9d}, {0x100a089f0, 0x337b5d27e840}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.walkDir({0x337b5d288140, 0x99}, {0x100a08a60, 0x337b5d1b26a0}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:333 +0x1fc\npath/filepath.WalkDir({0x337b5d288140, 0x99}, 0x337b5d0835c8)\n\t/opt/homebrew/opt/go/libexec/src/path/filepath/path.go:401 +0x74\ngithub.com/NickyBoy89/java2go/transpiler.runMavenProject({0x16f9e703e, 0x71}, {0x337b5d1b2480, 0x1, 0x1}, {0x16f9e70bc, 0x1c}, {0x16f9e70e2, 0x37}, {0x16f9e7150, ...}, ...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/maven_project.go:101 +0xb60\ngithub.com/NickyBoy89/java2go/transpiler.runInternal({0x337b5d1c4010, 0xd, 0xd}, {0x100a06ab0, 0x337b5d182048}, 0x0)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:74 +0x718\ngithub.com/NickyBoy89/java2go/transpiler.run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:29\ngithub.com/NickyBoy89/java2go/transpiler.Run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/java2go.go:25\ngithub.com/NickyBoy89/java2go.Run(...)\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/api.go:16\nmain.main()\n\t/Users/suhaib/.codex/worktrees/adversarial-java/java2go/cmd/java2go/main.go:12 +0x68\n"
+        "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
+        "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": ".campaign/runs/20260928T050203Z-553045912",
+      "latest_artifact": ".campaign/runs/20260928T053408Z-1502926740",
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T050203Z-553045912",
-        "implementation_sha256": "fef2913def766cd4b7b6620a7e0e26f6e0a658eb86a8faa31db4936720e3fc60",
-        "revision": "5539d53832954a49d70d3fe715d337459f7cdea7",
+        "artifact": ".campaign/runs/20260928T053408Z-1502926740",
+        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
+        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
         "passed": true,
         "race": true,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
       }
+    },
+    {
+      "id": "round02/business",
+      "status": "coordinator-parity-passed-round02-gson-still-active",
+      "owner": "sol_business",
+      "acceptance": "pending; no parity claim",
+      "latest_artifact": ".campaign/runs/20260928T053520Z-3408431293",
+      "oracle_runs": 9,
+      "source_binary_oracle_parity": "passed",
+      "maven_build": "passed",
+      "latest_blockers": [],
+      "manifest_sha256": "cd776bb419d52f4844a3a5c990264a91881359157bbf0ba60266a251388c2cff",
+      "dependency_lock_sha256": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+      "first_failure": {
+        "stage": "go-build-all",
+        "detail": "exit=1 error=\n\n# campaign.generated/round02-business/java2go_scc_63616d706169676e2f627573696e657373322f6469737061746368\njava2go_scc_63616d706169676e2f627573696e657373322f6469737061746368/63616d706169676e2f627573696e657373322f6469737061746368_Coordinator.go:215:74: cr.j63616d706169676e2f627573696e657373322f6469737061746368_depot.balanced undefined (type *J63616d706169676e2f627573696e657373322f6469737061746368_Depot has no field or method balanced, but does have method Balanced)\njava2go_scc_63616d706169676e2f627573696e657373322f6469737061746368/63616d706169676e2f627573696e657373322f6d6f64656c_Document.go:135:9: cannot use J63616d706169676e2f627573696e657373322f6469737061746368_NewShipmentJava2goExecution(__java2goExecution, id, quote) (value of type *J63616d706169676e2f627573696e657373322f6469737061746368_Shipment) as *J63616d706169676e2f627573696e657373322f6d6f64656c_Document[string] value in return statement\n"
+      },
+      "frozen_hashes": {
+        "challenge": "dc40238e9b885b330aa53d4028505c0d0f12f219792dee1741dabfdb8eeb964f",
+        "dependency": "33d165baa3e7be14bc400fa523b4c2d9f600c82ca1d06436f892f689f5acfcfa",
+        "oracle": "4f9a19759e0af4e925337dd7b3531f7463d208b5ba85e21709afe83a10a6f287"
+      },
+      "coordinator_verification": {
+        "artifact": ".campaign/runs/20260928T053520Z-3408431293",
+        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
+        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "passed": true,
+        "race": true,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
+      },
+      "first_artifact": ".campaign/runs/20260928T051409Z-56114146"
+    },
+    {
+      "id": "round02/data",
+      "status": "frozen-jvm-validated-gson-transpilation-failing",
+      "owner": "sol_data",
+      "acceptance": "pending; no parity claim",
+      "latest_artifact": ".campaign/runs/20260928T053633Z-482628607",
+      "oracle_runs": 9,
+      "source_binary_oracle_parity": "passed",
+      "maven_build": "passed",
+      "manifest_sha256": "92fd29b2951e3def5b0229928e1ca5cd5fbd0fa8048e05e507a5115392774eee",
+      "dependency_lock_sha256": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+      "first_failure": {
+        "stage": "transpile",
+        "detail": "time=\"2026-09-28T05:16:13Z\" level=fatal msg=\"Conversion failed\" error=\"error converting /Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/runs/20260928T051546Z-985480644/.java2go-project-3700758608/sources/j_com/j_google/j_gson/j_internal/ConstructorConstructor.java: line 235: in ConstructorConstructor: unsupported expression \\\"line_comment\\\": // then allow calling it\"",
+        "verbose_evidence": "See first_artifact/report.json and stage logs."
+      },
+      "latest_blockers": [
+        "Multiline @InlineMe annotation text leaves un-commented Go continuation lines; generated GsonBuilder.go fails parse after all source classes convert."
+      ],
+      "coordinator_verification": {
+        "artifact": ".campaign/runs/20260928T053633Z-482628607",
+        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
+        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "passed": false,
+        "race": true,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 0,
+        "stable_implementation": true
+      },
+      "first_artifact": ".campaign/runs/20260928T051546Z-985480644"
+    },
+    {
+      "id": "round02/concurrent",
+      "status": "coordinator-parity-passed-round02-gson-still-active",
+      "owner": "sol_concurrent",
+      "acceptance": "pending; no parity claim",
+      "latest_artifact": ".campaign/runs/20260928T053557Z-2909822102",
+      "oracle_runs": 9,
+      "source_binary_oracle_parity": "passed",
+      "maven_build": "passed",
+      "manifest_sha256": "7114d980bdd721105dd28de9a5149154ea753ad5bf837af8eb21d9cff95904d4",
+      "dependency_lock_sha256": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+      "first_failure": {
+        "stage": "go-build-all",
+        "detail": "java2go_scc_63616d706169676e2f636f6e63757272656e74322f696f/63616d706169676e2f636f6e63757272656e74322f73657276696365_Processor.go:37:71: undefined: ThreadLocal\njava2go_scc_63616d706169676e2f636f6e63757272656e74322f696f/63616d706169676e2f636f6e63757272656e74322f73657276696365_Processor.go:88:21: undefined: ThreadLocal\njava2go_scc_63616d706169676e2f636f6e63757272656e74322f696f/63616d706169676e2f636f6e63757272656e74322f73657276696365_Processor.go:169:21: input.read undefined (type *J63616d706169676e2f636f6e63757272656e74322f696f_TrackedInput has no field or method read)\njava2go_scc_63616d706169676e2f636f6e63757272656e74322f696f/63616d706169676e2f636f6e63757272656e74322f73657276696365_Processor.go:170:12: buffer.write undefined (type *stdjava.ByteArrayOutputStream has no field or method write, but does have method Write)\njava2go_scc_63616d706169676e2f636f6e63757272656e74322f696f/63616d706169676e2f636f6e63757272656e74322f73657276696365_Processor.go:177:8: undefined: Arrays\njava2go_scc_63616d706169676e2f636f6e63757272656e74322f696f/63616d706169676e2f636f6e63757272656e74322f696f_PlanIO.go:34:11: undefined: Files\njava2go_scc_63616d706169676e2f636f6e63757272656e74322f696f/63616d706169676e2f636f6e63757272656e74322f696f_PlanIO.go:42:79: cannot use '|' (untyped rune constant 124) as string value in argument to stdjava.StringIndexOf\njava2go_scc_63616d706169676e2f636f6e63757272656e74322f696f/",
+        "verbose_evidence": "See first_artifact/report.json and stage logs."
+      },
+      "latest_blockers": [],
+      "verification": {
+        "implementation_sha256": "8bfd82c8c80e3a650bfc5909cf9ec2688455f2fc16f3501f10c1430ae3bfdbe2",
+        "race": true,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
+      },
+      "coordinator_verification": {
+        "artifact": ".campaign/runs/20260928T053557Z-2909822102",
+        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
+        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "passed": true,
+        "race": true,
+        "oracle_pairs": 9,
+        "additional_stress_runs": 20,
+        "stable_implementation": true
+      },
+      "first_artifact": ".campaign/runs/20260928T051529Z-444414224"
     }
   ],
-  "next_action": "Commit and push accepted round01, then start round02 Sol challenges (Gson/resources/runtime interactions), repair queued compiler regressions with focused TDD, and retain all round01 gates.",
+  "next_action": "Commit and push verified checkpoint, then release astra_compiler to fix three multiline annotation comment emitters with JVM/red parser regression. Rerun unchanged full Gson fixture, assign subsequent blockers, and retain all five passing applications. Round02 remains unaccepted until Gson and all gates pass.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only"
@@ -161,7 +263,15 @@
     "Concurrent full source dependency closure: coordinator clean race build,9 JVM pairs plus20 additional stress comparisons",
     "Focused JVM oracle preserves exact leading/trailing whitespace: observed red then race-enabled UTF16/oracle tests green; full application harness already byte-exact",
     "Full data application: upstream Codec URLCodec/DigestUtils source, embedded resources, subclass IO dispatch, malformed decoder boundaries, collection pipelines and output files independently JVM verified with race+20 stress",
-    "Cyclic-package binding uses current go/types scopes without exposing incomplete imported TypeNames; array/map/generic lexical keys and local shadows have focused regressions"
+    "Cyclic-package binding uses current go/types scopes without exposing incomplete imported TypeNames; array/map/generic lexical keys and local shadows have focused regressions",
+    "StringNew malformed UTF8/UTF16 byte constructor parity: explicit/default/named charset and BOM cases match JDK; reader and full runtime race tests green",
+    "Java trim/strip/isBlank/isWhitespace semantics: focused JVM red observed then green, including exhaustive codepoint classification and control/nonbreaking space distinctions",
+    "String indexOf/lastIndexOf support String/int-code-point overloads with UTF16 offsets, boxed arguments, nulls and invalid-codepoint behavior: focused JVM parity green",
+    "Arrays.equals primitive/reference overloads: JVM parity including null, floating NaN/signed-zero, source equals dispatch and shallow nested-array identity",
+    "ThreadLocal get/set/remove/withInitial uses logical Execution with named/source/method-reference Supplier callbacks; JVM and race tests green; prior generated output requires regeneration for Supplier interface ABI",
+    "Source ByteArrayInputStream subclasses and ranged output writes, Files.readAllBytes plus binary-expression comments: focused JVM parity green",
+    "Java assert statements preserve disabled/enabled startup semantics and lazy details/causes; campaign pins Go mode false to match default JVM; scoped/ClassLoader policy unsupported",
+    "Map.computeIfAbsent HashMap/TreeMap callback/null/structural-modification contracts and generic mapping lambdas/record comparator chains: JVM and race regressions green"
   ],
   "verification_invalidation": "Any implementation change requires affected gates to rerun; concurrent acceptance is evidence at its recorded content digest, not current-round promotion.",
   "performance_findings": {
@@ -171,46 +281,55 @@
     "reports": [
       "performance/codegen/PILOT.md",
       "performance/codegen/array_assign_probe/README.md",
-      "performance/runtime/list_retention/README.md"
-    ]
+      "performance/runtime/list_retention/README.md",
+      "performance/codegen/round01_data/README.md",
+      "performance/codegen/round01_data/BENCHMARK_PLAN.md",
+      "performance/runtime/list_retention/CANDIDATE.md"
+    ],
+    "list_removal_candidate": "Isolated vacated-slot clearing candidate: semantic JVM parity + full copied runtime tests; retained payload8/16MiB reduced to528B; live patch not applied, no speed claim",
+    "data_allocation_audit": "Accepted data full-main allocation-only measurements:18 unchanged Go runs match3 live JVM oracles and file hashes; strongest candidates UTF16 comparisons, ASCII substring extraction and direct UTF16\u2192UTF8 construction; no wallclockspeedclaim"
   },
   "checkpoint_policy": {
     "branch": "codex/adversarial-campaign",
     "remote": "origin",
     "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints.",
-    "last_pushed_revision": "5539d53",
+    "last_pushed_revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
     "last_pushed_branch": "origin/codex/adversarial-campaign"
   },
   "regression_status": {
     "unit": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/gate-unit-final.log"
+      "log": ".campaign/checkpoint02-unit.log"
     },
     "e2e_other": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/gate-e2e-other-final.log"
+      "log": ".campaign/checkpoint02-e2e-other.log"
     },
     "e2e_strict_parity": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/gate-e2e-parity-final.log"
+      "log": ".campaign/checkpoint02-e2e-parity.log"
     },
     "fuzz": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/gate-fuzz-final.log"
-    },
-    "campaign": {
-      "status": "passed",
-      "exit_code": 0,
-      "log": ".campaign/gate-campaign-final.log"
+      "log": ".campaign/checkpoint02-fuzz.log"
     },
     "lint": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/gate-lint-final.log"
+      "log": ".campaign/checkpoint02-lint.log"
+    },
+    "campaign": {
+      "status": "failed-only-active-gson-challenge",
+      "exit_code": 1,
+      "log": ".campaign/checkpoint02-campaign.log",
+      "passing_applications": 5,
+      "oracle_pairs": 45,
+      "additional_stress_runs": 100,
+      "race_enabled": true
     }
   },
   "lint_repair": {
@@ -231,17 +350,30 @@
     {
       "id": "update-expression-return-boxing",
       "owner": "astra_compiler",
-      "detail": "Legal Integer return n++ fails Go compile because update_expression Java type inference is missing. Repair after current data/lint gate."
+      "detail": "Legal Integer return n++ fails Go compile because update_expression Java type inference is missing. Repair after current data/lint gate.",
+      "status": "focused-jvm-race-passed"
     },
     {
       "id": "unbraced-basic-for",
       "owner": "astra_compiler",
-      "detail": "Legal single-statement basic for panics on ExprStmt-to-BlockStmt cast. Add focused JVM regression and general statement normalization after current gate."
+      "detail": "Legal single-statement basic for panics on ExprStmt-to-BlockStmt cast. Add focused JVM regression and general statement normalization after current gate.",
+      "status": "focused-jvm-race-passed"
     },
     {
       "id": "narrowing-byte-literal",
       "owner": "astra_compiler",
-      "detail": "Java (byte)0xed produces invalid Go int8(237) instead of wrapped -19. Focused JVM TDD repair queued after current gate."
+      "detail": "Java (byte)0xed produces invalid Go int8(237) instead of wrapped -19. Focused JVM TDD repair queued after current gate.",
+      "status": "focused-jvm-race-passed"
+    },
+    {
+      "id": "local-multiple-declarators",
+      "owner": "astra_compiler",
+      "detail": "Ordinary local boolean a=true,b=false declaration loses b; for-init variant already fixed. Found while isolating comment-expression regression."
+    },
+    {
+      "id": "raw-generic-unbound-method-reference",
+      "owner": "astra_compiler",
+      "detail": "Function<Document<String>,String> f=Document::state produces nil AST; explicit Document<String>::state works. General target-driven inference needed."
     }
   ],
   "accepted_rounds": [

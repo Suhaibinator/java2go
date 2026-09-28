@@ -25,6 +25,7 @@ type Map[K, V any] struct {
 	entries    []*mapRecord[K, V]
 	sorted     bool
 	comparator Comparator[K]
+	modCount   uint64
 }
 
 func NewMap[K, V any]() *Map[K, V] {
@@ -104,10 +105,17 @@ func (m *Map[K, V]) put(key K, value V, onlyAbsent bool, exec *Execution) V {
 		}
 		return old
 	}
+	m.insert(key, value, hash, index, exec)
+	return collectionZero[V]()
+}
+
+// insert reuses the successful lookup, avoiding a second call to user key
+// hashCode/equals or comparison methods after a mapping callback.
+func (m *Map[K, V]) insert(key K, value V, hash int32, index int, exec *Execution) {
 	if m.sorted && len(m.entries) == 0 {
 		m.compare(key, key, exec)
 	}
-	record = &mapRecord[K, V]{entry: MapEntry[K, V]{Key: key, Value: value}}
+	record := &mapRecord[K, V]{entry: MapEntry[K, V]{Key: key, Value: value}}
 	if m.sorted {
 		m.entries = append(m.entries, nil)
 		copy(m.entries[index+1:], m.entries[index:])
@@ -119,7 +127,44 @@ func (m *Map[K, V]) put(key K, value V, onlyAbsent bool, exec *Execution) V {
 		m.buckets[hash] = append(m.buckets[hash], record)
 		m.entries = append(m.entries, record)
 	}
-	return collectionZero[V]()
+	m.modCount++
+}
+
+// ComputeIfAbsent follows HashMap and TreeMap's callback contract, including
+// rejection of structural mutation while preserving the callback's own writes.
+func (m *Map[K, V]) ComputeIfAbsent(key K, mapping func(K) V, execution ...*Execution) V {
+	ReferenceRequireNonNull(m)
+	ReferenceRequireNonNull(mapping)
+	exec := optionalComparisonExecution(execution)
+	var record *mapRecord[K, V]
+	var hash int32
+	var index int
+	// TreeMap defers validating a key in an empty tree until a non-null value
+	// actually needs insertion. A null-producing callback can therefore use null.
+	if !m.sorted || len(m.entries) != 0 {
+		record, hash, index = m.find(key, exec)
+	}
+	if record != nil && !javaReferenceIsNull(record.entry.Value) {
+		return record.entry.Value
+	}
+	before := m.modCount
+	computed := mapping(key)
+	if m.modCount != before {
+		panic(NewConcurrentModificationException("mapping function modified map"))
+	}
+	if record != nil && m.sorted {
+		record.entry.Value = computed
+		return computed
+	}
+	if javaReferenceIsNull(computed) {
+		return computed
+	}
+	if record != nil {
+		record.entry.Value = computed
+		return computed
+	}
+	m.insert(key, computed, hash, index, exec)
+	return computed
 }
 
 func (m *Map[K, V]) Get(key any, execution ...*Execution) V {
@@ -172,11 +217,12 @@ func (m *Map[K, V]) Remove(key any, execution ...*Execution) V {
 	copy(m.entries[index:], m.entries[index+1:])
 	m.entries[len(m.entries)-1] = nil
 	m.entries = m.entries[:len(m.entries)-1]
+	m.modCount++
 	return record.entry.Value
 }
 func (m *Map[K, V]) Size() int32   { return int32(len(m.entries)) }
 func (m *Map[K, V]) IsEmpty() bool { return len(m.entries) == 0 }
-func (m *Map[K, V]) Clear()        { m.buckets = nil; m.entries = nil }
+func (m *Map[K, V]) Clear()        { m.modCount++; m.buckets = nil; m.entries = nil }
 func (m *Map[K, V]) KeySet() []K {
 	out := make([]K, len(m.entries))
 	for i, record := range m.entries {

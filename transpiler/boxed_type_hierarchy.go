@@ -56,12 +56,15 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 	if len(expectedArguments) == 0 && javaExceptionReferenceAssignable(actualBase, expectedBase, ctx) {
 		return true
 	}
-	if len(expectedArguments) == 0 && stripJavaQualifier(expectedBase) == "InputStream" && resolveClassScopeByQualifiedName(ctx, expectedBase) == nil && sourceFilterInputStream(resolveClassScopeByQualifiedName(ctx, actualBase), ctx) {
+	if len(expectedArguments) == 0 && stripJavaQualifier(expectedBase) == "InputStream" && resolveClassScopeByQualifiedName(ctx, expectedBase) == nil && sourceInputStreamBase(resolveClassScopeByQualifiedName(ctx, actualBase), ctx) != "" {
 		return true
 	}
 	if resolveClassScopeByQualifiedName(ctx, expectedBase) != nil ||
 		resolveClassScopeByQualifiedName(ctx, actualBase) != nil {
 		return false
+	}
+	if builtinCollectionReferenceAssignable(actual, expected) {
+		return true
 	}
 	if len(expectedArguments) == 0 && digestIOAssignable(actualBase, expectedBase) {
 		return true
@@ -108,4 +111,28 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 		return len(expectedArguments) == 0 && stringObject
 	}
 	return false
+}
+
+// Runtime collection declarations retain their Java nominal ancestry even when
+// their Go implementations share an interface or a concrete container.
+func builtinCollectionReferenceAssignable(actual, expected string) bool {
+	actualBase, actualArguments := parseJavaTypeString(actual)
+	expectedBase, expectedArguments := parseJavaTypeString(expected)
+	actualBase, expectedBase = stripJavaQualifier(actualBase), stripJavaQualifier(expectedBase)
+	parents := map[string][]string{
+		"Collection": {"Iterable"}, "List": {"Collection"}, "Set": {"Collection"},
+		"ArrayList": {"AbstractList"}, "LinkedList": {"List"}, "AbstractList": {"List"},
+		"HashSet": {"AbstractSet"}, "LinkedHashSet": {"HashSet"}, "TreeSet": {"Set"}, "AbstractSet": {"Set"},
+		"HashMap": {"AbstractMap"}, "LinkedHashMap": {"HashMap"}, "TreeMap": {"Map"}, "AbstractMap": {"Map"},
+	}
+	var reaches func(string) bool
+	reaches = func(current string) bool {
+		for _, parent := range parents[current] {
+			if parent == expectedBase || reaches(parent) {
+				return true
+			}
+		}
+		return false
+	}
+	return reaches(actualBase) && javaGenericArgumentsApplicable(actualArguments, expectedArguments, nil)
 }
