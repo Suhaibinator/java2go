@@ -37,7 +37,7 @@ type Calendar interface {
 	SetLenient(bool)
 	IsLenient() bool
 	GetTime() *Date
-	SetTime(*Date)
+	SetTime(DateValue)
 	GetTimeInMillis() int64
 	SetTimeInMillis(int64)
 	GetTimeZone() *TimeZone
@@ -159,8 +159,11 @@ func (calendar *GregorianCalendar) IsLenient() bool {
 	ReferenceRequireNonNull(calendar)
 	return calendar.lenient
 }
-func (calendar *GregorianCalendar) GetTime() *Date     { return NewDate(calendar.GetTimeInMillis()) }
-func (calendar *GregorianCalendar) SetTime(date *Date) { calendar.SetTimeInMillis(date.GetTime()) }
+func (calendar *GregorianCalendar) GetTime() *Date { return NewDate(calendar.GetTimeInMillis()) }
+func (calendar *GregorianCalendar) SetTime(date DateValue) {
+	ReferenceRequireNonNull(date)
+	calendar.SetTimeInMillis(date.GetTime())
+}
 func (calendar *GregorianCalendar) GetTimeZone() *TimeZone {
 	ReferenceRequireNonNull(calendar)
 	return calendar.zone

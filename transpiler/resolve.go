@@ -65,6 +65,7 @@ func ResolveFile(file parsing.SourceFile) {
 	resolveInheritedClassOverloadNames()
 	resolvePromotedFieldMethodCollisions()
 	resolveAffineArrayViewHelperNames(file)
+	resolveLocalIdentifierHygiene()
 	resolveGenericMethodHelperNames()
 }
 

@@ -121,18 +121,27 @@ func projectDirectOwnerErasedExpressionForExpected(
 		return expr
 	}
 
-	var erasure string
+	var sourceView, erasure string
 	var ok bool
 	switch node.Type() {
 	case "field_access":
-		_, erasure, ok = directOwnerFieldAccessView(node, ctx, source)
+		sourceView, erasure, ok = directOwnerFieldAccessView(node, ctx, source)
 	case "method_invocation":
-		_, erasure, ok = directOwnerMethodResultView(node, ctx, source)
+		sourceView, erasure, ok = directOwnerMethodResultView(node, ctx, source)
 	}
-	if !ok || javaInferenceTypeAssignable(erasure, ctx.expectedType, ctx) {
+	target := ctx.expectedType
+	if _, primitive := javaPrimitiveType(target); primitive {
+		// Unboxing first checks the expression's reference view, then extracts
+		// and widens the primitive. ObjectView must never target a primitive ID.
+		if _, boxed := javaUnboxingPrimitive(sourceView, ctx); !boxed {
+			return expr
+		}
+		target = sourceView
+	}
+	if !ok || javaInferenceTypeAssignable(erasure, target, ctx) {
 		return expr
 	}
-	return projectDirectOwnerErasedView(expr, ctx.expectedType, erasure, ctx)
+	return projectDirectOwnerErasedView(expr, target, erasure, ctx)
 }
 
 func currentErasedCallableOwnerTypeParameter(javaType string, ctx Ctx) bool {
@@ -141,6 +150,10 @@ func currentErasedCallableOwnerTypeParameter(javaType string, ctx Ctx) bool {
 }
 
 func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (string, bool) {
+	physical := genericFamilyPhysicalJavaType(javaType, ctx)
+	if physical != javaType {
+		return physical, true
+	}
 	if ctx.currentClass == nil || ctx.localScope == nil ||
 		!directOwnerCallableMethodEligible(ctx.currentClass, ctx.localScope, ctx) {
 		return "", false
@@ -168,6 +181,7 @@ func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (s
 func projectDirectOwnerErasedMethodReferenceResult(
 	expr ast.Expr,
 	resolution *methodResolution,
+	target *invocationTargetInfo,
 	ctx Ctx,
 ) ast.Expr {
 	if expr == nil || resolution == nil || resolution.owner == nil || resolution.def == nil {
@@ -177,12 +191,18 @@ func projectDirectOwnerErasedMethodReferenceResult(
 	if !ok {
 		return expr
 	}
-	samMethod, bindings := resolveFunctionalInterfaceMethod(ctx, ctx.expectedType)
-	if samMethod == nil || strings.TrimSpace(samMethod.OriginalType) == "" ||
-		strings.TrimSpace(samMethod.OriginalType) == "void" {
+	// The shared SAM signature also carries runtime functional interfaces such
+	// as Supplier, which have no source declaration in the symbol graph.
+	_, targetView := methodReferenceJavaSignature(ctx)
+	if targetView == "" || targetView == "void" {
 		return expr
 	}
-	targetView := substituteJavaTypeParams(samMethod.OriginalType, bindings)
+	if _, primitive := javaPrimitiveType(targetView); primitive {
+		// Restore the referenced method's reference result before the regular
+		// unboxing/widening adapter. An Integer result consumed as long still
+		// needs an Integer checkcast, not a Long checkcast.
+		targetView = methodReferenceDeclaredResultType(resolution, target, ctx)
+	}
 	if javaInferenceTypeAssignable(erasure, targetView, ctx) {
 		return expr
 	}

@@ -239,7 +239,7 @@ func generateCharacterIOBridgeDecls(ctx Ctx) []ast.Decl {
 			params = append(params, &ast.Field{Names: []*ast.Ident{ast.NewIdent(name)}, Type: javaTypeStringToGoTypeExpr(p, nil, ctx)})
 			args = append(args, ast.NewIdent(name))
 		}
-		call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: recv, Sel: ast.NewIdent(executionImplementationName(method, owner))}, Args: args}
+		call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: recv, Sel: ast.NewIdent(executionImplementationName(method, owner, ctx))}, Args: args}
 		var results *ast.FieldList
 		var body ast.Stmt = &ast.ExprStmt{X: call}
 		if sig.result != "void" {

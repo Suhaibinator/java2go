@@ -13,7 +13,13 @@ import (
 // universal method descriptor needs views with different type arguments. The
 // source class and its binders remain unchanged; all aliases name one Go type.
 func canonicalGenericClass(scope *symbol.ClassScope, ctx Ctx) bool {
-	if scope == nil || len(scope.TypeParameters) == 0 || !leafObjectMemberErasureEligible(scope, ctx) {
+	if scope == nil || len(scope.TypeParameters) == 0 {
+		return false
+	}
+	if canonicalGenericFamily(scope, ctx) != nil {
+		return true
+	}
+	if !leafObjectMemberErasureEligible(scope, ctx) {
 		return false
 	}
 	for _, owner := range allSourceClassScopes() {
@@ -41,8 +47,7 @@ func canonicalGenericClass(scope *symbol.ClassScope, ctx Ctx) bool {
 	return false
 }
 
-func canonicalGenericName(scope *symbol.ClassScope) string {
-	base := scope.Class.Name + "Java2goErased"
+func availableCanonicalGenericName(base string) string {
 	used := map[string]bool{}
 	for _, owner := range allSourceClassScopes() {
 		used[owner.Class.Name] = true
@@ -66,10 +71,17 @@ func canonicalGenericName(scope *symbol.ClassScope) string {
 }
 
 func canonicalGenericTypeSpecs(name string, fields *ast.FieldList, parameters []symbol.TypeParam, ctx Ctx) []ast.Spec {
-	if ctx.currentClass == nil || name != ctx.currentClass.Class.Name || !canonicalGenericClass(ctx.currentClass, ctx) {
+	if ctx.currentClass == nil || !canonicalGenericClass(ctx.currentClass, ctx) {
 		return nil
 	}
-	raw := canonicalGenericName(ctx.currentClass)
+	carrier := ctx.currentClass.IsInterface && name == interfaceDefaultCarrierName(ctx.currentClass) && canonicalGenericFamily(ctx.currentClass, ctx) != nil
+	if name != ctx.currentClass.Class.Name && !carrier {
+		return nil
+	}
+	raw := availableCanonicalGenericName(name + "Java2goErased")
+	if canonicalGenericFamily(ctx.currentClass, ctx) != nil {
+		genericFamilyPhysicalFields(fields, parameters)
+	}
 	return []ast.Spec{
 		&ast.TypeSpec{Name: ast.NewIdent(raw), Type: &ast.StructType{Fields: fields}},
 		&ast.TypeSpec{Name: ast.NewIdent(name), TypeParams: &ast.FieldList{List: makeTypeParamFieldsInContext(parameters, ctx)}, Assign: token.Pos(1), Type: ast.NewIdent(raw)},
@@ -83,7 +95,11 @@ func canonicalizeGenericReceivers(declarations []ast.Decl, ctx Ctx) {
 	if !canonicalGenericClass(ctx.currentClass, ctx) {
 		return
 	}
-	name := ctx.currentClass.Class.Name
+	canonicalizeGenericNamedReceivers(declarations, ctx.currentClass.Class.Name, ctx)
+}
+
+func canonicalizeGenericNamedReceivers(declarations []ast.Decl, name string, ctx Ctx) {
+	rawName := availableCanonicalGenericName(name + "Java2goErased")
 	for _, declaration := range declarations {
 		method, ok := declaration.(*ast.FuncDecl)
 		if !ok || method.Recv == nil || len(method.Recv.List) != 1 {
@@ -91,6 +107,10 @@ func canonicalizeGenericReceivers(declarations []ast.Decl, ctx Ctx) {
 		}
 		pointer, ok := method.Recv.List[0].Type.(*ast.StarExpr)
 		if !ok {
+			continue
+		}
+		if ident, ok := pointer.X.(*ast.Ident); ok && ident.Name == rawName {
+			canonicalGenericReceiverBody(method, ctx)
 			continue
 		}
 		var base ast.Expr
@@ -106,7 +126,8 @@ func canonicalizeGenericReceivers(declarations []ast.Decl, ctx Ctx) {
 		if !ok || ident.Name != name {
 			continue
 		}
-		pointer.X = ast.NewIdent(canonicalGenericName(ctx.currentClass))
+		pointer.X = ast.NewIdent(rawName)
+		canonicalGenericReceiverBody(method, ctx)
 	}
 }
 

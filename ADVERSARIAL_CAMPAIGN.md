@@ -1,8 +1,8 @@
 # Continuous adversarial campaign
 
-Status: round 01 accepted; round 02 remains active. Checkpoint07 verifies five applications with 45 JVM/Go observations and 100 additional race-enabled stress runs. Full unit, strict application parity, other end-to-end, fuzz and exact lint gates pass on the unchanged snapshot. Repairs cover nested-type imports, canonical leaf generic identity, monitor aliasing, overload/helper naming, checked arithmetic, Map.putAll, static storage, signed literals, concatenation ordering, StringBuilder capacity and initial date/calendar/timezone/exception contracts.
+Status: round 01 accepted; round 02 remains active. Checkpoint10 verifies five applications with 45 exact JVM/Go observations and 100 additional race-enabled stress runs. Full unit, strict application parity, other end-to-end, fuzz replay, repository build and exact golangci-lint 2.14.0 gates pass on the immutable snapshot. Eight known-open fuzz cases remain skipped, identical to checkpoint07 and fewer than the original baseline’s fourteen; no added failures or skips are accepted.
 
-The unchanged Gson application has no accepted Go observations. Its latest quiet immutable run reaches a strict rejection of java.sql.Date after 105.270 seconds: the canonical owner guard prevents silently substituting java.util.Date. A genuine SQL runtime repair, connected source generic families, local identifier hygiene and generic method-reference result conversion now have focused JVM/race evidence and are preserved in candidate08 for integration. Full TypeAdapter families still require shared runtime collection storage and correct typed read boundaries; broader reflection and JDK services remain prerequisites.
+The unchanged Gson application has no accepted Go observations. Strict transpilation completes in 94.991 seconds under the unchanged 300-second limit. Go compilation still fails on missing AbstractMap, AbstractSet, BigInteger, BigDecimal and ConcurrentMap support and an omitted interface-nested enum. Complete selected dependency sources remain frozen; no dependency behavior is replaced or delegated to the JVM.
 
 Original CI lint findings are repaired. Exact golangci-lint 2.14.0 passes the recorded snapshot; later source edits require another lint gate. Verified arithmetic and performance-evidence milestones are committed and pushed. `campaign-state.json` records immutable fingerprints, preflight failures, focused repairs, run handles and exact resume points. Base revision: `c1f1ae45cfe8d5465425efc562a54580add4f3ea`.
 
@@ -58,3 +58,15 @@ Five accumulated applications passed 45 JVM/Go pairs and 100 stress runs. Exact 
 ### Verification scheduling
 
 Checkpoint07 exact lint is clean. Its first full unit and strict application-parity gates timed out, including a Java oracle; those runs are failures. Sequential reruns under the original limits now pass: the full unit compiler package took 447.746 seconds and strict parity took 653.655 seconds; other end-to-end, fuzz and all five historical dependency applications also passed. Input hashes remained unchanged. This verifies checkpoint07, while full Gson still fails and round02 remains active. Candidate08 and its focused repairs remain separate from this verified implementation.
+
+
+### Checkpoint09 repair status
+
+The exact 2.14.0 lint gate passed after removing one unused helper. The immutable full unit gate failed with eight new regressions; later gates did not run. Boxed generic consumption and scope-aware local identifier repairs now pass focused race checks, including cast timing, null unboxing, resource cleanup and generated implicit types. These changes are integrated but not yet a verified milestone. Checkpoint07 (`032d3550`) remains the last fully verified and pushed checkpoint.
+
+
+### Checkpoint10
+
+Connected generic families now preserve shared storage, nominal casts, boxed consumption, local interface implementations and varargs SAM array checks across the exercised contracts. SQL date/time types preserve their canonical owner and util.Date relationship, including bounded generic method references. Local identifier hygiene respects body requirements and renamed resource cleanup. Passing the render context through execution-name generation prevents repeated family rediscovery.
+
+Independent verification checked raw streams, declared files, frozen source/dependency/resource hashes, all nine repeated JVM oracles per application, translated-source versus binary dependency oracles, and twenty race-enabled stress runs per application. All historical observations matched. A verbose original/checkpoint07 fuzz audit confirms the eight remaining skips are pre-existing. Gson’s Go compilation failure remains an explicit blocker, so this is a checkpoint, not round02 acceptance. Private nested-enum and big-number TDD work continues after this milestone; unmeasured hygiene caching and runtime allocation candidates remain isolated.

@@ -94,8 +94,11 @@ func tryConstructorIntrinsic(className string, typeArgs, args []ast.Expr, invoca
 	if resolveClassScopeByQualifiedName(ctx, className) != nil {
 		return nil, false
 	}
-	if owner, registered := canonicalIntrinsicOwner(className, ctx); registered && !intrinsicOwnerSupported(owner) {
-		return unsupportedIntrinsicOwnerValue(owner, invocation, source, ctx), true
+	if owner, registered := canonicalIntrinsicOwner(className, ctx); registered {
+		if !intrinsicOwnerSupported(owner) {
+			return unsupportedIntrinsicOwnerValue(owner, invocation, source, ctx), true
+		}
+		name = intrinsicOwnerKey(owner)
 	}
 	if gen := constructorNodeIntrinsics[name]; gen != nil {
 		if result := gen(typeArgs, args, invocation, ctx, source); result != nil {
@@ -1035,8 +1038,11 @@ func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) 
 	if resolveClassScopeByQualifiedName(ctx, base) != nil {
 		return "", false
 	}
-	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered && !intrinsicOwnerSupported(owner) {
-		return "", false
+	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered {
+		if !intrinsicOwnerSupported(owner) {
+			return "", false
+		}
+		return intrinsicOwnerKey(owner), true
 	}
 	return name, true
 }
@@ -1098,8 +1104,16 @@ func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (
 		return "", false
 	}
 	name := objectNode.Content(source)
-	if owner, registered := canonicalIntrinsicOwner(name, ctx); registered && !intrinsicOwnerSupported(owner) {
-		return "", false
+	if owner, registered := canonicalIntrinsicOwner(name, ctx); registered {
+		if !intrinsicOwnerSupported(owner) {
+			return "", false
+		}
+		if objectNode.Type() == "identifier" {
+			if _, value := inferIdentifierJavaType(name, ctx); value {
+				return "", false
+			}
+		}
+		return intrinsicOwnerKey(owner), true
 	}
 	if objectNode.Type() != "identifier" {
 		if objectNode.Type() != "field_access" && objectNode.Type() != "scoped_identifier" {

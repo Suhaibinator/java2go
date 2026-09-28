@@ -79,15 +79,23 @@ func genericMethodErasedEntryDecls(ctx Ctx, def *symbol.Definition, params, resu
 	params, results = cloneFieldList(params), cloneFieldList(results)
 	eraseGenericMethodSignature(def, params, results, ctx)
 	typeArgs := typeParamExprs(ctx.currentClass.GoTypeParameterNames())
+	if canonicalGenericClass(ctx.currentClass, ctx) {
+		// A canonical receiver has no Go owner binders. The typed helper still
+		// declares them, so instantiate its owner slots with their physical
+		// erasures; method-owned parameters retain their separate slots below.
+		for index, parameter := range ctx.currentClass.TypeParameters {
+			typeArgs[index] = javaTypeStringToGoTypeExpr(rawTypeParameterErasure(parameter, ctx.currentClass.TypeParameters), nil, ctx)
+		}
+	}
 	for _, tp := range def.TypeParameters {
 		typeArgs = append(typeArgs, javaTypeStringToGoTypeExpr(rawTypeParameterErasure(tp, def.TypeParameters), ctx.currentClass.TypeParameterNames(), ctx))
 	}
 	recv := ShortName(ctx.className)
 	helper := &ast.CallExpr{Fun: applyTypeArguments(&ast.Ident{Name: "New" + def.HelperName}, typeArgs), Args: []ast.Expr{&ast.Ident{Name: recv}}}
-	call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: helper, Sel: &ast.Ident{Name: executionImplementationName(def, ctx.currentClass)}}, Args: append([]ast.Expr{&ast.Ident{Name: ctx.executionContextName}}, methodCallArgs(params)...)}
+	call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: helper, Sel: &ast.Ident{Name: executionImplementationName(def, ctx.currentClass, ctx)}}, Args: append([]ast.Expr{&ast.Ident{Name: ctx.executionContextName}}, methodCallArgs(params)...)}
 	body := &ast.BlockStmt{List: []ast.Stmt{invocationClosureCallStatement(call, results)}}
 	declaration := &ast.FuncDecl{Name: &ast.Ident{Name: def.Name}, Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: recv}}, Type: &ast.StarExpr{X: receiverBaseType}}}}, Type: &ast.FuncType{Params: params, Results: results}, Body: body}
-	return buildExecutionAwareFuncDecls(declaration, executionImplementationName(def, ctx.currentClass), ctx.executionContextName, ctx)
+	return buildExecutionAwareFuncDecls(declaration, executionImplementationName(def, ctx.currentClass, ctx), ctx.executionContextName, ctx)
 }
 
 // Result conversion belongs after the erased call. ObjectView preserves null

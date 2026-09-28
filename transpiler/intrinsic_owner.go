@@ -13,6 +13,8 @@ import (
 // Only migrated intrinsic families participate. Other legacy registrations keep
 // their existing resolution until they acquire explicit canonical owners.
 var intrinsicOwners = map[string]map[string]bool{}
+var intrinsicOwnerKeys = map[string]string{}
+var intrinsicDefaultOwners = map[string]string{}
 
 func registerIntrinsicOwner(owner string, supported bool) {
 	name := stripJavaQualifier(owner)
@@ -20,6 +22,15 @@ func registerIntrinsicOwner(owner string, supported bool) {
 		intrinsicOwners[name] = map[string]bool{}
 	}
 	intrinsicOwners[name][owner] = supported
+	if supported && intrinsicDefaultOwners[name] == "" {
+		intrinsicDefaultOwners[name] = owner
+	}
+}
+func intrinsicOwnerKey(owner string) string {
+	if key := intrinsicOwnerKeys[owner]; key != "" {
+		return key
+	}
+	return stripJavaQualifier(owner)
 }
 
 // canonicalIntrinsicOwner resolves a registered external family before its
@@ -61,10 +72,8 @@ func canonicalIntrinsicOwner(javaType string, ctx Ctx) (string, bool) {
 	}
 	// Historical isolated transpiler inputs often omit import declarations. Keep
 	// that convention only when no competing canonical owner has been selected.
-	for owner, supported := range owners {
-		if supported {
-			return owner, true
-		}
+	if owner := intrinsicDefaultOwners[base]; owner != "" {
+		return owner, true
 	}
 	return base, true
 }

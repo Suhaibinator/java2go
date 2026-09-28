@@ -20,6 +20,14 @@ func dateTimeRuntimeTypeExpr(base string, ctx Ctx) (ast.Expr, bool) {
 		reportUnsupported("JDK owner "+owner, nil, nil, ctx)
 		return nil, false
 	}
+	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered {
+		if name := sqlDateRuntimeNames[owner]; name != "" {
+			return &ast.StarExpr{X: stdjavaQualifiedExpr(name, ctx)}, true
+		}
+		if owner == "java.util.Date" {
+			return stdjavaQualifiedExpr("DateValue", ctx), true
+		}
+	}
 	if _, ok := dateTimeRuntimeTypeID(base, ctx); !ok {
 		return nil, false
 	}
@@ -31,6 +39,11 @@ func dateTimeRuntimeTypeExpr(base string, ctx Ctx) (ast.Expr, bool) {
 	return &ast.StarExpr{X: value}, true
 }
 func dateTimeReferenceAssignable(actual, expected string, ctx Ctx) bool {
+	if left, lok := canonicalIntrinsicOwner(actual, ctx); lok && sqlDateRuntimeNames[left] != "" {
+		if right, rok := canonicalIntrinsicOwner(expected, ctx); rok && right == "java.util.Date" {
+			return true
+		}
+	}
 	left, lok := dateTimeRuntimeTypeID(actual, ctx)
 	right, rok := dateTimeRuntimeTypeID(expected, ctx)
 	return lok && rok && left == "java.util.GregorianCalendar" && right == "java.util.Calendar"
@@ -38,10 +51,12 @@ func dateTimeReferenceAssignable(actual, expected string, ctx Ctx) bool {
 func init() {
 	for name, pkg := range dateTimePackages {
 		registerIntrinsicOwner(pkg+"."+name, true)
+		intrinsicDefaultOwners[name] = pkg + "." + name
 	}
 	for _, owner := range []string{"java.sql.Date", "java.sql.Time", "java.sql.Timestamp"} {
 		registerIntrinsicOwner(owner, false)
 	}
+	registerConstructorNodeIntrinsic("Date", dateConstructorNode("Date", true))
 	for _, name := range []string{"Date", "ParsePosition"} {
 		registerConstructorIntrinsic(name, func(types, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) > 1 {

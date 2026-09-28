@@ -119,7 +119,7 @@ func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
 			if id == nil {
 				id = javaTypeIDLiteral("void", ctx)
 			}
-			methods.Elts = append(methods.Elts, &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Name", metadataString(method.OriginalName)), metadataKey("GoName", metadataString(executionImplementationName(method, scope))), metadataKey("Return", id)}})
+			methods.Elts = append(methods.Elts, &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Name", metadataString(method.OriginalName)), metadataKey("GoName", metadataString(executionImplementationName(method, scope, ctx))), metadataKey("Return", id)}})
 		}
 	}
 	descriptor.Elts = append(descriptor.Elts, metadataKey("Fields", fields), metadataKey("Methods", methods))

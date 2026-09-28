@@ -36,12 +36,13 @@ func parseForInitializer(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	originalType := node.ChildByFieldName("type").Content(source)
 	for _, declarator := range declarators {
 		body.List = append(body.List, parseLocalVariableDeclarator(node, declarator, source, ctx))
-		name := identFromNode(declarator.ChildByFieldName("name"), source)
+		sourceName := declarator.ChildByFieldName("name").Content(source)
+		name := localBindingIdent(declarator.ChildByFieldName("name"), source, ctx)
 		names = append(names, name)
 		values = append(values, ast.NewIdent(name.Name))
 		resultType := explicitLocalVariableType(originalType, ctx)
 		if ctx.localScope != nil {
-			if local := ctx.localScope.FindVariable(name.Name); local != nil && local.Nullable {
+			if local := ctx.localScope.FindVariable(sourceName); local != nil && local.Nullable {
 				resultType = nullableLocalVariableType(originalType, ctx)
 			}
 		}
@@ -57,6 +58,8 @@ func parseForInitializer(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	originalType := node.ChildByFieldName("type").Content(source)
 	variableType := astutil.ParseType(node.ChildByFieldName("type"), source)
+	sourceName := variableDeclarator.ChildByFieldName("name").Content(source)
+	recordLocalVariableDefinition(ctx, sourceName, originalType, symbol.NodeToStr(variableType))
 
 	// If a variable is being declared, but not set to a value
 	// Ex: `int value;`
@@ -66,7 +69,7 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 				Tok: token.VAR,
 				Specs: []ast.Spec{
 					&ast.ValueSpec{
-						Names: []*ast.Ident{identFromNode(variableDeclarator.ChildByFieldName("name"), source)},
+						Names: []*ast.Ident{localBindingIdent(variableDeclarator.ChildByFieldName("name"), source, ctx)},
 						Type:  explicitLocalVariableType(originalType, ctx),
 					},
 				},
@@ -102,15 +105,15 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 				recordedOriginalType = inferredType
 			}
 		}
-		recordLocalVariableDefinition(ctx, ident.Name, recordedOriginalType, symbol.NodeToStr(variableType))
+		recordLocalVariableDefinition(ctx, sourceName, recordedOriginalType, symbol.NodeToStr(variableType))
 	}
 
 	// If the declaration contains null, declare it with the `var` keyword instead
 	// of implicitly
 	if containsNull {
-		for _, name := range names {
-			if local := ctx.localScope.FindVariable(name.Name); local != nil && usesNullableValueStorage(local.OriginalType) {
-				markLocalVariableNullable(ctx, name.Name)
+		for range names {
+			if local := ctx.localScope.FindVariable(sourceName); local != nil && usesNullableValueStorage(local.OriginalType) {
+				markLocalVariableNullable(ctx, sourceName)
 			}
 		}
 		// Java `var` derives its static type from the conditional. Its generated

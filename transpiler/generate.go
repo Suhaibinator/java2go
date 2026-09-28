@@ -302,6 +302,9 @@ func GenInterface(name string, methods *ast.FieldList, typeParams []symbol.TypeP
 }
 
 func genInterfaceInContext(name string, methods *ast.FieldList, typeParams []symbol.TypeParam, ctx Ctx) ast.Decl {
+	if specs := canonicalGenericInterfaceSpecs(name, methods, typeParams, ctx); specs != nil {
+		return &ast.GenDecl{Tok: token.TYPE, Specs: specs}
+	}
 	typeSpec := &ast.TypeSpec{
 		Name: &ast.Ident{Name: name},
 		Type: &ast.InterfaceType{

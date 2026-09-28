@@ -270,7 +270,7 @@ func throwableInitCauseRegistration(ctx Ctx) ast.Stmt {
 				{Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: ast.NewIdent("any")},
 				{Names: []*ast.Ident{ast.NewIdent("cause")}, Type: stdjavaQualifiedExpr("Throwable", ctx)},
 			}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{
-				&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: &ast.TypeAssertExpr{X: ast.NewIdent("receiver"), Type: receiverType}, Sel: ast.NewIdent(executionImplementationName(method, scope))}, Args: []ast.Expr{ast.NewIdent("execution"), ast.NewIdent("cause")}}}},
+				&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: &ast.TypeAssertExpr{X: ast.NewIdent("receiver"), Type: receiverType}, Sel: ast.NewIdent(executionImplementationName(method, scope, ctx))}, Args: []ast.Expr{ast.NewIdent("execution"), ast.NewIdent("cause")}}}},
 			}}}
 			return &ast.ExprStmt{X: stdjavaCall(ctx, "RegisterThrowableInitCause", &ast.CallExpr{Fun: receiverType, Args: []ast.Expr{ast.NewIdent("nil")}}, invoke)}
 		}

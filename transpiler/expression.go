@@ -199,7 +199,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					paramType = inferredParamTypes[ind]
 				}
 				lambdaParameters.List = append(lambdaParameters.List, &ast.Field{
-					Names: []*ast.Ident{identFromNode(param, source)},
+					Names: []*ast.Ident{localBindingIdent(param, source, lambdaCtx)},
 					Type:  paramType,
 				})
 			}
@@ -213,7 +213,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			lambdaParameters = &ast.FieldList{
 				List: []*ast.Field{
 					&ast.Field{
-						Names: []*ast.Ident{identFromNode(paramNode, source)},
+						Names: []*ast.Ident{localBindingIdent(paramNode, source, lambdaCtx)},
 						Type:  paramType,
 					},
 				},
@@ -336,7 +336,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				methodName := staticDef.Name
 				executionAware := staticDef.DeclarationNode != nil
 				if executionAware {
-					methodName = executionImplementationName(staticDef, staticOwner)
+					methodName = executionImplementationName(staticDef, staticOwner, ctx)
 				}
 				methodExpr := qualifiedNameExpr(methodName, staticPkg, ctx)
 				methodExpr, adaptedDefinition := instantiateStaticMethodReference(methodExpr, staticDef, node, source, ctx)
@@ -942,7 +942,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			constructorResolution = resolution
 		}
 		targetPkg := resolveJavaPackageForType(ctx, className, targetScope)
-		localInfo := ctx.localClasses[className]
+		localInfo := localClassInDeclaration(className, ctx)
 
 		// Resolve an inner creation's enclosing value and generic view together.
 		// The hidden constructor argument and the hidden class type-argument slots
@@ -1047,7 +1047,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if localInfo != nil {
 			captureArgs := make([]ast.Expr, 0, len(localInfo.captured))
 			for _, capture := range localInfo.captured {
-				captureValue := ast.Expr(&ast.Ident{Name: capture.name})
+				captureValue := ast.Expr(&ast.Ident{Name: localBindingName(capture.name, ctx)})
 				// Recursive allocation from a hoisted instance method, constructor,
 				// or field initializer forwards the value already stored on this
 				// instance. At the enclosing call site the lexical local remains the
@@ -1200,7 +1200,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// A stdjava-backed runtime element type (e.g. Thread in `new Thread[n]`)
 			// must resolve to its stdjava Go type (*stdjava.Thread), not a bare and
 			// undefined *Thread.
-			if rt, ok := stdjavaRuntimeTypeExpr(stripJavaQualifier(elementJavaType), nil, inScopeTypeParameters(ctx), ctx); ok {
+			if rt, ok := stdjavaRuntimeTypeExpr(elementJavaType, nil, inScopeTypeParameters(ctx), ctx); ok {
 				elementType = rt
 			}
 		}
@@ -1552,11 +1552,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return stdjavaGenericCall(ctx, "JavaArrayCast", []ast.Expr{targetType}, []ast.Expr{valueExpr, descriptor})
 			}
 		}
-		if base, arguments := parseJavaTypeString(targetJavaType); len(arguments) == 0 {
+		if base, arguments := parseJavaTypeString(targetJavaType); base != "" {
 			if targetScope := resolveClassScopeByQualifiedName(ctx, base); targetScope != nil &&
-				!targetScope.IsInterface && len(targetScope.TypeParameters) == 0 {
-				// A superclass variable can hold a generated Base subobject. Recover
-				// the same most-derived Java object before checking its Child view.
+				((!targetScope.IsInterface && len(arguments) == 0 && len(targetScope.TypeParameters) == 0) || canonicalGenericClass(targetScope, ctx)) {
+				// A Java cast checks the raw nominal class and preserves its object
+				// identity. Canonical generic aliases can select the declaring
+				// base subobject just like ordinary source-class views; a Go
+				// pointer assertion cannot perform that superclass conversion.
 				if descriptor, ok := javaTypeDescriptorExpr(targetJavaType, ctx); ok {
 					return stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{targetType}, []ast.Expr{valueExpr, descriptor})
 				}
@@ -3701,7 +3703,7 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 	// reachable by the Java source name so type-qualified static calls and values
 	// declared with the local type use the same overload/member resolution as
 	// ordinary classes.
-	if info := ctx.localClasses[name]; info != nil && info.scope != nil {
+	if info := localClassInDeclaration(name, ctx); info != nil {
 		return info.scope
 	}
 	for _, info := range ctx.anonymousClasses {
@@ -3994,7 +3996,7 @@ func executionCompanionDispatchInvocation(
 	hiddenCall := markDirectVarargsExpansion(&ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X:   &ast.Ident{Name: companionName},
-			Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner)},
+			Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner, ctx)},
 		},
 		Args: prependExecutionMethodArgument(ctx, resolution.def, stagedArgs),
 	}, expandVarargsArray)
@@ -5453,9 +5455,9 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	}
 	projectionCtx := ctx.Clone()
 	projectionCtx.expectedType = expectedType
-	if projectionCtx.expectedTypeRoot == nil {
-		projectionCtx.expectedTypeRoot = argNode
-	}
+	// This conversion owns the argument boundary even when the surrounding
+	// expression already has a distinct assignment/return target.
+	projectionCtx.expectedTypeRoot = argNode
 	beforeProjection := argExpr
 	argExpr = projectDirectOwnerErasedExpressionForExpected(argExpr, argNode, projectionCtx, source)
 	projectedToExpected := argExpr != beforeProjection
@@ -5899,11 +5901,15 @@ func contextWithLambdaParameters(ctx Ctx, parameters *sitter.Node, inferredTypes
 	local.Constructor = false
 	local.Parameters = append(definitions, local.Parameters...)
 	lambdaCtx.localScope = &local
+	if parameters != nil && parameters.Parent() != nil {
+		lambdaCtx.localBindingBody = parameters.Parent().ChildByFieldName("body")
+	}
 	// A Java lambda is a function/control-flow boundary. Returns and any lowered
 	// closure state inside it belong to the SAM invocation, never to an enclosing
 	// method's try/finally or synchronized statement.
 	lambdaCtx.tryReturnTarget = nil
 	lambdaCtx.tryControlBoundary = nil
+	hygienizeLocalScope(lambdaCtx)
 	return lambdaCtx
 }
 
@@ -6566,6 +6572,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		source,
 		false,
 	)
+	syntheticScope.Class.DeclarationNode = node
 	syntheticScope.Enclosing = ctx.currentClass
 	syntheticScope.IsInner = isInner
 	syntheticScope.EnclosingField = enclosingFieldName
@@ -6621,7 +6628,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		// Go interface satisfaction is structural: the exported Run method emitted
 		// below is sufficient. Embedding stdjava.Runnable would add a nil interface
 		// field and needlessly register a runtime import.
-	} else if rt, ok := stdjavaRuntimeTypeExpr(stripJavaQualifier(baseType), nil, inScopeTypeParameters(ctx), ctx); ok {
+	} else if rt, ok := stdjavaRuntimeTypeExpr(baseType, nil, inScopeTypeParameters(ctx), ctx); ok {
 		// Concrete stdjava-backed supertypes are embedded to retain their methods.
 		fields.List = append(fields.List, &ast.Field{Type: rt})
 	} else {
@@ -6636,11 +6643,11 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		})
 	}
 
-	ctx.addHoistedDecl(genStructWithTypeParamsInContext(structName, fields, syntheticScope.TypeParameters, ctx))
 	installerCtx := ctx.Clone()
 	installerCtx.currentClass = syntheticScope
 	installerCtx.className = structName
 	installerCtx.localScope = nil
+	ctx.addHoistedDecl(genStructWithTypeParamsInContext(structName, fields, syntheticScope.TypeParameters, installerCtx))
 	for _, declaration := range generateCharacterIOBridgeDecls(installerCtx) {
 		ctx.addHoistedDecl(declaration)
 	}
@@ -6693,6 +6700,17 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		methodDecls := buildAnonymousStructMethod(structName, methodNode, syntheticScope, source, ctx)
 		for _, methodDecl := range methodDecls {
 			ctx.addHoistedDecl(methodDecl)
+		}
+	}
+
+	if superScope != nil && !superScope.IsInterface && classNeedsReferenceIdentity(superScope, ctx) {
+		ownerID := ctx.className
+		if ctx.currentClass != nil {
+			ownerID = javaClassBinaryName(ctx.currentClass)
+		}
+		interfaces := resolveImplementedInterfaceScopesInDeclaringContext(installerCtx, syntheticScope)
+		for _, declaration := range syntheticHierarchicalReferenceIdentityDecls(structName, ownerID+"$"+structName, superScope, interfaces, syntheticScope.GoTypeParameterNames(), installerCtx) {
+			ctx.addHoistedDecl(declaration)
 		}
 	}
 
@@ -6783,7 +6801,7 @@ func anonymousClassConstructionExpr(
 	for _, captured := range info.captured {
 		elts = append(elts, &ast.KeyValueExpr{
 			Key:   &ast.Ident{Name: capturedLocalFieldName(captured)},
-			Value: &ast.Ident{Name: captured.name},
+			Value: &ast.Ident{Name: localBindingName(captured.name, ctx)},
 		})
 	}
 
@@ -7403,7 +7421,7 @@ func anonymousInheritedSelectorNames(supertype string, superScope *symbol.ClassS
 			}
 			reserved[method.Name] = struct{}{}
 			if method.DeclarationNode != nil {
-				reserved[executionImplementationName(method, current)] = struct{}{}
+				reserved[executionImplementationName(method, current, ctx)] = struct{}{}
 			}
 		}
 		if classNeedsVirtualDispatch(current, ctx) {
@@ -7833,17 +7851,25 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 	methodCtx.executionContextName = executionName
 
 	params := ParseNode(methodNode.ChildByFieldName("parameters"), source, methodCtx).(*ast.FieldList)
+	sourceParams := cloneFieldList(params)
+	for index := range params.List {
+		params.List[index].Type = directOwnerTypeParameterMethodParameterType(syntheticScope, methodScope, index, params.List[index].Type, methodCtx)
+	}
 
 	var results *ast.FieldList
 	typeNode := methodNode.ChildByFieldName("type")
 	if typeNode != nil && strings.TrimSpace(typeNode.Content(source)) != "void" {
 		results = &ast.FieldList{
 			List: []*ast.Field{
-				{Type: javaTypeStringToGoTypeExpr(typeNode.Content(source), inScopeTypeParameters(ctx), ctx)},
+				{Type: javaTypeStringToGoTypeExpr(typeNode.Content(source), inScopeTypeParameters(methodCtx), methodCtx)},
 			},
 		}
 	}
 
+	sourceResults := cloneFieldList(results)
+	if results != nil {
+		results.List[0].Type = directOwnerTypeParameterMethodResultType(syntheticScope, methodScope, results.List[0].Type, methodCtx)
+	}
 	body := ParseStmt(bodyNode, source, methodCtx).(*ast.BlockStmt)
 	if declarationHasModifier(methodNode, "synchronized") {
 		body.List = append(synchronizedMethodPrologue(methodCtx, methodScope.IsStatic, methodNode, source), body.List...)
@@ -7874,9 +7900,12 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 			Type:  &ast.StarExpr{X: receiverType},
 		}}}
 	}
+	if declarations, ok := buildDirectOwnerOverrideBridgeMethodDecls(decl, sourceParams, sourceResults, executionName, methodCtx); ok {
+		return declarations
+	}
 	return buildExecutionAwareFuncDecls(
 		decl,
-		executionImplementationName(methodScope, syntheticScope),
+		executionImplementationName(methodScope, syntheticScope, methodCtx),
 		executionName,
 		methodCtx,
 	)
@@ -8431,8 +8460,8 @@ func executionAwareMethodReferenceForwarder(
 			Args: append([]ast.Expr{execution}, javaArgs...),
 		}
 		markVariadicForwardCall(call, resolution.def)
-		result := projectDirectOwnerErasedMethodReferenceResult(call, resolution, ctx)
-		result = methodReferenceResultConversion(result, methodReferenceDeclaredResultType(resolution, target, ctx), ctx)
+		result := projectDirectOwnerErasedMethodReferenceResult(call, resolution, target, ctx)
+		result = genericMethodReferenceResult(result, resolution, target, unbound, ctx)
 		body = append(body, invocationClosureCallStatement(result, functionType.Results))
 		return &ast.FuncLit{
 			Type: &ast.FuncType{Params: params, Results: cloneFieldList(functionType.Results)},
@@ -8466,13 +8495,13 @@ func executionAwareMethodReferenceForwarder(
 		hiddenCall := &ast.CallExpr{
 			Fun: &ast.SelectorExpr{
 				X:   &ast.Ident{Name: executionReceiverName},
-				Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner)},
+				Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner, ctx)},
 			},
 			Args: append([]ast.Expr{execution}, javaArgs...),
 		}
 		markVariadicForwardCall(hiddenCall, resolution.def)
-		hiddenResult := projectDirectOwnerErasedMethodReferenceResult(hiddenCall, resolution, ctx)
-		hiddenResult = methodReferenceResultConversion(hiddenResult, methodReferenceDeclaredResultType(resolution, target, ctx), ctx)
+		hiddenResult := projectDirectOwnerErasedMethodReferenceResult(hiddenCall, resolution, target, ctx)
+		hiddenResult = genericMethodReferenceResult(hiddenResult, resolution, target, unbound, ctx)
 		hiddenBody := []ast.Stmt{invocationClosureCallStatement(hiddenResult, functionType.Results)}
 		if functionType.Results == nil || len(functionType.Results.List) == 0 {
 			hiddenBody = append(hiddenBody, &ast.ReturnStmt{})
@@ -8486,8 +8515,8 @@ func executionAwareMethodReferenceForwarder(
 			Args: javaArgs,
 		}
 		markVariadicForwardCall(publicCall, resolution.def)
-		publicResult := projectDirectOwnerErasedMethodReferenceResult(publicCall, resolution, ctx)
-		publicResult = methodReferenceResultConversion(publicResult, methodReferenceDeclaredResultType(resolution, target, ctx), ctx)
+		publicResult := projectDirectOwnerErasedMethodReferenceResult(publicCall, resolution, target, ctx)
+		publicResult = genericMethodReferenceResult(publicResult, resolution, target, unbound, ctx)
 		body = append(body, invocationClosureCallStatement(publicResult, functionType.Results))
 	} else {
 		if classNeedsVirtualDispatch(resolution.owner, ctx) && !boundDispatchReceiver {
@@ -8496,13 +8525,13 @@ func executionAwareMethodReferenceForwarder(
 		call := &ast.CallExpr{
 			Fun: &ast.SelectorExpr{
 				X:   callReceiver,
-				Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner)},
+				Sel: &ast.Ident{Name: executionImplementationName(resolution.def, resolution.owner, ctx)},
 			},
 			Args: append([]ast.Expr{execution}, javaArgs...),
 		}
 		markVariadicForwardCall(call, resolution.def)
-		result := projectDirectOwnerErasedMethodReferenceResult(call, resolution, ctx)
-		result = methodReferenceResultConversion(result, methodReferenceDeclaredResultType(resolution, target, ctx), ctx)
+		result := projectDirectOwnerErasedMethodReferenceResult(call, resolution, target, ctx)
+		result = genericMethodReferenceResult(result, resolution, target, unbound, ctx)
 		body = append(body, invocationClosureCallStatement(result, functionType.Results))
 	}
 
@@ -8567,6 +8596,8 @@ func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType 
 	if interfaceScope == nil || interfaceScope.Class == nil || interfaceScope.Class.Name == "" {
 		return nil
 	}
+
+	lambdaExpr = genericFamilySAMCallback(lambdaExpr, method, interfaceScope, expectedType, executionAware, ctx)
 
 	constructorName := "New" + interfaceScope.Class.Name + "FuncAdapter"
 	if executionAware {
@@ -9089,6 +9120,8 @@ func promoteJavaBinaryNumericOperands(
 			return leftExpr, rightExpr
 		}
 	}
+	leftExpr = projectDirectOwnerErasedIntrinsicReceiver(leftExpr, leftNode, ctx, source)
+	rightExpr = projectDirectOwnerErasedIntrinsicReceiver(rightExpr, rightNode, ctx, source)
 	return convertJavaNumericOperand(leftExpr, leftType, targetType, ctx),
 		convertJavaNumericOperand(rightExpr, rightType, targetType, ctx)
 }
@@ -9361,6 +9394,7 @@ func goIndexExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 // behavior for pointer-wrapping reference types, but operates on strings to support
 // type inference paths.
 func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) ast.Expr {
+	typeStr = genericFamilyPhysicalJavaType(typeStr, ctx)
 	typeStr = erasedAnonymousMethodJavaType(typeStr, ctx)
 	typeStr = strings.TrimSpace(typeStr)
 	if typeStr == "" {
@@ -9510,7 +9544,7 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		expr = &ast.StarExpr{X: stdjavaQualifiedExpr(baseName, ctx)}
 	} else if prim, ok := primitive(baseName); ok && resolvedScope == nil {
 		expr = prim
-	} else if rt, ok := stdjavaRuntimeTypeExpr(baseName, typeArgs, typeParams, ctx); ok {
+	} else if rt, ok := stdjavaRuntimeTypeExpr(base, typeArgs, typeParams, ctx); ok {
 		// java.util.concurrent / java.lang.Thread types backed by the stdjava
 		// runtime (AtomicInteger, Thread, ConcurrentHashMap, ...).
 		expr = rt
@@ -11263,14 +11297,33 @@ func javaInferenceSameType(left, right string, ctx Ctx) bool {
 	}
 	leftRaw, leftArgs := parseJavaTypeString(leftBase)
 	rightRaw, rightArgs := parseJavaTypeString(rightBase)
+	// Source spellings and generated binder names can differ when a method
+	// shadows a class parameter. Compare their declarations before nominal
+	// class lookup; textual S and S2 may denote the same method parameter.
+	leftParameter := visibleTypeParameterDeclarationForJavaType(leftRaw, ctx)
+	rightParameter := visibleTypeParameterDeclarationForJavaType(rightRaw, ctx)
+	if leftParameter != nil || rightParameter != nil {
+		return leftParameter != nil && leftParameter == rightParameter && len(leftArgs) == 0 && len(rightArgs) == 0
+	}
 	leftScope := resolveClassScopeByQualifiedName(ctx, leftRaw)
 	rightScope := resolveClassScopeByQualifiedName(ctx, rightRaw)
 	if leftScope != nil || rightScope != nil {
 		if leftScope == nil || rightScope == nil || leftScope != rightScope {
 			return false
 		}
-	} else if !sameJavaRawType(leftRaw, rightRaw) {
-		return false
+	} else {
+		// Migrated runtime families can have identical short names in different
+		// packages. Resolve import-visible spellings before the legacy fallback;
+		// otherwise util.Date and an imported sql.Date appear interchangeable.
+		if owner, known := canonicalIntrinsicOwner(leftRaw, ctx); known {
+			leftRaw = owner
+		}
+		if owner, known := canonicalIntrinsicOwner(rightRaw, ctx); known {
+			rightRaw = owner
+		}
+		if !sameJavaRawType(leftRaw, rightRaw) {
+			return false
+		}
 	}
 	if len(leftArgs) != len(rightArgs) {
 		return false

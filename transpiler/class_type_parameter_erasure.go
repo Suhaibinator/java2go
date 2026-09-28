@@ -88,7 +88,7 @@ func directOwnerInterfaceErasure(
 		return "", false
 	}
 	erasure := qualifyJavaTypeInDeclaringContext(use.erasure, owner)
-	if leafObjectErasure(owner, erasure, ctx) {
+	if leafObjectErasure(owner, erasure, ctx) || genericFamilyIsObjectErasure(owner, erasure, ctx) {
 		return erasure, true
 	}
 	if len(use.parameter.Bounds) != 1 || !javaTypeHasInterfaceRepresentation(erasure, ctx) {
@@ -125,6 +125,9 @@ func directOwnerOrdinaryFieldInterfaceErasure(
 	definition *symbol.Definition,
 	ctx Ctx,
 ) (string, bool) {
+	if canonicalGenericFamily(owner, ctx) != nil {
+		return directOwnerInterfaceErasure(owner, definition, ctx)
+	}
 	if owner == nil || owner.Class == nil || definition == nil || definition.DeclarationNode == nil {
 		return "", false
 	}
@@ -153,6 +156,9 @@ func directOwnerOrdinaryMethodInterfaceErasure(
 	definition *symbol.Definition,
 	ctx Ctx,
 ) (string, bool) {
+	if canonicalGenericFamily(owner, ctx) != nil {
+		return directOwnerInterfaceErasure(owner, definition, ctx)
+	}
 	if owner == nil || owner.Class == nil || definition == nil || definition.DeclarationNode == nil {
 		return "", false
 	}
@@ -239,6 +245,9 @@ func directOwnerMethodHasErasedCallableABI(owner *symbol.ClassScope, method *sym
 // cast-before-body Numbered -> First bridge. Unsupported mixed families remain
 // on their established invariant Go ABI.
 func directOwnerCallableMethodEligible(owner *symbol.ClassScope, method *symbol.Definition, ctx Ctx) bool {
+	if method != nil && !method.Constructor && !method.IsStatic && canonicalGenericFamily(owner, ctx) != nil {
+		return true
+	}
 	if directOwnerCallableMethodFamilyEligible(owner, method, ctx) {
 		for _, declaration := range methodDirectOwnerTypeParameterDeclarations(owner, method) {
 			if !ownerTypeParameterCallableShapeSupported(declaration, ctx) {
@@ -1216,8 +1225,12 @@ func classScopeCtx(scope *symbol.ClassScope, ctx Ctx) Ctx {
 	result := ctx.Clone()
 	result.currentClass = scope
 	result.localScope = nil
-	if file := findFileScopeForClassScope(scope); file != nil {
-		result.currentFile = file
+	result.localBindingBody = nil
+	for current := scope; current != nil; current = current.Enclosing {
+		if file := findFileScopeForClassScope(current); file != nil {
+			result.currentFile = file
+			break
+		}
 	}
 	return result
 }

@@ -123,3 +123,43 @@ method reference, raw cast and reified observation in the connected family befor
 activation. A superclass and subclass cannot independently select incompatible
 physical layouts. Completing the minimized leaf factory is a foundation gate,
 not permission to claim Gson or round02 completion.
+
+## Connected family implementation under verification
+
+The original leaf factory, its alpha-renamed companion and canonical alias
+identity/pollution tests now pass. The connected-family phase additionally has
+JVM parity for abstract forwarding classes, a captured inner null-safe adapter,
+a stateful anonymous subclass, erased specialized override bridges, source
+interface default dispatch, and a method binder shadowing its class binder.
+Its permanent focused tests retain raw writes followed by delayed typed-read
+failures, bridge checks before the specialized body, reified array stores,
+nominal Class inequality and shared monitors.
+
+The planner closes both inheritance/interface edges and eligible source-leaf
+storage edges. `Adapter<V> -> Cell<V> -> Link<V> -> Cell<V>` activates together;
+a runtime `List<V>` anywhere in that storage closure declines the entire plan.
+It never reinterprets an invariant Go collection pointer. Generic interface
+carriers use the same canonical representation. Typed SAM callbacks are staged
+once, receive cast-before-entry argument adapters, and widen their results only
+after the original typed callback has performed its own consuming checks.
+
+Rendering normalizes AST type positions, not arbitrary indexed-call expressions
+or source value names. Source binder identity distinguishes a method's `S` from
+its generated `S2` spelling and the shadowed class binder. Synthesized raw type
+names avoid resolved source declaration collisions. Anonymous object identities
+remain distinct from their base class; exact Java lexical anonymous binary-name
+numbering remains a separate metadata gap.
+
+Named plans can be cached only in a resolved file-render context. The cache is
+allocated after all resolution passes, copied by Ctx.Clone, and discarded at the
+next render boundary. Anonymous lowering scopes receive copied member maps and
+cannot mutate cached named plans. Ctx{} analysis callers remain uncached.
+Regression coverage verifies a fresh context rejects a newly resolved unsupported
+descendant instead of reusing an earlier eligibility result.
+
+This phase is not yet accepted against the unchanged full Gson application.
+The independent frozen multi-package family probe has progressed through its
+universal factory and shadowed-binder failures to a separately assigned local
+identifier/type collision. Full Gson still needs a coherent representation for
+bounded and runtime-collection specializations and generic reflection; those
+are not admitted by the Object-bound source-storage planner.

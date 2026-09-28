@@ -77,6 +77,9 @@ func planDirectOwnerCallableOverrideBridgeFamily(
 	method *symbol.Definition,
 	ctx Ctx,
 ) (*directOwnerOverrideBridgeFamilyPlan, bool) {
+	if plan, ok := genericFamilyMethodPlan(owner, method, ctx); ok {
+		return plan, true
+	}
 	plan, ok := planDirectOwnerCallableOverrideBridgeFamilyUnchecked(owner, method, ctx)
 	if !ok || plan == nil || !plan.requiresErasedView {
 		return nil, false
@@ -856,11 +859,11 @@ func directOwnerOverrideBridgeExactExecutionName(plan directOwnerOverrideBridgeP
 	return collisionSafeExecutionIdentifier(plan.method.Name+"Java2goExactExecution", plan.owner)
 }
 
-func directOwnerOverrideBridgeErasedExecutionName(plan *directOwnerOverrideBridgeFamilyPlan) string {
+func directOwnerOverrideBridgeErasedExecutionName(plan *directOwnerOverrideBridgeFamilyPlan, ctx Ctx) string {
 	if plan == nil {
 		return ""
 	}
-	return executionImplementationName(plan.method, plan.owner)
+	return executionImplementationName(plan.method, plan.owner, ctx)
 }
 
 // directOwnerSpecializedOverrideBridgeForMethod finds the erased ancestor
@@ -877,6 +880,9 @@ func directOwnerSpecializedOverrideBridgeForMethod(
 ) (directOwnerSpecializedOverrideBridgeSelection, bool) {
 	if owner == nil || method == nil || method.Constructor || method.IsStatic || method.IsPrivate {
 		return directOwnerSpecializedOverrideBridgeSelection{}, false
+	}
+	if selection, ok := genericFamilySpecializedMethod(owner, method, ctx); ok {
+		return selection, true
 	}
 	ctx = classScopeCtx(owner, ctx)
 	var selected directOwnerSpecializedOverrideBridgeSelection
@@ -985,6 +991,9 @@ func buildDirectOwnerOverrideBridgeMethodDecls(
 					ret.Results[0] = overrideBridgeConcreteResultProjection(ret.Results[0], selection.bridge.result.overrideJavaType, selection.bridge.owner, selection.family.erasedResult, selection.family.owner, ctx)
 				}
 			}
+			if canonicalGenericFamily(ctx.currentClass, ctx) != nil && len(declarations) > 0 {
+				declarations[0] = genericFamilyPublicBridgeWrapper(declaration, bridge.(*ast.FuncDecl), executionName, ctx)
+			}
 			declarations = append(declarations, bridge)
 		}
 		return declarations, true
@@ -1003,7 +1012,7 @@ func buildDirectOwnerErasedFamilyMethodDecls(
 	if declaration == nil || family == nil {
 		return nil
 	}
-	implementationName := directOwnerOverrideBridgeErasedExecutionName(family)
+	implementationName := directOwnerOverrideBridgeErasedExecutionName(family, ctx)
 	declarations := buildExecutionAwareFuncDecls(declaration, implementationName, executionName, ctx)
 	if len(declarations) < 2 {
 		return declarations
@@ -1126,7 +1135,7 @@ func buildDirectOwnerSpecializedOverrideBridgeDecl(
 	}
 
 	return &ast.FuncDecl{
-		Name: &ast.Ident{Name: directOwnerOverrideBridgeErasedExecutionName(selection.family)},
+		Name: &ast.Ident{Name: directOwnerOverrideBridgeErasedExecutionName(selection.family, ctx)},
 		Recv: cloneFieldList(declaration.Recv),
 		Type: &ast.FuncType{Params: params, Results: results},
 		Body: &ast.BlockStmt{List: body},

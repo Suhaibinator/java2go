@@ -114,7 +114,7 @@ func generateInputStreamBridgeDecls(ctx Ctx) []ast.Decl {
 		var call ast.Expr
 		recv := ast.NewIdent(ShortName(ctx.className))
 		if selected != nil {
-			call = &ast.CallExpr{Fun: &ast.SelectorExpr{X: recv, Sel: ast.NewIdent(executionImplementationName(selected, owner))}, Args: args}
+			call = &ast.CallExpr{Fun: &ast.SelectorExpr{X: recv, Sel: ast.NewIdent(executionImplementationName(selected, owner, ctx))}, Args: args}
 		} else {
 			all := append([]ast.Expr{args[0], inputStreamBaseReceiver(ctx)}, args[1:]...)
 			call = stdjavaCall(ctx, runtime, all...)

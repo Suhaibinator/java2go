@@ -84,7 +84,7 @@ public class OverrideBridgePlanProbe {
 	if !bridge.result.requiresWidening || stripJavaQualifier(bridge.result.overrideJavaType) != "First" {
 		t.Fatalf("bridge result plan = %#v, want First -> Numbered widening", bridge.result)
 	}
-	erasedName := directOwnerOverrideBridgeErasedExecutionName(plan)
+	erasedName := directOwnerOverrideBridgeErasedExecutionName(plan, helper.Ctx)
 	exactName := directOwnerOverrideBridgeExactExecutionName(bridge)
 	if erasedName == "" || exactName == "" || erasedName == exactName {
 		t.Fatalf("bridge selectors must be non-empty and distinct: erased=%q exact=%q", erasedName, exactName)

@@ -36,10 +36,11 @@ var concurrencyRuntimeTypes = map[string]bool{
 // (nil, false) for any other name, and never fires for a user-defined class of
 // the same name. Generic args are themselves lowered through
 // javaTypeStringToGoTypeExpr.
-func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
-	if expression, ok := dateTimeRuntimeTypeExpr(baseName, ctx); ok {
+func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+	if expression, ok := dateTimeRuntimeTypeExpr(javaType, ctx); ok {
 		return expression, true
 	}
+	baseName := stripJavaQualifier(javaType)
 	if expression, ok := reflectRuntimeTypeExpr(baseName, ctx); ok {
 		return expression, true
 	}

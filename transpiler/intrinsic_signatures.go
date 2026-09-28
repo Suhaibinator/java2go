@@ -26,6 +26,9 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 		return t
 	}
 	if class, ok := intrinsicStaticClassName(object, ctx, source); ok {
+		if expected, known := datetimeExpectedArgumentTypes(class, method, count); known {
+			return expected
+		}
 		if primitive, wrapper := builtinJavaWrapperPrimitive("java.lang."+class, ctx); wrapper {
 			switch method {
 			case "valueOf":
@@ -103,6 +106,9 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 	class, ok := intrinsicReceiverTypeName(object, ctx, source)
 	if !ok {
 		return result
+	}
+	if expected, known := datetimeExpectedArgumentTypes(class, method, count); known {
+		return expected
 	}
 	if class == "ThreadLocal" && method == "set" {
 		elements := receiverElementJavaTypes(object, ctx, source)

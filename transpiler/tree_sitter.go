@@ -43,6 +43,9 @@ func identFromNode(node *sitter.Node, source []byte) *ast.Ident {
 type Ctx struct {
 	// Project entrypoints retain their Java signature and receive argv from a launcher.
 	projectMode bool
+	// Immutable named-family analysis shared only within this resolved file render.
+	genericFamilies  *genericFamilyAnalysis
+	localBindingBody *sitter.Node
 	// Used to generate the names of all the methods, as well as the names
 	// of the constructors
 	className string
@@ -399,6 +402,8 @@ func transferTargetInsideBoundary(transfer *tryControlTransfer, boundary *sitter
 func (c Ctx) Clone() Ctx {
 	return Ctx{
 		projectMode:                         c.projectMode,
+		genericFamilies:                     c.genericFamilies,
+		localBindingBody:                    c.localBindingBody,
 		className:                           c.className,
 		currentFile:                         c.currentFile,
 		currentClass:                        c.currentClass,
@@ -655,7 +660,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			paramDef := ctx.localScope.ParameterByName(node.ChildByFieldName("name").Content(source))
 			if paramDef == nil {
 				paramDef = &symbol.Definition{
-					Name:         node.ChildByFieldName("name").Content(source),
+					Name:         localBindingName(node.ChildByFieldName("name").Content(source), ctx),
 					OriginalType: node.ChildByFieldName("type").Content(source),
 				}
 			}
@@ -677,7 +682,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 		fallbackType := node.ChildByFieldName("type").Content(source)
 		return &ast.Field{
-			Names: []*ast.Ident{identFromNode(node.ChildByFieldName("name"), source)},
+			Names: []*ast.Ident{localBindingIdent(node.ChildByFieldName("name"), source, ctx)},
 			Type:  abstractClassToInterface(javaTypeStringToGoTypeExpr(fallbackType, inScopeTypeParameters(ctx), ctx), fallbackType, ctx),
 		}
 	case "spread_parameter":
@@ -685,7 +690,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		spreadType, spreadName := nodeutil.JavaParameterNodes(node)
 
 		return &ast.Field{
-			Names: []*ast.Ident{identFromNode(spreadName, source)},
+			Names: []*ast.Ident{localBindingIdent(spreadName, source, ctx)},
 			Type:  javaTypeStringToGoTypeExpr(spreadType.Content(source)+"[]", inScopeTypeParameters(ctx), ctx),
 		}
 	case "inferred_parameters":
@@ -1092,14 +1097,14 @@ func buildCatchDispatchStmt(catches []*sitter.Node, recoveredName, didPanicName,
 			}
 			recordLocalVariableDefinition(catchCtx, catchName, originalType, catchType)
 			bodyStmts = append(bodyStmts, &ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.Ident{Name: catchName}},
+				Lhs: []ast.Expr{&ast.Ident{Name: localBindingName(catchName, catchCtx)}},
 				Tok: token.DEFINE,
 				Rhs: []ast.Expr{&ast.TypeAssertExpr{X: &ast.Ident{Name: recoveredName}, Type: stdjavaQualifiedExpr("Throwable", ctx)}},
 			})
 			bodyStmts = append(bodyStmts, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
 				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{&ast.Ident{Name: catchName}},
+				Rhs: []ast.Expr{&ast.Ident{Name: localBindingName(catchName, catchCtx)}},
 			})
 		}
 
@@ -1300,13 +1305,14 @@ func parseResourceDecls(resourcesNode *sitter.Node, source []byte, ctx Ctx) []re
 }
 
 func buildResourceCloseDeferStmt(resourceName string, resourceNode *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
+	resourceName = localBindingName(resourceName, ctx)
 	closeBody := []ast.Stmt{}
 	closeExecutionName := ""
 	if resourceNode != nil {
 		if typeNode := resourceNode.ChildByFieldName("type"); typeNode != nil {
 			if scope := resolveClassScopeByQualifiedName(ctx, typeNode.Content(source)); scope != nil {
 				if resolution := findInstanceMethodInHierarchy(scope, "close", 0, ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
-					closeExecutionName = executionImplementationName(resolution.def, resolution.owner)
+					closeExecutionName = executionImplementationName(resolution.def, resolution.owner, ctx)
 				}
 			}
 		}
@@ -1316,7 +1322,7 @@ func buildResourceCloseDeferStmt(resourceName string, resourceNode *sitter.Node,
 	// one globally collision-safe execution name, so probe that structural method
 	// before falling back to the public Close ABI.
 	if closeExecutionName == "" {
-		closeExecutionName = executionImplementationName(&symbol.Definition{Name: "Close"}, ctx.currentClass)
+		closeExecutionName = executionImplementationName(&symbol.Definition{Name: "Close"}, ctx.currentClass, ctx)
 	}
 	if execution := executionExpr(ctx); execution != nil && closeExecutionName != "" {
 		usedNames := map[string]struct{}{resourceName: {}}

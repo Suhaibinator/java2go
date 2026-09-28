@@ -17,6 +17,13 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	if isBuiltinReflectType(javaType, ctx) {
 		return true
 	}
+	// util.Date is a Java class represented by the DateValue interface so its
+	// SQL subclasses can share the same erased field and method descriptor.
+	// Resolve the canonical owner: java.sql.Date and source Date classes remain
+	// concrete representations and must not inherit this classification.
+	if owner, ok := dateTimeRuntimeTypeID(base, ctx); ok && owner == "java.util.Date" {
+		return true
+	}
 	switch stripJavaQualifier(base) {
 	case "Number", "Comparable", "Serializable", "Cloneable", "Constable", "ConstantDesc", "CharSequence":
 		return true

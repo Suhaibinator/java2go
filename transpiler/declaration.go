@@ -1015,7 +1015,7 @@ func buildInheritedInterfaceDefaultForwarder(
 				X:   &ast.Ident{Name: recvName},
 				Sel: &ast.Ident{Name: interfaceDefaultCarrierName(parentScope)},
 			},
-			Sel: &ast.Ident{Name: executionImplementationName(def, parentScope)},
+			Sel: &ast.Ident{Name: executionImplementationName(def, parentScope, ctx)},
 		},
 		Args: append([]ast.Expr{&ast.Ident{Name: executionName}}, args...),
 	}
@@ -1042,7 +1042,7 @@ func buildInheritedInterfaceDefaultForwarder(
 	}
 	return buildExecutionAwareFuncDecls(
 		declaration,
-		executionImplementationName(def, parentScope),
+		executionImplementationName(def, parentScope, ctx),
 		executionName,
 		ctx,
 	)
@@ -1107,7 +1107,7 @@ func buildInterfaceAbstractExecutionBridge(
 	hiddenCall := &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X:   &ast.Ident{Name: companionName},
-			Sel: &ast.Ident{Name: executionImplementationName(def, scope)},
+			Sel: &ast.Ident{Name: executionImplementationName(def, scope, ctx)},
 		},
 		Args: append([]ast.Expr{&ast.Ident{Name: executionName}}, args...),
 	}
@@ -1147,7 +1147,7 @@ func buildInterfaceAbstractExecutionBridge(
 	}
 	return buildExecutionAwareFuncDecls(
 		declaration,
-		executionImplementationName(def, scope),
+		executionImplementationName(def, scope, ctx),
 		executionName,
 		ctx,
 	)
@@ -1242,6 +1242,9 @@ func generateInterfaceDefaultMethodDecls(node *sitter.Node, source []byte, ctx C
 				decls = append(decls, forwarders...)
 			}
 		}
+	}
+	if canonicalGenericFamily(scope, ctx) != nil {
+		canonicalizeGenericNamedReceivers(decls, carrierName, ctx)
 	}
 	return decls
 }
@@ -1702,7 +1705,11 @@ func interfaceDefaultCarrierConstructorExpr(javaType string, typeParams []string
 	if len(typeArgs) > 0 {
 		args := make([]ast.Expr, 0, len(typeArgs))
 		for _, arg := range typeArgs {
-			args = append(args, javaTypeStringToGoTypeExpr(arg, typeParams, ctx))
+			if canonicalGenericFamily(scope, ctx) != nil {
+				args = append(args, ast.NewIdent("any"))
+			} else {
+				args = append(args, javaTypeStringToGoTypeExpr(arg, typeParams, ctx))
+			}
 		}
 		constructor = applyTypeArguments(constructor, args)
 	}
@@ -3149,7 +3156,7 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 	}
 	implMethods := buildExecutionAwareFuncDecls(
 		implMethod,
-		executionImplementationName(samDef, scope),
+		executionImplementationName(samDef, scope, ctx),
 		executionName,
 		ctx,
 	)
@@ -3478,7 +3485,7 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 
 	methodDecls := buildExecutionAwareFuncDecls(
 		funcDecl,
-		executionImplementationName(def, ctx.currentClass),
+		executionImplementationName(def, ctx.currentClass, ctx),
 		ctx.executionContextName,
 		ctx,
 	)
@@ -4073,7 +4080,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 			return append(implDecls, buildExecutionAwareFuncDecls(
 				wrapper,
-				executionImplementationName(ctx.localScope, ctx.currentClass),
+				executionImplementationName(ctx.localScope, ctx.currentClass, ctx),
 				executionName,
 				ctx,
 			)...)
@@ -4210,7 +4217,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 		return buildExecutionAwareFuncDecls(
 			funcDecl,
-			executionImplementationName(ctx.localScope, ctx.currentClass),
+			executionImplementationName(ctx.localScope, ctx.currentClass, ctx),
 			executionName,
 			ctx,
 		)

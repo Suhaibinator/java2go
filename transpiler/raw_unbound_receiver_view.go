@@ -171,7 +171,7 @@ func generateRawUnboundReceiverEntryDecls(ctx Ctx) []ast.Decl {
 		call := &ast.CallExpr{
 			Fun: &ast.SelectorExpr{
 				X:   callReceiver,
-				Sel: &ast.Ident{Name: executionImplementationName(candidate.method, candidate.owner)},
+				Sel: &ast.Ident{Name: executionImplementationName(candidate.method, candidate.owner, ctx)},
 			},
 			Args: append([]ast.Expr{execution}, javaArguments...),
 		}

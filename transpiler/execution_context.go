@@ -50,13 +50,15 @@ func newExecutionExpr(ctx Ctx) ast.Expr {
 // it both a narrow source body and an erased ancestor bridge, which Go cannot
 // overload under one selector. Such a body receives its collision-safe exact
 // name here; the bridge planner retains the ancestor's stable erased name.
+// Carry the render context through bridge selection so the immutable source-family
+// inventory is reused within this render, without sharing it across conversions.
 // Checking source-level generated names globally keeps a user method such as
 // FooJava2goExecution from colliding with either hidden implementation.
-func executionImplementationName(def *symbol.Definition, owner *symbol.ClassScope) string {
+func executionImplementationName(def *symbol.Definition, owner *symbol.ClassScope, ctx Ctx) string {
 	if def == nil {
 		return ""
 	}
-	if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(owner, def, classScopeCtx(owner, Ctx{})); bridged {
+	if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(owner, def, classScopeCtx(owner, ctx)); bridged {
 		return directOwnerOverrideBridgeExactExecutionName(selection.bridge)
 	}
 	return collisionSafeExecutionIdentifier(def.Name+executionMethodSuffix, owner)
@@ -145,7 +147,7 @@ func executionMethodCallName(def *symbol.Definition, owner *symbol.ClassScope, c
 	if executionExpr(ctx) == nil || def.DeclarationNode == nil {
 		return def.Name
 	}
-	return executionImplementationName(def, owner)
+	return executionImplementationName(def, owner, ctx)
 }
 
 func executionConstructorImplementationName(name string, owner *symbol.ClassScope) string {
@@ -245,7 +247,7 @@ func executionMethodField(public *ast.Field, def *symbol.Definition, owner *symb
 	executionName := executionNameForParams(params, reservedNames...)
 	params.List = append([]*ast.Field{executionParameterField(executionName, ctx)}, params.List...)
 	return &ast.Field{
-		Names: []*ast.Ident{{Name: executionImplementationName(def, owner)}},
+		Names: []*ast.Ident{{Name: executionImplementationName(def, owner, ctx)}},
 		Type: &ast.FuncType{
 			Params:  params,
 			Results: cloneFieldList(functionType.Results),

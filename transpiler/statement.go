@@ -511,12 +511,12 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		// If there is only one node, then that node is just a name
 		if node.NamedChildCount() == 1 {
-			names = append(names, identFromNode(node.NamedChild(0), source))
+			names = append(names, localBindingIdent(node.NamedChild(0), source, ctx))
 		}
 
 		// Loop through every pair of name and value
 		for ind := 0; ind < int(node.NamedChildCount())-1; ind += 2 {
-			names = append(names, identFromNode(node.NamedChild(ind), source))
+			names = append(names, localBindingIdent(node.NamedChild(ind), source, ctx))
 			valueNode := node.NamedChild(ind + 1)
 			value := ParseExpr(valueNode, source, ctx)
 			if expectedType := strings.TrimSpace(ctx.expectedType); expectedType != "" && !isVarKeywordType(expectedType) {
@@ -792,7 +792,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			}
 			if name := patternNode.ChildByFieldName("name"); name != nil {
 				block := body.(*ast.BlockStmt)
-				block.List = append([]ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "_"}}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.Ident{Name: sanitizeGoIdent(name.Content(source))}}}}, block.List...)
+				block.List = append([]ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "_"}}, Tok: token.ASSIGN, Rhs: []ast.Expr{localBindingIdent(name, source, bodyCtx)}}}, block.List...)
 			}
 			return &ast.IfStmt{
 				Init: initStmt,
@@ -1442,7 +1442,7 @@ func lowerInstanceofPattern(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt
 	}
 
 	initStmt := &ast.AssignStmt{
-		Lhs: []ast.Expr{&ast.Ident{Name: bindName}, &ast.Ident{Name: "ok"}},
+		Lhs: []ast.Expr{&ast.Ident{Name: localBindingName(bindName, bodyCtx)}, &ast.Ident{Name: "ok"}},
 		Tok: token.DEFINE,
 		Rhs: []ast.Expr{patternValue},
 	}
@@ -1653,6 +1653,7 @@ func recordLocalVariableDefinition(ctx Ctx, name, originalType, parsedType strin
 		existing.Type = parsedType
 		existing.OriginalType = originalType
 		bindDefinitionTypeParameters(existing, visibleTypeParameterDeclarations(ctx))
+		existing.Name = hygienicLocalIdentifier(existing.Name, existing.OriginalName, ctx)
 		return
 	}
 
@@ -1663,6 +1664,7 @@ func recordLocalVariableDefinition(ctx Ctx, name, originalType, parsedType strin
 		Type:         parsedType,
 	}
 	bindDefinitionTypeParameters(definition, visibleTypeParameterDeclarations(ctx))
+	definition.Name = hygienicLocalIdentifier(definition.Name, definition.OriginalName, ctx)
 	ctx.localScope.Children = append(ctx.localScope.Children, definition)
 }
 
