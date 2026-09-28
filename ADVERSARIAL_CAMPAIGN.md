@@ -1,8 +1,12 @@
 # Continuous adversarial campaign
 
-Status: round 01 accepted; round 02 remains active. Checkpoint04 independently verifies five applications, each with nine JVM/Go comparisons and twenty race-enabled stress runs. Java literal escapes, source character I/O protocols, reflection type protocols, null-preserving casts and StringBuilder UTF16 operations have focused JVM regressions. The unchanged Gson application now passes strict transpilation and generated-Go parsing but fails Go package building because a nested class owner is emitted as a package import. The complete campaign suite remains red and round 02 is not accepted. All historical regression shards and exact golangci-lint 2.14.0 pass; results and remaining limits are recorded in `campaign-state.json`. Base revision: `c1f1ae45cfe8d5465425efc562a54580add4f3ea`.
+Status: round 01 accepted; round 02 remains active. Checkpoint07 verifies five applications with 45 JVM/Go observations and 100 additional race-enabled stress runs. Full unit, strict application parity, other end-to-end, fuzz and exact lint gates pass on the unchanged snapshot. Repairs cover nested-type imports, canonical leaf generic identity, monitor aliasing, overload/helper naming, checked arithmetic, Map.putAll, static storage, signed literals, concatenation ordering, StringBuilder capacity and initial date/calendar/timezone/exception contracts.
 
-Three Sol agents own independent Java applications and JVM-derived oracles. Three Astra agents own compiler, runtime, and dependency/harness implementation respectively. Two additional dedicated Astra agents investigate generated-code and runtime performance; they do not implement changes or edit challenge oracles. The coordinator independently verifies every promotion. No challenge or upstream implementation may be weakened to make translation pass.
+The unchanged Gson application has no accepted Go observations. Its latest quiet immutable run reaches a strict rejection of java.sql.Date after 105.270 seconds: the canonical owner guard prevents silently substituting java.util.Date. A genuine SQL runtime repair, connected source generic families, local identifier hygiene and generic method-reference result conversion now have focused JVM/race evidence and are preserved in candidate08 for integration. Full TypeAdapter families still require shared runtime collection storage and correct typed read boundaries; broader reflection and JDK services remain prerequisites.
+
+Original CI lint findings are repaired. Exact golangci-lint 2.14.0 passes the recorded snapshot; later source edits require another lint gate. Verified arithmetic and performance-evidence milestones are committed and pushed. `campaign-state.json` records immutable fingerprints, preflight failures, focused repairs, run handles and exact resume points. Base revision: `c1f1ae45cfe8d5465425efc562a54580add4f3ea`.
+
+Three Sol agents own independent Java applications and JVM-derived oracles. Three Astra agents own compiler, runtime, and dependency/harness implementation respectively. Two additional dedicated Astra agents investigate generated-code and runtime performance; they test isolated optimization candidates and do not change live production code or challenge oracles. The coordinator independently verifies every promotion. No challenge or upstream implementation may be weakened to make translation pass.
 
 ## Execution contract
 
@@ -45,3 +49,12 @@ The performance reports distinguish observed regressions, isolated optimization 
 ## Milestone checkpoints
 
 Commit and push meaningful milestones to `origin/codex/adversarial-campaign`, as explicitly requested by the user. Keep incomplete repair patches uncommitted when recording a stable checkpoint. A checkpoint may record an active failing challenge; it must state that failure clearly and must not be labeled a completed round. Never force-push milestone history.
+
+### Checkpoint06 follow-up
+
+Five accumulated applications passed 45 JVM/Go pairs and 100 stress runs. Exact lint 2.14.0, strict application parity, other end-to-end tests and fuzz replay passed. The unit gate found an affine helper naming regression, now repaired against the unchanged test. Two concurrent full Gson runs timed out during conversion; a quiet instrumented replay completed in 96.810 seconds under the same 300-second bound. Checkpoint07 reruns the official Gson harness quietly before fresh historical verification. Neither timeout is accepted as parity.
+
+
+### Verification scheduling
+
+Checkpoint07 exact lint is clean. Its first full unit and strict application-parity gates timed out, including a Java oracle; those runs are failures. Sequential reruns under the original limits now pass: the full unit compiler package took 447.746 seconds and strict parity took 653.655 seconds; other end-to-end, fuzz and all five historical dependency applications also passed. Input hashes remained unchanged. This verifies checkpoint07, while full Gson still fails and round02 remains active. Candidate08 and its focused repairs remain separate from this verified implementation.

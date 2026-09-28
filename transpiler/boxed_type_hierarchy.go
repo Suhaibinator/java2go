@@ -48,6 +48,9 @@ func builtinJavaNumericReference(javaType string, ctx Ctx) bool {
 // builtinJavaReferenceAssignable provides nominal library relationships that
 // are absent from the source-class symbol graph. Comparable<T> is invariant.
 func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
+	if dateTimeReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
 	if _, rank := javaArrayTypeParts(actual); rank != 0 {
 		return false
 	}

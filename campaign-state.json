@@ -63,7 +63,7 @@
         "stage": "go-build-all",
         "detail": "exit=1 error=\n\n../../../../stdjava/common.go:6:2: missing go.sum entry for module providing package golang.org/x/exp/constraints (imported by github.com/NickyBoy89/java2go/stdjava); to add:\n\tgo get github.com/NickyBoy89/java2go/stdjava@v0.0.0\n"
       },
-      "latest_artifact": ".campaign/runs/20260928T062651Z-1388004505",
+      "latest_artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085340Z-2993208299",
       "verification": {
         "implementation_sha256": "51b7dc59744f8baadf77e69cb6a502f7d103d912e68c8c0bae6b7cb981763c96",
         "race": true,
@@ -72,15 +72,18 @@
         "stable_implementation": true
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T062651Z-1388004505",
-        "implementation_sha256": "6f308a25f95216db8cbd11fc0e62c353427e05801e5f9adfd868f53dd9266cc3",
-        "revision": "fcc53952f202ff236c60e0181fc70f855f856418",
-        "passed": true,
-        "race": true,
-        "jvm_oracle_runs": 9,
+        "name": "round01-business",
+        "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085340Z-2993208299",
+        "manifest_sha256": "de764af82c27af132b3e821fdda331296a81a3d6ce79095ca3ca258cf1d1188b",
+        "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
         "oracle_pairs": 9,
-        "additional_stress_runs": 20,
-        "stable_implementation": true
+        "stress_runs": 20,
+        "race": true,
+        "stable_implementation": true,
+        "passed": true,
+        "revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+        "jvm_oracle_runs": 9,
+        "additional_stress_runs": 20
       },
       "acceptance": "application parity verified; round acceptance awaits Gson"
     },
@@ -101,7 +104,7 @@
         "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": ".campaign/runs/20260928T062817Z-2096670424",
+      "latest_artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085504Z-407984233",
       "verification": {
         "implementation_sha256": "42c82081509055c7ee6992690ee2476a4aba9030bcd320ae586519d6ce5f6d15",
         "race": true,
@@ -110,15 +113,18 @@
         "stable_implementation": true
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T062817Z-2096670424",
-        "implementation_sha256": "6f308a25f95216db8cbd11fc0e62c353427e05801e5f9adfd868f53dd9266cc3",
-        "revision": "fcc53952f202ff236c60e0181fc70f855f856418",
-        "passed": true,
-        "race": true,
-        "jvm_oracle_runs": 9,
+        "name": "round01-data",
+        "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085504Z-407984233",
+        "manifest_sha256": "c46005897347d1a3e4c73d58f37fc580e510589beb2291ab8c617c53e3d9dace",
+        "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
         "oracle_pairs": 9,
-        "additional_stress_runs": 20,
-        "stable_implementation": true
+        "stress_runs": 20,
+        "race": true,
+        "stable_implementation": true,
+        "passed": true,
+        "revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+        "jvm_oracle_runs": 9,
+        "additional_stress_runs": 20
       },
       "acceptance": "application parity verified; round acceptance awaits Gson"
     },
@@ -139,17 +145,20 @@
         "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": ".campaign/runs/20260928T062742Z-3672794116",
+      "latest_artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085556Z-3459649190",
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T062742Z-3672794116",
-        "implementation_sha256": "6f308a25f95216db8cbd11fc0e62c353427e05801e5f9adfd868f53dd9266cc3",
-        "revision": "fcc53952f202ff236c60e0181fc70f855f856418",
-        "passed": true,
-        "race": true,
-        "jvm_oracle_runs": 9,
+        "name": "round01-concurrent",
+        "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085556Z-3459649190",
+        "manifest_sha256": "b6f68e9ff3fd7aa078eb96fdc85c890d2d20f3192e52a7c8243f168428ff9d7b",
+        "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
         "oracle_pairs": 9,
-        "additional_stress_runs": 20,
-        "stable_implementation": true
+        "stress_runs": 20,
+        "race": true,
+        "stable_implementation": true,
+        "passed": true,
+        "revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+        "jvm_oracle_runs": 9,
+        "additional_stress_runs": 20
       },
       "acceptance": "application parity verified; round acceptance awaits Gson"
     },
@@ -158,7 +167,7 @@
       "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_business",
       "acceptance": "application parity verified; round acceptance awaits Gson",
-      "latest_artifact": ".campaign/runs/20260928T062854Z-1913516111",
+      "latest_artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085631Z-1000935577",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -175,24 +184,27 @@
         "oracle": "4f9a19759e0af4e925337dd7b3531f7463d208b5ba85e21709afe83a10a6f287"
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T062854Z-1913516111",
-        "implementation_sha256": "6f308a25f95216db8cbd11fc0e62c353427e05801e5f9adfd868f53dd9266cc3",
-        "revision": "fcc53952f202ff236c60e0181fc70f855f856418",
-        "passed": true,
-        "race": true,
-        "jvm_oracle_runs": 9,
+        "name": "round02-business",
+        "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085631Z-1000935577",
+        "manifest_sha256": "cd776bb419d52f4844a3a5c990264a91881359157bbf0ba60266a251388c2cff",
+        "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
         "oracle_pairs": 9,
-        "additional_stress_runs": 20,
-        "stable_implementation": true
+        "stress_runs": 20,
+        "race": true,
+        "stable_implementation": true,
+        "passed": true,
+        "revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+        "jvm_oracle_runs": 9,
+        "additional_stress_runs": 20
       },
       "first_artifact": ".campaign/runs/20260928T051409Z-56114146"
     },
     {
       "id": "round02/data",
-      "status": "active-go-build-failure",
+      "status": "active-strict-SQL-owner-rejection",
       "owner": "sol_data",
       "acceptance": "active failure; no Go behavioral parity",
-      "latest_artifact": ".campaign/runs/20260928T063008Z-3921335113",
+      "latest_artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T080645Z-129723110",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -204,7 +216,8 @@
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
       "latest_blockers": [
-        "Nested source type owner TypeAdapters emitted as a nonexistent package import; strict transpilation and generated-Go parsing now pass."
+        "Strict java.sql.Date constructor rejection is first full-app failure on07; genuine SQL repair focused green in08 awaiting frozen application rerun.",
+        "Full TypeAdapter generic family needs genuine shared collection storage and typed read boundaries; broader JDK/reflection remain pending."
       ],
       "coordinator_verification": {
         "artifact": ".campaign/runs/20260928T063008Z-3921335113",
@@ -219,15 +232,15 @@
       },
       "first_artifact": ".campaign/runs/20260928T051546Z-985480644",
       "author_verification": {
-        "artifact": ".campaign/runs/20260928T062441Z-2622366026",
-        "implementation_sha256": "6f308a25f95216db8cbd11fc0e62c353427e05801e5f9adfd868f53dd9266cc3",
+        "artifact": "/private/tmp/java2go-gson-snapshot-20260928T0730/.campaign/runs/20260928T072902Z-1989338670",
+        "implementation_sha256": "1565bda057e4f199bfbfc5e8d92f17eddc68b13c9c76076a26b6706921bcd1e1",
         "stable_implementation": true,
         "passed": false,
         "failure_stage": "go-build-all"
       },
       "latest_failure": {
         "stage": "go-build-all",
-        "detail": "exit=1 error=\n\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JavaTimeTypeAdapters.go:4:2: package com/google/gson/internal/bind/TypeAdapters is not in std (/opt/homebrew/opt/go/libexec/src/com/google/gson/internal/bind/TypeAdapters)\n"
+        "detail": "Overloaded generic Gson.fromJson methods emit duplicate GsonFromJsonHelper and NewGsonFromJsonHelper declarations; exact first error in immutable report."
       }
     },
     {
@@ -235,7 +248,7 @@
       "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_concurrent",
       "acceptance": "application parity verified; round acceptance awaits Gson",
-      "latest_artifact": ".campaign/runs/20260928T062931Z-2991378424",
+      "latest_artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085718Z-2435148858",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -255,20 +268,23 @@
         "stable_implementation": true
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T062931Z-2991378424",
-        "implementation_sha256": "6f308a25f95216db8cbd11fc0e62c353427e05801e5f9adfd868f53dd9266cc3",
-        "revision": "fcc53952f202ff236c60e0181fc70f855f856418",
-        "passed": true,
-        "race": true,
-        "jvm_oracle_runs": 9,
+        "name": "round02-concurrent",
+        "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085718Z-2435148858",
+        "manifest_sha256": "7114d980bdd721105dd28de9a5149154ea753ad5bf837af8eb21d9cff95904d4",
+        "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
         "oracle_pairs": 9,
-        "additional_stress_runs": 20,
-        "stable_implementation": true
+        "stress_runs": 20,
+        "race": true,
+        "stable_implementation": true,
+        "passed": true,
+        "revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+        "jvm_oracle_runs": 9,
+        "additional_stress_runs": 20
       },
       "first_artifact": ".campaign/runs/20260928T051529Z-444414224"
     }
   ],
-  "next_action": "After checkpoint04 push, release astra_build for resolved nested-class import package repair and astra_runtime for bounded monitor identity/null/noninsertion repair with focused JVM regressions. Reverify unchanged Gson at a stable implementation barrier. Keep generic erased factory ABI and reflection metadata prerequisites active; no round03 until round02 passes.",
+  "next_action": "Commit and push verified checkpoint07 staged source/docs to origin/codex/adversarial-campaign. Then run candidate08 independent generic-family business probe and unchanged full Gson under original limits; preserve first new failure, rerun broader family/SQL/identifier/method-reference integration gates. No round03 until full round02 passes. Shared collection storage is designed but not implemented; agent production held.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -290,6 +306,30 @@
       "timing_claim": false,
       "live_implementation_changed": false,
       "semantic_followups": "monitor aliases and nullable String still disagree with JVM in both baseline and candidate"
+    },
+    "latest_stringbuilder_experiment": {
+      "path": "performance/codegen/stringbuilder/README.md",
+      "revision": "533c200ad56fedca1ef960cd6ef953a05350e637",
+      "status": "committed-pushed-isolated-candidates-only",
+      "jvm_go_measurement_parity_runs": 576,
+      "best_candidate_allocated_bytes_relative_to_Java": "1.92-2.31x; Go still allocates more",
+      "timing_claim": false,
+      "live_implementation_changed": false
+    },
+    "latest_object_identity_audit": {
+      "path": "performance/runtime/object_identity/README.md",
+      "status": "committed-pushed-reviewed",
+      "baseline_revision": "8cb6cd529c124802d9d004ef43d41dffe16f1085",
+      "finding": "ObjectInfo cycles collect without acquired monitors; repeated hierarchy views allocate1-8 times; no candidate or timing claim",
+      "revision": "2d038d522320c77d0b4921b51cb73fa618ac9244"
+    },
+    "latest_object_identity_candidate": {
+      "path": "performance/runtime/object_identity_candidate/README.md",
+      "status": "isolated-team-verified-coordinator-code-reviewed",
+      "generated_views64_allocations": "132 -> 2",
+      "production_applied": false,
+      "timing_claim": false,
+      "baseline": "8cb6cd529c124802d9d004ef43d41dffe16f1085"
     }
   },
   "verified_repairs": [
@@ -321,7 +361,15 @@
     "Source reflection ParameterizedType/GenericArrayType/WildcardType protocols preserve covariance, nulls, identity and exceptions; generic metadata still unimplemented.",
     "StringBuilder UTF16 unit storage, char/char[] overloads, reversal, edits and exact bounds exception subtype/messages pass coordinator JVM/race regression; isolated-surrogate String conversion and StringBuffer synchronization remain unsupported.",
     "Java quote/space and octal literal escapes now allow full frozen Gson strict transpilation and generated-Go parsing; package build remains blocked.",
-    "Reader/Writer source and anonymous subclass protocols, Appendable dispatch, Writer default monitor/buffer contracts and null-preserving reference casts pass focused JVM/race tests."
+    "Reader/Writer source and anonymous subclass protocols, Appendable dispatch, Writer default monitor/buffer contracts and null-preserving reference casts pass focused JVM/race tests.",
+    "Nested-type imports retain actual package and exact owner chain; same/cross/SCC JVM tests with ambiguous simple names pass. Frozen Gson now builds past that import error.",
+    "Source monitor aliases share canonical identity across enter/query/wait/notify, nullable String monitor operands throw NPE, and false holdsLock observations allocate no records; focused JVM/runtime race tests pass. Acquired monitors still retained for process lifetime.",
+    "Go receiver keywords and multibyte identifier/visibility conversion fixed with stateful JVM naming regression on stable snapshot; existing suite rerun in progress.",
+    "Bare unbounded type-variable leaf storage/method ABI permits raw heap pollution and throws at typed reads; full factory alias representation remains under repair.",
+    "String.hashCode typed calls and String::hashCode reuse existing Object UTF16 value hashing; JVM red/green covers supplementary values, null, erased views and single evaluation. Isolated snapshot regression passes; full live gate pending.",
+    "Receiver naming follow-up retains existing field collision allocation (map0) and applies Go keyword escaping only to class definitions; new keyword/Unicode naming and existing affine-field regression both pass.",
+    "Signed integral unary literal chains match Java fixed-width constants, including -9223372036854775808L and nested minimum negation; focused new/existing JVM/race literal tests pass.",
+    "StringBuilder capacity overload chooses from Java static argument types and performs boxing conversions once; negative-capacity messages, null unboxing, supplementary text and existing String constructors pass focused JVM/race tests. Full gate pending."
   ],
   "verification_invalidation": "Any implementation change requires affected gates to rerun; concurrent acceptance is evidence at its recorded content digest, not current-round promotion.",
   "performance_findings": {
@@ -337,13 +385,18 @@
       "performance/runtime/list_retention/CANDIDATE.md"
     ],
     "list_removal_candidate": "Isolated vacated-slot clearing candidate: semantic JVM parity + full copied runtime tests; retained payload8/16MiB reduced to528B; live patch not applied, no speed claim",
-    "data_allocation_audit": "Accepted data full-main allocation-only measurements:18 unchanged Go runs match3 live JVM oracles and file hashes; strongest candidates UTF16 comparisons, ASCII substring extraction and direct UTF16\u2192UTF8 construction; no wallclockspeedclaim"
+    "data_allocation_audit": "Accepted data full-main allocation-only measurements:18 unchanged Go runs match3 live JVM oracles and file hashes; strongest candidates UTF16 comparisons, ASCII substring extraction and direct UTF16\u2192UTF8 construction; no wallclockspeedclaim",
+    "source_object_construction_audit": {
+      "path": "performance/codegen/object_construction/README.md",
+      "status": "unmeasured-proposals-only",
+      "candidate": "Proven redundant interface-field omission preserving defaults, metadata and nonzero identity; later closure-free receiver/in-place identity designs."
+    }
   },
   "checkpoint_policy": {
     "branch": "codex/adversarial-campaign",
     "remote": "origin",
     "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints.",
-    "last_pushed_revision": "fcc53952f202ff236c60e0181fc70f855f856418",
+    "last_pushed_revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
     "last_pushed_branch": "origin/codex/adversarial-campaign"
   },
   "regression_status": {
@@ -400,7 +453,30 @@
       "unused"
     ],
     "acceptance": "No blanket exclusions; exact CI linter and relevant behavioral regressions must pass.",
-    "verification": "Exact golangci-lint 2.14.0 reports0; focused race/JVM regressions and independently rebuilt full business application pass after replacing recursive cyclic binding with package-local lexical analysis."
+    "verification": "Exact golangci-lint 2.14.0 reports0; focused race/JVM regressions and independently rebuilt full business application pass after replacing recursive cyclic binding with package-local lexical analysis.",
+    "latest_followup": {
+      "status": "verified-clean",
+      "snapshot": "/private/tmp/java2go-lint-fixed-snapshot-kljg0kpj",
+      "version": "2.14.0",
+      "original_23_fixes": "verified-intact",
+      "finding": "stdjava/math_exact.go generic long minimum shift may exceed 32-bit T",
+      "owner": "astra_lint",
+      "snapshot_manifest_sha256": "a1f43ab6986bc9607304cae12614ec736bb6f1811029f1d616af21d7bb2e38ea",
+      "issues": 0,
+      "runtime_milestone_revision": "b146ac82760a3db1c4bd9deb656bde55e43959f1",
+      "independent_runtime_gate": "/private/tmp/java2go-math-checkpoint-runtime.log"
+    },
+    "latest_audit": {
+      "original_fix_commit": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+      "live_origin_branch_sha": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+      "version": "2.14.0",
+      "committed_HEAD_issues": 0,
+      "checkpoint07_issues": 0,
+      "owner": "astra_lint",
+      "head_snapshot": "/private/tmp/java2go-head-lint-kqgnpiqz",
+      "candidate_snapshot": "/private/tmp/java2go-checkpoint07-ttxul8y4",
+      "verification": "Exact lint on immutable snapshots; read-only git ls-remote verified pushed HEAD; original fix commit is its ancestor."
+    }
   },
   "queued_semantic_gaps": [
     {
@@ -454,7 +530,7 @@
     {
       "id": "nested-generic-factory-abi",
       "owner": "astra_compiler",
-      "status": "design-and-red-reproducer",
+      "status": "canonical-leaf-factory-green-abstract-family-pending",
       "detail": "Canonical erased instance representation with identity-preserving views, delayed checkcast and whole hierarchy lowering; full Gson TypeAdapterFactory remains acceptance."
     },
     {
@@ -466,21 +542,97 @@
     {
       "id": "nested-type-import-owner-package",
       "owner": "astra_build",
-      "status": "red-reproducer-ready",
+      "status": "focused-same-cross-SCC-JVM-race-passed-fullGson-advanced",
       "detail": "Resolved source class package must precede syntactic import owner. Frozen Gson reaches go-build-all and imports nonexistent com/google/gson/internal/bind/TypeAdapters.",
       "artifact": ".campaign/runs/20260928T063008Z-3921335113"
     },
     {
       "id": "monitor-alias-null-and-lifetime",
       "owner": "astra_runtime",
-      "status": "diagnosed-not-repaired",
-      "detail": "Generated base/derived aliases use distinct monitor identity; null String holdsLock returns false instead of NPE; false ownership queries allocate permanent records. Full monitor acquisition also retains objects. See performance/runtime/monitor_observation/README.md; isolated lookup candidate is not a live repair."
+      "status": "alias-null-noninsertion-focused-JVM-race-passed-lifetime-still-open",
+      "detail": "Canonical ObjectInfo monitor identity, monitor source hierarchy seeds, inherited wait/notify routing and NullString checks repaired; lookup-only holdsLock allocates no records. Full acquired monitor registry lifetime remains a known gap."
     },
     {
       "id": "base-derived-reference-equality",
       "owner": "astra_compiler",
       "status": "diagnosed-not-repaired",
       "detail": "Performance diagnostic base == derived generates incompatible pointer comparison; preserve initial source/error with monitor audit artifacts."
+    },
+    {
+      "id": "JDK-date-calendar-timezone-text",
+      "owner": "astra_runtime",
+      "status": "initial-contracts-and-upstream-ISO-verified-checkpoint07; broader-JDK-pending",
+      "artifact": ".campaign/runs/20260928T064841Z-2011156583"
+    },
+    {
+      "id": "Map-putAll-and-nested-Math",
+      "owner": "astra_build",
+      "status": "verified-checkpoint07",
+      "artifact": ".campaign/runs/20260928T064841Z-2011156583"
+    },
+    {
+      "id": "qualified-static-field-shadow",
+      "owner": "astra_build",
+      "status": "focused-JVM-race-and-initialization-regressions-green",
+      "detail": "PutAllKey.source=source and similarly named static member/local bindings assign local instead of declared static field. Full failing source preserved by build agent; frozen applications unchanged.",
+      "artifact": ".campaign/static-field-shadow-regression.log"
+    },
+    {
+      "id": "minimum-long-unary-literal",
+      "owner": "coordinator",
+      "status": "focused-JVM-and-literal-regressions-green",
+      "detail": "Integral unary literal folding preserves int32/int64 wraparound and applies minimum decimal negation before Go conversion. Permanent JVM test covers static constants, underscores, lowercase suffix, nested negation/complement, signed hex patterns, overload width and boxing."
+    },
+    {
+      "id": "enum-static-field-concat",
+      "owner": "coordinator",
+      "status": "preserved-source-reproducer",
+      "detail": "Static int enum field in string concatenation incorrectly lowered to StringJava2goExecution; JVM run returns 9:5. Separate from repaired storage shadowing.",
+      "source": "campaign/reproducers/enum-static-concat/CampaignStaticEnum.java"
+    },
+    {
+      "id": "generic-overload-helper-collision",
+      "owner": "astra_build",
+      "status": "focused-JVM-race-green-full-Gson-rerun-pending",
+      "detail": "Overloaded generic methods share helper type/constructor names allocated before overload resolution; full Gson run9 firstfailure."
+    },
+    {
+      "id": "local-class-type-shadowing",
+      "owner": "astra_compiler",
+      "status": "local-hygiene-focused-JVM-and-existing-scope-regressions-green",
+      "detail": "Package-private Java class lowers to Go type name that a local variable can mask; preserved source under campaign/reproducers/local-class-type-shadowing."
+    },
+    {
+      "id": "sql-date-owner-identity",
+      "owner": "astra_runtime",
+      "status": "genuine-SQL-focused-JVM-race-and-ISO-green-full-Gson-pending",
+      "detail": "SQL Date constructors/class literals silently map to util.Date; preserved source at campaign/reproducers/sql-date-identity. New opt-in canonical owner dispatch guard focused green; actual SQL subclasses remain pending."
+    },
+    {
+      "id": "concat-covariant-evaluation-order",
+      "owner": "coordinator",
+      "status": "focused-JVM-and-existing-string-regressions-green",
+      "detail": "Flattening fmt.Sprintf delayed earlier field read after later covariant invocation. Exact JVM0:true vsGo10:true red preserved; general evaluation-boundary fix underfocusedverification.",
+      "log": "/private/tmp/java2go-concat-order-effects.log"
+    },
+    {
+      "id": "scoped-nested-constructor",
+      "owner": "astra_build",
+      "status": "active-focused-repair-or-preserved-red",
+      "detail": "Explicit new Outer.Inner() across package lowers to undefined ConstructInner; original source preserved."
+    },
+    {
+      "id": "generic-method-reference-result",
+      "owner": "astra_compiler",
+      "status": "focused-JVM-race-and-related-regressions-green",
+      "detail": "Generic method reference Function<String,String> result remains erased any without typed-read projection; source preserved.",
+      "evidence": "/private/tmp/java2go-methodref-completed/evidence.json"
+    },
+    {
+      "id": "multiple-for-update-expressions",
+      "owner": "astra_build",
+      "status": "preserved-red-reproducer",
+      "detail": "For loop comma-separated update drops later expressions; discovered independently during local-name hygiene. Not fixed or accepted as parity."
     }
   ],
   "accepted_rounds": [
@@ -496,20 +648,457 @@
     }
   ],
   "in_progress_checkpoint": {
-    "status": "verified-milestone-ready-to-commit-and-push-round02-still-red",
-    "last_complete_checkpoint": "fcc53952f202ff236c60e0181fc70f855f856418",
+    "status": "checkpoint07 verified; completed candidate08 awaits integration gates",
     "package_ready_barrier": {
-      "astra_compiler": "production-held-focused-green",
-      "astra_runtime": "production-held-focused-green",
-      "astra_build": "production-held-focused-green",
-      "coordinator": "production-held-focused-green"
+      "astra_build": "Candidate08 local identifier hygiene focused green, held; full family probe pending",
+      "astra_runtime": "Candidate08 genuine SQL runtime focused/JVM/race/ISO green, held; shared collection design documented",
+      "astra_compiler": "Candidate08 connected source families/cache/SAM focused green, held; full family probe/Gson pending; runtime containers still rejected",
+      "coordinator": "Checkpoint07 full historical verification green. Candidate08 method-reference result tests green; combined08 unverified."
     },
     "root_runtime_gate": ".campaign/coordinator-runtime-phase2.log",
-    "full_gate_required_after_repairs": false,
+    "full_gate_required_after_repairs": true,
     "interrupted_gate_attempt": {
       "prefix": ".campaign/checkpoint04-",
       "reason": "Stopped unit, strict parity and campaign after lint found an unused helper; Sol Gson run had already completed with a stable new escape failure. End-to-end-other and fuzz were terminal passes. New source changes require fresh final gates.",
       "all_root_handles_terminal": true
-    }
+    },
+    "snapshot_verification": {
+      "root": "/private/tmp/java2go-checkpoint05-ac5u2fys",
+      "hash_manifest": "snapshot-hashes.json",
+      "source_implementation_sha256": "bec04ed63607d71a75e6a14a91b05061ed98542ae51495a3d18785994a6d7ab0",
+      "sessions": {
+        "unit": 44011,
+        "e2e_other": 35561,
+        "e2e_strict_parity": 47886,
+        "fuzz": 20093
+      },
+      "log_prefix": "/private/tmp/java2go-checkpoint05-verified-",
+      "expected_active_red": "New TestCampaignNestedGenericFactoryIdentity remains red; no existing regression failure may be accepted.",
+      "discarded_attempt": "Earlier /private/tmp/java2go-checkpoint05-*.log invocations had malformed timeout flags and ran root package with no tests. All terminal; not verification evidence.",
+      "all_handles_terminal": true,
+      "results": {
+        "unit": {
+          "exit_code": 1,
+          "log": "/private/tmp/java2go-checkpoint05-verified-unit.log",
+          "failures": [
+            "TestResolveAffineArrayViewHelperNames_AfterDeepOrdinaryResolution (root naming repair now focused green)",
+            "TestCampaignNestedGenericFactoryIdentity (both subtests; canonical repair now focused green but broad verification pending)",
+            "TestDependentTypeParameterAdversarial_NestedArgumentInference (real generic coercion regression, compiler repair active)",
+            "TestGenericReceiverReturnTypeDrivesChainedStringIntrinsic (changed generated shape requires behavioral verification)"
+          ]
+        },
+        "e2e_other": {
+          "exit_code": 0,
+          "log": "/private/tmp/java2go-checkpoint05-verified-e2e-other.log"
+        },
+        "e2e_strict_parity": {
+          "exit_code": 0,
+          "log": "/private/tmp/java2go-checkpoint05-verified-e2e-parity.log"
+        },
+        "fuzz": {
+          "exit_code": 0,
+          "log": "/private/tmp/java2go-checkpoint05-verified-fuzz.log"
+        }
+      }
+    },
+    "pending_probe": {
+      "path": "testfiles/campaign/probes/generic-family-business",
+      "source_sha256": "6b730b66213255892714985469dfa31bfc4ef9def924685d4aa7a6663eadb71d",
+      "oracle_sha256": "15cb700943a6da86d978abed7d12c1f836789c0e14c15acca9012e266e41d264",
+      "jvm_runs": 9,
+      "failure_stage": "go-build-all",
+      "detail": "Universal interface Factory method has unbound T; full Gson remains acceptance."
+    },
+    "preflight": {
+      "snapshot": "/private/tmp/java2go-lint-fixed-snapshot-kljg0kpj",
+      "session_id": 22617,
+      "log": "/private/tmp/java2go-preflight-lint-snapshot-unit.log",
+      "purpose": "Full unsuppressed unit preflight on fixed immutable lint snapshot; contains newly introduced pending abstract-family, capacity and initCause red tests. Not round acceptance; later source repairs need fresh final gates.",
+      "status": "terminal-failed",
+      "exit_code": 1,
+      "duration_seconds": 282.959,
+      "failures": [
+        "TestCampaignAbstractGenericFactoryFamily: pending connected-family red",
+        "TestCampaignRuntimeThrowableInitCauseOverload: snapshot predates exact override/default-super repair",
+        "TestCampaignStringBuilderCapacityJVMParity: snapshot predates capacity repair",
+        "TestCampaignRuntimeCountDownLatch: root int constant wrapper blocked widening; focused repair green",
+        "TestMultidimensionalArrayDimensionsEvaluateOnceBeforeChecks: root int wrapper altered expression form; focused repair green"
+      ]
+    },
+    "coordinator_iso_probe": {
+      "artifact": ".campaign/probes/iso8601-20260928T072406531993Z",
+      "passed": true,
+      "checks": "Unchanged complete upstream member; exact23JVMstdoutlines/stderr/exit; generated package build and race binary; before/after production fingerprint stable",
+      "source_sha256": "ae515fc0a17f15c919a152a3004d874a81d1466d39bdf163bd45d468a3faeba5",
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "driver_sha256": "c2b1f6c8e121acd453cf7bacbc00178a5e3092569806b590e34e27ed7a7a8787",
+      "implementation_sha256": "608cc1f10ede2866da6868943e2efe2fe1ae254477affadd45c5f887ac5d4553",
+      "revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+      "stable_implementation": true
+    },
+    "root_unary_followup": {
+      "status": "focused-green",
+      "log": "/private/tmp/java2go-unary-width-green.log",
+      "duration_seconds": 9.54,
+      "checks": "Signed min/unary JVM tests, existing CountDownLatch timed-wait and multidimensional dimension evaluation, nondecimal/long/narrowing literal tests with race",
+      "detail": "Fold int constant values at Java width while retaining ordinary Go untyped literal assignability; long constants retain int64."
+    },
+    "frozen_gson_run9": {
+      "snapshot": "/private/tmp/java2go-gson-snapshot-20260928T0730",
+      "tree_sha256": "5a5aa2baa21f1eb51e3d95d66855f517a8a38cc2a7b00a4ca1a10ba084271029",
+      "revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+      "artifact": "/private/tmp/java2go-gson-snapshot-20260928T0730/.campaign/runs/20260928T072902Z-1989338670",
+      "owner": "sol_data",
+      "session_id": 10691,
+      "status": "terminal-go-build-all-failure-stable-inputs",
+      "log": "/private/tmp/campaign-data2-snapshot-run9.log"
+    },
+    "checkpoint06": {
+      "snapshot": "/private/tmp/java2go-checkpoint06-f2fplfpi",
+      "manifest_sha256": "dabea1e1475b5c9b9239671a7048c7cc1cbf093f2291d4918973d01731910510",
+      "source_files": 1350,
+      "base_revision": "2d038d522320c77d0b4921b51cb73fa618ac9244",
+      "staged_completed_source": true,
+      "pending_exclusions": [
+        "transpiler/generic_family_plan.go",
+        "transpiler/generic_family_plan_test.go",
+        "transpiler/campaign_abstract_generic_factory_test.go",
+        "transpiler/campaign_generic_helper_overload_test.go"
+      ],
+      "sessions": {
+        "unit": 60500,
+        "e2e_other": 84929,
+        "e2e_strict_parity": 93854,
+        "fuzz": 99728,
+        "campaign": 8013,
+        "lint": 81974
+      },
+      "log_prefix": "/private/tmp/java2go-checkpoint06-",
+      "results": {
+        "e2e_other": {
+          "exit_code": 0,
+          "duration_seconds": 49.146
+        },
+        "fuzz": {
+          "exit_code": 0,
+          "duration_seconds": 32.255
+        },
+        "lint": {
+          "exit_code": 0,
+          "version": "2.14.0",
+          "issues": 0,
+          "note": "Cache persistence warnings only; analysis completed. Future runs use writable GOLANGCI_LINT_CACHE."
+        },
+        "unit": {
+          "exit_code": 1,
+          "duration_seconds": 814.002,
+          "failures": [
+            "TestResolveAffineArrayViewHelperNames_CrossPackageProvenanceAndFutureRenames"
+          ],
+          "followup": "Same-declaring-owner exclusion focused green; unchanged legacy test passes."
+        },
+        "e2e_strict_parity": {
+          "exit_code": 0,
+          "duration_seconds": 832.878
+        },
+        "campaign": {
+          "exit_code": 1,
+          "duration_seconds": 525.752,
+          "historical_apps_passed": 5,
+          "oracle_pairs": 45,
+          "stress_runs": 100,
+          "gson_failure": "transpile timeout at 300015ms; quiet instrumented replay later completed96.810s, official quiet rerun pending"
+        }
+      },
+      "status": "terminal-not-accepted",
+      "all_handles_terminal": true
+    },
+    "frozen_gson_run10": {
+      "snapshot": "/private/tmp/java2go-gson-checkpoint06-helper-20260928T0750",
+      "base": "checkpoint06 plus completed generic helper allocator and ResolveFile hook only",
+      "source_sha256": "4c629e11b93bdb7d3ebb4b595b26c99aac9286f50c0e959b7cf1682abbc18a4d",
+      "artifact": "/private/tmp/java2go-gson-checkpoint06-helper-20260928T0750/.campaign/runs/20260928T074503Z-3237819849",
+      "session_id": 99663,
+      "owner": "sol_data",
+      "log": "/private/tmp/campaign-data2-checkpoint06-helper-run10.log",
+      "status": "terminal-transpile-timeout",
+      "implementation_sha256": "7da2c5120b8aa62fdff5186e65236a9c586c3c2adfa59daddb150b52ea67f4f4",
+      "transpile_milliseconds": 300011
+    },
+    "checkpoint07": {
+      "snapshot": "/private/tmp/java2go-checkpoint07-ttxul8y4",
+      "manifest_sha256": "d495992fb6121133bcce0a5f9d2ab944eb1ffe057087aa775592164c39a4751e",
+      "source_files": 1356,
+      "composition": "Checkpoint06 plus completed affine owner fix, canonical JDK owner guard, generic helper allocator, and concat evaluation-order repair. Excludes ongoing connected generic-family and genuine SQL runtime changes.",
+      "status": "verified-milestone-full-Gson-still-active",
+      "gson_session": 98287,
+      "gson_log": "/private/tmp/java2go-checkpoint07-gson.log",
+      "gson_session_terminal": true,
+      "gson_transpile_milliseconds": 105270,
+      "gson_failure": "Strict unsupported java.sql.Date constructor in unchanged SqlDateTypeAdapter.java67; canonical guard rejects previous incorrect util.Date substitution. No timeout, no Go parity claimed.",
+      "gson_artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T080645Z-129723110",
+      "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
+      "stable_implementation": true,
+      "sessions": {
+        "unit": 61804,
+        "strict_parity": 54766
+      },
+      "log_prefix": "/private/tmp/java2go-checkpoint07-",
+      "lint": {
+        "version": "2.14.0",
+        "issues": 0,
+        "exit_code": 0
+      },
+      "initial_handles_terminal": true,
+      "initial_results": {
+        "unit": {
+          "exit_code": 1,
+          "duration_seconds": 1200.241,
+          "failure": "20-minute suite timeout; current test had run only1s; no preceding semantic failures reported"
+        },
+        "strict_parity": {
+          "exit_code": 1,
+          "duration_seconds": 1216.656,
+          "failures": [
+            "integer_branch_search Java oracle timed out",
+            "numerical_kernels generated Go execution timed out"
+          ]
+        }
+      },
+      "quiet_retry": {
+        "unit_session": 29625,
+        "unit_log": "/private/tmp/java2go-checkpoint07-unit-quiet.log",
+        "timeout_unchanged": "20m",
+        "policy": "One heavy gate at a time; no campaign-owned Go/Java processes remained in process inspection after prior handles terminated. Timeouts remain failures, not accepted parity.",
+        "unit_terminal": true,
+        "unit_exit_code": 0,
+        "transpiler_duration_seconds": 447.746,
+        "snapshot_manifest_revalidated": true,
+        "strict_parity_session": 51492,
+        "strict_parity_log": "/private/tmp/java2go-checkpoint07-parity-quiet.log",
+        "strict_parity_terminal": true,
+        "strict_parity_exit_code": 0,
+        "strict_parity_duration_seconds": 653.655
+      },
+      "all_handles_terminal": true,
+      "remaining_results": [
+        {
+          "name": "e2e-other",
+          "command": [
+            "go",
+            "test",
+            "-race",
+            "-timeout",
+            "25m",
+            "-skip",
+            "^TestApplicationParity$",
+            "./e2e"
+          ],
+          "exit_code": 0,
+          "duration_seconds": 90.214,
+          "log": "/private/tmp/java2go-checkpoint07-quiet-e2e-other.log",
+          "stable_inputs": true
+        },
+        {
+          "name": "fuzz",
+          "command": [
+            "go",
+            "test",
+            "-race",
+            "-timeout",
+            "20m",
+            "./fuzz/..."
+          ],
+          "exit_code": 0,
+          "duration_seconds": 36.824,
+          "log": "/private/tmp/java2go-checkpoint07-quiet-fuzz.log",
+          "stable_inputs": true
+        },
+        {
+          "name": "round01-business",
+          "command": [
+            "go",
+            "run",
+            "./cmd/javacampaign",
+            "-fixture",
+            "testfiles/campaign/round01/business",
+            "-race",
+            "-stress-runs",
+            "20"
+          ],
+          "exit_code": 0,
+          "duration_seconds": 84.616,
+          "log": "/private/tmp/java2go-checkpoint07-quiet-round01-business.log",
+          "stable_inputs": true
+        },
+        {
+          "name": "round01-data",
+          "command": [
+            "go",
+            "run",
+            "./cmd/javacampaign",
+            "-fixture",
+            "testfiles/campaign/round01/data",
+            "-race",
+            "-stress-runs",
+            "20"
+          ],
+          "exit_code": 0,
+          "duration_seconds": 51.558,
+          "log": "/private/tmp/java2go-checkpoint07-quiet-round01-data.log",
+          "stable_inputs": true
+        },
+        {
+          "name": "round01-concurrent",
+          "command": [
+            "go",
+            "run",
+            "./cmd/javacampaign",
+            "-fixture",
+            "testfiles/campaign/round01/concurrent",
+            "-race",
+            "-stress-runs",
+            "20"
+          ],
+          "exit_code": 0,
+          "duration_seconds": 34.879,
+          "log": "/private/tmp/java2go-checkpoint07-quiet-round01-concurrent.log",
+          "stable_inputs": true
+        },
+        {
+          "name": "round02-business",
+          "command": [
+            "go",
+            "run",
+            "./cmd/javacampaign",
+            "-fixture",
+            "testfiles/campaign/round02/business",
+            "-race",
+            "-stress-runs",
+            "20"
+          ],
+          "exit_code": 0,
+          "duration_seconds": 47.085,
+          "log": "/private/tmp/java2go-checkpoint07-quiet-round02-business.log",
+          "stable_inputs": true
+        },
+        {
+          "name": "round02-concurrent",
+          "command": [
+            "go",
+            "run",
+            "./cmd/javacampaign",
+            "-fixture",
+            "testfiles/campaign/round02/concurrent",
+            "-race",
+            "-stress-runs",
+            "20"
+          ],
+          "exit_code": 0,
+          "duration_seconds": 43.446,
+          "log": "/private/tmp/java2go-checkpoint07-quiet-round02-concurrent.log",
+          "stable_inputs": true
+        }
+      ],
+      "independent_application_evidence": [
+        {
+          "name": "round01-business",
+          "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085340Z-2993208299",
+          "manifest_sha256": "de764af82c27af132b3e821fdda331296a81a3d6ce79095ca3ca258cf1d1188b",
+          "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
+          "oracle_pairs": 9,
+          "stress_runs": 20,
+          "race": true,
+          "stable_implementation": true
+        },
+        {
+          "name": "round01-data",
+          "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085504Z-407984233",
+          "manifest_sha256": "c46005897347d1a3e4c73d58f37fc580e510589beb2291ab8c617c53e3d9dace",
+          "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
+          "oracle_pairs": 9,
+          "stress_runs": 20,
+          "race": true,
+          "stable_implementation": true
+        },
+        {
+          "name": "round01-concurrent",
+          "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085556Z-3459649190",
+          "manifest_sha256": "b6f68e9ff3fd7aa078eb96fdc85c890d2d20f3192e52a7c8243f168428ff9d7b",
+          "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
+          "oracle_pairs": 9,
+          "stress_runs": 20,
+          "race": true,
+          "stable_implementation": true
+        },
+        {
+          "name": "round02-business",
+          "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085631Z-1000935577",
+          "manifest_sha256": "cd776bb419d52f4844a3a5c990264a91881359157bbf0ba60266a251388c2cff",
+          "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
+          "oracle_pairs": 9,
+          "stress_runs": 20,
+          "race": true,
+          "stable_implementation": true
+        },
+        {
+          "name": "round02-concurrent",
+          "artifact": "/private/tmp/java2go-checkpoint07-ttxul8y4/.campaign/runs/20260928T085718Z-2435148858",
+          "manifest_sha256": "7114d980bdd721105dd28de9a5149154ea753ad5bf837af8eb21d9cff95904d4",
+          "implementation_sha256": "7ebdae9aaf490304fe9c5032a4fe0050d375ec54de182aa1f542b62becd3314a",
+          "oracle_pairs": 9,
+          "stress_runs": 20,
+          "race": true,
+          "stable_implementation": true
+        }
+      ],
+      "verification_summary": {
+        "unit": "passed",
+        "strict_application_parity": "passed",
+        "e2e_other": "passed",
+        "fuzz": "passed",
+        "golangci_lint_2_14_0": "0 issues",
+        "historical_applications": 5,
+        "jvm_go_observations": 45,
+        "additional_race_stress_runs": 100,
+        "source_manifest_unchanged": true,
+        "round02_accepted": false
+      }
+    },
+    "checkpoint08": {
+      "snapshot": "/private/tmp/java2go-checkpoint08-d0_c1ct8",
+      "manifest_sha256": "47f8899a6f28a7b6f3d690b35be5be892b16d6082286be231094da86b1a18d2a",
+      "source_files": 1376,
+      "status": "assembled-not-yet-run",
+      "composition": "Immutable07 plus separate completed family, SQL runtime, local identifier hygiene and generic method-reference result patches. All patches apply without conflict.",
+      "patches": [
+        "/private/tmp/java2go-family-against07/family.patch",
+        "/private/tmp/java2go-sql-phase-20260928/sql-phase.patch",
+        "/private/tmp/java2go-local-hygiene-completed-twqj615o/local-hygiene-only.patch",
+        "/private/tmp/java2go-methodref-completed/methodref-only.patch"
+      ],
+      "next": "After quiet07 gates, validate frozen generic-family business probe and full Gson; regenerate every generated package for DateValue ABI. Family still correctly rejects invariant runtime collections."
+    },
+    "method_reference_result": {
+      "status": "focused-JVM-race-and-related-regressions-green",
+      "owner": "coordinator",
+      "evidence": "/private/tmp/java2go-methodref-completed/evidence.json",
+      "duration_seconds": 63.899,
+      "contracts": [
+        "unchanged multi-package overload reproducer",
+        "bound/unbound adapters",
+        "Object pollution accepted and typed pollution rejected",
+        "nullable String and null unboxing",
+        "eager bound receiver null check",
+        "source-class widening exactly once",
+        "void discarded result",
+        "shadowed class/method binders"
+      ],
+      "integrated_worktree": true,
+      "staged": false
+    },
+    "collection_design": "campaign/design/shared-collection-storage.md",
+    "previous_complete_checkpoint": "8cb6cd529c124802d9d004ef43d41dffe16f1085",
+    "last_complete_checkpoint_id": "checkpoint07"
   }
 }

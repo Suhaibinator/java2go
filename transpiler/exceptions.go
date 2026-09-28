@@ -16,6 +16,7 @@ import (
 // links recognised by stdjava.CaughtAs.
 var builtinExceptionTypes = map[string]string{
 	"Throwable":                       "",
+	"ParseException":                  "Exception",
 	"ExecutionException":              "Exception",
 	"TimeoutException":                "Exception",
 	"CancellationException":           "IllegalStateException",
@@ -62,7 +63,7 @@ func isBuiltinExceptionType(className string) bool {
 func builtinExceptionConstructorExpr(className string, args []ast.Expr, ctx Ctx) ast.Expr {
 	name := stripJavaQualifier(className)
 	switch name {
-	case "Exception", "RuntimeException", "IllegalArgumentException", "IllegalStateException", "UnsupportedEncodingException":
+	case "ParseException", "Exception", "RuntimeException", "IllegalArgumentException", "IllegalStateException", "UnsupportedEncodingException":
 		return &ast.CallExpr{Fun: stdjavaQualifiedExpr("New"+name, ctx), Args: args}
 	}
 	var message ast.Expr = &ast.BasicLit{Kind: token.STRING, Value: `""`}
@@ -130,7 +131,7 @@ func isExceptionJavaType(ctx Ctx, javaType string) bool {
 //
 //	func init() { stdjava.RegisterException("MyException", "RuntimeException") }
 func buildExceptionRegistrationDecl(childName, parentName string, ctx Ctx) ast.Decl {
-	return &ast.FuncDecl{
+	declaration := &ast.FuncDecl{
 		Name: &ast.Ident{Name: "init"},
 		Type: &ast.FuncType{Params: &ast.FieldList{}},
 		Body: &ast.BlockStmt{
@@ -147,6 +148,11 @@ func buildExceptionRegistrationDecl(childName, parentName string, ctx Ctx) ast.D
 			},
 		},
 	}
+	if registration := throwableInitCauseRegistration(ctx); registration != nil {
+		declaration.Body.List = append(declaration.Body.List, registration)
+	}
+	return declaration
+
 }
 
 // buildThrowableTypeNameMethod generates a ThrowableTypeName() method on the
@@ -241,4 +247,33 @@ func javaExceptionReferenceAssignable(actual, expected string, ctx Ctx) bool {
 		actual = parent
 	}
 	return false
+}
+
+func isThrowableInitCauseOverride(method *symbol.Definition, owner *symbol.ClassScope, ctx Ctx) bool {
+	if method == nil || method.IsStatic || method.OriginalName != "initCause" || len(method.Parameters) != 1 {
+		return false
+	}
+	declaring := classScopeCtx(owner, ctx)
+	parameter := method.Parameters[0].OriginalType
+	return (parameter == "Throwable" || parameter == "java.lang.Throwable") && resolveClassScopeByQualifiedName(declaring, parameter) == nil
+}
+
+func throwableInitCauseRegistration(ctx Ctx) ast.Stmt {
+	for scope := ctx.currentClass; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
+		for _, method := range scope.Methods {
+			if !isThrowableInitCauseOverride(method, scope, ctx) {
+				continue
+			}
+			receiverType := &ast.StarExpr{X: ast.NewIdent(ctx.className)}
+			invoke := &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{
+				executionParameterField("execution", ctx),
+				{Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: ast.NewIdent("any")},
+				{Names: []*ast.Ident{ast.NewIdent("cause")}, Type: stdjavaQualifiedExpr("Throwable", ctx)},
+			}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{
+				&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: &ast.TypeAssertExpr{X: ast.NewIdent("receiver"), Type: receiverType}, Sel: ast.NewIdent(executionImplementationName(method, scope))}, Args: []ast.Expr{ast.NewIdent("execution"), ast.NewIdent("cause")}}}},
+			}}}
+			return &ast.ExprStmt{X: stdjavaCall(ctx, "RegisterThrowableInitCause", &ast.CallExpr{Fun: receiverType, Args: []ast.Expr{ast.NewIdent("nil")}}, invoke)}
+		}
+	}
+	return nil
 }

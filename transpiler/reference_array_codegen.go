@@ -213,6 +213,9 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
 		return source, true
 	}
+	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered {
+		return javaTypeIDLiteral(owner, ctx), true
+	}
 	if constant := characterIONominalConstant(javaType, ctx); constant != "" {
 		return stdjavaQualifiedExpr(constant, ctx), true
 	}
@@ -491,6 +494,7 @@ func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 	relevant := map[*symbol.ClassScope]struct{}{}
 	objectErasure := false
 	for _, scope := range allScopes {
+		addMonitorIdentitySeeds(scope, ctx, relevant, &objectErasure)
 		for _, field := range scope.Fields {
 			fieldCtx := ctx.Clone()
 			fieldCtx.currentClass = scope
@@ -499,6 +503,12 @@ func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 			addDirectOwnerTypeParameterIdentitySeed(field, scope, fieldCtx, relevant, &objectErasure)
 		}
 		for _, method := range scope.Methods {
+			// A Throwable override can return a declaring superclass view of
+			// its receiver through the runtime's erased callback. Preserve the
+			// allocation identity (and synchronized-body monitor) across views.
+			if isThrowableInitCauseOverride(method, scope, ctx) && isUserDefinedExceptionClass(ctx, scope) {
+				relevant[scope] = struct{}{}
+			}
 			// Concrete covariant returns expose superclass pointer views of the
 			// same allocation. Install identity metadata for their result
 			// hierarchy so == remains Java reference equality across views.

@@ -62,8 +62,10 @@ func ResolveFile(file parsing.SourceFile) {
 	// file all ordinary names are resolved, and the pass is idempotent before
 	// then because it only renames an actual remaining collision.
 	resolveInheritedInterfaceOverloadNames()
+	resolveInheritedClassOverloadNames()
 	resolvePromotedFieldMethodCollisions()
 	resolveAffineArrayViewHelperNames(file)
+	resolveGenericMethodHelperNames()
 }
 
 func resolveClassTree(class *symbol.ClassScope, file parsing.SourceFile) {

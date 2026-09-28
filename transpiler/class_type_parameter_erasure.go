@@ -84,11 +84,14 @@ func directOwnerInterfaceErasure(
 	ctx Ctx,
 ) (string, bool) {
 	use, ok := directOwnerTypeParameterForDefinition(owner, definition)
-	if !ok || len(use.parameter.Bounds) != 1 {
+	if !ok {
 		return "", false
 	}
 	erasure := qualifyJavaTypeInDeclaringContext(use.erasure, owner)
-	if !javaTypeHasInterfaceRepresentation(erasure, ctx) {
+	if leafObjectErasure(owner, erasure, ctx) {
+		return erasure, true
+	}
+	if len(use.parameter.Bounds) != 1 || !javaTypeHasInterfaceRepresentation(erasure, ctx) {
 		return "", false
 	}
 	return erasure, true
@@ -1344,11 +1347,10 @@ func directOwnerTypeParameterFieldStorageType(
 	if !ok {
 		return declared
 	}
-	// This first physical-storage slice is limited to generated interface
-	// erasures. A Go interface can retain every implementing object's identity,
-	// including heap pollution through a raw alias. Concrete-class erasures need
-	// the broader canonical reference/subobject migration, while unbounded Object
-	// fields retain the established generic Go API until that migration lands.
+	// Interface erasures (including Object for a fully eligible leaf plan)
+	// retain object identity and heap pollution through raw aliases. Concrete
+	// class erasures and cross-instantiation object views still require the
+	// canonical reference/subobject migration.
 	storage := javaTypeStringToGoTypeExpr(erasure, inScopeTypeParameters(ctx), ctx)
 	return abstractClassToInterface(storage, erasure, ctx)
 }

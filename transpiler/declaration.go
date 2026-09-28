@@ -298,6 +298,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Add the global variables
 		if len(globalVariables.Specs) > 0 {
 			declarations = append(declarations, globalVariables)
+			declarations = append(declarations, staticFieldStorageHelperDecls(globalVariables, ctx)...)
 		}
 
 		// Add the class's virtual-dispatch contract before the struct. Go permits
@@ -371,6 +372,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			)
 		}
 
+		canonicalizeGenericReceivers(declarations, ctx)
 		return declarations
 	case "class_body", "enum_body": // The body of the currently parsed class or enum
 		return parseClassBodyDeclarations(node, source, ctx, false)
@@ -522,6 +524,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		if len(globalVariables.Specs) > 0 {
 			declarations = append(declarations, globalVariables)
+			declarations = append(declarations, staticFieldStorageHelperDecls(globalVariables, ctx)...)
 		}
 
 		// Declare the enum struct type
@@ -2357,7 +2360,21 @@ func explicitSuperConstructorAssignment(
 func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mostDerived ast.Expr) ast.Stmt {
 	scope := ctx.currentClass
 	parent := resolveSuperclassScope(ctx, scope)
-	if scope == nil || parent == nil || parent.Class == nil {
+	if scope == nil {
+		return nil
+	}
+	if parent == nil {
+		base, _ := parseJavaTypeString(scope.Superclass)
+		if isBuiltinExceptionType(base) {
+			return &ast.AssignStmt{
+				Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(stripJavaQualifier(base))}},
+				Tok: token.ASSIGN,
+				Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, nil, ctx)},
+			}
+		}
+		return nil
+	}
+	if parent.Class == nil {
 		return nil
 	}
 	constructorName := noArgConstructorName(parent)

@@ -50,6 +50,10 @@ type intrinsicKey struct {
 // to the normal constructor path.
 type constructorGenerator func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr
 
+// constructorNodeGenerator selects overloads using Java static argument types.
+// Arguments are already lowered; generators must not evaluate them a second time.
+type constructorNodeGenerator func(typeArgs, args []ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr
+
 var (
 	instanceIntrinsics              = map[intrinsicKey]intrinsicGenerator{}
 	staticIntrinsics                = map[intrinsicKey]intrinsicGenerator{}
@@ -66,7 +70,8 @@ var (
 	staticIntrinsicTypeArgs = map[intrinsicKey]typeArgDeriver{}
 	// constructorIntrinsics is keyed by Java class name; generators select the
 	// right overload by arg count.
-	constructorIntrinsics = map[string]constructorGenerator{}
+	constructorIntrinsics     = map[string]constructorGenerator{}
+	constructorNodeIntrinsics = map[string]constructorNodeGenerator{}
 )
 
 // registerConstructorIntrinsic adds a `new Type(...)` intrinsic.
@@ -74,16 +79,28 @@ func registerConstructorIntrinsic(className string, gen constructorGenerator) {
 	constructorIntrinsics[className] = gen
 }
 
+func registerConstructorNodeIntrinsic(className string, gen constructorNodeGenerator) {
+	constructorNodeIntrinsics[className] = gen
+}
+
 // tryConstructorIntrinsic attempts to rewrite a `new className<typeArgs>(args)`
 // expression via the constructor intrinsics table. It only fires when className
 // is not a user-defined class.
-func tryConstructorIntrinsic(className string, typeArgs, args []ast.Expr, ctx Ctx) (ast.Expr, bool) {
+func tryConstructorIntrinsic(className string, typeArgs, args []ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) (ast.Expr, bool) {
 	name := stripJavaQualifier(className)
 	if name == "" {
 		return nil, false
 	}
 	if resolveClassScopeByQualifiedName(ctx, className) != nil {
 		return nil, false
+	}
+	if owner, registered := canonicalIntrinsicOwner(className, ctx); registered && !intrinsicOwnerSupported(owner) {
+		return unsupportedIntrinsicOwnerValue(owner, invocation, source, ctx), true
+	}
+	if gen := constructorNodeIntrinsics[name]; gen != nil {
+		if result := gen(typeArgs, args, invocation, ctx, source); result != nil {
+			return result, true
+		}
 	}
 	gen, ok := constructorIntrinsics[name]
 	if !ok {
@@ -149,7 +166,32 @@ func registerStaticFieldIntrinsic(className, fieldName string, gen func(ctx Ctx)
 // using the intrinsics table. It resolves the receiver's Java type, looks up the
 // table, and returns the generated expression (or nil if nothing matched).
 func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []byte, ctx Ctx) (ast.Expr, bool) {
-	receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source)
+	receiverType, ok := intrinsicMethodReceiverTypeName(objectNode, methodName, ctx, source)
+	// Object's zero-argument monitor methods are final and inherited by every
+	// Java reference type, including source classes. Preserve the original
+	// receiver expression rather than projecting it to an embedded Go base.
+	if isObjectMonitorInvocation(objectNode, methodName) {
+		receiverType, ok = "Object", true
+	}
+	if methodName == "initCause" {
+		if objectNode != nil && objectNode.Type() == "super" && ctx.currentClass != nil && isBuiltinExceptionType(ctx.currentClass.Superclass) && resolveClassScopeByQualifiedName(ctx, ctx.currentClass.Superclass) == nil {
+			args := intrinsicArgs(objectNode, methodName, source, ctx)
+			if len(args) == 1 {
+				return stdjavaCall(ctx, "ThrowableInitCauseDefaultExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)), args[0]), true
+			}
+		}
+		if javaType, known := inferExprJavaType(objectNode, ctx, source); known && isExceptionJavaType(ctx, javaType) {
+			// Resolved source methods retain their exact formal and covariant
+			// result types. The runtime callback is only needed when the static
+			// receiver exposes the inherited JDK Throwable declaration.
+			if target := resolveInvocationTarget(objectNode, ctx, source); target != nil {
+				if resolved, _ := findBestMethodForInvocationTarget(target, methodName, objectNode.Parent().ChildByFieldName("arguments"), true, false, ctx, source); resolved != nil {
+					return nil, false
+				}
+			}
+			receiverType, ok = "Throwable", true
+		}
+	}
 	if !ok {
 		return nil, false
 	}
@@ -949,6 +991,26 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 // expression for instance-intrinsic lookup. It returns false when the type is
 // unknown or when the receiver is itself a user-defined class (those calls must
 // go through the normal resolution path).
+// getClass is final on Object and inherited by source classes as well as
+// runtime classes. Resolve it before the usual source-method exclusion, keeping
+// the exact receiver (and therefore its canonical raw Java class) intact.
+func intrinsicMethodReceiverTypeName(objectNode *sitter.Node, methodName string, ctx Ctx, source []byte) (string, bool) {
+	if objectNode != nil && methodName == "getClass" {
+		parent := objectNode.Parent()
+		if parent != nil && parent.Type() == "method_invocation" {
+			arguments := parent.ChildByFieldName("arguments")
+			if arguments == nil || arguments.NamedChildCount() == 0 {
+				if javaType, known := inferExprJavaType(objectNode, ctx, source); known {
+					if _, primitive := javaPrimitiveType(javaType); !primitive {
+						return "Object", true
+					}
+				}
+			}
+		}
+	}
+	return intrinsicReceiverTypeName(objectNode, ctx, source)
+}
+
 func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 	javaType, ok := inferExprJavaType(objectNode, ctx, source)
 	if !ok {
@@ -973,6 +1035,9 @@ func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) 
 	if resolveClassScopeByQualifiedName(ctx, base) != nil {
 		return "", false
 	}
+	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered && !intrinsicOwnerSupported(owner) {
+		return "", false
+	}
 	return name, true
 }
 
@@ -990,7 +1055,7 @@ func inferIntrinsicMethodResultType(node *sitter.Node, ctx Ctx, source []byte) (
 		return "", false
 	}
 	methodName := nameNode.Content(source)
-	if receiverType, ok := intrinsicReceiverTypeName(objectNode, ctx, source); ok {
+	if receiverType, ok := intrinsicMethodReceiverTypeName(objectNode, methodName, ctx, source); ok {
 		if resultType, known := intrinsicCollectionMethodResultType(node, receiverType, ctx, source); known {
 			return resultType, true
 		}
@@ -1033,6 +1098,9 @@ func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (
 		return "", false
 	}
 	name := objectNode.Content(source)
+	if owner, registered := canonicalIntrinsicOwner(name, ctx); registered && !intrinsicOwnerSupported(owner) {
+		return "", false
+	}
 	if objectNode.Type() != "identifier" {
 		if objectNode.Type() != "field_access" && objectNode.Type() != "scoped_identifier" {
 			return "", false

@@ -15,6 +15,16 @@ func NewStringBuilder() *StringBuilder {
 	return &StringBuilder{}
 }
 
+// NewStringBuilderCapacity implements the int constructor. Capacity is a
+// storage reservation, not initial text or length; growth/capacity observation
+// is not modeled by this runtime surface.
+func NewStringBuilderCapacity(capacity int32) *StringBuilder {
+	if capacity < 0 {
+		panic(NewNegativeArraySizeException(fmt.Sprint(capacity)))
+	}
+	return &StringBuilder{buf: make([]rune, 0, int(capacity))}
+}
+
 // NewStringBuilderString returns a StringBuilder seeded with the given string,
 // matching `new StringBuilder(String)`.
 func NewStringBuilderString(s string) *StringBuilder {

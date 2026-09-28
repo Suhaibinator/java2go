@@ -266,16 +266,7 @@ func registerStringBuilderIntrinsics() {
 		registerInstanceIntrinsicResultType(typeName, "toString", "String")
 		registerInstanceIntrinsicResultType(typeName, "length", "int")
 		registerInstanceIntrinsicResultType(typeName, "charAt", "char")
-		// new StringBuilder() / new StringBuilder(String)
-		registerConstructorIntrinsic(typeName, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
-			switch len(args) {
-			case 0:
-				return stdjavaCall(ctx, "NewStringBuilder")
-			case 1:
-				return stdjavaCall(ctx, "NewStringBuilderString", args[0])
-			}
-			return nil
-		})
+		registerConstructorNodeIntrinsic(typeName, lowerStringBuilderConstructor)
 		registerInstanceIntrinsic(typeName, "append", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, 1) {
 				return nil
@@ -359,6 +350,12 @@ func lowerStringBuilderTextCall(javaMethod, goMethod string, valueIndex int) nod
 // --- java.lang.Math ---------------------------------------------------------
 
 func registerMathIntrinsics() {
+	registerStaticIntrinsic("Math", "multiplyExact", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 2 {
+			return nil
+		}
+		return stdjavaCall(ctx, "MathMultiplyExact", args...)
+	})
 	registerStaticIntrinsic("Math", "addExact", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 2 {
 			return nil
@@ -453,7 +450,7 @@ func registerMathIntrinsics() {
 		registerStaticIntrinsicResultType("Math", method, "double")
 	}
 	registerStaticIntrinsicResultType("Math", "round", "long")
-	for _, method := range []string{"abs", "min", "max", "round", "addExact"} {
+	for _, method := range []string{"abs", "min", "max", "round", "addExact", "multiplyExact"} {
 		registerStaticIntrinsicDerivedResultType("Math", method, func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 			parameter := intrinsicMathParameterJavaType(invocation, ctx, source)
 			if method == "round" {

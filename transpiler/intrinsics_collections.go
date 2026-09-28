@@ -237,7 +237,7 @@ func registerMapIntrinsics() {
 			if !expectArgs(args, argc) {
 				return nil
 			}
-			if goName == "ComputeIfAbsent" || goName == "Put" || goName == "PutIfAbsent" || goName == "Get" || goName == "GetOrDefault" || goName == "ContainsKey" || goName == "ContainsValue" || goName == "Remove" {
+			if goName == "ComputeIfAbsent" || goName == "Put" || goName == "PutIfAbsent" || goName == "PutAll" || goName == "Get" || goName == "GetOrDefault" || goName == "ContainsKey" || goName == "ContainsValue" || goName == "Remove" {
 				args = append(args, intrinsicExecutionExpr(ctx))
 			}
 			result := methodCall(recv, goName, args...)
@@ -253,6 +253,7 @@ func registerMapIntrinsics() {
 	registerForTypes([]string{"Entry"}, "getKey", method("GetKey", 0))
 	registerForTypes([]string{"Entry"}, "getValue", method("GetValue", 0))
 	registerForTypes(mapTypeNames, "put", method("Put", 2))
+	registerForTypes(mapTypeNames, "putAll", method("PutAll", 1))
 	registerForTypes(mapTypeNames, "putIfAbsent", method("PutIfAbsent", 2))
 	registerForTypes(mapTypeNames, "computeIfAbsent", method("ComputeIfAbsent", 2))
 	registerForTypes(mapTypeNames, "get", method("Get", 1))

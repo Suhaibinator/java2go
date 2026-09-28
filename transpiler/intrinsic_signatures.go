@@ -90,7 +90,7 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 				for i := range result {
 					result[i] = "double"
 				}
-			case "abs", "min", "max", "round", "addExact":
+			case "abs", "min", "max", "round", "addExact", "multiplyExact":
 				parameter := intrinsicMathParameterJavaType(invocation, ctx, source)
 				for i := range result {
 					result[i] = parameter

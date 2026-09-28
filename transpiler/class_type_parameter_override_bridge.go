@@ -936,6 +936,12 @@ func directOwnerOverrideBridgeFamilyUsesErasedHiddenOnly(
 	method *symbol.Definition,
 	ctx Ctx,
 ) bool {
+	if _, ok := specializedInterfaceCovariantBridge(owner, method, ctx); ok {
+		// The public wrapper implements the interface's wider result type.
+		// This class's dispatch descriptor must use the exact hidden body;
+		// requiring its narrower result on the public selector is impossible.
+		return true
+	}
 	_, ok := planDirectOwnerCallableOverrideBridgeFamily(owner, method, ctx)
 	return ok
 }

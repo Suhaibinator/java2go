@@ -134,11 +134,15 @@ func staticFieldStorageExpr(access *staticFieldAccess, ctx Ctx) ast.Expr {
 	if access == nil || access.resolution == nil || access.resolution.def == nil {
 		return &ast.BadExpr{}
 	}
-	return qualifiedNameExpr(
+	storage := qualifiedNameExpr(
 		access.resolution.def.Name,
 		findJavaPackageForClassScope(access.resolution.owner),
 		ctx,
 	)
+	if _, samePackage := storage.(*ast.Ident); samePackage && staticFieldStorageShadowed(access.resolution.def, ctx) {
+		return &ast.StarExpr{X: &ast.CallExpr{Fun: ast.NewIdent(staticFieldStorageHelperName(access.resolution.def, access.resolution.owner))}}
+	}
+	return storage
 }
 
 func staticFieldValueType(access *staticFieldAccess, ctx Ctx) ast.Expr {

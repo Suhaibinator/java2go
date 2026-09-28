@@ -562,12 +562,10 @@ func NewObject() any {
 // Execution token: entering again with the same token increments its depth,
 // while every different token waits until the depth returns to zero.
 //
-// LIMITATION: monitors are keyed by the runtime pointer of the value passed in,
-// so the synchronized argument must be a reference type (the common case:
-// `this`, a lock object, a field). Synchronizing on a value type would key on a
-// transient boxed copy and not exclude correctly; such uses are rare and not
-// modelled. The registry never releases monitors, matching the fact that an
-// object's monitor lives as long as the object.
+// Generated superclass views share the ObjectInfo identity of their Java
+// allocation. Other supported runtime references retain their existing identity.
+// LIMITATION: the global registry retains acquired monitors and their object
+// graphs for the process lifetime, even after Java application references die.
 type monitor struct {
 	// mu protects explicit logical ownership. The outermost explicit entry also
 	// holds legacyMu across the generated body; reentrant entries by the same
@@ -618,6 +616,11 @@ var (
 )
 
 func monitorIdentityFor(obj interface{}) monitorIdentity {
+	if carrier, ok := obj.(JavaObjectInfoCarrier); ok {
+		if identity := carrier.JavaObjectInfo(); identity != nil {
+			return monitorIdentity{comparable: identity}
+		}
+	}
 	value := reflect.ValueOf(obj)
 	if value.Type().Comparable() {
 		return monitorIdentity{comparable: obj}
@@ -670,17 +673,7 @@ func monitorFor(obj interface{}) *sync.Mutex {
 // consulting the monitor registry both preserves Java's exception and avoids a
 // raw Go panic for unhashable nil slices.
 func nilMonitorReference(obj interface{}) bool {
-	if obj == nil {
-		return true
-	}
-
-	value := reflect.ValueOf(obj)
-	switch value.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
-		return value.IsNil()
-	default:
-		return false
-	}
+	return javaReferenceIsNull(obj)
 }
 
 func requireNonNullMonitorReference(obj interface{}, operation string) {

@@ -395,9 +395,10 @@ type ThrowableBase struct {
 }
 
 type throwableState struct {
-	mu         sync.Mutex
-	suppressed []interface{}
-	cause      interface{}
+	mu               sync.Mutex
+	suppressed       []interface{}
+	cause            interface{}
+	causeInitialized bool
 }
 
 func (t ThrowableBase) ThrowableTypeName() string { return t.typeName }
@@ -511,6 +512,7 @@ func NewLinkageError(message string) LinkageError {
 // initialization passes the throwable that escaped the initializer.
 func NewExceptionInInitializerError(value interface{}) ExceptionInInitializerError {
 	base := newThrowableBase("ExceptionInInitializerError", "")
+	base.state.causeInitialized = true
 	emptyNoArgMarker := false
 	if stringValue, ok := value.(string); ok {
 		emptyNoArgMarker = stringValue == ""
@@ -528,6 +530,7 @@ func NewNoClassDefFoundError(message string) NoClassDefFoundError {
 func NewNoClassDefFoundErrorWithCause(message string, cause interface{}) NoClassDefFoundError {
 	base := newThrowableBase("NoClassDefFoundError", message)
 	base.state.cause = cause
+	base.state.causeInitialized = true
 	return NoClassDefFoundError{base}
 }
 
@@ -540,16 +543,21 @@ func NewException(arguments ...any) Exception {
 func newExceptionConstructorBase(name string, arguments ...any) ThrowableBase {
 	message := NullString()
 	var cause any
+	causeInitialized := false
 	switch len(arguments) {
 	case 0:
 	case 1:
 		if text, ok := arguments[0].(string); ok {
 			message = text
-		} else if !javaReferenceIsNull(arguments[0]) {
-			cause = arguments[0]
-			message = exceptionCauseMessage(cause)
+		} else {
+			causeInitialized = true
+			if !javaReferenceIsNull(arguments[0]) {
+				cause = arguments[0]
+				message = exceptionCauseMessage(cause)
+			}
 		}
 	case 2:
+		causeInitialized = true
 		message = StringReferenceValue(arguments[0])
 		if !javaReferenceIsNull(arguments[1]) {
 			cause = arguments[1]
@@ -559,6 +567,7 @@ func newExceptionConstructorBase(name string, arguments ...any) ThrowableBase {
 	}
 	base := newThrowableBase(name, message)
 	base.state.cause = cause
+	base.state.causeInitialized = causeInitialized
 	return base
 }
 
@@ -611,6 +620,7 @@ func NewIllegalArgumentException(arguments ...any) IllegalArgumentException {
 func NewIllegalArgumentExceptionWithCause(message string, cause interface{}) IllegalArgumentException {
 	base := newThrowableBase("IllegalArgumentException", message)
 	base.state.cause = cause
+	base.state.causeInitialized = true
 	return IllegalArgumentException{base}
 }
 
@@ -675,6 +685,7 @@ type ExecutionException struct{ ThrowableBase }
 func NewExecutionException(cause any) ExecutionException {
 	b := newThrowableBase("ExecutionException", errorMessage(cause))
 	b.state.cause = cause
+	b.state.causeInitialized = true
 	return ExecutionException{b}
 }
 
@@ -704,4 +715,70 @@ func NewIllegalThreadStateException(message string) IllegalThreadStateException 
 
 func NewUnsupportedEncodingException(arguments ...any) UnsupportedEncodingException {
 	return UnsupportedEncodingException{newExceptionConstructorBase("UnsupportedEncodingException", arguments...)}
+}
+
+// throwableCauseState is promoted through generated exception subclasses while
+// keeping cause initialization separate from a cause explicitly set to null.
+func (t ThrowableBase) throwableCauseState() *throwableState { return t.state }
+
+func ThrowableInitCauseExecution(execution *Execution, primary, cause any) Throwable {
+	ReferenceRequireNonNull(primary)
+	primary = collectionObjectView(primary)
+	if override, ok := throwableInitCauseOverrides.Load(reflect.TypeOf(primary)); ok {
+		var typedCause Throwable
+		if !javaReferenceIsNull(cause) {
+			typedCause = cause.(Throwable)
+		}
+		result := override.(func(*Execution, any, Throwable) any)(execution, primary, typedCause)
+		if javaReferenceIsNull(result) {
+			return nil
+		}
+		return result.(Throwable)
+	}
+	return ThrowableInitCauseDefaultExecution(execution, primary, cause)
+}
+
+// An explicit super.initCause invokes Throwable's body without redispatching
+// the receiver's override; its result still denotes the original Java object.
+func ThrowableInitCauseDefaultExecution(execution *Execution, primary, cause any) Throwable {
+	ReferenceRequireNonNull(primary)
+	// Throwable's synchronized body holds the Java monitor even while error
+	// formatting invokes an overriding cause.toString. The state mutex is only
+	// held around state access, so reentrant Java calls remain possible.
+	guard := MonitorEnterExecution(execution, primary)
+	defer MonitorExitExecution(guard)
+	carrier, ok := primary.(interface{ throwableCauseState() *throwableState })
+	if !ok || carrier.throwableCauseState() == nil {
+		panic(NewIllegalArgumentException("throwable has no cause state"))
+	}
+	state := carrier.throwableCauseState()
+	state.mu.Lock()
+	if state.causeInitialized {
+		state.mu.Unlock()
+		description := "a null"
+		if !javaReferenceIsNull(cause) {
+			description = StringValueOfExecution(execution, cause)
+		}
+		panic(NewIllegalStateException("Can't overwrite cause with "+description, primary))
+	}
+	if other, ok := cause.(interface{ throwableCauseState() *throwableState }); ok && other.throwableCauseState() == state {
+		state.mu.Unlock()
+		panic(NewIllegalArgumentExceptionWithCause("Self-causation not permitted", primary))
+	}
+	if javaReferenceIsNull(cause) {
+		cause = nil
+	}
+	state.cause = cause
+	state.causeInitialized = true
+	state.mu.Unlock()
+	return primary.(Throwable)
+}
+
+// Only compiler-resolved overrides of Throwable.initCause(Throwable) are
+// registered. Go's erased Throwable parameter alone cannot distinguish a
+// source overload initCause(Exception). Keys are types, never object instances.
+var throwableInitCauseOverrides sync.Map
+
+func RegisterThrowableInitCause(prototype any, invoke func(*Execution, any, Throwable) any) {
+	throwableInitCauseOverrides.Store(reflect.TypeOf(prototype), invoke)
 }

@@ -29,6 +29,9 @@ func genericMethodHasErasedEntry(def *symbol.Definition) bool {
 	for _, typ := range types {
 		for _, tp := range def.TypeParameters {
 			if strings.TrimSpace(typ) != tp.Name && strings.TrimSpace(typ) != tp.EmittedName() && javaTypeContainsParameter(typ, tp.Name) {
+				if ctx, found := genericMethodOwnerContext(def); found && canonicalGenericMethodSignature(def, ctx) {
+					return true
+				}
 				return false
 			}
 		}
@@ -48,12 +51,13 @@ func javaTypeContainsParameter(typ, name string) bool {
 }
 
 func genericMethodErasedJavaType(def *symbol.Definition, typ string) string {
-	for _, tp := range def.TypeParameters {
-		if strings.TrimSpace(typ) == tp.Name || strings.TrimSpace(typ) == tp.EmittedName() {
-			return rawTypeParameterErasure(tp, def.TypeParameters)
-		}
+	bindings := map[string]string{}
+	for _, parameter := range def.TypeParameters {
+		erasure := rawTypeParameterErasure(parameter, def.TypeParameters)
+		bindings[parameter.Name] = erasure
+		bindings[parameter.EmittedName()] = erasure
 	}
-	return typ
+	return substituteJavaTypeParameters(typ, bindings)
 }
 
 func eraseGenericMethodSignature(def *symbol.Definition, params, results *ast.FieldList, ctx Ctx) {

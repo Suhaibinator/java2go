@@ -156,7 +156,7 @@ func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (s
 				rawTypeParameterErasure(parameter, ctx.currentClass.TypeParameters),
 				ctx.currentClass,
 			)
-			if !javaTypeHasInterfaceRepresentation(erasure, ctx) {
+			if !javaTypeHasInterfaceRepresentation(erasure, ctx) && !leafObjectErasure(ctx.currentClass, erasure, ctx) {
 				return "", false
 			}
 			return erasure, true

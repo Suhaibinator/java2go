@@ -1090,13 +1090,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// handled by the intrinsics table, which maps them onto stdjava runtime
 		// constructors. This runs after type arguments are resolved so a collection
 		// constructor can carry its element type (e.g. stdjava.NewList[string]()).
-		if _, isIntrinsic := constructorIntrinsics[stripJavaQualifier(className)]; isIntrinsic {
+		if intrinsicName := stripJavaQualifier(className); constructorIntrinsics[intrinsicName] != nil || constructorNodeIntrinsics[intrinsicName] != nil {
 			scopeTypeParams := inScopeTypeParameters(ctx)
 			typeArgExprs := make([]ast.Expr, 0, len(effectiveTypeArgs))
 			for _, ta := range effectiveTypeArgs {
 				typeArgExprs = append(typeArgExprs, javaTypeStringToGoTypeExpr(ta, scopeTypeParams, ctx))
 			}
-			if rewritten, ok := tryConstructorIntrinsic(className, typeArgExprs, arguments, ctx); ok {
+			if rewritten, ok := tryConstructorIntrinsic(className, typeArgExprs, arguments, node, ctx, source); ok {
 				return rewritten
 			}
 		}
@@ -1400,6 +1400,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 			erasedReference := stripJavaQualifier(leftBase) == "Object" || stripJavaQualifier(rightBase) == "Object" ||
 				stripJavaQualifier(leftBase) == "Number" || stripJavaQualifier(rightBase) == "Number"
+			// Builtin exception signatures use the shared Throwable interface.
+			// A source exception can arrive through a declaring-base subobject;
+			// comparing Go interface payloads would lose its Java identity.
+			erasedReference = erasedReference ||
+				(resolveClassScopeByQualifiedName(ctx, leftBase) == nil && isBuiltinExceptionType(leftBase)) ||
+				(resolveClassScopeByQualifiedName(ctx, rightBase) == nil && isBuiltinExceptionType(rightBase))
 			if (leftWrapper || rightWrapper || erasedReference || sourceHierarchyReference) && !leftPrimitive && !rightPrimitive {
 				comparison := ast.Expr(stdjavaCall(ctx, "JavaReferenceEqual", leftExpr, rightExpr))
 				if operator == "!=" {
@@ -1464,6 +1470,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			Y:  rightExpr,
 		}
 	case "unary_expression":
+		if literal := javaIntegralUnaryLiteral(node, source); literal != nil {
+			return literal
+		}
 		operator := node.Child(0).Content(source)
 		operandNode := node.Child(1)
 		operand := ParseExpr(operandNode, source, ctx)
@@ -3172,7 +3181,10 @@ func isFmtSprintfCall(expr ast.Expr) bool {
 }
 
 func mergeFmtSprintCall(leftExpr, rightExpr ast.Expr, ctx Ctx) ast.Expr {
-	if call, ok := leftExpr.(*ast.CallExpr); ok && isFmtSprintfCall(call) {
+	if call, ok := leftExpr.(*ast.CallExpr); ok && isFmtSprintfCall(call) && !concatOperandInvokesCode(rightExpr) {
+		// Flatten only when the added operand cannot invoke code. Otherwise the
+		// existing call is the evaluation boundary that captures earlier reads
+		// before a later Java invocation or implicit toString conversion.
 		// Append %v to existing format string and add argument
 		formatLit := call.Args[0].(*ast.BasicLit)
 		formatLit.Value = formatLit.Value[:len(formatLit.Value)-1] + "%v\""
@@ -3698,6 +3710,11 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 		}
 	}
 
+	// Resolve package-qualified member types before falling back to a simple name.
+	if scope := findQualifiedSourceClass(name); scope != nil {
+		return scope
+	}
+
 	// Try fully-qualified lookup first: "pkg.path.Class".
 	if idx := strings.LastIndex(name, "."); idx >= 0 {
 		pkgPath := name[:idx]
@@ -3707,9 +3724,9 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 				return scope
 			}
 		}
-		// Explicit java.lang qualification bypasses a same-named class in the
-		// caller's package. The implicit import is shadowable; this spelling is not.
-		if pkgPath == "java.lang" {
+		// Explicit JDK qualification bypasses a same-named class in the
+		// caller's package. Exact source declarations were checked above.
+		if strings.HasPrefix(pkgPath, "java.") {
 			return nil
 		}
 		// Fall back to unqualified lookup.
@@ -3721,19 +3738,24 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 		return scope
 	}
 
+	// A single-type import may name a nested class. Its complete owner path
+	// selects that class before package-wide simple-name lookup can find a
+	// different member type with the same name.
+	if ownerPath, ok := ctx.currentFile.Imports[name]; ok {
+		if scope := findQualifiedSourceClass(ownerPath + "." + name); scope != nil {
+			return scope
+		}
+		// A single-type JDK import wins over another compilation unit's
+		// same-package declaration, even when the JDK class is runtime-owned.
+		if strings.HasPrefix(ownerPath, "java.") {
+			return nil
+		}
+	}
+
 	// Current package (other files).
 	if pkg := symbol.GlobalScope.FindPackage(ctx.currentFile.Package); pkg != nil {
 		if scope := pkg.FindClassScope(name); scope != nil {
 			return scope
-		}
-	}
-
-	// Imported package.
-	if pkgPath, ok := ctx.currentFile.Imports[name]; ok {
-		if pkg := symbol.GlobalScope.FindPackage(pkgPath); pkg != nil {
-			if scope := pkg.FindClassScope(name); scope != nil {
-				return scope
-			}
 		}
 	}
 
@@ -5434,7 +5456,9 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	if projectionCtx.expectedTypeRoot == nil {
 		projectionCtx.expectedTypeRoot = argNode
 	}
+	beforeProjection := argExpr
 	argExpr = projectDirectOwnerErasedExpressionForExpected(argExpr, argNode, projectionCtx, source)
+	projectedToExpected := argExpr != beforeProjection
 	if isJavaStringType(expectedType) && expressionUsesNullableValueStorage(argNode, ctx, source) {
 		return stdjavaCall(ctx, "StringReferenceValue", argExpr)
 	}
@@ -5453,7 +5477,10 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 			}
 		}
 	}
-	if actualKnown && javaDependentTypeParameterAssignable(actualType, expectedType, ctx) {
+	// An erased field/result was already projected directly to its consuming
+	// view. Its old source T no longer describes the physical expression, so
+	// wrapping that B value in a T-to-B bridge would require the wrong Go type.
+	if actualKnown && !projectedToExpected && javaDependentTypeParameterAssignable(actualType, expectedType, ctx) {
 		return dependentTypeParameterWideningExpr(argExpr, actualType, expectedType, ctx)
 	}
 
@@ -6404,6 +6431,9 @@ func lowerAnonymousClass(node, objectType, classBody *sitter.Node, source []byte
 	}
 	methodCtx := ctx.Clone()
 	methodCtx.localScope = implScope
+	if len(implScope.TypeParameters) > 0 && canonicalGenericMethodSignature(implScope, methodCtx) {
+		methodCtx.erasedGenericMethodBody = implScope
+	}
 	executionName := executionParameterName(implMethod, source, methodCtx)
 	methodCtx.executionContextName = executionName
 
@@ -6414,7 +6444,7 @@ func lowerAnonymousClass(node, objectType, classBody *sitter.Node, source []byte
 	if strings.TrimSpace(method.OriginalType) != "" && strings.TrimSpace(method.OriginalType) != "void" {
 		results = &ast.FieldList{
 			List: []*ast.Field{
-				{Type: javaTypeStringToGoTypeExpr(method.OriginalType, inScopeTypeParameters(ctx), ctx)},
+				{Type: javaTypeStringToGoTypeExpr(implScope.OriginalType, inScopeTypeParameters(methodCtx), methodCtx)},
 			},
 		}
 	}
@@ -6446,6 +6476,17 @@ func scopeForAnonymousMethod(implMethod *sitter.Node, samDef *symbol.Definition,
 		DeclarationNode: implMethod,
 	}
 	scope.Parameters = anonymousMethodParameters(implMethod, source)
+	scope.TypeParameters = symbol.ExtractTypeParameters(implMethod.ChildByFieldName("type_parameters"), source)
+	symbol.BindTypeParameterBounds(scope.TypeParameters, scope.TypeParameters)
+	if typeNode := implMethod.ChildByFieldName("type"); typeNode != nil {
+		scope.OriginalType = typeNode.Content(source)
+	}
+	scope.TypeParameterBindings = symbol.VisibleTypeParamBindings(scope.TypeParameters)
+	scope.DirectTypeParameter = symbol.DirectTypeParamForJavaType(scope.OriginalType, scope.TypeParameters)
+	for _, parameter := range scope.Parameters {
+		parameter.TypeParameterBindings = symbol.VisibleTypeParamBindings(scope.TypeParameters)
+		parameter.DirectTypeParameter = symbol.DirectTypeParamForJavaType(parameter.OriginalType, scope.TypeParameters)
+	}
 	return scope
 }
 
@@ -9320,6 +9361,7 @@ func goIndexExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 // behavior for pointer-wrapping reference types, but operates on strings to support
 // type inference paths.
 func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) ast.Expr {
+	typeStr = erasedAnonymousMethodJavaType(typeStr, ctx)
 	typeStr = strings.TrimSpace(typeStr)
 	if typeStr == "" {
 		return &ast.Ident{Name: "any"}
@@ -9764,8 +9806,8 @@ func qualifyJavaTypeInDeclaringContext(typeStr string, owner *symbol.ClassScope)
 	qualifiedBase := base
 	declCtx := Ctx{currentFile: ownerFile}
 	if scope := resolveClassScopeByQualifiedName(declCtx, base); scope != nil {
-		if javaPkg := resolveJavaPackageForType(declCtx, base, scope); javaPkg != "" && !strings.Contains(base, ".") {
-			qualifiedBase = javaPkg + "." + base
+		if sourceName := qualifiedSourceClassName(scope); sourceName != "" {
+			qualifiedBase = sourceName
 		}
 	}
 

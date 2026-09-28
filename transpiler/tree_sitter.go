@@ -54,6 +54,9 @@ type Ctx struct {
 	// The symbols of the current
 	localScope *symbol.Definition
 
+	// Anonymous universal-method callbacks use their declaration-bound erased ABI.
+	erasedGenericMethodBody *symbol.Definition
+
 	// executionContextName is the hidden *stdjava.Execution parameter active
 	// while lowering one generated Java method, constructor, or callback. Calls
 	// made within that body propagate the same token so Java monitor reentrancy
@@ -400,6 +403,7 @@ func (c Ctx) Clone() Ctx {
 		currentFile:                         c.currentFile,
 		currentClass:                        c.currentClass,
 		localScope:                          c.localScope,
+		erasedGenericMethodBody:             c.erasedGenericMethodBody,
 		executionContextName:                c.executionContextName,
 		lastType:                            c.lastType,
 		expectedType:                        c.expectedType,

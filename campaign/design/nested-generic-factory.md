@@ -69,3 +69,57 @@ public final class GsonGenericFactoryRepro {
   }
 }
 ```
+
+## Leaf prerequisite completed; next atomic factory slice
+
+The permanent `TestCampaignGenericLeafRawPollutionTiming` now matches JDK21 for
+raw method/field writes, Object-consuming reads, delayed concrete read failures,
+null, and alias identity. The physical member plan admits an Object-erased leaf
+only when its fields, callable signatures, body type uses, initializers and known
+subclasses can move together. It excludes nested/array slots, inner captures,
+inheritance, generic/private callable shapes that lack the required bridges.
+This is **not** canonical cross-instantiation layout or factory support. The
+original `TestCampaignNestedGenericFactoryIdentity` and its alpha-renamed
+companion remain failing acceptance tests. The companion exposes free method T;
+the original also exposed a separately owned receiver-keyword bug.
+
+The next proposed slice targets that complete minimized factory rather than
+another unrelated leaf extension:
+
+- For a fully planned concrete family, emit one non-generic instance struct and
+  generic source aliases to it, e.g. `type Adapter[T any] = AdapterJava2goErased`.
+  Every source instantiation then has the same physical pointer type. Generic
+  constructor functions can retain source type arguments while returning that
+  alias; they allocate exactly one canonical object. No facade allocation, object
+  copy, reinterpretation, or assertion between invariant pointers is allowed.
+- Emit instance methods, identity/view/metadata methods and initializers on the
+  canonical receiver. Class-owned T has its erased member meaning in those method
+  bodies. Constructor wrappers retain the source checking context; their storage
+  operations use the planned erased fields. Do not mutate source TypeParameters,
+  OriginalType, superclass/interface signatures or lexical binder identities.
+- Only after those aliases exist, recursively erase method-owned variables in
+  nested descriptors whose entire reference path is canonicalized. Ordinary
+  invariant containers remain outside this proof. The factory's Token<T> input
+  and Adapter<T> result can then use concrete erased aliases without free T.
+- Preserve anonymous method type-parameter declarations before lowering its
+  callback. A universal Java method must produce one erased callback descriptor,
+  with declaration-bound erased body context and typed-consumer checks. Merely
+  replacing the text T is invalid when binders shadow each other.
+- Require the original factory identity/null/mutation oracle plus the raw-write
+  timing oracle to pass together. Add checked raw nominal casts and metadata/array
+  identity checks at the canonical boundary. Existing generic method, interface,
+  anonymous, SCC and bridge tests remain required.
+
+The physical plan needs scope-aware hooks in generated type/receiver emission,
+constructor and SAM declarations, method erasure, source type mapping and metadata
+receiver helpers. Its identity key is the original Java class scope; names are
+output only. Runtime generic reflection continues to consume immutable source
+signatures and original raw binary class IDs.
+
+Full Gson still requires extending this plan atomically through TypeAdapter's
+abstract class hierarchy, interface contracts and synthesized anonymous classes.
+That extension must inventory every field, override, bridge, constructor, callback,
+method reference, raw cast and reified observation in the connected family before
+activation. A superclass and subclass cannot independently select incompatible
+physical layouts. Completing the minimized leaf factory is a foundation gate,
+not permission to claim Gson or round02 completion.

@@ -204,7 +204,7 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	scope := &ClassScope{
 		Class: &Definition{
 			OriginalName:    className,
-			Name:            HandleExportStatus(public, className),
+			Name:            classIdentifier(public, className),
 			IsFinal:         isFinal,
 			DeclarationNode: root,
 		},

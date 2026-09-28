@@ -5,7 +5,13 @@ package stdjava
 func ThreadHoldsLockExecution(execution *Execution, value any) bool {
 	requireExecution(execution)
 	requireNonNullMonitorReference(value, "holdsLock")
-	monitor := monitorRecord(value)
+	identity := monitorIdentityFor(value)
+	monitorsMu.Lock()
+	monitor := monitors[identity]
+	monitorsMu.Unlock()
+	if monitor == nil {
+		return false
+	}
 	monitor.mu.Lock()
 	defer monitor.mu.Unlock()
 	return monitor.owner == execution && monitor.depth > 0

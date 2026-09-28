@@ -19,7 +19,7 @@ func nullaryBuiltinConstructorReference(node *sitter.Node, class, target, result
 	for index, arg := range arguments {
 		types[index] = javaTypeStringToGoTypeExpr(arg, inScopeTypeParameters(ctx), ctx)
 	}
-	call, ok := tryConstructorIntrinsic(class, types, nil, ctx)
+	call, ok := tryConstructorIntrinsic(class, types, nil, node, ctx, source)
 	if !ok {
 		return nil, false
 	}

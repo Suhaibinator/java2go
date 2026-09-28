@@ -5,16 +5,25 @@ import (
 	"go/printer"
 	"go/token"
 	"unicode"
+	"unicode/utf8"
 )
 
 // Uppercase uppercases the first character of the given string
 func Uppercase(name string) string {
-	return string(unicode.ToUpper(rune(name[0]))) + name[1:]
+	if name == "" {
+		return name
+	}
+	first, width := utf8.DecodeRuneInString(name)
+	return string(unicode.ToUpper(first)) + name[width:]
 }
 
 // Lowercase lowercases the first character of the given string
 func Lowercase(name string) string {
-	return string(unicode.ToLower(rune(name[0]))) + name[1:]
+	if name == "" {
+		return name
+	}
+	first, width := utf8.DecodeRuneInString(name)
+	return string(unicode.ToLower(first)) + name[width:]
 }
 
 // HandleExportStatus is a convenience method for renaming methods that may be
@@ -24,6 +33,16 @@ func HandleExportStatus(exported bool, name string) string {
 		return Uppercase(name)
 	}
 	return Lowercase(name)
+}
+
+func classIdentifier(exported bool, name string) string {
+	name = HandleExportStatus(exported, name)
+	// Visibility conversion can itself create a Go keyword, for example a
+	// package-private Java class named If. Escape its generated declaration.
+	if token.Lookup(name).IsKeyword() {
+		name += "_"
+	}
+	return name
 }
 
 // nodeToStr converts any AST node to its string representation
