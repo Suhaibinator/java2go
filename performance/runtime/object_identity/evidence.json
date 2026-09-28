@@ -1,0 +1,570 @@
+{
+  "scope": "Allocation and post-GC reachability only; no speed claims",
+  "revision": "8cb6cd529c124802d9d004ef43d41dffe16f1085",
+  "archive_sha256": "886928a3a2846254e1f87373d93a02dbd171d12b2b1116c522314ee09a9ea2c2",
+  "source_sha256": "7efbc20e1fc3325c11ae7b582393fbb499160baa0ad520ca500bd0779f356e80",
+  "generated_sha256": "61b9f5202122db823186c22d53c9dcaa030680fa1a3e8a07c0d0a4f92e3c81fb",
+  "parity": true,
+  "harness_fingerprints": {
+    "IdentityDriver.java": "cbfe0a6ccaf1f2d12ba90c9c8d26c77a45bed4242e18964941dab56134ee7fb2",
+    "allocation_test.go.txt": "fd512b1193f222b6b3ca03f1383c40079bc5520ddc47ae0c242b523fb6bcbd19",
+    "counted_driver.go.txt": "9fd1315816fe6aa96389efae3b24d6d23584ab45d207aeb31d4676614d57ba1c",
+    "diagnostics.go.txt": "bac030722e652473d387b165d7f973a0b67896ab054330eeedc4c5d5b8502587",
+    "driver.go.txt": "28960fa41178b3d2d350941f59a5ec051417589722a29041563b01affa0b34d5"
+  },
+  "results": [
+    {
+      "variant": "java",
+      "seed": 17,
+      "mode": 0,
+      "stdout_sha256": "1870e479aff48586625ba8e6708038b5234256895d24e7c811f7a8fede614634",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 0
+        },
+        {
+          "phase": "round-1",
+          "delta": 36440
+        },
+        {
+          "phase": "round-2",
+          "delta": 36104
+        },
+        {
+          "phase": "cleared",
+          "delta": 36104
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "seed": 17,
+      "mode": 0,
+      "stdout_sha256": "1870e479aff48586625ba8e6708038b5234256895d24e7c811f7a8fede614634",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 16
+        },
+        {
+          "phase": "round-1",
+          "delta": 16
+        },
+        {
+          "phase": "round-2",
+          "delta": 64
+        },
+        {
+          "phase": "cleared",
+          "delta": 48
+        }
+      ]
+    },
+    {
+      "variant": "instrumented",
+      "seed": 17,
+      "mode": 0,
+      "stdout_sha256": "1870e479aff48586625ba8e6708038b5234256895d24e7c811f7a8fede614634",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 64,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-1",
+          "delta": 112,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-2",
+          "delta": 160,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "cleared",
+          "delta": 144,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        }
+      ]
+    },
+    {
+      "variant": "java",
+      "seed": 17,
+      "mode": 1,
+      "stdout_sha256": "fba7cf020d2c36bf026c2cfe4435a33051e0077286727a3cf2f70a13b5109ad1",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 131112
+        },
+        {
+          "phase": "round-1",
+          "delta": 298664
+        },
+        {
+          "phase": "round-2",
+          "delta": 167216
+        },
+        {
+          "phase": "cleared",
+          "delta": 167216
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "seed": 17,
+      "mode": 1,
+      "stdout_sha256": "fba7cf020d2c36bf026c2cfe4435a33051e0077286727a3cf2f70a13b5109ad1",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 131312
+        },
+        {
+          "phase": "round-1",
+          "delta": 131408
+        },
+        {
+          "phase": "round-2",
+          "delta": 131440
+        },
+        {
+          "phase": "cleared",
+          "delta": 176
+        }
+      ]
+    },
+    {
+      "variant": "instrumented",
+      "seed": 17,
+      "mode": 1,
+      "stdout_sha256": "fba7cf020d2c36bf026c2cfe4435a33051e0077286727a3cf2f70a13b5109ad1",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 131312,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-1",
+          "delta": 131344,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-2",
+          "delta": 131344,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "cleared",
+          "delta": 80,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        }
+      ]
+    },
+    {
+      "variant": "java",
+      "seed": 17,
+      "mode": 2,
+      "stdout_sha256": "2eae0f8e41fdef91426473a4e26cdde1cdaaf6a5e4de93f1012f5f91682e97e0",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 4195728
+        },
+        {
+          "phase": "round-1",
+          "delta": 4232168
+        },
+        {
+          "phase": "round-2",
+          "delta": 4231832
+        },
+        {
+          "phase": "cleared",
+          "delta": 168104
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "seed": 17,
+      "mode": 2,
+      "stdout_sha256": "2eae0f8e41fdef91426473a4e26cdde1cdaaf6a5e4de93f1012f5f91682e97e0",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 4200512
+        },
+        {
+          "phase": "round-1",
+          "delta": 4200512
+        },
+        {
+          "phase": "round-2",
+          "delta": 4200560
+        },
+        {
+          "phase": "cleared",
+          "delta": 48
+        }
+      ]
+    },
+    {
+      "variant": "instrumented",
+      "seed": 17,
+      "mode": 2,
+      "stdout_sha256": "2eae0f8e41fdef91426473a4e26cdde1cdaaf6a5e4de93f1012f5f91682e97e0",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 4200512,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-1",
+          "delta": 4200512,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-2",
+          "delta": 4200608,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "cleared",
+          "delta": 96,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        }
+      ]
+    },
+    {
+      "variant": "instrumented",
+      "seed": 97,
+      "mode": 0,
+      "stdout_sha256": "666952fd55fdee0f8b05cc689e3a2482ac6195ebf8e4de0ccb4aa146e06b8449",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 16,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-1",
+          "delta": 64,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-2",
+          "delta": 64,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "cleared",
+          "delta": 48,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "seed": 97,
+      "mode": 0,
+      "stdout_sha256": "666952fd55fdee0f8b05cc689e3a2482ac6195ebf8e4de0ccb4aa146e06b8449",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 16
+        },
+        {
+          "phase": "round-1",
+          "delta": 16
+        },
+        {
+          "phase": "round-2",
+          "delta": 64
+        },
+        {
+          "phase": "cleared",
+          "delta": 48
+        }
+      ]
+    },
+    {
+      "variant": "java",
+      "seed": 97,
+      "mode": 0,
+      "stdout_sha256": "666952fd55fdee0f8b05cc689e3a2482ac6195ebf8e4de0ccb4aa146e06b8449",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 0
+        },
+        {
+          "phase": "round-1",
+          "delta": 36440
+        },
+        {
+          "phase": "round-2",
+          "delta": 36104
+        },
+        {
+          "phase": "cleared",
+          "delta": 36104
+        }
+      ]
+    },
+    {
+      "variant": "instrumented",
+      "seed": 97,
+      "mode": 1,
+      "stdout_sha256": "01a2e25ec88edf8f1e01c523cfa479a1f864106871d20a6d2ffa1549cf6b36ee",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 131264,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-1",
+          "delta": 131312,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-2",
+          "delta": 131312,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "cleared",
+          "delta": 48,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "seed": 97,
+      "mode": 1,
+      "stdout_sha256": "01a2e25ec88edf8f1e01c523cfa479a1f864106871d20a6d2ffa1549cf6b36ee",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 131312
+        },
+        {
+          "phase": "round-1",
+          "delta": 131312
+        },
+        {
+          "phase": "round-2",
+          "delta": 131312
+        },
+        {
+          "phase": "cleared",
+          "delta": 48
+        }
+      ]
+    },
+    {
+      "variant": "java",
+      "seed": 97,
+      "mode": 1,
+      "stdout_sha256": "01a2e25ec88edf8f1e01c523cfa479a1f864106871d20a6d2ffa1549cf6b36ee",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 131112
+        },
+        {
+          "phase": "round-1",
+          "delta": 298664
+        },
+        {
+          "phase": "round-2",
+          "delta": 167216
+        },
+        {
+          "phase": "cleared",
+          "delta": 167216
+        }
+      ]
+    },
+    {
+      "variant": "instrumented",
+      "seed": 97,
+      "mode": 2,
+      "stdout_sha256": "f504c7d9b4427903e7c6056e4ed588cb8cf64a2b041e0bec1f5d0e5f5e7d6e50",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 4200512,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-1",
+          "delta": 4200512,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "round-2",
+          "delta": 4200512,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        },
+        {
+          "phase": "cleared",
+          "delta": 0,
+          "types": 99,
+          "classes": 1,
+          "descriptors": 5,
+          "monitors": 0
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "seed": 97,
+      "mode": 2,
+      "stdout_sha256": "f504c7d9b4427903e7c6056e4ed588cb8cf64a2b041e0bec1f5d0e5f5e7d6e50",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 4200512
+        },
+        {
+          "phase": "round-1",
+          "delta": 4200512
+        },
+        {
+          "phase": "round-2",
+          "delta": 4200512
+        },
+        {
+          "phase": "cleared",
+          "delta": 0
+        }
+      ]
+    },
+    {
+      "variant": "java",
+      "seed": 97,
+      "mode": 2,
+      "stdout_sha256": "f504c7d9b4427903e7c6056e4ed588cb8cf64a2b041e0bec1f5d0e5f5e7d6e50",
+      "metrics": [
+        {
+          "phase": "round-0",
+          "delta": 4195728
+        },
+        {
+          "phase": "round-1",
+          "delta": 4232168
+        },
+        {
+          "phase": "round-2",
+          "delta": 4231832
+        },
+        {
+          "phase": "cleared",
+          "delta": 36104
+        }
+      ]
+    }
+  ],
+  "runtime_manifest_sha256": {
+    "baseline": "d55a9f2c1e9ee8c6eae3b099cbd283b62cc5e1553aad015b3ee6f18ef46e001f",
+    "instrumented": "f6ba8204596371c58e8564670eb804969385d46354a199f39496a218e1ae0757"
+  },
+  "raw_output": ".campaign/performance/object-identity-20260927T235324",
+  "versions": {
+    "go-version": "go version go1.27.1 darwin/arm64",
+    "java-version": "java version \"21.0.6\" 2025-01-21 LTS\nJava(TM) SE Runtime Environment (build 21.0.6+8-LTS-188)\nJava HotSpot(TM) 64-Bit Server VM (build 21.0.6+8-LTS-188, mixed mode, sharing)",
+    "host": "Darwin arm64"
+  },
+  "allocation_observations": [
+    "construct_graph_8byte_payload_allocs=7",
+    "new_object_info_without_provider_allocs=1",
+    "new_generated_object_info_allocs=2",
+    "reference_equality_allocs=0",
+    "exact_leaf_view_allocs=0",
+    "base_to_leaf_view_allocs=0",
+    "leaf_to_base_view_allocs=2",
+    "leaf_to_interface_view_allocs=1",
+    "erased_descriptor_base_view_allocs=8",
+    "get_class_warmed_allocs=0",
+    "generated_views_1_allocs=6",
+    "generated_views_64_allocs=132",
+    "registry_counts_before=99,0,5,0 after=99,1,5,0"
+  ]
+}
