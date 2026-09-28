@@ -208,7 +208,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 							})
 						case "marker_annotation", "annotation":
 							modContent := modifier.Content(source)
-							comments = append(comments, &ast.Comment{Text: "//" + modContent})
+							comments = append(comments, javaAnnotationComments(modContent)...)
 							if excludedAnnotations[modContent] {
 								// Skip this field if there is an ignored annotation
 								skipField = true
@@ -3936,7 +3936,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				case "synchronized":
 					synchronizedMethod = true
 				case "marker_annotation", "annotation":
-					comments = append(comments, &ast.Comment{Text: "//" + modifier.Content(source)})
+					comments = append(comments, javaAnnotationComments(modifier.Content(source))...)
 					// If the annotation was on the list of ignored annotations, don't
 					// parse the method
 					if _, in := excludedAnnotations[modifier.Content(source)]; in {

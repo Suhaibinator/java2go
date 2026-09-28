@@ -23,7 +23,7 @@ func (f *repeatedFlag) Set(value string) error { *f = append(*f, value); return 
 
 // Project conversion stages a complete module before publishing it. Failed
 // dependency resolution, conversion, or cycle checks leave the output untouched.
-func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, output, module, excluded string, stdout io.Writer) error {
+func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, output, module, excluded string, stdout io.Writer) (resultErr error) {
 	if mainClass == "" || runtimeRoot == "" {
 		return fmt.Errorf("-maven requires -main-class fully.qualified.Class and -runtime /path/to/java2go")
 	}
@@ -79,7 +79,8 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.RemoveAll(staging) }()
+	published := false
+	defer func() { finishMavenProjectStaging(staging, published, &resultErr) }()
 	inputs := filepath.Join(staging, "sources")
 	generated := filepath.Join(staging, "output")
 	if err = os.MkdirAll(inputs, 0755); err != nil {
@@ -236,8 +237,26 @@ func main() {
 	if err = os.Rename(generated, output); err != nil {
 		return fmt.Errorf("publish project output: %w", err)
 	}
+	published = true
 	return nil
 }
+
+// Only a successfully published module discards staging. In particular, panic
+// unwinding must not confuse a nil named error with successful conversion.
+func finishMavenProjectStaging(staging string, published bool, result *error) {
+	if published {
+		_ = os.RemoveAll(staging)
+		return
+	}
+	if *result != nil {
+		*result = fmt.Errorf("%w; failed project artifacts retained at %s", *result, staging)
+		return
+	}
+	// Keep the original panic value and stack; add the artifact location without
+	// recovering or converting the failure into a successful return.
+	_, _ = fmt.Fprintf(os.Stderr, "project conversion interrupted; artifacts retained at %s\n", staging)
+}
+
 func validProjectModule(module string) bool {
 	if module == "" || strings.HasPrefix(module, "/") || strings.HasSuffix(module, "/") {
 		return false

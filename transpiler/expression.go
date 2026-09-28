@@ -6439,18 +6439,7 @@ func scopeForAnonymousMethod(implMethod *sitter.Node, samDef *symbol.Definition,
 		OriginalType:    samDef.OriginalType,
 		DeclarationNode: implMethod,
 	}
-	paramsNode := implMethod.ChildByFieldName("parameters")
-	for _, param := range nodeutil.NamedChildrenOf(paramsNode) {
-		typeNode, nameNode := nodeutil.JavaParameterNodes(param)
-		if nameNode == nil || typeNode == nil {
-			continue
-		}
-		scope.Parameters = append(scope.Parameters, &symbol.Definition{
-			OriginalName: nameNode.Content(source),
-			Name:         nameNode.Content(source),
-			OriginalType: typeNode.Content(source),
-		})
-	}
+	scope.Parameters = anonymousMethodParameters(implMethod, source)
 	return scope
 }
 
@@ -7734,17 +7723,7 @@ func synthAnonClassMethodDefinition(methodNode *sitter.Node, source []byte, keep
 		HasBody:         methodNode.ChildByFieldName("body") != nil,
 		DeclarationNode: methodNode,
 	}
-	for _, param := range nodeutil.NamedChildrenOf(methodNode.ChildByFieldName("parameters")) {
-		javaType, name := nodeutil.JavaParameterNodes(param)
-		if name == nil || javaType == nil {
-			continue
-		}
-		method.Parameters = append(method.Parameters, &symbol.Definition{
-			OriginalName: name.Content(source),
-			Name:         name.Content(source),
-			OriginalType: javaType.Content(source),
-		})
-	}
+	method.Parameters = anonymousMethodParameters(methodNode, source)
 	return method
 }
 

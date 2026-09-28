@@ -1,6 +1,6 @@
 # Continuous adversarial campaign
 
-Status: round 01 accepted; round 02 remains active. Five applications independently pass all nine JVM/Go comparisons plus twenty race-enabled stress runs each. All existing regression shards and exact lint pass. The frozen Gson application still fails generated-Go parsing on multiline annotations; the complete campaign suite remains red and round 02 is not accepted. Base revision: `c1f1ae45cfe8d5465425efc562a54580add4f3ea`.
+Status: round 01 accepted; round 02 remains active. Checkpoint03 independently verifies five applications, each with nine JVM/Go comparisons and twenty race-enabled stress runs. All historical regression shards and exact lint pass. Multiline annotation comments, anonymous parameter names, multiple local declarations, failed-artifact retention and reflection Type/Class foundations are verified. The unchanged Gson application still fails generated-Go parsing on a Java octal character escape; the complete campaign suite remains red and round 02 is not accepted. Base revision: `c1f1ae45cfe8d5465425efc562a54580add4f3ea`.
 
 Three Sol agents own independent Java applications and JVM-derived oracles. Three Astra agents own compiler, runtime, and dependency/harness implementation respectively. Two additional dedicated Astra agents investigate generated-code and runtime performance; they do not implement changes or edit challenge oracles. The coordinator independently verifies every promotion. No challenge or upstream implementation may be weakened to make translation pass.
 

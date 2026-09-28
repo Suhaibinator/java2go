@@ -213,6 +213,12 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
 		return source, true
 	}
+	if isBuiltinReflectType(javaType, ctx) {
+		return stdjavaQualifiedExpr("ReflectTypeTypeID", ctx), true
+	}
+	if base == "Class" || base == "java.lang.Class" {
+		return stdjavaQualifiedExpr("JavaClassTypeID", ctx), true
+	}
 	builtin := map[string]string{
 		"Object": "ObjectTypeID", "String": "StringTypeID",
 		"Number":     "NumberTypeID",
@@ -587,7 +593,7 @@ func classNeedsReferenceIdentity(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil {
 		return false
 	}
-	if sourceUsesReflection() {
+	if sourceUsesReflection() || sourceImplementsReflectType(scope, ctx) {
 		return true
 	}
 	_, ok := referenceIdentityScopes(ctx)[scope]
@@ -680,6 +686,10 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	}
 	for _, implementedScope := range resolveImplementedInterfaceScopesInDeclaringContext(ctx, scope) {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(implementedScope), ctx))
+	}
+
+	if sourceDirectlyImplementsReflectType(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr("ReflectTypeTypeID", ctx))
 	}
 
 	name := collisionSafeExecutionIdentifier("__java2goReferenceTypeRegistration"+scope.Class.Name, scope)

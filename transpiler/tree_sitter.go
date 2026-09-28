@@ -547,7 +547,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
 				switch modifier.Type() {
 				case "marker_annotation", "annotation":
-					comments = append(comments, &ast.Comment{Text: "//" + modifier.Content(source)})
+					comments = append(comments, javaAnnotationComments(modifier.Content(source))...)
 					if _, in := excludedAnnotations[modifier.Content(source)]; in {
 						// If this entire method is ignored, we return an empty field, which
 						// is handled by the logic that parses a class file

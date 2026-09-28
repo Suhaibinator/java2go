@@ -14,6 +14,9 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
 		return scope.IsInterface
 	}
+	if isBuiltinReflectType(javaType, ctx) {
+		return true
+	}
 	switch stripJavaQualifier(base) {
 	case "Number", "Comparable", "Serializable", "Cloneable", "Constable", "ConstantDesc", "CharSequence":
 		return true
@@ -50,6 +53,9 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 	}
 	if _, rank := javaArrayTypeParts(expected); rank != 0 {
 		return false
+	}
+	if builtinReflectTypeAssignable(actual, expected, ctx) {
+		return true
 	}
 	actualBase, _ := parseJavaTypeString(strings.TrimSpace(actual))
 	expectedBase, expectedArguments := parseJavaTypeString(strings.TrimSpace(expected))

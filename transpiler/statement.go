@@ -505,7 +505,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		hoistLocalClass(node, source, ctx)
 		return &ast.EmptyStmt{Implicit: true}
 	case "local_variable_declaration":
-		return parseLocalVariableDeclarator(node, node.ChildByFieldName("declarator"), source, ctx)
+		return parseLocalVariableDeclaration(node, source, ctx)
 	case "variable_declarator":
 		var names, values []ast.Expr
 

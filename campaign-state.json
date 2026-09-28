@@ -63,7 +63,7 @@
         "stage": "go-build-all",
         "detail": "exit=1 error=\n\n../../../../stdjava/common.go:6:2: missing go.sum entry for module providing package golang.org/x/exp/constraints (imported by github.com/NickyBoy89/java2go/stdjava); to add:\n\tgo get github.com/NickyBoy89/java2go/stdjava@v0.0.0\n"
       },
-      "latest_artifact": ".campaign/runs/20260928T053316Z-2416120059",
+      "latest_artifact": ".campaign/runs/20260928T055234Z-2814083121",
       "verification": {
         "implementation_sha256": "51b7dc59744f8baadf77e69cb6a502f7d103d912e68c8c0bae6b7cb981763c96",
         "race": true,
@@ -72,11 +72,12 @@
         "stable_implementation": true
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T053316Z-2416120059",
-        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
-        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "artifact": ".campaign/runs/20260928T055234Z-2814083121",
+        "implementation_sha256": "4f5a2008372869287066cd21c27420f4745e816386ac39a1ea34fd7f5ddf2c4c",
+        "revision": "af4e2f5ff4af6f2dddb0ae36f314a9d3cc2f26c4",
         "passed": true,
         "race": true,
+        "jvm_oracle_runs": 9,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
@@ -99,7 +100,7 @@
         "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": ".campaign/runs/20260928T053442Z-1890760263",
+      "latest_artifact": ".campaign/runs/20260928T055404Z-1198076937",
       "verification": {
         "implementation_sha256": "42c82081509055c7ee6992690ee2476a4aba9030bcd320ae586519d6ce5f6d15",
         "race": true,
@@ -108,11 +109,12 @@
         "stable_implementation": true
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T053442Z-1890760263",
-        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
-        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "artifact": ".campaign/runs/20260928T055404Z-1198076937",
+        "implementation_sha256": "4f5a2008372869287066cd21c27420f4745e816386ac39a1ea34fd7f5ddf2c4c",
+        "revision": "af4e2f5ff4af6f2dddb0ae36f314a9d3cc2f26c4",
         "passed": true,
         "race": true,
+        "jvm_oracle_runs": 9,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
@@ -135,13 +137,14 @@
         "detail": "panic: runtime error: invalid memory address or nil pointer dereference",
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
-      "latest_artifact": ".campaign/runs/20260928T053408Z-1502926740",
+      "latest_artifact": ".campaign/runs/20260928T055329Z-2658749714",
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T053408Z-1502926740",
-        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
-        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "artifact": ".campaign/runs/20260928T055329Z-2658749714",
+        "implementation_sha256": "4f5a2008372869287066cd21c27420f4745e816386ac39a1ea34fd7f5ddf2c4c",
+        "revision": "af4e2f5ff4af6f2dddb0ae36f314a9d3cc2f26c4",
         "passed": true,
         "race": true,
+        "jvm_oracle_runs": 9,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
@@ -152,7 +155,7 @@
       "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_business",
       "acceptance": "pending; no parity claim",
-      "latest_artifact": ".campaign/runs/20260928T053520Z-3408431293",
+      "latest_artifact": ".campaign/runs/20260928T055443Z-644742734",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -169,11 +172,12 @@
         "oracle": "4f9a19759e0af4e925337dd7b3531f7463d208b5ba85e21709afe83a10a6f287"
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T053520Z-3408431293",
-        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
-        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "artifact": ".campaign/runs/20260928T055443Z-644742734",
+        "implementation_sha256": "4f5a2008372869287066cd21c27420f4745e816386ac39a1ea34fd7f5ddf2c4c",
+        "revision": "af4e2f5ff4af6f2dddb0ae36f314a9d3cc2f26c4",
         "passed": true,
         "race": true,
+        "jvm_oracle_runs": 9,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
@@ -185,7 +189,7 @@
       "status": "frozen-jvm-validated-gson-transpilation-failing",
       "owner": "sol_data",
       "acceptance": "pending; no parity claim",
-      "latest_artifact": ".campaign/runs/20260928T053633Z-482628607",
+      "latest_artifact": ".campaign/runs/20260928T055600Z-1256780903",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -197,15 +201,17 @@
         "verbose_evidence": "See first_artifact/report.json and stage logs."
       },
       "latest_blockers": [
-        "Multiline @InlineMe annotation text leaves un-commented Go continuation lines; generated GsonBuilder.go fails parse after all source classes convert."
+        "Java octal character literal '\\0' is copied into Go rune syntax, causing ReflectiveTypeAdapterFactory.go930 parse failure.",
+        "Subsequent prerequisites: nested generic factory ABI, reflection metadata and UTF16 Reader/Writer protocols."
       ],
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T053633Z-482628607",
-        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
-        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "artifact": ".campaign/runs/20260928T055600Z-1256780903",
+        "implementation_sha256": "4f5a2008372869287066cd21c27420f4745e816386ac39a1ea34fd7f5ddf2c4c",
+        "revision": "af4e2f5ff4af6f2dddb0ae36f314a9d3cc2f26c4",
         "passed": false,
         "race": true,
-        "oracle_pairs": 9,
+        "jvm_oracle_runs": 9,
+        "oracle_pairs": 0,
         "additional_stress_runs": 0,
         "stable_implementation": true
       },
@@ -216,7 +222,7 @@
       "status": "coordinator-parity-passed-round02-gson-still-active",
       "owner": "sol_concurrent",
       "acceptance": "pending; no parity claim",
-      "latest_artifact": ".campaign/runs/20260928T053557Z-2909822102",
+      "latest_artifact": ".campaign/runs/20260928T055521Z-741171616",
       "oracle_runs": 9,
       "source_binary_oracle_parity": "passed",
       "maven_build": "passed",
@@ -236,11 +242,12 @@
         "stable_implementation": true
       },
       "coordinator_verification": {
-        "artifact": ".campaign/runs/20260928T053557Z-2909822102",
-        "implementation_sha256": "07c8a2cd33a598530a3778fcb005a3625e43fa506a0c427dd9a7421b3d6c4cb2",
-        "revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+        "artifact": ".campaign/runs/20260928T055521Z-741171616",
+        "implementation_sha256": "4f5a2008372869287066cd21c27420f4745e816386ac39a1ea34fd7f5ddf2c4c",
+        "revision": "af4e2f5ff4af6f2dddb0ae36f314a9d3cc2f26c4",
         "passed": true,
         "race": true,
+        "jvm_oracle_runs": 9,
         "oracle_pairs": 9,
         "additional_stress_runs": 20,
         "stable_implementation": true
@@ -248,10 +255,20 @@
       "first_artifact": ".campaign/runs/20260928T051529Z-444414224"
     }
   ],
-  "next_action": "Commit and push verified checkpoint, then release astra_compiler to fix three multiline annotation comment emitters with JVM/red parser regression. Rerun unchanged full Gson fixture, assign subsequent blockers, and retain all five passing applications. Round02 remains unaccepted until Gson and all gates pass.",
+  "next_action": "Fix confirmed Java octal character literal lowering, then continue reflection protocols/metadata, UTF16 Reader/Writer source dispatch and sound nested generic factory ABI. Rerun unchanged Gson after stable repairs; round02 is not accepted.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
-    "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only"
+    "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
+    "latest_string_search_experiment": {
+      "path": "performance/codegen/string_search/README.md",
+      "status": "isolated-candidate-only",
+      "generated_call_allocations": "4 -> 1",
+      "direct_helper_allocations": "3 -> 0",
+      "java_search_method_results": 15912,
+      "java_null_cases": 4,
+      "timing_claim": false,
+      "live_implementation_changed": false
+    }
   },
   "verified_repairs": [
     "Modified/annotated varargs parsing: symbol tests and JVM constructor/method parity",
@@ -271,7 +288,12 @@
     "ThreadLocal get/set/remove/withInitial uses logical Execution with named/source/method-reference Supplier callbacks; JVM and race tests green; prior generated output requires regeneration for Supplier interface ABI",
     "Source ByteArrayInputStream subclasses and ranged output writes, Files.readAllBytes plus binary-expression comments: focused JVM parity green",
     "Java assert statements preserve disabled/enabled startup semantics and lazy details/causes; campaign pins Go mode false to match default JVM; scoped/ClassLoader policy unsupported",
-    "Map.computeIfAbsent HashMap/TreeMap callback/null/structural-modification contracts and generic mapping lambdas/record comparator chains: JVM and race regressions green"
+    "Map.computeIfAbsent HashMap/TreeMap callback/null/structural-modification contracts and generic mapping lambdas/record comparator chains: JVM and race regressions green",
+    "Multiline annotation comments preserve LF/CRLF/CR, literal comment text, directive safety and runtime annotation metadata: coordinator JVM/race tests passed.",
+    "Ordinary multiple local declarations retain all variables, sequential evaluation, abrupt completion and aliasing: coordinator red JVM regression then race green.",
+    "Failed Maven conversion retains private source/generated artifacts and diagnoses their path; successful publication still cleans staging. Coordinator failure/success/panic tests passed.",
+    "Anonymous method parameters use collision-safe Go names while preserving Java binding names: compiler JVM/race regression passed; coordinator full unit gate pending.",
+    "Reflect Type/Class phase1 implements canonical Class nominal identity and type names, source default dispatch, casts and Type arrays. Generic reflection metadata remains pending."
   ],
   "verification_invalidation": "Any implementation change requires affected gates to rerun; concurrent acceptance is evidence at its recorded content digest, not current-round promotion.",
   "performance_findings": {
@@ -293,39 +315,41 @@
     "branch": "codex/adversarial-campaign",
     "remote": "origin",
     "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints.",
-    "last_pushed_revision": "563fddbe837ba558ae3d1f57c9a947a179f845af",
+    "last_pushed_revision": "af4e2f5ff4af6f2dddb0ae36f314a9d3cc2f26c4",
     "last_pushed_branch": "origin/codex/adversarial-campaign"
   },
   "regression_status": {
     "unit": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/checkpoint02-unit.log"
+      "log": ".campaign/checkpoint03-unit.log"
     },
     "e2e_other": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/checkpoint02-e2e-other.log"
+      "log": ".campaign/checkpoint03-e2e-other.log"
     },
     "e2e_strict_parity": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/checkpoint02-e2e-parity.log"
+      "log": ".campaign/checkpoint03-e2e-parity.log"
     },
     "fuzz": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/checkpoint02-fuzz.log"
+      "log": ".campaign/checkpoint03-fuzz.log"
     },
     "lint": {
       "status": "passed",
       "exit_code": 0,
-      "log": ".campaign/checkpoint02-lint.log"
+      "version": "2.14.0",
+      "issues": 0,
+      "verified_by": "astra_lint at stable checkpoint03"
     },
     "campaign": {
       "status": "failed-only-active-gson-challenge",
       "exit_code": 1,
-      "log": ".campaign/checkpoint02-campaign.log",
+      "log": ".campaign/checkpoint03-campaign.log",
       "passing_applications": 5,
       "oracle_pairs": 45,
       "additional_stress_runs": 100,
@@ -367,13 +391,21 @@
     },
     {
       "id": "local-multiple-declarators",
-      "owner": "astra_compiler",
-      "detail": "Ordinary local boolean a=true,b=false declaration loses b; for-init variant already fixed. Found while isolating comment-expression regression."
+      "owner": "coordinator",
+      "detail": "Each local declarator now retains sequential initializer evaluation and lexical scope via separate Go var specifications. JVM regression covers dependent initializers, side effects, abrupt completion, unused locals, boxed/null values and shared arrays.",
+      "status": "focused-jvm-race-passed"
     },
     {
       "id": "raw-generic-unbound-method-reference",
       "owner": "astra_compiler",
       "detail": "Function<Document<String>,String> f=Document::state produces nil AST; explicit Document<String>::state works. General target-driven inference needed."
+    },
+    {
+      "id": "java-octal-character-literals",
+      "owner": "astra_compiler",
+      "status": "coordinator-stable-red",
+      "detail": "Frozen Gson ReflectiveTypeAdapterFactory.java613 uses legal Java '\\0'; generated rune copied verbatim is invalid Go. Confirmed with unchanged implementation hashes by the full coordinator campaign gate.",
+      "artifact": ".campaign/runs/20260928T055600Z-1256780903"
     }
   ],
   "accepted_rounds": [
@@ -387,5 +419,13 @@
       "existing_regression_shards": "all passed",
       "lint": "golangci-lint2.14.0:0 issues"
     }
-  ]
+  ],
+  "in_progress_checkpoint": {
+    "status": "verified-milestone-gson-still-red",
+    "focused_gate": ".campaign/coordinator-gson-prerequisites.log",
+    "focused_gate_passed": true,
+    "all_historical_regression_shards_passed": true,
+    "campaign_passed": false,
+    "passing_applications": 5
+  }
 }

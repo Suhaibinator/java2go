@@ -102,3 +102,10 @@ The campaign always rebuilds against the matching local runtime. In particular,
 of a plain Go function, so callbacks created on one Java thread execute with
 the calling thread's identity and ThreadLocal values. Previously generated Go
 using the old Supplier ABI must be regenerated before linking this runtime.
+
+Failed Maven project conversion retains its private `.java2go-project-*` staging
+folder beside the requested output, inside the campaign run directory. Error
+messages name that folder, preserving source and generated Go paths for diagnosis.
+Panic unwinding also retains staging and reports its path without replacing the
+panic. Successful publication cleans staging normally. Retained diagnostic output
+is never treated as a successful conversion or parity result.
