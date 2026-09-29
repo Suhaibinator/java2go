@@ -21,6 +21,10 @@ import (
 func init() {
 	registerCollectionConstructors()
 	registerListIntrinsics()
+	registerErasedCollectionIntrinsics()
+	registerListErasedResults()
+	registerCollectionIterators()
+	registerRawListIntrinsics()
 	registerMapIntrinsics()
 	registerSetIntrinsics()
 	registerOptionalIntrinsics()
@@ -89,6 +93,13 @@ func collectionNeedsSliceForRange(node *sitter.Node, ctx Ctx, source []byte) boo
 // is not a collection type. List/Map/Set are reference types and map to a
 // pointer (mutations are shared); Optional is a value type.
 func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx Ctx) ast.Expr {
+	writtenName := baseName
+	baseName = stripJavaQualifier(baseName)
+	if baseName == "Iterable" || baseName == "Iterator" {
+		if containsString(scopeTypeParams, writtenName) || canonicalIterationOwner(writtenName, ctx) == "" {
+			return nil
+		}
+	}
 	argExprs := func() []ast.Expr {
 		exprs := make([]ast.Expr, 0, len(typeArgs))
 		for _, ta := range typeArgs {
@@ -98,8 +109,14 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 	}
 
 	switch {
-	case (baseName == "Iterable" || baseName == "Collection") && len(typeArgs) == 1:
-		return applyTypeArguments(stdjavaQualifiedExpr("Iterable", ctx), argExprs())
+	case baseName == "Iterator":
+		return stdjavaQualifiedExpr("JavaIterator", ctx)
+	case containsString(listTypeNames, baseName) && len(typeArgs) == 0:
+		return stdjavaQualifiedExpr("JavaIterable", ctx)
+	case baseName == "Collection":
+		return stdjavaQualifiedExpr("JavaIterable", ctx)
+	case baseName == "Iterable":
+		return stdjavaQualifiedExpr("JavaIterable", ctx)
 	case baseName == "Entry" && len(typeArgs) == 2:
 		return applyTypeArguments(stdjavaQualifiedExpr("MapEntry", ctx), argExprs())
 	case containsString(listTypeNames, baseName):
@@ -131,7 +148,7 @@ func registerCollectionConstructors() {
 	for _, name := range []string{"ArrayList", "LinkedList"} {
 		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) == 1 {
-				return stdjavaGenericCall(ctx, "NewListWithArgument", typeArgs, args)
+				return stdjavaGenericCall(ctx, "NewListWithArgument", typeArgs, append(args, intrinsicExecutionExpr(ctx)))
 			}
 			if len(args) != 0 {
 				return nil
@@ -185,7 +202,7 @@ func registerListIntrinsics() {
 			if len(args) != 0 {
 				return nil
 			}
-			return selectorCall(stdjavaCall(ctx, "ReferenceRequireNonNull", recv), "String", nil)
+			return selectorCall(stdjavaCall(ctx, "ReferenceRequireNonNull", recv), "StringJava2goExecution", []ast.Expr{intrinsicExecutionExpr(ctx)})
 		})
 		registerInstanceIntrinsicResultType(listType, "toString", "String")
 	}
@@ -221,8 +238,18 @@ func registerListIntrinsics() {
 			goName := "RemoveObject"
 			if listRemoveUsesIndex(invocation, ctx, source) {
 				goName = "RemoveAt"
+				if collectionResultIsErased(invocation, ctx, source) {
+					goName = "RemoveAtObject"
+				}
 			}
 			args := intrinsicArgs(invocation.ChildByFieldName("object"), "remove", source, ctx)
+			if rawListReceiver(invocation, ctx, source) {
+				helper := "CollectionRemoveExecution"
+				if goName != "RemoveObject" {
+					helper = "CollectionListRemoveAtExecution"
+				}
+				return stdjavaCall(ctx, helper, append([]ast.Expr{intrinsicExecutionExpr(ctx), recv}, args...)...)
+			}
 			if goName == "RemoveObject" {
 				args = append(args, intrinsicExecutionExpr(ctx))
 			}

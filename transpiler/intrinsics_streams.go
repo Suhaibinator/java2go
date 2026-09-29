@@ -38,6 +38,18 @@ func registerStreamIntrinsics() {
 		}
 	}
 
+	for _, method := range []string{"stream", "parallelStream"} {
+		registerInstanceNodeIntrinsic("Collection", method, func(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+			elements := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
+			element := "Object"
+			if len(elements) == 1 {
+				element = readableWildcardProjection(elements[0])
+			}
+			values := stdjavaGenericCall(ctx, "ErasedCollectionSlice", []ast.Expr{javaTypeStringToGoTypeExpr(element, inScopeTypeParameters(ctx), ctx)}, []ast.Expr{intrinsicExecutionExpr(ctx), recv})
+			return stdjavaCall(ctx, "StreamOfSlice", values)
+		})
+	}
+
 	// Stream.of(...) uses Java's inferred reference type explicitly. Go cannot
 	// infer Number from heterogeneous Integer and Long wrapper pointers.
 	registerStaticIntrinsic("Stream", "of", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {

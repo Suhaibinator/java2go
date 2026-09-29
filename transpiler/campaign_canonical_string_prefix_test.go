@@ -5,9 +5,9 @@ import "testing"
 // Prepared before implementation; the strict helper validates the handwritten
 // observations on explicit JDK21 before transpiling the unchanged Java source.
 func TestCampaignCanonicalStringPrefixSuffixJDK21(t *testing.T) {
-	runCampaignCompilerStrictProjectOracle(t, map[string]string{
-		"pom.xml": `<project><modelVersion>4.0.0</modelVersion><groupId>probe</groupId><artifactId>string-prefix</artifactId><version>1</version></project>`,
-		"src/main/java/prefixprobe/Entry.java": `package prefixprobe;
+ runCampaignCompilerStrictProjectOracle(t, map[string]string{
+  "pom.xml": `<project><modelVersion>4.0.0</modelVersion><groupId>probe</groupId><artifactId>string-prefix</artifactId><version>1</version></project>`,
+  "src/main/java/prefixprobe/Entry.java": `package prefixprobe;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 public class Entry {
@@ -37,5 +37,5 @@ public class Entry {
   try { starts.test(null,""); System.out.println("unbound-null=missed"); } catch(NullPointerException expected) { System.out.println("unbound-null=call"); }
  }
 }`,
-	}, "prefixprobe.Entry", "units=true:true:true:false:false\noffset=false:true:true:false:false:false\nlength=false:false:true:false:true:true:false\nprefix-null-negative=false\nprefix-null=now\nsuffix-null=now\nreceiver-null=12\nend-receiver-null=12\nrefs=true:true:true\nbound-null=now\nunbound-null=call\n")
+ }, "prefixprobe.Entry", "units=true:true:true:false:false\noffset=false:true:true:false:false:false\nlength=false:false:true:false:true:true:false\nprefix-null-negative=false\nprefix-null=now\nsuffix-null=now\nreceiver-null=12\nend-receiver-null=12\nrefs=true:true:true\nbound-null=now\nunbound-null=call\n")
 }

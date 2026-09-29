@@ -14,11 +14,13 @@ import "strings"
 // List is a generic, slice-backed list matching the subset of java.util.List
 // used by transpiled code.
 type List[T any] struct {
-	elements    []T
-	array       *ReferenceArray
-	elementType TypeID
-	fixed       bool
-	modCount    uint64
+	elements       []T
+	erasedElements []any
+	erasedStorage  bool
+	array          *ReferenceArray
+	elementType    TypeID
+	fixed          bool
+	modCount       uint64
 }
 
 // NewList returns an empty List, matching `new ArrayList<>()` / `new LinkedList<>()`.
@@ -38,6 +40,10 @@ func NewListFrom[T any](elements ...T) *List[T] {
 func (l *List[T]) Add(element T) bool {
 	l.requireResizable()
 	l.modCount++
+	if l.erasedStorage {
+		l.erasedElements = append(l.erasedElements, element)
+		return true
+	}
 	l.elements = append(l.elements, element)
 	return true
 }
@@ -47,25 +53,24 @@ func (l *List[T]) Get(index int32) T {
 	if l.array != nil {
 		return ReferenceArrayGet[T](l.array, index, l.elementType)
 	}
-	return l.elements[index]
+	return collectionElementView[T](l.rawGet(index))
 }
 
 // Set replaces the element at index and returns the previous value, matching
 // List.set.
 func (l *List[T]) Set(index int32, element T) T {
-	old := l.Get(index)
-	if l.array != nil {
-		ReferenceArraySet(l.array, index, element)
-		return old
-	}
-	l.elements[index] = element
-	return old
+	old := l.rawGet(index)
+	l.rawSet(index, element)
+	return collectionElementView[T](old)
 }
 
 // Size returns the number of elements, matching List.size.
 func (l *List[T]) Size() int32 {
 	if l.array != nil {
 		return ReferenceArrayLength(l.array)
+	}
+	if l.erasedStorage {
+		return int32(len(l.erasedElements))
 	}
 	return int32(len(l.elements))
 }
@@ -84,15 +89,12 @@ func (l *List[T]) Clear() {
 		l.modCount++
 	}
 	l.elements = nil
+	l.erasedElements = nil
 }
 
 // RemoveAt removes and returns the element at index, matching List.remove(int).
 func (l *List[T]) RemoveAt(index int32) T {
-	l.requireResizable()
-	old := l.elements[index]
-	l.modCount++
-	l.elements = append(l.elements[:index], l.elements[index+1:]...)
-	return old
+	return collectionElementView[T](l.rawRemove(index))
 }
 
 // AddAll appends every element of other and returns true if any were added,
@@ -108,7 +110,17 @@ func (l *List[T]) AddAll(other *List[T]) bool {
 		return false
 	}
 	l.requireResizable()
-	l.elements = append(l.elements, other.Slice()...)
+	if l.erasedStorage || other.erasedStorage {
+		copied := other.javaListElements()
+		if !l.erasedStorage {
+			l.erasedElements = l.javaListElements()
+			l.erasedStorage = true
+			l.elements = nil
+		}
+		l.erasedElements = append(l.erasedElements, copied...)
+	} else {
+		l.elements = append(l.elements, other.Slice()...)
+	}
 	return true
 }
 
@@ -129,7 +141,7 @@ func (l *List[T]) Contains(target any, execution ...*Execution) bool {
 // matching List.indexOf.
 func (l *List[T]) IndexOf(target any, execution ...*Execution) int32 {
 	for i := int32(0); i < l.Size(); i++ {
-		e := l.Get(i)
+		e := l.rawGet(i)
 		if listElementEqual(target, e, optionalComparisonExecution(execution)) {
 			return int32(i)
 		}
@@ -144,7 +156,7 @@ func (l *List[T]) RemoveObject(target any, execution ...*Execution) bool {
 	if index < 0 {
 		return false
 	}
-	l.RemoveAt(index)
+	l.rawRemove(index)
 	return true
 }
 
@@ -155,6 +167,13 @@ func (l *List[T]) Slice() []T {
 	if l.array != nil {
 		return ReferenceArrayElements[T](l.array, l.elementType)
 	}
+	if l.erasedStorage {
+		elements := make([]T, l.Size())
+		for index := range elements {
+			elements[index] = collectionElementView[T](l.erasedElements[index])
+		}
+		return elements
+	}
 	return l.elements
 }
 
@@ -163,7 +182,7 @@ func (l *List[T]) Slice() []T {
 func (l *List[T]) String() string {
 	parts := make([]string, l.Size())
 	for i := int32(0); i < l.Size(); i++ {
-		e := l.Get(i)
+		e := l.rawGet(i)
 		parts[i] = StringValueOf(e)
 	}
 	return "[" + strings.Join(parts, ", ") + "]"

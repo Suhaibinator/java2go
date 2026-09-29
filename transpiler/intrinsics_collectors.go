@@ -2,7 +2,6 @@ package transpiler
 
 import (
 	"go/ast"
-	"go/token"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -332,8 +331,4 @@ func numericCollectorJavaType(name string) string {
 		return "double"
 	}
 	return "int"
-}
-
-func emptyStringLit() ast.Expr {
-	return &ast.BasicLit{Kind: token.STRING, Value: `""`}
 }

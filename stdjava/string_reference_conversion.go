@@ -26,9 +26,15 @@ func JavaStringValueOfExecution(execution *Execution, value any) *JavaString {
 		if rendered, found := callRegisteredSourceJavaString(execution, value); found {
 			return rendered
 		}
-		// Source default Object/Throwable adapters are a separate migration
-		// boundary. A similarly named ordinary method is never that adapter.
+		if registeredSourceObjectToString(value) {
+			return ObjectDefaultJavaStringExecution(execution, value)
+		}
+		// An unmarked source value has no migrated default adapter. A similarly
+		// named ordinary method is never evidence of Java toString ownership.
 		panic(NewUnsupportedOperationException("Java source String conversion requires a registered reference-returning toString adapter"))
+	}
+	if rendered, found := javaStringValueOfNativeExecution(execution, value); found {
+		return rendered
 	}
 	if source, ok := value.(javaReferenceStringer); ok {
 		return source.StringJava2goExecution(execution)

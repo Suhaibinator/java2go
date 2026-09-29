@@ -319,6 +319,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
 		declarations = append(declarations, generateCharacterIOBridgeDecls(ctx)...)
 		declarations = append(declarations, generateFunctionSAMBridgeDecls(ctx)...)
+		declarations = append(declarations, generateIterationBridgeDecls(ctx)...)
 		declarations = append(declarations, generateRawUnboundReceiverEntryDecls(ctx)...)
 		declarations = append(declarations, generateClassSubobjectInstallerDecls(ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
@@ -839,7 +840,7 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) [
 // parameters from the implementing class, applies generated name casing, and
 // qualifies types that live in another generated package.
 func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
-	if isExternalFunctionType(javaType, ctx) {
+	if isExternalFunctionType(javaType, ctx) || canonicalIterationOwner(javaType, ctx) != "" {
 		return nil
 	}
 	base, _ := parseJavaTypeString(javaType)

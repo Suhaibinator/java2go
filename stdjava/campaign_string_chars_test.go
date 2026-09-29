@@ -60,7 +60,12 @@ func TestCampaignJavaStringCharsJDK21(t *testing.T) {
 	empty2 := JavaStringFromCharsRange(chars, 7, 0)
 	literal := JavaStringLiteralUTF16(nil)
 	line("empty.identity=%t", empty1 != empty2 && empty1 != literal && empty2 != literal)
-	line("empty.array.identity=%t", JavaStringToCharArray(empty1) != JavaStringToCharArray(empty1))
+	emptyCharsFirst := JavaStringToCharArray(empty1)
+	emptyCharsSecond := JavaStringToCharArray(empty1)
+	if emptyCharsFirst == nil || emptyCharsSecond == nil || len(emptyCharsFirst.Elements) != 0 || len(emptyCharsSecond.Elements) != 0 || emptyCharsFirst.ComponentType() != PrimitiveTypeID("char") || emptyCharsSecond.ComponentType() != PrimitiveTypeID("char") {
+		t.Fatal("empty toCharArray must return nonnull zero-length char arrays")
+	}
+	line("empty.array.identity=%t", emptyCharsFirst != emptyCharsSecond)
 	line("substring.full.identity=%t", JavaStringSubstringFrom(whole, 0) == whole)
 	line("substring.empty.identity=%t", JavaStringSubstringFrom(whole, whole.Length()) == literal)
 	line("substring.empty.full.identity=%t", JavaStringSubstringFrom(empty1, 0) == empty1)

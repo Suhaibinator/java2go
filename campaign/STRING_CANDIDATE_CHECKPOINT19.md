@@ -22,3 +22,13 @@ go test -race -count=1 -timeout=300s ./transpiler -run '^TestCampaignThrowable(R
 ```
 
 Use the installed JDK21 explicitly for both Java compilation and execution. These focused results establish the stated corpus behavior; they do not establish full canonical runtime coverage, full Gson or Netty support, performance superiority, or completion of the campaign.
+
+## Canonical integration and lint checkpoint
+
+This component composes native iteration/collection and canonical String prerequisites, source Object text dispatch, boxed-wrapper adapters, List text behavior and boolean inference for instanceof. The coherent1,934-file source passed all16 focused stages with independent raw audit `5cd1a769ce0a448e9908233e420615f5f37078b060a30aadcb72e763554f7ffd`.
+
+A fresh original22-stage gate then passed five version/build stages and failed lint with eight issues; the remaining16 stages were unrun. The subsequent lint-only derivative removes seven unused helpers and replaces two syntactically identical calls in the empty-array test with separate variables, retaining the original identity observation and adding array descriptor/length checks. No surviving production function body, Java fixture or oracle changed. The resulting1,933-file source passes the original lint command, original charsJDK1 and canonical String5 tests. Independent terminal audit: `4a01e3cd79d5e25010537569e8f1727e1c4d6234c6c803bcec14a2fef3685dc0`.
+
+A fresh full22 run on the lint derivative passed eight stages, then exposed two obsolete astutil String shape assertions expecting raw Go strings. Thirteen later stages were unrun. The test adaptation and independent audit remain pending; no full acceptance is claimed.
+
+Final tested source manifest: `32e5dcbfb68df7469ff7cc09d0205ac156b00566f2c20b4f0b9ca2f102f87f31`. Root publication verifies all1,931 nonledger candidate files plus retention of the three previously published metadata/probe files. Two current tracking files are preserved and updated. These are component results; the new originalfull22 run and full Gson remain required. Number/Enum, DateFormat and newer collection repairs are separate candidates awaiting coherent integration. Checkpoint18 remains the latest full compatibility acceptance.

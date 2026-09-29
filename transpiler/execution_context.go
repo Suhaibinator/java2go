@@ -61,6 +61,9 @@ func executionImplementationName(def *symbol.Definition, owner *symbol.ClassScop
 	if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(owner, def, classScopeCtx(owner, ctx)); bridged {
 		return directOwnerOverrideBridgeExactExecutionName(selection.bridge)
 	}
+	if name := iterationSourceImplementationName(def, owner, ctx); name != "" {
+		return name
+	}
 	return collisionSafeExecutionIdentifier(def.Name+executionMethodSuffix, owner)
 }
 

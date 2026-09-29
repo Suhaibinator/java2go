@@ -139,6 +139,19 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 		case "package_declaration":
 			filePackage = node.NamedChild(0).Content(source)
 		case "import_declaration":
+			// The table binds individual imported names. On-demand imports do
+			// not import their owner as a type (Math.* does not import Math).
+			// Their declarations remain in the AST for on-demand resolution.
+			// Static members have separate type and value namespaces; resolve them
+			// from their retained declarations once their owner symbols are known.
+			wildcard, static := false, false
+			for index := 0; index < int(node.ChildCount()); index++ {
+				wildcard = wildcard || node.Child(index).Content(source) == "*"
+				static = static || node.Child(index).Type() == "static"
+			}
+			if wildcard || static {
+				continue
+			}
 			importedItem := node.NamedChild(0).ChildByFieldName("name").Content(source)
 			importPath := node.NamedChild(0).ChildByFieldName("scope").Content(source)
 

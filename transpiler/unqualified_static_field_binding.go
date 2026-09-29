@@ -19,5 +19,5 @@ func resolveUnqualifiedStaticField(name string, ctx Ctx) *fieldResolution {
 		}
 		return resolution
 	}
-	return nil
+	return resolveStaticImportedField(name, ctx).source
 }

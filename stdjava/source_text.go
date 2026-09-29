@@ -10,6 +10,24 @@ import (
 // before Java constructors or static initializers can invoke virtual methods.
 var sourceToStringSelectors sync.Map
 
+// The compiler explicitly marks source classes whose superclass chain reaches
+// Object. This is a nominal default adapter, separate from declaration selectors
+// so a child's default never shadows an inherited Java toString override.
+var sourceObjectToStringAdapters sync.Map
+
+func RegisterJavaSourceObjectToString(id TypeID) {
+	sourceObjectToStringAdapters.Store(id, true)
+}
+
+func registeredSourceObjectToString(value any) bool {
+	id, ok := ObjectDynamicType(value)
+	if !ok {
+		return false
+	}
+	_, registered := sourceObjectToStringAdapters.Load(id)
+	return registered
+}
+
 func RegisterJavaSourceToString(id TypeID, selector string) {
 	sourceToStringSelectors.Store(id, selector)
 }

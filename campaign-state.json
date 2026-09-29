@@ -4378,8 +4378,29 @@
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Focused progress and restored strict Gson milestone; implementation remains private pending regression gates",
+    "publication_status": "Canonical1933 WIP component with focused and lint verification; NumberEnum3cfd remains separate. Checkpoint18 remains latest full compatibility acceptance.",
     "checkpoint_updated_utc": "2026-09-29T14:30:09.712628+00:00",
-    "prepared_endpoints": "Old main43 endpoints preserved UNRUN; repin fresh after generic repair stable."
+    "prepared_endpoints": "Old main43 endpoints preserved UNRUN; repin fresh after generic repair stable.",
+    "canonical_lint_component": {
+      "status": "EXACT_TESTED_IMPLEMENTATION_PUBLISHED_WITH_TRACKING_UPDATES_ONLY",
+      "base_commit": "f377ebb63fe71fbc341dd28b2ddec9b90756a7e4",
+      "branch": "codex/adversarial-string-checkpoint19",
+      "source_manifest_sha256": "32e5dcbfb68df7469ff7cc09d0205ac156b00566f2c20b4f0b9ca2f102f87f31",
+      "exact_candidate_nonledger_files": 1931,
+      "retained_published_extra_paths": [
+        "campaign/STRING_CANDIDATE_CHECKPOINT19.md",
+        "campaign/probes/canonical-string-containers/CanonicalStringContainers.java",
+        "campaign/probes/canonical-string-containers/expected.txt"
+      ],
+      "canonical_patch_sha256": "d246679e8e7cc980c4279fe1d9cabf84a1dff6522f4f3268d07a6429999879c9",
+      "lint_patch_sha256": "bd6c6ad780245c28d8abfb09778c9f9f267da669286af5945f768edc3171a3a9",
+      "focused16_audit_sha256": "5cd1a769ce0a448e9908233e420615f5f37078b060a30aadcb72e763554f7ffd",
+      "lint3_audit_sha256": "4a01e3cd79d5e25010537569e8f1727e1c4d6234c6c803bcec14a2fef3685dc0",
+      "limits": "Focused16 accepted on historical1934; lint-only deletion leaves surviving production bodies unchanged; final1933 lint+chars1+canonical5 independently accepted. Fresh original full22 and Gson remain unaccepted. Later NumberEnum/Date/collection integration not included.",
+      "audit_sha256": "cd94e19a6089235fa8f73e4e34c3f87acb025e91dfa227a4b2a2f6212e614a40",
+      "updated_utc": "2026-09-29T22:43:02.598283+00:00",
+      "full22_root": "/private/tmp/java2go-canonical-lint-full22-sol-pe27sda4",
+      "full22_status": "Owner-reported fresh gate: first8 pass, unit-noncompiler fails two old String AST shape assertions;13 later stages unrun. Independent audit pending; no full acceptance."
+    }
   }
 }

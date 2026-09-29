@@ -302,38 +302,6 @@ func isNullableValueBackedLocal(node *sitter.Node, ctx Ctx, source []byte) bool 
 	return local != nil && local.Nullable
 }
 
-// isNullableStringStorageExpression identifies String reads whose generated
-// storage can directly contain Java null. Fields receive the concrete sentinel
-// at allocation time; explicitly nullable locals use an interface slot. Plain
-// parameters and non-null expressions retain the existing direct-string fast
-// path, avoiding unnecessary runtime calls and imports.
-func isNullableStringStorageExpression(node *sitter.Node, ctx Ctx, source []byte) bool {
-	for node != nil && node.Type() == "parenthesized_expression" && node.NamedChildCount() > 0 {
-		node = node.NamedChild(0)
-	}
-	if node == nil {
-		return false
-	}
-	if isNullableValueBackedLocal(node, ctx, source) {
-		return true
-	}
-	if node.Type() == "field_access" {
-		javaType, ok := inferExprJavaType(node, ctx, source)
-		return ok && isJavaStringType(javaType)
-	}
-	if node.Type() != "identifier" || ctx.currentClass == nil {
-		return false
-	}
-	name := node.Content(source)
-	if ctx.localScope != nil {
-		if ctx.localScope.ParameterByName(name) != nil || ctx.localScope.FindVariable(name) != nil {
-			return false
-		}
-	}
-	field := findFieldInHierarchy(ctx.currentClass, name, ctx)
-	return field != nil && isJavaStringType(field.OriginalType)
-}
-
 func isDefinitelyNonNullStringExpression(node *sitter.Node, ctx Ctx, source []byte) bool {
 	for node != nil && node.Type() == "parenthesized_expression" && node.NamedChildCount() > 0 {
 		node = node.NamedChild(0)
@@ -918,6 +886,9 @@ func tryStaticIntrinsicInvocation(invocation *sitter.Node, className, methodName
 	}
 
 	args := parseTypedIntrinsicInvocationArguments(invocation, nil, className, methodName, source, ctx)
+	if className == "Objects" && methodName == "requireNonNull" {
+		return lowerObjectsRequireNonNull(invocation, args, ctx, source), true
+	}
 	if className == "String" && methodName == "join" {
 		return lowerStringJoin(invocation, args, ctx, source), true
 	}

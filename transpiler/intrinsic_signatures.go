@@ -25,6 +25,9 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 		return t
 	}
 	if class := staticClass; class != "" {
+		if class == "Objects" && method == "requireNonNull" {
+			return objectsRequireNonNullExpected(invocation, ctx, source)
+		}
 		if expected, known := bigMathExpectedArgumentTypes(class, method, count); known {
 			return expected
 		}
@@ -95,6 +98,8 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 			}
 		case "Math":
 			switch method {
+			case "toIntExact":
+				return set("long")
 			case "sin", "cos", "pow", "sqrt", "floor", "ceil":
 				for i := range result {
 					result[i] = "double"
@@ -452,6 +457,12 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 		}
 		return "Object"
 	}
+	if receiver == "Iterator" && name == "next" {
+		return readableWildcardProjection(element(0)), true
+	}
+	if name == "iterator" && (receiver == "Collection" || receiver == "Iterable" || containsString(listTypeNames, receiver) || containsString(setTypeNames, receiver)) {
+		return "Iterator<" + element(0) + ">", true
+	}
 	if receiver == "Entry" {
 		if name == "getKey" {
 			return element(0), true
@@ -682,6 +693,7 @@ func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, sta
 		parsed := ParseExpr(arg, source, argCtx)
 		if index < len(expected) && expected[index] != "" && arg.Type() != "lambda_expression" && arg.Type() != "method_reference" {
 			parsed = coerceArgumentToExpectedType(parsed, arg, expected[index], ctx, source)
+			parsed = convertIntrinsicStringBoundArgument(parsed, arg, expected[index], ctx, source)
 		}
 		if intrinsicLaterArgumentsMayWrite(invocation, index) {
 			valueType := ""

@@ -281,6 +281,9 @@ func inferEnhancedForElementJavaType(valueNode *sitter.Node, source []byte, ctx 
 		return elementType, elementType != ""
 	}
 
+	if element, iterable := iterationElementType(rangeType, "java.lang.Iterable", ctx); iterable {
+		return element, true
+	}
 	base, typeArgs := parseJavaTypeString(rangeType)
 	if len(typeArgs) != 1 {
 		return "", false
@@ -870,7 +873,23 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			}
 			// Collection iteration reads list slots when the iterator advances;
 			// an array-backed list must not snapshot future elements.
-			if collectionNeedsSliceForRange(valueNode, ctx, source) {
+			if erasedCollectionExpression(valueNode, ctx, source) || erasedIterableExpression(valueNode, ctx, source) {
+				rawValue := &ast.Ident{Name: fmt.Sprintf("__java2goEnhancedForElement_%d", node.StartByte())}
+				rangeValue = rawValue
+				rangeExpr = stdjavaCall(ctx, "ErasedCollectionIterationElements", intrinsicExecutionExpr(ctx), rangeExpr)
+				componentJavaType, known := inferEnhancedForElementJavaType(valueNode, source, ctx)
+				if !known {
+					componentJavaType = "Object"
+				}
+				componentJavaType = readableWildcardProjection(componentJavaType)
+				componentType := javaTypeStringToGoTypeExpr(componentJavaType, inScopeTypeParameters(ctx), ctx)
+				componentID, known := javaTypeDescriptorExpr(componentJavaType, ctx)
+				if !known {
+					componentID = stdjavaQualifiedExpr("ObjectTypeID", ctx)
+				}
+				referenceBinding = &ast.AssignStmt{Lhs: []ast.Expr{bindingValue}, Tok: token.DEFINE,
+					Rhs: []ast.Expr{enhancedForReferenceElementView(rawValue, componentJavaType, componentType, componentID, bindingJavaType, ctx)}}
+			} else if collectionNeedsSliceForRange(valueNode, ctx, source) {
 				rangeExpr = stdjavaCall(ctx, "CollectionIterationElements", rangeExpr)
 			}
 			if referenceBinding == nil && nameNode != nil {

@@ -26,7 +26,7 @@ func (cursor *listJavaIterator[T]) NextJava2goExecution(execution *Execution) an
 	if cursor.index >= cursor.source.Size() {
 		panic(NewNoSuchElementException(""))
 	}
-	value := cursor.source.Get(cursor.index)
+	value := cursor.source.rawGet(cursor.index)
 	cursor.index++
 	return value
 }

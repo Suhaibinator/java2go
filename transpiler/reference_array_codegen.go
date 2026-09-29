@@ -19,6 +19,9 @@ const (
 // Source descriptor methods are emitted even for leaves without ObjectInfo.
 // Reserve exactly that selector independently of hierarchy carrier eligibility.
 func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx Ctx) bool {
+	if iterationProtocolReservedSelector(name) {
+		return true
+	}
 	if scope != nil && !scope.IsInterface && name == "JavaDynamicTypeID" {
 		return true
 	}
@@ -26,6 +29,9 @@ func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx 
 }
 
 func referenceIdentityReservedSelector(name string) bool {
+	if iterationProtocolReservedSelector(name) {
+		return true
+	}
 	switch name {
 	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod:
 		return true
@@ -743,6 +749,7 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(implementedScope), ctx))
 	}
 
+	args = append(args, sourceIterationInterfaceIDs(scope, ctx)...)
 	if sourceDirectCharSequence(scope, ctx) {
 		args = append(args, stdjavaQualifiedExpr("CharSequenceTypeID", ctx))
 	}
@@ -953,6 +960,7 @@ func syntheticReferenceRegistrationDecl(
 	}
 	args := []ast.Expr{javaTypeIDLiteral(dynamicID, ctx), superID}
 	args = append(args, interfaceIDs...)
+	args = append(args, sourceIterationInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	registrationName := "__java2goSyntheticTypeRegistration" + sanitizeGoIdent(structName)
 	statements := []ast.Stmt{
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},

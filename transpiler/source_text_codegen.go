@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 	"strconv"
+	"strings"
 
 	"github.com/NickyBoy89/java2go/symbol"
 )
@@ -23,9 +24,33 @@ func sourceToStringRegistration(scope *symbol.ClassScope, id string, ctx Ctx) as
 		selector = executionStringMethodName(scope)
 	}
 	if selector == "" {
+		if sourceInheritsObjectTextDefault(scope, ctx) {
+			return &ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceObjectToString", javaTypeIDLiteral(id, ctx))}
+		}
 		return nil
 	}
 	return &ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceToString", javaTypeIDLiteral(id, ctx), &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(selector)})}
+}
+
+// Mark only source class chains that terminate at builtin Object. An external
+// runtime superclass may own its own toString implementation and must acquire
+// that adapter separately. Source ancestors' actual override selectors always
+// take precedence over this default metadata at the runtime boundary.
+func sourceInheritsObjectTextDefault(scope *symbol.ClassScope, ctx Ctx) bool {
+	seen := map[*symbol.ClassScope]bool{}
+	for current := scope; current != nil && !seen[current]; {
+		seen[current] = true
+		declaring := classScopeCtx(current, ctx)
+		if parent := resolveSuperclassScopeInDeclaringContext(declaring, current); parent != nil {
+			current = parent
+			continue
+		}
+		if strings.TrimSpace(current.Superclass) == "" {
+			return true
+		}
+		return qualifyDeclaredReferenceType(symbol.JavaType{Original: current.Superclass}, declaring) == "java.lang.Object"
+	}
+	return false
 }
 
 func syntheticSourceTextScope(structName string, ctx Ctx) *symbol.ClassScope {
