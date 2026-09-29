@@ -15,6 +15,21 @@ import (
 // in strict mode, and an execution timeout or stderr difference cannot be parity.
 func runCampaignCompilerStrictProjectOracle(t *testing.T, files map[string]string, mainClass, expected string) {
 	t.Helper()
+	runCampaignCompilerStrictProjectObservations(t, files, mainClass, []campaignCompilerProjectObservation{{name: "default", stdout: expected}})
+}
+
+type campaignCompilerProjectObservation struct {
+	name   string
+	args   []string
+	stdout string
+	stderr string
+}
+
+func runCampaignCompilerStrictProjectObservations(t *testing.T, files map[string]string, mainClass string, observations []campaignCompilerProjectObservation) {
+	t.Helper()
+	if len(observations) == 0 {
+		t.Fatal("strict project oracle requires at least one observation")
+	}
 	javac, err := campaignCompilerJavaTool("javac")
 	if err != nil {
 		t.Fatal(err)
@@ -58,11 +73,17 @@ func runCampaignCompilerStrictProjectOracle(t *testing.T, files map[string]strin
 	sort.Strings(sources)
 	classes := filepath.Join(root, "classes")
 	run("javac", root, 5*time.Minute, javac, append([]string{"--release", "21", "-encoding", "UTF-8", "-d", classes}, sources...)...)
-	want, wantErr := run("JVM", root, time.Minute, java, "-cp", classes, mainClass)
-	if string(want) != expected || len(wantErr) != 0 {
-		t.Fatalf("invalid JVM oracle: stdout=%q stderr=%q; expected stdout=%q and empty stderr", want, wantErr, expected)
+	type oracleOutput struct{ stdout, stderr []byte }
+	oracles := make([]oracleOutput, len(observations))
+	for index, observation := range observations {
+		args := append([]string{"-cp", classes, mainClass}, observation.args...)
+		want, wantErr := run("JVM "+observation.name, root, time.Minute, java, args...)
+		if string(want) != observation.stdout || string(wantErr) != observation.stderr {
+			t.Fatalf("invalid JVM oracle %s: stdout=%q stderr=%q; expected stdout=%q stderr=%q", observation.name, want, wantErr, observation.stdout, observation.stderr)
+		}
+		t.Logf("JVM oracle %s: stdout=%q stderr=%q", observation.name, want, wantErr)
+		oracles[index] = oracleOutput{want, wantErr}
 	}
-	t.Logf("JVM oracle: %q", want)
 	repo, err := filepath.Abs("..")
 	if err != nil {
 		t.Fatal(err)
@@ -74,8 +95,11 @@ func runCampaignCompilerStrictProjectOracle(t *testing.T, files map[string]strin
 	run("all generated packages race build", generated, 5*time.Minute, "go", "build", "-race", "-mod=mod", "./...")
 	binary := filepath.Join(root, "generated-app")
 	run("generated entry point race build", generated, 5*time.Minute, "go", "build", "-race", "-mod=mod", "-o", binary, "./cmd/app")
-	got, gotErr := run("generated Go", root, time.Minute, binary)
-	if !bytes.Equal(got, want) || !bytes.Equal(gotErr, wantErr) {
-		t.Fatalf("Go stdout=%q stderr=%q differs from JVM stdout=%q stderr=%q", got, gotErr, want, wantErr)
+	for index, observation := range observations {
+		got, gotErr := run("generated Go "+observation.name, root, time.Minute, binary, observation.args...)
+		want := oracles[index]
+		if !bytes.Equal(got, want.stdout) || !bytes.Equal(gotErr, want.stderr) {
+			t.Fatalf("Go observation %s stdout=%q stderr=%q differs from JVM stdout=%q stderr=%q", observation.name, got, gotErr, want.stdout, want.stderr)
+		}
 	}
 }

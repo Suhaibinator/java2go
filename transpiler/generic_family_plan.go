@@ -14,10 +14,11 @@ import (
 // descriptor bridges, anonymous implementations and all member storage must
 // consume the same successful plan before family lowering can be activated.
 type genericFamilyPlan struct {
-	members   map[*symbol.ClassScope]struct{}
-	anonymous map[genericFamilySourceKey]genericFamilyAnonymous
-	locals    map[genericFamilySourceKey]genericFamilyAnonymous
-	binders   map[*symbol.TypeParamDeclaration]struct{}
+	members         map[*symbol.ClassScope]struct{}
+	anonymous       map[genericFamilySourceKey]genericFamilyAnonymous
+	locals          map[genericFamilySourceKey]genericFamilyAnonymous
+	binders         map[*symbol.TypeParamDeclaration]struct{}
+	representations map[*symbol.TypeParamDeclaration]genericFamilyBinderRepresentation
 }
 
 type genericFamilySourceKey struct {
@@ -41,10 +42,11 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 		return nil, fmt.Errorf("generic family requires a source generic declaration")
 	}
 	plan := &genericFamilyPlan{
-		members:   map[*symbol.ClassScope]struct{}{seed: {}},
-		anonymous: map[genericFamilySourceKey]genericFamilyAnonymous{},
-		locals:    map[genericFamilySourceKey]genericFamilyAnonymous{},
-		binders:   map[*symbol.TypeParamDeclaration]struct{}{},
+		members:         map[*symbol.ClassScope]struct{}{seed: {}},
+		anonymous:       map[genericFamilySourceKey]genericFamilyAnonymous{},
+		locals:          map[genericFamilySourceKey]genericFamilyAnonymous{},
+		binders:         map[*symbol.TypeParamDeclaration]struct{}{},
+		representations: map[*symbol.TypeParamDeclaration]genericFamilyBinderRepresentation{},
 	}
 	scopes := allSourceClassScopes()
 	localInterfaces := genericFamilyLocalInterfaceEdges(scopes, ctx)
@@ -95,11 +97,8 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 		if scope.IsEnum || scope.Class == nil || scope.Class.DeclarationNode == nil {
 			return nil, fmt.Errorf("generic family contains an unsupported source declaration")
 		}
-		for _, parameter := range scope.TypeParameters {
-			if parameter.Declaration == nil || len(parameter.Bounds) > 1 || stripJavaQualifier(rawTypeParameterErasure(parameter, scope.TypeParameters)) != "Object" {
-				return nil, fmt.Errorf("generic family %s requires a non-Object bound representation", scope.Class.OriginalName)
-			}
-			plan.binders[parameter.Declaration] = struct{}{}
+		if err := plan.addBinderRepresentations(scope, ctx); err != nil {
+			return nil, fmt.Errorf("generic family %s: %w", scope.Class.OriginalName, err)
 		}
 	}
 	// Scan each physical source file once, preserving the lexical owner and
@@ -139,11 +138,8 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 							localCtx := lexical.Clone()
 							localCtx.currentClass = local
 							localCtx.localScope = nil
-							for _, parameter := range local.TypeParameters {
-								if parameter.Declaration == nil || len(parameter.Bounds) > 1 || stripJavaQualifier(rawTypeParameterErasure(parameter, local.TypeParameters)) != "Object" {
-									return fmt.Errorf("local generic family requires a non-Object bound representation")
-								}
-								plan.binders[parameter.Declaration] = struct{}{}
+							if err := plan.addBinderRepresentations(local, localCtx); err != nil {
+								return err
 							}
 							if !plan.typeSupported(javaType, localCtx, true) {
 								return fmt.Errorf("local generic family specialization needs shared storage: %s", javaType)
@@ -299,8 +295,8 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 		// transitive and cyclic dependencies. Eligibility alone is insufficient:
 		// independent Go instantiations would split the shared Java allocation.
 		plan.members[target] = struct{}{}
-		for _, parameter := range target.TypeParameters {
-			plan.binders[parameter.Declaration] = struct{}{}
+		if err := plan.addBinderRepresentations(target, ctx); err != nil {
+			return false
 		}
 	}
 	if rank != 0 && containsOwned {

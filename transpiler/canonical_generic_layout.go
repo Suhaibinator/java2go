@@ -80,7 +80,7 @@ func canonicalGenericTypeSpecs(name string, fields *ast.FieldList, parameters []
 	}
 	raw := availableCanonicalGenericName(name + "Java2goErased")
 	if canonicalGenericFamily(ctx.currentClass, ctx) != nil {
-		genericFamilyPhysicalFields(fields, parameters)
+		genericFamilyPhysicalFields(fields, parameters, ctx)
 	}
 	return []ast.Spec{
 		&ast.TypeSpec{Name: ast.NewIdent(raw), Type: &ast.StructType{Fields: fields}},

@@ -51,6 +51,17 @@ func canonicalGenericFamily(scope *symbol.ClassScope, ctx Ctx) *genericFamilyPla
 					instance.members[member] = struct{}{}
 				}
 				instance.members[scope] = struct{}{}
+				instance.binders = make(map[*symbol.TypeParamDeclaration]struct{}, len(plan.binders))
+				for declaration := range plan.binders {
+					instance.binders[declaration] = struct{}{}
+				}
+				instance.representations = make(map[*symbol.TypeParamDeclaration]genericFamilyBinderRepresentation, len(plan.representations))
+				for declaration, representation := range plan.representations {
+					instance.representations[declaration] = representation
+				}
+				if err := instance.addBinderRepresentations(scope, ctx); err != nil {
+					return nil
+				}
 				return &instance
 			}
 		}
@@ -106,11 +117,16 @@ func genericFamilyPhysicalJavaType(typ string, ctx Ctx) string {
 	if ctx.localScope == nil || ctx.localScope.Constructor || ctx.localScope.IsStatic || canonicalGenericFamily(ctx.currentClass, ctx) == nil {
 		return typ
 	}
+	plan := canonicalGenericFamily(ctx.currentClass, ctx)
 	bindings := map[string]string{}
 	for _, parameter := range ctx.currentClass.TypeParameters {
 		if parameter.Declaration != nil && visibleTypeParameterDeclarationForJavaType(parameter.Name, ctx) == parameter.Declaration {
-			bindings[parameter.Name] = "Object"
-			bindings[parameter.EmittedName()] = "Object"
+			representation, present := plan.representations[parameter.Declaration]
+			if !present {
+				continue
+			}
+			bindings[parameter.Name] = representation.erasure
+			bindings[parameter.EmittedName()] = representation.erasure
 		}
 	}
 	return substituteJavaTypeParameters(typ, bindings)
@@ -119,7 +135,7 @@ func genericFamilyPhysicalJavaType(typ string, ctx Ctx) string {
 // Rewrite type syntax, never declaration/value identifiers. Receiver binders
 // disappear with a canonical alias, but package-qualified selectors, field
 // names and shadowing method binders keep their original identities.
-func genericFamilyPhysicalGoType(expr ast.Expr, parameters []symbol.TypeParam) ast.Expr {
+func genericFamilyPhysicalGoType(expr ast.Expr, parameters []symbol.TypeParam, ctx Ctx) ast.Expr {
 	if expr == nil {
 		return nil
 	}
@@ -127,47 +143,49 @@ func genericFamilyPhysicalGoType(expr ast.Expr, parameters []symbol.TypeParam) a
 	case *ast.Ident:
 		for _, parameter := range parameters {
 			if typ.Name == parameter.EmittedName() {
-				return ast.NewIdent("any")
+				if physical := genericFamilyBinderGoType(parameter, ctx); physical != nil {
+					return physical
+				}
 			}
 		}
 	case *ast.StarExpr:
-		typ.X = genericFamilyPhysicalGoType(typ.X, parameters)
+		typ.X = genericFamilyPhysicalGoType(typ.X, parameters, ctx)
 	case *ast.ArrayType:
-		typ.Elt = genericFamilyPhysicalGoType(typ.Elt, parameters)
+		typ.Elt = genericFamilyPhysicalGoType(typ.Elt, parameters, ctx)
 	case *ast.MapType:
-		typ.Key = genericFamilyPhysicalGoType(typ.Key, parameters)
-		typ.Value = genericFamilyPhysicalGoType(typ.Value, parameters)
+		typ.Key = genericFamilyPhysicalGoType(typ.Key, parameters, ctx)
+		typ.Value = genericFamilyPhysicalGoType(typ.Value, parameters, ctx)
 	case *ast.ChanType:
-		typ.Value = genericFamilyPhysicalGoType(typ.Value, parameters)
+		typ.Value = genericFamilyPhysicalGoType(typ.Value, parameters, ctx)
 	case *ast.IndexExpr:
-		typ.X = genericFamilyPhysicalGoType(typ.X, parameters)
-		typ.Index = genericFamilyPhysicalGoType(typ.Index, parameters)
+		typ.X = genericFamilyPhysicalGoType(typ.X, parameters, ctx)
+		typ.Index = genericFamilyPhysicalGoType(typ.Index, parameters, ctx)
 	case *ast.IndexListExpr:
-		typ.X = genericFamilyPhysicalGoType(typ.X, parameters)
+		typ.X = genericFamilyPhysicalGoType(typ.X, parameters, ctx)
 		for index := range typ.Indices {
-			typ.Indices[index] = genericFamilyPhysicalGoType(typ.Indices[index], parameters)
+			typ.Indices[index] = genericFamilyPhysicalGoType(typ.Indices[index], parameters, ctx)
 		}
 	case *ast.FuncType:
-		genericFamilyPhysicalFields(typ.Params, parameters)
-		genericFamilyPhysicalFields(typ.Results, parameters)
+		genericFamilyPhysicalFields(typ.Params, parameters, ctx)
+		genericFamilyPhysicalFields(typ.Results, parameters, ctx)
 	case *ast.InterfaceType:
-		genericFamilyPhysicalFields(typ.Methods, parameters)
+		genericFamilyPhysicalFields(typ.Methods, parameters, ctx)
 	case *ast.StructType:
-		genericFamilyPhysicalFields(typ.Fields, parameters)
+		genericFamilyPhysicalFields(typ.Fields, parameters, ctx)
 	case *ast.ParenExpr:
-		typ.X = genericFamilyPhysicalGoType(typ.X, parameters)
+		typ.X = genericFamilyPhysicalGoType(typ.X, parameters, ctx)
 	case *ast.Ellipsis:
-		typ.Elt = genericFamilyPhysicalGoType(typ.Elt, parameters)
+		typ.Elt = genericFamilyPhysicalGoType(typ.Elt, parameters, ctx)
 	}
 	return expr
 }
 
-func genericFamilyPhysicalFields(fields *ast.FieldList, parameters []symbol.TypeParam) {
+func genericFamilyPhysicalFields(fields *ast.FieldList, parameters []symbol.TypeParam, ctx Ctx) {
 	if fields == nil {
 		return
 	}
 	for _, field := range fields.List {
-		field.Type = genericFamilyPhysicalGoType(field.Type, parameters)
+		field.Type = genericFamilyPhysicalGoType(field.Type, parameters, ctx)
 	}
 }
 
@@ -175,7 +193,7 @@ func canonicalGenericInterfaceSpecs(name string, methods *ast.FieldList, paramet
 	if len(parameters) == 0 || canonicalGenericFamily(ctx.currentClass, ctx) == nil {
 		return nil
 	}
-	genericFamilyPhysicalFields(methods, parameters)
+	genericFamilyPhysicalFields(methods, parameters, ctx)
 	raw := availableCanonicalGenericName(name + "Java2goErased")
 	return []ast.Spec{
 		&ast.TypeSpec{Name: ast.NewIdent(raw), Type: &ast.InterfaceType{Methods: methods}},
@@ -188,23 +206,23 @@ func canonicalGenericReceiverBody(method *ast.FuncDecl, ctx Ctx) {
 		return
 	}
 	parameters := ctx.currentClass.TypeParameters
-	genericFamilyPhysicalFields(method.Type.Params, parameters)
-	genericFamilyPhysicalFields(method.Type.Results, parameters)
+	genericFamilyPhysicalFields(method.Type.Params, parameters, ctx)
+	genericFamilyPhysicalFields(method.Type.Results, parameters, ctx)
 	ast.Inspect(method.Body, func(node ast.Node) bool {
 		switch value := node.(type) {
 		case *ast.ValueSpec:
-			value.Type = genericFamilyPhysicalGoType(value.Type, parameters)
+			value.Type = genericFamilyPhysicalGoType(value.Type, parameters, ctx)
 		case *ast.TypeAssertExpr:
-			value.Type = genericFamilyPhysicalGoType(value.Type, parameters)
+			value.Type = genericFamilyPhysicalGoType(value.Type, parameters, ctx)
 		case *ast.CompositeLit:
-			value.Type = genericFamilyPhysicalGoType(value.Type, parameters)
+			value.Type = genericFamilyPhysicalGoType(value.Type, parameters, ctx)
 		case *ast.FuncLit:
-			genericFamilyPhysicalGoType(value.Type, parameters)
+			genericFamilyPhysicalGoType(value.Type, parameters, ctx)
 		case *ast.CallExpr:
 			switch fun := value.Fun.(type) {
 			case *ast.Ident:
 				if (fun.Name == "new" || fun.Name == "make") && len(value.Args) > 0 {
-					value.Args[0] = genericFamilyPhysicalGoType(value.Args[0], parameters)
+					value.Args[0] = genericFamilyPhysicalGoType(value.Args[0], parameters, ctx)
 				}
 			}
 		}

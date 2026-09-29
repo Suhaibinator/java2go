@@ -4476,5 +4476,14 @@
     "publication_status": "Canonical source WIP9a23066 pushed on separate branch; campaign implementation remains checkpoint18",
     "checkpoint_updated_utc": "2026-09-29T15:23:49.265402+00:00",
     "prepared_endpoints": "Version2 prepared against fresh native source; final provenance audit pending, no endpoint execution."
+  },
+  "number_wip_publication": {
+    "branch": "codex/adversarial-number-checkpoint19",
+    "source_manifest_sha256": "ec7c47d0f22e71de24f211b11c749a5ade251f8449c8575b371b3b6b91e9c6a0",
+    "original_workflow": "9JVM/9Go portable regression green;13neighbor controls green",
+    "known_blocker": "Explicit Number-bound nominal cast vs six-method structural impostor",
+    "production_accepted": false,
+    "coordinator_branch": "origin/codex/adversarial-campaign",
+    "publication_audit_sha256": "8a65a9eec69668a724da0baeeeebcf55d3114fc9e8e9016c7c83666c30c9c9c0"
   }
 }
