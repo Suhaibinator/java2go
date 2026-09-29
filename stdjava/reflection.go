@@ -14,6 +14,7 @@ type ClassDescriptor struct {
 	HasSimpleName       bool
 	Type                TypeID
 	Interface           bool
+	Enum                bool
 	InheritedAnnotation bool
 	Initialize          func(*Execution)
 	Construct           func(*Execution) any
@@ -25,6 +26,9 @@ type FieldDescriptor struct {
 	Name, GoName string
 	Type         TypeID
 	Final        bool
+	NonPublic    bool
+	EnumConstant bool
+	StaticGet    func(*Execution) any
 }
 type MethodDescriptor struct {
 	Name, GoName string
@@ -98,6 +102,9 @@ func (class *Class) GetSuperclass() *Class {
 func (class *Class) IsAssignableFrom(other *Class) bool {
 	return JavaTypeAssignable(other.TypeID(), class.TypeID())
 }
+func (class *Class) IsEnum() bool {
+	return classDescriptor(class.TypeID()).Enum
+}
 func (class *Class) IsAnnotationPresent(annotation *Class) bool {
 	class.TypeID()
 	id := annotation.TypeID()
@@ -153,12 +160,33 @@ func (class *Class) GetField(name string) *Field {
 	}
 	for current := class; current != nil; current = current.GetSuperclass() {
 		for _, field := range classDescriptor(current.TypeID()).Fields {
-			if field.Name == name {
+			if field.Name == name && !field.NonPublic {
 				return &Field{current, field}
 			}
 		}
 	}
 	panic(reflectionException("NoSuchFieldException", name))
+}
+
+// GetDeclaredField includes non-public metadata but searches only this class.
+// Finding a descriptor does not grant access to read or write the field.
+func (class *Class) GetDeclaredField(name string) *Field {
+	class.TypeID()
+	if nilJavaReference(name) {
+		panic(NewNullPointerException("field name is null"))
+	}
+	for _, field := range classDescriptor(class.TypeID()).Fields {
+		if field.Name == name {
+			return &Field{class, field}
+		}
+	}
+	panic(reflectionException("NoSuchFieldException", name))
+}
+func (field *Field) IsEnumConstant() bool {
+	if field == nil {
+		panic(NewNullPointerException("field is null"))
+	}
+	return field.descriptor.EnumConstant
 }
 func (field *Field) GetName() string {
 	if field == nil {
@@ -187,15 +215,50 @@ func (field *Field) Get(receiver any) any {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
+	if field.descriptor.StaticGet != nil {
+		return field.GetExecution(NewExecution(), receiver)
+	}
+	if field.descriptor.NonPublic {
+		panic(reflectionException("IllegalAccessException", "non-public field"))
+	}
 	value := reflectionReceiver(receiver, field.owner).Elem().FieldByName(field.descriptor.GoName)
 	if field.descriptor.Type == StringTypeID && nilJavaReference(value.Interface()) {
 		return nil
 	}
 	return reflectionBox(value.Interface(), field.descriptor.Type)
 }
+
+// GetExecution retains the invoking Java execution when a generated static
+// getter initializes or reads a field. The receiver is ignored for static reads.
+func (field *Field) GetExecution(execution *Execution, receiver any) any {
+	if field == nil {
+		panic(NewNullPointerException("field is null"))
+	}
+	if field.descriptor.NonPublic {
+		panic(reflectionException("IllegalAccessException", "non-public field"))
+	}
+	if getter := field.descriptor.StaticGet; getter != nil {
+		requireExecution(execution)
+		if initialize := classDescriptor(field.owner.TypeID()).Initialize; initialize != nil {
+			initialize(execution)
+		}
+		value := getter(execution)
+		if field.descriptor.Type == StringTypeID && nilJavaReference(value) {
+			return nil
+		}
+		return reflectionBox(value, field.descriptor.Type)
+	}
+	return field.Get(receiver)
+}
 func (field *Field) Set(receiver, value any) {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
+	}
+	if field.descriptor.NonPublic {
+		panic(reflectionException("IllegalAccessException", "non-public field"))
+	}
+	if field.descriptor.StaticGet != nil {
+		panic(reflectionException("IllegalAccessException", "static field is not writable"))
 	}
 	target := reflectionReceiver(receiver, field.owner).Elem().FieldByName(field.descriptor.GoName)
 	if field.descriptor.Final {

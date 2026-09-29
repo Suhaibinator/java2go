@@ -61,6 +61,8 @@ func (plan *genericFamilyPlan) addBinderRepresentations(scope *symbol.ClassScope
 			representation.goName = "any"
 		case "java.lang.Number":
 			representation.goName = "JavaNumber"
+		case "java.lang.Enum":
+			representation.goName = "JavaEnum"
 		default:
 			return fmt.Errorf("generic family bound requires an unsupported physical representation: %s", erasure)
 		}

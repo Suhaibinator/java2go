@@ -4486,5 +4486,22 @@
     "coordinator_branch": "origin/codex/adversarial-campaign",
     "publication_audit_sha256": "961cfd43c83c17fe38333519cd9be813725a2a3a5051bc8ab049e93be0b76eef",
     "nominal_cast_independent_audit_sha256": "1bac2be9d7a2cf0097ca456de11e23e4d410e7a4cbeb6e9cfaed03c9d09975b3"
+  },
+  "enum_wip_publication": {
+    "branch": "codex/adversarial-enum-checkpoint19",
+    "source_manifest_sha256": "8f5bc692a39a6315144d504c292a9c6f37e49c9ad863f8d2c3ac7c9ed695289a",
+    "base": "90359d20a2fc053074f34a4cf25666bf3f3f7755",
+    "gates": [
+      "Number18 freshJVM/Go",
+      "35 neighboring tests",
+      "original10Java Enum9 freshJVM/Go",
+      "constructor9 originalJVM/freshGo",
+      "runtime7 race"
+    ],
+    "root_publication_audit_sha256": "d391f97dd1dc81077630671c9749dd61e3f9074b88e062e3f5d01a8a384a3c91",
+    "independent_raw_audit_sha256": "34e27ed32b2e37786469088209114f10f993e1b153bd3d1977047a5e58f3f027",
+    "production_accepted": false,
+    "open_frontier": "Private instance reflective field null receiver ordering; separate original13Java baseline red preserved. Full Gson and cumulative campaign gates required.",
+    "coordinator_branch": "origin/codex/adversarial-campaign"
   }
 }

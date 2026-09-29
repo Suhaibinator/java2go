@@ -1,0 +1,9 @@
+# Number and Enum implementation checkpoint
+
+This work-in-progress branch extends the published Number checkpoint with nominal Enum representation, name/ordinal metadata available during constructors, declaring-class identity, lazy class initialization, and execution-aware enum access. Source overrides and nominal ancestry retain their tested behavior. Number nominal casts and their independent impostor regression remain intact.
+
+The portable fixture preserves all ten original Java files, the build descriptor and nine recorded JVM observations. The exact composed source passed eighteen fresh Number JVM/Go comparisons, thirty-five neighboring compiler tests, nine fresh Enum JVM/Go comparisons, nine constructor comparisons against the original JVM oracle, and seven runtime tests under the race detector. Generated packages and entry points were race-built. Six reviewed Go test files were adapted for the new representation; all twenty-nine embedded Java fixtures and their expected behavior were preserved.
+
+Known open frontier: the separate thirteen-file reflection probe shows incorrect exception precedence for private instance Field.get/set with a null receiver. Its baseline failure remains preserved; this checkpoint does not include its repair. Broader reflection, complete Enum support, full Gson, and accumulated campaign acceptance are not claimed. Production compatibility remains checkpoint18.
+
+Tested source manifest: `8f5bc692a39a6315144d504c292a9c6f37e49c9ad863f8d2c3ac7c9ed695289a` (1980 files). Coordinator verified every published byte against that source before updating tracking documents. Publication audit SHA256: `d391f97dd1dc81077630671c9749dd61e3f9074b88e062e3f5d01a8a384a3c91`. Independent raw evidence audit: `34e27ed32b2e37786469088209114f10f993e1b153bd3d1977047a5e58f3f027`. Exact source and observation provenance are retained alongside the tests; detailed historical and current scopes remain on `origin/codex/adversarial-campaign`.

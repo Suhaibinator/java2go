@@ -60,6 +60,30 @@ func runCampaignCompilerStrictProjectObservations(t *testing.T, files map[string
 		return stdout.Bytes(), stderr.Bytes()
 	}
 	root := t.TempDir()
+	if artifactDir := os.Getenv("JAVA2GO_TEST_ARTIFACT_DIR"); artifactDir != "" {
+		t.Cleanup(func() {
+			if err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+				if err != nil || entry.IsDir() {
+					return err
+				}
+				name := filepath.Base(path)
+				if filepath.Ext(path) != ".go" && filepath.Ext(path) != ".java" && name != "go.mod" && name != "go.sum" {
+					return nil
+				}
+				relative, err := filepath.Rel(root, path)
+				if err != nil {
+					return err
+				}
+				contents, err := os.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				return writeProjectFile(filepath.Join(artifactDir, t.Name(), relative), contents)
+			}); err != nil {
+				t.Errorf("preserve compiler artifacts: %v", err)
+			}
+		})
+	}
 	var sources []string
 	for name, source := range files {
 		path := filepath.Join(root, name)

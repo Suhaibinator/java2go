@@ -14,7 +14,7 @@ import (
 
 // A dynamically supplied binary name can select any source class in the
 // compilation. Enable descriptors for the complete source set in that case.
-var reflectionUsePattern = regexp.MustCompile(`\b(getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getMethod|isAnnotationPresent|getSuperclass|isAssignableFrom)\b`)
+var reflectionUsePattern = regexp.MustCompile(`\b(getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getDeclaredField|getMethod|isEnum|isEnumConstant|isAnnotationPresent|getSuperclass|isAssignableFrom)\b`)
 
 func sourceUsesReflection() bool {
 	seen := map[*symbol.FileScope]bool{}
@@ -57,7 +57,7 @@ func metadataKey(name string, value ast.Expr) ast.Expr {
 	return &ast.KeyValueExpr{Key: ast.NewIdent(name), Value: value}
 }
 func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
-	if !sourceUsesReflection() {
+	if !sourceUsesReflection() && !scope.IsEnum {
 		return nil
 	}
 	simpleName := ""
@@ -73,6 +73,7 @@ func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
 		metadataKey("SimpleName", metadataString(simpleName)),
 		metadataKey("HasSimpleName", ast.NewIdent("true")),
 		metadataKey("Interface", ast.NewIdent(strconv.FormatBool(scope.IsInterface))),
+		metadataKey("Enum", ast.NewIdent(strconv.FormatBool(scope.IsEnum))),
 	}}
 	execution := ast.NewIdent("execution")
 	if initialize := classInitializationEnsureCall(scope, execution, ctx); initialize != nil {
@@ -100,6 +101,9 @@ func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
 	}
 	fields := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("FieldDescriptor", ctx)}}
 	methods := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("MethodDescriptor", ctx)}}
+	if scope.IsEnum {
+		fields.Elts = append(fields.Elts, enumReflectionFieldDescriptors(scope, ctx)...)
+	}
 	if len(scope.TypeParameters) == 0 && !scope.IsInterface && !scope.IsEnum {
 		for _, field := range scope.Fields {
 			if !reflectionPublic(field, scope) || field.IsStatic {
@@ -158,14 +162,17 @@ func init() {
 	})
 	registerStaticIntrinsicResultType("Class", "forName", "Class")
 	for receiver, methods := range map[string]map[string]string{
-		"Class":       {"getName": "String", "getSimpleName": "String", "getSuperclass": "Class", "isAssignableFrom": "boolean", "isAnnotationPresent": "boolean", "getConstructor": "Constructor", "getField": "Field", "getMethod": "Method"},
-		"Field":       {"get": "Object", "set": "void", "getName": "String"},
+		"Class":       {"getName": "String", "getSimpleName": "String", "getSuperclass": "Class", "isAssignableFrom": "boolean", "isAnnotationPresent": "boolean", "getConstructor": "Constructor", "getField": "Field", "getDeclaredField": "Field", "isEnum": "boolean", "getMethod": "Method"},
+		"Field":       {"get": "Object", "set": "void", "getName": "String", "isEnumConstant": "boolean"},
 		"Method":      {"invoke": "Object", "getName": "String"},
 		"Constructor": {"newInstance": "Object"},
 	} {
 		for name, result := range methods {
 			receiver, name := receiver, name
 			registerInstanceIntrinsic(receiver, name, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if receiver == "Field" && name == "get" {
+					return &ast.CallExpr{Fun: &ast.SelectorExpr{X: recv, Sel: ast.NewIdent("GetExecution")}, Args: append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)}
+				}
 				if (receiver == "Method" && name == "invoke") || (receiver == "Constructor" && name == "newInstance") {
 					args = append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)
 				}

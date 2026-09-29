@@ -104,8 +104,9 @@ public class SyntheticArrayIdentityProgram {
 		`stdjava.RegisterJavaType(stdjava.TypeID("SyntheticArrayIdentityProgram$Sub"), stdjava.ObjectTypeID, stdjava.TypeID("SyntheticArrayIdentityProgram$Super"))`,
 		`stdjava.RegisterJavaType(stdjava.TypeID("SyntheticArrayIdentityProgram$Parent"), stdjava.ObjectTypeID, stdjava.TypeID("SyntheticArrayIdentityProgram$Sub"))`,
 		`stdjava.RegisterJavaType(stdjava.TypeID("SyntheticArrayIdentityProgram$Inherited"), stdjava.TypeID("SyntheticArrayIdentityProgram$Parent"))`,
-		`stdjava.RegisterJavaType(stdjava.TypeID("SyntheticArrayIdentityProgram$Color"), stdjava.ObjectTypeID)`,
-		`func (synthetic *SyntheticArrayIdentityProgramcolor) JavaDynamicTypeID() stdjava.TypeID`,
+		`stdjava.RegisterJavaType(stdjava.TypeID("SyntheticArrayIdentityProgram$Color"), stdjava.EnumTypeID)`,
+		`func (sr *SyntheticArrayIdentityProgramcolor) JavaDynamicTypeID() stdjava.TypeID`,
+		`return sr.__java2goEnumMetadata.DynamicTypeID()`,
 	} {
 		if !strings.Contains(flat, fragment) {
 			t.Fatalf("generated identity is missing %q:\n%s", fragment, out)

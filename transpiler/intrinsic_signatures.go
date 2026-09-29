@@ -149,7 +149,7 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 			return set("Object")
 		}
 	}
-	if class == "Class" && (method == "getField" || method == "getMethod") {
+	if class == "Class" && (method == "getField" || method == "getDeclaredField" || method == "getMethod") {
 		return set("String")
 	}
 	if intrinsicFunctionalMethodNames[class] == method {

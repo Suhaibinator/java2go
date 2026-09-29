@@ -1013,6 +1013,24 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 // runtime classes. Resolve it before the usual source-method exclusion, keeping
 // the exact receiver (and therefore its canonical raw Java class) intact.
 func intrinsicMethodReceiverTypeName(objectNode *sitter.Node, methodName string, ctx Ctx, source []byte) (string, bool) {
+	if objectNode != nil && enumFinalMethod(methodName) {
+		invocation := objectNode.Parent()
+		arguments := invocation.ChildByFieldName("arguments")
+		arity := 0
+		if arguments != nil {
+			arity = int(arguments.NamedChildCount())
+		}
+		if (methodName == "compareTo" && arity == 1) || (methodName != "compareTo" && arity == 0) {
+			if typ, known := inferExprJavaType(objectNode, ctx, source); known && enumReferenceType(typ, ctx) {
+				base, _ := parseJavaTypeString(typ)
+				if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil &&
+					findBestMethodInHierarchy(scope, methodName, arguments, true, false, ctx, source) != nil {
+					return "", false
+				}
+				return "Enum", true
+			}
+		}
+	}
 	if objectNode != nil && methodName == "getClass" {
 		parent := objectNode.Parent()
 		if parent != nil && parent.Type() == "method_invocation" {

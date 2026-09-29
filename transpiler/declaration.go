@@ -515,6 +515,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			},
 		}
 
+		fields.List = append(fields.List, enumMetadataField(ctx))
 		// Embed implemented interfaces
 		typeParams := ctx.currentClass.TypeParameterNames()
 		if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
@@ -552,9 +553,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			declarations = append(declarations, registration)
 		}
 		declarations = append(declarations, sourceClassReferenceIdentityDecls(ctx.currentClass, ctx)...)
+		declarations = append(declarations, enumInstanceInitializerDecls(node.ChildByFieldName("body"), source, ctx)...)
 
 		// Generate ordinal constants to preserve declaration order
-		if len(ctx.currentClass.EnumConstants) > 0 {
+		{
 			ordinalSpecs := []ast.Spec{}
 			ordinalPrefix := "_" + symbol.Lowercase(ctx.className) + "_ordinal_"
 			for i, enumConst := range ctx.currentClass.EnumConstants {
@@ -565,36 +567,30 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				ordinalSpecs = append(ordinalSpecs, spec)
 			}
 
-			declarations = append(declarations, &ast.GenDecl{Tok: token.CONST, Specs: ordinalSpecs})
+			if len(ordinalSpecs) > 0 {
+				declarations = append(declarations, &ast.GenDecl{Tok: token.CONST, Specs: ordinalSpecs})
+			}
 
 			// Build enum instances
 			valueSpecs := []ast.Spec{}
 			valuesVarName := "_" + symbol.Lowercase(ctx.className) + "Values"
-			valuesSlice := []ast.Expr{}
 			for _, enumConst := range ctx.currentClass.EnumConstants {
-				ordinalIdent := &ast.Ident{Name: ordinalPrefix + enumConst.Name}
-				initializer := buildEnumConstantInitializer(enumConst, ordinalIdent, ctx, source)
-
 				valueSpecs = append(valueSpecs, &ast.ValueSpec{
-					Names:  []*ast.Ident{{Name: enumConst.Name}},
-					Values: []ast.Expr{initializer},
+					Names: []*ast.Ident{{Name: enumConst.Name}},
+					Type:  &ast.StarExpr{X: ast.NewIdent(ctx.className)},
 				})
-				valuesSlice = append(valuesSlice, &ast.Ident{Name: enumConst.Name})
 			}
 
-			declarations = append(declarations, &ast.GenDecl{Tok: token.VAR, Specs: valueSpecs})
+			if len(valueSpecs) > 0 {
+				declarations = append(declarations, &ast.GenDecl{Tok: token.VAR, Specs: valueSpecs})
+			}
 
 			declarations = append(declarations, &ast.GenDecl{
 				Tok: token.VAR,
 				Specs: []ast.Spec{
 					&ast.ValueSpec{
 						Names: []*ast.Ident{{Name: valuesVarName}},
-						Values: []ast.Expr{
-							&ast.CompositeLit{
-								Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}},
-								Elts: valuesSlice,
-							},
-						},
+						Type:  &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}},
 					},
 				},
 			})
@@ -608,7 +604,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						List: []*ast.Field{{Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}},
 					},
 				},
-				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valuesVarName}}}}},
+				Body: &ast.BlockStmt{List: []ast.Stmt{classInitializationEnsureStmt(ctx.currentClass, ast.NewIdent(executionNameForClass(ctx.currentClass)), ctx), &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valuesVarName}}}}},
 			})
 
 			// Generate valueOf(String) method
@@ -631,6 +627,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}},
 				},
 				Body: &ast.BlockStmt{List: []ast.Stmt{
+					classInitializationEnsureStmt(ctx.currentClass, ast.NewIdent(executionNameForClass(ctx.currentClass)), ctx),
 					&ast.SwitchStmt{
 						Tag:  &ast.Ident{Name: "name"},
 						Body: &ast.BlockStmt{List: valueOfCases},
@@ -675,7 +672,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		// Parse the enum body declarations (methods, constructors, etc.)
-		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
+		declarations = append(declarations, parseClassBodyDeclarations(node.ChildByFieldName("body"), source, ctx, true)...)
+		declarations = append(declarations, buildLazyClassInitializationDecls(node.ChildByFieldName("body"), source, ctx)...)
+		declarations = enumStaticExecutionDecls(declarations, ctx)
 
 		return declarations
 	}
@@ -3301,44 +3300,31 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 }
 
 // buildEnumConstantInitializer constructs the Go expression used to initialize a single enum constant.
-// It invokes a matching constructor if one exists, then injects the synthetic enum metadata fields
-// to mirror Java enum metadata.
+// Hidden metadata enters the constructor before instance initialization and user
+// code, so virtual callbacks observe the original enum object's identity.
 func buildEnumConstantInitializer(enumConst symbol.EnumConstant, ordinal ast.Expr, ctx Ctx, source []byte) ast.Expr {
-	args := parseEnumConstantArguments(enumConst, ctx, source)
-
-	var baseInit ast.Expr = &ast.UnaryExpr{Op: token.AND, X: &ast.CompositeLit{Type: &ast.Ident{Name: ctx.className}}}
-	if ctor := findEnumConstructor(ctx, len(args)); ctor != nil {
-		baseInit = &ast.CallExpr{Fun: &ast.Ident{Name: ctor.Name}, Args: args}
+	metadata := enumConstantMetadata(enumConst, ordinal, ctx)
+	var arguments *sitter.Node
+	if len(enumConst.Arguments) > 0 {
+		arguments = enumConst.Arguments[0].Parent()
 	}
-
-	return &ast.CallExpr{
-		Fun: &ast.FuncLit{
-			Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}}},
-			Body: &ast.BlockStmt{List: []ast.Stmt{
-				&ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "inst"}}, Tok: token.DEFINE, Rhs: []ast.Expr{baseInit}},
-				&ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "inst"}, Sel: &ast.Ident{Name: enumMetaNameField}}}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + enumConst.Name + "\""}}},
-				&ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "inst"}, Sel: &ast.Ident{Name: enumMetaOrdinalField}}}, Tok: token.ASSIGN, Rhs: []ast.Expr{ordinal}},
-				&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "inst"}}},
-			}},
-		},
+	if resolution := findBestConstructor(ctx.currentClass, arguments, ctx, source); resolution != nil {
+		expected := instantiatedConstructorParameterTypes(resolution.def, ctx.currentClass, nil, nil)
+		args, expand := parseResolvedInvocationArguments(resolution, arguments, source, ctx, expected, nil, nil)
+		return markDirectVarargsExpansion(&ast.CallExpr{Fun: ast.NewIdent(executionConstructorImplementationName(resolution.def.Name, ctx.currentClass)), Args: append([]ast.Expr{intrinsicExecutionExpr(ctx), metadata}, args...)}, expand)
 	}
-}
-
-func parseEnumConstantArguments(enumConst symbol.EnumConstant, ctx Ctx, source []byte) []ast.Expr {
-	args := []ast.Expr{}
-	for _, arg := range enumConst.Arguments {
-		args = append(args, ParseExpr(arg, source, ctx))
+	recv := ast.NewIdent("inst")
+	body := []ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{recv}, Tok: token.DEFINE, Rhs: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: &ast.CompositeLit{Type: ast.NewIdent(ctx.className), Elts: []ast.Expr{
+		&ast.KeyValueExpr{Key: ast.NewIdent(enumMetadataFieldName(ctx.currentClass)), Value: metadata},
+		&ast.KeyValueExpr{Key: ast.NewIdent(enumMetaNameField), Value: metadataString(enumConst.Name)},
+		&ast.KeyValueExpr{Key: ast.NewIdent(enumMetaOrdinalField), Value: ordinal},
+	}}}}}}
+	body = append(body, defaultStringFieldInitializationStmts(ctx.currentClass, "inst", ctx)...)
+	if ctx.currentClass.HasInstanceFieldInitializers {
+		body = append(body, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{X: recv, Sel: ast.NewIdent(fieldInitMethodName + executionMethodSuffix)}, Args: []ast.Expr{intrinsicExecutionExpr(ctx)}}})
 	}
-	return args
-}
-
-func findEnumConstructor(ctx Ctx, argumentCount int) *symbol.Definition {
-	for _, def := range ctx.currentClass.Methods {
-		if def.Constructor && len(def.Parameters) == argumentCount {
-			return def
-		}
-	}
-	return nil
+	body = append(body, &ast.ReturnStmt{Results: []ast.Expr{recv}})
+	return &ast.CallExpr{Fun: &ast.FuncLit{Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: ast.NewIdent(ctx.className)}}}}}, Body: &ast.BlockStmt{List: body}}}
 }
 
 func findDeclaredToStringMethod(scope *symbol.ClassScope) *symbol.Definition {
@@ -3997,6 +3983,9 @@ func buildSourceConstructorDecls(
 func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
 	case "constructor_declaration":
+		if ctx.currentClass.IsEnum {
+			return buildSourceConstructorDecls(node, source, ctx, enumConstructorOptions(node, source, ctx))
+		}
 		return buildSourceConstructorDecls(node, source, ctx, constructorLoweringOptions{})
 	case "method_declaration", "abstract_method_declaration":
 		var static bool

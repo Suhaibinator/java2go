@@ -122,8 +122,15 @@ func TestEnumDeclaration(t *testing.T) {
 		t.Fatalf("Expected enum to be represented as struct:\n%s", output)
 	}
 
-	if !strings.Contains(output, "NORTH = func() *compass") || !strings.Contains(output, "WEST = func() *compass") {
-		t.Errorf("Expected enum constants to be initialized as singleton pointers:\n%s", output)
+	for _, fragment := range []string{
+		"NORTH *compass", "WEST *compass",
+		`stdjava.NewClassInitialization("Compass")`,
+		`NORTH = NewCompassJava2goExecution(__java2goExecution, stdjava.NewEnumMetadata("NORTH", 0, stdjava.TypeID("Compass"), stdjava.TypeID("Compass")))`,
+		`WEST = NewCompassJava2goExecution(__java2goExecution, stdjava.NewEnumMetadata("WEST", 3, stdjava.TypeID("Compass"), stdjava.TypeID("Compass")))`,
+	} {
+		if !strings.Contains(output, fragment) {
+			t.Errorf("Expected lazy initialization of metadata-bearing singleton pointers, missing %q:\n%s", fragment, output)
+		}
 	}
 
 	if !strings.Contains(output, "[]*compass{NORTH, SOUTH, EAST, WEST}") {
@@ -158,9 +165,16 @@ func TestEnumWithConstructorsAndFields(t *testing.T) {
 		t.Errorf("expected enum instance fields to be preserved\n%s", output)
 	}
 
-	// Constants should be initialized as singleton pointers
-	if !strings.Contains(output, "MERCURY = func() *planet") {
-		t.Errorf("expected enum constants to be initialized with helper func\n%s", output)
+	// Constants remain singleton pointers, initialized with metadata and the
+	// original constructor arguments by their declaring class coordinator.
+	for _, fragment := range []string{
+		"MERCURY *planet",
+		`stdjava.NewClassInitialization("Planet")`,
+		`MERCURY = newPlanetJava2goExecution(__java2goExecution, stdjava.NewEnumMetadata("MERCURY", 0, stdjava.TypeID("Planet"), stdjava.TypeID("Planet")), 3.303e+23, 2.4397e6)`,
+	} {
+		if !strings.Contains(output, fragment) {
+			t.Errorf("expected lazy enum constructor initialization, missing %q\n%s", fragment, output)
+		}
 	}
 
 	if !strings.Contains(output, "[]*planet{MERCURY, VENUS}") {

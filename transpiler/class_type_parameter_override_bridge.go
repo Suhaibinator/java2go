@@ -678,6 +678,9 @@ func overrideBridgePlainResultWideningSupported(javaType string, owner *symbol.C
 	if stripJavaQualifier(base) == "Object" {
 		return true
 	}
+	if isBuiltinEnum(component, classScopeCtx(owner, ctx)) {
+		return true
+	}
 	if builtinJavaNumericReference(base, classScopeCtx(owner, ctx)) {
 		return stripJavaQualifier(base) == "Number"
 	}

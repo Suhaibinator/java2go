@@ -582,12 +582,20 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 			// Check if this is an enum values() call
 			// Transform EnumName.values() to EnumNameValues()
-			if objectNode.Type() == "identifier" && methodName == "values" {
-				if enumScope := resolveClassScopeByIdentifier(ctx, source, objectNode); enumScope != nil && enumScope.IsEnum {
+			if objectNode.Type() == "identifier" && (methodName == "values" || methodName == "valueOf") {
+				if enumScope := resolveClassScopeByIdentifier(ctx, source, objectNode); enumScope != nil && enumScope.IsEnum && enumSyntheticStaticCall(enumScope, methodName, argListNode, ctx, source) {
 					enumPkg := resolveJavaPackageForType(ctx, objectNode.Content(source), enumScope)
+					name := "Values"
+					if methodName == "valueOf" {
+						name = "ValueOf"
+					}
+					args := []ast.Expr{intrinsicExecutionExpr(ctx)}
+					for _, argument := range nodeutil.NamedChildrenOf(argListNode) {
+						args = append(args, ParseExpr(argument, source, ctx))
+					}
 					return &ast.CallExpr{
-						Fun:  qualifiedNameExpr(enumScope.Class.Name+"Values", enumPkg, ctx),
-						Args: []ast.Expr{},
+						Fun:  qualifiedNameExpr(enumStaticExecutionName(enumScope, name), enumPkg, ctx),
+						Args: args,
 					}
 				}
 			}
@@ -774,6 +782,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if ctx.currentClass != nil {
 			allowInstance := ctx.localScope != nil && ctx.localScope.OriginalName != "" && !ctx.localScope.IsStatic
 			selected := findBestMethodInHierarchy(ctx.currentClass, methodName, argListNode, allowInstance, true, ctx, source)
+			if helper := implicitRuntimeClassMethod(node, selected, ctx, source); helper != "" {
+				return stdjavaCall(ctx, helper, ast.NewIdent(ShortName(ctx.className)))
+			}
 			if inheritedBuiltinMessageSelected(node, selected, ctx, source) {
 				return stdjavaCall(ctx, "ThrowableMessageExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
 			}
@@ -1590,6 +1601,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			targetJavaType = erasure
 		}
 		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
+		if enumReferenceType(targetJavaType, ctx) {
+			return stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{targetType}, []ast.Expr{valueExpr, stdjavaQualifiedExpr("EnumTypeID", ctx)})
+		}
 		if _, rank := javaArrayTypeParts(targetJavaType); rank > 0 {
 			if descriptor, ok := javaTypeDescriptorExpr(targetJavaType, ctx); ok {
 				return stdjavaGenericCall(ctx, "JavaArrayCast", []ast.Expr{targetType}, []ast.Expr{valueExpr, descriptor})
@@ -1684,10 +1698,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// lowers to `WED` (qualified with the enum's Go package when it lives
 		// elsewhere) rather than an invalid `Day.WED` selector.
 		if fieldNode := node.ChildByFieldName("field"); fieldNode != nil {
-			if enumScope := resolveClassScopeByIdentifier(ctx, source, obj); enumScope != nil && enumScope.IsEnum {
+			if enumScope := resolveClassScopeByIdentifier(ctx, source, obj); enumScope != nil && enumScope.IsEnum && enumConstantNamed(enumScope, fieldNode.Content(source)) {
 				constName := fieldNode.Content(source)
 				enumPkg := resolveJavaPackageForType(ctx, obj.Content(source), enumScope)
-				return qualifiedNameExpr(constName, enumPkg, ctx)
+				return enumInitializedExpr(enumScope, qualifiedNameExpr(constName, enumPkg, ctx), &ast.StarExpr{X: qualifiedNameExpr(enumScope.Class.Name, enumPkg, ctx)}, ctx)
 			}
 		}
 		if access, ok := resolveStaticFieldAccess(node, source, ctx); ok {
@@ -9648,6 +9662,8 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		// subclass values can cross parameter and return boundaries. Source
 		// classes with the same simple name retain their generated type.
 		expr = stdjavaQualifiedExpr("Throwable", ctx)
+	} else if isBuiltinEnum(typeStr, ctx) {
+		expr = stdjavaQualifiedExpr("JavaEnum", ctx)
 	} else if resolvedScope == nil && baseName == "Number" {
 		expr = stdjavaQualifiedExpr("JavaNumber", ctx)
 	} else if resolvedScope == nil && (baseName == "Comparable" || baseName == "Serializable" || baseName == "Cloneable" || baseName == "Constable" || baseName == "ConstantDesc" || baseName == "CharSequence") {
@@ -10044,6 +10060,9 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 		}
 	} else {
 		resolution = findBestMethodInHierarchy(scope, methodName, argListNode, allowInstance, allowStatic, ctx, source)
+	}
+	if implicitRuntimeClassMethod(node, resolution, ctx, source) != "" {
+		return "java.lang.Class", true
 	}
 	if inheritedBuiltinMessageSelected(node, resolution, ctx, source) {
 		return "java.lang.String", true

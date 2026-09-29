@@ -14,6 +14,9 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
 		return scope.IsInterface
 	}
+	if isBuiltinEnum(javaType, ctx) {
+		return true
+	}
 	if isExternalFunctionType(javaType, ctx) {
 		return true
 	}
@@ -67,6 +70,9 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 // Only invocation applicability may infer the candidate method's own binders.
 // Ordinary assignability and override checks keep invariant arguments.
 func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
+	if enumReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
 	if dateTimeReferenceAssignable(actual, expected, ctx) {
 		return true
 	}

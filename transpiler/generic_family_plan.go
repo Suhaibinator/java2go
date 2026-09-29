@@ -270,6 +270,10 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 	}
 	component, rank := javaArrayTypeParts(typ)
 	base, args := parseJavaTypeString(component)
+	// Enum has one nominal erased object representation regardless of E.
+	if rank == 0 && isBuiltinEnum(component, ctx) {
+		return true
+	}
 	declaration := visibleTypeParameterDeclarationForJavaType(base, ctx)
 	_, owned := plan.binders[declaration]
 	if len(args) == 0 {

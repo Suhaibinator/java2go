@@ -291,7 +291,7 @@ func TestPkgPrivateInheritance(t *testing.T) {
 }
 
 // TestCodegen_QualifiedEnumConstantAccess verifies `Enum.CONSTANT` in expression
-// position lowers to the bare generated constant var.
+// position initializes its declaring enum before reading the singleton var.
 func TestCodegen_QualifiedEnumConstantAccess(t *testing.T) {
 	src := `
 public class E {
@@ -305,14 +305,16 @@ public class E {
 }
 `
 	out := renderGoFileFromJava(t, src)
+	flat := normalizeSpaces(out)
 	if strings.Contains(out, "Day.WED") {
 		t.Errorf("expected `Day.WED` to lower to the constant var, got verbatim selector:\n%s", out)
 	}
-	if !strings.Contains(out, "return WED") {
-		t.Errorf("expected `return WED`, got:\n%s", out)
+	access := "func() *Eday { EdayJava2goEnsureInitialized(__java2goExecution) return WED }()"
+	if !strings.Contains(flat, "return "+access) {
+		t.Errorf("expected return of the initialized WED singleton, got:\n%s", out)
 	}
-	if !strings.Contains(out, "== WED") {
-		t.Errorf("expected `d == WED`, got:\n%s", out)
+	if !strings.Contains(flat, "return d == "+access) {
+		t.Errorf("expected comparison with the initialized WED singleton, got:\n%s", out)
 	}
 }
 
@@ -412,7 +414,7 @@ public class E {
 	if strings.Contains(out, ".ordinal()") {
 		t.Errorf("enum method call should resolve to `.Ordinal()`, got lowercased:\n%s", out)
 	}
-	if !strings.Contains(out, "WED.Ordinal()") {
-		t.Errorf("expected `WED.Ordinal()`, got:\n%s", out)
+	if !strings.Contains(normalizeSpaces(out), "func() *Eday { EdayJava2goEnsureInitialized(__java2goExecution) return WED }().Ordinal()") {
+		t.Errorf("expected initialized WED access followed by `.Ordinal()`, got:\n%s", out)
 	}
 }

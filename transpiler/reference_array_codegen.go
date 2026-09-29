@@ -19,6 +19,9 @@ const (
 // Source descriptor methods are emitted even for leaves without ObjectInfo.
 // Reserve exactly that selector independently of hierarchy carrier eligibility.
 func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx Ctx) bool {
+	if scope != nil && scope.IsEnum && name == "JavaEnumMetadata" {
+		return true
+	}
 	if scope != nil && !scope.IsInterface && name == "JavaDynamicTypeID" {
 		return true
 	}
@@ -230,6 +233,9 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	baseName := stripJavaQualifier(base)
 	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
 		return source, true
+	}
+	if isBuiltinEnum(javaType, ctx) {
+		return stdjavaQualifiedExpr("EnumTypeID", ctx), true
 	}
 	if isExceptionJavaType(ctx, base) {
 		return stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(base)}), true
@@ -730,7 +736,9 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		return nil
 	}
 	args := []ast.Expr{javaTypeIDLiteral(id, ctx)}
-	if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
+	if scope.IsEnum {
+		args = append(args, stdjavaQualifiedExpr("EnumTypeID", ctx))
+	} else if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(parent), ctx))
 	} else if isExceptionJavaType(classScopeCtx(scope, ctx), scope.Superclass) {
 		args = append(args, stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(scope.Superclass)}))
@@ -762,6 +770,9 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	statements := []ast.Stmt{
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(id, ctx))},
+	}
+	if scope.IsEnum {
+		statements = append(statements, enumConstantRegistrationStmts(scope, ctx)...)
 	}
 	if text := sourceToStringRegistration(scope, id, ctx); text != nil {
 		statements = append(statements, text)
@@ -833,10 +844,7 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 		return nil
 	}
 	if scope.IsEnum {
-		if declaration := fixedJavaDynamicTypeDecl(scope.Class.Name, javaClassBinaryName(scope), ctx); declaration != nil {
-			return []ast.Decl{declaration}
-		}
-		return nil
+		return enumReferenceIdentityDecls(scope, ctx)
 	}
 	receiverName := ShortName(scope.Class.Name)
 	receiverType := &ast.StarExpr{X: instantiateGenericType(scope.Class.Name, typeParamExprs(scope.GoTypeParameterNames()))}
