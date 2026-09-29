@@ -20,3 +20,7 @@ The sealed progress50 archive does not contain all newer receipts. Supplemental 
 ## Progress53 precedence
 
 The historical preparation notes above retain their original scope. `active_resume.progress53` and `SOL_PROGRESS53.md` govern current status. Number+Enum component3cfd5fd is pushed, canonical focused16 is independently green, and its fresh full22 stops at lint with later stages unrun. Codec has a verified JVM oracle and actual missing-resource red; candidate alias collision blocks green. Reflection's incomplete runtime selection is rejected. Original full Gson, accumulated CI, concurrency stress and all network gates remain required. Progress51 archive is sealed at its recorded cutoff; later receipts are not claimed archived.
+
+## Progress54 precedence
+
+`active_resume.progress54` and `SOL_PROGRESS54.md` govern this checkpoint. Canonical28e50af and reflection90b4526 are pushed component milestones. The canonical full22 is terminal red at AM258parents; twelve later stages are unrun. Reflection v6 is independently accepted only for its focused scope. Codec finalv2 awaits independent raw audit; its earlier cache-integrity rejection remains intact. Native callback acceptance is pending. The corrected progress53 archive is locally verified at its declared earlier cutoff. Full Gson, accumulated CI and concurrency/network requirements above remain unchanged.

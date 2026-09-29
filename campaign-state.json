@@ -4546,13 +4546,13 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "80226b178090698c30e35f81081b0e6148f37422",
+    "last_pushed_revision": "b00e164013abae53f04c4fa6ffe00b4b33b904f1",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "Multiple immutable component candidates; progress53 supersedes current-status prose only. Checkpoint18 remains latest full compatibility acceptance.",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Repair and verify canonical lint; finish reflection exact seven-test closure; validate source Entry applicability and remaining AbstractMap contracts; fix resource destination alias collision before Codec green; complete Set boundary composition and qualifier comparisons. Preserve mandatory full Gson and accumulated gates. No Netty advancement.",
+    "next": "Classify and repair canonical full22 AM258parent failures with additional GPT6.1 Sol teams; validate composed2070 and native callback candidate; independently audit Codec finalv2 then publish minimal ingestion repair. Preserve full Gson requirement.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4566,8 +4566,8 @@
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Number+Enum component 3cfd5fdc750913129e58c4062058bf5582f62b55 pushed and remote verified. Canonical focused16 accepted but fresh full22 lint RED; canonical publication deferred until repair and review.",
-    "checkpoint_updated_utc": "2026-09-29T22:24:06.852027+00:00",
+    "publication_status": "Canonical28e50af and reflection90b45262692c71fb905fd52d49e01231ffa37020 committed, pushed and remote verified on their component branches. Latest full compatibility acceptance remains checkpoint18.",
+    "checkpoint_updated_utc": "2026-09-29T23:10:44.697585+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE",
     "minimal_repair_full22": {
@@ -5046,10 +5046,118 @@
       },
       "durability": "Progress51 sealed archive remains its stated cutoff. Later artifacts listed here are local receipts, not claimed included in that archive.",
       "execution_policy": "At most3 isolated correctness lanes, GOMAXPROCS2; performance measurements exclusive; root assigns gates and owns publication."
+    },
+    "progress54": {
+      "status": "ACTIVE_COMPONENT_CHECKPOINT_NO_NEW_ROUND_ACCEPTANCE",
+      "canonical_publication": {
+        "commit": "28e50af626385b9c2b071fe6d07ea3cad19a751f",
+        "branch": "origin/codex/adversarial-string-checkpoint19",
+        "source_manifest_sha256": "32e5dcbfb68df7469ff7cc09d0205ac156b00566f2c20b4f0b9ca2f102f87f31",
+        "root_publication_audit_sha256": "cd94e19a6089235fa8f73e4e34c3f87acb025e91dfa227a4b2a2f6212e614a40",
+        "lint_and_six_tests_audit_sha256": "4a01e3cd79d5e25010537569e8f1727e1c4d6234c6c803bcec14a2fef3685dc0",
+        "scope": "Exact1931 nonledger tested bytes retained, previous three publication metadata/probe paths preserved. Historical1934 focused16 green; final1933 lint+chars1+canonical5 green. Full22/Gson unaccepted."
+      },
+      "canonical_astshape": {
+        "prior_full22_red_audit_sha256": "3b22a7516e81e2123de540759244da65c9e4f745dfc6892eb58168f64d0682cb",
+        "prior_scope": "first8 stages pass; two astutil String AST parent tests and two children fail;13 later stages unrun.",
+        "candidate_source": "/private/tmp/java2go-canonical-astshape-repair-sol-s3u00ihr/candidate",
+        "candidate_manifest_sha256": "788a1e7f909c345a609637dacbc2c2f2c6ae7e157a77b1dd4e581139ede23bc2",
+        "test_only_patch_sha256": "2c3b595b01afdc6de07e7485b30f6ca72be09465ca97369ab4e4754b18a759a5",
+        "independent_actual_audit_sha256": "8715aba1bdde24fb494bd2ecd46416bde684704539debb2467f8fdabdbc8f15f",
+        "scope": "Exact canonical JavaString pointer and nominal package assertions; unchanged production/Java inputs. Focused2+lint+original noncompiler445parents across7packages pass without skips.",
+        "new_full22_root": "/private/tmp/java2go-canonical-astshape-full22-sol-t24r5op2",
+        "new_full22_readiness_sha256": "e2aebdf19a28b69cbbeca1de907ad1a95146e6cc79295a362761df264972f14c",
+        "new_full22_status": "TERMINAL_RED: first9stages pass; exact828 AM parents570pass258fail, all1009testkeys697pass312fail, zero skips, originalbounds andcleanup pass. Twelve later stages UNRUN.",
+        "new_full22_independent_audit_sha256": "a0f043a56945db0a53c3a0600f202776e291f15c4321c48379cd4a3a83e3b170"
+      },
+      "reflection": {
+        "v5_independent_actual_audit_sha256": "23915f9edfd1f1935319879093ed272eb7949f2be0119cf3c5a118726c8e50f7",
+        "scope": "Exact new3+prior7 runtime selection, all nested statuses and27 fresh raceGo observations vs frozenJVM; full1883 stability/cleanup. Earlier v4 missing-selection aggregate remains rejected.",
+        "publication_candidate": "/private/tmp/java2go-reflection-null51-publication-v6-av0joert",
+        "publication_candidate_manifest_sha256": "cec8581b527a4e3a6372878ed0327d7b4c5619dd6d7e24a4dadabf61d4a8d87e",
+        "publication_status": "COMMITTED_PUSHED_REMOTE_VERIFIED; fresh fivegate composition independently accepted for focused scope only.",
+        "publication_commit": "90b45262692c71fb905fd52d49e01231ffa37020",
+        "publication_branch": "origin/codex/adversarial-enum-checkpoint19",
+        "publication_independent_audit_sha256": "2b1328ad22b6ed3dad994efb8606a4150f3378d48f911be610da0d040247ed15",
+        "root_publication_audit_sha256": "60b1a8861f670a71d8ce6283eab7b50d5a37323b476e0a2b714f70f100332c6f"
+      },
+      "entry_applicability": {
+        "source": "/private/tmp/java2go-entry-applicability51-r94p2bu9/candidate-v2",
+        "source_manifest_sha256": "f452db55d440402ff0ad2d275fcca76dfe64f36a2e0f42e0bb65a89f8561b9d7",
+        "root_audit_sha256": "874189530306ce2b26bde9e29f8d93d69de3c8199953a96111e7f88259528d8a",
+        "scope": "Five prerequisite parents pass; two unchanged fullMap parents fail all3seeds at inheritedPut selector or prematureDouble/Integer cast. All922 prior fixture/test paths retained. Whole batch red."
+      },
+      "native_entry_effects": {
+        "source": "/private/tmp/java2go-native-set51-p3vn5ob5/candidate-v2",
+        "source_manifest_sha256": "7014b527af9b9798692536a2cd3c960ce38b7b035afe15faff63f26bd1989c82",
+        "baseline_report_sha256": "976b05458bb893574984d2c2a45e76b9209eac33515e268c04dd0fd43497e326",
+        "runtime_red_report_sha256": "9740b5461e827a74158e27f4e0c673dfb4cb2b59867e16164bbbe9818ab78070",
+        "scope": "Set boundary now compiles. All18 stages exit0 including9normal+3race, but all12 stdout observations mismatch unchangedJVM. Eager getValue/second getKey/equality direction are actual failures; no parity acceptance.",
+        "callback_candidate": "/private/tmp/java2go-native-entry-callback20-cfu0bl9w/candidate-v1",
+        "callback_manifest_sha256": "d5b9738b2605d9d060aaa097ddd037155dbe95e188953d9acb708cfa9d2b4812",
+        "callback_patch_sha256": "15e4888491313e6dbed529273504a60dd59cd6554e6395441f39383f201755f4",
+        "callback_status": "Readinessba4dd05b frozen; lane1 granted focusedbaseline/control reds then candidategreen, Effects18/original14/rawkey18/runtime375 sequential. Consult actual receipts, no acceptance yet."
+      },
+      "codec": {
+        "alias_red_sha256": "ac6ac9ffbd3bda9e024e9f8e57327af2275b38a2ee976a39db6cd03cc06a7ddb",
+        "alias_green_sha256": "a437215681cb666e751af91952db21734cf6f6aa9af4379f224f0e6821946eea",
+        "alias_scope": "Allfour file/directory target normalization cases pass after actual three-file-alias red.",
+        "full_candidate_manifest_sha256": "0be7157af54d9c2a3dff561c1b0ee6bda01f9f98fbbd61a58eed3b1868c0ef26",
+        "full_output": "/private/tmp/java2go-codec-final-green-attempt1",
+        "next": "Complete independent raw audit then minimal source publication; broaderCodec/fullGson unaccepted.",
+        "full_v1_status": "AGGREGATE_REJECTED: owner reports focused+full source/binary/generated9triples and3stress pass, then module-cache membership integrity rejects new cache/lock and main-module VCS .info plusdirectories. No library acceptance.",
+        "full_v2_output": "/private/tmp/java2go-codec-final-green-v2-attempt1",
+        "full_v2_status": "Owner terminalGREEN, independent audit assigned sol_codec_terminal_audit_v5. Exact cache two-metadata/fullmembership pinning, no blanket exclusion. Fiveparents+fouraliascases, nine triples+three race stress pass; earlier v1 remains rejected.",
+        "full_v2_stage_sha256": "ca32136b598bd517be5f47d85e3a05073042153fe55b0cd0eccafe5d29d8c433"
+      },
+      "independent_oracles": {
+        "enum_date_rawset27_handoff": "/private/tmp/java2go-data-prereq-oracles-v4-utf8-lsgo6gzh/supervised-batch-v5-td_1g8_p/canonical-string-rawset-oracle-handoff.json",
+        "enum_date_rawset27_sha256": "95698ac036e20fdfaaec752526668ede3ef91183256ab5448bf9207cacab0650",
+        "map_nominal9_handoff": "/private/tmp/java2go-data-prereq-oracles-v4-utf8-lsgo6gzh/supervised-batch-v5-7bdfmbyy/map-nominal-oracle-handoff.json",
+        "map_nominal9_sha256": "04d2e2474a7adfaad0d2c79190fc2a368d99f5480b910f6c9a5473bee78e3bdd",
+        "scope": "Actual JDK21 stable repeated observations, empty stderr and cleanup; no generated parity yet. Go any representation must still perform nominal Comparable/Serializable casts after lookup effects."
+      },
+      "coherent_integration": {
+        "root": "/private/tmp/java2go-canonical-number-enum-compose-3x_jml79",
+        "status": "Date/Class interning composed after Astra review, immutable2070 private target frozen for testing; no broad acceptance.",
+        "enum_override_baseline": "/private/tmp/java2go-enum-override-root-red-attempt1",
+        "enum_override_actual_red_sha256": "e9c715403c871abeb71e03f0236301b72851f5f4844dab5c02a83c85c50a39e6",
+        "enum_override_scope": "Root executed exact two parse/render tests: dropped constant-only inherited override fails; overload/nested negative passes. Immutable2045/source/tool checks/cleanup pass. FullJVM runtime acceptance still required.",
+        "enum_override_candidate": "/private/tmp/java2go-astra-enum-inherited-v4-td_qny56/source",
+        "enum_override_candidate_manifest_sha256": "895fd79bf4461195bc82607f386d2a9f756ed5b90b11a0abcea3ee47afe67519",
+        "enum_override_status": "Actual focused rootred then green, exact2parse/render tests; merged into coherenttarget, full JVM gates required.",
+        "frozen_source": "/private/tmp/java2go-canonical-number-enum-jdk-freeze-a5z3o4qa/source",
+        "frozen_manifest_sha256": "159764f6d431012fc32cce9fe09fe1f1cab91bd66a835dfd45879c148fbc0222",
+        "enum_override_actual_green_sha256": "723620a5b97a6a4c98b61e9324d002029a74decb2bc42a2e38bfbb1a396a2172"
+      },
+      "performance": {
+        "callback_diag_transport": "/private/tmp/java2go-callback-diag-transport-sol-v5",
+        "status": "Actualv5 diagnostic attempt stopped after9commands at Java17 stderr: empty-valued Java options cause JVM Picked up notices. Source/tool/cleanup stable and stdout/files matched; infrastructure rejection preserved. New v6 must unset options and rerun all14commands; no speed claim.",
+        "qualifier_status": "Four canonical/proposed qualifier comparisons remain build-red before any runtime observations. New field provenance/staticimport diagnosis ready; no cache optimization acceptance.",
+        "v5_rejected_report_sha256": "fb7a1a5512a07ace6cd538b2d3e11ec60e84f8c92d5803c1d0a30d27d8ea2d86"
+      },
+      "archive": {
+        "path": ".campaign/checkpoints/checkpoint19/sol-progress53",
+        "archive_sha256": "0c2ebb44386a93b4471640e14ee804ffb85e7c8daca161a1da76f0f0223c2698",
+        "inventory_sha256": "4cc4b29bb89dbbfb8e49660a1071802b7a65178d68a41b1d184c7733fec13e6e",
+        "root_receipt_sha256": "3d617df438ac7adabaee8e20caec9e34f43d2a04f051f3c0fc40e946759fc70d",
+        "scope": "Independently verified2612regularmembers and all15reconstructed source scopes; copied to ignored local checkpoint store with recovery tools. Fixed earlier progress53 cutoff only; newer results listed here are not claimed archived or pushed as verbose artifacts."
+      },
+      "additional_sol_workers": {
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "assignments": {
+          "sol_regression_triage_v5": "classify terminal258failures, distinguish actual semantics",
+          "sol_test_migration_v5": "disjoint boxing Go-harness test migration, originalJava/oracles preserved",
+          "sol_bigmath_canonical_v5": "BigInteger/BigDecimal lossless canonicalString ABI TDD",
+          "sol_codec_terminal_audit_v5": "independent actualCodec finalv2 raw audit"
+        },
+        "rule": "Astra reserved hardest semantics; new Sol work isolated/private with explicit ownership and root-granted heavy workloads."
+      }
     }
   },
   "work_allocation": {
-    "updated_at": "2026-09-29T22:24:06.852027+00:00",
+    "updated_at": "2026-09-29T23:10:44.697585+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -5074,7 +5182,7 @@
     },
     "astra_model": "gpt-6-astra",
     "astra_reasoning_effort": "high",
-    "astra_scope": "Only the hardest compiler/runtime architecture, generic dispatch, nominal/interface bridges, object identity/concurrency semantics, and difficult optimization design/review. Routine harness, execution, audit and repairs handed to Sol.",
+    "astra_scope": "Hard semantics/design and specific inherited Enum override planner and native EntrySet callback repairs. Sol owns routine implementation, integration, regression authoring, harnesses and independent reviews.",
     "astra_routine_roles": "Build/verifier agents idle; runtime/performance agents consult only when hard issues arise.",
     "ownership": "Challenge/oracle authors remain separate from implementation owners. Implementers may not change frozen expectations or weaken challenges.",
     "execution": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
@@ -5084,6 +5192,17 @@
       "memory_bytes": 137438953472,
       "reason": "User requested additional parallelism; host capacity checked before increasing concurrency."
     },
-    "latest_parallelism": "Added four gpt-6.1-sol/high agents for catch independent verification, Codec independent review, callback performance experiment preparation, and DateFormat/JDK integration preparation; reused Sol for lint, collection composition and oracle comparisons. Astra reserved for hardest semantics and optimization design."
+    "latest_parallelism": "Added four gpt-6.1-sol/high agents for catch independent verification, Codec independent review, callback performance experiment preparation, and DateFormat/JDK integration preparation; reused Sol for lint, collection composition and oracle comparisons. Astra reserved for hardest semantics and optimization design.",
+    "additional_sol_workers": {
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "assignments": {
+        "sol_regression_triage_v5": "classify terminal258failures, distinguish actual semantics",
+        "sol_test_migration_v5": "disjoint boxing Go-harness test migration, originalJava/oracles preserved",
+        "sol_bigmath_canonical_v5": "BigInteger/BigDecimal lossless canonicalString ABI TDD",
+        "sol_codec_terminal_audit_v5": "independent actualCodec finalv2 raw audit"
+      },
+      "rule": "Astra reserved hardest semantics; new Sol work isolated/private with explicit ownership and root-granted heavy workloads."
+    }
   }
 }
