@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Finish caller String shadow and canonical Object anonymous review reds/fixes; run neighbors and lint, combine only reviewed fixes in immutable snapshot, full historical gates and original endpoints. Full16 isolated UTF16 requires canonical String ABI migration. Full Gson remains required/red; source Iterator and AbstractMap/Set queued.",
+  "next_action": "Finish current main40 unit shard; preserve every failure. Run seven focused main41 assertion tests, then full historical22 gates and four source-text/factory endpoints on the final frozen native candidate. Independently audit before implementation integration/commit/push. Canonical String ABI remains separate; boxed/char-array/host helper JVM-first reds queued. Full16 isolated UTF16 and full Gson remain required/red.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -3936,7 +3936,7 @@
       }
     },
     "checkpoint19": {
-      "status": "ACTUAL_REDS_PRIVATE_REPAIRS_IN_PROGRESS",
+      "status": "PRIVATE_JOINT_HISTORICAL_VERIFICATION_IN_PROGRESS_NO_PROMOTION",
       "base": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
       "full_Gson_accepted": false,
       "capital_string": {
@@ -3947,13 +3947,15 @@
         "owner": "astra_compiler",
         "historical_bdbefca": "Go-build blocked, no runtime classification",
         "private_candidate": {
-          "version": "v3c",
-          "focused_passes": 6,
+          "version": "v4",
+          "focused_passes": 7,
           "source_unchanged": true,
-          "patch_sha256": "f00fa58dd6e30f4b66f0cfb12893185695f0f59cf2dfcf5004463825022ad20f",
-          "evidence": ".campaign/checkpoints/checkpoint19/private-attempts-v3/capital-v3c/manifest.json",
-          "unrun_review": "canonical new Object anonymous nominal registration",
-          "accepted": false
+          "patch_sha256": "0beb6418a7b8bc316318fa856cc850fe169e0f5795c144fe39c081c05bc4b9a7",
+          "evidence": ".campaign/checkpoints/checkpoint19/private-attempts-v4",
+          "unrun_review": null,
+          "accepted": false,
+          "existing_neighbor_passes": 53,
+          "remaining_gate": "Final joint full9 JVM/raceGo endpoint and historical gates"
         }
       },
       "string_invocation_order": {
@@ -3984,11 +3986,11 @@
         "candidate": "/private/tmp/java2go-nanotime26-candidate-nfzzv9s2",
         "promoted": false,
         "private_candidate": {
-          "version": "v3",
-          "focused_passes": 15,
+          "version": "v6",
+          "focused_passes": 43,
           "source_unchanged": true,
-          "patch_sha256": "f5a884b93609583e9972dc08814b41c4e069cb94d21c8da62d62e9f80ddf2423",
-          "remaining_gate": "caller imports source String review, 127 existing neighbors, exact lint, full integration",
+          "patch_sha256": "eeef9d02c85485bedc55a58f1cfdbc539a2b0d8fcf8cecf42e187ff7f7af7518",
+          "remaining_gate": "Joint historical and application verification",
           "accepted": false,
           "caller_import_review": {
             "status": "ACTUAL_JVM_VALID_GO_BUILD_RED",
@@ -3996,7 +3998,8 @@
             "failure": "untyped string literal misclassified as imported source shadow.String",
             "evidence": "/private/tmp/java2go-static-import-caller-shadow26-jzg3qin2/baseline-red-package/manifest.json",
             "next": "canonical java.lang.String literal inference"
-          }
+          },
+          "fixed_result_followup": "Actual v4 SQL date and five new JVM-valid source-owner shadow failures; v6 declaration-scoped result metadata green, evidence retained."
         }
       },
       "discovery_archive": ".campaign/checkpoints/checkpoint19/discovery-v1",
@@ -4004,7 +4007,9 @@
       "attempt_evidence": [
         ".campaign/checkpoints/checkpoint19/private-attempts-v1",
         ".campaign/checkpoints/checkpoint19/private-attempts-v2",
-        ".campaign/checkpoints/checkpoint19/private-attempts-v3"
+        ".campaign/checkpoints/checkpoint19/private-attempts-v3",
+        ".campaign/checkpoints/checkpoint19/private-attempts-v4",
+        ".campaign/checkpoints/checkpoint19/private-attempts-v5"
       ],
       "utf16_prerequisite": {
         "owner": "astra_build; astra_string_abi design",
@@ -4023,17 +4028,85 @@
         "reason": "Java durations and drift fail; both Go sampled medians below declared minimum",
         "speed_claim": null,
         "next": "prepare separately versioned exact-cycle batching and independent ordered-work model; original benchmark immutable"
+      },
+      "private_attempts_v5_receipt_sha256": "c043bec5665750110d5d015233695f4361750120c9b4063c63e21adea3781305",
+      "joint_attempts": [
+        {
+          "version": 1,
+          "status": "UNRUN_SUPERSEDED_RUNTIME_V4_SQL_FAILURE"
+        },
+        {
+          "version": 2,
+          "status": "BUILD_RED_STALE_INTRINSIC_HELPER_NAME",
+          "snapshot": "/private/tmp/java2go-checkpoint19-joint-v2-w099kgm9"
+        },
+        {
+          "version": 3,
+          "status": "NONCOMPILER_RED_OLD_NATIVE_CHARAT_BOUNDS_EXPECTATION",
+          "snapshot": "/private/tmp/java2go-checkpoint19-joint-v3-7rufjyd2"
+        },
+        {
+          "version": 4,
+          "status": "RUNNING_UNIT_AM_ONE_EMISSION_ASSERTION_RED_OBSERVED",
+          "snapshot": "/private/tmp/java2go-checkpoint19-joint-v4-j1wuu0iw",
+          "manifest_sha256": "8d61d8bfac152aae5fcaa4fbdd2f4cf17ea84377a919f0a37f9368e7055355e0",
+          "session": 97377,
+          "passed_gates": [
+            "build",
+            "lint2.14",
+            "unit-noncompiler"
+          ],
+          "failed_test": "TestInterfaceBoundUsesInterfaceConstraintAndResolvesBoundMethods"
+        },
+        {
+          "version": 5,
+          "status": "PREPARED_UNRUN_41_FILES_ASSERTION_FOCUS_PENDING",
+          "snapshot": "/private/tmp/java2go-checkpoint19-joint-v5-_cjipj9r",
+          "manifest_sha256": "3488c20782d82fd8cf6b699af7e8137cbcf31511bc56ef16973867fa6b58b0de"
+        }
+      ],
+      "test_contract_corrections": {
+        "charAt": "Seven targeted race tests green; JDK-derived exception contract replaces obsolete native Go slice panic, all25 input pairs and prior controls retained; Sol and independent Astra reviewed.",
+        "interface_bound": "Test-only staging assertion update prepared; original Java, bound and method count checks retained; Sol reviewed; focused execution pending."
+      },
+      "canonical_string_joint": {
+        "status": "FROZEN_PREPARED_UNRUN",
+        "path": "/private/tmp/java2go-canonical-joint19-08lnogqa",
+        "manifest_sha256": "48bf2bda3d59054e335b07605291fca74791019f4975efa879519d5acf00ae67",
+        "files": 1860,
+        "delta_from_main40": 34,
+        "direct_dynamic_helpers_missing": 27,
+        "compiler_only_v3_green": true,
+        "generated_abi_accepted": false,
+        "helper_evidence": "C charset, D containers, E registered source pointer text focused green only; source/enum/Throwable/defaultObject and other adapters remain",
+        "owners": [
+          "astra_string_abi",
+          "astra_string_core",
+          "astra_string_host",
+          "astra_string_containers",
+          "astra_compiler",
+          "astra_runtime"
+        ]
+      },
+      "timing_pilot_v2": {
+        "status": "DURATION_QUALIFIED_PENDING_JVM_STEADY_STATE_DIAGNOSTICS",
+        "semantic_report_sha256": "df65901f6aa702323eb06e893e0d3831cfe47d8bdadb9f8d51fb62dc9fde32ff",
+        "qualification_report_sha256": "c98042582086a42539527fc98e3e2370d975ce92cd9e624ca46872537d2e1fea",
+        "independent_raw_audit": true,
+        "claims": "No CPU/JVM advantage claimed; variant counts differ, raw batch times incomparable",
+        "diagnostic": "Prepared unrun marker variant/JFR runner preserved in private-attempts-v5",
+        "optimization_design": "Lazy literal slot spec only; activation and measurement pending"
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "c593f90245a23f77a9a190cdfc46a8bac3a1efe9",
+    "last_pushed_revision": "63b55a727cad0d404562a87136c4bad1609479e8",
     "branch": "origin/codex/adversarial-campaign",
-    "active_root_session": null,
-    "source_checkpoint": "/private/tmp/java2go-checkpoint18-full-v4-tz30vyky/source",
+    "active_root_session": 97377,
+    "source_checkpoint": "/private/tmp/java2go-checkpoint19-joint-v4-j1wuu0iw/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Finish caller String shadow and canonical Object anonymous review reds/fixes; run neighbors and lint, combine only reviewed fixes in immutable snapshot, full historical gates and original endpoints. Full16 isolated UTF16 requires canonical String ABI migration. Full Gson remains required/red; source Iterator and AbstractMap/Set queued.",
+    "next": "Finish current main40 unit shard; preserve every failure. Run seven focused main41 assertion tests, then full historical22 gates and four source-text/factory endpoints on the final frozen native candidate. Independently audit before implementation integration/commit/push. Canonical String ABI remains separate; boxed/char-array/host helper JVM-first reds queued. Full16 isolated UTF16 and full Gson remain required/red.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -4041,12 +4114,13 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "coordinator assigns one bounded compiler/runtime/build job at a time",
-    "heavy_session": null,
+    "heavy_owner": "root full native joint regression",
+    "heavy_session": 97377,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Checkpoint19 evidence-only update; production remains eee3036, no new round acceptance."
+    "publication_status": "Evidence-only checkpoint; implementation remains eee3036, no new round acceptance.",
+    "checkpoint_updated_utc": "2026-09-29T10:45:54.927771+00:00"
   }
 }
