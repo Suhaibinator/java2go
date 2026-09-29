@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Native regression panic repaired, independently reviewed and pushed as e92116f on codex/adversarial-pause-checkpoint19. Original full22 rerun prepared and independently cleared on minimal repair source ede7cb11, awaiting exclusive allocation profile completion. Whitespace and source Entry focused parity green; generic Class application remains red, native live-entry baseline build red, abstract defaults baseline build red. Duration factories compile but standalone harness needs a Go entrypoint before parity. Continue frozen TDD repairs; full Gson remains required red and Netty stays gated.",
+  "next_action": "Original full22 now running on repaired native source, session38667. Poll same process; preserve results. Two additional isolated correctness lanes test source generic constructor and shared primitive argument capture repairs. Fixed allocation profile phase completed; independent audit pending. Full Gson remains required red.",
   "performance_team": {
     "astra_perf_codegen": "Difficult optimization design/correctness review only, invoked after material baseline evidence",
     "astra_perf_runtime": "Difficult runtime optimization, lifetime/concurrency review only",
@@ -4536,7 +4536,7 @@
     "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Native regression panic repaired, independently reviewed and pushed as e92116f on codex/adversarial-pause-checkpoint19. Original full22 rerun prepared and independently cleared on minimal repair source ede7cb11, awaiting exclusive allocation profile completion. Whitespace and source Entry focused parity green; generic Class application remains red, native live-entry baseline build red, abstract defaults baseline build red. Duration factories compile but standalone harness needs a Go entrypoint before parity. Continue frozen TDD repairs; full Gson remains required red and Netty stays gated.",
+    "next": "Original full22 now running on repaired native source, session38667. Poll same process; preserve results. Two additional isolated correctness lanes test source generic constructor and shared primitive argument capture repairs. Fixed allocation profile phase completed; independent audit pending. Full Gson remains required red.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4544,8 +4544,8 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "Coordinator assigns individual correctness lanes",
-    "heavy_session": null,
+    "heavy_owner": "sol_build_v2 (correctness lane1)",
+    "heavy_session": 38667,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
@@ -4558,11 +4558,12 @@
       "source": "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/source",
       "source_manifest_sha256": "ede7cb11500f00855b78c95682be6763b453562d362364dd46aafe1e34355fab",
       "readiness_audit_sha256": "1eaa50901d03c6a6f6789d0ab920d2bf32f904ef34711c026944be8b4da4c633",
-      "status": "PREPARED_UNRUN; execute only after exclusive profile window",
+      "status": "RUNNING session38667; poll same handle or inspect authoritative terminal result before any restart",
       "production_delta": [
         "transpiler/static_import_resolution.go"
       ],
-      "regression_test": "transpiler/campaign_static_import_file_ownership46_test.go"
+      "regression_test": "transpiler/campaign_static_import_file_ownership46_test.go",
+      "output": "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/full-attempt1"
     },
     "sol_progress47": {
       "evidence_archive": ".campaign/checkpoints/checkpoint19/sol-progress47/evidence.tar.gz",
