@@ -37,11 +37,11 @@ func stageStringIntrinsicInvocation(object *sitter.Node, method string, receiver
 		name := synchronizedUniqueLocalName("__java2goInvocationArg"+strconv.Itoa(index), used)
 		node := invocationArgumentNode(invocation, index)
 		statement := stagedInvocationLocal(name, argument)
-		if invocationArgumentNeedsContextualType(argument, node) {
-			javaType := ""
-			if index < len(expected) {
-				javaType = expected[index]
-			}
+		javaType := ""
+		if index < len(expected) {
+			javaType = expected[index]
+		}
+		if invocationArgumentNeedsContextualType(argument, node) || invocationArgumentHasPrimitiveFormal(javaType) {
 			if javaType == "" {
 				javaType, _ = inferExprJavaType(node, ctx, source)
 			}

@@ -4013,10 +4013,10 @@ func stagedInvocationArgumentLocal(
 	ctx Ctx,
 	source []byte,
 ) (ast.Stmt, bool) {
-	if !invocationArgumentNeedsContextualType(value, valueNode) {
+	javaType := strings.TrimSpace(parameterJavaType)
+	if !invocationArgumentNeedsContextualType(value, valueNode) && !invocationArgumentHasPrimitiveFormal(javaType) {
 		return stagedInvocationLocal(name, value), true
 	}
-	javaType := strings.TrimSpace(parameterJavaType)
 	if javaType == "" || invocationTypeUsesMethodParameter(javaType, resolution) {
 		return nil, false
 	}
