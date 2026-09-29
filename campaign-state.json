@@ -4546,13 +4546,13 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "42a5e84607fae7d8e0e1d38f7d526e9e17755161",
+    "last_pushed_revision": "8351867e86849cacbf10993097e4d282feb848b2",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Native session38667 and cumulative session22106 are TERMINAL, do not poll/restart. Native first21 gates passed; full Gson remains Go-build red. Cumulative source requires canonical String prerequisite semantic merge by sol_canonical_integration_v3. Continue package-keyword, bounded dispatch, Entry, JDK and SAM repairs with preserved frozen oracles.",
+    "next": "Canonical v3 session18113 is TERMINAL RED: String16/race10 and runtime74 pass; bounded Object.toString adapter fails in native7, later4 unrun. New1929 repair f317d0 runner is prepared pending audit. Continue canonical Class.getName references, independent six-method Number impostor control, Entry binder/direct-demand, AbstractMap/native raw-key, Enum and DateFormat TDD. Preserve all red fixtures; full Gson remains required.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4567,7 +4567,7 @@
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Native panic fix e92116f and canonical String/primitive-capture repair f377ebb63fe71fbc341dd28b2ddec9b90756a7e4 pushed to their existing origin WIP branches. Production acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-29T20:52:46.473955+00:00",
+    "checkpoint_updated_utc": "2026-09-29T21:19:35.240004+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE",
     "minimal_repair_full22": {
@@ -4636,6 +4636,82 @@
       "builder_sam": {
         "status": "PARTIAL_GREEN_LAMBDA_THROWABLE_RED",
         "detail": "Full unchanged16-line Builder fixture, runtime11 and whitespace3 pass. Independent primitive consumer fixture compiles but lambda exception message formats canonical String as a pointer dump. Frozen7-line oracle retained; general repair assigned to Sol."
+      }
+    },
+    "number_publication50": {
+      "branch": "origin/codex/adversarial-number-checkpoint19",
+      "commit": "fa5ca2e151025e5bff9ee2012eb026e8d58952cb",
+      "origin_verified": true,
+      "worktree": "/Users/suhaib/.codex/worktrees/string-candidate/java2go",
+      "source_manifest_sha256": "ec7c47d0f22e71de24f211b11c749a5ade251f8449c8575b371b3b6b91e9c6a0",
+      "source_files_exact_excluding_tracking_docs": 1903,
+      "scope": "Original8Java workflow: portable9JVM/9Go green, prior13neighbors green; missing ancestor bridge runtime baseline retained.",
+      "known_blocker": "Explicit Number-bound cast accepts structural6method impostor; independent challenge in progress. No broad Number/Enum/Gson acceptance.",
+      "root_audit_sha256": "8a65a9eec69668a724da0baeeeebcf55d3114fc9e8e9016c7c83666c30c9c9c0",
+      "hard_review_sha256": "6dcaa22cb1a082f7e876d3cd239b19decb9bb9085e9868675b376595f3a10b3b",
+      "production_accepted": false
+    },
+    "progress50": {
+      "canonical_integration": {
+        "status": "TERMINAL_RED_NEW_OBJECT_DEFAULT_ADAPTER",
+        "manifest_sha256": "79a5573662f3aeca8e1d6e74deb5f70410f92df662a5c5fcee535cba37dbcf1c",
+        "terminal_audit_sha256": "b2806f9459eef4808570eb186581a2c8aeca233fbd9d217dbf4a6e1deea3165c",
+        "repair_source": "/private/tmp/java2go-canonical-object-default-repair-sol-_1skyh6g/source",
+        "repair_runner": "/private/tmp/java2go-canonical-object-default-runner-sol-ki8nodob",
+        "passed": "OriginalString16 normal/10race, compilerbuild, runtime74; native7 has6pass/1fail; four later stages unrun."
+      },
+      "keyword_package": {
+        "status": "INDEPENDENT_FOCUSED_GREEN",
+        "audit_sha256": "7447b16d71b247b59f572ac18199725030d47a88d516db6182c535be40cca4bd",
+        "formatted_patch_sha256": "1a1cc00454ce9c0a7e7e09545ea8b43534d180603243722deff35d43b20ad68d",
+        "scope": "Threeparents14records, JVM/import/localbinding identity, Java metadata retained; fullMap now reaches genuine runtime prerequisites."
+      },
+      "inherited_entry": {
+        "status": "FOCUSED3_GREEN_BINDER_SHADOW_OPEN",
+        "audit_sha256": "7047ba705edca9bb8c6bd55c9ce1bb777a96be60a26048aa4e17940be7bc25ad",
+        "next": "New independently captured source V vs generic V oracle; direct generic demand and overload controls also valid JVM but Go pending."
+      },
+      "native_views": {
+        "status": "ORIGINAL14_FOCUSED_GREEN_BROADER_CALLBACK_AND_RAWKEY_CONTROLS_READY",
+        "audit_sha256": "300c402e11100322afd9db2c89eff74158b519e6392b05597b97e44789ca5951",
+        "new_JVM_runs": 18,
+        "new_JVM_audit_sha256": "f1d349535b2fbbeb24aaaf988f7ea328f1c12ded864ad2eaa8b671ffd052055b",
+        "limits": "Callbackorder/asymmetric equality and raw nativekey storage await Go baseline/repair; broad Map/Set write ABI blocked."
+      },
+      "time_nominal": {
+        "status": "ALREADY_GREEN_NO_REPAIR",
+        "audit_sha256": "f354660019e68285935f30a26f5caf9311ea8fb60bab6b908c529698b765381c",
+        "scope": "Oneparent7stages classidentity/source shadows/crosscast/zero identity; no broader java.time claim."
+      },
+      "dateformat": {
+        "status": "JVM_VALID_TARGET_BUILD_RED_PRIVATE_CANDIDATE_READY",
+        "audit_sha256": "1ceb1f44c613dd98d795e2e67478434d37e2716d12419e9e59935d9235463696",
+        "candidate": "/private/tmp/java2go-dateformat46-impl-nt8f97kj",
+        "next": "Prepare new audited green transport against unchanged UTF8 oracle; candidate locale/calendar limits explicit."
+      },
+      "throwable_class_name": {
+        "status": "FULL11_GREEN_METHOD_REFERENCE_FOLLOWUP",
+        "source": "/private/tmp/java2go-illegal-argument-constructor-v3-mRTBNr",
+        "scope": "Original9 + ClassName direct/JVM + concurrency pass v4; methodreference canonical return adapter remains in separate red-first followup. Earlier full9/full11 failures retained."
+      },
+      "literal_optimization": {
+        "status": "CANDIDATE_UNRUN_ORIGINAL_COMPILER_HYGIENE_RED",
+        "baseline_report_sha256": "0d76a20bcf45587244c3cdaaf63a85b530721079326788fa54008f87c64c08a2",
+        "failure": "Frozen originalcompiler strictpasses but allpackage build fails local uint16 shadows generated literal element type; 0/18Go observations. Independent correctedJVM18 green, invalidv1 retained as fixture issue.",
+        "candidate": "/private/tmp/java2go-literal-cache-candidate-v3-rhoqpkf1",
+        "scope": "No optimized correctness or performance measurement yet; separate shared hygiene prerequisite required."
+      },
+      "enum": {
+        "status": "RUNTIME_API_ABSENCE_RED_PRIVATE_FOUNDATIONS",
+        "runtime_candidate": "/private/tmp/java2go-enum-runtime50-fxczv156",
+        "compiler_candidate": "/private/tmp/java2go-enum-foundation20-b4xllbvo",
+        "scope": "OriginalEnum application still required; runtime compile red0assertions, no fullEnum parity. Runtime and compiler ownership separate."
+      },
+      "archive": {
+        "status": "PREPARING",
+        "owner": "sol_concurrent_v2",
+        "handoff": "/private/tmp/java2go-progress50-bundle-handoff-sol-yg9tur1c/handoff.json",
+        "handoff_sha256": "587390ac418f2712c5621fee096f4902bc33ef9661288bef3ddde6ce790b34a8"
       }
     }
   },
