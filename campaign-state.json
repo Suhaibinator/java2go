@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Push this exact checkpoint and verify origin. Continue original nanoTime JVM-first reds (including static-import and canonical System.out prerequisites), sourceIterator erased-next test, and Sol capital String collision differential. Full Gson remains required red; no Netty progression.",
+  "next_action": "Repair ordinary String dispatch, static imports/qualified System owner binding, and String receiver argument ordering using actual JVM reds. Then independently validate focused tests and unchanged endpoints/full corpus. SourceIterator and AbstractMap/Set prerequisites remain queued; retain full Gson red.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -1107,7 +1107,7 @@
     }
   ],
   "in_progress_checkpoint": {
-    "status": "checkpoint18 independently verified implementation checkpoint; round02 full Gson remains active",
+    "status": "checkpoint19 adversarial repairs active after published checkpoint18",
     "package_ready_barrier": {
       "astra_build": "Candidate08 local identifier hygiene focused green, held; full family probe pending",
       "astra_runtime": "Candidate08 genuine SQL runtime focused/JVM/race/ISO green, held; shared collection design documented",
@@ -3934,29 +3934,59 @@
           "accepted": false
         }
       }
+    },
+    "checkpoint19": {
+      "status": "ACTUAL_REDS_PRIVATE_REPAIRS_IN_PROGRESS",
+      "base": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
+      "full_Gson_accepted": false,
+      "capital_string": {
+        "status": "JVM9_VALID_GO9_RUNTIME_MISMATCHES",
+        "fixture": "campaign/reproducers/capital-string-collision",
+        "oracle_sha256": "c2d193ed4e756a08059ff8a900346683188066e840e3075aff2fff31b0723316",
+        "audit": ".campaign/checkpoints/checkpoint19/discovery-v1/capital-coordinator-audit.json",
+        "owner": "astra_compiler",
+        "historical_bdbefca": "Go-build blocked, no runtime classification"
+      },
+      "string_invocation_order": {
+        "status": "JVM16_VALID_GOPROBE_NULLCHECK_TOO_EARLY",
+        "normal_pairs_before_failure": 13,
+        "race_pairs_before_failure": 7,
+        "later_go_cases": "order race, bounds and isolated not reached",
+        "audit": ".campaign/checkpoints/checkpoint19/discovery-v1/string-loop-coordinator-audit.json",
+        "owner": "astra_build",
+        "performance_optimization": "blocked pending full unchanged semantic gate"
+      },
+      "timer_static_imports": {
+        "status": "actual baseline red; timer/qualified-print partialgreen; static-import and dotted-value/source owner reds retained; private general repair prepared",
+        "owner": "astra_runtime",
+        "candidate": "/private/tmp/java2go-nanotime26-candidate-nfzzv9s2",
+        "promoted": false
+      },
+      "discovery_archive": ".campaign/checkpoints/checkpoint19/discovery-v1",
+      "publication_rule": "No private repair integrated; focused/full acceptance required before implementation milestone."
     }
   },
   "active_resume": {
-    "last_pushed_revision": "fcd971be65420f8c245b942e218d2961e5d06ebb",
+    "last_pushed_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "/private/tmp/java2go-checkpoint18-full-v4-tz30vyky/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Push this exact checkpoint and verify origin. Continue original nanoTime JVM-first reds (including static-import and canonical System.out prerequisites), sourceIterator erased-next test, and Sol capital String collision differential. Full Gson remains required red; no Netty progression.",
+    "next": "Repair ordinary String dispatch, static imports/qualified System owner binding, and String receiver argument ordering using actual JVM reds. Then independently validate focused tests and unchanged endpoints/full corpus. SourceIterator and AbstractMap/Set prerequisites remain queued; retain full Gson red.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
-    "last_compatibility_revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b",
+    "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
     "checkpoint16_review_hold": {
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "astra_runtime private nanoTime and canonical System.out prerequisite",
+    "heavy_owner": "coordinator assigns one bounded compiler/runtime/build job at a time",
     "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Checkpoint18 implementation in this commit; origin push verification follows"
+    "publication_status": "Checkpoint18 committed/pushed/live-origin-verified as eee3036; checkpoint19 repairs private and unaccepted"
   }
 }
