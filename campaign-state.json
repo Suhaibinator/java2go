@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Math static-import-kind repair controls, canonical Throwable constructor/getter TDD, and erased collection raw List/Iterator prerequisites. Then fresh full Gson and original full16 String workflow, accumulated22 gates and supplemental endpoints. Dedicated performance agents prepare bounded formatting/marker warmup diagnostic; no speed claim.",
+  "next_action": "Run exactnative26 and field/type qualifier oracle; finish Throwable mixed callback and bounded constructor gates; repair collection raw removals/projection and Iterable boundary. FullGsonGoBuild remains requiredred. Full22/supplemental and full16String gates required before implementation promotion. Performance fixedprelude capture pending analyzer review.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -4144,7 +4144,14 @@
         "diagnostic_limitation": "All52 markers and24 model rows valid. Kernel compilation ends during warmup, but74 compiler events and a safepoint overlap conservative measured batch brackets. Bracket width is not exact nanoTime interval; safepoint span is not pause duration. No speed claim.",
         "speed_claim": null,
         "diagnostic_report_sha256": "c85bb2611faf0cc694a98e2920815abcd6c23a3f79a0df237595bf4fbdcab13d",
-        "diagnostic_archive_sha256": "d4f9e184232471808e58462048a5aa7154f43afa1180c1b1b161fab2a73a9fb9"
+        "diagnostic_archive_sha256": "d4f9e184232471808e58462048a5aa7154f43afa1180c1b1b161fab2a73a9fb9",
+        "fixed_prelude": {
+          "status": "PREPARE_THREE_SEEDS_84_ROWS_INDEPENDENTLY_GREEN_CAPTURE_UNRUN",
+          "path": "/private/tmp/java2go-jfr-fixed-prelude-v1-dx67t9vh",
+          "report_sha256": "a43bc481e4da762ca563644e4781b3160a5f456442130283bb865ddc230de460",
+          "independent_audit_sha256": "b010f84893b8c4e10d61b9b976e0325c6b557ae0bd1025fbbcc60a33298a6661",
+          "next": "Versioned analyzer paired-safepoint interval and pin anchor fixes before fixed capture; no speed claim."
+        }
       },
       "private_attempts_v6_receipt_sha256": "1685ca1ac23ba54d889fb1fbdab310ae4476865e2fc9fda820ec89dc10405af8",
       "canonical_string_additive_helpers": {
@@ -4183,12 +4190,12 @@
       },
       "private_attempts_v7_manifest_sha256": "432e9a86cfc75d533886bede1ede1d7befe37ea56ad6b462ebbb9e9d6af696d6",
       "generic_collection_repair": {
-        "status": "FOCUSED4_JVM_STRICT_RACE_GREEN_FULL_GSON_STILL_STRICT_RED",
+        "status": "FOCUSED_NATIVE_FIXES_RESTORE_GSON_STRICT_TRANSPILE_GO_BUILD_REQUIRED_RED",
         "patch_sha256": "e912e37a1750e402efe1b4bb0cf469143d4c160795a554edc1acd8063345aca3",
         "candidate": "/private/tmp/java2go-static-collection43-fix-rjumntjv",
-        "full_gson_report": "/private/tmp/java2go-objects-gson44-preflight-emcodfaw/gson-preflight-20260929T065416/artifacts/20260929T135417Z-3296411661/report.json",
-        "full_gson_report_sha256": "5a04935631758abfac63b04d54d1a56f4540a948114d3937c748579f1322dc8a",
-        "first_failure": "JavaTimeTypeAdapters.java83 Math.toIntExact(values[0]); nine unchanged JVM observations valid, no Go build",
+        "full_gson_report": "/private/tmp/java2go-math-gson44-preflight-wio0z3mf/gson-preflight-20260929T071703/artifacts/20260929T141703Z-3900060099/report.json",
+        "full_gson_report_sha256": "300aca1b6739761f7f240260fc6b8a0b38fad68d5849e9e4eb532a7aa36f6bf6",
+        "first_failure": "Go build: missing AbstractMap/AbstractSet/ConcurrentMap/T/DateFormat/Enum/Duration/Instant in first capped diagnostic batch",
         "valid_jvm_observations": 9,
         "go_observations": 0,
         "owners": {
@@ -4297,15 +4304,18 @@
         "v15_manifest_sha256": "c10f21ea590393c5df098491ad5c0b8b0bc6d143ea7ab38b29c9a45a5a5bfaaf",
         "v15_archive_sha256": "90e2f4cdfeb97f9586034fa9292c55e913a9bdca4bcfe641e2de75d232fdf654",
         "durable_directory": ".campaign/checkpoints/checkpoint19",
-        "production_promoted": false
+        "production_promoted": false,
+        "v16_manifest_sha256": "0ed4257b11e7754ac81ade6f77cfa2fdf08f05e46b12ed9bc3d06f62b33ee948",
+        "v17_manifest_sha256": "6b43b3c4fd5dc02fcebac35dff32a19be8a052e952760197e5297dcec7cced5e",
+        "v18_manifest_sha256": "aee7031f275bfecbd1802d59a3efec57cd68b03f7528f8db9012ee8fe17f9441"
       },
       "erased_collection_followup": {
         "path": "/private/tmp/java2go-collection-erased20-5_2pcf7h",
-        "status": "CANDIDATE1_STATEFUL_PARITY_AND_ORIGINAL13_GREEN_SOL_AUX_GO_BUILD_RED",
-        "patch_sha256": "bfbe519cff8e8b82894b895f74be1d6d3afb1f16bdcb8a91b152cfb5a5922f46",
-        "manifest_sha256": "91976bc8a67e1cce0e3d926d68f4b160198729f70a7d5d01f71b5cc4280f6e34",
-        "scope": "13-line stateful JVM/Go transcript equal, original13 focused controls pass. Sol auxiliary all9 JVM stable then generated Go raw List signatures and iterator methods fail compilation.",
-        "next": "Raw List/Iterator prerequisites and consumer cast timing, array-backed stores, broad collection regression gate; no source Iterator/Set acceptance.",
+        "status": "CANDIDATE2_SOL_AUX_PARITY_AND_ORIGINAL14_GREEN_NEW_CONTROLS_RED",
+        "patch_sha256": "41680db541eb346ba5d912c21f7ac741612417e7a606b399a29fa062546f4611",
+        "manifest_sha256": "25f9dd6063868e615ae689806b8dd4f394ae06fb72f66b1cb8da67a2767d7514",
+        "scope": "9 JVM/9 normal Go/3 race Go exact Sol auxiliary pairs independently audited. Original13 plus stateful test all14 pass. New raw remove control Go build red; separate source Object/nested-projection and Iterable method-boundary controls also JVM-valid Go build red.",
+        "next": "Candidate3 raw remove/projection repair, then consistent Iterable/source protocol bridge and broad collection regressions.",
         "accepted": false
       },
       "integer_parse_reference": {
@@ -4317,22 +4327,44 @@
         "remaining": "Canonical Integer constructors/valueOf and historical old-helper emission assertion not claimed. Full String workflow still required."
       },
       "math_to_int_exact": {
-        "status": "MATH3_AND_EXPLICIT_IMPORT2_GREEN_PREEXISTING_WILDCARD_NESTED_RED_RETAINED",
-        "path": "/private/tmp/java2go-import-kind44-ma7go3xn",
-        "failure": "Original source shadow fixed; separate static nested wildcard type import remains Go build red on baseline and candidate",
-        "next": "Fresh unchanged full Gson preflight; broader regression verification pending",
+        "status": "MATH_AND_STATIC_NAMESPACE_SEVEN_FOCUSED_GREEN_COMBINED26_PREPARED",
+        "path": "/private/tmp/java2go-static-member-type44-f2jauji4/candidate",
+        "failure": "Original wildcard member-type and field/type namespace errors repaired in focused7. Imported field/type qualifier class-initialization control prepared unrun.",
+        "next": "Exactcombined26 then qualifier control/repair and freshfull22; no promotion yet.",
         "accepted": false
+      },
+      "full_gson_restored_strict": {
+        "status": "STRICT_PASS_GO_BUILD_RED_EXACT_BASELINE_COORDINATE_MISMATCH_CLASSIFIED_NOT_WAIVED",
+        "transpile_ms": 139361,
+        "jvm_observations": 9,
+        "go_observations": 0,
+        "independent_audit": "/private/tmp/java2go-math-gson44-independent-audit.json",
+        "exact_comparison": "/private/tmp/java2go-math-gson44-exact-comparison.json",
+        "detail": "Exact comparator rejects AbstractSet diagnostics at991/1092 versus990/1091. Only LinkedTreeMap source change is one source-toString registration at689; affected statements and ordered first10 messages unchanged. Truncated diagnostics cannot rule out additional errors.",
+        "accepted": false
+      },
+      "canonical_throwable_compiler": {
+        "status": "ORIGINAL3_VALID_JVM_STORAGE_AND_VIRTUAL_GREEN_INITCAUSE_RUNTIME_RED",
+        "path": "/private/tmp/java2go-throwable-compiler19-8e5mhq5b",
+        "manifest_sha256": "23cadcf706c117a24bcdd8c64107c81f65d80b9033bb0e047a534a987f94438d",
+        "next": "General mixed native/canonical callback diagnostic repair; generic String-bound ctor repair and bare-null green control. Recombine and rerun exact3+typing2 then originalfull16."
+      },
+      "canonical_throwable_constructor_helpers": {
+        "status": "INDEPENDENT_JVM_RUNTIME_RACE_GREEN",
+        "patch_production_sha256": "219e5a064093db7945111e8465377c24ad6af4feae86203b0220c123e195196d",
+        "archive_sha256": "588b416834f74ee393f0edb82dba90c52c80699fe91a981a1c93ffc615e53e67",
+        "scope": "Two additive typed message constructors; independent storage/identity/noarg/null/UTF16 test, not broad compiler acceptance."
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "a6b21b527d8f757fea3b158f4fe96e188e6f1df5",
+    "last_pushed_revision": "db8d280932fa297f8777af1901646303d0ddc65d",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "/private/tmp/java2go-generic-null-calls44-a80tjv3o/combined-v2",
+    "source_checkpoint": "/private/tmp/java2go-native44-final-prepared-xqd74aa8",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Math static-import-kind repair controls, canonical Throwable constructor/getter TDD, and erased collection raw List/Iterator prerequisites. Then fresh full Gson and original full16 String workflow, accumulated22 gates and supplemental endpoints. Dedicated performance agents prepare bounded formatting/marker warmup diagnostic; no speed claim.",
+    "next": "Run exactnative26 and field/type qualifier oracle; finish Throwable mixed callback and bounded constructor gates; repair collection raw removals/projection and Iterable boundary. FullGsonGoBuild remains requiredred. Full22/supplemental and full16String gates required before implementation promotion. Performance fixedprelude capture pending analyzer review.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -4340,14 +4372,14 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "astra_string_abi",
-    "heavy_session": 50539,
+    "heavy_owner": "astra_string_host",
+    "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Resumed evidence milestone; no production promotion or round acceptance",
-    "checkpoint_updated_utc": "2026-09-29T14:13:10.917214+00:00",
+    "publication_status": "Focused progress and restored strict Gson milestone; implementation remains private pending regression gates",
+    "checkpoint_updated_utc": "2026-09-29T14:30:09.712628+00:00",
     "prepared_endpoints": "Old main43 endpoints preserved UNRUN; repin fresh after generic repair stable."
   }
 }
