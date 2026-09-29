@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "active; restored checkpoint17 semantic candidate",
+  "status": "active; checkpoint19 adversarial repairs resumed; checkpoint18 remains latest production acceptance",
   "base_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
   "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
   "round": 2,
@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "On available execution resume collection-erased JVM baseline (unrun), run combined-v2 exact19, and finish/test parser candidate against frozen oracles. V4 original12 pass but lower-wildcard13 requires real erased mutable collection semantics. Throwable helper5/native38 green; compiler mapping pending. JFRv3 flagprobe green, capture unrun. Then full untouched Gson preflight, fresh full22 and supplemental gates before any promotion.",
+  "next_action": "Math static-import-kind repair controls, canonical Throwable constructor/getter TDD, and erased collection raw List/Iterator prerequisites. Then fresh full Gson and original full16 String workflow, accumulated22 gates and supplemental endpoints. Dedicated performance agents prepare bounded formatting/marker warmup diagnostic; no speed claim.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -4139,10 +4139,12 @@
         "claims": "No CPU/JVM advantage claimed; variant counts differ, raw batch times incomparable",
         "diagnostic": "Prepared unrun marker variant/JFR runner preserved in private-attempts-v5",
         "optimization_design": "Lazy literal slot spec only; activation and measurement pending",
-        "diagnostic_status": "PREPARE_MODEL_GREEN_TWO_LOGGING_VALIDATION_FAILURES_PRESERVED",
+        "diagnostic_status": "CAPTURE_VALID_INDEPENDENTLY_REVIEWED_STEADY_STATE_NOT_DEMONSTRATED",
         "diagnostic_prepare_report_sha256": "c24a1816a8efc0cfe92c37a3499555643904cac6a0f8a1e615f9b38295c2507d",
-        "diagnostic_limitation": "JFR startup logs polluted strict stdout; no marker/event acceptance. Official HotSpot source explains startup stdout forcing when any output enables startup warnings. Separate logging revision under preparation; application parser unchanged.",
-        "speed_claim": null
+        "diagnostic_limitation": "All52 markers and24 model rows valid. Kernel compilation ends during warmup, but74 compiler events and a safepoint overlap conservative measured batch brackets. Bracket width is not exact nanoTime interval; safepoint span is not pause duration. No speed claim.",
+        "speed_claim": null,
+        "diagnostic_report_sha256": "c85bb2611faf0cc694a98e2920815abcd6c23a3f79a0df237595bf4fbdcab13d",
+        "diagnostic_archive_sha256": "d4f9e184232471808e58462048a5aa7154f43afa1180c1b1b161fab2a73a9fb9"
       },
       "private_attempts_v6_receipt_sha256": "1685ca1ac23ba54d889fb1fbdab310ae4476865e2fc9fda820ec89dc10405af8",
       "canonical_string_additive_helpers": {
@@ -4184,9 +4186,9 @@
         "status": "FOCUSED4_JVM_STRICT_RACE_GREEN_FULL_GSON_STILL_STRICT_RED",
         "patch_sha256": "e912e37a1750e402efe1b4bb0cf469143d4c160795a554edc1acd8063345aca3",
         "candidate": "/private/tmp/java2go-static-collection43-fix-rjumntjv",
-        "full_gson_report": "/private/tmp/java2go-queue-ancestry43-green-1p5aubp0/gson-preflight-20260929T043802/artifacts/20260929T113803Z-4142046422/report.json",
-        "full_gson_report_sha256": "98c2254707c2fffeb9b4e9b2c08a815e44933a26566407427b097e6482ad2b8a",
-        "first_failure": "GsonTypes.java516 imported Objects.requireNonNull(rawType); nine unchanged JVM observations valid, no Go build",
+        "full_gson_report": "/private/tmp/java2go-objects-gson44-preflight-emcodfaw/gson-preflight-20260929T065416/artifacts/20260929T135417Z-3296411661/report.json",
+        "full_gson_report_sha256": "5a04935631758abfac63b04d54d1a56f4540a948114d3937c748579f1322dc8a",
+        "first_failure": "JavaTimeTypeAdapters.java83 Math.toIntExact(values[0]); nine unchanged JVM observations valid, no Go build",
         "valid_jvm_observations": 9,
         "go_observations": 0,
         "owners": {
@@ -4220,19 +4222,19 @@
         "layered_patch_sha256": "0f64b3ac8fec7b63fc07e8ed96d330f5187cd249a08e1b40e3cd48a63c947e32",
         "v3_archive_sha256": "96d0967ce4e0b9aaa69cb7a6c6e4cf90a46928b8c85f3eaddb819127c3dbd53a",
         "passed_scope": "Numeric bounds, declaring-owner qualification, invariant repeated parameters, upper wildcard capture, original controls",
-        "remaining": "V4 selects correct Select[string], but Collection<? super T> lowers to Iterable[any], incompatible with List[string]. Dedicated collection-view agent prepared baseline only before usage failure. Raw collection writes must retain Java erasure semantics; no premature cast on insertion.",
+        "remaining": "V4 plus erased collection candidate1 passes original13 focused tests, but new Sol raw List/Iterator auxiliary fails Go build. Further prerequisites and combined regression gate required.",
         "lower_wildcard_evidence": "/private/tmp/java2go-lower-wildcard19-19g8_gjz/evidence",
         "accepted": false
       },
       "objects_require_non_null": {
-        "status": "ORIGINAL4_JVM_STRICT_RACE_GREEN_FIFTH_BOUND_STRING_AND_NULL_CALL_RED",
+        "status": "COMBINED19_ALL_GREEN_FOCUSED_ONLY",
         "candidate": "/private/tmp/java2go-objects-null43-v2-n337tw3z",
         "layer_patch_sha256": "a43d5783778459163a7f8d97e3709252dd2418c061adc42b788612e802e60a2f",
-        "detail": "Combined19 completed: seventeen pass, fifth/sixth fail Go build because bounded S still needs conversion to native string for the message helper. Generic null callsite defect is fixed; Objects conversion repair remains active.",
-        "combined": "/private/tmp/java2go-generic-null-calls44-a80tjv3o/combined-v1",
-        "combined_manifest_sha256": "0aed395f37982541be0912c6ba50027e415e8ae8f5d19461d6be97ab12450386",
+        "detail": "Objects6 plus generic-null1 and compiler12 pass; original combined-v1 failure preserved. V4 lower-wildcard solver and erased collections are not in this snapshot.",
+        "combined": "/private/tmp/java2go-generic-null-calls44-a80tjv3o/combined-v2",
+        "combined_manifest_sha256": "a1a586e962db00f687a93797017d5651e08d6c39e10444ae001acb4e205f8739",
         "accepted": false,
-        "combined_result": "17_PASS_2_FAIL_SOURCE_STABLE_CLEANUP_COMPLETE"
+        "combined_result": "19_PASS_0_FAIL_0_SKIP_SOURCE_STABLE_CLEANUP_COMPLETE"
       },
       "canonical_nine_controls": {
         "status": "ALL9_JVM_STRICT_GENERATED_RACE_GREEN_COMPONENT_ONLY",
@@ -4243,15 +4245,16 @@
         "full_abi_accepted": false
       },
       "canonical_full16": {
-        "status": "JVM16_VALID_GO_BUILD_RED_INTEGER_PARSEINT_NATIVE_STRING_BOUNDARY",
-        "path": "/private/tmp/java2go-string-full16-canonical19-pdm7j2ef",
-        "report_sha256": "44abc75c31d5354b4cd7dd46ce8b313cb37f9078ccf414645ac372e125365559",
-        "normal_pairs": 0,
-        "race_pairs": 0,
+        "status": "JVM16_VALID_GO_NORMAL13_RACE7_THEN_THROWABLE_MESSAGE_RUNTIME_RED",
+        "path": "/private/tmp/java2go-string-full16-parser19-4hymfra9",
+        "report_sha256": "ee67500be8cd9f133c78696caa59e606f1dca4e7d0e75ac7469fe7b33b66ab8d",
+        "normal_pairs": 13,
+        "race_pairs": 7,
         "required_normal_pairs": 16,
         "required_race_pairs": 10,
         "sources_and_models_unchanged": true,
-        "next": "UTF16 Integer.parseInt helper and intrinsic lowering; exact UTF16 exception messages require additive canonical Throwable storage/getters."
+        "next": "Compiler canonical Throwable constructor/getter lowering. getMessage native string reaches canonical concat; legacy variadic constructor also misclassifies canonical String as cause. Later bounds/isolated cases not reached.",
+        "archive_sha256": "cb2c6f6198a7830e21d32cccc962f7ae4dab27d7ef495fbad452d8b2ca86da61"
       },
       "canonical_throwable": {
         "status": "FIVE_JVM_NATIVE_HELPER_GROUPS_GREEN_38_NATIVE_COMPATIBILITY_TESTS_GREEN",
@@ -4283,18 +4286,53 @@
         "collection_baseline": "/private/tmp/java2go-collection-erased20-5_2pcf7h",
         "parser_partial_candidate": "/private/tmp/java2go-integer-parse-canonical-q3r_4ggx/candidate-v2",
         "parser_status": "JVM_ORACLES_VALID_RUNTIME_AND_COMPILER_REDS; candidate implementation interrupted/unrun, inspect before continuing",
-        "jfr_capture_status": "V3_FLAGPROBE_GREEN_CAPTURE_UNRUN"
+        "jfr_capture_status": "V3_FLAGPROBE_GREEN_CAPTURE_UNRUN",
+        "superseded_by": "Resumed execution; retained as historical interruption evidence. See resumed_evidence and current component statuses."
+      },
+      "resumed_evidence": {
+        "status": "PRIVATE_FOCUSED_PROGRESS_REQUIRED_APPLICATIONS_STILL_RED",
+        "v13_manifest_sha256": "12acf791ad6b55603635236e3c3d9f441c259ddda6c7070f3d2b8e8919107a97",
+        "v14_manifest_sha256": "ab709fee290845d68e11f0ab391679b239acff5ccd7a6288888db0b523502495",
+        "v14_archive_sha256": "2899ae29e97d071cb71f127fb12ff641ca98549fbd56de8b35032d399a67d45f",
+        "v15_manifest_sha256": "c10f21ea590393c5df098491ad5c0b8b0bc6d143ea7ab38b29c9a45a5a5bfaaf",
+        "v15_archive_sha256": "90e2f4cdfeb97f9586034fa9292c55e913a9bdca4bcfe641e2de75d232fdf654",
+        "durable_directory": ".campaign/checkpoints/checkpoint19",
+        "production_promoted": false
+      },
+      "erased_collection_followup": {
+        "path": "/private/tmp/java2go-collection-erased20-5_2pcf7h",
+        "status": "CANDIDATE1_STATEFUL_PARITY_AND_ORIGINAL13_GREEN_SOL_AUX_GO_BUILD_RED",
+        "patch_sha256": "bfbe519cff8e8b82894b895f74be1d6d3afb1f16bdcb8a91b152cfb5a5922f46",
+        "manifest_sha256": "91976bc8a67e1cce0e3d926d68f4b160198729f70a7d5d01f71b5cc4280f6e34",
+        "scope": "13-line stateful JVM/Go transcript equal, original13 focused controls pass. Sol auxiliary all9 JVM stable then generated Go raw List signatures and iterator methods fail compilation.",
+        "next": "Raw List/Iterator prerequisites and consumer cast timing, array-backed stores, broad collection regression gate; no source Iterator/Set acceptance.",
+        "accepted": false
+      },
+      "integer_parse_reference": {
+        "status": "V3_JVM_UTF16_ORACLES_AND_STRICT_GENERATED_RACE_CONTROLS_GREEN",
+        "path": "/private/tmp/java2go-integer-parse-canonical-q3r_4ggx/candidate-v3",
+        "manifest_sha256": "1e914598da83ebe993b3c027ffc9223eb2965d0e916aae67f6115472c159f12c",
+        "patch_sha256": "7535878dde7c76f98d92af7c60f9fb7eb0ca77307d95865aee0273529546527d",
+        "report_sha256": "bb6fdda3ceed343ded193c1735383443a8baab0ca5b27f47bc061e0cda4aac39",
+        "remaining": "Canonical Integer constructors/valueOf and historical old-helper emission assertion not claimed. Full String workflow still required."
+      },
+      "math_to_int_exact": {
+        "status": "MATH3_AND_EXPLICIT_IMPORT2_GREEN_PREEXISTING_WILDCARD_NESTED_RED_RETAINED",
+        "path": "/private/tmp/java2go-import-kind44-ma7go3xn",
+        "failure": "Original source shadow fixed; separate static nested wildcard type import remains Go build red on baseline and candidate",
+        "next": "Fresh unchanged full Gson preflight; broader regression verification pending",
+        "accepted": false
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "cdaf884cf0a13ece63763678445e733d2cb508a5",
+    "last_pushed_revision": "a6b21b527d8f757fea3b158f4fe96e188e6f1df5",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "/private/tmp/java2go-generic-null-calls44-a80tjv3o/combined-v2",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "On available execution resume collection-erased JVM baseline (unrun), run combined-v2 exact19, and finish/test parser candidate against frozen oracles. V4 original12 pass but lower-wildcard13 requires real erased mutable collection semantics. Throwable helper5/native38 green; compiler mapping pending. JFRv3 flagprobe green, capture unrun. Then full untouched Gson preflight, fresh full22 and supplemental gates before any promotion.",
+    "next": "Math static-import-kind repair controls, canonical Throwable constructor/getter TDD, and erased collection raw List/Iterator prerequisites. Then fresh full Gson and original full16 String workflow, accumulated22 gates and supplemental endpoints. Dedicated performance agents prepare bounded formatting/marker warmup diagnostic; no speed claim.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -4302,14 +4340,14 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": null,
-    "heavy_session": null,
+    "heavy_owner": "astra_string_abi",
+    "heavy_session": 50539,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Usage-limit evidence checkpoint; goal incomplete, no production promotion; last production eee3036.",
-    "checkpoint_updated_utc": "2026-09-29T13:49:04.109927+00:00",
+    "publication_status": "Resumed evidence milestone; no production promotion or round acceptance",
+    "checkpoint_updated_utc": "2026-09-29T14:13:10.917214+00:00",
     "prepared_endpoints": "Old main43 endpoints preserved UNRUN; repin fresh after generic repair stable."
   }
 }
