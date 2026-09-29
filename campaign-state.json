@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "usage-limited; exact resume checkpoint preserved",
+  "status": "active; restored checkpoint17 semantic candidate",
   "base_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
   "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
   "round": 2,
@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "No live build or test jobs. Resume from checkpoint17-semantic-pending: finish concrete Throwable runtime/compiler support, rerun the unchanged full cause workflow, then run the full accumulated gates. The new Sol probes still need Go validation. Full Gson remains active. Performance resume commands are preserved separately.",
+  "next_action": "Run new runtime Throwable text tests then frozen explicit tostring3 JVM controls, preserve actual metadata red if present and fix. Rerun original fullThrowable workflow, freeze candidate and complete regression/corpus gates before compiler integration. Exactlint2.14 locallycached; fullGson remainsred.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -3369,9 +3369,11 @@
       "charsequence_candidate": "/private/tmp/java2go-charsequence-boundfix17-cqnxto3s/repo",
       "charsequence_focused": "21 tests green94.451s after valid bounded-overload and typed-null reds",
       "full_throwable_workflow": {
-        "report": "/private/tmp/java2go-cause-workflow-final17-i9me9qj1/run-r06qbogw/report.json",
-        "status": "9exactJVM; candidate clearedjoin, go-build-all missingNewThrowable,0Goacceptance",
-        "owner": "astra_runtime"
+        "report": "/private/tmp/java2go-restored-workflow17-ebvoh93d/run-0bsn4qrj/report.json",
+        "status": "9freshJVMmatch; candidate go-build-all red on four builtin Exception/RuntimeException.toString selectors;0Goexecutions",
+        "independent_audit": "Coordinator verified all9rawJVMstreams, all stage rawstream hashes, before/after source/compiler hashes",
+        "durable_archive": ".campaign/checkpoints/checkpoint17-restored-v1/full-workflow/run-0bsn4qrj.tar.gz",
+        "owner": "astra_compiler"
       },
       "performance": "layoutfocusedgreenonly; published-base parity and actualStringcontrol benchmark unrun",
       "cancellation_verification": {
@@ -3397,12 +3399,12 @@
       },
       "durable_pending": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint17-semantic-pending",
       "concrete_throwable": {
-        "private": "/private/tmp/java2go-throwable-concrete17-p3zejxtc",
+        "private": "/private/tmp/java2go-campaign17-rfhx93r_/repo",
         "red_session": 88705,
-        "status": "Both JVM oracles passed; strict generated-package builds fail on missing NewThrowable. Two runtime files were prepared after the baseline and remain untested. Compiler hooks are unimplemented.",
-        "owner": "astra_runtime runtime; astra_compiler hooks pending coordinatorassignment",
+        "status": "Private runtime constructors and compiler concrete storage hooks: 2runtime+18compiler focused tests green. Full unchanged workflow clears NewThrowable and fails explicit builtin Exception/RuntimeException.toString Go selectors.",
+        "owner": "astra_compiler builtin toString followup; astra_runtime runtime review",
         "prepared_runtime_patch": "/private/tmp/java2go-throwable-concrete17-p3zejxtc/runtime-prepared.patch",
-        "runtime_tested": false
+        "runtime_tested": true
       },
       "performance_string_control": {
         "private": "/private/tmp/java2go-string-fields-6b5f02f-7mjzbje2",
@@ -3413,6 +3415,13 @@
           "status": "prepared, unrun; all agents on hold, no live jobs",
           "command": "python3 /private/tmp/java2go-string-fields-6b5f02f-7mjzbje2/timing-prep/timing.py --released",
           "pins_sha256": "cf73fe4c1d2a2d6646e99284d3c6d3f0270ed670282a352510c8e676d63484a6"
+        },
+        "fresh_restoration": {
+          "private": "/private/tmp/java2go-string-fields-restored-rcz0hxv5",
+          "status": "29stages pass;9JVMGo+3race match independentmodel and historicalgeneratedhashes; timingpreflight UNQUALIFIED, no speedclaim",
+          "semantic_report_sha256": "7833fbcef6913cb9b3c3669d502857cf46e8beddd79fb1ac9122e54b1d2e94d7",
+          "coordinator_audit": "/private/tmp/java2go-string-fields-restored-rcz0hxv5/semantic-20260929T051920Z/coordinator-audit.json",
+          "timing_report": "/private/tmp/java2go-string-fields-restored-rcz0hxv5/timing-prep/run-20260929T052247Z/report.json"
         }
       },
       "performance_marker": {
@@ -3421,25 +3430,63 @@
         "status": "Published-base layout tests passed. Baseline parity build failed because generated module checksums were unavailable in readonly mode; candidate parity and weak/cleanup checks did not run. Missing getDeclaredFields support is a source-review finding awaiting a corrected build.",
         "resume": "/private/tmp/java2go-named-interface-marker-6b5f02f/RESUME.md"
       },
-      "performance_durable_checkpoint": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/performance-next"
+      "performance_durable_checkpoint": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/performance-next",
+      "restoration": {
+        "repository": "/private/tmp/java2go-campaign17-rfhx93r_/repo",
+        "base_commit": "b65aa815af5ccac954f968b1c7133b2f44cedff0",
+        "independent_git_metadata": true,
+        "green_delta_files": 22,
+        "prior_temporary_directories": "cleared; recovered from durable checkpoint",
+        "runtime_focused_result": "/private/tmp/java2go-campaign17-rfhx93r_/throwable-runtime-result.json",
+        "runtime_tests": 2,
+        "runtime_race": true,
+        "compiler_gate_session": 84828,
+        "durable_checkpoint": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint17-restored-v1",
+        "manifest_sha256": "e67b01e2a545b8a113eb628bdde82910a9dde44d089e4e815a1076195004d477",
+        "compiler_gate_status": "18 focused tests pass47.955s; exact sources unchanged",
+        "runtime_gate_status": "2 focused race tests pass1.427s; exact sources unchanged"
+      },
+      "exact_lint_restoration": {
+        "version": "2.14.0",
+        "status": "installed and verified; candidate lint unrun",
+        "binary": "/private/tmp/java2go-lint214-restore-8oanhliu/bin/golangci-lint",
+        "sha256": "89af13f98e1e4abfe30fb6aeb57c8463c883a5729a6aded2d5c6995f4ab262a8"
+      },
+      "generic_forwarder_prerequisite": {
+        "package": "campaign/reproducers/generic-forwarder-cast-prereq",
+        "status": "9stableJVMoracles; GoUNRUN",
+        "manifest_sha256": "85efa3c1c3dea769394449cc6c5973036e4b61c893e36b03392b7ac6ba30a94b",
+        "oracle_sha256": "2247f4a40a60d006d923510b147426470c0169fab47c9108a6eeb39c827d9cad",
+        "independent_audit": ".campaign/checkpoints/checkpoint17-restored-v1/generic-forwarder-coordinator-audit.json",
+        "contract": "Generic forwarding side effect completes before consumer checkcast; Object/ignored reads and subsequent null/tail preserved"
+      },
+      "explicit_throwable_text": {
+        "status": "validJVMfirst2tests;Go-buildred;private general runtime/compiler fixprepared,3rd metadata controlUNRUN",
+        "red_log": "/private/tmp/java2go-campaign17-rfhx93r_/throwable-explicit-string-red.log",
+        "frozen_initial_test_sha256": "c003a40fa05c81e71673e2dc51386dcc1b5fb1b7f2f753beaba830dd930be031",
+        "owners": [
+          "astra_compiler",
+          "astra_runtime"
+        ]
+      }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "0c1dbeacfd499e3ddd61615e9d104ab1d0b9bbd4",
+    "last_pushed_revision": "b65aa815af5ccac954f968b1c7133b2f44cedff0",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "checkpoint16-v8 verified",
+    "source_checkpoint": "/private/tmp/java2go-campaign17-rfhx93r_/repo",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "No live build or test jobs. Resume from checkpoint17-semantic-pending: finish concrete Throwable runtime/compiler support, rerun the unchanged full cause workflow, then run the full accumulated gates. The new Sol probes still need Go validation. Full Gson remains active. Performance resume commands are preserved separately.",
+    "next": "Run new runtime Throwable text tests then frozen explicit tostring3 JVM controls, preserve actual metadata red if present and fix. Rerun original fullThrowable workflow, freeze candidate and complete regression/corpus gates before compiler integration. Exactlint2.14 locallycached; fullGson remainsred.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
-    "automatic_goal_controller": "get_goal confirms usageLimited; no active heavy process; no round/goal completion claimed",
+    "automatic_goal_controller": "active after continuation; no token budget",
     "checkpoint16_review_hold": {
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": null,
+    "heavy_owner": "astra_compiler",
     "heavy_session": null
   }
 }
