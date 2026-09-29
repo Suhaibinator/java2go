@@ -4546,13 +4546,13 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "ab04cc1c6a4b27d5c55ad9dffa25d011298da115",
+    "last_pushed_revision": "42a5e84607fae7d8e0e1d38f7d526e9e17755161",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Poll same full22 session38667 on minimal native fix. Strict parity shard passed; later regression gates still running. Preserve live process and source. Continue Collection/Set, source/native Entry, generic-bound and DateFormat TDD; compound Class field fix has binder-shadow regression repair under revalidation. No full Gson acceptance.",
+    "next": "Native session38667 and cumulative session22106 are TERMINAL, do not poll/restart. Native first21 gates passed; full Gson remains Go-build red. Cumulative source requires canonical String prerequisite semantic merge by sol_canonical_integration_v3. Continue package-keyword, bounded dispatch, Entry, JDK and SAM repairs with preserved frozen oracles.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4560,26 +4560,31 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "sol_build_v2 (correctness lane1)",
-    "heavy_session": 38667,
+    "heavy_owner": "Three coordinator-assigned isolated correctness lanes; consult live agents for current handles",
+    "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Native panic fix e92116f and canonical String/primitive-capture repair f377ebb63fe71fbc341dd28b2ddec9b90756a7e4 pushed to their existing origin WIP branches. Production acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-29T20:34:45.852582+00:00",
+    "checkpoint_updated_utc": "2026-09-29T20:52:46.473955+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE",
     "minimal_repair_full22": {
       "source": "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/source",
       "source_manifest_sha256": "ede7cb11500f00855b78c95682be6763b453562d362364dd46aafe1e34355fab",
       "readiness_audit_sha256": "1eaa50901d03c6a6f6789d0ab920d2bf32f904ef34711c026944be8b4da4c633",
-      "status": "RUNNING session38667; poll same handle or inspect authoritative terminal result before any restart",
+      "status": "TERMINAL_RED_GSON; first21 stages green; all22 executed; no timeout",
       "production_delta": [
         "transpiler/static_import_resolution.go"
       ],
       "regression_test": "transpiler/campaign_static_import_file_ownership46_test.go",
-      "output": "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/full-attempt1"
+      "output": "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/full-attempt1",
+      "independent_terminal_audit": "/private/tmp/java2go-native-bounds46-sol-independent/terminal-raw-review.json",
+      "independent_terminal_audit_sha256": "adcc749d15716ae85f8aafba9757fe3c523b07b72ce550722d3557a6acb7b9e9",
+      "unit_records": 1933,
+      "existing_fuzz_skips": 8,
+      "gson_exact_comparator": "RED preserved: two diagnostic coordinates shifted by exactly one added source-toString registration. Same ordered undefined-symbol diagnostics; no relaxation or fullGson acceptance."
     },
     "sol_progress47": {
       "evidence_archive": ".campaign/checkpoints/checkpoint19/sol-progress47/evidence.tar.gz",
@@ -4599,10 +4604,43 @@
       "native_entry": "Original9line JVM3/Go3/race1 gate green; raw consumer and broader Set contracts pending.",
       "class_field": "Original7source parity green, then binder-shadow regression found and repaired in separate frozen candidate; original7 revalidation and independent broader clearance pending.",
       "abstract_defaults": "Frozen full2+selector6 candidate under validation; full builder method-reference fixture remains red on missing primitive SAM contracts."
+    },
+    "component_progress49": {
+      "cumulative_union": {
+        "status": "TERMINAL_RED",
+        "source_manifest_sha256": "123b635346c0796284e9f24dfd7195024ce6ea1f66059c11a63d5da5327862be",
+        "audit_sha256": "6e429869462871848a55527fc7e03e4495f12a43878cb29aef3dba4d9d0381f0",
+        "scope": "Build/runtime74/native7/collection16/iteration6 green. String5 has three failures: missing scalar-string prefix method, surrogate constructor panic, identity mismatch. Last guard unrun. Canonical String prerequisite omitted; semantic merge in progress."
+      },
+      "class_field_binder": {
+        "status": "INDEPENDENT_FOCUSED_GREEN",
+        "parents": 7,
+        "audit_sha256": "e224f146c8c838ee58301071e21cafc3f7c1b5867453c6cb0827f631ef7ec758"
+      },
+      "source_generic_entry": {
+        "status": "INDEPENDENT_FOCUSED_GREEN",
+        "parents": 2,
+        "audit_sha256": "1974fce50129f5e15e533e0554a2739a17a08c64c0ab8f68d99e97f9f022f153",
+        "limits": "Inherited overrides, direct generic demand and native composition remain open."
+      },
+      "abstract_collection_set": {
+        "status": "INDEPENDENT_FOCUSED_GREEN",
+        "parents": 8,
+        "audit_sha256": "6a6653c7297ad7f77488b4f3f07be0b0cda5c8c913ae755f9c611748ec18ef32",
+        "map_blocker": "Original23-line valid Java fixture fails strict generated parse: probe.map emits Go keyword package map. General compiler repair assigned; fixture unchanged."
+      },
+      "number_bounds": {
+        "status": "CANDIDATE_RUNTIME_RED",
+        "detail": "Original Number and Enum fixtures reproduced free T. Number candidate clears strict and both race builds, then fails abstract get dispatch. Candidate unaccepted; Astra owns hard override repair."
+      },
+      "builder_sam": {
+        "status": "PARTIAL_GREEN_LAMBDA_THROWABLE_RED",
+        "detail": "Full unchanged16-line Builder fixture, runtime11 and whitespace3 pass. Independent primitive consumer fixture compiles but lambda exception message formats canonical String as a pointer dump. Frozen7-line oracle retained; general repair assigned to Sol."
+      }
     }
   },
   "work_allocation": {
-    "updated_at": "2026-09-29T19:57:31.120423+00:00",
+    "updated_at": "2026-09-29T20:52:46.473955+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -4618,7 +4656,8 @@
       "sol_string_compat_v2": "String runtime contracts and TDD",
       "sol_generic_representation_v2": "Canonical generic runtime representation proofs and TDD",
       "sol_map_entry_v2": "Source and builtin Map.Entry interoperability and TDD",
-      "sol_abstract_collections_v2": "JDK abstract collection defaults and TDD"
+      "sol_abstract_collections_v2": "JDK abstract collection defaults and TDD",
+      "sol_canonical_integration_v3": "Semantic merge of seven canonical String prerequisite conflicts, explicit ownership and provenance"
     },
     "astra_model": "gpt-6-astra",
     "astra_reasoning_effort": "high",
