@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Repair ordinary String dispatch, static imports/qualified System owner binding, and String receiver argument ordering using actual JVM reds. Then independently validate focused tests and unchanged endpoints/full corpus. SourceIterator and AbstractMap/Set prerequisites remain queued; retain full Gson red.",
+  "next_action": "Finish caller String shadow and canonical Object anonymous review reds/fixes; run neighbors and lint, combine only reviewed fixes in immutable snapshot, full historical gates and original endpoints. Full16 isolated UTF16 requires canonical String ABI migration. Full Gson remains required/red; source Iterator and AbstractMap/Set queued.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -3945,7 +3945,16 @@
         "oracle_sha256": "c2d193ed4e756a08059ff8a900346683188066e840e3075aff2fff31b0723316",
         "audit": ".campaign/checkpoints/checkpoint19/discovery-v1/capital-coordinator-audit.json",
         "owner": "astra_compiler",
-        "historical_bdbefca": "Go-build blocked, no runtime classification"
+        "historical_bdbefca": "Go-build blocked, no runtime classification",
+        "private_candidate": {
+          "version": "v3c",
+          "focused_passes": 6,
+          "source_unchanged": true,
+          "patch_sha256": "f00fa58dd6e30f4b66f0cfb12893185695f0f59cf2dfcf5004463825022ad20f",
+          "evidence": ".campaign/checkpoints/checkpoint19/private-attempts-v3/capital-v3c/manifest.json",
+          "unrun_review": "canonical new Object anonymous nominal registration",
+          "accepted": false
+        }
       },
       "string_invocation_order": {
         "status": "JVM16_VALID_GOPROBE_NULLCHECK_TOO_EARLY",
@@ -3954,26 +3963,77 @@
         "later_go_cases": "order race, bounds and isolated not reached",
         "audit": ".campaign/checkpoints/checkpoint19/discovery-v1/string-loop-coordinator-audit.json",
         "owner": "astra_build",
-        "performance_optimization": "blocked pending full unchanged semantic gate"
+        "performance_optimization": "blocked pending full unchanged semantic gate",
+        "private_candidate": {
+          "version": "v2",
+          "focused_top_level_passes": 4,
+          "full_workflow": {
+            "JVM_model_observations": 16,
+            "normal_pairs": 15,
+            "race_pairs": 9,
+            "status": "FAILED_ISOLATED_UTF16_CONSTRUCTION",
+            "unreached": "isolated-race",
+            "report_sha256": "4145a64afe42fad009388078f1d28fc6b13cb0c3117187e430001e38521bfda9"
+          },
+          "accepted": false
+        }
       },
       "timer_static_imports": {
         "status": "actual baseline red; timer/qualified-print partialgreen; static-import and dotted-value/source owner reds retained; private general repair prepared",
         "owner": "astra_runtime",
         "candidate": "/private/tmp/java2go-nanotime26-candidate-nfzzv9s2",
-        "promoted": false
+        "promoted": false,
+        "private_candidate": {
+          "version": "v3",
+          "focused_passes": 15,
+          "source_unchanged": true,
+          "patch_sha256": "f5a884b93609583e9972dc08814b41c4e069cb94d21c8da62d62e9f80ddf2423",
+          "remaining_gate": "caller imports source String review, 127 existing neighbors, exact lint, full integration",
+          "accepted": false,
+          "caller_import_review": {
+            "status": "ACTUAL_JVM_VALID_GO_BUILD_RED",
+            "expected": "1:2",
+            "failure": "untyped string literal misclassified as imported source shadow.String",
+            "evidence": "/private/tmp/java2go-static-import-caller-shadow26-jzg3qin2/baseline-red-package/manifest.json",
+            "next": "canonical java.lang.String literal inference"
+          }
+        }
       },
       "discovery_archive": ".campaign/checkpoints/checkpoint19/discovery-v1",
-      "publication_rule": "No private repair integrated; focused/full acceptance required before implementation milestone."
+      "publication_rule": "No private repair integrated; focused/full acceptance required before implementation milestone.",
+      "attempt_evidence": [
+        ".campaign/checkpoints/checkpoint19/private-attempts-v1",
+        ".campaign/checkpoints/checkpoint19/private-attempts-v2",
+        ".campaign/checkpoints/checkpoint19/private-attempts-v3"
+      ],
+      "utf16_prerequisite": {
+        "owner": "astra_build; astra_string_abi design",
+        "status": "TWO_VALID_JVM_ORACLES_GO_RUNTIME_UNSUPPORTED",
+        "expected_hashCode": 56833580,
+        "original_authored_oracle_error": "57757101 was custom full16 checksum; invalid attempt retained, only authored expectation corrected from actual JVM",
+        "source_core": "stdjava JavaString immutable UTF16 exists but compiler/native-string ABI migration remains",
+        "plan": "/private/tmp/java2go-string-utf16-v3-zwcpyghj/PLAN.md",
+        "production_edited": false
+      },
+      "timing_pilot": {
+        "status": "UNQUALIFIED",
+        "semantic_groups": 9,
+        "semantic_race_observations": 3,
+        "timing_rows_audited": 72,
+        "reason": "Java durations and drift fail; both Go sampled medians below declared minimum",
+        "speed_claim": null,
+        "next": "prepare separately versioned exact-cycle batching and independent ordered-work model; original benchmark immutable"
+      }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
+    "last_pushed_revision": "c593f90245a23f77a9a190cdfc46a8bac3a1efe9",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "/private/tmp/java2go-checkpoint18-full-v4-tz30vyky/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Repair ordinary String dispatch, static imports/qualified System owner binding, and String receiver argument ordering using actual JVM reds. Then independently validate focused tests and unchanged endpoints/full corpus. SourceIterator and AbstractMap/Set prerequisites remain queued; retain full Gson red.",
+    "next": "Finish caller String shadow and canonical Object anonymous review reds/fixes; run neighbors and lint, combine only reviewed fixes in immutable snapshot, full historical gates and original endpoints. Full16 isolated UTF16 requires canonical String ABI migration. Full Gson remains required/red; source Iterator and AbstractMap/Set queued.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -3987,6 +4047,6 @@
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Checkpoint18 committed/pushed/live-origin-verified as eee3036; checkpoint19 repairs private and unaccepted"
+    "publication_status": "Checkpoint19 evidence-only update; production remains eee3036, no new round acceptance."
   }
 }
