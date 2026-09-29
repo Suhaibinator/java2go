@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Finish current main40 unit shard; preserve every failure. Run seven focused main41 assertion tests, then full historical22 gates and four source-text/factory endpoints on the final frozen native candidate. Independently audit before implementation integration/commit/push. Canonical String ABI remains separate; boxed/char-array/host helper JVM-first reds queued. Full16 isolated UTF16 and full Gson remain required/red.",
+  "next_action": "Run bounded binder JVM-first guard and ArrayDeque ancestry red/repair; combine verified fixes into fresh immutable snapshot, rerun Gson then full22 and supplemental endpoints. Keep v6 and v7 unpromoted. Search helpers, charset overloads, source bridge and canonical integration queued.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -3936,7 +3936,7 @@
       }
     },
     "checkpoint19": {
-      "status": "PRIVATE_JOINT_HISTORICAL_VERIFICATION_IN_PROGRESS_NO_PROMOTION",
+      "status": "NATIVE_HISTORICAL_GREEN_NEW_GSON_STRICT_REGRESSIONS_UNDER_REPAIR_NO_PROMOTION",
       "base": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
       "full_Gson_accepted": false,
       "capital_string": {
@@ -4009,7 +4009,9 @@
         ".campaign/checkpoints/checkpoint19/private-attempts-v2",
         ".campaign/checkpoints/checkpoint19/private-attempts-v3",
         ".campaign/checkpoints/checkpoint19/private-attempts-v4",
-        ".campaign/checkpoints/checkpoint19/private-attempts-v5"
+        ".campaign/checkpoints/checkpoint19/private-attempts-v5",
+        ".campaign/checkpoints/checkpoint19/private-attempts-v6",
+        ".campaign/checkpoints/checkpoint19/private-attempts-v7"
       ],
       "utf16_prerequisite": {
         "owner": "astra_build; astra_string_abi design",
@@ -4047,27 +4049,62 @@
         },
         {
           "version": 4,
-          "status": "RUNNING_UNIT_AM_ONE_EMISSION_ASSERTION_RED_OBSERVED",
+          "status": "TERMINAL_UNIT_AM_EMISSION_ASSERTIONS_RED",
           "snapshot": "/private/tmp/java2go-checkpoint19-joint-v4-j1wuu0iw",
           "manifest_sha256": "8d61d8bfac152aae5fcaa4fbdd2f4cf17ea84377a919f0a37f9368e7055355e0",
-          "session": 97377,
+          "session": null,
           "passed_gates": [
             "build",
             "lint2.14",
             "unit-noncompiler"
           ],
-          "failed_test": "TestInterfaceBoundUsesInterfaceConstraintAndResolvesBoundMethods"
+          "failed_test": "TestInterfaceBoundUsesInterfaceConstraintAndResolvesBoundMethods",
+          "pass_records": 920,
+          "failed_parent_tests": [
+            "TestInterfaceBoundUsesInterfaceConstraintAndResolvesBoundMethods",
+            "TestGenericReceiverReturnTypeDrivesChainedStringIntrinsic",
+            "TestIntrinsics_StringMethods"
+          ],
+          "failed_subcases": 13,
+          "durable": ".campaign/checkpoints/checkpoint19/joint-v4-terminal"
         },
         {
           "version": 5,
-          "status": "PREPARED_UNRUN_41_FILES_ASSERTION_FOCUS_PENDING",
+          "status": "SUPERSEDED_PREPARED_UNRUN_INCOMPLETE_ASSERTION_FIX",
           "snapshot": "/private/tmp/java2go-checkpoint19-joint-v5-_cjipj9r",
           "manifest_sha256": "3488c20782d82fd8cf6b699af7e8137cbcf31511bc56ef16973867fa6b58b0de"
+        },
+        {
+          "version": 6,
+          "status": "HISTORICAL_AND_FIVE_APPS_GREEN_NEW_GSON_STRICT_REGRESSION",
+          "snapshot": "/private/tmp/java2go-checkpoint19-joint-v6-_u7s3rp4",
+          "manifest_sha256": "5df7d5d7f183caf1dab52a10e9b5be501b4c304d36fa668e330a097ce6f8ae8b",
+          "session": null,
+          "changed_go_files": 43,
+          "focused_parents": 8,
+          "focused_subcases": 21,
+          "unit_pass_records": 1901,
+          "strict_parity_pass_records": 55,
+          "other_e2e_pass_records": 73,
+          "normal_app_pairs": 45,
+          "race_stress_pairs": 100,
+          "promotion_permitted": false,
+          "first_failure": "Gson.java242 newImmutableList(builder.factories) rejects List<T> to Collection<E>",
+          "failed_archive_sha256": "ee000d399110a830e8fc4294343bd1b8837c19b0ac6acef006e5ce7302ce22b4"
+        },
+        {
+          "version": 7,
+          "status": "PREPARED_UNRUN_ON_HOLD_GENERIC_BOUND_REVIEW_AND_ARRAYDEQUE_GAP",
+          "snapshot": "/private/tmp/java2go-checkpoint19-joint-v7-ksmbdsmp",
+          "manifest_sha256": "c0792bad2efca85fb991e1aa9d10a82f618a65386f3fac1dad587c38765fc1f1",
+          "source_files": 1850,
+          "changed_go_files": 46,
+          "promotion_permitted": false
         }
       ],
       "test_contract_corrections": {
         "charAt": "Seven targeted race tests green; JDK-derived exception contract replaces obsolete native Go slice panic, all25 input pairs and prior controls retained; Sol and independent Astra reviewed.",
-        "interface_bound": "Test-only staging assertion update prepared; original Java, bound and method count checks retained; Sol reviewed; focused execution pending."
+        "interface_bound": "Three exact-emission assertion updates verified: focused8 parents+21 subcases green and historical native43 gates green; Java source and operand semantics retained; Sol reviewed."
       },
       "canonical_string_joint": {
         "status": "FROZEN_PREPARED_UNRUN",
@@ -4096,17 +4133,67 @@
         "claims": "No CPU/JVM advantage claimed; variant counts differ, raw batch times incomparable",
         "diagnostic": "Prepared unrun marker variant/JFR runner preserved in private-attempts-v5",
         "optimization_design": "Lazy literal slot spec only; activation and measurement pending"
+      },
+      "private_attempts_v6_receipt_sha256": "1685ca1ac23ba54d889fb1fbdab310ae4476865e2fc9fda820ec89dc10405af8",
+      "canonical_string_additive_helpers": {
+        "boxed": {
+          "status": "2_JVM_3_NATIVE_RACE_GREEN_HELPER_ONLY",
+          "patch_sha256": "c1df5358fb1725e87342673ce5db3037d993a710f9124f6ced49926fd27cc5ae"
+        },
+        "char_arrays": {
+          "status": "JVM_TRANSCRIPT_RACE_GREEN_FOUR_HELPERS",
+          "patch_sha256": "8aa5bdfc0324139336b0c555ddeddfdc929208878e3e3bedec1b2542ba3bb60c"
+        },
+        "host": {
+          "status": "THREE_JVM_RACE_GROUPS_GREEN_UTF8_ONLY",
+          "production_sha256": "b5f1043188cd6ac939888ed67f456252fbe81a648d0db6007c7eb37d24661c49",
+          "invalid_first_java_fixture_preserved": true
+        },
+        "generated_abi_accepted": false
+      },
+      "private_attempts_v7_manifest_sha256": "432e9a86cfc75d533886bede1ede1d7befe37ea56ad6b462ebbb9e9d6af696d6",
+      "generic_collection_repair": {
+        "status": "FOCUSED4_JVM_STRICT_RACE_GREEN_FULL_GSON_STILL_STRICT_RED",
+        "patch_sha256": "e912e37a1750e402efe1b4bb0cf469143d4c160795a554edc1acd8063345aca3",
+        "candidate": "/private/tmp/java2go-static-collection43-fix-rjumntjv",
+        "full_gson_report": "/private/tmp/java2go-static-collection43-fix-rjumntjv/gson-preflight-20260929T043107/artifacts/20260929T113108Z-3830119279/report.json",
+        "full_gson_report_sha256": "9a9497dbc80681ec12f1f7b9243bbe7f70c69bf9f50f5df29ca0923f81579834",
+        "first_failure": "Gson.java246 newImmutableList(builder.reflectionFilters), ArrayDeque nominal Collection ancestry missing",
+        "valid_jvm_observations": 9,
+        "go_observations": 0,
+        "owners": {
+          "ancestry": "astra_runtime",
+          "bounds": "astra_compiler",
+          "review": "astra_lint"
+        },
+        "review_concern": "CONFIRMED introduced regression: JVM outputs2 and native43 matches, candidate strict passes but Go race build rejects List<String> as Iterable<JavaNumber>. Bound fix required.",
+        "accepted": false,
+        "bound_guard": {
+          "path": "/private/tmp/java2go-static-collection-bound19-gvie175l",
+          "test_sha256": "93f015d999351aff98d0eea9109ea2353a6b62ce80c92f63ea5e7f5f802651aa",
+          "baseline_exit": 0,
+          "candidate_exit": 1,
+          "source_stable": true
+        }
+      },
+      "canonical_string_joint_v2": {
+        "status": "PREPARED_UNRUN",
+        "path": "/private/tmp/java2go-canonical-joint-v2-y_bb6p4v/candidate",
+        "source_files": 1866,
+        "manifest_sha256": "2c721ec380f1ea79c78ff68a14497b13467375f283559eeed58e58502dd5e0e3",
+        "missing_helper_symbols": 20,
+        "generated_abi_accepted": false
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "63b55a727cad0d404562a87136c4bad1609479e8",
+    "last_pushed_revision": "3842e20ef867ce3fec432bf5c230ea1fb46f8945",
     "branch": "origin/codex/adversarial-campaign",
-    "active_root_session": 97377,
-    "source_checkpoint": "/private/tmp/java2go-checkpoint19-joint-v4-j1wuu0iw/source",
+    "active_root_session": null,
+    "source_checkpoint": "/private/tmp/java2go-checkpoint19-joint-v7-ksmbdsmp/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Finish current main40 unit shard; preserve every failure. Run seven focused main41 assertion tests, then full historical22 gates and four source-text/factory endpoints on the final frozen native candidate. Independently audit before implementation integration/commit/push. Canonical String ABI remains separate; boxed/char-array/host helper JVM-first reds queued. Full16 isolated UTF16 and full Gson remain required/red.",
+    "next": "Run bounded binder JVM-first guard and ArrayDeque ancestry red/repair; combine verified fixes into fresh immutable snapshot, rerun Gson then full22 and supplemental endpoints. Keep v6 and v7 unpromoted. Search helpers, charset overloads, source bridge and canonical integration queued.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -4114,13 +4201,14 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "root full native joint regression",
-    "heavy_session": 97377,
+    "heavy_owner": "astra_runtime ArrayDeque ancestry JVM-first focused repair",
+    "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Evidence-only checkpoint; implementation remains eee3036, no new round acceptance.",
-    "checkpoint_updated_utc": "2026-09-29T10:45:54.927771+00:00"
+    "publication_status": "Evidence-only checkpoint; last accepted production remains eee3036, no new round acceptance.",
+    "checkpoint_updated_utc": "2026-09-29T11:33:53.178133+00:00",
+    "prepared_endpoints": "Old main43 endpoints preserved UNRUN; repin fresh after generic repair stable."
   }
 }
