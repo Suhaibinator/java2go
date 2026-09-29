@@ -490,6 +490,13 @@ func registerNumberIntrinsics() {
 // --- boxed types: Integer / Long / Double / Boolean / Character -------------
 func registerBoxedTypeIntrinsics() {
 	// Integer
+	registerStaticIntrinsic("Integer", "toHexString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "IntegerToHexString", args[0])
+	})
+	registerStaticIntrinsicResultType("Integer", "toHexString", "String")
 	registerStaticIntrinsic("Integer", "parseInt", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil

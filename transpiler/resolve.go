@@ -49,6 +49,7 @@ func ResolveFile(file parsing.SourceFile) {
 		return
 	}
 	prepareBuiltinInterfaceMethods()
+	resolveTypeParameterNominalNames(file)
 	// Complete ordinary member resolution for the entire file before allocating
 	// synthesized names. A Java source may contain multiple top-level classes and
 	// arbitrarily deep nested classes; helper naming must observe their final Go
@@ -67,6 +68,48 @@ func ResolveFile(file parsing.SourceFile) {
 	resolveAffineArrayViewHelperNames(file)
 	resolveLocalIdentifierHygiene()
 	resolveGenericMethodHelperNames()
+}
+
+// Complete package symbols exist before conversion starts. Allocate binder
+// names here, rather than renaming them after a helper or receiver was emitted.
+func resolveTypeParameterNominalNames(file parsing.SourceFile) {
+	pkg := symbol.GlobalScope.FindPackage(file.Symbols.Package)
+	if pkg == nil {
+		return
+	}
+	nominal := make(map[string]struct{})
+	var scopes []*symbol.ClassScope
+	var collect func(*symbol.ClassScope)
+	collect = func(scope *symbol.ClassScope) {
+		if scope == nil {
+			return
+		}
+		scopes = append(scopes, scope)
+		if scope.Class != nil {
+			nominal[scope.Class.Name] = struct{}{}
+		}
+		for _, nested := range scope.Subclasses {
+			collect(nested)
+		}
+	}
+	for _, sourceFile := range pkg.Files {
+		if sourceFile == nil {
+			continue
+		}
+		for _, top := range sourceFile.TopLevelClasses {
+			collect(top)
+		}
+	}
+	var parameters []symbol.TypeParam
+	for _, scope := range scopes {
+		parameters = symbol.AppendTypeParamsByDeclaration(parameters, scope.TypeParameters)
+		for _, method := range scope.Methods {
+			if method != nil {
+				parameters = symbol.AppendTypeParamsByDeclaration(parameters, method.TypeParameters)
+			}
+		}
+	}
+	symbol.ReserveTypeParamNominalNames(parameters, nominal)
 }
 
 func resolveClassTree(class *symbol.ClassScope, file parsing.SourceFile) {
@@ -359,7 +402,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 
 		// Rename the field if its name conflits with any keyword
 		for i := 0; symbol.IsReserved(field.Name) ||
-			(!field.IsStatic && classNeedsReferenceIdentity(class, Ctx{}) && referenceIdentityReservedSelector(field.Name)) ||
+			(!field.IsStatic && sourceReferenceReservedSelector(class, field.Name, Ctx{})) ||
 			classHasOtherFieldName(class, field, field.Name) ||
 			(!field.IsStatic && classHasOtherInstanceMethodName(class, field, field.Name)) ||
 			(field.IsStatic && packageHasOtherStaticFieldName(packageScope, field, field.Name)) ||
@@ -400,7 +443,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 		}
 
 		for i := 0; symbol.IsReserved(method.Name) ||
-			(!method.IsStatic && classNeedsReferenceIdentity(class, Ctx{}) && referenceIdentityReservedSelector(method.Name)) ||
+			(!method.IsStatic && sourceReferenceReservedSelector(class, method.Name, Ctx{})) ||
 			collidesWithGoFuncName(method) ||
 			(method.IsStatic && packageHasEmittedSourceTypeName(packageScope, method.Name)) ||
 			classHasOtherFieldName(class, method, method.Name) ||

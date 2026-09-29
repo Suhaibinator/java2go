@@ -43,6 +43,10 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 				return set("String", "int")
 			case "compare":
 				return set(primitive, primitive)
+			case "toHexString":
+				if class == "Integer" {
+					return set("int")
+				}
 			case "toString", "hashCode", "isNaN", "isInfinite":
 				return set(primitive)
 			}

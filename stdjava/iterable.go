@@ -4,6 +4,13 @@ package stdjava
 // sets implement it directly; native slice views use a small adapter.
 type Iterable[T any] interface{ Slice() []T }
 
+// IterableView exposes both internal collection access and Java iteration while
+// preserving the same view object and backing collection.
+type IterableView[T any] interface {
+	Iterable[T]
+	JavaIterable
+}
+
 type sliceIterable[T any] struct{ elements []T }
 
 func (view *sliceIterable[T]) Slice() []T { return view.elements }
@@ -47,7 +54,9 @@ func CollectionIterationElements[T any](collection Iterable[T]) func(func(int, T
 type mapValuesIterable[K, V any] struct{ source *Map[K, V] }
 
 func (view *mapValuesIterable[K, V]) Slice() []V { return view.source.Values() }
-func MapValuesView[K, V any](source *Map[K, V]) Iterable[V] {
+
+// Both collection protocols retain the same view without copying the backing map.
+func MapValuesView[K, V any](source *Map[K, V]) IterableView[V] {
 	ReferenceRequireNonNull(source)
 	return &mapValuesIterable[K, V]{source: source}
 }

@@ -1,6 +1,9 @@
 package transpiler
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"strings"
 	"testing"
 )
@@ -152,10 +155,41 @@ public class NestedTernaryContextProgram {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if strings.Contains(out, "func() bool") {
+	generated, err := parser.ParseFile(token.NewFileSet(), "generated.go", out, 0)
+	if err != nil {
+		t.Fatalf("parse generated Go: %v\n%s", err, out)
+	}
+	var runBody *ast.BlockStmt
+	for _, declaration := range generated.Decls {
+		if function, ok := declaration.(*ast.FuncDecl); ok && function.Recv == nil && function.Name.Name == "RunJava2goExecution" {
+			runBody = function.Body
+			break
+		}
+	}
+	if runBody == nil {
+		t.Fatalf("missing RunJava2goExecution body:\n%s", out)
+	}
+	// Registration initializers also use IIFEs; only the generated Java method
+	// contains the ternaries whose inherited result context is under test.
+	iifeResults := make(map[string]int)
+	ast.Inspect(runBody, func(node ast.Node) bool {
+		call, ok := node.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		literal, ok := call.Fun.(*ast.FuncLit)
+		if !ok || literal.Type.Params.NumFields() != 0 || literal.Type.Results.NumFields() != 1 {
+			return true
+		}
+		if result, ok := literal.Type.Results.List[0].Type.(*ast.Ident); ok {
+			iifeResults[result.Name]++
+		}
+		return true
+	})
+	if iifeResults["bool"] != 0 {
 		t.Fatalf("numeric ternary inherited enclosing boolean target:\n%s", out)
 	}
-	if got := strings.Count(out, "func() int32"); got != 2 {
+	if got := iifeResults["int32"]; got != 2 {
 		t.Fatalf("numeric ternary IIFE count = %d, want 2:\n%s", got, out)
 	}
 

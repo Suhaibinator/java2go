@@ -51,6 +51,11 @@ func (cursor *mapJavaIterator[K, V]) HasNextJava2goExecution(execution *Executio
 }
 func (cursor *mapJavaIterator[K, V]) NextJava2goExecution(execution *Execution) any {
 	requireExecution(execution)
+	// TreeMap's nextEntry checks exhaustion before structural revision;
+	// HashMap's nextNode performs those checks in the opposite order.
+	if cursor.source.sorted && cursor.index >= len(cursor.records) {
+		panic(NewNoSuchElementException(""))
+	}
 	if cursor.expected != cursor.source.modCount {
 		panic(NewConcurrentModificationException(""))
 	}

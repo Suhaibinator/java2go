@@ -174,7 +174,7 @@ func StringRequireNonNull(value any) string {
 	if stringValue, ok := value.(string); ok {
 		return stringValue
 	}
-	panic(NewClassCastException(fmt.Sprintf("cannot use %T as String", value)))
+	panic(NewClassCastException("cannot use " + reflect.TypeOf(value).String() + " as String"))
 }
 
 // FloatToString formats a float32 according to Java's Float.toString rules.

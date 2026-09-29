@@ -751,8 +751,34 @@ func overrideBridgeResultCompatible(
 		return true
 	}
 	actualScope := resolveClassScopeByQualifiedName(classScopeCtx(actualOwner, ctx), actualBase)
-	expectedScope := resolveClassScopeByQualifiedName(classScopeCtx(expectedOwner, ctx), expectedBase)
+	expectedCtx := classScopeCtx(expectedOwner, ctx)
+	expectedScope := resolveClassScopeByQualifiedName(expectedCtx, expectedBase)
+	// Source classes and interfaces widen to the canonical Object descriptor.
+	// Object has no source ClassScope, so the source-to-source hierarchy check
+	// below cannot establish this edge. Do not interpret a source declaration,
+	// foreign import, or type parameter named Object as java.lang.Object.
+	if actualScope != nil && overrideBridgeCanonicalObjectResult(expected, expectedBase, expectedCtx) {
+		return true
+	}
 	return actualScope != nil && expectedScope != nil && javaReferenceTypeAssignable(actualScope, expectedScope, ctx)
+}
+
+func overrideBridgeCanonicalObjectResult(javaType, base string, ctx Ctx) bool {
+	_, arguments := parseJavaTypeString(javaType)
+	if len(arguments) != 0 || (base != "Object" && base != "java.lang.Object") {
+		return false
+	}
+	if base == "Object" {
+		if _, bound := resolveReferenceTypeParameter(symbol.JavaType{Original: base}, ctx); bound {
+			return false
+		}
+		if ctx.currentFile != nil {
+			if owner, imported := ctx.currentFile.Imports[base]; imported && owner != "java.lang" {
+				return false
+			}
+		}
+	}
+	return resolveClassScopeByQualifiedName(ctx, base) == nil
 }
 
 // directOwnerOverrideBridgeRepresentationSupported is the whole-parameter

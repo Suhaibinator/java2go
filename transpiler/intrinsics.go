@@ -1064,6 +1064,9 @@ func inferIntrinsicMethodResultType(node *sitter.Node, ctx Ctx, source []byte) (
 		return "", false
 	}
 	methodName := nameNode.Content(source)
+	if inheritedObjectTextSelected(objectNode, methodName, ctx, source) {
+		return "String", true
+	}
 	if receiverType, ok := intrinsicMethodReceiverTypeName(objectNode, methodName, ctx, source); ok {
 		if resultType, known := intrinsicCollectionMethodResultType(node, receiverType, ctx, source); known {
 			return resultType, true

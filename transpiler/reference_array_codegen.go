@@ -16,6 +16,15 @@ const (
 	generatedObjectViewMethod  = "Java2goReferenceView"
 )
 
+// Source descriptor methods are emitted even for leaves without ObjectInfo.
+// Reserve exactly that selector independently of hierarchy carrier eligibility.
+func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx Ctx) bool {
+	if scope != nil && !scope.IsInterface && name == "JavaDynamicTypeID" {
+		return true
+	}
+	return classNeedsReferenceIdentity(scope, ctx) && referenceIdentityReservedSelector(name)
+}
+
 func referenceIdentityReservedSelector(name string) bool {
 	switch name {
 	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod:
@@ -105,17 +114,26 @@ func sourceReferenceTypeIDExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	if scope == nil || scope.Class == nil {
 		return nil, false
 	}
-	id := javaClassBinaryName(scope)
-	for _, local := range ctx.localClasses {
-		if local != nil && local.scope == scope && local.dynamicTypeID != "" {
-			id = local.dynamicTypeID
-			break
-		}
-	}
+	id := sourceClassRuntimeTypeID(scope, ctx)
 	if id == "" {
 		return nil, false
 	}
 	return javaTypeIDLiteral(id, ctx), true
+}
+
+// sourceClassRuntimeTypeID keeps local-class casts, hierarchy edges and view
+// providers on the same hoisted nominal identity. Named classes use their
+// ordinary binary name; the local registry owns synthesized runtime IDs.
+func sourceClassRuntimeTypeID(scope *symbol.ClassScope, ctx Ctx) string {
+	if scope == nil || scope.Class == nil {
+		return ""
+	}
+	for _, local := range ctx.localClasses {
+		if local != nil && local.scope == scope && local.dynamicTypeID != "" {
+			return local.dynamicTypeID
+		}
+	}
+	return javaClassBinaryName(scope)
 }
 
 func javaPrimitiveTypeIDExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
@@ -614,6 +632,13 @@ func classNeedsReferenceIdentity(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil {
 		return false
 	}
+	// Any source hierarchy can reach Object text through an erased parameter,
+	// return, or concatenation. Keep its most-derived view available without
+	// requiring a syntactic reflection trigger. Leaf descriptors below do not
+	// require an ObjectInfo allocation.
+	if sourceHierarchyUsesMostDerived(scope, ctx) {
+		return true
+	}
 	// Throwable's inherited toString observes the most-derived class even when
 	// source code never calls getClass or overrides any Throwable method.
 	if sourceInheritsThrowable(scope, ctx) {
@@ -697,7 +722,7 @@ func constructorObjectInfoInitStmt(scope *symbol.ClassScope, receiverName string
 }
 
 func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
-	if scope == nil || scope.Class == nil || !classNeedsReferenceIdentity(scope, ctx) {
+	if scope == nil || scope.Class == nil {
 		return nil
 	}
 	id := javaClassBinaryName(scope)
@@ -801,7 +826,7 @@ func sourceClassViewExpr(scope, requested *symbol.ClassScope, receiver ast.Expr,
 }
 
 func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.Decl {
-	if scope == nil || scope.Class == nil || scope.IsInterface || !classNeedsReferenceIdentity(scope, ctx) {
+	if scope == nil || scope.Class == nil || scope.IsInterface {
 		return nil
 	}
 	if scope.IsEnum {
@@ -940,10 +965,10 @@ func syntheticReferenceRegistrationDecl(
 	}}}
 }
 
-// syntheticHierarchicalReferenceIdentityDecls gives a hoisted local concrete
-// subclass its own nominal runtime identity while exposing each embedded source
-// superclass view. The hierarchy root owns ObjectInfo; the local child supplies
-// the most-derived descriptor and view provider captured by that root.
+// syntheticHierarchicalReferenceIdentityDecls gives a hoisted hierarchy member
+// its own nominal runtime identity and each embedded source superclass view.
+// A nil superScope represents a local hierarchy root, which owns ObjectInfo;
+// every member supplies the most-derived provider captured by that root.
 func syntheticHierarchicalReferenceIdentityDecls(
 	structName string,
 	dynamicID string,
@@ -952,7 +977,7 @@ func syntheticHierarchicalReferenceIdentityDecls(
 	typeParams []string,
 	ctx Ctx,
 ) []ast.Decl {
-	if structName == "" || dynamicID == "" || superScope == nil || superScope.Class == nil {
+	if structName == "" || dynamicID == "" || (superScope != nil && superScope.Class == nil) {
 		return nil
 	}
 
@@ -1000,14 +1025,17 @@ func syntheticHierarchicalReferenceIdentityDecls(
 		}
 	}
 
-	view := ast.Expr(&ast.SelectorExpr{X: receiverExpr, Sel: &ast.Ident{Name: superScope.Class.Name}})
+	var view ast.Expr
+	if superScope != nil {
+		view = &ast.SelectorExpr{X: receiverExpr, Sel: &ast.Ident{Name: superScope.Class.Name}}
+	}
 	seenScopes := map[*symbol.ClassScope]struct{}{}
 	for current := superScope; current != nil && current.Class != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
 		if _, duplicate := seenScopes[current]; duplicate {
 			break
 		}
 		seenScopes[current] = struct{}{}
-		appendCase(javaClassBinaryName(current), view)
+		appendCase(sourceClassRuntimeTypeID(current, ctx), view)
 		for _, interfaceScope := range transitiveImplementedInterfaceScopes(current, ctx) {
 			appendCase(javaClassBinaryName(interfaceScope), receiverExpr)
 		}
@@ -1039,10 +1067,14 @@ func syntheticHierarchicalReferenceIdentityDecls(
 			interfaceIDs = append(interfaceIDs, javaTypeIDLiteral(javaClassBinaryName(interfaceScope), ctx))
 		}
 	}
+	var superID ast.Expr
+	if superScope != nil {
+		superID = javaTypeIDLiteral(sourceClassRuntimeTypeID(superScope, ctx), ctx)
+	}
 	registration := syntheticReferenceRegistrationDecl(
 		structName,
 		dynamicID,
-		javaTypeIDLiteral(javaClassBinaryName(superScope), ctx),
+		superID,
 		interfaceIDs,
 		ctx,
 	)

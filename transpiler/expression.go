@@ -485,6 +485,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return lowered
 			}
 
+			if lowered := inheritedObjectTextInvocation(objectNode, methodName, ctx, source); lowered != nil {
+				return lowered
+			}
+
 			if isSystemOutSelector(objectNode, source) && (methodName == "println" || methodName == "print") {
 				argListNode := node.ChildByFieldName("arguments")
 				args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, nil)
@@ -772,6 +776,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			selected := findBestMethodInHierarchy(ctx.currentClass, methodName, argListNode, allowInstance, true, ctx, source)
 			if inheritedBuiltinMessageSelected(node, selected, ctx, source) {
 				return stdjavaCall(ctx, "ThrowableMessageExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+			}
+			if implicitInheritedObjectTextSelected(node, selected, ctx, source) {
+				return stdjavaCall(ctx, "StringValueOfExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
 			}
 			if selected != nil && selected.def != nil && selected.def.IsStatic {
 				implicitStaticResolution = selected
@@ -3161,29 +3168,17 @@ func javaStringValueOfForType(javaType string, expr ast.Expr, ctx Ctx) ast.Expr 
 		return stdjavaCall(ctx, "StringValueOf", expr)
 	}
 	base, _ := parseJavaTypeString(javaType)
-	base = stripJavaQualifier(base)
-	needsExecution := base == "Object" || base == "Enum"
-	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
-		needsExecution = needsExecution || scope.IsEnum || scope.IsInterface || scope.IsAbstract || classHasStringerBridge(scope, ctx)
+	needsExecution := stripJavaQualifier(base) == "Object" || stripJavaQualifier(base) == "Enum" ||
+		visibleTypeParameterDeclarationForJavaType(base, ctx) != nil
+	if resolveClassScopeByQualifiedName(ctx, base) != nil {
+		// Even inherited Object.toString invokes virtual hashCode, which can
+		// synchronize. Source references therefore retain the invoking token.
+		needsExecution = true
 	}
 	if needsExecution {
 		return stdjavaCall(ctx, "StringValueOfExecution", execution, expr)
 	}
 	return stdjavaCall(ctx, "StringValueOf", expr)
-}
-
-func classHasStringerBridge(scope *symbol.ClassScope, ctx Ctx) bool {
-	seen := make(map[*symbol.ClassScope]struct{})
-	for current := scope; current != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
-		if _, duplicate := seen[current]; duplicate {
-			break
-		}
-		seen[current] = struct{}{}
-		if current.IsEnum || findDeclaredToStringMethod(current) != nil {
-			return true
-		}
-	}
-	return false
 }
 
 func isFmtSprintfCall(expr ast.Expr) bool {
@@ -8245,6 +8240,12 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	// inherited fields/methods promote naturally, followed by implemented
 	// interfaces, then this class's own fields and captured locals.
 	fields := &ast.FieldList{}
+	// A local hierarchy root owns the same shared identity carrier that its
+	// constructor initializes. Leaf locals keep their lightweight descriptor.
+	needsObjectInfo := classNeedsReferenceObjectInfo(syntheticScope, fieldTypeCtx)
+	if needsObjectInfo && sourceHierarchyRoot(syntheticScope, fieldTypeCtx) {
+		fields.List = append(fields.List, generatedObjectInfoField(fieldTypeCtx))
+	}
 	if enclosingType := enclosingInstanceType(syntheticScope); enclosingType != nil {
 		fields.List = append(fields.List, &ast.Field{
 			Names: []*ast.Ident{{Name: syntheticScope.EnclosingFieldName()}},
@@ -8301,7 +8302,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 			directInterfaceScopes = append(directInterfaceScopes, interfaceScope)
 		}
 	}
-	if superclassScope != nil && classNeedsReferenceObjectInfo(superclassScope, ctx) {
+	if needsObjectInfo {
 		for _, declaration := range syntheticHierarchicalReferenceIdentityDecls(
 			structName,
 			dynamicTypeID,
@@ -8319,7 +8320,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		}
 		var superID ast.Expr
 		if superclassScope != nil {
-			superID = javaTypeIDLiteral(javaClassBinaryName(superclassScope), ctx)
+			superID = javaTypeIDLiteral(sourceClassRuntimeTypeID(superclassScope, ctx), ctx)
 		}
 		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(
 			structName,
@@ -9977,6 +9978,9 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 		resolution = findBestMethodInHierarchy(scope, methodName, argListNode, allowInstance, allowStatic, ctx, source)
 	}
 	if inheritedBuiltinMessageSelected(node, resolution, ctx, source) {
+		return "java.lang.String", true
+	}
+	if implicitInheritedObjectTextSelected(node, resolution, ctx, source) {
 		return "java.lang.String", true
 	}
 	if resolution == nil && node.ChildByFieldName("object") == nil {
