@@ -4501,7 +4501,22 @@
     "root_publication_audit_sha256": "d391f97dd1dc81077630671c9749dd61e3f9074b88e062e3f5d01a8a384a3c91",
     "independent_raw_audit_sha256": "34e27ed32b2e37786469088209114f10f993e1b153bd3d1977047a5e58f3f027",
     "production_accepted": false,
-    "open_frontier": "Private instance reflective field null receiver ordering; separate original13Java baseline red preserved. Full Gson and cumulative campaign gates required.",
+    "open_frontier": "Focused null receiver/access ordering repair now verified; broader reflection, full Gson and cumulative campaign gates remain required.",
     "coordinator_branch": "origin/codex/adversarial-campaign"
+  },
+  "reflection_wip_publication": {
+    "status": "ROOT_PUBLICATION_EXACT_1982_SOURCE_VERIFIED",
+    "base": "3cfd5fdc750913129e58c4062058bf5582f62b55",
+    "branch": "codex/adversarial-enum-checkpoint19",
+    "source_manifest_sha256": "cec8581b527a4e3a6372878ed0327d7b4c5619dd6d7e24a4dadabf61d4a8d87e",
+    "patch_sha256": "ac9cd4380a82532ee47e110afe6df431399ace09e324e6720e78c2548f271d44",
+    "independent_audit_sha256": "2b1328ad22b6ed3dad994efb8606a4150f3378d48f911be610da0d040247ed15",
+    "files": [
+      "stdjava/reflection.go",
+      "stdjava/reflection_receiver_order_test.go"
+    ],
+    "scope": "Null receiver/access ordering focused10 runtime parents11subtests27originalJVM/freshGo comparisons; no full22/Gson acceptance",
+    "root_publication_audit_sha256": "60b1a8861f670a71d8ce6283eab7b50d5a37323b476e0a2b714f70f100332c6f",
+    "production_accepted": false
   }
 }

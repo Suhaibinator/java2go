@@ -211,10 +211,20 @@ func reflectionReceiver(receiver any, owner *Class) reflect.Value {
 	}
 	return reflect.ValueOf(receiver)
 }
+
+// requireInstanceReceiver preserves Field.checkAccess ordering: an instance
+// null fails before access permission, but receiver type checking remains in
+// the accessor. Static descriptors ignore the supplied receiver entirely.
+func (field *Field) requireInstanceReceiver(receiver any) {
+	if field.descriptor.StaticGet == nil && nilJavaReference(receiver) {
+		panic(NewNullPointerException("reflection receiver is null"))
+	}
+}
 func (field *Field) Get(receiver any) any {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
+	field.requireInstanceReceiver(receiver)
 	if field.descriptor.StaticGet != nil {
 		return field.GetExecution(NewExecution(), receiver)
 	}
@@ -234,6 +244,7 @@ func (field *Field) GetExecution(execution *Execution, receiver any) any {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
+	field.requireInstanceReceiver(receiver)
 	if field.descriptor.NonPublic {
 		panic(reflectionException("IllegalAccessException", "non-public field"))
 	}
@@ -254,6 +265,7 @@ func (field *Field) Set(receiver, value any) {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
+	field.requireInstanceReceiver(receiver)
 	if field.descriptor.NonPublic {
 		panic(reflectionException("IllegalAccessException", "non-public field"))
 	}
