@@ -131,11 +131,31 @@ func qualifyDeclaredNominalReference(base string, ctx Ctx) string {
 			return qualified
 		}
 	}
+	// Exact external names and single-type imports retain their declaration
+	// identity even when that family has not migrated to intrinsic dispatch.
+	if strings.Contains(base, ".") {
+		return base
+	}
+	if ctx.currentFile != nil {
+		if pkg, imported := ctx.currentFile.Imports[base]; imported {
+			return pkg + "." + base
+		}
+	}
 	if qualified, known := canonicalIntrinsicOwner(base, ctx); known {
 		return qualified
 	}
 	if qualified, known := builtinThrowableReferenceName(base, ctx); known {
 		return qualified
+	}
+	// These core reference declarations already have compiler/runtime type
+	// models, but not all participate in the intrinsic-owner registry. Resolve
+	// their implicit java.lang import only after source and explicit imports.
+	switch base {
+	case "Object", "String", "StringBuilder", "StringBuffer", "Class", "Enum",
+		"Number", "Boolean", "Byte", "Short", "Character", "Integer", "Long", "Float", "Double",
+		"Comparable", "CharSequence", "Cloneable", "Iterable", "AutoCloseable", "Appendable", "Readable",
+		"Thread", "Runnable", "Deprecated":
+		return "java.lang." + base
 	}
 	return base
 }

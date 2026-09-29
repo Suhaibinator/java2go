@@ -489,7 +489,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return lowered
 			}
 
-			if isSystemOutSelector(objectNode, source) && (methodName == "println" || methodName == "print") {
+			if isSystemOutSelector(objectNode, ctx, source) && (methodName == "println" || methodName == "print") {
 				argListNode := node.ChildByFieldName("arguments")
 				args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, nil)
 				// PrintStream performs Java text conversion before writing. Route
@@ -798,6 +798,26 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				if selected := findEnclosingStaticMethod(methodName, argListNode, ctx, source); selected != nil {
 					implicitStaticResolution = selected
 					expectedArgTypes = definitionParameterOriginalTypes(selected.def)
+				}
+			}
+		}
+		if implicitInstanceResolution == nil && implicitStaticResolution == nil {
+			imported := resolveStaticImportedMethod(node, ctx, source)
+			if imported.problem != "" {
+				return unsupportedIntrinsicValue(node, imported.problem, source, ctx)
+			}
+			if imported.intrinsic != "" {
+				if lowered, ok := tryStaticIntrinsicInvocation(node, imported.intrinsic, methodName, source, ctx); ok {
+					return lowered
+				}
+				return unsupportedIntrinsicValue(node, "unsupported static method import "+methodName, source, ctx)
+			}
+			if imported.source != nil {
+				implicitStaticResolution = imported.source
+				expectedArgTypes = definitionParameterOriginalTypes(imported.source.def)
+			} else if len(staticMethodImports(ctx)) > 0 && lexicalMethodNamePresent(methodName, ctx) {
+				if enclosing, _ := enclosingMemberMethodSelector(methodName, argCount, ctx); enclosing == nil {
+					return unsupportedIntrinsicValue(node, "no applicable lexical method "+methodName, source, ctx)
 				}
 			}
 		}
@@ -1797,6 +1817,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		if inheritedFilterInputName(identName, ctx) {
 			return filterInputField(ctx)
+		}
+		if imported := resolveStaticImportedField(identName, ctx); imported.problem != "" {
+			return unsupportedIntrinsicValue(node, imported.problem, source, ctx)
+		} else if generator := staticFieldIntrinsics[imported.intrinsic]; generator != nil {
+			return generator(ctx)
 		}
 		if classScope := resolveClassScopeByQualifiedName(ctx, identName); classScope != nil {
 			if alias := markJavaPackageUsage(ctx, resolveJavaPackageForType(ctx, identName, classScope)); alias != "" {
@@ -3066,22 +3091,23 @@ func compoundAssignmentValue(operator string, old, rhs ast.Expr, lhsJavaType, rh
 	return finish(&ast.CallExpr{Fun: &ast.Ident{Name: conversion}, Args: []ast.Expr{operation}})
 }
 
-func isSystemOutSelector(node *sitter.Node, source []byte) bool {
-	if node == nil {
+func isSystemOutSelector(node *sitter.Node, ctx Ctx, source []byte) bool {
+	if node == nil || node.Type() != "field_access" {
 		return false
 	}
-	if strings.TrimSpace(node.Content(source)) == "System.out" {
-		return true
-	}
-	if node.Type() != "field_access" {
-		return false
-	}
-	obj := node.ChildByFieldName("object")
+	object := node.ChildByFieldName("object")
 	field := node.ChildByFieldName("field")
-	if obj == nil || field == nil {
+	if object == nil || field == nil || field.Content(source) != "out" {
 		return false
 	}
-	return obj.Type() == "identifier" && obj.Content(source) == "System" && field.Content(source) == "out"
+	owner, registered := canonicalIntrinsicOwner(object.Content(source), ctx)
+	if !registered || owner != "java.lang.System" {
+		return false
+	}
+	// A local or field named System is a value, even when the canonical class
+	// is available. Reuse the static-owner check before lowering its stream.
+	class, static := intrinsicStaticClassName(object, ctx, source)
+	return static && class == intrinsicOwnerKey(owner)
 }
 
 func isStringLikeExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
@@ -3770,6 +3796,12 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 		}
 	}
 
+	// Single-static imports can introduce types, fields, and methods with the
+	// same spelling. Only an actual member type participates in this lookup.
+	if imported, present := staticImportedSourceType(name, false, ctx); present {
+		return imported
+	}
+
 	// Current package (other files).
 	if pkg := symbol.GlobalScope.FindPackage(ctx.currentFile.Package); pkg != nil {
 		for _, file := range pkg.Files {
@@ -3779,6 +3811,10 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 		}
 	}
 
+	// On-demand members do not shadow types declared in the current package.
+	if imported, present := staticImportedSourceType(name, true, ctx); present {
+		return imported
+	}
 	return nil
 }
 
@@ -4461,6 +4497,9 @@ func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, cand
 			score.exactCount++
 		}
 	}
+	if !methodInvocationBoundsApplicable(def, owner, argNodes, fixedArrayInvocation, ctx, source) {
+		return methodCandidateScore{}, false
+	}
 	return score, true
 }
 
@@ -4743,9 +4782,9 @@ func javaInvocationConversionCost(argNode *sitter.Node, expectedType string, can
 		return 0, false, false
 	}
 
-	actualReference := normalizeJavaReferenceType(actualType)
-	expectedReference := normalizeJavaReferenceType(expectedType)
-	if actualReference == expectedReference && invocationReferenceBindersCompatible(actualType, expectedType, ctx) {
+	// Reference equality uses declaration identity. Dropping package names here
+	// makes a source class such as shadow.String an exact match for java.lang.String.
+	if javaInferenceSameType(actualType, expectedType, ctx) && invocationReferenceBindersCompatible(actualType, expectedType, ctx) {
 		return 0, true, true
 	}
 
@@ -4765,7 +4804,7 @@ func javaInvocationConversionCost(argNode *sitter.Node, expectedType string, can
 	if stripJavaQualifier(expectedBase) == "Object" {
 		return 24, false, true
 	}
-	if builtinJavaReferenceAssignable(actualType, expectedType, ctx) {
+	if builtinJavaReferenceAssignableWithTypeParameters(actualType, expectedType, candidateTypeParams, ctx) {
 		return 17, false, true
 	}
 	actualScope := resolveClassScopeByQualifiedName(ctx, actualBase)
@@ -5346,7 +5385,7 @@ func parseResolvedInvocationArguments(
 		expectedTypes = instantiatedMethodParameterTypes(
 			resolution,
 			classTypeArguments,
-			genericArrayInvocationTypeBindings(def, invocationNode, ctx, source),
+			resolvedMethodInvocationTypeBindings(def, invocationNode, ctx, source),
 		)
 	}
 	argumentCount := 0
@@ -6702,6 +6741,16 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(structName, ownerID+"$"+structName, stdjavaQualifiedExpr(characterIONominalConstants[stripJavaQualifier(supertype)], ctx), protocolIDs, syntheticScope.GoTypeParameterNames(), ctx) {
 			ctx.addHoistedDecl(declaration)
 		}
+	} else if superScope == nil && overrideBridgeCanonicalObjectResult(supertype, baseType, ctx) {
+		// A canonical Object anonymous subclass has no source superclass scope,
+		// but its Java methods still require declaration-based text dispatch.
+		ownerID := ctx.className
+		if ctx.currentClass != nil {
+			ownerID = javaClassBinaryName(ctx.currentClass)
+		}
+		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(structName, ownerID+"$"+structName, stdjavaQualifiedExpr("ObjectTypeID", ctx), nil, syntheticScope.GoTypeParameterNames(), installerCtx) {
+			ctx.addHoistedDecl(declaration)
+		}
 	}
 
 	for _, declaration := range buildClassStringerBridgeDecls(installerCtx) {
@@ -6751,12 +6800,15 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 	}
 
-	// A non-SAM anonymous implementation has no source ClassScope of its own, but
-	// it is still a real Java object that can be stored in an interface array.
-	// Give it a unique nominal type and register every inherited interface edge;
-	// the generated pointer already satisfies those Go interface views directly.
-	if superScope != nil && superScope.IsInterface && classNeedsReferenceIdentity(superScope, ctx) {
-		interfaceScopes := append([]*symbol.ClassScope{superScope}, transitiveImplementedInterfaceScopes(superScope, ctx)...)
+	// Anonymous source values need a nominal descriptor even when no array or
+	// reflection operation requests an ObjectInfo carrier. In particular, erased
+	// Object text conversion must select only the registered Java toString body.
+	// Concrete hierarchies with a carrier were registered immediately above.
+	if superScope != nil && (superScope.IsInterface || !classNeedsReferenceIdentity(superScope, ctx)) {
+		interfaceScopes := transitiveImplementedInterfaceScopes(superScope, ctx)
+		if superScope.IsInterface {
+			interfaceScopes = append([]*symbol.ClassScope{superScope}, interfaceScopes...)
+		}
 		interfaceIDs := make([]ast.Expr, 0, len(interfaceScopes))
 		seenInterfaces := make(map[*symbol.ClassScope]struct{})
 		for _, interfaceScope := range interfaceScopes {
@@ -6776,10 +6828,14 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		if ownerID == "" {
 			ownerID = ctx.className
 		}
+		var parentID ast.Expr
+		if !superScope.IsInterface {
+			parentID = javaTypeIDLiteral(sourceClassRuntimeTypeID(superScope, ctx), ctx)
+		}
 		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(
 			structName,
 			ownerID+"$"+structName,
-			nil,
+			parentID,
 			interfaceIDs,
 			syntheticScope.GoTypeParameterNames(),
 			ctx,
@@ -9520,7 +9576,8 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		// site. Complete the generated ABI with hidden enclosing arguments and use
 		// Java first-bound erasure for genuinely raw declared slots.
 		typeArgs = normalizeClassTypeArguments(resolvedScope, typeArgs, ctx.currentClass, nil)
-	} else if ctx.currentFile != nil {
+	} else if ctx.currentFile != nil && !strings.Contains(base, ".") {
+		// Only an unqualified type may be resolved through caller imports.
 		// If this type name maps to an import whose package we parsed in the same conversion run,
 		// emit a qualified Go selector and add the corresponding import.
 		if importedPkg, ok := ctx.currentFile.Imports[baseName]; ok && symbol.GlobalScope.FindPackage(importedPkg) != nil {
@@ -9665,6 +9722,14 @@ func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
 		}
 		if javaType, found := inferEnclosingFieldJavaType(name, ctx); found {
 			return javaType, true
+		}
+	}
+	if imported := resolveStaticImportedField(name, ctx); imported.problem == "" {
+		if imported.source != nil {
+			return qualifyJavaTypeInDeclaringContext(definitionJavaType(imported.source.def), imported.source.owner), true
+		}
+		if result := staticFieldIntrinsicResultTypes[imported.intrinsic]; result != "" {
+			return result, true
 		}
 	}
 	return "", false
@@ -9989,6 +10054,12 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 			scope = resolution.owner
 		}
 	}
+	if resolution == nil && node.ChildByFieldName("object") == nil {
+		resolution = resolveStaticImportedMethod(node, ctx, source).source
+		if resolution != nil {
+			scope = resolution.owner
+		}
+	}
 	if resolution == nil || resolution.def == nil {
 		return "", false
 	}
@@ -10231,9 +10302,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		}
 		return "", false
 	case "string_literal":
-		// A string literal is a java.lang.String, so chained calls on a literal
-		// (e.g. "  x  ".trim()) resolve as String intrinsics.
-		return "String", true
+		// Literals name the canonical JDK declaration, even when the caller
+		// imports a source class with the simple name String.
+		return "java.lang.String", true
 	case "decimal_integer_literal", "hex_integer_literal", "octal_integer_literal", "binary_integer_literal":
 		// An integer literal is `long` if it carries an L suffix, otherwise `int`.
 		// Used to infer `var x = 0` as int (-> int32) for K1 pinning.
@@ -10986,36 +11057,33 @@ func explicitTypeArgumentExprs(node *sitter.Node, source []byte, typeParams []st
 	return exprs
 }
 
-func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
-	if len(def.TypeParameters) == 0 {
-		return nil
+// resolvedMethodInvocationTypeBindings completes inference with the same
+// declaration-qualified erasures used for generated Go type arguments. Null-only
+// arguments provide no lower bound, but their invocation conversions must still
+// use the chosen type (for example String's null representation).
+func resolvedMethodInvocationTypeBindings(def *symbol.Definition, invocationNode *sitter.Node, ctx Ctx, source []byte) map[string]string {
+	bindings := genericArrayInvocationTypeBindings(def, invocationNode, ctx, source)
+	if def == nil {
+		return bindings
 	}
-
-	if explicit := explicitTypeArgumentExprs(invocationNode, source, inScopeTypeParameters(ctx), ctx); len(explicit) == len(def.TypeParameters) && len(explicit) > 0 {
-		return explicit
-	}
-
-	argsNode := invocationNode.ChildByFieldName("arguments")
-	if argsNode == nil {
-		return nil
-	}
-
-	resolved := make(map[string]ast.Expr)
-	for name, javaType := range genericArrayInvocationTypeBindings(def, invocationNode, ctx, source) {
-		resolved[name] = javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx)
-	}
-
-	result := make([]ast.Expr, len(def.TypeParameters))
-	for i, tp := range def.TypeParameters {
-		if expr, ok := resolved[tp.Name]; ok {
-			result[i] = expr
-		} else {
-			// If no dependent argument supplied a precise view for a bound-only
-			// parameter, use Java's transitive first-bound erasure. Unlike `any`, the
-			// erased view is guaranteed to satisfy the generated Go constraint.
-			erased := rawTypeParameterErasure(tp, def.TypeParameters)
-			result[i] = javaTypeStringToGoTypeExpr(erased, inScopeTypeParameters(ctx), ctx)
+	declaring, _ := invocationMethodDeclarationContext(def, ctx)
+	parameters := qualifyTypeParameterBounds(def.TypeParameters, declaring)
+	for _, parameter := range parameters {
+		if strings.TrimSpace(bindings[parameter.Name]) == "" {
+			bindings[parameter.Name] = rawTypeParameterErasure(parameter, parameters)
 		}
+	}
+	return bindings
+}
+
+func inferMethodTypeArguments(def *symbol.Definition, invocationNode *sitter.Node, ctx Ctx, source []byte) []ast.Expr {
+	if def == nil || len(def.TypeParameters) == 0 {
+		return nil
+	}
+	bindings := resolvedMethodInvocationTypeBindings(def, invocationNode, ctx, source)
+	result := make([]ast.Expr, len(def.TypeParameters))
+	for index, parameter := range def.TypeParameters {
+		result[index] = javaTypeStringToGoTypeExpr(bindings[parameter.Name], inScopeTypeParameters(ctx), ctx)
 	}
 	return result
 }
@@ -11048,17 +11116,23 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 		return bindings
 	}
 	argNodes := nodeutil.NamedChildrenOf(argsNode)
-	lowerBounds := make(map[string][]string, len(def.TypeParameters))
+	declaring, owner := invocationMethodDeclarationContext(def, ctx)
+	parameters := qualifyTypeParameterBounds(def.TypeParameters, declaring)
+	lowerBounds := make(map[string][]string, len(parameters))
 	typeParameterNames := make(map[string]struct{}, len(def.TypeParameters))
 	for _, typeParameter := range def.TypeParameters {
 		typeParameterNames[typeParameter.Name] = struct{}{}
+		typeParameterNames[typeParameter.EmittedName()] = struct{}{}
 	}
 	for index, parameter := range def.Parameters {
 		if parameter == nil || index >= len(argNodes) {
 			continue
 		}
+		formal := parameter.OriginalType
+		if owner != nil {
+			formal = methodParameterReferenceType(parameter, def, owner, ctx)
+		}
 		if executionParameterIsVariadic(def, index) {
-			formal := parameter.OriginalType
 			if len(argNodes) == len(def.Parameters) {
 				actual, known := inferExprJavaType(argNodes[index], ctx, source)
 				actualBase, actualRank := javaArrayTypeParts(actual)
@@ -11083,7 +11157,7 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 			continue
 		}
 		collectGenericMethodInferenceBounds(
-			parameter.OriginalType,
+			formal,
 			actualType,
 			typeParameterNames,
 			lowerBounds,
@@ -11102,8 +11176,12 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 		}
 	}
 
-	for _, typeParameter := range def.TypeParameters {
-		inferred := javaInferenceLeastUpperBound(lowerBounds[typeParameter.Name], ctx)
+	for _, typeParameter := range parameters {
+		candidates := append([]string(nil), lowerBounds[typeParameter.EmittedName()]...)
+		if typeParameter.EmittedName() != typeParameter.Name {
+			candidates = append(candidates, lowerBounds[typeParameter.Name]...)
+		}
+		inferred := javaInferenceLeastUpperBound(candidates, ctx)
 		if inferred == "" {
 			continue
 		}
@@ -11111,7 +11189,7 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 		// unlike a Java upper bound that also admits subclasses. Use the transitive
 		// erasure view (including T extends B extends Base) so argument lowering can
 		// carve the corresponding Base subobject.
-		erased := rawTypeParameterErasure(typeParameter, def.TypeParameters)
+		erased := rawTypeParameterErasure(typeParameter, parameters)
 		erasedBase, _ := parseJavaTypeString(erased)
 		if boundScope := resolveClassScopeByQualifiedName(ctx, erasedBase); boundScope != nil && !boundScope.IsInterface &&
 			!methodTypeParameterRequiresConcreteWitness(def, typeParameter.Declaration, ctx) {
@@ -11145,7 +11223,7 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 	// precise inferred dependent view when it satisfies B's own erasure. This is
 	// what keeps `<B extends Root, T extends B> B id(T)` returning Impl for an
 	// Impl argument instead of unnecessarily widening its call-site type to Root.
-	for _, missing := range def.TypeParameters {
+	for _, missing := range parameters {
 		if _, alreadyResolved := bindings[missing.Name]; alreadyResolved {
 			continue
 		}
@@ -11163,7 +11241,7 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 			continue
 		}
 
-		erased := rawTypeParameterErasure(missing, def.TypeParameters)
+		erased := rawTypeParameterErasure(missing, parameters)
 		erasedBase, _ := parseJavaTypeString(erased)
 		if boundScope := resolveClassScopeByQualifiedName(ctx, erasedBase); boundScope != nil {
 			if !methodTypeParameterRequiresConcreteWitness(def, missing.Declaration, ctx) &&
@@ -11220,6 +11298,7 @@ func collectGenericMethodInferenceBounds(
 			return
 		}
 		inferred := actualBase + strings.Repeat("[]", actualRank-formalRank)
+		inferred = inferenceCaptureUpperBound(inferred)
 		if formalRank > 0 && actualRank == formalRank {
 			if _, primitive := javaPrimitiveType(actualBase); primitive {
 				return
@@ -11249,7 +11328,8 @@ func collectGenericMethodInferenceBounds(
 		if formalScope == nil || actualScope == nil || formalScope != actualScope {
 			return
 		}
-	} else if stripJavaQualifier(bareFormal) != stripJavaQualifier(actualRaw) {
+	} else if !sameJavaRawType(bareFormal, actualRaw) &&
+		!builtinJavaReferenceAssignable(actualRaw, bareFormal, ctx) {
 		return
 	}
 	for index := range formalArguments {
@@ -11467,6 +11547,9 @@ func javaInferenceTypeAssignable(actual, expected string, ctx Ctx) bool {
 	if builtinJavaReferenceAssignable(actual, expected, ctx) {
 		return true
 	}
+	if actualScope != nil && expectedScope == nil {
+		return sourceRuntimeReferenceAssignable(actualScope, actualArgs, expected, ctx)
+	}
 	if actualScope == nil || expectedScope == nil {
 		return false
 	}
@@ -11517,7 +11600,7 @@ func javaInferenceTypeName(scope *symbol.ClassScope) string {
 
 func genericArrayInvocationExpectedTypes(def *symbol.Definition, invocationNode *sitter.Node, ctx Ctx, source []byte) []string {
 	expected := definitionParameterOriginalTypes(def)
-	bindings := genericArrayInvocationTypeBindings(def, invocationNode, ctx, source)
+	bindings := resolvedMethodInvocationTypeBindings(def, invocationNode, ctx, source)
 	if len(bindings) == 0 {
 		return expected
 	}

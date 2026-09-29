@@ -122,11 +122,11 @@ func registerInstanceIntrinsic(typeName, methodName string, gen intrinsicGenerat
 }
 
 func registerInstanceIntrinsicResultType(typeName, methodName, resultType string) {
-	instanceIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = resultType
+	instanceIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = canonicalIntrinsicResultType(resultType)
 }
 
 func registerStaticIntrinsicResultType(typeName, methodName, resultType string) {
-	staticIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = resultType
+	staticIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = canonicalIntrinsicResultType(resultType)
 }
 
 // typeArgDeriver computes the explicit Go type arguments a static intrinsic
@@ -151,7 +151,7 @@ func registerStaticIntrinsicDerivedResultType(className, methodName string, deri
 }
 
 func registerStaticFieldIntrinsicResultType(typeName, fieldName, resultType string) {
-	staticFieldIntrinsicResultTypes[intrinsicKey{typeName, fieldName}] = resultType
+	staticFieldIntrinsicResultTypes[intrinsicKey{typeName, fieldName}] = canonicalIntrinsicResultType(resultType)
 }
 
 // registerStaticIntrinsic adds a static-method intrinsic.
@@ -215,6 +215,12 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 	// Normalize every String receiver through the runtime bridge so dereferencing
 	// either representation throws NullPointerException.
 	if receiverType == "String" && !isDefinitelyNonNullStringExpression(objectNode, ctx, source) {
+		if !hasNodeIntrinsic && gen != nil && invocationArgumentCount(objectNode.Parent()) > 0 {
+			// An instance receiver is evaluated first, but Java checks it for
+			// null only after every argument and argument conversion completes.
+			result := stageStringIntrinsicInvocation(objectNode, methodName, recv, gen, ctx, source)
+			return result, result != nil
+		}
 		recv = stdjavaCall(ctx, "StringRequireNonNull", recv)
 	}
 	// A node-aware intrinsic parses its own arguments, since it needs their
@@ -869,8 +875,12 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 	if !ok {
 		return nil, false
 	}
+	return tryStaticIntrinsicInvocation(objectNode.Parent(), className, methodName, source, ctx)
+}
+
+func tryStaticIntrinsicInvocation(invocation *sitter.Node, className, methodName string, source []byte, ctx Ctx) (ast.Expr, bool) {
 	if className == "String" && methodName == "valueOf" && executionExpr(ctx) != nil {
-		if parent := objectNode.Parent(); parent != nil {
+		if parent := invocation; parent != nil {
 			if arguments := parent.ChildByFieldName("arguments"); arguments != nil && arguments.NamedChildCount() == 1 {
 				argumentNode := arguments.NamedChild(0)
 				if javaType, inferred := inferExprJavaType(argumentNode, ctx, source); inferred {
@@ -895,35 +905,37 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 		return nil, false
 	}
 
-	args := intrinsicArgs(objectNode, methodName, source, ctx)
+	args := parseTypedIntrinsicInvocationArguments(invocation, nil, className, methodName, source, ctx)
+	if className == "Objects" && methodName == "requireNonNull" {
+		return lowerObjectsRequireNonNull(invocation, args, ctx, source), true
+	}
 	if className == "String" && methodName == "join" {
-		return lowerStringJoin(objectNode.Parent(), args, ctx, source), true
+		return lowerStringJoin(invocation, args, ctx, source), true
 	}
 	if className == "Arrays" && methodName == "asList" {
-		if result := arraysAsListCall(objectNode.Parent(), args, ctx, source); result != nil {
+		if result := arraysAsListCall(invocation, args, ctx, source); result != nil {
 			return result, true
 		}
 	}
-	if className == "Math" && methodName == "round" && len(args) == 1 && intrinsicMathParameterJavaType(objectNode.Parent(), ctx, source) == "float" {
+	if className == "Math" && methodName == "round" && len(args) == 1 && intrinsicMathParameterJavaType(invocation, ctx, source) == "float" {
 		return stdjavaCall(ctx, "MathRoundFloat", args[0]), true
 	}
 	if _, wrapper := builtinJavaWrapperPrimitive("java.lang."+className, ctx); wrapper && methodName == "valueOf" {
-		if !wrapperValueOfApplicable(objectNode.Parent(), className, ctx, source) {
-			return unsupportedIntrinsicValue(objectNode.Parent(), "java.lang."+className, source, ctx), true
+		if !wrapperValueOfApplicable(invocation, className, ctx, source) {
+			return unsupportedIntrinsicValue(invocation, "java.lang."+className, source, ctx), true
 		}
-		actual, _ := inferExprJavaType(invocationArgumentNode(objectNode.Parent(), 0), ctx, source)
+		actual, _ := inferExprJavaType(invocationArgumentNode(invocation, 0), ctx, source)
 		if isJavaStringType(actual) || actual == "null" {
 			return stdjavaCall(ctx, className+"ValueOfString", args...), true
 		}
 		return stdjavaCall(ctx, "Box"+className, args...), true
 	}
 	if derive, ok := staticIntrinsicTypeArgs[intrinsicKey{className, methodName}]; ok {
-		ctx.intrinsicTypeArgs = derive(objectNode.Parent(), ctx, source)
+		ctx.intrinsicTypeArgs = derive(invocation, ctx, source)
 	}
 	// A static call has no receiver to take an element type from, so a declared
 	// static shape names the argument that carries it instead.
 	if shape, ok := staticLambdaShapes[intrinsicKey{className, methodName}]; ok {
-		invocation := objectNode.Parent()
 		elementJavaTypes := staticIntrinsicElementJavaTypes(invocation, shape.elementArg, ctx, source)
 		if len(elementJavaTypes) == 1 {
 			elementType := javaTypeStringToGoTypeExpr(elementJavaTypes[0], inScopeTypeParameters(ctx), ctx)
@@ -1018,6 +1030,9 @@ func intrinsicMethodReceiverTypeName(objectNode *sitter.Node, methodName string,
 }
 
 func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+	if objectNode == nil {
+		return "", false
+	}
 	javaType, ok := inferExprJavaType(objectNode, ctx, source)
 	if !ok {
 		return "", false
@@ -1060,10 +1075,17 @@ func inferIntrinsicMethodResultType(node *sitter.Node, ctx Ctx, source []byte) (
 	}
 	objectNode := node.ChildByFieldName("object")
 	nameNode := node.ChildByFieldName("name")
-	if objectNode == nil || nameNode == nil {
+	if nameNode == nil {
 		return "", false
 	}
 	methodName := nameNode.Content(source)
+	if objectNode == nil {
+		resolved := resolveStaticImportedMethod(node, ctx, source)
+		if resolved.intrinsic != "" {
+			return inferStaticIntrinsicResultType(node, resolved.intrinsic, methodName, ctx, source)
+		}
+		return "", false
+	}
 	if inheritedObjectTextSelected(objectNode, methodName, ctx, source) {
 		return "String", true
 	}
@@ -1076,16 +1098,19 @@ func inferIntrinsicMethodResultType(node *sitter.Node, ctx Ctx, source []byte) (
 		}
 	}
 	if className, ok := intrinsicStaticClassName(objectNode, ctx, source); ok {
-		if derive, ok := staticIntrinsicDerivedResultTypes[intrinsicKey{className, methodName}]; ok {
-			if resultType, derived := derive(node, ctx, source); derived {
-				return resultType, true
-			}
-		}
-		if resultType := staticIntrinsicResultTypes[intrinsicKey{className, methodName}]; resultType != "" {
+		return inferStaticIntrinsicResultType(node, className, methodName, ctx, source)
+	}
+	return "", false
+}
+
+func inferStaticIntrinsicResultType(node *sitter.Node, className, methodName string, ctx Ctx, source []byte) (string, bool) {
+	if derive, ok := staticIntrinsicDerivedResultTypes[intrinsicKey{className, methodName}]; ok {
+		if resultType, derived := derive(node, ctx, source); derived {
 			return resultType, true
 		}
 	}
-	return "", false
+	result := staticIntrinsicResultTypes[intrinsicKey{className, methodName}]
+	return result, result != ""
 }
 
 func inferIntrinsicFieldResultType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
@@ -1108,6 +1133,27 @@ func inferIntrinsicFieldResultType(node *sitter.Node, ctx Ctx, source []byte) (s
 func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 	if objectNode == nil {
 		return "", false
+	}
+	// A dotted spelling can start at a local/parameter/field rather than a
+	// package. Resolve that root binding before interpreting a canonical owner.
+	root := objectNode
+	for root != nil && (root.Type() == "field_access" || root.Type() == "scoped_identifier") {
+		next := root.ChildByFieldName("object")
+		if next == nil {
+			next = root.ChildByFieldName("scope")
+		}
+		if next == nil && root.NamedChildCount() > 0 {
+			next = root.NamedChild(0)
+		}
+		if next == nil {
+			break
+		}
+		root = next
+	}
+	if root != nil && root.Type() == "identifier" {
+		if _, value := inferIdentifierJavaType(root.Content(source), ctx); value {
+			return "", false
+		}
 	}
 	name := objectNode.Content(source)
 	if owner, registered := canonicalIntrinsicOwner(name, ctx); registered {

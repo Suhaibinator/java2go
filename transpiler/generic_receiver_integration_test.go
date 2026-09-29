@@ -26,7 +26,11 @@ public class App {
 	want := campaignRuntimeJavaOracle(t, "App", src)
 	assertGeneratedLocalConstructorResult(t, src, want)
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, `strings.HasPrefix(stdjava.StringRequireNonNull(stdjava.ObjectView[string](box.ValueJava2goExecution(__java2goExecution), stdjava.StringTypeID)), "BLOCK:")`) {
+	if !strings.Contains(normalizeSpaces(out), normalizeSpaces(`func() bool {
+        __java2goInvocationReceiver := stdjava.ObjectView[string](box.ValueJava2goExecution(__java2goExecution), stdjava.StringTypeID)
+        __java2goInvocationArg0 := "BLOCK:"
+        return strings.HasPrefix(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+    }()`)) {
 		t.Fatalf("expected a class type-parameter return to resolve to String for the chained intrinsic, got:\n%s", out)
 	}
 }

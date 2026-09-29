@@ -61,6 +61,12 @@ func builtinJavaNumericReference(javaType string, ctx Ctx) bool {
 // builtinJavaReferenceAssignable provides nominal library relationships that
 // are absent from the source-class symbol graph. Comparable<T> is invariant.
 func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
+	return builtinJavaReferenceAssignableWithTypeParameters(actual, expected, nil, ctx)
+}
+
+// Only invocation applicability may infer the candidate method's own binders.
+// Ordinary assignability and override checks keep invariant arguments.
+func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
 	if dateTimeReferenceAssignable(actual, expected, ctx) {
 		return true
 	}
@@ -91,7 +97,7 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 		resolveClassScopeByQualifiedName(ctx, actualBase) != nil {
 		return false
 	}
-	if builtinCollectionReferenceAssignable(actual, expected) {
+	if builtinCollectionReferenceAssignable(actual, expected, candidateTypeParams) {
 		return true
 	}
 	if len(expectedArguments) == 0 && digestIOAssignable(actualBase, expectedBase) {
@@ -144,13 +150,15 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 
 // Runtime collection declarations retain their Java nominal ancestry even when
 // their Go implementations share an interface or a concrete container.
-func builtinCollectionReferenceAssignable(actual, expected string) bool {
+func builtinCollectionReferenceAssignable(actual, expected string, candidateTypeParams []string) bool {
 	actualBase, actualArguments := parseJavaTypeString(actual)
 	expectedBase, expectedArguments := parseJavaTypeString(expected)
 	actualBase, expectedBase = stripJavaQualifier(actualBase), stripJavaQualifier(expectedBase)
 	parents := map[string][]string{
 		"Collection": {"Iterable"}, "List": {"Collection"}, "Set": {"Collection"},
-		"ArrayList": {"AbstractList"}, "LinkedList": {"List"}, "AbstractList": {"List"},
+		"AbstractCollection": {"Collection"}, "Queue": {"Collection"}, "Deque": {"Queue"},
+		"ArrayDeque": {"AbstractCollection", "Deque"},
+		"ArrayList":  {"AbstractList"}, "LinkedList": {"List"}, "AbstractList": {"List"},
 		"HashSet": {"AbstractSet"}, "LinkedHashSet": {"HashSet"}, "TreeSet": {"Set"}, "AbstractSet": {"Set"},
 		"HashMap": {"AbstractMap"}, "LinkedHashMap": {"HashMap"}, "TreeMap": {"Map"}, "AbstractMap": {"Map"},
 	}
@@ -163,5 +171,5 @@ func builtinCollectionReferenceAssignable(actual, expected string) bool {
 		}
 		return false
 	}
-	return reaches(actualBase) && javaGenericArgumentsApplicable(actualArguments, expectedArguments, nil)
+	return reaches(actualBase) && javaGenericArgumentsApplicable(actualArguments, expectedArguments, candidateTypeParams)
 }

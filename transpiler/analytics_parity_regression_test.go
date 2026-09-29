@@ -138,7 +138,13 @@ public class StableRanker<T extends Ranked> {
 	if strings.Count(flat, ".PrimaryScoreJava2goExecution(__java2goExecution)") != 4 {
 		t.Fatalf("expected type-parameter receiver calls to use Ranked's generated method names:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.StringCompareTo(stdjava.StringRequireNonNull(func() string") ||
+	// The String intrinsic stages its receiver and argument before the null
+	// check, preserving Java's invocation evaluation order.
+	receiverStage := strings.Index(flat, "__java2goInvocationReceiver := func() string")
+	argumentStage := strings.Index(flat, "__java2goInvocationArg0 := func() string")
+	compareCall := strings.Index(flat, "stdjava.StringCompareTo(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)")
+	if receiverStage < 0 || argumentStage <= receiverStage || compareCall <= argumentStage ||
+		!strings.Contains(flat, "return func() int32 {") || !strings.Contains(flat, "}() < 0") ||
 		strings.Count(flat, ".StableKeyJava2goExecution(__java2goExecution)") != 2 {
 		t.Fatalf("expected String return from the bound method to drive compareTo intrinsic lowering:\n%s", out)
 	}

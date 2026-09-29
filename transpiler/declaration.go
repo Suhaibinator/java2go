@@ -3423,12 +3423,16 @@ func buildStringerBridgeDecls(ctx Ctx, toString *symbol.Definition, defaultResul
 			&ast.ReturnStmt{Results: []ast.Expr{result}},
 		}},
 	}
-	return buildExecutionAwareFuncDecls(
+	declarations := buildExecutionAwareFuncDecls(
 		declaration,
 		executionStringMethodName(scope),
 		executionName,
 		stringCtx,
 	)
+	if sourceOwnsNativeStringSelector(scope, ctx) {
+		return declarations[1:]
+	}
+	return declarations
 }
 
 func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {

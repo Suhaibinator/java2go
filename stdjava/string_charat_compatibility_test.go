@@ -57,7 +57,7 @@ func TestCharAtCandidateNativeDecodingCompatibility(t *testing.T) {
 func charAtCandidatePanic(call func()) (kind reflect.Type, message string) {
 	defer func() {
 		if value := recover(); value != nil {
-			kind, message = reflect.TypeOf(value), fmt.Sprint(value)
+			kind, message = reflect.TypeOf(value), GetMessage(value)
 		}
 	}()
 	call()
@@ -68,9 +68,14 @@ func TestCharAtCandidateInvalidIndexFallback(t *testing.T) {
 	for _, value := range []string{"", "a", "a\x00λ😀", "\xff😀", NullString()} {
 		length := int32(len(StringChars(value)))
 		for _, index := range []int32{math.MinInt32, -1, length, length + 1, math.MaxInt32} {
-			wantType, wantMessage := charAtCandidatePanic(func() { _ = StringChars(value)[index] })
+			// The JVM-verified String contract supersedes the old native slice
+			// panic comparison. Host malformed-byte/null-sentinel cases still
+			// use the existing StringChars unit count; caller null checks remain
+			// independently covered by TestCharAtCandidateCallerNullBoundary.
+			wantType := reflect.TypeOf(StringIndexOutOfBoundsException{})
+			wantMessage := fmt.Sprintf("Index %d out of bounds for length %d", index, length)
 			gotType, gotMessage := charAtCandidatePanic(func() { _ = StringCharAt(value, index) })
-			if wantType == nil || gotType != wantType || gotMessage != wantMessage {
+			if gotType != wantType || gotMessage != wantMessage {
 				t.Fatalf("fallback bytes=%x index=%d got=%v/%q want=%v/%q", value, index, gotType, gotMessage, wantType, wantMessage)
 			}
 		}

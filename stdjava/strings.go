@@ -1,6 +1,7 @@
 package stdjava
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"unicode"
@@ -99,8 +100,9 @@ func StringCharAt(s string, index int32) rune {
 			}
 		}
 	}
-	// Preserve the existing invalid-index path and caller's null boundary.
-	return StringChars(s)[index]
+	// This is a String index contract, not an array access. Preserve the Java
+	// subtype and report the UTF-16 length even for negative or extreme indices.
+	panic(NewStringIndexOutOfBoundsException(fmt.Sprintf("Index %d out of bounds for length %d", index, StringLength(s))))
 }
 
 // StringLength returns the number of UTF-16 code units in the string.

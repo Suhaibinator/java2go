@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/NickyBoy89/java2go/nodeutil"
 	"github.com/NickyBoy89/java2go/symbol"
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -374,26 +373,10 @@ func methodInvocationTypeArgumentJavaTypes(
 	if def == nil || len(def.TypeParameters) == 0 {
 		return nil
 	}
-	if invocationNode != nil {
-		if typeArguments := invocationNode.ChildByFieldName("type_arguments"); typeArguments != nil {
-			explicit := nodeutil.NamedChildrenOf(typeArguments)
-			if len(explicit) == len(def.TypeParameters) {
-				result := make([]string, len(explicit))
-				for index, argument := range explicit {
-					result[index] = strings.TrimSpace(argument.Content(source))
-				}
-				return result
-			}
-		}
-	}
-
-	bindings := genericArrayInvocationTypeBindings(def, invocationNode, ctx, source)
+	bindings := resolvedMethodInvocationTypeBindings(def, invocationNode, ctx, source)
 	result := make([]string, len(def.TypeParameters))
 	for index, parameter := range def.TypeParameters {
-		result[index] = strings.TrimSpace(bindings[parameter.Name])
-		if result[index] == "" {
-			result[index] = rawTypeParameterErasure(parameter, def.TypeParameters)
-		}
+		result[index] = bindings[parameter.Name]
 	}
 	return result
 }
