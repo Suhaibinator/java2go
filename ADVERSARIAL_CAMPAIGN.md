@@ -234,3 +234,9 @@ The source Iterator/Iterable candidate passes its four original JVM/generated-ra
 The native implementation and tests are committed and pushed as `4a94e3e` on `codex/adversarial-pause-checkpoint19`. Build, lint2.14 and all unit shards pass, with1,930 pass records and no failures or skips. The coordinator stopped strict parity at the user's request after31 case passes; that gate remains incomplete and later gates are unrun. Cleanup left no owned processes, and all agents halted.
 
 The exact stopping point, independent audit, private repair evidence and ten prepared continuation items are preserved in the pause ledger and local checkpoint archives. The canonical String source checkpoint remains available on its existing origin branch. The campaign is paused until the user resumes it; no production promotion, completed round or full Gson compatibility is claimed.
+
+### Resumed with Sol-first work allocation
+
+The resumed campaign now uses eight GPT-6.1-Sol agents for challenge authorship, harnesses, execution, verification, routine compiler/JDK repairs and benchmarking. Astra is reserved for difficult architecture and semantic review. Frozen oracle ownership remains separate from implementation ownership.
+
+Sol-run benchmark semantics pass17 stages, three JVM/Go/model pairs and six direct scans, independently verified. The warmed allocation baseline completed18 measurements and awaits independent final acceptance; it does not establish an optimization or a Java speed advantage. A separate paired compiler test confirms a local-class selector crash introduced by the private iteration candidate; a general repair is prepared but unrun. Native verification restarts with fresh full22 rather than treating the interrupted parity stage as complete.

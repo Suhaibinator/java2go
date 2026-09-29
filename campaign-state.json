@@ -630,10 +630,10 @@
       ]
     }
   ],
-  "next_action": "Wait for explicit user resume. Verify frozen source6af2c3ad and toolchain, then run interrupted strict parity and later gates in NEW output directories; a fresh full22 is the simplest reproducible option. Preserve user-interrupted run62227. Four audited endpoint-v2 runs remain required. Then ordinary noniteration selector red/green, inherited-default and live map/nominal prerequisites, canonical whitespace baseline, and performance semantic baseline from the saved UNRUN queue. Any implementation change invalidates affected gates. Full Gson remains required red; no stage advancement.",
+  "next_action": "Fresh original full22 on native source6af2c3ad is assigned to Sol_build after independent final launcher review43ea8983. Historical completed1930 unit pass records remain evidence, but no partial parity reuse. Next queued focused gates: ordinary selector repairedcandidate exact6, Duration/Instant observed-JVM red, collection nominal/default/liveview controls. Performance semantic baseline independently accepted; allocation audit pending. Preserve fullGson red and all prior paused/interrupted artifacts.",
   "performance_team": {
-    "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
-    "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
+    "astra_perf_codegen": "Difficult optimization design/correctness review only, invoked after material baseline evidence",
+    "astra_perf_runtime": "Difficult runtime optimization, lifetime/concurrency review only",
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
       "status": "isolated-candidate-only",
@@ -676,7 +676,9 @@
       "production_applied": false,
       "timing_claim": false,
       "baseline": "8cb6cd529c124802d9d004ef43d41dffe16f1085"
-    }
+    },
+    "execution_owner": "sol_perf_execution_v2 (gpt-6.1-sol, high)",
+    "independent_verification_owner": "sol_verification_v2 (gpt-6.1-sol, high)"
   },
   "verified_repairs": [
     "Modified/annotated varargs parsing: symbol tests and JVM constructor/method parity",
@@ -4480,33 +4482,82 @@
         "queue_manifest_sha256": "1944f3eb6bbcb0e91a45eb39286b18ba0486c53f6d9bb815cfadf519b000947b",
         "agents": "All halted; no ongoing heavy process",
         "source_checkpoint_commit": "4a94e3e2a3e53802c01ee41c8ee9bd51d27e1fd1"
+      },
+      "resumed_sol_campaign": {
+        "resumed_at": "2026-09-29T19:40:39.676303+00:00",
+        "native_launcher": "/private/tmp/java2go-native-resume19-sol-tb9d2djq",
+        "launcher_sha256": "43ea8983cac63019ae4ef6a7a51aba0ec1c5393b61f48a6a24ef011ece2277fc",
+        "source_manifest_sha256": "6af2c3ad3378b44a8e2dd0d92a78e19240da91265e92736a7eafb60db4ae37e0",
+        "prefix_reuse": false,
+        "reason": "Historical executable-content identity not proven; fresh full22 selected. New launcher pins complete Go/JDK installations and declared dependencies."
+      },
+      "literal_allocation_baseline": {
+        "semantic_status": "INDEPENDENTLY_VERIFIED_PASS",
+        "semantic_report": "/private/tmp/java2go-literal-baseline-v2-u3ntczf3/semantic-20260929T193208358136Z/report.json",
+        "semantic_report_sha256": "e47ba3512c4e6e937ca32df8b7ff69a7dbda90d8404e3b3a5b2012a4fcc79bea",
+        "semantic_scope": "Exact17 stages,3 JVM/Go/model pairs,6 direct scans, unchanged source/generated inputs and cleanup",
+        "allocation_status": "RUNNER_PASS_INDEPENDENT_AUDIT_PENDING",
+        "allocation_report": "/private/tmp/java2go-literal-baseline-v2-u3ntczf3/allocation-20260929T193632492622Z/report.json",
+        "allocation_report_sha256": "0fd99b639ab7b79686e251e60ebba0aa75d1ec77c9c0ed29379b36c44f0d60f5",
+        "scope": "18 warmed generated-Go measurements across3 fresh processes. No implementation optimization or Java superiority claim."
+      },
+      "ordinary_selector_followup": {
+        "status": "BASELINE_GREEN_CANDIDATE_RUNTIME_RED_PRIVATE_REPAIR_UNRUN",
+        "owner": "sol_compiler_repairs_v2",
+        "evidence": "/private/tmp/java2go-iteration-ordinary-review20-_hxuwxsf",
+        "red": "JVM-valid local noniteration source interface implementation calls promoted nil selector and crashes; earlier compiler passes unchanged oracle.",
+        "candidate": "/private/tmp/java2go-ordinary-selector-repair20-kby_xlqf",
+        "patch_sha256": "abe447980429435e7506d14e8fd0f7a0d87f18a12b646aee78541a37a2488544",
+        "next": "Exact6 frozen controls then broader affected gates; no promotion from prepared patch."
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "74ba0fedfffcfbef25ee75db00e341332957763b",
+    "last_pushed_revision": "ab04cc1c6a4b27d5c55ad9dffa25d011298da115",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Wait for explicit user resume. Verify frozen source6af2c3ad and toolchain, then run interrupted strict parity and later gates in NEW output directories; a fresh full22 is the simplest reproducible option. Preserve user-interrupted run62227. Four audited endpoint-v2 runs remain required. Then ordinary noniteration selector red/green, inherited-default and live map/nominal prerequisites, canonical whitespace baseline, and performance semantic baseline from the saved UNRUN queue. Any implementation change invalidates affected gates. Full Gson remains required red; no stage advancement.",
+    "next": "Fresh original full22 on native source6af2c3ad is assigned to Sol_build after independent final launcher review43ea8983. Historical completed1930 unit pass records remain evidence, but no partial parity reuse. Next queued focused gates: ordinary selector repairedcandidate exact6, Duration/Instant observed-JVM red, collection nominal/default/liveview controls. Performance semantic baseline independently accepted; allocation audit pending. Preserve fullGson red and all prior paused/interrupted artifacts.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
-    "automatic_goal_controller": "Paused at explicit user request; do not resume automatically",
+    "automatic_goal_controller": "Active after user resumed goal",
     "checkpoint16_review_hold": {
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": null,
+    "heavy_owner": "sol_build_v2",
     "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Native WIP4a94e3e and canonical WIP9a23066 pushed on separate origin branches; campaign production remains checkpoint18",
-    "checkpoint_updated_utc": "2026-09-29T15:40:39.406273+00:00",
+    "checkpoint_updated_utc": "2026-09-29T19:40:39.676303+00:00",
     "prepared_endpoints": "All4 audited PREPARED_UNRUN; wait for user resume",
-    "status": "PAUSED_BY_USER"
+    "status": "ACTIVE"
+  },
+  "work_allocation": {
+    "updated_at": "2026-09-29T19:40:39.676303+00:00",
+    "requested_by": "user",
+    "default_model": "gpt-6.1-sol",
+    "default_reasoning_effort": "high",
+    "sol_agents": {
+      "sol_business_v2": "Business challenge and oracle author",
+      "sol_data_v2": "Data/dependency challenge and independent oracle author",
+      "sol_concurrent_v2": "Concurrency challenge and oracle author",
+      "sol_build_v2": "Build integration, harnesses and full-suite execution",
+      "sol_verification_v2": "Independent evidence and routine correctness verification",
+      "sol_perf_execution_v2": "Benchmark execution, measurement and routine harness fixes",
+      "sol_jdk_runtime_v2": "Routine JDK/runtime implementation through TDD",
+      "sol_compiler_repairs_v2": "Routine compiler repairs through TDD"
+    },
+    "astra_model": "gpt-6-astra",
+    "astra_reasoning_effort": "high",
+    "astra_scope": "Only the hardest compiler/runtime architecture, generic dispatch, nominal/interface bridges, object identity/concurrency semantics, and difficult optimization design/review. Routine harness, execution, audit and repairs handed to Sol.",
+    "astra_routine_roles": "Build/verifier agents idle; runtime/performance agents consult only when hard issues arise.",
+    "ownership": "Challenge/oracle authors remain separate from implementation owners. Implementers may not change frozen expectations or weaken challenges.",
+    "execution": "One heavy Go/JVM/build/test/benchmark job team-wide, coordinator assigned; light work may overlap. No agent spawning without coordinator assignment."
   }
 }
