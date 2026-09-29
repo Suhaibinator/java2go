@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Continue canonical List text adapter after actual consumer failure; verify Enum test adaptations without weakening Java assertions; repair native raw-key storage, Entry pattern-variable compilation, DateFormat constructor lowering and literal init import hygiene. Number nominal cast published and focused green. Full Gson remains required red; run all accumulated gates before production acceptance.",
+  "next_action": "Finish immutable canonicalList and reflection baselines; integrate Enum minimally onto90359d2 while preserving Numbernominal; verify nativev5 and repair source catch/Set boundary, DateFormat constructor, nested static qualifier and dependency resource ingestion. Preserve original full Gson and accumulated gates; no Netty advancement.",
   "performance_team": {
     "astra_perf_codegen": "Difficult optimization design/correctness review only, invoked after material baseline evidence",
     "astra_perf_runtime": "Difficult runtime optimization, lifetime/concurrency review only",
@@ -4546,13 +4546,13 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "ba982165240c4f0174f0529628119d6d63ddf226",
+    "last_pushed_revision": "628727bea860ae5f1956690ca65c5c942408e3d1",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "Multiple private immutable candidates; see progress51. No cumulative candidate accepted.",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Continue canonical List text adapter after actual consumer failure; verify Enum test adaptations without weakening Java assertions; repair native raw-key storage, Entry pattern-variable compilation, DateFormat constructor lowering and literal init import hygiene. Number nominal cast published and focused green. Full Gson remains required red; run all accumulated gates before production acceptance.",
+    "next": "Finish immutable canonicalList and reflection baselines; integrate Enum minimally onto90359d2 while preserving Numbernominal; verify nativev5 and repair source catch/Set boundary, DateFormat constructor, nested static qualifier and dependency resource ingestion. Preserve original full Gson and accumulated gates; no Netty advancement.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4567,7 +4567,7 @@
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Number nominal cast 90359d20a2fc053074f34a4cf25666bf3f3f7755 pushed and remote verified; native e921 and String f377 WIP branches retained. Production compatibility remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-29T21:40:30.799016+00:00",
+    "checkpoint_updated_utc": "2026-09-29T22:02:18.127300+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE",
     "minimal_repair_full22": {
@@ -4795,6 +4795,203 @@
       "production_accepted": false,
       "full_gson": "REQUIRED_RED",
       "archive_limits": "Progress50 archive does not contain all newer progress51 evidence. Private paths and precise resume points retained; supplemental packaging pending."
+    },
+    "record_precedence": {
+      "authoritative_current_record": "active_resume.progress52",
+      "authoritative_document": "campaign/SOL_PROGRESS52.md",
+      "historical_records": [
+        "active_resume.sol_progress47",
+        "active_resume.component_progress48",
+        "active_resume.component_progress49",
+        "active_resume.number_publication50",
+        "active_resume.progress50",
+        "active_resume.progress51"
+      ],
+      "historical_documents": [
+        "campaign/SOL_PROGRESS47.md",
+        "campaign/SOL_PROGRESS48.md",
+        "campaign/SOL_PROGRESS49.md",
+        "campaign/SOL_PROGRESS50.md",
+        "campaign/SOL_PROGRESS51.md"
+      ],
+      "rule": "Historical records retain their exact source/report/time scope. Progress52 governs superseded restart status; source details not superseded remain in earlier records. Verify live handles/current receipts before launching or restarting any process.",
+      "sealed_archive_rule": "Progress50 archive proves transport and historical scopes only; newer receipts belong to separate supplemental inventory, with immutable byte/hash pins and explicit omissions."
+    },
+    "verified_source_manifest_scope": {
+      "checkpoint": "checkpoint18",
+      "revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
+      "sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
+      "snapshot": "/private/tmp/java2go-checkpoint18-full-v4-tz30vyky",
+      "completion_receipt": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
+      "rule": "This manifest binds checkpoint18 acceptance only. It does not describe active_resume.source_checkpoint, any progress51 private candidate, or a union of focused green components."
+    },
+    "source_checkpoint_scope": {
+      "current_candidates": "active_resume.progress52 plus explicitly linked historical components; no accepted cumulative source",
+      "historical_native_source": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
+      "historical_native_manifest_sha256": "6af2c3ad3378b44a8e2dd0d92a78e19240da91265e92736a7eafb60db4ae37e0",
+      "historical_record": "in_progress_checkpoint.checkpoint19.native_full22_current",
+      "relation": "The historical native snapshot is a separate interrupted attempt; no equality or acceptance relation to the checkpoint18 manifest is asserted."
+    },
+    "original_user_gates": [
+      {
+        "gate": "Full Gson and accumulated CI",
+        "status": "UNMET_FULL_GSON_RED_CURRENT_COMPOSED_SOURCE_UNACCEPTED",
+        "evidence": [
+          "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/full-attempt1/gates/report.json",
+          "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/full-attempt1/result.json",
+          "/private/tmp/java2go-native-bounds46-sol-independent/terminal-raw-review.json",
+          "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/source/.campaign/runs/20260929T203627Z-2476273075/report.json",
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.github/workflows/ci.yml",
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json"
+        ],
+        "scope": "Minimal native source ede7cb... completed all22 stages, first21 green, Gson all-package Go build red. Local macOS CI-equivalent runs do not prove hosted Linux CI. Progress51 components remain different private sources.",
+        "remaining": "Compose accepted components with provenance; run original full Gson and all accumulated required CI/application gates on one frozen source under unchanged bounds. Record existing fuzz skips and hosted/cold-bootstrap limitations explicitly."
+      },
+      {
+        "gate": "Concurrent source/binary parity, race and20 additional stress runs",
+        "status": "HISTORICAL_GREEN_SAME_INTEGRATED_SOURCE_GATE_REMAINS_UNMET",
+        "evidence": [
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/independent-raw-audit.json",
+          "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/full-attempt1/gates/report.json",
+          "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/source/.campaign/runs/20260929T203437Z-3757132601/report.json",
+          "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/source/.campaign/runs/20260929T203550Z-2414936176/report.json",
+          "/private/tmp/java2go-native-bounds46-sol-independent/terminal-raw-review.json"
+        ],
+        "scope": "Both original concurrent applications previously pass nine seed/repeat observations plus20 race-enabled stress comparisons each, at pinned checkpoint18 and minimal-native sources. These successes are not invalidated historically and do not automatically transfer to future composition.",
+        "remaining": "On final integrated source, retain original seed17/41/97 x3 source/binary JVM parity, generated all-package/entry race builds, exact streams/files,20 extra fresh Go processes, source/tool/dependency/resource stability and cleanup."
+      },
+      {
+        "gate": "Dependency resources and original build inputs",
+        "status": "UNMET_READ_ONLY_AUDIT_CONFIRMS_INGESTION_GAPS_PREREQUISITE_PREPARED_UNRUN",
+        "evidence": [
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/campaign/runner.go",
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/campaign/README.md",
+          "/private/tmp/java2go-codec-ingestion-v1/authority.json",
+          "/private/tmp/java2go-codec-ingestion-v1/red",
+          "/private/tmp/java2go-codec-ingestion-v1/candidate",
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/campaign/dependencies.lock.json"
+        ],
+        "scope": "Audit: source-JAR non-Java entries except license/notice dropped; original Maven compile output not translated source graph; javac processors disabled. Fixture resources and selected source closures passing do not prove dependency resources, processors/generated sources or filtering. Private prerequisite has no execution/expectations yet.",
+        "remaining": "Preserve real locked resources and original build-generated inputs; establish independent byte-identical source/binary JVM resource oracle, a frozen baseline red and candidate green. Do not substitute handmade library behavior or widen selected-class success to whole-library support."
+      },
+      {
+        "gate": "Netty ladder and bounded network soak",
+        "status": "BLOCKED_UNRUN_NO_ACCEPTANCE_RECEIPT_IDENTIFIED",
+        "evidence": [
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/campaign/SOL_PARALLEL_CHECKPOINT.md",
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/campaign/SOL_PROGRESS48.md",
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/campaign/SOL_PROGRESS49.md",
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/testfiles/campaign",
+          "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json"
+        ],
+        "scope": "Tracked history explicitly gates Netty progression on unresolved full Gson. No Netty ladder/soak artifact was identified by this lightweight read-only inspection; this is absence of recorded evidence, not an exhaustive filesystem proof.",
+        "remaining": "After the original prerequisite gates pass, execute the originally requested Netty ladder and network soak with their original bounds, genuine dependency sources, exact JVM/Go observations, race/cleanup and network evidence. Focused Number/Enum/Map greens cannot clear this gate."
+      }
+    ],
+    "progress52": {
+      "enum_same_source": {
+        "status": "INDEPENDENT_FOCUSED35_PLUS27_GREEN",
+        "source": "/private/tmp/java2go-enum-neighbor-adaptation-v1-6bfslekn/candidate",
+        "manifest_sha256": "fdca8301ecfeef178c6b7a4bad201e724c633f5800a7ac3d44673318e0617401",
+        "root_neighbors_audit_sha256": "5f3e42ccd6c0ede5c5f14b818263e1f49795b4198ad44bb9ff12d2d0b7cf5dc7",
+        "root_workflows_audit_sha256": "83a758b90d770a08e01a8b7166515d7ebadd2a5663fb4e747feeef3e65219c5a",
+        "scope": "35 exact neighbors no skips; original Enum9, constructor9, Number9 fresh Go comparisons against original recorded JVM bytes. Same1880 files before/after/current and39 workflow stages checked. All Java fixtures unchanged.",
+        "next": "Sol_generic assembles minimal Enum-over-Number delta and durable10Java fixture onto published90359d2 in private candidate; preserve newNumbernominal18. Final composed-source gates required.",
+        "integration_root": "/private/tmp/java2go-enum-number-publication-v1-ycay79ho",
+        "production_accepted": false
+      },
+      "enum_reflection": {
+        "status": "ACTUAL9_SEMANTIC_RED_REPAIR_PREPARED",
+        "handoff": "/private/tmp/java2go-data-prereq-oracles-v4-utf8-lsgo6gzh/supervised-batch-v5-hllc0083/enum-reflection-oracle-handoff.json",
+        "handoff_sha256": "50fcfa6f9ae79ca6e2afe3067c5403d8cb71baf23a40d44b430d3d445f038ab1",
+        "go_root": "/private/tmp/java2go-enum-reflection51-red-fvexu9c6",
+        "finding": "Private instance Field.get/set(null) NPE precedes access denial; private static nullreceiver denies access. Actual generated baseline must precede repair. Cold publicfinal write initialization separate untested boundary.",
+        "owner": "astra_runtime",
+        "baseline_report_sha256": "6fba3efa65278ee3d000b5ce14192f03047abe28bd47f65f4ff99848fa71359a",
+        "scope": "V1 preserved Maven layout failure; v2 byte-identical src/main/java staging succeeds strict/allrace and all9 processes. Exact mismatch only private instance null get/set returns access error instead of NPE; other lines equal.",
+        "candidate": "/private/tmp/java2go-reflection-null51-fix-e4eikj4u/source",
+        "next": "Astra shared null precheck repair, Sol JDK runner port; focused3+prior7+original13Java9 and Enum neighbors required."
+      },
+      "abstract_map": {
+        "status": "INDEPENDENT_ORIGINAL9_GREEN_NEW_REVIEW_GAPS",
+        "source": "/private/tmp/java2go-abstract-map46-v2-y_y8ot85",
+        "raw_audit_sha256": "af34598422cab8bcafeb1e20dfb78f14ff60ea9151078db6e07a608321f1fff4",
+        "scope": "OriginalMap23 workflow plus unchangedAbstract8 pass on1889source; historical wrapper retained computed stability and helper comparisons, not full after maps or successful child streams.",
+        "next": "IndependentJVM18 controls valid. New1918baseline two parents execute all6seed cases; both fail generatedracebuild at source Entry formal applicability (cells.add vs Add). Targets not reached. Dedicated Sol_entry_discovery_v3 repairs prerequisite before inherited-put/widerNumber fixes.",
+        "repair_preparation": "/private/tmp/java2go-abstract-map47-regressions-k3xh7450",
+        "new_baseline_discrepancy_sha256": "ec9e896e2cc17e1439b6a3671132ac5be952db04fb0776acf9b0aa1a210b78a9"
+      },
+      "pattern_expression": {
+        "status": "FOCUSED3_GREEN_FULL_EFFECTS_BUILD_RED",
+        "root": "/private/tmp/java2go-pattern-expression49-mzz9dj_k",
+        "oracle_handoff_sha256": "f9ccfa54ff2bbe7ac87e0e26b22c266376175be98885129c8f9e1ed3354c63ae",
+        "scope": "Independent actual JVM3 oracle then baseline undefined pattern binders; compiler-only three-file repair passes new trace and two existing direct-if tests. Full EntrySeteffects advances past binders but source catch variable loses ProbeFailure methods and EntrySet view fails Set formal boundary. Callbacks not executed.",
+        "next": "Sol_map source-catch nominal view repair; Astra_collection native Set physical representation composition.",
+        "catch_preparation": "/private/tmp/java2go-source-catch50-th6ffk1e",
+        "independent_audit_sha256": "6f53cb6cc749d85b5de6b4f2f365667a849838462bbbf783327fbbe38b11f443"
+      },
+      "native_map": {
+        "status": "V5_FOCUSED_GATES_GREEN_INDEPENDENT_RAW_REVIEW_PENDING",
+        "root": "/private/tmp/java2go-native-rawkey20-xzsyula4",
+        "v4_rawkey_report_sha256": "0ef1ee508b110b10d58106f14d7ed0db54adedbe663cad32891a2863b99305ca",
+        "scope": "V5 samecachedview restores interface API.375runtimeparents+210subtests zero skips, rawkey9normal+3race, originalnative14stages green; all33supervised stages cleanup verified by owner. Independent raw review pending, source/binder-shadow and rawSet additional controls unrun.",
+        "next": "Independently audit v5; JVM-first source/binder-shadow and rawSetadd controls remain. Compose accepted Abstract8+Set-only mapping privately, no global Map switch.",
+        "manifest_sha256": "59ccec71c2b2c7f915138066543e6c22dcb7dcf1226addfab7370cfae36799cd",
+        "runtime375_report_sha256": "84f32356d992eff5d1eaacea2bafe7b86053531802ea83b5d8c63a3783b0f5ab",
+        "rawkey18_report_sha256": "1db5bddf79f69d763aa568ffc7ec983562a19c9bca6365d4b8697243ae5ecd55",
+        "original14_report_sha256": "638e77cf28aa1069b0723052249ce3c19e9580cb236553508eb3efeb31e75e37"
+      },
+      "canonical_list": {
+        "status": "TERMINAL_RED_PRIMITIVE_INSTANCEOF_TYPE_INFERENCE",
+        "source": "/private/tmp/java2go-canonical-list-v2-repair-sol-z5uo8zup/source",
+        "source_files": 1933,
+        "readiness_sha256": "bc1def13ef172c6105987f96dbfbcd6ffcec7c691ec95653944ea3bf80512459",
+        "scope": "First11 of14 gates green including List3/JDK1/wrapper6/prior4/String16+10race/runtime74/native7/collection16; iteration6 has5pass1CanonicalShadow runtime failure. Lastcanonical5/bounds1 unrun. ExactgeneratedMain44 shows instanceof bool incorrectly sent to reference String converter; typeinference omission, not another runtimeadapter.",
+        "next": "Sol canonical owner adds general instanceof boolean type inference in fresh snapshot, then unchanged focused/full gates. No cumulative publication yet.",
+        "terminal_audit_sha256": "93cd3816246e73575a70bf7c511dd534a17d37c3c20758b2da420328cf24772e"
+      },
+      "dateformat": {
+        "status": "INDEPENDENT_FOCUSED6_GREEN",
+        "root": "/private/tmp/java2go-dateformat46-sol-ctor-v5-7rlxqgs0",
+        "manifest_sha256": "5f7963b73fa5bafaff9276eda266e106c95d2000826c8a01fb678e96429c4994",
+        "scope": "Exactruntime3+JDKvalidatedconstructor2+originalapp1 green, all7actualapp stages/UTF8c9088U202F and empty stderr match; source1886 beforeafter/current/toolpins+all3cleanup verified. Original locale/calendar/sourceSubclass/canonicalString composition limits remain.",
+        "terminal_audit_sha256": "a8ff1dbfcd14dae2793295e4b7a18410d6daf1be44e778a5fd6446d749bacf01",
+        "patch_sha256": "66a4aa501c8297cb6c428c161ef14d1830a3cb3290697da5ae6e205a805968f8"
+      },
+      "literal": {
+        "status": "HYGIENE_CLEARED_THEN_NESTED_STATIC_QUALIFIER_BUILD_RED",
+        "root": "/private/tmp/java2go-literal-cache-go-parity-v3-f0auv68y",
+        "report_sha256": "87fd97d74107cf8c1d0bc2420aec50864e96026e1585bd60f390c466b5777cd1",
+        "scope": "uint16 and init alias failures cleared; nested static source class qualifiers now fail build. 0/18Go and no optimized measurements. New general qualifier repair and independent shadow controls prepared separately.",
+        "performance_review": "/private/tmp/java2go-literal-v5-lifetime-review-q526pyy1/REVIEW.md",
+        "performance_review_sha256": "97f79802a8c78129a81bfa7aaec0699cd0894b2bd1a6986c840c6579dbb3c42a",
+        "performance_claim": "Measured baseline allocation overhead only; candidate savings and superiority to Java unmeasured."
+      },
+      "dependency_resources": {
+        "status": "IMPLEMENTATION_PREPARED_TRANSPORT_HOLD",
+        "root": "/private/tmp/java2go-codec-ingestion-v1",
+        "scope": "Real locked Codec Resources.java and dmrules payload; explicit binary-JAR resource authority and source/binary payload equality. Original locks/fixtures unchanged; no expected outputs or workloads yet.",
+        "next": "Replace custom kill-attempt runner with vetted identity-aware supervisor and full source/tool beforeafter checks; independent readiness then actual JVM18 oracle, immutable red and green.",
+        "owner": "sol_ingestion_audit_v3"
+      },
+      "evidence_supplement": {
+        "status": "SEALED_ROOT_VERIFIED_COPIED",
+        "path": ".campaign/checkpoints/checkpoint19/sol-progress51",
+        "archive_sha256": "0f499f978de12b51365b7ac420c8af36e5aeb82bf8ce8a6d8d52a06560be77c6",
+        "inventory_sha256": "850badf10b1e54a0aa73d9bd6e33f895274df77280c2daefec9c7f227f955bcf",
+        "root_verification_sha256": "404eebd97d3198dccaf60c2e3b1a7bf6be809fa1696960f3ec3f71d770bf6c85",
+        "members": 1794,
+        "source_scopes": 16,
+        "scope": "Progress51 bounded historical cutoff only. Newer Enum35+27/literalv3/nativev4 references are pointers; Listv2/nativev5/Datev5/reflection/catch qualifier results are not full archive contents. All exclusions retained."
+      },
+      "full_gson": "REQUIRED_RED",
+      "latest_accepted_production_checkpoint": "checkpoint18 eee3036c8d3f575307906a1d4c27e935e065ca8d",
+      "production_accepted": false,
+      "fresh_independent_oracles": {
+        "source_catch_and_qualifier24": "/private/tmp/java2go-data-prereq-oracles-v4-utf8-lsgo6gzh/supervised-batch-v5-5uw7_fwd/catch-qualifier-oracle-handoff.json",
+        "handoff_sha256": "6a9bb6c527f40e0223eec6da3dee4f58c05704797e70a0bb0162745332215647",
+        "scope": "6sourcecatch and18qualifiedstatic JVM processes valid; no Go support inferred. Originalfixtures unchanged."
+      }
     }
   },
   "work_allocation": {
