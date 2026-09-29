@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Poll same full22 session38667 on minimal native fix. Strict parity shard passed; later regression gates still running. Preserve live process and source. Continue Collection/Set, source/native Entry, generic-bound and DateFormat TDD; compound Class field fix has binder-shadow regression repair under revalidation. No full Gson acceptance.",
+  "next_action": "Continue canonical List text adapter after actual consumer failure; verify Enum test adaptations without weakening Java assertions; repair native raw-key storage, Entry pattern-variable compilation, DateFormat constructor lowering and literal init import hygiene. Number nominal cast published and focused green. Full Gson remains required red; run all accumulated gates before production acceptance.",
   "performance_team": {
     "astra_perf_codegen": "Difficult optimization design/correctness review only, invoked after material baseline evidence",
     "astra_perf_runtime": "Difficult runtime optimization, lifetime/concurrency review only",
@@ -4546,13 +4546,13 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "8351867e86849cacbf10993097e4d282feb848b2",
+    "last_pushed_revision": "ba982165240c4f0174f0529628119d6d63ddf226",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
+    "source_checkpoint": "Multiple private immutable candidates; see progress51. No cumulative candidate accepted.",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Canonical v3 session18113 is TERMINAL RED: String16/race10 and runtime74 pass; bounded Object.toString adapter fails in native7, later4 unrun. New1929 repair f317d0 runner is prepared pending audit. Continue canonical Class.getName references, independent six-method Number impostor control, Entry binder/direct-demand, AbstractMap/native raw-key, Enum and DateFormat TDD. Preserve all red fixtures; full Gson remains required.",
+    "next": "Continue canonical List text adapter after actual consumer failure; verify Enum test adaptations without weakening Java assertions; repair native raw-key storage, Entry pattern-variable compilation, DateFormat constructor lowering and literal init import hygiene. Number nominal cast published and focused green. Full Gson remains required red; run all accumulated gates before production acceptance.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4566,8 +4566,8 @@
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Native panic fix e92116f and canonical String/primitive-capture repair f377ebb63fe71fbc341dd28b2ddec9b90756a7e4 pushed to their existing origin WIP branches. Production acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-29T21:19:35.240004+00:00",
+    "publication_status": "Number nominal cast 90359d20a2fc053074f34a4cf25666bf3f3f7755 pushed and remote verified; native e921 and String f377 WIP branches retained. Production compatibility remains checkpoint18.",
+    "checkpoint_updated_utc": "2026-09-29T21:40:30.799016+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE",
     "minimal_repair_full22": {
@@ -4708,11 +4708,93 @@
         "scope": "OriginalEnum application still required; runtime compile red0assertions, no fullEnum parity. Runtime and compiler ownership separate."
       },
       "archive": {
-        "status": "PREPARING",
+        "status": "SEALED_ROOT_VERIFIED",
         "owner": "sol_concurrent_v2",
         "handoff": "/private/tmp/java2go-progress50-bundle-handoff-sol-yg9tur1c/handoff.json",
-        "handoff_sha256": "587390ac418f2712c5621fee096f4902bc33ef9661288bef3ddde6ce790b34a8"
+        "handoff_sha256": "587390ac418f2712c5621fee096f4902bc33ef9661288bef3ddde6ce790b34a8",
+        "path": ".campaign/checkpoints/checkpoint19/sol-progress50",
+        "archive_sha256": "110be145f77fcffbfe50246b370574408e86911f977b9e0c3d26530848b82c6a",
+        "inventory_sha256": "590bfaa92c536d8fdeadad5e0cd6d5cc9077b5281169c5754053b42a3ba6c0a6",
+        "members": 4137,
+        "root_receipt_sha256": "0132feeb8923866ebbd6f2b17dc2f45c41e058c27851966079e0a3f23e567423",
+        "scope": "Progress50 sealed contents only; later Number nominal/Enum/Throwable/canonical receipts remain separate. All omissions and historical limitations retained."
       }
+    },
+    "progress51": {
+      "number_nominal": {
+        "status": "PUBLISHED_FOCUSED_GREEN",
+        "commit": "90359d20a2fc053074f34a4cf25666bf3f3f7755",
+        "branch": "origin/codex/adversarial-number-checkpoint19",
+        "origin_verified": true,
+        "source_manifest_sha256": "546cf7bce18f78f202da954b04df080f02ebc6cb8b22f36d91667b5eca1d85ac",
+        "exact_published_non_tracking_files": 1936,
+        "root_publication_audit_sha256": "961cfd43c83c17fe38333519cd9be813725a2a3a5051bc8ab049e93be0b76eef",
+        "raw_audit_sha256": "1bac2be9d7a2cf0097ca456de11e23e4d410e7a4cbeb6e9cfaed03c9d09975b3",
+        "hard_review_sha256": "328216f44e1651580aaf5b66180f9f3260c5a5d172b978fb667cee96477c7ab4",
+        "scope": "Original9 + independent six-method impostor9 JVM/Go comparisons and13neighbors. Structural nominal-cast hole repaired; no broad Number or accumulated acceptance."
+      },
+      "canonical": {
+        "status": "TERMINAL_RED_LIST_STRING_ADAPTER",
+        "source": "/private/tmp/java2go-canonical-wrapper-harness-repair-sol-bbuf1dgt/source",
+        "source_files": 1930,
+        "terminal_session": 50128,
+        "scope": "Wrapper6 runtime controls green; prior4 failures now3green including boxed erased value and2 canonical UTF16 Go harnesses. ConsumerControls prints first2 expectedlines then fails rendering sorted List. Ten subsequent stages unrun. New immutable List adapter derivative assigned; no combined acceptance.",
+        "prior_object_default_audit_sha256": "6279b5c8266e077159da4924586581b7e3615c78e3605aa3870ae22f62996caf"
+      },
+      "enum": {
+        "status": "ORIGINAL9_AND_CONSTRUCTOR9_GREEN_ON_DISTINCT_VERSIONS_NEIGHBOR_RED",
+        "source": "/private/tmp/java2go-enum-foundation20-b4xllbvo",
+        "v2_raw_audit_sha256": "39a40e9d0ab331d39895d3b426687c1d2eb5185172119b4336063842a58be751",
+        "scope": "Runtime7 green; original9 v2 green; constructor9 v3 green; v3neighbors26pass9fail (seven shape assertions/two Go harness initialization). Sol owns test adaptation/durableport; Astra owns semantic review; rerun all on final immutable source plus Number9."
+      },
+      "dateformat": {
+        "status": "RUNTIME3_GREEN_APPLICATION_BUILD_RED",
+        "root": "/private/tmp/java2go-dateformat46-green-v3-08k7_6vb",
+        "audit_sha256": "877f6d5f1aaba005c275b86b28f28aa5147cc17d735c0615ebeaab4fb6a162b1",
+        "failure": "Four undefined ConstructSimpleDateFormat calls after valid original UTF8 JVM oracle/compiler/strict; generated execution unrun. Constructor lowering fix needed; no parity."
+      },
+      "throwable_class_name": {
+        "status": "INDEPENDENT_FOCUSED12_GREEN",
+        "root": "/private/tmp/java2go-illegal-argument-constructor-v3-mRTBNr",
+        "audit_sha256": "4f98a5846ce7256df1dd1bc5d6bc13f21f5ada25ba4a95778098c3ecfabdf1b0",
+        "scope": "Original consumers/builder/whitespace/Throwable plus ClassName direct/methodrefs/concurrency. Integration requires composing helper changes with Number named observations."
+      },
+      "abstract_map": {
+        "status": "ORIGINAL_MAP23_PARITY_GREEN_NEIGHBORS_PENDING",
+        "root": "/private/tmp/java2go-abstract-map46-v2-y_y8ot85",
+        "scope": "One full unchanged Map23 oracle strict/race/parity green andsource stable; originalAbstract8 revalidation granted separately. Independent algorithm review pending; globalMap/nativeSet rawwrite contracts deferred."
+      },
+      "native_maps": {
+        "status": "BOTH_NEW_BASELINES_BUILD_RED",
+        "root": "/private/tmp/java2go-native-map-baselines20-hxks4btj",
+        "scope": "Rawkey generated Put requires string and HashMap(Map) constructor missing; EntrySeteffects blocked by source instanceof pattern variable key/value lowering before callback execution. Original independent JVM18 remains frozen. Astra owns storage; Sol owns pattern binder prerequisite."
+      },
+      "literal": {
+        "status": "SECOND_COMPILER_HYGIENE_BUILD_RED_CACHE_UNRUN",
+        "root": "/private/tmp/java2go-literal-cache-go-parity-v2-84s47o_v",
+        "baseline_report_sha256": "24769d176f714f07787ecece2aa3a38e50d9a52cc24c0d542f8bbad60fb14e25",
+        "scope": "uint16 shadow prerequisite clears earlier errors; legal Java init package becomes illegal Go import alias init. 0/18Go runs; cachev4 correctness/performance unrun. Sol owns general naming prerequisite and independentreview."
+      },
+      "allocation": {
+        "models": "More GPT-6.1 Sol high effort; Astra reserved for hardest semantics and dedicated performance research",
+        "new_agents": [
+          "sol_ingestion_audit_v3",
+          "sol_resume_audit_v3"
+        ],
+        "reactivated_sol": [
+          "sol_generic_representation_v2",
+          "sol_compiler_repairs_v2",
+          "sol_data_v2",
+          "sol_business_v2",
+          "sol_map_entry_v2",
+          "sol_jdk_runtime_v2",
+          "sol_perf_execution_v2"
+        ],
+        "heavy_policy": "At most3 isolated correctness lanes GOMAXPROCS2; performance measurements exclusive; no agent subspawns without root assignment."
+      },
+      "production_accepted": false,
+      "full_gson": "REQUIRED_RED",
+      "archive_limits": "Progress50 archive does not contain all newer progress51 evidence. Private paths and precise resume points retained; supplemental packaging pending."
     }
   },
   "work_allocation": {
@@ -4746,6 +4828,7 @@
       "physical_cpus": 16,
       "memory_bytes": 137438953472,
       "reason": "User requested additional parallelism; host capacity checked before increasing concurrency."
-    }
+    },
+    "latest_parallelism": "Added two GPT-6.1 Sol high agents and reassigned routine Enum tests, reviews, oracle controls and compiler prerequisites to Sol; Astra retains hardest contracts."
   }
 }
