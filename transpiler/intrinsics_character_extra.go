@@ -39,7 +39,7 @@ func init() {
 		if len(args) != 5 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringRegionMatches", append([]ast.Expr{recv}, args...)...)
+		return stdjavaCall(ctx, "JavaStringRegionMatches", append([]ast.Expr{recv}, args...)...)
 	})
 	registerInstanceIntrinsicResultType("String", "regionMatches", "boolean")
 

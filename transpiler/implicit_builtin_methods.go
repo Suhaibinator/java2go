@@ -43,9 +43,9 @@ func throwableMessageInvocation(object *sitter.Node, method string, ctx Ctx, sou
 		}
 	}
 	if object.Type() == "super" {
-		return stdjavaCall(ctx, "ThrowableMessageDefault", ast.NewIdent(ShortName(ctx.className)))
+		return stdjavaCall(ctx, "JavaThrowableMessageDefault", ast.NewIdent(ShortName(ctx.className)))
 	}
-	return stdjavaCall(ctx, "ThrowableMessageExecution", intrinsicExecutionExpr(ctx), ParseExpr(object, source, ctx))
+	return stdjavaCall(ctx, "JavaThrowableMessageExecution", intrinsicExecutionExpr(ctx), ParseExpr(object, source, ctx))
 }
 
 // This decision is used only for a zero-argument getMessage invocation. An

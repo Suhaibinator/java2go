@@ -162,7 +162,7 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		class = stripJavaQualifier(base)
 	}
 	primitive, wrapper := builtinJavaWrapperPrimitive(targetJavaType, ctx)
-	if constructor && !wrapper {
+	if constructor && !wrapper && !isBuiltinJavaString(targetJavaType, ctx) {
 		return nullaryBuiltinConstructorReference(node, class, targetJavaType, result, parameters, ctx, source)
 	}
 	staticGenerator := staticIntrinsics[intrinsicKey{class, method}]
@@ -205,9 +205,9 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		} else {
 			receiver = &ast.Ident{Name: "__java2goMethodReferenceReceiver"}
 		}
-		// String keeps a sentinel ABI; this checks both null representations.
+		// A bound String receiver retains its pointer and Java null behavior.
 		if class == "String" {
-			receiver = stdjavaCall(bodyCtx, "StringRequireNonNull", receiver)
+			receiver = stdjavaCall(bodyCtx, "RequireJavaString", receiver)
 		}
 	}
 
@@ -274,7 +274,9 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		arguments[i] = methodReferenceConvertedArgument(arguments[i], argumentTypes[i], expected[i], bodyCtx)
 	}
 	var call ast.Expr
-	if constructor {
+	if constructor && isBuiltinJavaString(targetJavaType, ctx) {
+		call = canonicalStringConstructorForTypes(arguments, argumentTypes, bodyCtx)
+	} else if constructor {
 		if len(arguments) != 1 {
 			return nil, false
 		}
@@ -292,7 +294,15 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		}
 		call = stdjavaCall(bodyCtx, name, value)
 	} else if static {
-		call = staticGenerator(nil, arguments, bodyCtx)
+		if class == "String" && method == "valueOf" && len(arguments) == 1 {
+			if argumentTypes[0] == "char[]" {
+				call = stdjavaCall(bodyCtx, "JavaStringFromChars", arguments[0])
+			} else {
+				call = canonicalStringValueOf(argumentTypes[0], arguments[0], false, bodyCtx)
+			}
+		} else {
+			call = staticGenerator(nil, arguments, bodyCtx)
+		}
 	} else {
 		call = instanceGenerator(receiver, arguments, bodyCtx)
 	}

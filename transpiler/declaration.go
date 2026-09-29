@@ -247,11 +247,11 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 					if staticField {
 						spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}
-						if isJavaStringType(fieldDef.OriginalType) {
+						if isBuiltinJavaString(fieldDef.OriginalType, ctx) {
 							// A Java String field starts as null, not Go's empty-string zero.
 							// Keep that state observable even when a later static initializer
 							// overwrites it.
-							spec.Values = []ast.Expr{javaNullStringExpr()}
+							spec.Values = []ast.Expr{javaStringNullExpr(ctx)}
 						}
 						if fieldValueNode != nil && (!consolidateStaticInitialization || fieldDef.IsCompileTimeConstant) {
 							valueCtx := ctx.Clone()
@@ -2056,29 +2056,9 @@ func defaultStringFieldInitializationStmts(scope *symbol.ClassScope, receiverNam
 // by synthetic classes whose scope also contains compiler-generated capture
 // fields. Captures already hold their enclosing values before super() runs and
 // must not be reset while installing Java defaults for source-declared fields.
-func defaultStringFieldInitializationForFieldsStmts(
-	fields []*symbol.Definition,
-	receiverName string,
-	ctx Ctx,
-) []ast.Stmt {
-	if receiverName == "" {
-		return nil
-	}
-	var statements []ast.Stmt
-	for _, field := range fields {
-		if field == nil || field.IsStatic || !isJavaStringType(field.OriginalType) {
-			continue
-		}
-		statements = append(statements, &ast.AssignStmt{
-			Lhs: []ast.Expr{&ast.SelectorExpr{
-				X:   &ast.Ident{Name: receiverName},
-				Sel: &ast.Ident{Name: field.Name},
-			}},
-			Tok: token.ASSIGN,
-			Rhs: []ast.Expr{javaNullStringExpr()},
-		})
-	}
-	return statements
+func defaultStringFieldInitializationForFieldsStmts(fields []*symbol.Definition, receiverName string, ctx Ctx) []ast.Stmt {
+	// A zeroed *JavaString is already Java null, including during superclass construction.
+	return nil
 }
 
 func constructorMostDerivedInitStmt(receiverName string) ast.Stmt {
@@ -2341,7 +2321,7 @@ func explicitSuperConstructorAssignment(
 		return &ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(storage)}},
 			Tok: token.ASSIGN,
-			Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, invocation.parsedArgs, ctx)},
+			Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, invocation.arguments, invocation.parsedArgs, ctx, source)},
 		}
 	} else {
 		if invocation.target != nil && invocation.target.Name != "" {
@@ -2414,7 +2394,7 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 			return &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(storage)}},
 				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, nil, ctx)},
+				Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, nil, nil, ctx, nil)},
 			}
 		}
 		return nil
@@ -3406,6 +3386,12 @@ func buildStringerBridgeDecls(ctx Ctx, toString *symbol.Definition, defaultResul
 		}
 	}
 
+	// Source Java callbacks use the canonical pointer ABI. Enum's retained
+	// name storage is a separate migration and remains on its existing path.
+	if !scope.IsEnum {
+		return buildCanonicalSourceStringBridgeDecls(receiverName, receiverBase, executionName, result, stringCtx)
+	}
+
 	declaration := &ast.FuncDecl{
 		Name: &ast.Ident{Name: "String"},
 		Recv: &ast.FieldList{List: []*ast.Field{{
@@ -3423,12 +3409,79 @@ func buildStringerBridgeDecls(ctx Ctx, toString *symbol.Definition, defaultResul
 			&ast.ReturnStmt{Results: []ast.Expr{result}},
 		}},
 	}
-	return buildExecutionAwareFuncDecls(
+	declarations := buildExecutionAwareFuncDecls(
 		declaration,
 		executionStringMethodName(scope),
 		executionName,
 		stringCtx,
 	)
+	if sourceOwnsNativeStringSelector(scope, ctx) {
+		return declarations[1:]
+	}
+	return declarations
+}
+
+// buildCanonicalSourceStringBridgeDecls keeps Java's exact pointer result out
+// of the optional fmt.Stringer adapter. Java conversion calls the registered
+// source execution method directly; host presentation is the only bytes path.
+func buildCanonicalSourceStringBridgeDecls(receiverName string, receiverBase ast.Expr, executionName string, result ast.Expr, ctx Ctx) []ast.Decl {
+	receiver := &ast.FieldList{List: []*ast.Field{{
+		Names: []*ast.Ident{ast.NewIdent(receiverName)},
+		Type:  &ast.StarExpr{X: receiverBase},
+	}}}
+	implementationName := executionStringMethodName(ctx.currentClass)
+	implementation := &ast.FuncDecl{
+		Name: ast.NewIdent(implementationName),
+		Recv: cloneFieldList(receiver),
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: []*ast.Field{executionParameterField(executionName, ctx)}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: javaStringReferenceType(ctx)}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			&ast.ExprStmt{X: stdjavaCall(ctx, "ReferenceRequireNonNull", ast.NewIdent(receiverName))},
+			&ast.ReturnStmt{Results: []ast.Expr{result}},
+		}},
+	}
+	if sourceOwnsNativeStringSelector(ctx.currentClass, ctx) {
+		return []ast.Decl{implementation}
+	}
+
+	// This wrapper takes one callback snapshot with a fresh logical execution.
+	// A returned null is preserved above and rendered as text only below.
+	text := ast.NewIdent("__java2goHostText")
+	encoded := ast.NewIdent("__java2goHostEncoded")
+	octets := ast.NewIdent("__java2goHostBytes")
+	index := ast.NewIdent("__java2goHostIndex")
+	value := ast.NewIdent("__java2goHostByte")
+	nativeNull := func(operand ast.Expr) ast.Stmt {
+		return &ast.IfStmt{
+			Cond: &ast.BinaryExpr{X: operand, Op: token.EQL, Y: ast.NewIdent("nil")},
+			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: `"null"`}}}}},
+		}
+	}
+	wrapper := &ast.FuncDecl{
+		Name: ast.NewIdent("String"),
+		Recv: cloneFieldList(receiver),
+		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("string")}}}},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			nativeNull(ast.NewIdent(receiverName)),
+			&ast.AssignStmt{Lhs: []ast.Expr{text}, Tok: token.DEFINE, Rhs: []ast.Expr{
+				methodCall(ast.NewIdent(receiverName), implementationName, newExecutionExpr(ctx)),
+			}},
+			nativeNull(text),
+			&ast.AssignStmt{Lhs: []ast.Expr{encoded}, Tok: token.DEFINE, Rhs: []ast.Expr{
+				stdjavaCall(ctx, "PrimitiveArrayElements", stdjavaCall(ctx, "JavaStringGetBytes", text, stdjavaQualifiedExpr("UTF_8", ctx))),
+			}},
+			&ast.AssignStmt{Lhs: []ast.Expr{octets}, Tok: token.DEFINE, Rhs: []ast.Expr{
+				callIdent("make", &ast.ArrayType{Elt: ast.NewIdent("byte")}, callIdent("len", encoded)),
+			}},
+			&ast.RangeStmt{Key: index, Value: value, Tok: token.DEFINE, X: encoded, Body: &ast.BlockStmt{List: []ast.Stmt{
+				&ast.AssignStmt{Lhs: []ast.Expr{&ast.IndexExpr{X: octets, Index: index}}, Tok: token.ASSIGN, Rhs: []ast.Expr{callIdent("byte", value)}},
+			}}},
+			&ast.ReturnStmt{Results: []ast.Expr{callIdent("string", octets)}},
+		}},
+	}
+	return []ast.Decl{wrapper, implementation}
 }
 
 func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {

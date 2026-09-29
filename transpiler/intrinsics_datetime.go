@@ -137,7 +137,7 @@ func init() {
 			java, goName, result string
 			arity                int
 		}{
-			{"get", "Get", "int", 1}, {"getTime", "GetTime", "Date", 0}, {"setTime", "SetTime", "void", 1},
+			{"get", "Get", "int", 1}, {"getTime", "GetTime", "java.util.Date", 0}, {"setTime", "SetTime", "void", 1},
 			{"getTimeInMillis", "GetTimeInMillis", "long", 0}, {"setTimeInMillis", "SetTimeInMillis", "void", 1},
 			{"setLenient", "SetLenient", "void", 1}, {"isLenient", "IsLenient", "boolean", 0},
 			{"getTimeZone", "GetTimeZone", "TimeZone", 0}, {"setTimeZone", "SetTimeZone", "void", 1},

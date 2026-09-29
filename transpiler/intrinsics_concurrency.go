@@ -47,35 +47,35 @@ func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx 
 		return expression, true
 	}
 	baseName := stripJavaQualifier(javaType)
-	if expression, ok := reflectRuntimeTypeExpr(baseName, ctx); ok {
+	if expression, ok := reflectRuntimeTypeExpr(javaType, ctx); ok {
 		return expression, true
 	}
-	if expression, ok := digestIORuntimeTypeExpr(baseName, ctx); ok {
+	if expression, ok := digestIORuntimeTypeExpr(javaType, ctx); ok {
 		return expression, true
 	}
-	if (baseName == "StringBuilder" || baseName == "StringBuffer") && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if (baseName == "StringBuilder" || baseName == "StringBuffer") && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		return &ast.StarExpr{X: stdjavaQualifiedExpr("StringBuilder", ctx)}, true
 	}
-	if (baseName == "Charset" || baseName == "ByteBuffer" || baseName == "MessageDigest" || baseName == "Locale" || baseName == "BitSet" || baseName == "Random") && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if (baseName == "Charset" || baseName == "ByteBuffer" || baseName == "MessageDigest" || baseName == "Locale" || baseName == "BitSet" || baseName == "Random") && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		return &ast.StarExpr{X: stdjavaQualifiedExpr(baseName, ctx)}, true
 	}
 
 	// java.lang.Object maps to the empty interface. It commonly appears as the
 	// type of a lock token; new Object() is handled by its constructor intrinsic.
-	if baseName == "Object" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if baseName == "Object" && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		return &ast.Ident{Name: "any"}, true
 	}
 
 	// java.lang.Runnable is an interface, so it maps to stdjava.Runnable without a
 	// pointer. A value typed Runnable (or a struct that embeds it) resolves here.
-	if baseName == "Runnable" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if baseName == "Runnable" && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		return stdjavaQualifiedExpr("Runnable", ctx), true
 	}
 
-	if baseName == "TimeUnit" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if baseName == "TimeUnit" && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		return &ast.StarExpr{X: stdjavaQualifiedExpr("TimeUnit", ctx)}, true
 	}
-	if (baseName == "Callable" || baseName == "Supplier") && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if (baseName == "Callable" || baseName == "Supplier") && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		if len(typeArgs) == 0 {
 			typeArgs = []string{"Object"}
 		}
@@ -88,7 +88,7 @@ func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx 
 	if !ok {
 		return nil, false
 	}
-	if resolveClassScopeByQualifiedName(ctx, baseName) != nil {
+	if resolveClassScopeByQualifiedName(ctx, javaType) != nil {
 		return nil, false
 	}
 

@@ -33,6 +33,9 @@ func ReflectTypeNameExecution(execution *Execution, value ReflectType) string {
 	if named, ok := value.(interface{ GetTypeName() string }); ok {
 		return named.GetTypeName()
 	}
+	if registeredJavaSourceValue(value) {
+		return StringValueOfExecution(execution, value)
+	}
 	// The default is virtual Object.toString, including Object's own default
 	// when the implementation declares neither method. fmt.Sprint would expose
 	// the generated Go struct in that case.

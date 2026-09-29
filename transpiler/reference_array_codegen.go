@@ -763,6 +763,9 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(id, ctx))},
 	}
+	if text := sourceToStringRegistration(scope, id, ctx); text != nil {
+		statements = append(statements, text)
+	}
 	if metadata := sourceClassMetadataStmt(scope, ctx); metadata != nil {
 		statements = append(statements, metadata)
 	}
@@ -951,13 +954,17 @@ func syntheticReferenceRegistrationDecl(
 	args := []ast.Expr{javaTypeIDLiteral(dynamicID, ctx), superID}
 	args = append(args, interfaceIDs...)
 	registrationName := "__java2goSyntheticTypeRegistration" + sanitizeGoIdent(structName)
+	statements := []ast.Stmt{
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(dynamicID, ctx))},
+	}
+	if text := sourceToStringRegistration(syntheticSourceTextScope(structName, ctx), dynamicID, ctx); text != nil {
+		statements = append(statements, text)
+	}
+	statements = append(statements, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}})
 	initializer := &ast.CallExpr{Fun: &ast.FuncLit{
 		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "bool"}}}}},
-		Body: &ast.BlockStmt{List: []ast.Stmt{
-			&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
-			&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(dynamicID, ctx))},
-			&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}},
-		}},
+		Body: &ast.BlockStmt{List: statements},
 	}}
 	return &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{
 		Names:  []*ast.Ident{{Name: registrationName}},

@@ -416,13 +416,11 @@ func ObjectDynamicType(value any) (TypeID, bool) {
 func ObjectView[T any](value any, requested TypeID) T {
 	var zero T
 	if nilJavaReference(value) {
-		// Generated strings retain a concrete Go string ABI, so a statically
-		// String-typed null read needs the sentinel. The generic T[] path carries
-		// ObjectTypeID after erasure, so also inspect T itself. Do not use a plain
-		// type assertion here: string is assignable to T=any and would incorrectly
-		// turn an Object null into a non-nil interface.
+		// Legacy native-string callers need the sentinel. Canonical String
+		// pointers and erased any views use their ordinary nil zero value,
+		// regardless of the nominal descriptor requested by the consumer.
 		targetType := reflect.TypeOf((*T)(nil)).Elem()
-		if requested == StringTypeID || targetType.Kind() == reflect.String {
+		if targetType.Kind() == reflect.String {
 			if nullString, ok := any(NullString()).(T); ok {
 				return nullString
 			}
@@ -614,11 +612,6 @@ func NewReferenceArray[I javaArrayLength](length I, componentType TypeID) *Refer
 	array := &ReferenceArray{
 		componentType: componentType,
 		elements:      make([]any, int(length)),
-	}
-	if componentType == StringTypeID {
-		for index := range array.elements {
-			array.elements[index] = NullString()
-		}
 	}
 	return array
 }
@@ -822,9 +815,6 @@ func referenceArrayStoreAt(array *ReferenceArray, position int, value any) {
 		// []any storage. Otherwise an Object[] read would receive a non-nil Go
 		// interface containing a nil pointer and Java `value == null` could fail.
 		stored = nil
-		if array.componentType == StringTypeID {
-			stored = NullString()
-		}
 	}
 	array.elements[position] = stored
 }

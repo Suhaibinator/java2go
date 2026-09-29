@@ -385,6 +385,10 @@ type throwableState struct {
 	suppressed       []interface{}
 	cause            interface{}
 	causeInitialized bool
+	// The reference is initialized once and shared by all views/value copies.
+	messageOnce      sync.Once
+	javaMessage      *JavaString
+	canonicalMessage bool
 }
 
 // javaThrowable is a runtime-owned nominal marker. It is promoted through
@@ -393,7 +397,16 @@ type throwableState struct {
 func (ThrowableBase) javaThrowable() {}
 
 func (t ThrowableBase) ThrowableTypeName() string { return t.typeName }
-func (t ThrowableBase) Message() string           { return t.message }
+func (t ThrowableBase) Message() string {
+	if t.state != nil && t.state.canonicalMessage {
+		if t.state.javaMessage == nil {
+			return NullString()
+		}
+		// Native diagnostics are an output boundary; retained Java units stay intact.
+		return string(unsignedBytes(JavaStringGetBytes(t.state.javaMessage, UTF_8).Elements))
+	}
+	return t.message
+}
 
 // JavaDynamicTypeID lets every built-in Throwable value participate in the
 // descriptor-bearing reference-array ABI. The method is promoted through each
@@ -401,10 +414,11 @@ func (t ThrowableBase) Message() string           { return t.message }
 func (t ThrowableBase) JavaDynamicTypeID() TypeID { return BuiltinThrowableTypeID(t.typeName) }
 
 func (t ThrowableBase) Error() string {
-	if t.message == "" || StringIsNull(t.message) {
+	message := t.Message()
+	if message == "" || StringIsNull(message) {
 		return t.typeName
 	}
-	return t.typeName + ": " + t.message
+	return t.typeName + ": " + message
 }
 
 func (t ThrowableBase) String() string { return t.Error() }
@@ -731,6 +745,10 @@ func ThrowableInitCauseDefaultExecution(execution *Execution, primary, cause any
 	state.mu.Lock()
 	if state.causeInitialized {
 		state.mu.Unlock()
+		referenceText := throwableHasCanonicalDiagnosticText(cause)
+		if state.canonicalMessage || referenceText {
+			panic(newJavaInitCauseRejection(execution, primary, cause, referenceText))
+		}
 		description := "a null"
 		if !javaReferenceIsNull(cause) {
 			description = StringValueOfExecution(execution, cause)

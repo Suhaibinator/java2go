@@ -24,7 +24,7 @@ func lowerStringBuilderConstructor(_ []ast.Expr, args []ast.Expr, invocation *si
 		return stdjavaCall(ctx, "NewStringBuilderCapacity", converted)
 	}
 	if isJavaStringType(actual) || actual == "null" {
-		return stdjavaCall(ctx, "NewStringBuilderString", coerceArgumentToExpectedType(args[0], argument, "String", ctx, source))
+		return stdjavaCall(ctx, "NewStringBuilderJavaString", coerceArgumentToExpectedType(args[0], argument, "String", ctx, source))
 	}
 	// CharSequence requires its own virtual protocol; do not infer that overload
 	// from a Go value or silently turn an arbitrary object into text.

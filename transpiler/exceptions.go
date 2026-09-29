@@ -60,7 +60,10 @@ func isBuiltinExceptionType(className string) bool {
 // builtinExceptionConstructorExpr builds a call to the stdjava constructor for a
 // built-in exception type, e.g. stdjava.NewIllegalArgumentException(args). The
 // Types with modeled cause overloads preserve the entire Java argument list.
-func builtinExceptionConstructorExpr(className string, args []ast.Expr, ctx Ctx) ast.Expr {
+func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	if call := canonicalThrowableConstructorExpr(className, arguments, args, ctx, source); call != nil {
+		return call
+	}
 	if owner, ok := canonicalIntrinsicOwner(className, ctx); ok && owner == "java.lang.AssertionError" {
 		return stdjavaCall(ctx, "NewAssertionErrorExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
 	}
@@ -80,6 +83,79 @@ func builtinExceptionConstructorExpr(className string, args []ast.Expr, ctx Ctx)
 		Fun:  stdjavaQualifiedExpr("New"+name, ctx),
 		Args: []ast.Expr{message},
 	}
+}
+
+// canonicalThrowableConstructorExpr selects modeled Java overloads from their
+// static argument types before values are erased. In particular, String-null
+// leaves initCause available while Throwable-null initializes the cause slot.
+// Additional builtin constructor families are separate runtime ABI migrations.
+func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	name := stripJavaQualifier(className)
+	if name != "Exception" && name != "RuntimeException" && name != "IllegalStateException" {
+		return nil
+	}
+	if _, builtin := builtinExceptionStorageTypeName(className, ctx); !builtin {
+		return nil
+	}
+	if len(args) == 0 {
+		return stdjavaCall(ctx, "NewJava"+name+"Message", ast.NewIdent("nil"))
+	}
+	if arguments == nil || int(arguments.NamedChildCount()) != len(args) {
+		return nil
+	}
+	if name == "Exception" && len(args) == 2 {
+		// The two-argument declaration is (String, Throwable); coerce a null literal
+		// according to that declaration instead of interpreting its runtime value.
+		message := stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{javaStringReferenceType(ctx)}, []ast.Expr{args[0], stdjavaQualifiedExpr("StringTypeID", ctx)})
+		return stdjavaCall(ctx, "NewJavaExceptionMessageCause", message, args[1])
+	}
+	actual, known := inferExprJavaType(arguments.NamedChild(0), ctx, source)
+	if !known {
+		return nil
+	}
+	if len(args) == 1 {
+		if throwableConstructorMessageType(symbol.JavaType{Original: actual}, ctx, map[typeParameterIdentityKey]bool{}) {
+			message := args[0]
+			if !isBuiltinJavaString(actual, ctx) {
+				// Bound parameters can use an erased Go representation. The
+				// nominal view preserves both the original reference and null.
+				message = stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{javaStringReferenceType(ctx)}, []ast.Expr{message, stdjavaQualifiedExpr("StringTypeID", ctx)})
+			}
+			return stdjavaCall(ctx, "NewJava"+name+"Message", message)
+		}
+		if name != "IllegalStateException" && javaExceptionReferenceAssignable(actual, "java.lang.Throwable", ctx) {
+			return stdjavaCall(ctx, "NewJava"+name+"CauseExecution", intrinsicExecutionExpr(ctx), args[0])
+		}
+	}
+	return nil
+}
+
+// A String-bounded parameter selects the String constructor declaration.
+// Reuse declaration identities and each bound's lexical context; a source type
+// or unrelated binder named String must never borrow the builtin overload.
+func throwableConstructorMessageType(actual symbol.JavaType, ctx Ctx, visiting map[typeParameterIdentityKey]bool) bool {
+	base, rank := javaArrayTypeParts(strings.TrimSpace(actual.Original))
+	if rank != 0 {
+		return false
+	}
+	if binding, found := resolveReferenceTypeParameter(actual, ctx); found {
+		identity := identityKeyForTypeParameter(binding.parameter)
+		if visiting[identity] {
+			return false
+		}
+		visiting[identity] = true
+		defer delete(visiting, identity)
+		for _, bound := range binding.parameter.Bounds {
+			if throwableConstructorMessageType(bound, binding.context, visiting) {
+				return true
+			}
+		}
+		return false
+	}
+	if actual.TypeParameterBindings[base] != nil {
+		return false
+	}
+	return isBuiltinJavaString(base, ctx)
 }
 
 // exceptionSuperclassName returns the simple name of scope's superclass if that
@@ -158,8 +234,8 @@ func buildExceptionRegistrationDecl(childName, parentName string, ctx Ctx) ast.D
 		declaration.Body.List = append(declaration.Body.List, registration)
 	}
 	for _, textMethod := range [][2]string{
-		{"toString", "RegisterThrowableToStringOverride"},
-		{"getLocalizedMessage", "RegisterThrowableLocalizedMessageOverride"},
+		{"toString", "RegisterJavaThrowableToStringOverride"},
+		{"getLocalizedMessage", "RegisterJavaThrowableLocalizedMessageOverride"},
 	} {
 		if registration := throwableTextOverrideRegistration(textMethod[0], textMethod[1], ctx); registration != nil {
 			declaration.Body.List = append(declaration.Body.List, registration)

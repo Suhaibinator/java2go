@@ -65,7 +65,7 @@ func inferCollectorJavaType(collector *sitter.Node, elementJavaType string, ctx 
 	case "counting":
 		return "java.lang.Long", true
 	case "joining":
-		return "String", true
+		return "java.lang.String", true
 	case "summingInt", "summingLong", "summingDouble":
 		return "java.lang." + ternaryBoxedJavaType(numericCollectorJavaType(name)), true
 	case "averagingInt", "averagingLong", "averagingDouble":
@@ -134,7 +134,7 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 	case "joining":
 		// joining() / joining(sep) / joining(sep, prefix, suffix); the runtime
 		// takes all three, so the shorter forms pass empty strings.
-		separator, prefix, suffix := emptyStringLit(), emptyStringLit(), emptyStringLit()
+		separator, prefix, suffix := javaStringLiteralUnitsExpr(nil, ctx), javaStringLiteralUnitsExpr(nil, ctx), javaStringLiteralUnitsExpr(nil, ctx)
 		switch arity {
 		case 0:
 		case 1:
@@ -146,7 +146,7 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		default:
 			return nil, ""
 		}
-		return stdjavaCall(ctx, "StreamJoining", streamExpr, separator, prefix, suffix), "String"
+		return stdjavaCall(ctx, "JavaStringStreamJoining", streamExpr, separator, prefix, suffix), "java.lang.String"
 
 	case "summingInt", "summingLong", "summingDouble":
 		if arity != 1 {

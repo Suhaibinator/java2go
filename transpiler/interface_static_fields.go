@@ -24,9 +24,6 @@ func interfaceStaticFieldDeclarations(body *sitter.Node, source []byte, ctx Ctx)
 		}
 		typ := abstractClassToInterface(javaTypeStringToGoTypeExpr(field.OriginalType, ctx.currentClass.TypeParameterNames(), ctx), field.OriginalType, ctx)
 		spec := &ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent(field.Name)}, Type: typ}
-		if isJavaStringType(field.OriginalType) {
-			spec.Values = []ast.Expr{javaNullStringExpr()}
-		}
 		if field.IsCompileTimeConstant {
 			if declarator := declaratorForField(field, source); declarator != nil {
 				if valueNode := declarator.ChildByFieldName("value"); valueNode != nil {

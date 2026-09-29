@@ -179,7 +179,29 @@ func executionFieldInitializerMethodName() string {
 }
 
 func executionStringMethodName(scope *symbol.ClassScope) string {
-	return collisionSafeExecutionIdentifier("String"+executionMethodSuffix, scope)
+	base := "String" + executionMethodSuffix
+	for suffix := 0; ; suffix++ {
+		candidate := base
+		if suffix > 0 {
+			candidate += strconv.Itoa(suffix)
+		}
+		if generatedIdentifierExists(candidate, scope) {
+			continue
+		}
+		occupied := false
+		if scope != nil {
+			for _, method := range scope.Methods {
+				if method != nil && !method.IsStatic && !method.Constructor &&
+					candidate == collisionSafeExecutionIdentifier(method.Name+executionMethodSuffix, scope) {
+					occupied = true
+					break
+				}
+			}
+		}
+		if !occupied {
+			return candidate
+		}
+	}
 }
 
 func executionNameForParams(params *ast.FieldList, reservedNames ...string) string {

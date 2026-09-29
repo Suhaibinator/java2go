@@ -489,7 +489,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return lowered
 			}
 
-			if isSystemOutSelector(objectNode, source) && (methodName == "println" || methodName == "print") {
+			if isSystemOutSelector(objectNode, ctx, source) && (methodName == "println" || methodName == "print") {
 				argListNode := node.ChildByFieldName("arguments")
 				args := parseArgumentListWithExpectedTypes(argListNode, source, ctx, nil)
 				// PrintStream performs Java text conversion before writing. Route
@@ -508,7 +508,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					funName = "Print"
 				}
 				return &ast.CallExpr{
-					Fun:  qualifiedNameExpr(funName, "fmt", ctx),
+					Fun:  stdjavaQualifiedExpr("Java"+funName+"Strings", ctx),
 					Args: args,
 				}
 			}
@@ -519,7 +519,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				parent := strings.TrimSpace(ctx.currentClass.Superclass)
 				args := node.ChildByFieldName("arguments")
 				if (parent == "" || parent == "java.lang.Object" || (parent == "Object" && resolveClassScopeByQualifiedName(ctx, parent) == nil)) && (args == nil || args.NamedChildCount() == 0) {
-					return stdjavaCall(ctx, "ObjectDefaultStringExecution", intrinsicExecutionExpr(ctx), &ast.Ident{Name: ShortName(ctx.className)})
+					return stdjavaCall(ctx, "ObjectDefaultJavaStringExecution", intrinsicExecutionExpr(ctx), &ast.Ident{Name: ShortName(ctx.className)})
 				}
 			}
 
@@ -775,10 +775,17 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			allowInstance := ctx.localScope != nil && ctx.localScope.OriginalName != "" && !ctx.localScope.IsStatic
 			selected := findBestMethodInHierarchy(ctx.currentClass, methodName, argListNode, allowInstance, true, ctx, source)
 			if inheritedBuiltinMessageSelected(node, selected, ctx, source) {
-				return stdjavaCall(ctx, "ThrowableMessageExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+				return stdjavaCall(ctx, "JavaThrowableMessageExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+			}
+			if implicitBuiltinThrowableTextSelected(node, selected, ctx, source) {
+				runtimeName := "JavaThrowableToStringExecution"
+				if methodName == "getLocalizedMessage" {
+					runtimeName = "JavaThrowableLocalizedMessageExecution"
+				}
+				return stdjavaCall(ctx, runtimeName, intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
 			}
 			if implicitInheritedObjectTextSelected(node, selected, ctx, source) {
-				return stdjavaCall(ctx, "StringValueOfExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+				return stdjavaCall(ctx, "JavaStringValueOfExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
 			}
 			if selected != nil && selected.def != nil && selected.def.IsStatic {
 				implicitStaticResolution = selected
@@ -798,6 +805,26 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				if selected := findEnclosingStaticMethod(methodName, argListNode, ctx, source); selected != nil {
 					implicitStaticResolution = selected
 					expectedArgTypes = definitionParameterOriginalTypes(selected.def)
+				}
+			}
+		}
+		if implicitInstanceResolution == nil && implicitStaticResolution == nil {
+			imported := resolveStaticImportedMethod(node, ctx, source)
+			if imported.problem != "" {
+				return unsupportedIntrinsicValue(node, imported.problem, source, ctx)
+			}
+			if imported.intrinsic != "" {
+				if lowered, ok := tryStaticIntrinsicInvocation(node, imported.intrinsic, methodName, source, ctx); ok {
+					return lowered
+				}
+				return unsupportedIntrinsicValue(node, "unsupported static method import "+methodName, source, ctx)
+			}
+			if imported.source != nil {
+				implicitStaticResolution = imported.source
+				expectedArgTypes = definitionParameterOriginalTypes(imported.source.def)
+			} else if len(staticMethodImports(ctx)) > 0 && lexicalMethodNamePresent(methodName, ctx) {
+				if enclosing, _ := enclosingMemberMethodSelector(methodName, argCount, ctx); enclosing == nil {
+					return unsupportedIntrinsicValue(node, "no applicable lexical method "+methodName, source, ctx)
 				}
 			}
 		}
@@ -952,7 +979,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// corresponding stdjava constructor, preserving the detail message.
 		if _, builtin := builtinExceptionStorageTypeName(className, ctx); builtin {
 			arguments := parseArgumentListWithExpectedTypes(objectArguments, source, ctx, nil)
-			return builtinExceptionConstructorExpr(className, arguments, ctx)
+			return builtinExceptionConstructorExpr(className, objectArguments, arguments, ctx, source)
 		}
 
 		// Find the respective constructor (if we have symbol info for that class).
@@ -1391,8 +1418,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if rightNull {
 				otherNode = leftNode
 			}
-			if javaType, ok := inferExprJavaType(otherNode, ctx, source); ok && isJavaStringType(javaType) {
-				comparison := ast.Expr(stdjavaCall(ctx, "StringIsNull", ParseExpr(otherNode, source, ctx)))
+			if javaType, ok := inferExprJavaType(otherNode, ctx, source); ok && isBuiltinJavaString(javaType, ctx) {
+				comparison := ast.Expr(stdjavaCall(ctx, "JavaReferenceEqual", ParseExpr(otherNode, source, ctx), ast.NewIdent("nil")))
 				if operator == "!=" {
 					comparison = &ast.UnaryExpr{Op: token.NOT, X: comparison}
 				}
@@ -1420,7 +1447,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				sourceHierarchyReference = leftScope != nil && rightScope != nil && (javaReferenceTypeAssignable(leftScope, rightScope, ctx) || javaReferenceTypeAssignable(rightScope, leftScope, ctx)) &&
 					classNeedsReferenceIdentity(leftScope, ctx) && classNeedsReferenceIdentity(rightScope, ctx)
 			}
-			erasedReference := stripJavaQualifier(leftBase) == "Object" || stripJavaQualifier(rightBase) == "Object" ||
+			erasedReference := isBuiltinJavaString(leftJavaType, ctx) || isBuiltinJavaString(rightJavaType, ctx) || stripJavaQualifier(leftBase) == "Object" || stripJavaQualifier(rightBase) == "Object" ||
 				stripJavaQualifier(leftBase) == "Number" || stripJavaQualifier(rightBase) == "Number"
 			// Builtin exception signatures use the shared Throwable interface.
 			// A source exception can arrive through a declaring-base subobject;
@@ -1462,10 +1489,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return comparison
 			}
 		}
-		if operator == "+" && (isStringLikeExprNode(leftNode, ctx, source) || isStringLikeExprNode(rightNode, ctx, source) || isFmtSprintfCall(leftExpr)) {
+		if operator == "+" && (isStringLikeExprNode(leftNode, ctx, source) || isStringLikeExprNode(rightNode, ctx, source)) {
 			leftExpr = javaStringConversionExpr(leftNode, leftExpr, ctx, source)
 			rightExpr = javaStringConversionExpr(rightNode, rightExpr, ctx, source)
-			return mergeFmtSprintCall(leftExpr, rightExpr, ctx)
+			result := ast.Expr(stdjavaCall(ctx, "ConcatJavaStrings", leftExpr, rightExpr))
+			if compileTimeConstantExpression(node, source, ctx, map[*symbol.Definition]bool{}) {
+				result = stdjavaCall(ctx, "InternJavaString", result)
+			}
+			return result
 		}
 		if boolean, ok := lowerJavaBooleanBinary(operator, leftNode, rightNode, leftExpr, rightExpr, source, ctx); ok {
 			return boolean
@@ -1538,8 +1569,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "cast_expression":
 		targetJavaType := node.NamedChild(0).Content(source)
 		valueNode := node.NamedChild(1)
-		if isJavaStringType(targetJavaType) && isStaticallyNullReference(valueNode) {
-			return javaNullStringExpr()
+		if isBuiltinJavaString(targetJavaType, ctx) && isStaticallyNullReference(valueNode) {
+			return javaStringNullExpr(ctx)
 		}
 		if _, erased := currentErasedCallableOwnerTypeParameterErasure(targetJavaType, ctx); erased &&
 			isStaticallyNullReference(valueNode) {
@@ -1570,6 +1601,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			targetJavaType = erasure
 		}
 		targetType := javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
+		if isBuiltinJavaString(targetJavaType, ctx) {
+			return stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{targetType}, []ast.Expr{valueExpr, stdjavaQualifiedExpr("StringTypeID", ctx)})
+		}
 		if _, rank := javaArrayTypeParts(targetJavaType); rank > 0 {
 			if descriptor, ok := javaTypeDescriptorExpr(targetJavaType, ctx); ok {
 				return stdjavaGenericCall(ctx, "JavaArrayCast", []ast.Expr{targetType}, []ast.Expr{valueExpr, descriptor})
@@ -1804,28 +1838,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 		return &ast.Ident{Name: sanitizeGoIdent(identName)}
-	case "type_identifier": // Any reference type
-		switch node.Content(source) {
-		// Special case for strings, because in Go, these are primitive types
-		case "String":
-			return &ast.Ident{Name: "string"}
-		}
-
-		if ctx.currentFile != nil {
-			// Look for the class locally first
-			if localClass := ctx.currentFile.FindClass(node.Content(source)); localClass != nil {
-				return &ast.StarExpr{
-					X: &ast.Ident{Name: localClass.Name},
-				}
-			}
-		}
-
-		return &ast.StarExpr{
-			X: &ast.Ident{Name: node.Content(source)},
-		}
+	case "type_identifier": // Resolve lexical/source types before builtin String.
+		return javaTypeStringToGoTypeExpr(node.Content(source), inScopeTypeParameters(ctx), ctx)
 	case "null_literal":
-		if isJavaStringType(ctx.expectedType) && expectedTypeTargetsExpression(ctx, node) {
-			return javaNullStringExpr()
+		if isBuiltinJavaString(ctx.expectedType, ctx) && expectedTypeTargetsExpression(ctx, node) {
+			return javaStringNullExpr(ctx)
 		}
 		return &ast.Ident{Name: "nil"}
 	case "decimal_integer_literal":
@@ -1852,13 +1869,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		return &ast.Ident{Name: literal}
 	case "string_literal":
-		raw := node.Content(source)
-		// Text blocks (Java 13+) are delimited by triple quotes; lower them to a Go
-		// string literal after JLS incidental-whitespace stripping.
-		if strings.HasPrefix(raw, "\"\"\"") {
-			return textBlockLiteral(raw)
-		}
-		return &ast.Ident{Name: normalizeJavaLiteralEscapes(raw)}
+		return canonicalStringLiteral(node, source, ctx)
 	case "character_literal":
 		return &ast.Ident{Name: normalizeJavaCharacterLiteral(node.Content(source))}
 	case "true", "false":
@@ -1947,8 +1958,8 @@ func ternaryExpressionParts(node *sitter.Node) (condition, consequence, alternat
 
 func parseTernaryBranch(node *sitter.Node, resultJavaType string, source []byte, ctx Ctx) ast.Expr {
 	if unwrapped := unwrapParenthesizedExpressionNode(node); unwrapped != nil && unwrapped.Type() == "null_literal" {
-		if isJavaStringType(resultJavaType) {
-			return javaNullStringExpr()
+		if isBuiltinJavaString(resultJavaType, ctx) {
+			return javaStringNullExpr(ctx)
 		}
 		return &ast.Ident{Name: "nil"}
 	}
@@ -1962,15 +1973,11 @@ func parseTernaryBranch(node *sitter.Node, resultJavaType string, source []byte,
 }
 
 func ternaryResultGoType(resultJavaType string, consequence, alternative *sitter.Node, ctx Ctx) ast.Expr {
-	// String null is carried by the concrete sentinel, so every String arm is
-	// coerced to the ordinary string ABI rather than widening the IIFE to any.
-	if isJavaStringType(resultJavaType) {
+	// Every String arm uses the same nullable pointer ABI.
+	if isBuiltinJavaString(resultJavaType, ctx) {
 		return javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx)
 	}
-	// String and boxed primitives normally use Go value types, but a selected
-	// Java null must remain distinguishable from their zero values. Use an
-	// interface result when any nested conditional arm can produce literal null;
-	// pointer/slice/interface reference representations can use nil directly.
+	// Other reference representations retain their existing contextual type.
 	if usesNullableValueStorage(resultJavaType) &&
 		(expressionCanProduceNull(consequence) || expressionCanProduceNull(alternative)) {
 		return &ast.Ident{Name: "any"}
@@ -2585,14 +2592,6 @@ func signedIntegerConstant(value int64) ast.Expr {
 	}
 }
 
-// javaNullStringExpr is the concrete-string representation shared with
-// stdjava.NullString. Keeping the literal at allocation/ABI boundaries avoids
-// adding a runtime import to classes that merely declare a String field and
-// never perform an operation that observes null.
-func javaNullStringExpr() ast.Expr {
-	return &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote("\xffjava2go:null-string\x00")}
-}
-
 // lowerReferenceArrayCompoundAssignment stages a compound assignment through
 // the descriptor-bearing array API. The outer call evaluates and validates the
 // array/index and loads the old component before the RHS is evaluated; the
@@ -2924,8 +2923,6 @@ func assignmentValueCall(storageType, valueType ast.Expr, targetAddress, rhs ast
 func compoundAssignmentValue(operator string, old, rhs ast.Expr, lhsJavaType, rhsJavaType string, ctx Ctx, oldUnboxed ...bool) (ast.Expr, bool) {
 	lhsBase, _ := parseJavaTypeString(lhsJavaType)
 	lhsBase = stripJavaQualifier(lhsBase)
-	rhsBase, _ := parseJavaTypeString(rhsJavaType)
-	rhsBase = stripJavaQualifier(rhsBase)
 	lhsPrimitive, lhsBoxed := builtinJavaWrapperPrimitive(lhsJavaType, ctx)
 	oldJavaType := lhsJavaType
 	if lhsBoxed && len(oldUnboxed) != 0 && oldUnboxed[0] {
@@ -2938,17 +2935,10 @@ func compoundAssignmentValue(operator string, old, rhs ast.Expr, lhsJavaType, rh
 		return value, true
 	}
 
-	if operator == "+=" && lhsBase == "String" {
-		var rhsString ast.Expr
-		switch rhsBase {
-		case "String":
-			rhsString = stdjavaCall(ctx, "StringValueOf", rhs)
-		case "char":
-			rhsString = &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{rhs}}
-		default:
-			rhsString = javaStringValueOfForType(rhsJavaType, rhs, ctx)
-		}
-		return &ast.BinaryExpr{X: stdjavaCall(ctx, "StringValueOf", old), Op: token.ADD, Y: rhsString}, true
+	if operator == "+=" && isBuiltinJavaString(lhsJavaType, ctx) {
+		leftText := canonicalStringValueOf(lhsJavaType, old, true, ctx)
+		rightText := canonicalStringValueOf(rhsJavaType, rhs, true, ctx)
+		return stdjavaCall(ctx, "ConcatJavaStrings", leftText, rightText), true
 	}
 
 	if lhsBase == "boolean" || lhsBase == "Boolean" {
@@ -3066,22 +3056,23 @@ func compoundAssignmentValue(operator string, old, rhs ast.Expr, lhsJavaType, rh
 	return finish(&ast.CallExpr{Fun: &ast.Ident{Name: conversion}, Args: []ast.Expr{operation}})
 }
 
-func isSystemOutSelector(node *sitter.Node, source []byte) bool {
-	if node == nil {
+func isSystemOutSelector(node *sitter.Node, ctx Ctx, source []byte) bool {
+	if node == nil || node.Type() != "field_access" {
 		return false
 	}
-	if strings.TrimSpace(node.Content(source)) == "System.out" {
-		return true
-	}
-	if node.Type() != "field_access" {
-		return false
-	}
-	obj := node.ChildByFieldName("object")
+	object := node.ChildByFieldName("object")
 	field := node.ChildByFieldName("field")
-	if obj == nil || field == nil {
+	if object == nil || field == nil || field.Content(source) != "out" {
 		return false
 	}
-	return obj.Type() == "identifier" && obj.Content(source) == "System" && field.Content(source) == "out"
+	owner, registered := canonicalIntrinsicOwner(object.Content(source), ctx)
+	if !registered || owner != "java.lang.System" {
+		return false
+	}
+	// A local or field named System is a value, even when the canonical class
+	// is available. Reuse the static-owner check before lowering its stream.
+	class, static := intrinsicStaticClassName(object, ctx, source)
+	return static && class == intrinsicOwnerKey(owner)
 }
 
 func isStringLikeExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
@@ -3100,7 +3091,7 @@ func isStringLikeExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
 
 	if javaType, ok := inferExprJavaType(node, ctx, source); ok {
 		baseType, _ := parseJavaTypeString(javaType)
-		return stripJavaQualifier(baseType) == "String"
+		return isBuiltinJavaString(baseType, ctx)
 	}
 
 	return false
@@ -3112,73 +3103,15 @@ func isStringLikeExprNode(node *sitter.Node, ctx Ctx, source []byte) bool {
 // needs static-type-aware rune-to-string conversion; all other values use the
 // runtime bridge for Java null and floating-point spelling.
 func javaStringConversionExpr(node *sitter.Node, expr ast.Expr, ctx Ctx, source []byte) ast.Expr {
-	if isFmtSprintfCall(expr) {
-		return expr
-	}
-	if isCharTypedExprNode(node, ctx, source) {
-		return &ast.CallExpr{Fun: &ast.Ident{Name: "string"}, Args: []ast.Expr{expr}}
-	}
-	if execution := executionExpr(ctx); execution != nil && node != nil {
-		if javaType, ok := inferExprJavaType(node, ctx, source); ok {
-			base, _ := parseJavaTypeString(javaType)
-			if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && scope.IsEnum {
-				return &ast.CallExpr{
-					Fun:  &ast.SelectorExpr{X: expr, Sel: &ast.Ident{Name: executionStringMethodName(scope)}},
-					Args: []ast.Expr{execution},
-				}
-			}
-		}
-	}
-	if isNullableStringStorageExpression(node, ctx, source) {
-		return stdjavaCall(ctx, "StringValueOf", expr)
-	}
-	if node != nil && node.Type() != "null_literal" && !isNullableValueBackedLocal(node, ctx, source) {
-		if javaType, ok := inferExprJavaType(node, ctx, source); ok {
-			base, _ := parseJavaTypeString(javaType)
-			switch stripJavaQualifier(base) {
-			case "String":
-				// Any String reference can carry the concrete null sentinel after a
-				// field read, method return, or parameter pass. Literals are the one
-				// representation that is statically known non-null.
-				if node.Type() == "string_literal" {
-					return expr
-				}
-				return stdjavaCall(ctx, "StringValueOf", expr)
-			case "byte", "short", "int", "long", "boolean":
-				// fmt uses Java-compatible spelling for these concrete values.
-				return expr
-			}
-		}
-	}
+	javaType := ""
 	if node != nil {
-		if javaType, ok := inferExprJavaType(node, ctx, source); ok {
-			return javaStringValueOfForType(javaType, expr, ctx)
-		}
+		javaType, _ = inferExprJavaType(node, ctx, source)
 	}
-	return stdjavaCall(ctx, "StringValueOf", expr)
+	return canonicalStringValueOf(javaType, expr, true, ctx)
 }
 
-// javaStringValueOfForType preserves the current execution when the static
-// type can expose a generated Stringer. Java toString methods may synchronize,
-// so calling their public fmt.Stringer wrapper from inside an already-held
-// monitor would otherwise create a fresh token and deadlock.
 func javaStringValueOfForType(javaType string, expr ast.Expr, ctx Ctx) ast.Expr {
-	execution := executionExpr(ctx)
-	if execution == nil {
-		return stdjavaCall(ctx, "StringValueOf", expr)
-	}
-	base, _ := parseJavaTypeString(javaType)
-	needsExecution := stripJavaQualifier(base) == "Object" || stripJavaQualifier(base) == "Enum" ||
-		visibleTypeParameterDeclarationForJavaType(base, ctx) != nil
-	if resolveClassScopeByQualifiedName(ctx, base) != nil {
-		// Even inherited Object.toString invokes virtual hashCode, which can
-		// synchronize. Source references therefore retain the invoking token.
-		needsExecution = true
-	}
-	if needsExecution {
-		return stdjavaCall(ctx, "StringValueOfExecution", execution, expr)
-	}
-	return stdjavaCall(ctx, "StringValueOf", expr)
+	return canonicalStringValueOf(javaType, expr, false, ctx)
 }
 
 func isFmtSprintfCall(expr ast.Expr) bool {
@@ -4743,9 +4676,9 @@ func javaInvocationConversionCost(argNode *sitter.Node, expectedType string, can
 		return 0, false, false
 	}
 
-	actualReference := normalizeJavaReferenceType(actualType)
-	expectedReference := normalizeJavaReferenceType(expectedType)
-	if actualReference == expectedReference && invocationReferenceBindersCompatible(actualType, expectedType, ctx) {
+	// Reference equality uses declaration identity. Dropping package names here
+	// makes a source class such as shadow.String an exact match for java.lang.String.
+	if javaInferenceSameType(actualType, expectedType, ctx) && invocationReferenceBindersCompatible(actualType, expectedType, ctx) {
 		return 0, true, true
 	}
 
@@ -5427,7 +5360,7 @@ func parseArgumentListWithExpectedTypes(argsNode *sitter.Node, source []byte, ct
 		// instead preserve null with the concrete-string sentinel.
 		if expectedType != "" && usesNullableValueStorage(expectedType) && expressionAlwaysProducesNull(argNode) {
 			if isJavaStringType(expectedType) {
-				parsed = javaNullStringExpr()
+				parsed = javaStringNullExpr(ctx)
 			} else {
 				parsed = zeroValueForType(javaTypeStringToGoTypeExpr(expectedType, inScopeTypeParameters(ctx), ctx))
 			}
@@ -5475,9 +5408,6 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	beforeProjection := argExpr
 	argExpr = projectDirectOwnerErasedExpressionForExpected(argExpr, argNode, projectionCtx, source)
 	projectedToExpected := argExpr != beforeProjection
-	if isJavaStringType(expectedType) && expressionUsesNullableValueStorage(argNode, ctx, source) {
-		return stdjavaCall(ctx, "StringReferenceValue", argExpr)
-	}
 
 	actualType, actualKnown := inferExprJavaType(argNode, ctx, source)
 	if actualKnown {
@@ -6231,10 +6161,9 @@ func buildSwitchExpressionIIFE(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	if javaType, known := inferExprJavaType(condNode, ctx, source); known {
 		tag = javaUnboxExpr(tag, javaType, ctx)
 	}
-	switchStmt := &ast.SwitchStmt{
-		Tag:  tag,
-		Body: buildSwitchExpressionBody(bodyNode, source, ctx),
-	}
+	switchBody := buildSwitchExpressionBody(bodyNode, source, ctx)
+	tag = canonicalStringSwitch(tag, condNode, switchBody, source, ctx)
+	switchStmt := &ast.SwitchStmt{Tag: tag, Body: switchBody}
 
 	body := &ast.BlockStmt{List: []ast.Stmt{
 		switchStmt,
@@ -6702,6 +6631,16 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(structName, ownerID+"$"+structName, stdjavaQualifiedExpr(characterIONominalConstants[stripJavaQualifier(supertype)], ctx), protocolIDs, syntheticScope.GoTypeParameterNames(), ctx) {
 			ctx.addHoistedDecl(declaration)
 		}
+	} else if superScope == nil && overrideBridgeCanonicalObjectResult(supertype, baseType, ctx) {
+		// A canonical Object anonymous subclass has no source superclass scope,
+		// but its Java methods still require declaration-based text dispatch.
+		ownerID := ctx.className
+		if ctx.currentClass != nil {
+			ownerID = javaClassBinaryName(ctx.currentClass)
+		}
+		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(structName, ownerID+"$"+structName, stdjavaQualifiedExpr("ObjectTypeID", ctx), nil, syntheticScope.GoTypeParameterNames(), installerCtx) {
+			ctx.addHoistedDecl(declaration)
+		}
 	}
 
 	for _, declaration := range buildClassStringerBridgeDecls(installerCtx) {
@@ -6751,12 +6690,15 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 	}
 
-	// A non-SAM anonymous implementation has no source ClassScope of its own, but
-	// it is still a real Java object that can be stored in an interface array.
-	// Give it a unique nominal type and register every inherited interface edge;
-	// the generated pointer already satisfies those Go interface views directly.
-	if superScope != nil && superScope.IsInterface && classNeedsReferenceIdentity(superScope, ctx) {
-		interfaceScopes := append([]*symbol.ClassScope{superScope}, transitiveImplementedInterfaceScopes(superScope, ctx)...)
+	// Anonymous source values need a nominal descriptor even when no array or
+	// reflection operation requests an ObjectInfo carrier. In particular, erased
+	// Object text conversion must select only the registered Java toString body.
+	// Concrete hierarchies with a carrier were registered immediately above.
+	if superScope != nil && (superScope.IsInterface || !classNeedsReferenceIdentity(superScope, ctx)) {
+		interfaceScopes := transitiveImplementedInterfaceScopes(superScope, ctx)
+		if superScope.IsInterface {
+			interfaceScopes = append([]*symbol.ClassScope{superScope}, interfaceScopes...)
+		}
 		interfaceIDs := make([]ast.Expr, 0, len(interfaceScopes))
 		seenInterfaces := make(map[*symbol.ClassScope]struct{})
 		for _, interfaceScope := range interfaceScopes {
@@ -6776,10 +6718,14 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		if ownerID == "" {
 			ownerID = ctx.className
 		}
+		var parentID ast.Expr
+		if !superScope.IsInterface {
+			parentID = javaTypeIDLiteral(sourceClassRuntimeTypeID(superScope, ctx), ctx)
+		}
 		for _, declaration := range syntheticReferenceIdentityDeclsWithTypeParams(
 			structName,
 			ownerID+"$"+structName,
-			nil,
+			parentID,
 			interfaceIDs,
 			syntheticScope.GoTypeParameterNames(),
 			ctx,
@@ -9520,7 +9466,8 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		// site. Complete the generated ABI with hidden enclosing arguments and use
 		// Java first-bound erasure for genuinely raw declared slots.
 		typeArgs = normalizeClassTypeArguments(resolvedScope, typeArgs, ctx.currentClass, nil)
-	} else if ctx.currentFile != nil {
+	} else if ctx.currentFile != nil && !strings.Contains(base, ".") {
+		// Only an unqualified type may be resolved through caller imports.
 		// If this type name maps to an import whose package we parsed in the same conversion run,
 		// emit a qualified Go selector and add the corresponding import.
 		if importedPkg, ok := ctx.currentFile.Imports[baseName]; ok && symbol.GlobalScope.FindPackage(importedPkg) != nil {
@@ -9540,7 +9487,7 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 	primitive := func(name string) (ast.Expr, bool) {
 		switch name {
 		case "String":
-			return &ast.Ident{Name: "string"}, true
+			return javaStringReferenceType(ctx), true
 		case "Object":
 			return &ast.Ident{Name: "any"}, true
 		case "AutoCloseable":
@@ -9598,7 +9545,7 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 		// java.lang.Class<T> is erased at runtime; every generic view shares one
 		// canonical descriptor object.
 		expr = &ast.StarExpr{X: stdjavaQualifiedExpr(baseName, ctx)}
-	} else if prim, ok := primitive(baseName); ok && resolvedScope == nil {
+	} else if prim, ok := primitive(baseName); ok && resolvedScope == nil && (baseName != "String" || isBuiltinJavaString(base, ctx)) {
 		expr = prim
 	} else if rt, ok := stdjavaRuntimeTypeExpr(base, typeArgs, typeParams, ctx); ok {
 		// java.util.concurrent / java.lang.Thread types backed by the stdjava
@@ -9980,11 +9927,20 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 	if inheritedBuiltinMessageSelected(node, resolution, ctx, source) {
 		return "java.lang.String", true
 	}
+	if implicitBuiltinThrowableTextSelected(node, resolution, ctx, source) {
+		return "java.lang.String", true
+	}
 	if implicitInheritedObjectTextSelected(node, resolution, ctx, source) {
 		return "java.lang.String", true
 	}
 	if resolution == nil && node.ChildByFieldName("object") == nil {
 		resolution = findEnclosingStaticMethod(methodName, argListNode, ctx, source)
+		if resolution != nil {
+			scope = resolution.owner
+		}
+	}
+	if resolution == nil && node.ChildByFieldName("object") == nil {
+		resolution = resolveStaticImportedMethod(node, ctx, source).source
 		if resolution != nil {
 			scope = resolution.owner
 		}
@@ -10231,9 +10187,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		}
 		return "", false
 	case "string_literal":
-		// A string literal is a java.lang.String, so chained calls on a literal
-		// (e.g. "  x  ".trim()) resolve as String intrinsics.
-		return "String", true
+		// Literals name the canonical JDK declaration, even when the caller
+		// imports a source class with the simple name String.
+		return "java.lang.String", true
 	case "decimal_integer_literal", "hex_integer_literal", "octal_integer_literal", "binary_integer_literal":
 		// An integer literal is `long` if it carries an L suffix, otherwise `int`.
 		// Used to infer `var x = 0` as int (-> int32) for K1 pinning.

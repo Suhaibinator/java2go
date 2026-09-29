@@ -104,7 +104,7 @@ func localTypeRequiresIdentifier(javaType, name string, ctx Ctx) bool {
 			return name == parameter.EmittedName() || name == "any"
 		}
 	}
-	builtin := map[string]string{"String": "string", "java.lang.String": "string", "Object": "any", "java.lang.Object": "any", "boolean": "bool", "byte": "int8", "short": "int16", "char": "rune", "int": "int32", "long": "int64", "float": "float32", "double": "float64"}
+	builtin := map[string]string{"Object": "any", "java.lang.Object": "any", "boolean": "bool", "byte": "int8", "short": "int16", "char": "rune", "int": "int32", "long": "int64", "float": "float32", "double": "float64"}
 	return builtin[strings.TrimSpace(javaType)] == name
 }
 

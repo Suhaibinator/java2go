@@ -1,0 +1,15 @@
+map=1,true,true,true
+setIdentity=1,2,false
+null=true,true
+views=true,true,true
+store=ArrayStoreException
+cast=ClassCastException
+compare=-1987
+compareCast=ClassCastException
+compareNull=NullPointerException
+sequence=4,55296,56320
+builder=120,120,55296,0,56320,55296,0,56320,true,true
+join=120,55296,0,56320,57343,110,117,108,108,57343,120,55296,0,56320
+stream=91,120,55296,0,56320,124,110,117,108,108,124,120,55296,0,56320,93
+region=true,true
+concurrent=1,true,true

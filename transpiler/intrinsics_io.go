@@ -449,6 +449,7 @@ func stdjavaCallArg(arg ast.Expr, name string) (ast.Expr, bool) {
 }
 
 func registerCharsetIntrinsics() {
+	registerIntrinsicOwner("java.nio.charset.StandardCharsets", true)
 	for _, name := range []string{"US_ASCII", "ISO_8859_1", "UTF_8", "UTF_16BE", "UTF_16LE", "UTF_16"} {
 		name := name
 		registerStaticFieldIntrinsic("StandardCharsets", name, func(ctx Ctx) ast.Expr { return stdjavaQualifiedExpr(name, ctx) })
@@ -467,22 +468,20 @@ func registerCharsetIntrinsics() {
 		if len(args) > 1 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringGetBytes", append([]ast.Expr{recv}, args...)...)
+		if len(args) == 0 {
+			return stdjavaCall(ctx, "JavaStringGetBytes", recv, stdjavaQualifiedExpr("UTF_8", ctx))
+		}
+		return stdjavaCall(ctx, "JavaStringGetBytes", recv, args[0])
 	})
 	registerInstanceIntrinsicResultType("String", "getBytes", "byte[]")
 	registerInstanceIntrinsic("String", "toCharArray", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 0 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringToCharArray", recv)
+		return stdjavaCall(ctx, "JavaStringToCharArray", recv)
 	})
 	registerInstanceIntrinsicResultType("String", "toCharArray", "char[]")
-	registerConstructorIntrinsic("String", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) > 2 {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringNew", args...)
-	})
+	registerConstructorNodeIntrinsic("String", lowerCanonicalStringConstructor)
 }
 
 func registerByteBufferIntrinsics() {

@@ -147,8 +147,8 @@ func parseStatementBlock(node, omitted *sitter.Node, source []byte, ctx Ctx) *as
 
 func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	if node != nil && node.Type() == "null_literal" && strings.TrimSpace(ctx.expectedType) != "" {
-		if isJavaStringType(ctx.expectedType) {
-			return javaNullStringExpr()
+		if isBuiltinJavaString(ctx.expectedType, ctx) {
+			return javaStringNullExpr(ctx)
 		}
 		return zeroValueForType(javaTypeStringToGoTypeExpr(ctx.expectedType, inScopeTypeParameters(ctx), ctx))
 	}
@@ -241,30 +241,11 @@ func lowerSimpleArrayAssignmentCall(node *sitter.Node, source []byte, ctx Ctx) (
 	), true
 }
 
-// requireNullableValueBackedExpression preserves nullable String locals across
-// the concrete string ABI. Wrapper objects already use nullable pointers.
+// Reference values now retain their nullable representation across boundaries.
 func requireNullableValueBackedExpression(value ast.Expr, node *sitter.Node, expectedType string, ctx Ctx, source []byte) ast.Expr {
-	if !usesNullableValueStorage(expectedType) ||
-		!expressionUsesNullableValueStorage(node, ctx, source) {
-		return value
-	}
-	base, _ := parseJavaTypeString(expectedType)
-	if stripJavaQualifier(base) == "String" {
-		// Returning or passing a String reference is not a dereference. Preserve
-		// null through the concrete-string ABI using the runtime sentinel.
-		return stdjavaCall(ctx, "StringReferenceValue", value)
-	}
-	return &ast.TypeAssertExpr{
-		X:    value,
-		Type: javaTypeStringToGoTypeExpr(expectedType, inScopeTypeParameters(ctx), ctx),
-	}
+	return value
 }
 
-// inferEnhancedForElementJavaType resolves the Java type inferred by `var` in
-// an enhanced-for binding. Go's range statement infers the generated variable's
-// type automatically, but the transpiler's Java-side expression inference also
-// needs the element type for compound assignments, overload selection, and
-// intrinsic dispatch inside the loop body.
 func inferEnhancedForElementJavaType(valueNode *sitter.Node, source []byte, ctx Ctx) (string, bool) {
 	if valueNode == nil {
 		return "", false
@@ -673,7 +654,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 									Sel: &ast.Ident{Name: storage},
 								}},
 								Tok: token.ASSIGN,
-								Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, args, ctx)},
+								Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, argsNode, args, ctx, source)},
 							}
 						}
 					}
@@ -1090,80 +1071,19 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if javaType, known := inferExprJavaType(tagNode, ctx, source); known {
 			tag = javaUnboxExpr(tag, javaType, ctx)
 		}
-		return &ast.SwitchStmt{
-			Tag:  tag,
-			Body: parseSwitchBlock(blockNode, source, ctx),
-		}
+		body := parseSwitchBlock(blockNode, source, ctx)
+		tag = canonicalStringSwitch(tag, tagNode, body, source, ctx)
+		return &ast.SwitchStmt{Tag: tag, Body: body}
 	case "switch_block":
 		return parseSwitchBlock(node, source, ctx)
 	}
 	return nil
 }
 
-// lowerBufferedReaderReadLineWhile recognizes Java's canonical nullable line
-// loop and uses the runtime's (string, presence) bridge:
-//
-//	while ((line = reader.readLine()) != null) { ... }
-//	for reader.ReadLineInto(&line) { ... }
-//
-// Java String is represented as a Go string, so a direct translation cannot
-// compare the read result with nil. Keeping the rewrite at the loop boundary
-// preserves empty-line versus EOF behavior and evaluates the reader once per
-// condition check.
+// Canonical readLine returns a nullable String pointer; ordinary loop lowering
+// now preserves assignment and EOF without a native-string slot rewrite.
 func lowerBufferedReaderReadLineWhile(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt, bool) {
-	if node == nil || node.Type() != "while_statement" || node.NamedChildCount() < 2 {
-		return nil, false
-	}
-
-	condition := unwrapParenthesizedExpressionNode(node.NamedChild(0))
-	if condition == nil || condition.Type() != "binary_expression" || condition.ChildCount() < 3 {
-		return nil, false
-	}
-	if operator := condition.Child(1); operator == nil || operator.Content(source) != "!=" {
-		return nil, false
-	}
-
-	left := unwrapParenthesizedExpressionNode(condition.Child(0))
-	right := unwrapParenthesizedExpressionNode(condition.Child(2))
-	var assignment *sitter.Node
-	switch {
-	case left != nil && left.Type() == "assignment_expression" && right != nil && right.Type() == "null_literal":
-		assignment = left
-	case right != nil && right.Type() == "assignment_expression" && left != nil && left.Type() == "null_literal":
-		assignment = right
-	default:
-		return nil, false
-	}
-	if assignment.ChildCount() < 3 || assignment.Child(1).Content(source) != "=" {
-		return nil, false
-	}
-
-	targetNode := assignment.Child(0)
-	readCall := unwrapParenthesizedExpressionNode(assignment.Child(2))
-	if targetNode == nil || readCall == nil || readCall.Type() != "method_invocation" {
-		return nil, false
-	}
-	nameNode := readCall.ChildByFieldName("name")
-	receiverNode := readCall.ChildByFieldName("object")
-	if nameNode == nil || nameNode.Content(source) != "readLine" || receiverNode == nil {
-		return nil, false
-	}
-	receiverType, ok := inferExprJavaType(receiverNode, ctx, source)
-	if !ok || stripJavaQualifier(receiverType) != "BufferedReader" {
-		return nil, false
-	}
-
-	conditionExpr := &ast.CallExpr{
-		Fun: &ast.SelectorExpr{
-			X:   ParseExpr(receiverNode, source, ctx),
-			Sel: &ast.Ident{Name: "ReadLineInto"},
-		},
-		Args: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: ParseExpr(targetNode, source, ctx)}},
-	}
-	return &ast.ForStmt{
-		Cond: conditionExpr,
-		Body: parseLoopBody(node.NamedChild(1), source, ctx),
-	}, true
+	return nil, false
 }
 
 func unwrapParenthesizedExpressionNode(node *sitter.Node) *sitter.Node {
@@ -1202,13 +1122,7 @@ func nullableLocalVariableType(originalType string, ctx Ctx) ast.Expr {
 }
 
 func usesNullableValueStorage(originalType string) bool {
-	base, _ := parseJavaTypeString(originalType)
-	switch stripJavaQualifier(base) {
-	case "String":
-		return true
-	default:
-		return false
-	}
+	return false
 }
 
 // localVariableDiscardStatements marks Java locals as used without dropping

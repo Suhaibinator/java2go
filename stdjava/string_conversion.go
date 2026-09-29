@@ -81,6 +81,12 @@ func hasJavaObjectTextIdentity(value any) bool {
 	if carrier, ok := value.(JavaObjectInfoCarrier); ok && carrier.JavaObjectInfo() != nil {
 		return true
 	}
+	return registeredJavaSourceValue(value)
+}
+
+// Source registration, unlike ObjectInfo or structural method membership,
+// identifies values whose Java methods were resolved by the compiler.
+func registeredJavaSourceValue(value any) bool {
 	id, ok := ObjectDynamicType(value)
 	if !ok {
 		return false
@@ -99,13 +105,23 @@ type executionStringer interface {
 // already running inside a logical execution. Generated toString methods can
 // acquire Java monitors, so forwarding the execution token is required when a
 // value has been erased to Object (or another interface type) before text
-// conversion. Collision-renamed hidden methods are discovered structurally.
+// conversion. Registered source classes use only declaration-registered Java entries;
+// legacy native Go companions retain their structural compatibility path.
 func StringValueOfExecution(execution *Execution, value any) string {
 	if nilJavaReference(value) {
 		return "null"
 	}
 
 	value = collectionObjectView(value)
+	if registeredJavaSourceValue(value) {
+		if _, throwable := value.(nominalThrowableText); throwable {
+			return ThrowableToStringExecution(execution, value)
+		}
+		if rendered, ok := callRegisteredSourceToString(execution, value); ok {
+			return rendered
+		}
+		return ObjectDefaultStringExecution(execution, value)
+	}
 	switch value := value.(type) {
 	case nominalThrowableText:
 		return ThrowableToStringExecution(execution, value)

@@ -13,7 +13,7 @@ func lowerStringJoin(invocation *sitter.Node, args []ast.Expr, ctx Ctx, source [
 	if len(args) == 0 {
 		return unsupportedIntrinsicValue(invocation, "String", source, ctx)
 	}
-	helper := "StringJoinValuesExecution"
+	helper := "JavaStringJoinValuesExecution"
 	if len(args) == 2 {
 		argument := invocationArgumentNode(invocation, 1)
 		javaType, known := inferExprJavaType(argument, ctx, source)
@@ -26,7 +26,7 @@ func lowerStringJoin(invocation *sitter.Node, args []ast.Expr, ctx Ctx, source [
 			if _, primitive := javaPrimitiveArrayComponent(javaType); primitive {
 				return unsupportedIntrinsicValue(invocation, "String", source, ctx)
 			}
-			helper = "StringJoinArrayExecution"
+			helper = "JavaStringJoinArrayExecution"
 		case rank != 0:
 			return unsupportedIntrinsicValue(invocation, "String", source, ctx)
 		default:
@@ -39,7 +39,7 @@ func lowerStringJoin(invocation *sitter.Node, args []ast.Expr, ctx Ctx, source [
 			// must not inherit the runtime mapping simply by sharing a short name.
 			builtin := resolveClassScopeByQualifiedName(ctx, base) == nil
 			if builtin && (containsString(listTypeNames, name) || containsString(setTypeNames, name) || name == "Collection" || name == "Iterable") {
-				helper = "StringJoinIterableExecution"
+				helper = "JavaStringJoinIterableExecution"
 			} else if !intrinsicInvocationConversionApplicable(argument, "java.lang.CharSequence", ctx, source) {
 				return unsupportedIntrinsicValue(invocation, "String", source, ctx)
 			}
