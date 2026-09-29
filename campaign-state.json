@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Original full22 now running on repaired native source, session38667. Poll same process; preserve results. Two additional isolated correctness lanes test source generic constructor and shared primitive argument capture repairs. Fixed allocation profile phase completed; independent audit pending. Full Gson remains required red.",
+  "next_action": "Poll same full22 session38667 on minimal native fix. Strict parity shard passed; later regression gates still running. Preserve live process and source. Continue Collection/Set, source/native Entry, generic-bound and DateFormat TDD; compound Class field fix has binder-shadow regression repair under revalidation. No full Gson acceptance.",
   "performance_team": {
     "astra_perf_codegen": "Difficult optimization design/correctness review only, invoked after material baseline evidence",
     "astra_perf_runtime": "Difficult runtime optimization, lifetime/concurrency review only",
@@ -764,10 +764,26 @@
       "status": "Accepted baseline: three Java/Go/model semantic pairs and18 allocation rows; no optimized implementation or superiority claim."
     },
     "literal_v3_compiler_attribution": {
-      "status": "Independently accepted optimizing compiler diagnostics; allocation profiles separately running or pending terminal audit. No optimization or Java superiority claim.",
+      "status": "Compiler diagnostics and fixed allocation profiles independently accepted for allocation attribution only; no optimized candidate or Java performance comparison.",
       "report_sha256": "4981320a66292e23085ef5cf45a44809410ed98874d78425649262b6fe1a61cd",
       "audit_sha256": "fa15325ea71fe11bd25d2d6df8e5bbc7cd50fb51faf34dc842ea09c50674a996",
       "finding": "Intern lookup path allocates a JavaString wrapper and cloned UTF16 buffer; all64 generated field composites do not escape. Runtime attribution still requires actual profile evidence."
+    },
+    "literal_v3_profiles": {
+      "archive": ".campaign/checkpoints/checkpoint19/literal-v3-accepted/literal-v3-accepted-attribution.tar.gz",
+      "archive_sha256": "3b1e9a38b0ac18001205fde1edc1e1dcf7addd5a8262d98a089bdd5008376329",
+      "manifest_sha256": "3ea0745f324a7fdc0ac81f7c5596fc95505acf450b95ad81683435e44e8bdf9b",
+      "verified_members": 146,
+      "base_archive_verified": ".campaign/checkpoints/checkpoint19/literal-v2-accepted/literal-v2-accepted-semantic-allocation.tar.gz",
+      "audit_sha256": "3309aef169118a62a3714c0cfd4e97fc15882909f7a93caac4c9a9a681d8c8e7",
+      "per_mode_observations": {
+        "checked_calls": 21,
+        "wrapper_objects": 10752,
+        "wrapper_bytes": 344064,
+        "clone_objects": 10609,
+        "clone_bytes": 4257712
+      },
+      "limits": "Two fresh processes; whole-process profiles including warmup and potentially delayed GC accounting. Extra4 clone objects and256 bytes remain unexplained. Not prior20-scan-window counters, timing or Java superiority."
     }
   },
   "checkpoint_policy": {
@@ -4536,7 +4552,7 @@
     "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Original full22 now running on repaired native source, session38667. Poll same process; preserve results. Two additional isolated correctness lanes test source generic constructor and shared primitive argument capture repairs. Fixed allocation profile phase completed; independent audit pending. Full Gson remains required red.",
+    "next": "Poll same full22 session38667 on minimal native fix. Strict parity shard passed; later regression gates still running. Preserve live process and source. Continue Collection/Set, source/native Entry, generic-bound and DateFormat TDD; compound Class field fix has binder-shadow regression repair under revalidation. No full Gson acceptance.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4550,8 +4566,8 @@
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Native panic repair e92116fb294123230113e728217b4b5875bdb9fc pushed to origin/codex/adversarial-pause-checkpoint19; canonical WIP9a23066 preserved separately. Production acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-29T20:14:47.195122+00:00",
+    "publication_status": "Native panic fix e92116f and canonical String/primitive-capture repair f377ebb63fe71fbc341dd28b2ddec9b90756a7e4 pushed to their existing origin WIP branches. Production acceptance remains checkpoint18.",
+    "checkpoint_updated_utc": "2026-09-29T20:34:45.852582+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE",
     "minimal_repair_full22": {
@@ -4573,6 +4589,16 @@
       "panic_fix_audit_sha256": "df9f76d117ae9c55a54cfd6d0c4c7d23b138e3a80692a22d04cc960cbd76dd19",
       "whitespace_audit_sha256": "7e3f79cb7a8f2b74fb09b54d3b64191847be4714f6e087ac82ed4057e9cdedfb",
       "scope": "Completed native red, focused panic repair and independent JVM prerequisites; selected component patches and receipts. Full gate remains unaccepted."
+    },
+    "component_progress48": {
+      "string_commit": "f377ebb63fe71fbc341dd28b2ddec9b90756a7e4",
+      "string_branch": "origin/codex/adversarial-string-checkpoint19",
+      "string_audit_sha256": "9c398e31c2abad0507cbb5cb8b5f7ffe3442146a15c1bfb03457d7201eddb668",
+      "duration_factory_audit_sha256": "80bbddd3051256a8efda309599ddb3f1317e3b5a1913b603dc560b0be808a6ff",
+      "generic_entry": "Focused direct+raw generic Node JVM/race parity green; inherited source substitution and broader composition pending.",
+      "native_entry": "Original9line JVM3/Go3/race1 gate green; raw consumer and broader Set contracts pending.",
+      "class_field": "Original7source parity green, then binder-shadow regression found and repaired in separate frozen candidate; original7 revalidation and independent broader clearance pending.",
+      "abstract_defaults": "Frozen full2+selector6 candidate under validation; full builder method-reference fixture remains red on missing primitive SAM contracts."
     }
   },
   "work_allocation": {
