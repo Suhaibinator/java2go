@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Commit and push independently verified checkpoint17, then continue the unchanged full Gson challenge through source Iterable/Iterator prerequisites and the retained reflection-free Object-text probe. Dedicated performance agents continue bounded, independently verified experiments.",
+  "next_action": "Performance allocation ownerreportsactivehandle; nootherheavyjob. CompilercombinedGREENqueued foractualdescriptor/implicit/binder/tokenfixes. Factory/cache9JVMoraclesfrozen inthiscommit; sourceclosureJVM andGoUNRUN, wrapperpreparing. Lastcompatibilitypublishedbdbefca9; fullGsonrequiredred.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -3441,10 +3441,12 @@
         "scope": "CLI and campaign packages; full application milestone remains6b5f02f"
       },
       "publication": {
-        "status": "committed and pushed, liveoriginverified",
-        "branch": "origin/codex/adversarial-campaign",
-        "revision": "0c1dbeacfd499e3ddd61615e9d104ab1d0b9bbd4",
-        "independently_verified_committed_blobs": 69
+        "revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b",
+        "origin_branch": "codex/adversarial-campaign",
+        "origin_live_sha_verified": true,
+        "verified_source_manifest_sha256": "e92f88e011542a218f1a8da6a5627715c973a98b3f9c4d1e1cede7a0a6578c6e",
+        "audit_sha256": "148f343e9d2b0081d0e39709d161c51c01171d31272ca58c4554b7bf8c75027e",
+        "all_six_applications_accepted": false
       },
       "durable_pending": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint17-semantic-pending",
       "concrete_throwable": {
@@ -3701,29 +3703,92 @@
         "owner": "astra_perf_runtime",
         "reviewer": "astra_perf_codegen"
       }
+    },
+    "checkpoint18": {
+      "base_revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b",
+      "status": "Focused TDD; no implementation promoted",
+      "compiler": {
+        "owner": "astra_compiler",
+        "private": "/private/tmp/java2go-nometa18-jn9_k17g/repo",
+        "status": "FIRST_CANDIDATE_FULL_PROBE_VERIFIED; REVIEW_REGRESSIONS_BLOCK_PROMOTION",
+        "session": null,
+        "fixture": "campaign/reproducers/throwable-nometa-collision",
+        "durable": ".campaign/checkpoints/checkpoint18/nometa-focused-baseline-red.tar.gz",
+        "full_probe": {
+          "jvm": 9,
+          "go_race": 9,
+          "independent_audit_sha256": "793177e9047c82392f08f086d894df1bc2c90d722510a7fcd6b9d31b4f490de6",
+          "durable": ".campaign/checkpoints/checkpoint18/nometa-first-full-green-evidence.tar.gz"
+        },
+        "review": {
+          "new_regressions": [
+            "JavaDynamicTypeID source method collision",
+            "JavaDynamicTypeID source field collision"
+          ],
+          "preexisting": [
+            "implicit toString selects varargs",
+            "generic owner/method shadow bound Go compilation failure"
+          ],
+          "bounded_execution": "Independent JVM-valid holdsLock probe actual semanticRED on baseline/candidate: true:1 vsfalse:1; declaration-bound callerExecutionfix authorized",
+          "durable": ".campaign/checkpoints/checkpoint18/nometa-review-paired-red.tar.gz"
+        }
+      },
+      "runtime_iteration": {
+        "owner": "astra_runtime",
+        "status": "THREE_JVM_NATIVE_DRIVER_PARITY_GREENS; INTEGRATION_PENDING",
+        "entry_abi": "separate unresolved prerequisite",
+        "durable": ".campaign/checkpoints/checkpoint18/map-views-green",
+        "claim": "Native JDK-contract parity driver; not translated application parity"
+      },
+      "performance": {
+        "owner": "astra_perf_runtime",
+        "reviewer": "astra_perf_codegen",
+        "status": "SEMANTIC_GATE_INDEPENDENTLY_VERIFIED; ALLOCATION_RUNNING",
+        "report_sha256": "a21293b1709bef4bbfd8b5df2f6489addff775c81beb3f1c4db3765dea565a12",
+        "durable": ".campaign/checkpoints/checkpoint18/string-boundary-baseline-red.tar.gz",
+        "raw_stages": 24,
+        "jvm_go_pairs": 3,
+        "helper_observations": 174,
+        "generated_observations": 18,
+        "optimization": "none yet; normal-build escape diagnostics preparing",
+        "candidate": "/private/tmp/java2go-string-boundary-candidate-avmb07m3",
+        "candidate_archive": ".campaign/checkpoints/checkpoint18/string-boundary-candidate-prepared-unrun.tar.gz",
+        "semantic_report_sha256": "7373acf3526c9e8a0d3d9dd942740d0355b9df2ac175184f886268ffe6122c68",
+        "semantic_durable": ".campaign/checkpoints/checkpoint18/string-boundary-candidate-semantic-green.tar.gz"
+      },
+      "factory_cache_prerequisite": {
+        "owner": "sol_business oracle; astra_build differentialwrapper",
+        "status": "9STABLE_BINARY_JVM_ORACLES; sourceclosureJVM/strictGoUNRUN",
+        "source": "/private/tmp/java2go-factory-cache-prereq",
+        "report": "/private/tmp/java2go-factory-cache-oracle-next/report.json",
+        "report_sha256": "f22a24a67755b54c94e98b990d1399f255f12b09510f98372682c637f3d18bfc",
+        "package": "campaign/reproducers/factory-cache-prereq",
+        "package_manifest_sha256": "49f687f56be38139692a8ce1bba8c249f932c307729832759bd5f89a1f28337f",
+        "independent_audit": ".campaign/checkpoints/checkpoint18/factory-cache-jvm-oracle-raw.tar.gz"
+      }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "53af25af7eae1f8e4ea2bee614fe6251a2be7e60",
+    "last_pushed_revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "/private/tmp/java2go-checkpoint17-full-ud28crz5/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Commit and push independently verified checkpoint17, then continue the unchanged full Gson challenge through source Iterable/Iterator prerequisites and the retained reflection-free Object-text probe. Dedicated performance agents continue bounded, independently verified experiments.",
+    "next": "Performance allocation ownerreportsactivehandle; nootherheavyjob. CompilercombinedGREENqueued foractualdescriptor/implicit/binder/tokenfixes. Factory/cache9JVMoraclesfrozen inthiscommit; sourceclosureJVM andGoUNRUN, wrapperpreparing. Lastcompatibilitypublishedbdbefca9; fullGsonrequiredred.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
-    "last_compatibility_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
+    "last_compatibility_revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b",
     "automatic_goal_controller": "active after continuation; no token budget",
     "checkpoint16_review_hold": {
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": null,
+    "heavy_owner": "astra_perf_runtime: isolated candidate allocation phase",
     "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint17 (implementation in this commit)",
     "verified_source_manifest_sha256": "e92f88e011542a218f1a8da6a5627715c973a98b3f9c4d1e1cede7a0a6578c6e",
     "verification_archive": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/completion.json",
-    "publication_status": "This checkpoint commit must be pushed and live origin SHA verified by the coordinator; previous published revision remains recorded below for history."
+    "publication_status": "Committed and pushed; live origin SHA independently verified"
   }
 }
