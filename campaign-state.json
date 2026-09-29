@@ -4479,11 +4479,12 @@
   },
   "number_wip_publication": {
     "branch": "codex/adversarial-number-checkpoint19",
-    "source_manifest_sha256": "ec7c47d0f22e71de24f211b11c749a5ade251f8449c8575b371b3b6b91e9c6a0",
-    "original_workflow": "9JVM/9Go portable regression green;13neighbor controls green",
-    "known_blocker": "Explicit Number-bound nominal cast vs six-method structural impostor",
+    "source_manifest_sha256": "546cf7bce18f78f202da954b04df080f02ebc6cb8b22f36d91667b5eca1d85ac",
+    "original_workflow": "Original9 + independent impostor9 JVM/Go observations and13neighbors green",
+    "known_blocker": "Reproduced nominal-cast hole fixed; broader families and accumulated campaign gates remain unaccepted",
     "production_accepted": false,
     "coordinator_branch": "origin/codex/adversarial-campaign",
-    "publication_audit_sha256": "8a65a9eec69668a724da0baeeeebcf55d3114fc9e8e9016c7c83666c30c9c9c0"
+    "publication_audit_sha256": "961cfd43c83c17fe38333519cd9be813725a2a3a5051bc8ab049e93be0b76eef",
+    "nominal_cast_independent_audit_sha256": "1bac2be9d7a2cf0097ca456de11e23e4d410e7a4cbeb6e9cfaed03c9d09975b3"
   }
 }

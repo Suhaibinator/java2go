@@ -1607,6 +1607,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 		}
+		if cast, ok := lowerCanonicalNumberReferenceCast(valueExpr, targetJavaType, ctx); ok {
+			return cast
+		}
 		typeAssert := func() ast.Expr {
 			return &ast.TypeAssertExpr{
 				X: &ast.CallExpr{
