@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Run exactnative26 and field/type qualifier oracle; finish Throwable mixed callback and bounded constructor gates; repair collection raw removals/projection and Iterable boundary. FullGsonGoBuild remains requiredred. Full22/supplemental and full16String gates required before implementation promotion. Performance fixedprelude capture pending analyzer review.",
+  "next_action": "Poll root full22 session45321 to terminal; audit all shards and unchanged fullGson result, then run four supplemental endpoints if appropriate. Integrate collection3 after native verification; implement coordinated source Iterable bridge. Canonical full16 is green and WIPpublished; broad ABI verification and literal-cache baseline remain pending.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -4146,11 +4146,18 @@
         "diagnostic_report_sha256": "c85bb2611faf0cc694a98e2920815abcd6c23a3f79a0df237595bf4fbdcab13d",
         "diagnostic_archive_sha256": "d4f9e184232471808e58462048a5aa7154f43afa1180c1b1b161fab2a73a9fb9",
         "fixed_prelude": {
-          "status": "PREPARE_THREE_SEEDS_84_ROWS_INDEPENDENTLY_GREEN_CAPTURE_UNRUN",
+          "status": "CAPTURE_INTEGRITY_GREEN_VALIDATION_NONQUIET",
           "path": "/private/tmp/java2go-jfr-fixed-prelude-v1-dx67t9vh",
           "report_sha256": "a43bc481e4da762ca563644e4781b3160a5f456442130283bb865ddc230de460",
           "independent_audit_sha256": "b010f84893b8c4e10d61b9b976e0325c6b557ae0bd1025fbbcc60a33298a6661",
-          "next": "Versioned analyzer paired-safepoint interval and pin anchor fixes before fixed capture; no speed claim."
+          "next": "No retuning or speed claim. Prepare measured Go allocation/profile baseline for a potential lazy canonical literal cache before implementation.",
+          "capture_report_sha256": "9284cd4dada092fc56b0525b86f5fac4fef6fed731679f3834606ca740fc8edf",
+          "capture_markers": 102,
+          "capture_model_rows": 48,
+          "validation_compilation_events": 5,
+          "kernel_allowlist_compilation_quiet": true,
+          "validation_batch_event_quiet": false,
+          "validation_envelope_event_quiet": false
         }
       },
       "private_attempts_v6_receipt_sha256": "1685ca1ac23ba54d889fb1fbdab310ae4476865e2fc9fda820ec89dc10405af8",
@@ -4252,16 +4259,19 @@
         "full_abi_accepted": false
       },
       "canonical_full16": {
-        "status": "JVM16_VALID_GO_NORMAL13_RACE7_THEN_THROWABLE_MESSAGE_RUNTIME_RED",
-        "path": "/private/tmp/java2go-string-full16-parser19-4hymfra9",
-        "report_sha256": "ee67500be8cd9f133c78696caa59e606f1dca4e7d0e75ac7469fe7b33b66ab8d",
-        "normal_pairs": 13,
-        "race_pairs": 7,
+        "status": "ALL16_JVM_NORMAL_AND10_RACE_GREEN_WITH_ALL_PACKAGE_SUPPLEMENT",
+        "path": "/private/tmp/java2go-throwable-joint19-5iykfbr0/full16",
+        "report_sha256": "d983cd248e9596fad684ad1e080060e65050dbe38d654c1cf949424ab4620b05",
+        "normal_pairs": 16,
+        "race_pairs": 10,
         "required_normal_pairs": 16,
         "required_race_pairs": 10,
         "sources_and_models_unchanged": true,
-        "next": "Compiler canonical Throwable constructor/getter lowering. getMessage native string reaches canonical concat; legacy variadic constructor also misclassifies canonical String as cause. Later bounds/isolated cases not reached.",
-        "archive_sha256": "cb2c6f6198a7830e21d32cccc962f7ae4dab27d7ef495fbad452d8b2ca86da61"
+        "next": "Broader canonical compiler/runtime CI and remaining native boundary families; full16 does not establish full ABI acceptance.",
+        "archive_sha256": "cb2c6f6198a7830e21d32cccc962f7ae4dab27d7ef495fbad452d8b2ca86da61",
+        "independent_audit_sha256": "71ff84922c164d07b8a82b8753b357028f3ee882fad79302d0f502a9aae5d8ed",
+        "all_package_audit_sha256": "8ea3ec39dfabfd284df1ea6a709d4cf41c073d6750e17207bd488dea1bb25179",
+        "source_manifest_sha256": "faa2c898478a7052d487a21a0a9860796049efbd781d61b2833854aa3715b52d"
       },
       "canonical_throwable": {
         "status": "FIVE_JVM_NATIVE_HELPER_GROUPS_GREEN_38_NATIVE_COMPATIBILITY_TESTS_GREEN",
@@ -4307,15 +4317,18 @@
         "production_promoted": false,
         "v16_manifest_sha256": "0ed4257b11e7754ac81ade6f77cfa2fdf08f05e46b12ed9bc3d06f62b33ee948",
         "v17_manifest_sha256": "6b43b3c4fd5dc02fcebac35dff32a19be8a052e952760197e5297dcec7cced5e",
-        "v18_manifest_sha256": "aee7031f275bfecbd1802d59a3efec57cd68b03f7528f8db9012ee8fe17f9441"
+        "v18_manifest_sha256": "aee7031f275bfecbd1802d59a3efec57cd68b03f7528f8db9012ee8fe17f9441",
+        "v19_manifest_sha256": "e3a2964debf152251352cebad910d5987542ef8e3f080e0ee32a6343fd59fae5",
+        "v20_manifest_sha256": "7c33852943809363b554ff8f7c45f461496690e32e286c67941cabb28f552cd8",
+        "v20_archive_sha256": "ed71e95bc441de5544a2bb12226a2c3041a8ed5750e13b4821c3564095f04f78"
       },
       "erased_collection_followup": {
         "path": "/private/tmp/java2go-collection-erased20-5_2pcf7h",
-        "status": "CANDIDATE2_SOL_AUX_PARITY_AND_ORIGINAL14_GREEN_NEW_CONTROLS_RED",
-        "patch_sha256": "41680db541eb346ba5d912c21f7ac741612417e7a606b399a29fa062546f4611",
-        "manifest_sha256": "25f9dd6063868e615ae689806b8dd4f394ae06fb72f66b1cb8da67a2767d7514",
-        "scope": "9 JVM/9 normal Go/3 race Go exact Sol auxiliary pairs independently audited. Original13 plus stateful test all14 pass. New raw remove control Go build red; separate source Object/nested-projection and Iterable method-boundary controls also JVM-valid Go build red.",
-        "next": "Candidate3 raw remove/projection repair, then consistent Iterable/source protocol bridge and broad collection regressions.",
+        "status": "CANDIDATE3_EXACT16_SOL_AUX_AND_BROAD_RUNTIME_COLLECTION_GATES_GREEN",
+        "patch_sha256": "313bf504f7a1652dd3ef7f4c62e9a0d4f62ff01088a1caf187f735dda92cc95e",
+        "manifest_sha256": "04d8f183562e6fac3a2334d023a3351e94d5a6c12c373ad1992104121bacd77f",
+        "scope": "Exact16 focused controls; JVM9/Go9/race3 Sol auxiliary; full stdjava375 parents+210 subtests and selected compiler88 parents+21 subtests. Zero failures/skips, immutable source, unconditional cleanup. Initial nonverbose runtime run retained as package-status-only.",
+        "next": "Integrate verified delta after native baseline gates; source Iterable/Iterator bridge phase remains required with actual four-test baseline2green2GoBuildred.",
         "accepted": false
       },
       "integer_parse_reference": {
@@ -4327,10 +4340,10 @@
         "remaining": "Canonical Integer constructors/valueOf and historical old-helper emission assertion not claimed. Full String workflow still required."
       },
       "math_to_int_exact": {
-        "status": "MATH_AND_STATIC_NAMESPACE_SEVEN_FOCUSED_GREEN_COMBINED26_PREPARED",
+        "status": "NATIVE26_GREEN_QUALIFIER8_GREEN_FULL22_RUNNING",
         "path": "/private/tmp/java2go-static-member-type44-f2jauji4/candidate",
         "failure": "Original wildcard member-type and field/type namespace errors repaired in focused7. Imported field/type qualifier class-initialization control prepared unrun.",
-        "next": "Exactcombined26 then qualifier control/repair and freshfull22; no promotion yet.",
+        "next": "Independent full22 on fresh qualifier-inclusive native candidate; then four supplemental endpoints. Full Gson remains required red, no candidate promotion yet.",
         "accepted": false
       },
       "full_gson_restored_strict": {
@@ -4344,27 +4357,53 @@
         "accepted": false
       },
       "canonical_throwable_compiler": {
-        "status": "ORIGINAL3_VALID_JVM_STORAGE_AND_VIRTUAL_GREEN_INITCAUSE_RUNTIME_RED",
-        "path": "/private/tmp/java2go-throwable-compiler19-8e5mhq5b",
-        "manifest_sha256": "23cadcf706c117a24bcdd8c64107c81f65d80b9033bb0e047a534a987f94438d",
-        "next": "General mixed native/canonical callback diagnostic repair; generic String-bound ctor repair and bare-null green control. Recombine and rerun exact3+typing2 then originalfull16."
+        "status": "ORIGINAL3_PLUS_TYPING2_ALL_GREEN_COMBINED",
+        "path": "/private/tmp/java2go-throwable-joint19-5iykfbr0",
+        "manifest_sha256": "faa2c898478a7052d487a21a0a9860796049efbd781d61b2833854aa3715b52d",
+        "next": "Broader canonical ABI verification. Original full16 now green; additional constructor families remain outside the focused scope."
       },
       "canonical_throwable_constructor_helpers": {
         "status": "INDEPENDENT_JVM_RUNTIME_RACE_GREEN",
         "patch_production_sha256": "219e5a064093db7945111e8465377c24ad6af4feae86203b0220c123e195196d",
         "archive_sha256": "588b416834f74ee393f0edb82dba90c52c80699fe91a981a1c93ffc615e53e67",
         "scope": "Two additive typed message constructors; independent storage/identity/noarg/null/UTF16 test, not broad compiler acceptance."
+      },
+      "canonical_wip_publication": {
+        "branch": "codex/adversarial-string-checkpoint19",
+        "commit": "9a23066a98c1c5d030638f5fe9d35df6464a3ebf",
+        "worktree": "/Users/suhaib/.codex/worktrees/string-candidate/java2go",
+        "network_origin_verified": true,
+        "independent_blob_audit_sha256": "687f3753f2ecafd7d888b9854c34b71de3a4b9ffae9bcb1130d399a37b1c9595",
+        "frozen_source_manifest_sha256": "faa2c898478a7052d487a21a0a9860796049efbd781d61b2833854aa3715b52d",
+        "implementation_files_exact": 1878,
+        "allowed_document_paths": [
+          "ADVERSARIAL_CAMPAIGN.md",
+          "campaign-state.json",
+          "campaign/STRING_CANDIDATE_CHECKPOINT19.md"
+        ],
+        "production_promoted": false,
+        "scope": "Remote implementation checkpoint; 16 normal/10 race semantic corpus and all generated packages verified. Full accumulated CI/dependency acceptance pending. Newer native generic/import and collection candidates remain separate."
+      },
+      "native_full22_current": {
+        "path": "/private/tmp/java2go-native44-full-prepared-skpbw6u1",
+        "source_manifest_sha256": "afe50c80dd706803a8a101d80c32c63bdaf170d47d9a187dbe14dd01e3ca646d",
+        "status": "RUNNING",
+        "root_session": 45321,
+        "source_immutable": true,
+        "focused_tests_present": 27,
+        "supplemental_endpoints": "Prepared separately, unrun",
+        "accepted": false
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "db8d280932fa297f8777af1901646303d0ddc65d",
+    "last_pushed_revision": "c70cf54d9e83530122337547a888f04b22c5e0d3",
     "branch": "origin/codex/adversarial-campaign",
-    "active_root_session": null,
-    "source_checkpoint": "/private/tmp/java2go-native44-final-prepared-xqd74aa8",
+    "active_root_session": 45321,
+    "source_checkpoint": "/private/tmp/java2go-native44-full-prepared-skpbw6u1/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Run exactnative26 and field/type qualifier oracle; finish Throwable mixed callback and bounded constructor gates; repair collection raw removals/projection and Iterable boundary. FullGsonGoBuild remains requiredred. Full22/supplemental and full16String gates required before implementation promotion. Performance fixedprelude capture pending analyzer review.",
+    "next": "Poll root full22 session45321 to terminal; audit all shards and unchanged fullGson result, then run four supplemental endpoints if appropriate. Integrate collection3 after native verification; implement coordinated source Iterable bridge. Canonical full16 is green and WIPpublished; broad ABI verification and literal-cache baseline remain pending.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -4372,14 +4411,14 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "astra_string_host",
-    "heavy_session": null,
+    "heavy_owner": "root",
+    "heavy_session": 45321,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Focused progress and restored strict Gson milestone; implementation remains private pending regression gates",
-    "checkpoint_updated_utc": "2026-09-29T14:30:09.712628+00:00",
+    "publication_status": "Canonical source WIP9a23066 pushed on separate branch; campaign implementation remains checkpoint18",
+    "checkpoint_updated_utc": "2026-09-29T14:54:26.705231+00:00",
     "prepared_endpoints": "Old main43 endpoints preserved UNRUN; repin fresh after generic repair stable."
   }
 }
