@@ -751,6 +751,17 @@
       "path": "performance/codegen/object_construction/README.md",
       "status": "unmeasured-proposals-only",
       "candidate": "Proven redundant interface-field omission preserving defaults, metadata and nonzero identity; later closure-free receiver/in-place identity designs."
+    },
+    "literal_v2_baseline": {
+      "archive": ".campaign/checkpoints/checkpoint19/literal-v2-accepted/literal-v2-accepted-semantic-allocation.tar.gz",
+      "sha256": "901b1efae2ef6aa71d24273ef24723e5deff21f479bf80d6eb0f8ff8f2abdebe",
+      "manifest_sha256": "f37ed381a4b1c94733278aef8dead911692e73b4cedc5944c6f03c31114cb146",
+      "files_independently_verified": 2024,
+      "scope": "Accepted semantic and Go allocation baseline only; no optimization or Java performance comparison",
+      "semantic_report_sha256": "e47ba3512c4e6e937ca32df8b7ff69a7dbda90d8404e3b3a5b2012a4fcc79bea",
+      "allocation_report_sha256": "0fd99b639ab7b79686e251e60ebba0aa75d1ec77c9c0ed29379b36c44f0d60f5",
+      "independent_allocation_audit_sha256": "b678d6df2179adb2c72e3c700f60a360a360b81da7ba38814f0d816631a633ba",
+      "status": "Accepted baseline: three Java/Go/model semantic pairs and18 allocation rows; no optimized implementation or superiority claim."
     }
   },
   "checkpoint_policy": {
@@ -4518,8 +4529,8 @@
     "active_root_session": null,
     "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
     "active_full_challenge": "round02/data Gson",
-    "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Fresh original full22 on native source6af2c3ad is assigned to Sol_build after independent final launcher review43ea8983. Historical completed1930 unit pass records remain evidence, but no partial parity reuse. Next queued focused gates: ordinary selector repairedcandidate exact6, Duration/Instant observed-JVM red, collection nominal/default/liveview controls. Performance semantic baseline independently accepted; allocation audit pending. Preserve fullGson red and all prior paused/interrupted artifacts.",
+    "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
+    "next": "Full22 run94033 terminalexit1: first11 stages independently green1930units; strictparity53casesgreen1recursive_object_model panic; later10stages UNRUN. Compiler Sol owns isolated reproduction. Selector exact6 independently accepted; whitespace candidate runtime9/generated3 reportedgreen pending independentaudit. ScalarClass unitred observed; implementation/green assigned. Duration harnessred rejected; runner correction pending. Data owns independentJVMoracles. FullGson remains mandatoryred.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4527,19 +4538,19 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "sol_build_v2",
+    "heavy_owner": "Coordinator assigns individual correctness lanes",
     "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Native WIP4a94e3e and canonical WIP9a23066 pushed on separate origin branches; campaign production remains checkpoint18",
-    "checkpoint_updated_utc": "2026-09-29T19:40:39.676303+00:00",
-    "prepared_endpoints": "All4 audited PREPARED_UNRUN; wait for user resume",
+    "checkpoint_updated_utc": "2026-09-29T19:57:31.120423+00:00",
+    "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE"
   },
   "work_allocation": {
-    "updated_at": "2026-09-29T19:40:39.676303+00:00",
+    "updated_at": "2026-09-29T19:57:31.120423+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -4551,13 +4562,23 @@
       "sol_verification_v2": "Independent evidence and routine correctness verification",
       "sol_perf_execution_v2": "Benchmark execution, measurement and routine harness fixes",
       "sol_jdk_runtime_v2": "Routine JDK/runtime implementation through TDD",
-      "sol_compiler_repairs_v2": "Routine compiler repairs through TDD"
+      "sol_compiler_repairs_v2": "Routine compiler repairs through TDD",
+      "sol_string_compat_v2": "String runtime contracts and TDD",
+      "sol_generic_representation_v2": "Canonical generic runtime representation proofs and TDD",
+      "sol_map_entry_v2": "Source and builtin Map.Entry interoperability and TDD",
+      "sol_abstract_collections_v2": "JDK abstract collection defaults and TDD"
     },
     "astra_model": "gpt-6-astra",
     "astra_reasoning_effort": "high",
     "astra_scope": "Only the hardest compiler/runtime architecture, generic dispatch, nominal/interface bridges, object identity/concurrency semantics, and difficult optimization design/review. Routine harness, execution, audit and repairs handed to Sol.",
     "astra_routine_roles": "Build/verifier agents idle; runtime/performance agents consult only when hard issues arise.",
     "ownership": "Challenge/oracle authors remain separate from implementation owners. Implementers may not change frozen expectations or weaken challenges.",
-    "execution": "One heavy Go/JVM/build/test/benchmark job team-wide, coordinator assigned; light work may overlap. No agent spawning without coordinator assignment."
+    "execution": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
+    "capacity_evidence": {
+      "logical_cpus": 16,
+      "physical_cpus": 16,
+      "memory_bytes": 137438953472,
+      "reason": "User requested additional parallelism; host capacity checked before increasing concurrency."
+    }
   }
 }
