@@ -22,10 +22,10 @@ func staticMethodImports(ctx Ctx) []staticMethodImport {
 	if ctx.currentFile == nil {
 		return nil
 	}
-	scope := ctx.currentClass
-	if scope == nil {
-		scope = ctx.currentFile.BaseClass
-	}
+	// Imports belong to the file, including when hierarchy resolution changes
+	// currentFile while retaining another class as its invocation context.
+	// Pair this file's declaration tree with the source bytes read below.
+	scope := ctx.currentFile.BaseClass
 	if scope == nil || scope.Class == nil || scope.Class.DeclarationNode == nil {
 		return nil
 	}
