@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Poll root full22 session45321 to terminal; audit all shards and unchanged fullGson result, then run four supplemental endpoints if appropriate. Integrate collection3 after native verification; implement coordinated source Iterable bridge. Canonical full16 is green and WIPpublished; broad ABI verification and literal-cache baseline remain pending.",
+  "next_action": "Poll root native full22 session62227 to terminal and independently audit all results. Run version2 supplemental endpoints when appropriate. Source iteration exact5 is green but inherited default bodies/map views/nominal IDs need tests and atomic prerequisites before global activation. Canonical whitespace and literal allocation baselines are queued. Full Gson remains required red.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -4320,7 +4320,10 @@
         "v18_manifest_sha256": "aee7031f275bfecbd1802d59a3efec57cd68b03f7528f8db9012ee8fe17f9441",
         "v19_manifest_sha256": "e3a2964debf152251352cebad910d5987542ef8e3f080e0ee32a6343fd59fae5",
         "v20_manifest_sha256": "7c33852943809363b554ff8f7c45f461496690e32e286c67941cabb28f552cd8",
-        "v20_archive_sha256": "ed71e95bc441de5544a2bb12226a2c3041a8ed5750e13b4821c3564095f04f78"
+        "v20_archive_sha256": "ed71e95bc441de5544a2bb12226a2c3041a8ed5750e13b4821c3564095f04f78",
+        "v21_manifest_sha256": "45bcfdc54298285e12751666c9c90b66b5375c734d1fb8aac02a6f4c59ca670f",
+        "v21_archive_sha256": "fced6379146a6070fe1c57227f6de147b53c023a3b965d0b4d2bc8d166fc3b13",
+        "v21_path": ".campaign/checkpoints/checkpoint19/private-attempts-v21"
       },
       "erased_collection_followup": {
         "path": "/private/tmp/java2go-collection-erased20-5_2pcf7h",
@@ -4340,10 +4343,10 @@
         "remaining": "Canonical Integer constructors/valueOf and historical old-helper emission assertion not claimed. Full String workflow still required."
       },
       "math_to_int_exact": {
-        "status": "NATIVE26_GREEN_QUALIFIER8_GREEN_FULL22_RUNNING",
+        "status": "FOCUSED_GREEN_ANCESTRY_REGRESSION_FIXED_FULL22_RUNNING",
         "path": "/private/tmp/java2go-static-member-type44-f2jauji4/candidate",
-        "failure": "Original wildcard member-type and field/type namespace errors repaired in focused7. Imported field/type qualifier class-initialization control prepared unrun.",
-        "next": "Independent full22 on fresh qualifier-inclusive native candidate; then four supplemental endpoints. Full Gson remains required red, no candidate promotion yet.",
+        "failure": "Original wildcard member-type, field/type namespace and imported qualifier initialization defects are fixed in eight focused controls. Full native verification remains in progress.",
+        "next": "Complete fresh full22, then all4 supplemental endpoints. Preserve any failure, no promotion from focused evidence alone.",
         "accepted": false
       },
       "full_gson_restored_strict": {
@@ -4385,25 +4388,78 @@
         "scope": "Remote implementation checkpoint; 16 normal/10 race semantic corpus and all generated packages verified. Full accumulated CI/dependency acceptance pending. Newer native generic/import and collection candidates remain separate."
       },
       "native_full22_current": {
+        "path": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6",
+        "source_manifest_sha256": "6af2c3ad3378b44a8e2dd0d92a78e19240da91265e92736a7eafb60db4ae37e0",
+        "status": "RUNNING",
+        "root_session": 62227,
+        "source_immutable": true,
+        "accepted": false,
+        "supplemental_endpoints": "Version2 preparation pending fresh source/provenance audit; unrun",
+        "metadata_preflight": "Independent Git directory copied and rev-parse/status/freeze-selection verified; source1873 unchanged."
+      },
+      "native_full22_previous": {
         "path": "/private/tmp/java2go-native44-full-prepared-skpbw6u1",
         "source_manifest_sha256": "afe50c80dd706803a8a101d80c32c63bdaf170d47d9a187dbe14dd01e3ca646d",
-        "status": "RUNNING",
+        "status": "FAILED_COMPILER_UNIT_AM",
         "root_session": 45321,
         "source_immutable": true,
         "focused_tests_present": 27,
         "supplemental_endpoints": "Prepared separately, unrun",
-        "accepted": false
+        "accepted": false,
+        "report_sha256": "c812b3fdcc969299454d07c2bb3fcab3a88ad8df9b4f2b8d7142a1d5fb55356b",
+        "passed_records": 961,
+        "failed_tests": [
+          "TestCampaignObjectTextBoundedExecutionJVM"
+        ],
+        "skips": 0,
+        "later_gates": "UNRUN"
+      },
+      "native_ancestry_repair": {
+        "status": "FOCUSED4_GREEN_BROAD_VERIFICATION_RUNNING",
+        "path": "/private/tmp/java2go-bound-execution44-bl6wb7_h",
+        "patch_sha256": "9e5b7c6fd7c5490ae5f39cc6bce20ca1e337b277e789e8f31a9e79db2ca11daf",
+        "scope": "Declared source ancestry to runtime-owned nominal bounds restores execution-aware dispatch; no monitor or token changes. Original synchronized control and inherited Runnable, source shadow, static Object guards pass.",
+        "baseline": "All4 JVM valid; original deadlock and inherited overload mismatch reproduce. Source-stable flag false due only to copied .git/index refresh; non-git source hashes identical. Candidate full manifest stable with optional Git locks disabled.",
+        "independent_audit_sha256": "b07593b37dd741baf6c496668803e5d172e3eabea4cdf701578336af1a833480",
+        "promotion": false
+      },
+      "source_iteration_bridge": {
+        "path": "/private/tmp/java2go-source-iteration20-x8c1vd_3",
+        "status": "EXACT5_GREEN_BROADER_GATES_PENDING",
+        "baseline": "Original4 all JVM valid: 2 pass, 2 generated Go compilation failures. New protocol-collision control has valid JVM oracle and baseline Go compilation failure.",
+        "candidate_v1": "All5 JVM valid; original4 strict/race/runtime pass; anonymous class duplicate NextJava2goExecution still fails all-package Go race build.",
+        "independent_audit_sha256": "83f85fc71365c9584124d1071e8c6bc89991bbdc957a66eb57171de8e7e1b31c",
+        "integration_ready": false,
+        "unresolved_risks": [
+          "ordinary noniteration anonymous method selector reservation",
+          "inherited source interface default methods",
+          "live map view consumers and canonical interface membership"
+        ],
+        "owner": "astra_compiler with astra_collection_views runtime support",
+        "candidate_v2": "All5 JVM/strict/all-generated-race/entry/runtime pass; same fixtures and stable source. Anonymous scope selector repair preserves inherited Java overrides.",
+        "candidate_v2_report_sha256": "a401217c1e35da9dc32fd8dad36b9cd17c1fcc4e3f51a82c1d4d24f237deeff8",
+        "next": "Independent review and broader regression gates, then integration with collection3. No broad source Iterable acceptance."
+      },
+      "native_full22_infrastructure_failure": {
+        "path": "/private/tmp/java2go-native44-ancestry-prepared-ll8rjqd0",
+        "source_manifest_sha256": "6af2c3ad3378b44a8e2dd0d92a78e19240da91265e92736a7eafb60db4ae37e0",
+        "status": "FAILED_SNAPSHOT_INFRASTRUCTURE",
+        "root_session": 68096,
+        "source_immutable": true,
+        "accepted": false,
+        "supplemental_endpoints": "Version2 preparation pending fresh source/provenance audit; unrun",
+        "failure": "Snapshot preparation omitted independent .git directory; unchanged CLI cancellation tests exit128 during implementation freeze. Build/lint pass; source manifest stable. No compiler classification."
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "c70cf54d9e83530122337547a888f04b22c5e0d3",
+    "last_pushed_revision": "91ed3e7d8bd5c38a9c48b2cca43927da41ce8bb1",
     "branch": "origin/codex/adversarial-campaign",
-    "active_root_session": 45321,
-    "source_checkpoint": "/private/tmp/java2go-native44-full-prepared-skpbw6u1/source",
+    "active_root_session": 62227,
+    "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Poll root full22 session45321 to terminal; audit all shards and unchanged fullGson result, then run four supplemental endpoints if appropriate. Integrate collection3 after native verification; implement coordinated source Iterable bridge. Canonical full16 is green and WIPpublished; broad ABI verification and literal-cache baseline remain pending.",
+    "next": "Poll root native full22 session62227 to terminal and independently audit all results. Run version2 supplemental endpoints when appropriate. Source iteration exact5 is green but inherited default bodies/map views/nominal IDs need tests and atomic prerequisites before global activation. Canonical whitespace and literal allocation baselines are queued. Full Gson remains required red.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -4412,13 +4468,13 @@
       "owner": "astra_compiler; root independent verifier"
     },
     "heavy_owner": "root",
-    "heavy_session": 45321,
+    "heavy_session": 62227,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Canonical source WIP9a23066 pushed on separate branch; campaign implementation remains checkpoint18",
-    "checkpoint_updated_utc": "2026-09-29T14:54:26.705231+00:00",
-    "prepared_endpoints": "Old main43 endpoints preserved UNRUN; repin fresh after generic repair stable."
+    "checkpoint_updated_utc": "2026-09-29T15:23:49.265402+00:00",
+    "prepared_endpoints": "Version2 prepared against fresh native source; final provenance audit pending, no endpoint execution."
   }
 }
