@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Inspect combined19 then integrate compiler lower-wildcard V4 repair; repeat full Gson preflight before fresh full22/supplemental acceptance. Canonical full16 requires parseInt and retained UTF16 Throwable messages; separate focused repairs remain private. Continue JFR logging validation separately, no speed claims.",
+  "next_action": "On available execution resume collection-erased JVM baseline (unrun), run combined-v2 exact19, and finish/test parser candidate against frozen oracles. V4 original12 pass but lower-wildcard13 requires real erased mutable collection semantics. Throwable helper5/native38 green; compiler mapping pending. JFRv3 flagprobe green, capture unrun. Then full untouched Gson preflight, fresh full22 and supplemental gates before any promotion.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -4016,7 +4016,8 @@
         ".campaign/checkpoints/checkpoint19/private-attempts-v9",
         ".campaign/checkpoints/checkpoint19/private-attempts-v10",
         ".campaign/checkpoints/checkpoint19/private-attempts-v11",
-        ".campaign/checkpoints/checkpoint19/private-attempts-v12"
+        ".campaign/checkpoints/checkpoint19/private-attempts-v12",
+        ".campaign/checkpoints/checkpoint19/usage-resume-20260929"
       ],
       "utf16_prerequisite": {
         "owner": "astra_build; astra_string_abi design",
@@ -4214,12 +4215,12 @@
         "generated_abi_accepted": false
       },
       "bounded_generic_followup": {
-        "status": "V3_FOCUSED12_GREEN_LOWER_WILDCARD13TH_ACTUAL_RED",
+        "status": "V4_ORIGINAL12_GREEN_LOWER13_PHYSICAL_COLLECTION_ABI_RED",
         "v3": "/private/tmp/java2go-bound-constraints-v3-nplyz4j4",
         "layered_patch_sha256": "0f64b3ac8fec7b63fc07e8ed96d330f5187cd249a08e1b40e3cd48a63c947e32",
         "v3_archive_sha256": "96d0967ce4e0b9aaa69cb7a6c6e4cf90a46928b8c85f3eaddb819127c3dbd53a",
         "passed_scope": "Numeric bounds, declaring-owner qualification, invariant repeated parameters, upper wildcard capture, original controls",
-        "remaining": "Lower-wildcard-only JVM selects generic; original candidate failed Go build, V3 instead selects Object and produces wrong output. V4 under repair.",
+        "remaining": "V4 selects correct Select[string], but Collection<? super T> lowers to Iterable[any], incompatible with List[string]. Dedicated collection-view agent prepared baseline only before usage failure. Raw collection writes must retain Java erasure semantics; no premature cast on insertion.",
         "lower_wildcard_evidence": "/private/tmp/java2go-lower-wildcard19-19g8_gjz/evidence",
         "accepted": false
       },
@@ -4253,10 +4254,12 @@
         "next": "UTF16 Integer.parseInt helper and intrinsic lowering; exact UTF16 exception messages require additive canonical Throwable storage/getters."
       },
       "canonical_throwable": {
-        "status": "FOUR_JVM_VALID_HELPER_REDS_PLUS_SEPARATE_NFE_VALID_RED_PRIVATE_REPAIR",
+        "status": "FIVE_JVM_NATIVE_HELPER_GROUPS_GREEN_38_NATIVE_COMPATIBILITY_TESTS_GREEN",
         "path": "/private/tmp/java2go-throwable-reference-run-4hd_7y4m",
         "native_api_preserved": true,
-        "accepted": false
+        "accepted": false,
+        "scope": "Handwritten runtime drivers only; compiler getters/constructors remain separate migration",
+        "archive_sha256": "be5c3238c4ad54f42fcde3c364a390e5409a1fc0c332c5db8cd61431fd97db5a"
       },
       "performance_validator": {
         "status": "38_PYTHON_ONLY_CONTROLS_GREEN_V3_WORKLOAD_UNRUN_SOURCE_UNACCEPTED",
@@ -4266,17 +4269,32 @@
         "path": "/private/tmp/java2go-supervised-command-v1-cwe2hzrr",
         "sha256": "cad0ecb7f210916d0babc4bf0dc38b8e939504b0d4e53eddf56a3835d3ec8989",
         "status": "Python process controls verified; new gates persist unconditional cleanup and observed identities. Older missing normal cleanup receipts retained as explicit limitations."
+      },
+      "usage_interruption": {
+        "status": "AGENTS_USAGE_LIMIT_NO_ACTIVE_TEST_PROCESS_OBSERVED",
+        "archive_sha256": "afdb36357a501dc8fcdf60be7203ad9a2109b16b29d814da3922f126a90b8534",
+        "manifest_sha256": "555f69a5475c1c4adbe9110998a0353bc6c4299839821ebbdeae851e64551ab7",
+        "verified_archive_members": 9505,
+        "agent_reported_retry": "2026-10-05 07:07 (agent output; timezone unspecified)",
+        "last_test_grant": "astra_collection_views baseline; no evidence directory created or matching test process observed, treat UNRUN",
+        "combined_v2": "/private/tmp/java2go-generic-null-calls44-a80tjv3o/combined-v2",
+        "combined_v2_manifest_sha256": "a1a586e962db00f687a93797017d5651e08d6c39e10444ae001acb4e205f8739",
+        "combined_v2_status": "PREPARED_UNRUN",
+        "collection_baseline": "/private/tmp/java2go-collection-erased20-5_2pcf7h",
+        "parser_partial_candidate": "/private/tmp/java2go-integer-parse-canonical-q3r_4ggx/candidate-v2",
+        "parser_status": "JVM_ORACLES_VALID_RUNTIME_AND_COMPILER_REDS; candidate implementation interrupted/unrun, inspect before continuing",
+        "jfr_capture_status": "V3_FLAGPROBE_GREEN_CAPTURE_UNRUN"
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "2f63cbd2f596ac7c671ccdc2d638c95c405e7438",
+    "last_pushed_revision": "cdaf884cf0a13ece63763678445e733d2cb508a5",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "/private/tmp/java2go-generic-null-calls44-a80tjv3o/combined-v1",
+    "source_checkpoint": "/private/tmp/java2go-generic-null-calls44-a80tjv3o/combined-v2",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Inspect combined19 then integrate compiler lower-wildcard V4 repair; repeat full Gson preflight before fresh full22/supplemental acceptance. Canonical full16 requires parseInt and retained UTF16 Throwable messages; separate focused repairs remain private. Continue JFR logging validation separately, no speed claims.",
+    "next": "On available execution resume collection-erased JVM baseline (unrun), run combined-v2 exact19, and finish/test parser candidate against frozen oracles. V4 original12 pass but lower-wildcard13 requires real erased mutable collection semantics. Throwable helper5/native38 green; compiler mapping pending. JFRv3 flagprobe green, capture unrun. Then full untouched Gson preflight, fresh full22 and supplemental gates before any promotion.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -4284,14 +4302,14 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "astra_compiler V4 exact13; inspect live agent/session before launch",
+    "heavy_owner": null,
     "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Evidence-only progress checkpoint; production remains eee3036, full Gson and canonical full16 unaccepted.",
-    "checkpoint_updated_utc": "2026-09-29T12:08:49.046319+00:00",
+    "publication_status": "Usage-limit evidence checkpoint; goal incomplete, no production promotion; last production eee3036.",
+    "checkpoint_updated_utc": "2026-09-29T13:49:04.109927+00:00",
     "prepared_endpoints": "Old main43 endpoints preserved UNRUN; repin fresh after generic repair stable."
   }
 }

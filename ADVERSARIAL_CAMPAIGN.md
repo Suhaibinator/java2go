@@ -182,3 +182,11 @@ Native generic repair V3 passes twelve focused controls, including numeric bound
 Performance validation now rejects malformed metrics and mismatched evidence in all 38 Python controls. JFR preparation matched three frozen models, but capture/logging probes exposed startup output pollution; original artifacts are preserved, and official HotSpot source guides a separate logging revision. The workload output parser remains strict, and there is no steady-state or speed claim. New runs use a verified process supervisor with unconditional cleanup receipts.
 
 This checkpoint preserves experiments and exact blockers, not a production promotion. After the generic fixes are combined, rerun the unchanged Gson application, full accumulated regression shards, and supplemental endpoints from a fresh frozen snapshot.
+
+### Usage-limit resume checkpoint
+
+Agent execution hit the account usage limit. No matching active campaign test process was observed; the final collection baseline grant had not produced execution evidence and remains unrun. A verified 9,505-file archive preserves current source candidates, regressions, runtime evidence, and the exact resume inventory under the ignored checkpoint19/usage-resume-20260929 directory.
+
+Since the prior checkpoint, V4 retained all twelve generic controls but exposed the physical Collection<? super T> / Iterable[any] incompatibility. A dedicated agent prepared a stateful collection baseline; no runtime workaround was accepted. The Objects/native-string conversion is staged in combined-v2, whose nineteen-test gate is unrun. Throwable helper tests passed five JVM groups and 38 native compatibility tests; compiler lowering is still separate. Integer.parseInt has valid JVM oracles and recorded compiler/runtime reds, with a partial candidate preserved for inspection. JFR logging V3 passed its strict flag probe; diagnostic capture is still unrun.
+
+Resume from campaign-state.json. Full Gson and the original sixteen-case String workflow remain required and failing; no new production code or round acceptance is claimed.
