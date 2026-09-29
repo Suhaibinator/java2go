@@ -639,6 +639,9 @@ func prepare(c Config, m Manifest, lock Lock, runDir string, report *Report) (p 
 		if len(found) == 0 {
 			return p, fmt.Errorf("empty implementation source closure for %s", id)
 		}
+		if e = copyDependencyResources(binaryPath, projectRoot, id, m.DependencyResources[id], p.resources, report.SourceHashes); e != nil {
+			return p, e
+		}
 		if e = write(filepath.Join(projectRoot, "pom.xml"), pom(binary.Group, id, binary.Version, nil)); e != nil {
 			return p, e
 		}
@@ -653,6 +656,7 @@ func prepare(c Config, m Manifest, lock Lock, runDir string, report *Report) (p 
 			return p, e
 		}
 		add := func(source, target string) error {
+			target = filepath.ToSlash(filepath.Clean(target))
 			if _, ok := p.resources[target]; ok {
 				return fmt.Errorf("duplicate resource target %s", target)
 			}
@@ -694,6 +698,67 @@ func prepare(c Config, m Manifest, lock Lock, runDir string, report *Report) (p 
 	sort.Strings(p.allSources)
 	return p, nil
 }
+
+// Runtime resources come from the same frozen published binary as the oracle.
+// Keep them in their dependency module; duplicating them in the app module would
+// introduce a resource collision during Maven project translation.
+func copyDependencyResources(binaryPath, projectRoot, id string, paths []string, resources map[string][]byte, hashes map[string]string) (resultErr error) {
+	if len(paths) == 0 {
+		return nil
+	}
+	selected := map[string]bool{}
+	for _, path := range paths {
+		if !validDependencyResource(path) {
+			return fmt.Errorf("invalid dependency resource %q", path)
+		}
+		if selected[path] {
+			return fmt.Errorf("duplicate dependency resource %s", path)
+		}
+		selected[path] = true
+	}
+	reader, err := zip.OpenReader(binaryPath)
+	if err != nil {
+		return err
+	}
+	defer func() { resultErr = errors.Join(resultErr, reader.Close()) }()
+	found := map[string]bool{}
+	for _, file := range reader.File {
+		if !selected[file.Name] {
+			continue
+		}
+		if !file.Mode().IsRegular() {
+			return fmt.Errorf("dependency resource must be a regular archive file: %s", file.Name)
+		}
+		if found[file.Name] {
+			return fmt.Errorf("duplicate dependency resource archive entry %s", file.Name)
+		}
+		if _, exists := resources[file.Name]; exists {
+			return fmt.Errorf("duplicate resource target %s", file.Name)
+		}
+		stream, err := file.Open()
+		if err != nil {
+			return err
+		}
+		data, err := io.ReadAll(stream)
+		err = errors.Join(err, stream.Close())
+		if err != nil {
+			return err
+		}
+		if err = write(filepath.Join(projectRoot, "src/main/resources", file.Name), data); err != nil {
+			return err
+		}
+		resources[file.Name] = data
+		hashes["dependency-resource/"+id+"/"+file.Name] = hash(data)
+		found[file.Name] = true
+	}
+	for _, path := range paths {
+		if !found[path] {
+			return fmt.Errorf("resource not in locked %s binary archive: %s", id, path)
+		}
+	}
+	return nil
+}
+
 func validatePOM(data []byte, m Manifest, lock Lock) error {
 	var model struct {
 		Dependencies []struct {

@@ -5241,10 +5241,69 @@
         "astra_performance_specialist": "astra_callback_perf_v5",
         "thread_limits": "Several completed-worker reactivation/messages hitagent-threadlimit. Roottakesavailableindependentreviews andactiveworkerscontinue; no general campaignblocker."
       }
+    },
+    "progress56": {
+      "recorded_at": "2026-09-29T23:49:55.946406+00:00",
+      "status": "ACTIVE; scoped milestone only; full Gson and accumulated CI remain unaccepted",
+      "codec_resource_publication": {
+        "tested_base": "9a800349f76dd83cd2c7fa8c504de3f88444e475",
+        "applied_onto": "17e0752664a014f5a85dad23f3ff122ca0aebadb",
+        "candidate_manifest_sha256": "7053a3ae0f8d9a8d227fb5f03ce1122ab3dc105f647d98d8d48d5397d44b541a",
+        "patch_sha256": "ecf5b99aaa1331d24c2f3cf30f20b610325e95036c42cbf98a615933eea50230",
+        "independent_receipt": "/private/tmp/java2go-codec-publication-sol-terminal-audit-eppql8b0/receipt.json",
+        "independent_sha256": "7a7736e374c950c93ec58fe72af4d2dd9d51871ff98bcbdb793a00af6d2ed474",
+        "root_byte_correspondence_audit": "/private/tmp/java2go-codec-publication-root-audit.json",
+        "root_audit_sha256": "3e42801e8957636eecf849370e3f3c4e3c789f18946efc1c8041854f41ecbe6a",
+        "result": "Fresh publication five focused parents/four alias subcases, nine binary/source/generated triples plus three race stress runs passed. All fifteen patch paths exactly match tested candidate; only newer tracking files preserved.",
+        "scope": "Whole original Codec Resources.java and selected locked dmrules.txt resource, not whole Commons Codec. Prior cache-integrity rejection retained."
+      },
+      "native_publication": {
+        "source_manifest_sha256": "0fb227f2a02bee63cadffe83189b4d8bb8c0408ac9a9d71bb64e959283db9f19",
+        "owner_audit": "/private/tmp/java2go-native-publication54-u2fagt3n/harness-v2/publication-terminal-audit.json",
+        "owner_audit_sha256": "93793051080beb91844242a4f8782543c18b04ae7bcd7731d52c1d48915a636e",
+        "status": "Owner reports all nine gates green; independent Sol audit active. RawSet and shadow gates still required."
+      },
+      "bigmath": {
+        "source_manifest_sha256": "fe79ac9688859ba95ecde94d78f83832f5debb11894f9cb8c4e16b04aee1e9cc",
+        "independent_audit": "/private/tmp/java2go-sol-bigmath-audit-v6-88s8010n/audit.json",
+        "independent_sha256": "31b82107baeb667c8c7194ddabf0ba3d9928119fc7ec31f93ba5b90d3c1d4805",
+        "status": "Actual constructor red3 and identity red1 followed by focus4 and original Number18 green, independently accepted. Historical six-test derivative still unrun.",
+        "race_scope": "Focused generated helper uses plain go test; direct runtime drivers and Number18 generated builds use race detection."
+      },
+      "canonical_test_migrations": {
+        "boxing": "Eleven parents independently accepted, diagnostic-only printf verb correction; historical vet red retained.",
+        "ast31": "Fresh baseline14fail17pass, candidate31parents4subtests green. Independent audit active.",
+        "io10": {
+          "status": "ACTUAL RED: all ten parents ran, five pass/five fail, zero skips; source/tools/cleanup stable. Three pointer-rendered String output mismatches and two Writer.write ClassCastException failures assigned separate Sol repair owners.",
+          "owner_receipt": "/private/tmp/java2go-canonical-io10-runner-sol-upw0v3__/io-attempt1/terminal-builder-summary.json",
+          "sha256": "2fbcf3ec847a8b803c2e27de353e6f23852cc209c9a0d0c1671a21acbd613062"
+        }
+      },
+      "map52": {
+        "status": "Actual nominal consumer baseline mismatch repaired; candidate nominal and wider fixtures green across three seeds. Inherited Map.put remains generated compilation red. Astra prepared scoped dispatch draft; new Sol composes accepted native storage prerequisite.",
+        "terminal_receipt_sha256": "0b0b47f5e80ddd3669ecf9341e5a2a760d616c1f74ec501177870074e4972132"
+      },
+      "dollar_identifiers": "Original full8 strict transpilation red retained. V2 enum export and descriptor provenance candidate under independent review; package-dollar prerequisite separately active. No green claimed.",
+      "additional_sol": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "high",
+        "assignments": {
+          "sol_map_composition_v6": "Compose accepted native erased storage with Map.put dispatch and retained Map52 consumers",
+          "sol_native_audit_v6": "Independent native nine-gate publication verification",
+          "sol_ast_audit_v6": "Independent AST31 regression verification",
+          "sol_bigmath_harness_audit_v6": "Independent historical six-test harness readiness",
+          "sol_dollar_v2_audit_v6": "Independent dollar identifier v2 readiness and naming injectivity",
+          "sol_set_shadow_prep_v6": "Original Set and shadow oracle/acceptance preparation",
+          "sol_io_string_output_v6": "Canonical String output mismatch repair through TDD",
+          "sol_writer_dispatch_v6": "Writer.write canonical argument dispatch repair through TDD"
+        }
+      },
+      "limits": "Three heavy correctness lanes maximum; performance measurements exclusive; no subagent spawning without coordinator assignment.",
+      "durability": "Verbose newer receipts remain private local artifacts; progress53 archive has an earlier fixed cutoff."
     }
   },
   "work_allocation": {
-    "updated_at": "2026-09-29T23:10:44.697585+00:00",
+    "updated_at": "2026-09-29T23:49:55.946406+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -5265,7 +5324,15 @@
       "sol_catch_independent_v4": "Independent source catch evidence and full EntrySet frontier audit",
       "sol_codec_independent_v4": "Independent dependency resource review, then separate alias-collision regression preparation",
       "sol_callback_perf_prep_v4": "Fresh lambda callback experiment controls and fair benchmark preparation, unmeasured",
-      "sol_jdk_integration_prep_v4": "Private DateFormat integration and canonical/native ABI prerequisite mapping"
+      "sol_jdk_integration_prep_v4": "Private DateFormat integration and canonical/native ABI prerequisite mapping",
+      "sol_map_composition_v6": "Compose accepted native erased storage with Map.put dispatch and retained Map52 consumers",
+      "sol_native_audit_v6": "Independent native nine-gate publication verification",
+      "sol_ast_audit_v6": "Independent AST31 regression verification",
+      "sol_bigmath_harness_audit_v6": "Independent historical six-test harness readiness",
+      "sol_dollar_v2_audit_v6": "Independent dollar identifier v2 readiness and naming injectivity",
+      "sol_set_shadow_prep_v6": "Original Set and shadow oracle/acceptance preparation",
+      "sol_io_string_output_v6": "Canonical String output mismatch repair through TDD",
+      "sol_writer_dispatch_v6": "Writer.write canonical argument dispatch repair through TDD"
     },
     "astra_model": "gpt-6-astra",
     "astra_reasoning_effort": "high",
@@ -5279,7 +5346,7 @@
       "memory_bytes": 137438953472,
       "reason": "User requested additional parallelism; host capacity checked before increasing concurrency."
     },
-    "latest_parallelism": "Added four gpt-6.1-sol/high agents for catch independent verification, Codec independent review, callback performance experiment preparation, and DateFormat/JDK integration preparation; reused Sol for lint, collection composition and oracle comparisons. Astra reserved for hardest semantics and optimization design.",
+    "latest_parallelism": "Added eight GPT-6.1 Sol/high agents for disjoint integration, independent verification, prerequisite preparation and newly observed IO runtime repairs. Astra reserved for difficult semantic design.",
     "additional_sol_workers": {
       "model": "gpt-6.1-sol",
       "reasoning": "high",

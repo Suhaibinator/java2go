@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -20,21 +21,27 @@ type Resource struct {
 	Target string `json:"target"`
 }
 type Manifest struct {
-	Name              string              `json:"name"`
-	MainClass         string              `json:"main_class"`
-	SourceRoots       []string            `json:"source_roots"`
-	POM               string              `json:"pom"`
-	Dependencies      []string            `json:"dependencies"`
-	DependencySources map[string][]string `json:"dependency_sources"`
-	Resources         []Resource          `json:"resources"`
-	Args              []string            `json:"args"`
-	Seeds             []int               `json:"seeds"`
-	Repeats           int                 `json:"repeats"`
-	OutputFiles       []string            `json:"output_files"`
+	Name                string              `json:"name"`
+	MainClass           string              `json:"main_class"`
+	SourceRoots         []string            `json:"source_roots"`
+	POM                 string              `json:"pom"`
+	Dependencies        []string            `json:"dependencies"`
+	DependencySources   map[string][]string `json:"dependency_sources"`
+	DependencyResources map[string][]string `json:"dependency_resources,omitempty"`
+	Resources           []Resource          `json:"resources"`
+	Args                []string            `json:"args"`
+	Seeds               []int               `json:"seeds"`
+	Repeats             int                 `json:"repeats"`
+	OutputFiles         []string            `json:"output_files"`
 }
 
 func safeRelative(path string) bool {
 	return path != "" && !filepath.IsAbs(path) && filepath.Clean(path) != ".." && !strings.HasPrefix(filepath.Clean(path), ".."+string(filepath.Separator))
+}
+
+// Dependency resources are exact portable archive paths, never compiled classes.
+func validDependencyResource(path string) bool {
+	return path != "." && fs.ValidPath(path) && !strings.ContainsAny(path, "\\:") && !strings.HasSuffix(path, ".class")
 }
 func (m Manifest) Validate() error {
 	if m.Name == "" || strings.ContainsAny(m.Name, "/\\") || m.MainClass == "" || len(m.SourceRoots) == 0 || !safeRelative(m.POM) {
@@ -66,6 +73,21 @@ func (m Manifest) Validate() error {
 			if p != "**" && (!safeRelative(p) || !strings.HasSuffix(p, ".java")) {
 				return fmt.Errorf("invalid implementation source %q", p)
 			}
+		}
+	}
+	for dep, paths := range m.DependencyResources {
+		if !seen[dep] {
+			return fmt.Errorf("undeclared dependency resource %s", dep)
+		}
+		selected := map[string]bool{}
+		for _, path := range paths {
+			if !validDependencyResource(path) {
+				return fmt.Errorf("invalid dependency resource %q", path)
+			}
+			if selected[path] {
+				return fmt.Errorf("duplicate dependency resource %s", path)
+			}
+			selected[path] = true
 		}
 	}
 	for _, r := range m.Resources {

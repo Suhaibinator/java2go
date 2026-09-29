@@ -53,6 +53,19 @@ Each fixture directory contains `fixture.json`, the original POM, sources/resour
 
 All paths are fixture-relative, except package-relative dependency source paths. IDs match dependency lock IDs. Every declared dependency must have matching exact direct coordinates in the fixture POM; make any needed transitive source dependencies explicit. The POM must pin compiler/resources plugins supported by the Maven lock. Seeds and repeats are mandatory and cannot be reduced. Unknown manifest fields, empty source roots, duplicate sources, undeclared dependencies, and escaping paths fail.
 
+Optional `dependency_resources` maps declared dependency IDs to exact package-relative
+resource paths in their locked published binary JAR. For example,
+`"dependency_resources": {"commons-codec": ["org/apache/commons/codec/language/dmrules.txt"]}`.
+These bytes are frozen and hashed unchanged, copied into that dependency project's
+`src/main/resources`, and supplied identically to both JVM graphs and generated Go.
+Extracted caches and source-JAR payloads do not override published runtime resources.
+Selections must name existing regular entries; unsafe paths, compiled `.class` files,
+symlink entries, repeated selections, and duplicate classpath targets fail. Paths are
+literal, with no wildcard expansion. Fixture resource destinations are normalized
+before collision checks and freezing, so aliases such as `vendor/./data.bin` collide
+with `vendor/data.bin`. Dependencies need not select resources; old fixtures retain
+their existing source/resource inputs.
+
 Resources may be files or directories. They are copied to each fresh process working directory and to the Java classpath. Write output files relative to that directory. `{seed}` substitution applies only to arguments.
 
 Fixtures producing files must also contain a frozen `oracle.json` with the Java observations:

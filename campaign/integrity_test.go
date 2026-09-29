@@ -215,3 +215,147 @@ func TestRawStreamArtifactsPreserveInvalidUTF8(t *testing.T) {
 		t.Fatalf("raw stdout damaged: %x %v", b, e)
 	}
 }
+
+// Resource payloads intentionally include non-UTF8 bytes; ingestion must copy
+// the archive bytes, not decode text or trust an extracted dependency cache.
+func dependencyResourceTestInputs(t *testing.T) (Config, Manifest, Lock) {
+	t.Helper()
+	root := t.TempDir()
+	fixture := filepath.Join(root, "fixture")
+	archive := func(file string, entries map[string][]byte) {
+		t.Helper()
+		var data bytes.Buffer
+		writer := zip.NewWriter(&data)
+		for name, payload := range entries {
+			member, err := writer.Create(name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err = member.Write(payload); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := writer.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := write(filepath.Join(root, ".campaign/cache", file), data.Bytes()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	archive("lib.jar", map[string][]byte{"vendor/data.bin": {0xff, 0, 0xfe, 10}, "vendor/unselected.txt": []byte("not selected")})
+	archive("lib-sources.jar", map[string][]byte{"vendor/Real.java": []byte("package vendor; public class Real {}"), "vendor/data.bin": []byte("different source archive payload")})
+	for path, data := range map[string]string{
+		"src/app/Main.java": "package app; public class Main {}",
+		"pom.xml":           "<project><dependencies><dependency><groupId>vendor</groupId><artifactId>lib</artifactId><version>1</version></dependency></dependencies></project>",
+	} {
+		if err := write(filepath.Join(fixture, path), []byte(data)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := write(filepath.Join(root, ".campaign/sources/lib-1/vendor/data.bin"), []byte("untrusted extracted payload")); err != nil {
+		t.Fatal(err)
+	}
+	manifest := Manifest{Name: "resource", MainClass: "app.Main", POM: "pom.xml", SourceRoots: []string{"src"}, Dependencies: []string{"lib"}, DependencySources: map[string][]string{"lib": {"vendor/Real.java"}}, DependencyResources: map[string][]string{"lib": {"vendor/data.bin"}}, Seeds: []int{17, 41, 97}, Repeats: 3}
+	lock := Lock{Artifacts: []Artifact{{ID: "lib", Kind: "binary", Group: "vendor", Version: "1", File: "lib.jar"}, {ID: "lib", Kind: "sources", Group: "vendor", Version: "1", File: "lib-sources.jar"}}}
+	return Config{Repository: root, Fixture: fixture}, manifest, lock
+}
+
+func TestDependencyResourceComesFromLockedBinaryArchive(t *testing.T) {
+	config, manifest, lock := dependencyResourceTestInputs(t)
+	run := filepath.Join(config.Repository, "run")
+	report := Report{SourceHashes: map[string]string{}}
+	prepared, err := prepare(config, manifest, lock, run, &report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte{0xff, 0, 0xfe, 10}
+	name := "vendor/data.bin"
+	if !bytes.Equal(prepared.resources[name], want) {
+		t.Fatalf("locked dependency resource omitted or changed: %x", prepared.resources[name])
+	}
+	data, err := os.ReadFile(filepath.Join(run, "frozen/dependency-projects/lib/src/main/resources", name))
+	if err != nil || !bytes.Equal(data, want) {
+		t.Fatalf("dependency module payload: %x %v", data, err)
+	}
+	if report.SourceHashes["dependency-resource/lib/"+name] != hash(want) {
+		t.Fatal("dependency resource hash missing or changed")
+	}
+	if _, err := os.Stat(filepath.Join(prepared.project, "src/main/resources", name)); !os.IsNotExist(err) {
+		t.Fatalf("dependency resource duplicated in app: %v", err)
+	}
+	if _, present := prepared.resources["vendor/unselected.txt"]; present {
+		t.Fatal("unselected archive resource ingested")
+	}
+}
+
+func TestDependencyResourceManifestRejectsUnsafeSelections(t *testing.T) {
+	_, good, _ := dependencyResourceTestInputs(t)
+	for _, selection := range [][]string{{"../escape"}, {"/absolute"}, {"C:/absolute"}, {"vendor/../escape"}, {"vendor\\escape"}, {"vendor/Real.class"}, {"."}, {"vendor/data.bin", "vendor/data.bin"}} {
+		manifest := good
+		manifest.DependencyResources = map[string][]string{"lib": selection}
+		if manifest.Validate() == nil {
+			t.Fatalf("accepted invalid resource selection %q", selection)
+		}
+	}
+	good.DependencyResources = map[string][]string{"undeclared": {"vendor/data.bin"}}
+	if good.Validate() == nil {
+		t.Fatal("accepted resource for undeclared dependency")
+	}
+}
+
+func TestDependencyResourceMissingEntryFails(t *testing.T) {
+	config, manifest, lock := dependencyResourceTestInputs(t)
+	manifest.DependencyResources["lib"] = []string{"vendor/missing.txt"}
+	report := Report{SourceHashes: map[string]string{}}
+	_, err := prepare(config, manifest, lock, filepath.Join(config.Repository, "run"), &report)
+	if err == nil || !strings.Contains(err.Error(), "resource not in locked") {
+		t.Fatalf("missing resource silently omitted: %v", err)
+	}
+}
+
+func TestDependencyResourceFixtureCollisionFails(t *testing.T) {
+	config, manifest, lock := dependencyResourceTestInputs(t)
+	if err := write(filepath.Join(config.Fixture, "input.bin"), []byte("fixture")); err != nil {
+		t.Fatal(err)
+	}
+	manifest.Resources = []Resource{{Source: "input.bin", Target: "vendor/data.bin"}}
+	report := Report{SourceHashes: map[string]string{}}
+	_, err := prepare(config, manifest, lock, filepath.Join(config.Repository, "run"), &report)
+	if err == nil || !strings.Contains(err.Error(), "duplicate resource target") {
+		t.Fatalf("resource collision accepted: %v", err)
+	}
+}
+
+func TestDependencyResourceFixtureAliasCollisionFails(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+		target string
+	}{
+		{"file-dot-segment", "input.bin", "vendor/./data.bin"},
+		{"file-leading-dot", "input.bin", "./vendor/data.bin"},
+		{"file-parent-segment", "input.bin", "vendor/sub/../data.bin"},
+		{"directory-parent-segment", "inputs", "vendor/sub/.."},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			config, manifest, lock := dependencyResourceTestInputs(t)
+			input := testCase.source
+			if input == "inputs" {
+				input = filepath.Join(input, "data.bin")
+			}
+			if err := write(filepath.Join(config.Fixture, input), []byte("fixture")); err != nil {
+				t.Fatal(err)
+			}
+			manifest.Resources = []Resource{{Source: testCase.source, Target: testCase.target}}
+			if err := manifest.Validate(); err != nil {
+				t.Fatal(err)
+			}
+			report := Report{SourceHashes: map[string]string{}}
+			_, err := prepare(config, manifest, lock, filepath.Join(config.Repository, "run"), &report)
+			if err == nil || !strings.Contains(err.Error(), "duplicate resource target") {
+				t.Fatalf("resource alias collision accepted for %q: %v", testCase.target, err)
+			}
+		})
+	}
+}

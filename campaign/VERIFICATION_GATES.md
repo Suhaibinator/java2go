@@ -28,3 +28,7 @@ The historical preparation notes above retain their original scope. `active_resu
 ## Progress55 precedence
 
 `active_resume.progress55` records newer focused evidence. Native callback and Codec resource fixtures are independently accepted only for their stated scopes; fresh publication compositions remain required. The coherent full Enum/reflection String challenge is strict-transpile red on dollar identifiers. Boxing diagnostic migration and other test migrations remain unfinished. Callback diagnostic parity is verified with an explicit reused-cache caveat; no performance improvement is measured. Full Gson and accumulated CI remain unaccepted.
+
+## Progress56 precedence
+
+`active_resume.progress56` records the published Codec resource-ingestion prerequisite and expanded Sol assignments. BigMath focused scope is independently green; native and AST publication audits continue. IO10 exposes five actual runtime failures; inherited Map.put and full dollar-identifier application remain blocked. Historical failures remain visible. Full Gson, accumulated CI, concurrency stress and network gates remain required.
