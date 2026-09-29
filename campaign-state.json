@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Fresh original full22 on native source6af2c3ad is assigned to Sol_build after independent final launcher review43ea8983. Historical completed1930 unit pass records remain evidence, but no partial parity reuse. Next queued focused gates: ordinary selector repairedcandidate exact6, Duration/Instant observed-JVM red, collection nominal/default/liveview controls. Performance semantic baseline independently accepted; allocation audit pending. Preserve fullGson red and all prior paused/interrupted artifacts.",
+  "next_action": "Native regression panic repaired, independently reviewed and pushed as e92116f on codex/adversarial-pause-checkpoint19. Original full22 rerun prepared and independently cleared on minimal repair source ede7cb11, awaiting exclusive allocation profile completion. Whitespace and source Entry focused parity green; generic Class application remains red, native live-entry baseline build red, abstract defaults baseline build red. Duration factories compile but standalone harness needs a Go entrypoint before parity. Continue frozen TDD repairs; full Gson remains required red and Netty stays gated.",
   "performance_team": {
     "astra_perf_codegen": "Difficult optimization design/correctness review only, invoked after material baseline evidence",
     "astra_perf_runtime": "Difficult runtime optimization, lifetime/concurrency review only",
@@ -762,6 +762,12 @@
       "allocation_report_sha256": "0fd99b639ab7b79686e251e60ebba0aa75d1ec77c9c0ed29379b36c44f0d60f5",
       "independent_allocation_audit_sha256": "b678d6df2179adb2c72e3c700f60a360a360b81da7ba38814f0d816631a633ba",
       "status": "Accepted baseline: three Java/Go/model semantic pairs and18 allocation rows; no optimized implementation or superiority claim."
+    },
+    "literal_v3_compiler_attribution": {
+      "status": "Independently accepted optimizing compiler diagnostics; allocation profiles separately running or pending terminal audit. No optimization or Java superiority claim.",
+      "report_sha256": "4981320a66292e23085ef5cf45a44809410ed98874d78425649262b6fe1a61cd",
+      "audit_sha256": "fa15325ea71fe11bd25d2d6df8e5bbc7cd50fb51faf34dc842ea09c50674a996",
+      "finding": "Intern lookup path allocates a JavaString wrapper and cloned UTF16 buffer; all64 generated field composites do not escape. Runtime attribution still requires actual profile evidence."
     }
   },
   "checkpoint_policy": {
@@ -4530,7 +4536,7 @@
     "source_checkpoint": "/private/tmp/java2go-native44-ancestry-metadata-v2-jwffbsp6/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Full22 run94033 terminalexit1: first11 stages independently green1930units; strictparity53casesgreen1recursive_object_model panic; later10stages UNRUN. Compiler Sol owns isolated reproduction. Selector exact6 independently accepted; whitespace candidate runtime9/generated3 reportedgreen pending independentaudit. ScalarClass unitred observed; implementation/green assigned. Duration harnessred rejected; runner correction pending. Data owns independentJVMoracles. FullGson remains mandatoryred.",
+    "next": "Native regression panic repaired, independently reviewed and pushed as e92116f on codex/adversarial-pause-checkpoint19. Original full22 rerun prepared and independently cleared on minimal repair source ede7cb11, awaiting exclusive allocation profile completion. Whitespace and source Entry focused parity green; generic Class application remains red, native live-entry baseline build red, abstract defaults baseline build red. Duration factories compile but standalone harness needs a Go entrypoint before parity. Continue frozen TDD repairs; full Gson remains required red and Netty stays gated.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Active after user resumed goal",
@@ -4544,10 +4550,29 @@
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Native WIP4a94e3e and canonical WIP9a23066 pushed on separate origin branches; campaign production remains checkpoint18",
-    "checkpoint_updated_utc": "2026-09-29T19:57:31.120423+00:00",
+    "publication_status": "Native panic repair e92116fb294123230113e728217b4b5875bdb9fc pushed to origin/codex/adversarial-pause-checkpoint19; canonical WIP9a23066 preserved separately. Production acceptance remains checkpoint18.",
+    "checkpoint_updated_utc": "2026-09-29T20:14:47.195122+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
-    "status": "ACTIVE"
+    "status": "ACTIVE",
+    "minimal_repair_full22": {
+      "source": "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/source",
+      "source_manifest_sha256": "ede7cb11500f00855b78c95682be6763b453562d362364dd46aafe1e34355fab",
+      "readiness_audit_sha256": "1eaa50901d03c6a6f6789d0ab920d2bf32f904ef34711c026944be8b4da4c633",
+      "status": "PREPARED_UNRUN; execute only after exclusive profile window",
+      "production_delta": [
+        "transpiler/static_import_resolution.go"
+      ],
+      "regression_test": "transpiler/campaign_static_import_file_ownership46_test.go"
+    },
+    "sol_progress47": {
+      "evidence_archive": ".campaign/checkpoints/checkpoint19/sol-progress47/evidence.tar.gz",
+      "archive_sha256": "bcbb0c0d2b7d690989907a8095c23ab37174e6d180fe8ea021240a7fc2488ae6",
+      "manifest_sha256": "547239089d360de99bfc492704b157a2cb0124568006ae2bf2f3c21e0fc49c97",
+      "files": 176,
+      "panic_fix_audit_sha256": "df9f76d117ae9c55a54cfd6d0c4c7d23b138e3a80692a22d04cc960cbd76dd19",
+      "whitespace_audit_sha256": "7e3f79cb7a8f2b74fb09b54d3b64191847be4714f6e087ac82ed4057e9cdedfb",
+      "scope": "Completed native red, focused panic repair and independent JVM prerequisites; selected component patches and receipts. Full gate remains unaccepted."
+    }
   },
   "work_allocation": {
     "updated_at": "2026-09-29T19:57:31.120423+00:00",
