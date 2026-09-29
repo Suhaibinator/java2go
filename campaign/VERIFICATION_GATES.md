@@ -16,3 +16,7 @@ Concrete paths and their byte/hash pins are in `gate-matrix.json` and `proposal-
 `active_resume.progress51` and `SOL_PROGRESS51.md` govern current restart status. Progress47–50 records retain their original historical scopes. The checkpoint18 manifest `b4d384…` must not be read as the hash of private progress51 candidates; old native source `6af2c3…` was a separate interrupted attempt.
 
 The sealed progress50 archive does not contain all newer receipts. Supplemental owner `/root/sol_concurrent_v2` confirms LIGHT collection, with no staging or sealed archive yet. The stated cutoff and late pointer-only groups are recorded in `coordination.json`; no saved supplement manifest path has been supplied. New List-v2 source1933/runner is prepared and unrun pending review, so it adds no acceptance. Confirm the final supplement manifest and deliberate omissions before durability claims.
+
+## Progress53 precedence
+
+The historical preparation notes above retain their original scope. `active_resume.progress53` and `SOL_PROGRESS53.md` govern current status. Number+Enum component3cfd5fd is pushed, canonical focused16 is independently green, and its fresh full22 stops at lint with later stages unrun. Codec has a verified JVM oracle and actual missing-resource red; candidate alias collision blocks green. Reflection's incomplete runtime selection is rejected. Original full Gson, accumulated CI, concurrency stress and all network gates remain required. Progress51 archive is sealed at its recorded cutoff; later receipts are not claimed archived.
