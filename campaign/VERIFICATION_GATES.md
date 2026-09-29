@@ -24,3 +24,7 @@ The historical preparation notes above retain their original scope. `active_resu
 ## Progress54 precedence
 
 `active_resume.progress54` and `SOL_PROGRESS54.md` govern this checkpoint. Canonical28e50af and reflection90b4526 are pushed component milestones. The canonical full22 is terminal red at AM258parents; twelve later stages are unrun. Reflection v6 is independently accepted only for its focused scope. Codec finalv2 awaits independent raw audit; its earlier cache-integrity rejection remains intact. Native callback acceptance is pending. The corrected progress53 archive is locally verified at its declared earlier cutoff. Full Gson, accumulated CI and concurrency/network requirements above remain unchanged.
+
+## Progress55 precedence
+
+`active_resume.progress55` records newer focused evidence. Native callback and Codec resource fixtures are independently accepted only for their stated scopes; fresh publication compositions remain required. The coherent full Enum/reflection String challenge is strict-transpile red on dollar identifiers. Boxing diagnostic migration and other test migrations remain unfinished. Callback diagnostic parity is verified with an explicit reused-cache caveat; no performance improvement is measured. Full Gson and accumulated CI remain unaccepted.
