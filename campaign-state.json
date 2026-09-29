@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Performance allocation ownerreportsactivehandle; nootherheavyjob. CompilercombinedGREENqueued foractualdescriptor/implicit/binder/tokenfixes. Factory/cache9JVMoraclesfrozen inthiscommit; sourceclosureJVM andGoUNRUN, wrapperpreparing. Lastcompatibilitypublishedbdbefca9; fullGsonrequiredred.",
+  "next_action": "Fix existing local superclass/anonymous ObjectInfo carrier regression using unchanged test; freeze correctedsnapshot and rerun affected endpoints/fullgates. Exact24 implementation remains private. Factory/cache9+9+9 and objectworkflows18+18 independentlygreen on24; fullGsonstillrequiredred. CommitANDpush after gates.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -3706,14 +3706,14 @@
     },
     "checkpoint18": {
       "base_revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b",
-      "status": "Focused TDD; no implementation promoted",
+      "status": "INTEGRATION_BLOCKED_BY_EXISTING_LOCAL_CLASS_REGRESSION; private focused repairs and full supplemental endpoints preserved",
       "compiler": {
         "owner": "astra_compiler",
-        "private": "/private/tmp/java2go-nometa18-jn9_k17g/repo",
-        "status": "FIRST_CANDIDATE_FULL_PROBE_VERIFIED; REVIEW_REGRESSIONS_BLOCK_PROMOTION",
+        "private": "/private/tmp/java2go-nometa-review18-b1hfd9ut/candidate-v2",
+        "status": "FINAL_FOCUSED27_GREEN_PLUS_JOINT22_ENDPOINT9JVM9GO_GREEN",
         "session": null,
         "fixture": "campaign/reproducers/throwable-nometa-collision",
-        "durable": ".campaign/checkpoints/checkpoint18/nometa-focused-baseline-red.tar.gz",
+        "durable": ".campaign/checkpoints/checkpoint18/preflight-final22-v1",
         "full_probe": {
           "jvm": 9,
           "go_race": 9,
@@ -3735,47 +3735,90 @@
       },
       "runtime_iteration": {
         "owner": "astra_runtime",
-        "status": "THREE_JVM_NATIVE_DRIVER_PARITY_GREENS; INTEGRATION_PENDING",
+        "status": "DUAL_PROTOCOL_INTERFACE_CORRECTION_GREEN; FULL24_GATES_PENDING",
         "entry_abi": "separate unresolved prerequisite",
-        "durable": ".campaign/checkpoints/checkpoint18/map-views-green",
+        "durable": ".campaign/checkpoints/checkpoint18-full-v2/map-interface-correction",
         "claim": "Native JDK-contract parity driver; not translated application parity"
       },
       "performance": {
         "owner": "astra_perf_runtime",
         "reviewer": "astra_perf_codegen",
-        "status": "SEMANTIC_GATE_INDEPENDENTLY_VERIFIED; ALLOCATION_RUNNING",
+        "status": "SEMANTIC_ALLOCATION_DIAGNOSTIC_AND_PACKAGED_TESTS_INDEPENDENTLY_VERIFIED; FULL24_PENDING",
         "report_sha256": "a21293b1709bef4bbfd8b5df2f6489addff775c81beb3f1c4db3765dea565a12",
-        "durable": ".campaign/checkpoints/checkpoint18/string-boundary-baseline-red.tar.gz",
+        "durable": ".campaign/checkpoints/checkpoint18/preflight-final22-v1",
         "raw_stages": 24,
         "jvm_go_pairs": 3,
         "helper_observations": 174,
         "generated_observations": 18,
-        "optimization": "none yet; normal-build escape diagnostics preparing",
+        "optimization": "Cold RequireNonNull diagnostic no longer routes valid string boxes through fmt escape path",
         "candidate": "/private/tmp/java2go-string-boundary-candidate-avmb07m3",
         "candidate_archive": ".campaign/checkpoints/checkpoint18/string-boundary-candidate-prepared-unrun.tar.gz",
         "semantic_report_sha256": "7373acf3526c9e8a0d3d9dd942740d0355b9df2ac175184f886268ffe6122c68",
-        "semantic_durable": ".campaign/checkpoints/checkpoint18/string-boundary-candidate-semantic-green.tar.gz"
+        "semantic_durable": ".campaign/checkpoints/checkpoint18/string-boundary-candidate-semantic-green.tar.gz",
+        "allocation_report_sha256": "b794a968d7c7a2ed16b5621e7fe6489aa7a27701eaec31fa795a3781776d7351",
+        "diagnostic_report_sha256": "77f25d627bd7ee7979ef13ac28feca1107cfaeb4311dec14145e9fe5262a0386",
+        "claims": "Measured Go allocations reduced only; no CPU/JVM performance advantage demonstrated",
+        "timing_preparation": {
+          "status": "JAVA_MODEL_VALIDATION_AND_GENERATED_BUILD_PREREQUISITE_RUN_TERMINAL; raw review pending",
+          "path": "/private/tmp/java2go-boundary-timing18-t9jo_l7a/semantic-20260929T081336Z",
+          "first_failure": "baseline-app-build",
+          "prepared_archive": ".campaign/checkpoints/checkpoint18-full-v2/performance-timing-prepared.tar.gz",
+          "no_timing_claim": true
+        }
       },
       "factory_cache_prerequisite": {
         "owner": "sol_business oracle; astra_build differentialwrapper",
-        "status": "9STABLE_BINARY_JVM_ORACLES; sourceclosureJVM/strictGoUNRUN",
+        "status": "FULL24_ENDPOINT_INDEPENDENTLY_VERIFIED; IMPLEMENTATION_PROMOTION_BLOCKED_BY_SEPARATE_UNIT_REGRESSION",
         "source": "/private/tmp/java2go-factory-cache-prereq",
         "report": "/private/tmp/java2go-factory-cache-oracle-next/report.json",
         "report_sha256": "f22a24a67755b54c94e98b990d1399f255f12b09510f98372682c637f3d18bfc",
         "package": "campaign/reproducers/factory-cache-prereq",
         "package_manifest_sha256": "49f687f56be38139692a8ce1bba8c249f932c307729832759bd5f89a1f28337f",
-        "independent_audit": ".campaign/checkpoints/checkpoint18/factory-cache-jvm-oracle-raw.tar.gz"
+        "independent_audit": ".campaign/checkpoints/checkpoint18/factory-cache-jvm-oracle-raw.tar.gz",
+        "first_failure": "Erased Adapter.Apply missing on named nested specialized source adapter; source result did not widen to canonical Object",
+        "baseline_report_sha256": "49a5b08d0fa025049fac87580754b221718fbcfc5d540b45cc238ad9bc2d3075",
+        "candidate_report": "/private/tmp/java2go-factory-cache-joint18-run1/wrapper-report.json",
+        "candidate_report_sha256": "d82ec79f0304e0283f6b276353e7e0bae87a6a5473922379fda904d07e38bc9e",
+        "repair_owner": "astra_build",
+        "independent_audit_owner": "sol_business",
+        "independent_candidate_audit": ".campaign/checkpoints/checkpoint18-full-v2/endpoints/factory-root-audit.json",
+        "independent_candidate_audit_sha256": "739f7fc7c930563e128eca0350cde3697e280b54adfe33441f01116972b0777d"
+      },
+      "full_gate_v1": {
+        "status": "FAILED_EXACT_LINT_TYPECHECK",
+        "source_manifest_sha256": "08ee21181bbf7640eb6e960c81a080da4200f2595135463c93b533d2b987f6a1",
+        "failure": "MapValuesView concrete return incompatible with existing interface assertions in two string_join test call sites",
+        "durable": ".campaign/checkpoints/checkpoint18/preflight-final22-supplement-v1/failed-gates",
+        "correction": "IterableView embedding both existing protocols; tests unchanged; focused and exactlint green"
+      },
+      "full_gate_v2": {
+        "status": "FAILED_EXISTING_CONSTRUCTOR_LOCAL_ANONYMOUS_REGRESSION",
+        "snapshot": "/private/tmp/java2go-checkpoint18-full-v2-bi19hzo4",
+        "source_manifest_sha256": "a4a515739bd2345699f4de8fbc12a644151b7c19ac01e3681b51b9d6b9e10287",
+        "source_archive_sha256": "1714a8dd0b58bcd98ba14bd2958507fe4b25fbf5beec56a21b9aa189246f73fc",
+        "source_files": 1809,
+        "changed_go_files": 24,
+        "durable": ".campaign/checkpoints/checkpoint18-full-v2",
+        "session": null,
+        "gate_directory": "/private/tmp/java2go-checkpoint18-full-v2-bi19hzo4/gates",
+        "exit_code": 1,
+        "unit_am_pass_records": 901,
+        "failed_tests": [
+          "TestConstructorSubobjectAttachment_AnonymousSubclassOfLocalClass"
+        ],
+        "durable_failed_logs": ".campaign/checkpoints/checkpoint18-full-v2/failed-gates",
+        "failure": "generated LocalBase constructor touches ObjectInfo absent from local superclass layout"
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b",
+    "last_pushed_revision": "d7b2e27bda91eee00e944739a1141ea33688b785",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "/private/tmp/java2go-checkpoint17-full-ud28crz5/source",
+    "source_checkpoint": "/private/tmp/java2go-checkpoint18-full-v2-bi19hzo4/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Performance allocation ownerreportsactivehandle; nootherheavyjob. CompilercombinedGREENqueued foractualdescriptor/implicit/binder/tokenfixes. Factory/cache9JVMoraclesfrozen inthiscommit; sourceclosureJVM andGoUNRUN, wrapperpreparing. Lastcompatibilitypublishedbdbefca9; fullGsonrequiredred.",
+    "next": "Fix existing local superclass/anonymous ObjectInfo carrier regression using unchanged test; freeze correctedsnapshot and rerun affected endpoints/fullgates. Exact24 implementation remains private. Factory/cache9+9+9 and objectworkflows18+18 independentlygreen on24; fullGsonstillrequiredred. CommitANDpush after gates.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -3783,12 +3826,12 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "astra_perf_runtime: isolated candidate allocation phase",
+    "heavy_owner": null,
     "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
-    "last_compatibility_checkpoint": "checkpoint17 (implementation in this commit)",
+    "last_compatibility_checkpoint": "checkpoint17",
     "verified_source_manifest_sha256": "e92f88e011542a218f1a8da6a5627715c973a98b3f9c4d1e1cede7a0a6578c6e",
     "verification_archive": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/completion.json",
-    "publication_status": "Committed and pushed; live origin SHA independently verified"
+    "publication_status": "This metadata checkpoint preserves findings only; last implementation bdbefca; private24 promotion blocked by local class regression."
   }
 }
