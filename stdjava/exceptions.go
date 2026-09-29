@@ -387,6 +387,11 @@ type throwableState struct {
 	causeInitialized bool
 }
 
+// javaThrowable is a runtime-owned nominal marker. It is promoted through
+// genuine Throwable embeddings but cannot be implemented by unrelated source
+// Java methods or structural host error values from another Go package.
+func (ThrowableBase) javaThrowable() {}
+
 func (t ThrowableBase) ThrowableTypeName() string { return t.typeName }
 func (t ThrowableBase) Message() string           { return t.message }
 
@@ -574,36 +579,7 @@ func exceptionCauseMessageExecution(execution *Execution, cause any) string {
 	if execution == nil {
 		execution = NewExecution()
 	}
-	value := reflect.TypeOf(cause)
-	if value.Kind() == reflect.Pointer {
-		value = value.Elem()
-	}
-	if value.PkgPath() != "github.com/NickyBoy89/java2go/stdjava" {
-		return StringValueOfExecution(execution, cause)
-	}
-	throwable, ok := cause.(Throwable)
-	if !ok {
-		return StringValueOfExecution(execution, cause)
-	}
-	name := throwable.ThrowableTypeName()
-	switch name {
-	case "IOException", "UnsupportedEncodingException":
-		name = "java.io." + name
-	case "NoSuchAlgorithmException":
-		name = "java.security." + name
-	case "ExecutionException", "TimeoutException", "CancellationException", "RejectedExecutionException":
-		name = "java.util.concurrent." + name
-	case "NoSuchElementException", "ConcurrentModificationException":
-		name = "java.util." + name
-	default:
-		if !strings.Contains(name, ".") {
-			name = "java.lang." + name
-		}
-	}
-	if StringIsNull(throwable.Message()) {
-		return name
-	}
-	return name + ": " + throwable.Message()
+	return StringValueOfExecution(execution, cause)
 }
 
 func NewRuntimeException(arguments ...any) RuntimeException {

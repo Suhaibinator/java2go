@@ -133,6 +133,7 @@ func validReferenceComponentTypeID(id TypeID) bool {
 type registeredJavaType struct {
 	super      TypeID
 	interfaces []TypeID
+	source     bool
 }
 
 var javaTypeRegistry = struct {
@@ -180,7 +181,23 @@ func RegisterJavaType(id, super TypeID, interfaces ...TypeID) {
 	javaTypeRegistry.types[id] = registeredJavaType{
 		super:      super,
 		interfaces: append([]TypeID(nil), interfaces...),
+		source:     javaTypeRegistry.types[id].source,
 	}
+	javaTypeRegistry.Unlock()
+}
+
+// RegisterJavaSourceType marks a compiler-owned Java declaration. This is
+// separate from native runtime descriptors: a native fmt.Stringer still uses
+// its Go formatting contract, while source objects use Java method dispatch.
+// No object instances or callbacks are retained by this registration.
+func RegisterJavaSourceType(id TypeID) {
+	if id == "" {
+		panic(NewIllegalArgumentException("empty Java source type id"))
+	}
+	javaTypeRegistry.Lock()
+	descriptor := javaTypeRegistry.types[id]
+	descriptor.source = true
+	javaTypeRegistry.types[id] = descriptor
 	javaTypeRegistry.Unlock()
 }
 

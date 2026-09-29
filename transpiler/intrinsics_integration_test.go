@@ -74,7 +74,7 @@ func TestIntrinsics_StringStatics(t *testing.T) {
 	}{
 		{"valueOf", "String.valueOf(5)", "stdjava.StringValueOf(5)"},
 		{"format", "String.format(\"%d\", 5)", "fmt.Sprintf(\"%d\", 5)"},
-		{"join", "String.join(\",\", parts)", "strings.Join(parts, \",\")"},
+		{"join", "String.join(\",\", parts)", "stdjava.StringJoinArrayExecution(__java2goExecution, \",\", parts)"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

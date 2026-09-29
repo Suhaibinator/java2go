@@ -21,9 +21,15 @@ func isThrowableMessageOverride(method *symbol.Definition, owner *symbol.ClassSc
 }
 
 func throwableMessageRegistration(ctx Ctx) ast.Stmt {
+	return throwableTextOverrideRegistration("getMessage", "RegisterThrowableMessage", ctx)
+}
+
+// The registry follows resolved source declarations, so overloads and hidden
+// execution companion names cannot be mistaken for Java overrides.
+func throwableTextOverrideRegistration(javaName, runtimeName string, ctx Ctx) ast.Stmt {
 	for scope := ctx.currentClass; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
 		for _, method := range scope.Methods {
-			if !isThrowableMessageOverride(method, scope, ctx) {
+			if !isThrowableTextOverride(method, scope, javaName, ctx) {
 				continue
 			}
 			receiverType := &ast.StarExpr{X: ast.NewIdent(ctx.className)}
@@ -33,10 +39,15 @@ func throwableMessageRegistration(ctx Ctx) ast.Stmt {
 			}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("string")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{
 				&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: &ast.TypeAssertExpr{X: ast.NewIdent("receiver"), Type: receiverType}, Sel: ast.NewIdent(executionImplementationName(method, scope, ctx))}, Args: []ast.Expr{ast.NewIdent("execution")}}}},
 			}}}
-			return &ast.ExprStmt{X: stdjavaCall(ctx, "RegisterThrowableMessage", &ast.CallExpr{Fun: receiverType, Args: []ast.Expr{ast.NewIdent("nil")}}, invoke)}
+			return &ast.ExprStmt{X: stdjavaCall(ctx, runtimeName, &ast.CallExpr{Fun: receiverType, Args: []ast.Expr{ast.NewIdent("nil")}}, invoke)}
 		}
 	}
 	return nil
+}
+
+func isThrowableTextOverride(method *symbol.Definition, owner *symbol.ClassScope, javaName string, ctx Ctx) bool {
+	return method != nil && !method.IsStatic && !method.IsPrivate && !method.Constructor &&
+		method.OriginalName == javaName && len(method.Parameters) == 0 && sourceInheritsThrowable(owner, ctx)
 }
 
 func throwableMessageReceiverType(javaType string, ctx Ctx) bool {

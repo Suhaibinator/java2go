@@ -67,7 +67,7 @@ func builtinExceptionConstructorExpr(className string, args []ast.Expr, ctx Ctx)
 
 	name := stripJavaQualifier(className)
 	switch name {
-	case "Exception", "RuntimeException", "IllegalArgumentException", "IllegalStateException", "UnsupportedEncodingException":
+	case "Throwable", "Exception", "RuntimeException", "IllegalArgumentException", "IllegalStateException", "UnsupportedEncodingException":
 		return stdjavaCall(ctx, "New"+name+"Execution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
 	case "ParseException":
 		return &ast.CallExpr{Fun: stdjavaQualifiedExpr("New"+name, ctx), Args: args}
@@ -156,6 +156,14 @@ func buildExceptionRegistrationDecl(childName, parentName string, ctx Ctx) ast.D
 	}
 	if registration := throwableMessageRegistration(ctx); registration != nil {
 		declaration.Body.List = append(declaration.Body.List, registration)
+	}
+	for _, textMethod := range [][2]string{
+		{"toString", "RegisterThrowableToStringOverride"},
+		{"getLocalizedMessage", "RegisterThrowableLocalizedMessageOverride"},
+	} {
+		if registration := throwableTextOverrideRegistration(textMethod[0], textMethod[1], ctx); registration != nil {
+			declaration.Body.List = append(declaration.Body.List, registration)
+		}
 	}
 	if registration := throwableInitCauseRegistration(ctx); registration != nil {
 		declaration.Body.List = append(declaration.Body.List, registration)

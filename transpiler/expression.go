@@ -477,6 +477,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return lowered
 			}
 
+			if lowered := throwableTextInvocation(objectNode, methodName, ctx, source); lowered != nil {
+				return lowered
+			}
+
 			if lowered := throwableMessageInvocation(objectNode, methodName, ctx, source); lowered != nil {
 				return lowered
 			}
@@ -544,7 +548,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					runtimeFn := "GetMessage"
 					switch methodName {
 					case "getCause":
-						runtimeFn = "GetCause"
+						// The runtime cause slot is erased, while Java getCause has a
+						// nullable Throwable result in every consuming context.
+						return stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{stdjavaQualifiedExpr("Throwable", ctx)}, []ast.Expr{
+							stdjavaCall(ctx, "GetCause", receiver), stdjavaQualifiedExpr("ThrowableTypeID", ctx),
+						})
 					case "printStackTrace":
 						runtimeFn = "PrintStackTrace"
 					}
@@ -935,7 +943,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// Built-in exception types (java.lang/java.io) are modelled by the stdjava
 		// runtime, so `new IllegalArgumentException("msg")` becomes a call to the
 		// corresponding stdjava constructor, preserving the detail message.
-		if isBuiltinExceptionType(className) && resolveClassScopeByQualifiedName(ctx, className) == nil {
+		if _, builtin := builtinExceptionStorageTypeName(className, ctx); builtin {
 			arguments := parseArgumentListWithExpectedTypes(objectArguments, source, ctx, nil)
 			return builtinExceptionConstructorExpr(className, arguments, ctx)
 		}
@@ -1410,7 +1418,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// Builtin exception signatures use the shared Throwable interface.
 			// A source exception can arrive through a declaring-base subobject;
 			// comparing Go interface payloads would lose its Java identity.
-			erasedReference = erasedReference || isExternalFunctionType(leftJavaType, ctx) || isExternalFunctionType(rightJavaType, ctx) ||
+			erasedReference = erasedReference || isBuiltinCharSequence(leftJavaType, ctx) || isBuiltinCharSequence(rightJavaType, ctx) ||
+				isExternalFunctionType(leftJavaType, ctx) || isExternalFunctionType(rightJavaType, ctx) ||
 				(resolveClassScopeByQualifiedName(ctx, leftBase) == nil && isBuiltinExceptionType(leftBase)) ||
 				(resolveClassScopeByQualifiedName(ctx, rightBase) == nil && isBuiltinExceptionType(rightBase))
 			if (leftWrapper || rightWrapper || erasedReference || sourceHierarchyReference) && !leftPrimitive && !rightPrimitive {
@@ -8248,9 +8257,10 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 			base, _ := parseJavaTypeString(javaType)
 			builtin := stripJavaQualifier(base)
 			superclassScope = resolveClassScopeByQualifiedName(ctx, base)
+			storage, builtinException := builtinExceptionStorageTypeName(base, ctx)
 			switch {
-			case isBuiltinExceptionType(builtin) && resolveClassScopeByQualifiedName(ctx, builtin) == nil:
-				fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
+			case builtinException:
+				fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(storage, ctx)})
 			case builtin == "Thread" && resolveClassScopeByQualifiedName(ctx, builtin) == nil:
 				fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("Thread", ctx)}})
 			default:
@@ -9649,6 +9659,9 @@ func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
 				ctx,
 			), true
 		}
+		if field := resolveUnqualifiedStaticField(name, ctx); field != nil && field.def.OriginalType != "" {
+			return qualifyJavaTypeInDeclaringContext(definitionJavaType(field.def), field.owner), true
+		}
 		if javaType, found := inferEnclosingFieldJavaType(name, ctx); found {
 			return javaType, true
 		}
@@ -10311,6 +10324,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			}
 		}
 	case "method_invocation":
+		if name := node.ChildByFieldName("name"); name != nil && builtinThrowableTextSelected(node.ChildByFieldName("object"), name.Content(source), ctx, source) {
+			return "String", true
+		}
 		if resultType, ok := inferIntrinsicMethodResultType(node, ctx, source); ok {
 			return resultType, true
 		}

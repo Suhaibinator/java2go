@@ -79,6 +79,27 @@ func StringSplitArray(s, pattern string, limits ...int32) *ReferenceArray {
 // StringCharAt returns the UTF-16 code unit at index, matching Java's charAt.
 // Java char values use Go rune storage, including individual surrogate values.
 func StringCharAt(s string, index int32) rune {
+	if index >= 0 {
+		remaining := index
+		for _, value := range s {
+			if value > 0xffff {
+				high, low := utf16.EncodeRune(value)
+				if remaining == 0 {
+					return high
+				}
+				if remaining == 1 {
+					return low
+				}
+				remaining -= 2
+			} else {
+				if remaining == 0 {
+					return value
+				}
+				remaining--
+			}
+		}
+	}
+	// Preserve the existing invalid-index path and caller's null boundary.
 	return StringChars(s)[index]
 }
 

@@ -509,7 +509,9 @@ func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 			// A Throwable override can return a declaring superclass view of
 			// its receiver through the runtime's erased callback. Preserve the
 			// allocation identity (and synchronized-body monitor) across views.
-			if isThrowableMessageOverride(method, scope, ctx) {
+			if isThrowableMessageOverride(method, scope, ctx) ||
+				isThrowableTextOverride(method, scope, "toString", ctx) ||
+				isThrowableTextOverride(method, scope, "getLocalizedMessage", ctx) {
 				relevant[scope] = struct{}{}
 			}
 			if isThrowableInitCauseOverride(method, scope, ctx) && isUserDefinedExceptionClass(ctx, scope) {
@@ -612,7 +614,12 @@ func classNeedsReferenceIdentity(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil {
 		return false
 	}
-	if sourceUsesReflection() || sourceImplementsReflectType(scope, ctx) || len(sourceCharacterIOProtocols(scope, ctx)) > 0 {
+	// Throwable's inherited toString observes the most-derived class even when
+	// source code never calls getClass or overrides any Throwable method.
+	if sourceInheritsThrowable(scope, ctx) {
+		return true
+	}
+	if sourceUsesReflection() || sourceImplementsReflectType(scope, ctx) || sourceImplementsCharSequence(scope, ctx) || len(sourceCharacterIOProtocols(scope, ctx)) > 0 {
 		return true
 	}
 	_, ok := referenceIdentityScopes(ctx)[scope]
@@ -711,6 +718,9 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(implementedScope), ctx))
 	}
 
+	if sourceDirectCharSequence(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr("CharSequenceTypeID", ctx))
+	}
 	for _, protocol := range sourceDirectReflectProtocols(scope, ctx) {
 		args = append(args, stdjavaQualifiedExpr(reflectProtocolConstants[protocol], ctx))
 	}
@@ -721,7 +731,13 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	}
 
 	name := collisionSafeExecutionIdentifier("__java2goReferenceTypeRegistration"+scope.Class.Name, scope)
-	statements := []ast.Stmt{&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)}}
+	// Source origin is independent of reflection detail and ObjectInfo storage.
+	// Leaf objects expose a dynamic descriptor without allocating an identity
+	// carrier; runtime text fallback still needs to distinguish them from Go values.
+	statements := []ast.Stmt{
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(id, ctx))},
+	}
 	if metadata := sourceClassMetadataStmt(scope, ctx); metadata != nil {
 		statements = append(statements, metadata)
 	}
@@ -914,6 +930,7 @@ func syntheticReferenceRegistrationDecl(
 		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "bool"}}}}},
 		Body: &ast.BlockStmt{List: []ast.Stmt{
 			&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
+			&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(dynamicID, ctx))},
 			&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}},
 		}},
 	}}

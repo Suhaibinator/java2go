@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Run new runtime Throwable text tests then frozen explicit tostring3 JVM controls, preserve actual metadata red if present and fix. Rerun original fullThrowable workflow, freeze candidate and complete regression/corpus gates before compiler integration. Exactlint2.14 locallycached; fullGson remainsred.",
+  "next_action": "Commit and push independently verified checkpoint17, then continue the unchanged full Gson challenge through source Iterable/Iterator prerequisites and the retained reflection-free Object-text probe. Dedicated performance agents continue bounded, independently verified experiments.",
   "performance_team": {
     "astra_perf_codegen": "CPU, allocation, generated code; analysis and measurement only",
     "astra_perf_runtime": "runtime, concurrency, memory; analysis and measurement only",
@@ -726,9 +726,10 @@
         "BigDecimal equal-scale coefficient comparison removes measured allocations"
       ],
       "limits": "No full Gson acceptance; raw/wildcard Function conversions and compose/andThen/identity APIs remain unverified."
-    }
+    },
+    "Checkpoint17: String.join array/runtime iteration and nominal CharSequence, enclosing static fields, concrete Throwable constructors/virtual text/getCause projection, nominal registered source-object formatting, and measured StringCharAt allocation reduction; 1834 unit records and five historical applications independently verified."
   ],
-  "verification_invalidation": "Any implementation change requires affected gates to rerun; concurrent acceptance is evidence at its recorded content digest, not current-round promotion.",
+  "verification_invalidation": "Any implementation change requires affected gates to rerun; concurrent acceptance is evidence at its recorded content digest, not current-round promotion. Checkpoint17: 45 Go files match frozen manifest e92f88e011542a218f1a8da6a5627715c973a98b3f9c4d1e1cede7a0a6578c6e; subsequent implementation changes require fresh affected gates.",
   "performance_findings": {
     "warmed_allocation_pilot": "Go/Java time geometric ratio1.831 across3 noisy pairs; all18 executions exact; no speedup claim",
     "array_write_candidate": "Unsigned bounds predicate enables inlining in isolated runtime copy; focused timings improved, live patch not applied",
@@ -758,52 +759,52 @@
   },
   "regression_status": {
     "unit": {
-      "checkpoint": "checkpoint15",
+      "checkpoint": "checkpoint17",
       "status": "passed",
-      "pass_records": 1705,
+      "pass_records": 1834,
       "skip_records": 0,
       "additional_failures_or_skips": 0,
-      "log": "/private/tmp/java2go-checkpoint15-v3-unit.log"
+      "independent_audit": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/independent-raw-audit.json"
     },
     "e2e_other": {
-      "checkpoint": "checkpoint15",
+      "checkpoint": "checkpoint17",
       "status": "passed",
       "pass_records": 73,
       "skip_records": 0,
       "additional_failures_or_skips": 0,
-      "log": "/private/tmp/java2go-checkpoint15-e2e-other.log"
+      "log": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/gates/e2e-other.stdout"
     },
     "e2e_strict_parity": {
-      "checkpoint": "checkpoint15",
+      "checkpoint": "checkpoint17",
       "status": "passed",
       "pass_records": 55,
       "skip_records": 0,
       "additional_failures_or_skips": 0,
-      "log": "/private/tmp/java2go-checkpoint15-parity.log"
+      "log": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/gates/parity.stdout"
     },
     "fuzz": {
-      "checkpoint": "checkpoint15",
+      "checkpoint": "checkpoint17",
       "status": "passed",
       "pass_records": 36,
       "skip_records": 8,
       "additional_failures_or_skips": 0,
-      "log": "/private/tmp/java2go-checkpoint15-fuzz.log"
+      "log": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/gates/fuzz.stdout"
     },
     "lint": {
-      "checkpoint": "checkpoint15",
+      "checkpoint": "checkpoint17",
       "status": "passed",
       "version": "2.14.0",
       "issues": 0,
-      "log": "/private/tmp/java2go-checkpoint15-v3-lint.log"
+      "log": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/gates/lint.stdout"
     },
     "campaign": {
-      "checkpoint": "checkpoint15",
+      "checkpoint": "checkpoint17",
       "status": "failed-only-active-gson-challenge",
       "passing_applications": 5,
       "oracle_pairs": 45,
       "additional_stress_runs": 100,
       "race_enabled": true,
-      "independent_audit": "/private/tmp/java2go-checkpoint15-independent-acceptance.json"
+      "independent_audit": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/independent-raw-audit.json"
     },
     "historical_records_before_checkpoint15": {
       "unit": {
@@ -845,6 +846,56 @@
         "oracle_pairs": 45,
         "additional_stress_runs": 100,
         "race_enabled": true
+      }
+    },
+    "historical_records_before_checkpoint17": {
+      "unit": {
+        "checkpoint": "checkpoint15",
+        "status": "passed",
+        "pass_records": 1705,
+        "skip_records": 0,
+        "additional_failures_or_skips": 0,
+        "log": "/private/tmp/java2go-checkpoint15-v3-unit.log"
+      },
+      "e2e_other": {
+        "checkpoint": "checkpoint15",
+        "status": "passed",
+        "pass_records": 73,
+        "skip_records": 0,
+        "additional_failures_or_skips": 0,
+        "log": "/private/tmp/java2go-checkpoint15-e2e-other.log"
+      },
+      "e2e_strict_parity": {
+        "checkpoint": "checkpoint15",
+        "status": "passed",
+        "pass_records": 55,
+        "skip_records": 0,
+        "additional_failures_or_skips": 0,
+        "log": "/private/tmp/java2go-checkpoint15-parity.log"
+      },
+      "fuzz": {
+        "checkpoint": "checkpoint15",
+        "status": "passed",
+        "pass_records": 36,
+        "skip_records": 8,
+        "additional_failures_or_skips": 0,
+        "log": "/private/tmp/java2go-checkpoint15-fuzz.log"
+      },
+      "lint": {
+        "checkpoint": "checkpoint15",
+        "status": "passed",
+        "version": "2.14.0",
+        "issues": 0,
+        "log": "/private/tmp/java2go-checkpoint15-v3-lint.log"
+      },
+      "campaign": {
+        "checkpoint": "checkpoint15",
+        "status": "failed-only-active-gson-challenge",
+        "passing_applications": 5,
+        "oracle_pairs": 45,
+        "additional_stress_runs": 100,
+        "race_enabled": true,
+        "independent_audit": "/private/tmp/java2go-checkpoint15-independent-acceptance.json"
       }
     }
   },
@@ -1618,7 +1669,7 @@
     },
     "collection_design": "campaign/design/shared-collection-storage.md",
     "previous_complete_checkpoint": "8cb6cd529c124802d9d004ef43d41dffe16f1085",
-    "last_complete_checkpoint_id": "checkpoint15",
+    "last_complete_checkpoint_id": "checkpoint17",
     "checkpoint09": {
       "snapshot": "/private/tmp/java2go-checkpoint09-76fk92_f",
       "manifest_sha256": "a4be79313334c5d5cfc7153e98d03bc2e087b9ead77a8ef6b440ff3811be2111",
@@ -3356,7 +3407,7 @@
     },
     "checkpoint17": {
       "base_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
-      "status": "CLI cancellation integrated for independent package verification; semantic join/CharSequence changes remain private",
+      "status": "Verified checkpoint17 implementation integrated; full Gson remains required and red",
       "cancellation_manifest": "/private/tmp/java2go-cancellation16-4q_mb4nn/final-cli/manifest.json",
       "supplemental_packages": [
         "generic-binding-prereq",
@@ -3369,13 +3420,11 @@
       "charsequence_candidate": "/private/tmp/java2go-charsequence-boundfix17-cqnxto3s/repo",
       "charsequence_focused": "21 tests green94.451s after valid bounded-overload and typed-null reds",
       "full_throwable_workflow": {
-        "report": "/private/tmp/java2go-restored-workflow17-ebvoh93d/run-0bsn4qrj/report.json",
-        "status": "9freshJVMmatch; candidate go-build-all red on four builtin Exception/RuntimeException.toString selectors;0Goexecutions",
-        "independent_audit": "Coordinator verified all9rawJVMstreams, all stage rawstream hashes, before/after source/compiler hashes",
-        "durable_archive": ".campaign/checkpoints/checkpoint17-restored-v1/full-workflow/run-0bsn4qrj.tar.gz",
-        "owner": "astra_compiler"
+        "status": "9 JVM and 9 race-enabled Go observations independently verified on final45Go snapshot",
+        "report_sha256": "8cb85dafd62492ed9b7ea21282605791f61ba004a33fb49c88fb93618ec65da6",
+        "durable": ".campaign/checkpoints/checkpoint17-full-v6/full-throwable-final-green.tar.gz"
       },
-      "performance": "layoutfocusedgreenonly; published-base parity and actualStringcontrol benchmark unrun",
+      "performance": "StringCharAt valid-helper allocation regression red-to-green; generated scan allocation reduction independently audited in three trials. No CPU/JVM speed comparison.",
       "cancellation_verification": {
         "independent_session": 87520,
         "exit_code": 0,
@@ -3421,7 +3470,8 @@
           "status": "29stages pass;9JVMGo+3race match independentmodel and historicalgeneratedhashes; timingpreflight UNQUALIFIED, no speedclaim",
           "semantic_report_sha256": "7833fbcef6913cb9b3c3669d502857cf46e8beddd79fb1ac9122e54b1d2e94d7",
           "coordinator_audit": "/private/tmp/java2go-string-fields-restored-rcz0hxv5/semantic-20260929T051920Z/coordinator-audit.json",
-          "timing_report": "/private/tmp/java2go-string-fields-restored-rcz0hxv5/timing-prep/run-20260929T052247Z/report.json"
+          "timing_report": "/private/tmp/java2go-string-fields-restored-rcz0hxv5/timing-prep/run-20260929T052247Z/report.json",
+          "allocation_report": "/private/tmp/java2go-string-fields-restored-rcz0hxv5/allocation-baseline-prep/baseline-20260929T055435Z/report.json"
         }
       },
       "performance_marker": {
@@ -3458,27 +3508,209 @@
         "manifest_sha256": "85efa3c1c3dea769394449cc6c5973036e4b61c893e36b03392b7ac6ba30a94b",
         "oracle_sha256": "2247f4a40a60d006d923510b147426470c0169fab47c9108a6eeb39c827d9cad",
         "independent_audit": ".campaign/checkpoints/checkpoint17-restored-v1/generic-forwarder-coordinator-audit.json",
-        "contract": "Generic forwarding side effect completes before consumer checkcast; Object/ignored reads and subsequent null/tail preserved"
+        "contract": "Generic forwarding side effect completes before consumer checkcast; Object/ignored reads and subsequent null/tail preserved",
+        "publication": {
+          "revision": "53af25af7eae1f8e4ea2bee614fe6251a2be7e60",
+          "origin_verified": true,
+          "branch": "codex/adversarial-campaign"
+        }
       },
       "explicit_throwable_text": {
-        "status": "validJVMfirst2tests;Go-buildred;private general runtime/compiler fixprepared,3rd metadata controlUNRUN",
+        "status": "26compiler+8runtime focusedgreen; inheritedcanonicalclass-name actualJVMred thenmetadatafixgreen; fulloriginalworkflowgreen",
         "red_log": "/private/tmp/java2go-campaign17-rfhx93r_/throwable-explicit-string-red.log",
         "frozen_initial_test_sha256": "c003a40fa05c81e71673e2dc51386dcc1b5fb1b7f2f753beaba830dd930be031",
         "owners": [
           "astra_compiler",
           "astra_runtime"
+        ],
+        "final_compiler_log": "/private/tmp/java2go-campaign17-rfhx93r_/throwable-text-final-focused.log"
+      },
+      "full_gate_v1": {
+        "snapshot": "/private/tmp/java2go-checkpoint17-full-7gfh4k9n/source",
+        "manifest_sha256": "31a1b05d5102926fd9cedcfad4a775f5e07c2d41788664fa6c33740f3db3820c",
+        "status": "Buildpassed;exactlint2.14red3errcheck in newconstructor tests; further gatesunrun",
+        "session": 28228,
+        "report": "/private/tmp/java2go-checkpoint17-full-7gfh4k9n/gates/report.json",
+        "durable": ".campaign/checkpoints/checkpoint17-full-v1",
+        "source_files": 1733,
+        "integration_go_files": 37
+      },
+      "full_gate_v2": {
+        "status": "INTERRUPTED_AFTER_REPRODUCED_REGRESSION; build/exactlint/noncompilerunitsgreen; compilerA-Mpartial",
+        "session": 83743,
+        "source": "/private/tmp/java2go-checkpoint17-full-fqmzdr9r/source",
+        "source_manifest_sha256": "b5fc9301aeaf79a6db1ea80cae8816fe3616b1b8a3c2276dcbc1142c774cc9b7",
+        "source_archive_sha256": "87063632adb3278344349991c4798d9729a59ec5cb96954f4596b49c42d86056",
+        "gates": "/private/tmp/java2go-checkpoint17-full-fqmzdr9r/gates",
+        "runner": "/private/tmp/java2go-checkpoint17-verification-prepared-kfkxxfp8/full-gates/checkpoint16-v9-gates.py",
+        "exit_code": 143,
+        "failed_test": "TestCampaignRuntimeBigNumberParseCausesAndCleanup",
+        "failure": "GetCause returns interface{} but explicit declaredThrowable local requires stdjava.Throwable initializer projection",
+        "cleanup": {
+          "observed_descendants_stopped": true,
+          "forced_pids": []
+        },
+        "independent_auditor": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/checkpoints/checkpoint17-full-v2/independent-auditor/audit.py"
+      },
+      "getCause_projection": {
+        "status": "28focused green; legacytestunchanged; originalfullworkflow9+9 green",
+        "patch_sha256": "d8db56717924a39020f7ce0dea392c76868dbb4f42fba4456095d8f8907203a1",
+        "owner": "astra_compiler",
+        "durable": ".campaign/checkpoints/checkpoint17-full-v3/throwable-cause-projection"
+      },
+      "full_gate_v3": {
+        "status": "FAILED_STALE_GO_GOLDEN; compiler A-M707pass/1fail; Java expectations unchanged",
+        "session": 34662,
+        "source": "/private/tmp/java2go-checkpoint17-full-p5vt2e29/source",
+        "source_manifest_sha256": "03672ba877f5f4d985a2a2a1217b592e8bfca4af1d98fec2dea7b7cac3186a3e",
+        "source_archive_sha256": "34160698ee0840b18eb77f3c33c9ee3e624550ae6b7208c8248837da1f2f299b",
+        "gates": "/private/tmp/java2go-checkpoint17-full-p5vt2e29/gates",
+        "integration_go_files": 38,
+        "exit_code": 1
+      },
+      "prepared_followups": {
+        "durable": ".campaign/checkpoints/checkpoint17-next",
+        "allocation_baseline": "BASELINE_ALLOCATION_RED_CONFIRMED: five valid StringCharAt cases each allocate once vs zero desired; three independent repetitions of unchanged generated scans; private candidate preparation in progress, untested",
+        "structural_throwable": "source method-name collision identified by review; pairedbaseline53af25a/current config/JVMprefixprobe preparedunrun, expectationsunset; genericObjectdefaultformatting potentiallypreexisting"
+      },
+      "full_gate_v4": {
+        "status": "HISTORICAL_GATES_AND_FIVE_APPS_INDEPENDENTLY_VERIFIED_GSON_REQUIRED_RED",
+        "session": 79044,
+        "snapshot": "/private/tmp/java2go-checkpoint17-full-ww8mf672",
+        "source_manifest_sha256": "8f995ea52cbd598f8c23667b34e89fae3db1a88469284b5b89211ab508dba64e",
+        "source_archive_sha256": "581fcc4a39df334a4b9eaf4f2432ba45c5b63d1e1413304695d8c433d2c34030",
+        "source_files": 1734,
+        "changed_go_files": 39,
+        "gates": "/private/tmp/java2go-checkpoint17-full-ww8mf672/gates",
+        "milestone": "Last accepted compatibility remains6b5f02f; full Gson required and red",
+        "files": {
+          "allocation-baseline-evidence.tar.gz": "5b9aa52d38afae7805ca7020adccf0b6673bd76f230deb985ab51b237781da89",
+          "integration-plan.json": "e2d4b787f5cfa3ad32cd64b168adb767a7f4ef25bf8f59dc2b93a9bc1706da0f",
+          "join-golden-update/manifest.json": "25c3d8b44cf1e626cf98416a1b5a6f54a053b5ff430d202910ca6b840b7168fb",
+          "join-golden-update/repair.patch": "79349482dde0add2dd0d99717de5d4c3b5f6270753594664afda877ec297d077",
+          "snapshot.json": "5624806194f8e7d183cf76c7df43820d7825bc32455d432d34a31ab0a82d8773",
+          "source-manifest.json": "8f995ea52cbd598f8c23667b34e89fae3db1a88469284b5b89211ab508dba64e",
+          "source.tar.gz": "581fcc4a39df334a4b9eaf4f2432ba45c5b63d1e1413304695d8c433d2c34030",
+          "v3-comparison.json": "da7ff7b59c0e543b4c84871eb526cdc36cb9750485f789eecdc9b3ebe0998b98"
+        },
+        "exit_code": 1,
+        "independent_audit": ".campaign/checkpoints/checkpoint17-full-v4/independent-raw-audit.json",
+        "unit_pass_records": 1816,
+        "parity_pass_records": 55,
+        "other_e2e_pass_records": 73,
+        "accepted_normal_pairs": 45,
+        "accepted_stress_pairs": 100,
+        "review_hold": "CONFIRMED_STRUCTURAL_THROWABLE_REGRESSION: candidate calls unrelated message twice; publishedbaseline calls unrelated error twice; JVMcallsneither. Compiler focusedred next, runtime generalnominal/default-objectfix assigned"
+      },
+      "structural_throwable_gate": {
+        "status": "CONFIRMED_BEHAVIORAL_MISMATCH",
+        "session": 38865,
+        "output": "/private/tmp/java2go-throwable-structural-paired-v4-run1",
+        "runner": "/private/tmp/java2go-throwable-structural-review-exu730kf/run-paired.py",
+        "exit_code": 0,
+        "runner_exit_explanation": "Runner completed comparisons, does not mean parity",
+        "durable": ".campaign/checkpoints/checkpoint17-full-v4/structural-probe-red.tar.gz",
+        "jvm": "prefix=true;message/name/error=0/0/0 after both conversions",
+        "baseline": "prefix=false;error calls1 then2",
+        "candidate": "prefix=false;message calls1 then2",
+        "owner": "astra_compiler focused JVMred; astra_runtime generalfix"
+      },
+      "source_object_text_repair": {
+        "status": "FOCUSED_AND_FULL_HISTORICAL_GATES_VERIFIED; reflection-free NoMeta compile blockers retained",
+        "snapshot": "/private/tmp/java2go-checkpoint17-full-8a587aa_/source",
+        "manifest_sha256": "06890f9e0f1d873e44c1bc988a488c75cc618d09603080d484c476d9bf05d358",
+        "durable": ".campaign/checkpoints/checkpoint17-v5-prepared",
+        "mechanism": "Unexported Throwable marker; source declaration registry flag; canonical defaultObjecttext; cause route sharedconversion",
+        "owners": [
+          "astra_runtime",
+          "astra_compiler"
         ]
+      },
+      "performance_charat": {
+        "status": "INDEPENDENTLY_VERIFIED_AND_INTEGRATED",
+        "baseline": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
+        "semantic_report_sha256": "5389c23ed65c444373652437ffcb5c29a0be771105a87b07b6898466f4e2ef92",
+        "allocation_report_sha256": "15254892e2064cf163c21619afa6c832d152e48c05534b073056d37a2913e113",
+        "native_valid_helper_allocations": "1to0",
+        "generated_full_scan_allocations": {
+          "17": [
+            16280,
+            8192
+          ],
+          "97": [
+            10178,
+            5146
+          ],
+          "65537": [
+            9888,
+            5000
+          ]
+        },
+        "repetitions": 3,
+        "claims": "Goallocationonly; noCPU/JVMcomparison",
+        "durable": ".campaign/checkpoints/checkpoint17-full-v6",
+        "joint_report_sha256": "d9f684f6bbe4121c14a864221932eccf798060978d9662e9af7fabe22bac940e",
+        "joint_files": [
+          "stdjava/strings.go",
+          "stdjava/string_charat_compatibility_test.go",
+          "stdjava/string_charat_allocation_test.go"
+        ],
+        "allocation_measurement_limit": "Warmed AllocsPerRun counts and repeated generated scan observations; zero is not proof of zero allocations on every call; no CPU or JVM allocation comparison."
+      },
+      "full_gate_v6": {
+        "status": "HISTORICAL_GATES_AND_FIVE_APPS_INDEPENDENTLY_VERIFIED_GSON_REQUIRED_RED",
+        "source_manifest_sha256": "e92f88e011542a218f1a8da6a5627715c973a98b3f9c4d1e1cede7a0a6578c6e",
+        "source_archive_sha256": "72136d3a007665e0a8f9d96943c734d5f64825c623661d7a8d7a23b8c6b04ac5",
+        "root": "/private/tmp/java2go-checkpoint17-full-ud28crz5/source",
+        "source_files": 1738,
+        "changed_go_files": 45,
+        "heavy_owner": null,
+        "next": "Verified files integrated; commit and push milestone, then continue source-iteration and reflection-free object prerequisites with dedicated performance work.",
+        "session": null,
+        "gate_directory": "/private/tmp/java2go-checkpoint17-full-ud28crz5/gates",
+        "full_throwable_report_sha256": "8cb85dafd62492ed9b7ea21282605791f61ba004a33fb49c88fb93618ec65da6",
+        "full_throwable_independent_audit": "Passed: 9 JVM + 9 race-enabled Go observations; original inputs and source hashes unchanged",
+        "exit_code": 1,
+        "independent_audit": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/independent-raw-audit.json",
+        "independent_audit_sha256": "148f343e9d2b0081d0e39709d161c51c01171d31272ca58c4554b7bf8c75027e",
+        "implementation_sha256": "65428ec6f842fade689e107574ba33f61eaa146269ed728bf9d1de2e26810bb8",
+        "unit_pass_records": 1834,
+        "compiler_test_parents": 892,
+        "parity_pass_records": 55,
+        "other_e2e_pass_records": 73,
+        "accepted_normal_pairs": 45,
+        "accepted_stress_pairs": 100
+      },
+      "nometa_probe": {
+        "status": "BASELINE_AND_CANDIDATE_BUILD_FAILURE_RETAINED",
+        "oracle_sha256": "e03c6bdbccd1ffa41218d4e276d3e909e93a408efcd9fdb7a8fa955f8ac0014b",
+        "durable": ".campaign/checkpoints/checkpoint17-full-v6/nometa-baseline-candidate-red.tar.gz",
+        "fresh_jvm": 9,
+        "accepted_go": 0,
+        "first_failure": "build-all",
+        "same_diagnostics": [
+          "undefined: Integer",
+          "value.toString undefined"
+        ],
+        "report_sha256": "77d71ab4c1f404613aaadee6d3d14860c1e9fde5477f00ea7b7aad6aab025c36",
+        "package": "campaign/reproducers/throwable-nometa-collision"
+      },
+      "next_performance_probe": {
+        "status": "PREPARED_UNRUN; toolchain pinning revision under review",
+        "durable_original": ".campaign/checkpoints/checkpoint17-full-v6/string-boundary-prepared-unrun.tar.gz",
+        "owner": "astra_perf_runtime",
+        "reviewer": "astra_perf_codegen"
       }
     }
   },
   "active_resume": {
-    "last_pushed_revision": "b65aa815af5ccac954f968b1c7133b2f44cedff0",
+    "last_pushed_revision": "53af25af7eae1f8e4ea2bee614fe6251a2be7e60",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "/private/tmp/java2go-campaign17-rfhx93r_/repo",
+    "source_checkpoint": "/private/tmp/java2go-checkpoint17-full-ud28crz5/source",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "one process at a time; poll samehandle, release terminal",
-    "next": "Run new runtime Throwable text tests then frozen explicit tostring3 JVM controls, preserve actual metadata red if present and fix. Rerun original fullThrowable workflow, freeze candidate and complete regression/corpus gates before compiler integration. Exactlint2.14 locallycached; fullGson remainsred.",
+    "next": "Commit and push independently verified checkpoint17, then continue the unchanged full Gson challenge through source Iterable/Iterator prerequisites and the retained reflection-free Object-text probe. Dedicated performance agents continue bounded, independently verified experiments.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "6b5f02fe9f945d1bc3d522143ff17bde89afe6cb",
     "automatic_goal_controller": "active after continuation; no token budget",
@@ -3486,7 +3718,12 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "astra_compiler",
-    "heavy_session": null
+    "heavy_owner": null,
+    "heavy_session": null,
+    "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
+    "last_compatibility_checkpoint": "checkpoint17 (implementation in this commit)",
+    "verified_source_manifest_sha256": "e92f88e011542a218f1a8da6a5627715c973a98b3f9c4d1e1cede7a0a6578c6e",
+    "verification_archive": ".campaign/checkpoints/checkpoint17-full-v6/completion-evidence-v1/completion.json",
+    "publication_status": "This checkpoint commit must be pushed and live origin SHA verified by the coordinator; previous published revision remains recorded below for history."
   }
 }

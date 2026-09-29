@@ -181,6 +181,14 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 		}
 	}
 
+	// Throwable subclasses have concrete constructors but Java variables keep
+	// their declared reference type, including across later subtype assignments.
+	if _, builtinThrowable := builtinThrowableReferenceName(originalType, ctx); builtinThrowable {
+		return &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{
+			&ast.ValueSpec{Names: names, Type: explicitLocalVariableType(originalType, ctx), Values: declaration.Rhs},
+		}}}
+	}
+
 	base, _ := parseJavaTypeString(originalType)
 	switch stripJavaQualifier(base) {
 	case "Object", "Number", "Comparable", "Serializable", "Constable", "ConstantDesc":

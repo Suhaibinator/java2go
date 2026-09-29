@@ -657,20 +657,20 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					superName := stripJavaQualifier(base)
 					// A built-in exception superclass is constructed via the stdjava
 					// runtime; the embedded field is named after the runtime type.
-					if isBuiltinExceptionType(superName) && resolveClassScopeByQualifiedName(ctx, base) == nil {
+					if storage, builtin := builtinExceptionStorageTypeName(base, ctx); builtin {
 						recvName := ctx.className
 						if recvName == "" && ctx.currentClass.Class != nil {
 							recvName = ctx.currentClass.Class.Name
 						}
 						if recvName != "" {
 							if call, ok := assertionErrorConstructorArguments(base, argsNode, args, ctx, source); ok {
-								return &ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(ShortName(recvName)), Sel: ast.NewIdent(superName)}}, Tok: token.ASSIGN, Rhs: []ast.Expr{call}}
+								return &ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(ShortName(recvName)), Sel: ast.NewIdent(storage)}}, Tok: token.ASSIGN, Rhs: []ast.Expr{call}}
 							}
 
 							return &ast.AssignStmt{
 								Lhs: []ast.Expr{&ast.SelectorExpr{
 									X:   &ast.Ident{Name: ShortName(recvName)},
-									Sel: &ast.Ident{Name: superName},
+									Sel: &ast.Ident{Name: storage},
 								}},
 								Tok: token.ASSIGN,
 								Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, args, ctx)},

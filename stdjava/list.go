@@ -18,6 +18,7 @@ type List[T any] struct {
 	array       *ReferenceArray
 	elementType TypeID
 	fixed       bool
+	modCount    uint64
 }
 
 // NewList returns an empty List, matching `new ArrayList<>()` / `new LinkedList<>()`.
@@ -36,6 +37,7 @@ func NewListFrom[T any](elements ...T) *List[T] {
 // returns true for a List).
 func (l *List[T]) Add(element T) bool {
 	l.requireResizable()
+	l.modCount++
 	l.elements = append(l.elements, element)
 	return true
 }
@@ -78,6 +80,9 @@ func (l *List[T]) Clear() {
 	if l.Size() != 0 {
 		l.requireResizable()
 	}
+	if !l.fixed {
+		l.modCount++
+	}
 	l.elements = nil
 }
 
@@ -85,6 +90,7 @@ func (l *List[T]) Clear() {
 func (l *List[T]) RemoveAt(index int32) T {
 	l.requireResizable()
 	old := l.elements[index]
+	l.modCount++
 	l.elements = append(l.elements[:index], l.elements[index+1:]...)
 	return old
 }
@@ -92,7 +98,13 @@ func (l *List[T]) RemoveAt(index int32) T {
 // AddAll appends every element of other and returns true if any were added,
 // matching List.addAll.
 func (l *List[T]) AddAll(other *List[T]) bool {
-	if other == nil || other.Size() == 0 {
+	if other == nil {
+		return false
+	}
+	if !l.fixed {
+		l.modCount++
+	}
+	if other.Size() == 0 {
 		return false
 	}
 	l.requireResizable()

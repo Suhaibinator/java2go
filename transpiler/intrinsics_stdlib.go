@@ -232,13 +232,10 @@ func registerStringIntrinsics() {
 		return pkgCall(ctx, "fmt", "Sprintf", args...)
 	})
 
-	// String.join(sep, elements) -> strings.Join(elements, sep). Only the
-	// (CharSequence, Iterable/array) overload with two arguments is handled.
-	registerStaticIntrinsic("String", "join", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 2) {
-			return nil
-		}
-		return pkgCall(ctx, "strings", "Join", args[1], args[0])
+	// Overload selection needs the static Java argument type, retained by
+	// lowerStringJoin after the canonical String owner guard in tryStaticIntrinsic.
+	registerStaticIntrinsic("String", "join", func(_ ast.Expr, _ []ast.Expr, _ Ctx) ast.Expr {
+		return nil
 	})
 	for _, method := range []string{"length", "indexOf", "lastIndexOf", "compareTo"} {
 		registerInstanceIntrinsicResultType("String", method, "int")

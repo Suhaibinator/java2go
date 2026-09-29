@@ -94,20 +94,11 @@ func resolveStaticFieldAccess(node *sitter.Node, source []byte, ctx Ctx) (*stati
 	switch node.Type() {
 	case "identifier":
 		name := node.Content(source)
-		if identifierHasLocalBinding(name, ctx) {
+		resolution := resolveUnqualifiedStaticField(name, ctx)
+		if resolution == nil {
 			return nil, false
 		}
-		for scope := ctx.currentClass; scope != nil; scope = scope.Enclosing {
-			resolution := findFieldResolutionInHierarchy(scope, name, ctx)
-			if resolution == nil {
-				continue
-			}
-			if !resolution.def.IsStatic {
-				return nil, false
-			}
-			return &staticFieldAccess{resolution: resolution}, true
-		}
-		return nil, false
+		return &staticFieldAccess{resolution: resolution}, true
 
 	case "field_access":
 		objectNode := node.ChildByFieldName("object")

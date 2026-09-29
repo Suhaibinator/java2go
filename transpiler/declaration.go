@@ -92,8 +92,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				superScope := resolveClassScopeByQualifiedName(ctx, superBase)
 				// A class extending a built-in exception embeds the stdjava runtime
 				// type so it inherits the Throwable method set and message storage.
-				if builtin := stripJavaQualifier(t.Content(source)); isBuiltinExceptionType(builtin) && superScope == nil {
-					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(builtin, ctx)})
+				if storage, builtin := builtinExceptionStorageTypeName(superBase, ctx); builtin {
+					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(storage, ctx)})
 					continue
 				}
 				if baseType := characterIOBaseTypeExpr(t.Content(source), ctx); baseType != nil {
@@ -2337,9 +2337,9 @@ func explicitSuperConstructorAssignment(
 	constructorName := "New" + superName
 	constructor := ast.Expr(nil)
 	var constructorClassTypeArgs []string
-	if isBuiltinExceptionType(stripJavaQualifier(base)) && parent == nil {
+	if storage, builtin := builtinExceptionStorageTypeName(base, ctx); builtin && parent == nil {
 		return &ast.AssignStmt{
-			Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(superName)}},
+			Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(storage)}},
 			Tok: token.ASSIGN,
 			Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, invocation.parsedArgs, ctx)},
 		}
@@ -2410,9 +2410,9 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 	}
 	if parent == nil {
 		base, _ := parseJavaTypeString(scope.Superclass)
-		if isBuiltinExceptionType(base) {
+		if storage, builtin := builtinExceptionStorageTypeName(base, ctx); builtin {
 			return &ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(stripJavaQualifier(base))}},
+				Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(storage)}},
 				Tok: token.ASSIGN,
 				Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, nil, ctx)},
 			}

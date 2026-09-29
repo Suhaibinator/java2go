@@ -896,6 +896,9 @@ func tryStaticIntrinsic(objectNode *sitter.Node, methodName string, source []byt
 	}
 
 	args := intrinsicArgs(objectNode, methodName, source, ctx)
+	if className == "String" && methodName == "join" {
+		return lowerStringJoin(objectNode.Parent(), args, ctx, source), true
+	}
 	if className == "Arrays" && methodName == "asList" {
 		if result := arraysAsListCall(objectNode.Parent(), args, ctx, source); result != nil {
 			return result, true

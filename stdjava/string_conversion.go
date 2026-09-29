@@ -56,7 +56,9 @@ func StringValueOf(value any) string {
 	if nilJavaReference(value) {
 		return "null"
 	}
-
+	if _, ok := value.(nominalThrowableText); ok || hasJavaObjectTextIdentity(value) {
+		return StringValueOfExecution(NewExecution(), value)
+	}
 	switch value := value.(type) {
 	case float32:
 		return FloatToString(value)
@@ -65,6 +67,28 @@ func StringValueOf(value any) string {
 	default:
 		return fmt.Sprint(value)
 	}
+}
+
+// The public Throwable interface remains compatible with existing Go callers.
+// Object text conversion additionally requires the runtime-owned marker so
+// ordinary Java methods named message/error cannot impersonate a Throwable.
+type nominalThrowableText interface {
+	Throwable
+	javaThrowable()
+}
+
+func hasJavaObjectTextIdentity(value any) bool {
+	if carrier, ok := value.(JavaObjectInfoCarrier); ok && carrier.JavaObjectInfo() != nil {
+		return true
+	}
+	id, ok := ObjectDynamicType(value)
+	if !ok {
+		return false
+	}
+	javaTypeRegistry.RLock()
+	source := javaTypeRegistry.types[id].source
+	javaTypeRegistry.RUnlock()
+	return source
 }
 
 type executionStringer interface {
@@ -81,7 +105,10 @@ func StringValueOfExecution(execution *Execution, value any) string {
 		return "null"
 	}
 
+	value = collectionObjectView(value)
 	switch value := value.(type) {
+	case nominalThrowableText:
+		return ThrowableToStringExecution(execution, value)
 	case float32:
 		return FloatToString(value)
 	case float64:
@@ -92,6 +119,9 @@ func StringValueOfExecution(execution *Execution, value any) string {
 
 	if rendered, ok := callCollisionSafeExecutionStringer(execution, value); ok {
 		return rendered
+	}
+	if hasJavaObjectTextIdentity(value) {
+		return ObjectDefaultStringExecution(execution, value)
 	}
 	return fmt.Sprint(value)
 }

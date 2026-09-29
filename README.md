@@ -213,25 +213,16 @@ standard-library imports are rejected to prevent ambiguous import rewriting. Oth
 limits still apply; project discovery does not add framework implementations.
 
 
-## Throwable and build metadata prerequisites
+## String, Throwable and build metadata prerequisites
 
-Focused JVM regressions cover canonical builtin Throwable type names, source
-exception hierarchies and shadowing, inherited `getMessage` dispatch, and
-cause-only constructors that invoke source `toString` with the calling Java
-execution context. Generic bounds and overloaded calls retain the declaring
-context across shadowed and renamed type parameters, including boxing into
-generic method parameters. Entry-point generation also handles static
-method/type name collisions. These checks do not establish every Throwable or reflection contract.
+Focused JVM regressions cover String.join's exercised array, expanded-varargs and runtime collection iteration paths. They preserve null behavior, callback order, caller execution and nominal CharSequence checks. Source inheritance and generic bounds contribute to CharSequence overload selection; source name shadows and typed nulls retain their bindings. Nested classes can resolve enclosing static fields using the declaring owner's type information without overriding nearer lexical bindings. Broader translated-source Iterable support remains incomplete.
 
-Source ingestion recognizes a bounded Maven compiler-plugin metadata form:
-version 3.16.0, Java release 21, UTF-8, and absent or disabled annotation
-processing. Unsupported plugin configuration remains a diagnostic. This metadata
-validation does not implement arbitrary Maven plugin execution.
+Throwable regressions cover concrete java.lang.Throwable construction, allocation identity, nullable messages, cause initialization and getCause reference projection. Canonical type names, source exception hierarchies, inherited getMessage and explicit text dispatch preserve the invoking Java execution context. Text conversion distinguishes Java's nominal Throwable and Object contracts from unrelated similarly named Go methods. Generic bounds and overloaded calls retain their declaring context across shadowed and renamed type parameters, including boxing into generic method parameters. The unchanged original Throwable workflow matches nine JVM and nine race-enabled Go observations; these checks do not establish every Throwable or reflection contract.
 
-The runtime includes a separately tested immutable UTF16 String reference,
-interning and literal roots, fresh builder snapshots, and conversion adapters.
-Compiler String lowering still uses the existing representation. The retained
-String applications fail on identity, initialization, UTF16 and related behavior;
-passing runtime kernel tests does not constitute generated-application parity.
-See the frozen inputs under `campaign/reproducers/string-abi-prereq` and
-`campaign/reproducers/string-reference-prereq`.
+The current StringCharAt implementation removes a temporary allocation in measured valid calls. Repeated generated workloads also allocate less in Go; this is not a CPU or JVM performance claim. See [ADVERSARIAL_CAMPAIGN.md](ADVERSARIAL_CAMPAIGN.md) for the measured workloads and checkpoint verification status.
+
+Source ingestion recognizes a bounded Maven compiler-plugin metadata form: version 3.16.0, Java release 21, UTF-8, and absent or disabled annotation processing. Unsupported plugin configuration remains a diagnostic. This metadata validation does not implement arbitrary Maven plugin execution. Entry-point generation also handles static method/type name collisions.
+
+The runtime includes a separately tested immutable UTF16 String reference, interning and literal roots, fresh builder snapshots, and conversion adapters. Compiler String lowering still uses the existing representation. The retained String applications fail on identity, initialization, UTF16 and related behavior; passing runtime kernel tests does not constitute generated-application parity. See the frozen inputs under `campaign/reproducers/string-abi-prereq` and `campaign/reproducers/string-reference-prereq`.
+
+Full Gson remains an unaccepted source-translation challenge. A separate reflection-free NoMeta probe still fails Go compilation with `undefined: Integer` and `value.toString undefined` on both baseline and candidate. Its nine JVM observations produce no accepted Go observations. These open cases remain visible alongside the passing prerequisite tests.
