@@ -1,0 +1,7 @@
+inherited|probe.model.Base<java.lang.String>|true|true|true
+anonymous|probe.model.Base<java.util.List<probe.model.Order>>|true|true|true
+field|lines|java.util.List<java.lang.String>
+field|metadata|java.util.Map<java.lang.String, java.lang.Integer>
+variable|T|true|true
+ordinary|true|true
+state|seed-97-mutated|1

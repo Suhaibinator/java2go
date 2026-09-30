@@ -41,8 +41,8 @@ func (class *Class) GetFieldJavaString(name *JavaString) *Field {
 	key := JavaStringSwitchKey(name)
 	for current := class; current != nil; current = current.GetSuperclass() {
 		for _, field := range classDescriptor(current.TypeID()).Fields {
-			if !field.NonPublic && JavaStringSwitchKey(field.nameJavaString) == key {
-				return &Field{current, field}
+			if reflectionFieldPublic(field) && JavaStringSwitchKey(field.nameJavaString) == key {
+				return &Field{owner: current, descriptor: field}
 			}
 		}
 	}
@@ -54,7 +54,7 @@ func (class *Class) GetDeclaredFieldJavaString(name *JavaString) *Field {
 	key := JavaStringSwitchKey(name)
 	for _, field := range classDescriptor(class.TypeID()).Fields {
 		if JavaStringSwitchKey(field.nameJavaString) == key {
-			return &Field{class, field}
+			return &Field{owner: class, descriptor: field}
 		}
 	}
 	panic(reflectionJavaStringException("NoSuchFieldException", name))

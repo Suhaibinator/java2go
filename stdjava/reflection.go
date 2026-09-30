@@ -4,9 +4,10 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
-// ClassDescriptor describes the bounded public reflection surface emitted by
+// ClassDescriptor describes the bounded reflection surface emitted by
 // the transpiler. Callbacks retain Java initialization and execution semantics.
 // Descriptors are registered without constructing or initializing Java classes.
 type ClassDescriptor struct {
@@ -21,6 +22,13 @@ type ClassDescriptor struct {
 	Fields              []FieldDescriptor
 	Methods             []MethodDescriptor
 	Annotations         []TypeID
+	Modifiers           int32
+	HasModifiers        bool
+	GenericSuperclass   *ReflectTypeDescriptor
+	TypeParameters      []TypeVariableDescriptor
+	genericVariables    []*metadataTypeVariable
+	Constructors        []ConstructorDescriptor
+	AnnotationValues    []AnnotationDescriptor
 }
 type FieldDescriptor struct {
 	nameJavaString *JavaString
@@ -30,6 +38,13 @@ type FieldDescriptor struct {
 	NonPublic      bool
 	EnumConstant   bool
 	StaticGet      func(*Execution) any
+	Modifiers      int32
+	HasModifiers   bool
+	GenericType    *ReflectTypeDescriptor
+	Annotations    []AnnotationDescriptor
+	Get            func(*Execution, any) any
+	Set            func(*Execution, any, any)
+	StaticSet      func(*Execution, any)
 }
 type MethodDescriptor struct {
 	nameJavaString *JavaString
@@ -40,6 +55,7 @@ type MethodDescriptor struct {
 var reflectionRegistry sync.Map
 
 func RegisterClassDescriptor(descriptor ClassDescriptor) {
+	descriptor = cloneReflectionMetadata(descriptor)
 	descriptor.Fields = append([]FieldDescriptor(nil), descriptor.Fields...)
 	descriptor.Methods = append([]MethodDescriptor(nil), descriptor.Methods...)
 	descriptor.Annotations = append([]TypeID(nil), descriptor.Annotations...)
@@ -118,7 +134,13 @@ func (class *Class) IsAnnotationPresent(annotation *Class) bool {
 	id := annotation.TypeID()
 	inherited := classDescriptor(id).InheritedAnnotation
 	for current := class; current != nil; current = current.GetSuperclass() {
-		for _, candidate := range classDescriptor(current.TypeID()).Annotations {
+		descriptor := classDescriptor(current.TypeID())
+		for _, candidate := range descriptor.AnnotationValues {
+			if candidate.Type == id {
+				return true
+			}
+		}
+		for _, candidate := range descriptor.Annotations {
 			if candidate == id {
 				return true
 			}
@@ -131,34 +153,16 @@ func (class *Class) IsAnnotationPresent(annotation *Class) bool {
 }
 
 type Constructor struct {
-	owner     *Class
-	construct func(*Execution) any
-}
-
-func (class *Class) GetConstructor(parameters ...*Class) *Constructor {
-	construct := classDescriptor(class.TypeID()).Construct
-	if len(parameters) != 0 || construct == nil {
-		panic(reflectionException("NoSuchMethodException", class.GetName()+".<init>"))
-	}
-	return &Constructor{class, construct}
-}
-func (constructor *Constructor) NewInstance(execution *Execution, arguments ...any) (result any) {
-	if constructor == nil {
-		panic(NewNullPointerException("constructor is null"))
-	}
-	if len(arguments) != 0 {
-		panic(NewIllegalArgumentException("wrong number of constructor arguments"))
-	}
-	if initialize := classDescriptor(constructor.owner.TypeID()).Initialize; initialize != nil {
-		initialize(execution)
-	}
-	defer reflectionInvocationPanic()
-	return constructor.construct(execution)
+	owner      *Class
+	construct  func(*Execution) any
+	descriptor ConstructorDescriptor
+	accessible atomic.Bool
 }
 
 type Field struct {
 	owner      *Class
 	descriptor FieldDescriptor
+	accessible atomic.Bool
 }
 
 func (class *Class) GetField(name string) *Field {
@@ -168,8 +172,8 @@ func (class *Class) GetField(name string) *Field {
 	}
 	for current := class; current != nil; current = current.GetSuperclass() {
 		for _, field := range classDescriptor(current.TypeID()).Fields {
-			if field.Name == name && !field.NonPublic {
-				return &Field{current, field}
+			if field.Name == name && reflectionFieldPublic(field) {
+				return &Field{owner: current, descriptor: field}
 			}
 		}
 	}
@@ -185,7 +189,7 @@ func (class *Class) GetDeclaredField(name string) *Field {
 	}
 	for _, field := range classDescriptor(class.TypeID()).Fields {
 		if field.Name == name {
-			return &Field{class, field}
+			return &Field{owner: class, descriptor: field}
 		}
 	}
 	panic(reflectionException("NoSuchFieldException", name))
@@ -223,98 +227,6 @@ func reflectionReceiver(receiver any, owner *Class) reflect.Value {
 // requireInstanceReceiver preserves Field.checkAccess ordering: an instance
 // null fails before access permission, but receiver type checking remains in
 // the accessor. Static descriptors ignore the supplied receiver entirely.
-func (field *Field) requireInstanceReceiver(receiver any) {
-	if field.descriptor.StaticGet == nil && nilJavaReference(receiver) {
-		panic(NewNullPointerException("reflection receiver is null"))
-	}
-}
-func (field *Field) Get(receiver any) any {
-	if field == nil {
-		panic(NewNullPointerException("field is null"))
-	}
-	field.requireInstanceReceiver(receiver)
-	if field.descriptor.StaticGet != nil {
-		return field.GetExecution(NewExecution(), receiver)
-	}
-	if field.descriptor.NonPublic {
-		panic(reflectionException("IllegalAccessException", "non-public field"))
-	}
-	value := reflectionReceiver(receiver, field.owner).Elem().FieldByName(field.descriptor.GoName)
-	if field.descriptor.Type == StringTypeID && nilJavaReference(value.Interface()) {
-		return nil
-	}
-	return reflectionBox(value.Interface(), field.descriptor.Type)
-}
-
-// GetExecution retains the invoking Java execution when a generated static
-// getter initializes or reads a field. The receiver is ignored for static reads.
-func (field *Field) GetExecution(execution *Execution, receiver any) any {
-	if field == nil {
-		panic(NewNullPointerException("field is null"))
-	}
-	field.requireInstanceReceiver(receiver)
-	if field.descriptor.NonPublic {
-		panic(reflectionException("IllegalAccessException", "non-public field"))
-	}
-	if getter := field.descriptor.StaticGet; getter != nil {
-		requireExecution(execution)
-		if initialize := classDescriptor(field.owner.TypeID()).Initialize; initialize != nil {
-			initialize(execution)
-		}
-		value := getter(execution)
-		if field.descriptor.Type == StringTypeID && nilJavaReference(value) {
-			return nil
-		}
-		return reflectionBox(value, field.descriptor.Type)
-	}
-	return field.Get(receiver)
-}
-func (field *Field) Set(receiver, value any) {
-	if field == nil {
-		panic(NewNullPointerException("field is null"))
-	}
-	field.requireInstanceReceiver(receiver)
-	if field.descriptor.NonPublic {
-		panic(reflectionException("IllegalAccessException", "non-public field"))
-	}
-	if field.descriptor.StaticGet != nil {
-		panic(reflectionException("IllegalAccessException", "static field is not writable"))
-	}
-	target := reflectionReceiver(receiver, field.owner).Elem().FieldByName(field.descriptor.GoName)
-	if field.descriptor.Final {
-		panic(reflectionException("IllegalAccessException", "final field"))
-	}
-	converted := reflectionUnbox(value, field.descriptor.Type)
-	if nilJavaReference(converted) {
-		if isPrimitiveTypeID(field.descriptor.Type) {
-			panic(NewIllegalArgumentException("null primitive field value"))
-		}
-		if target.Kind() == reflect.String {
-			target.SetString(NullString())
-			return
-		}
-		target.SetZero()
-		return
-	}
-	if !isPrimitiveTypeID(field.descriptor.Type) {
-		actual, known := ObjectDynamicType(converted)
-		if known && !JavaTypeAssignable(actual, field.descriptor.Type) {
-			panic(NewIllegalArgumentException("field value has wrong Java type"))
-		}
-		if carrier, ok := converted.(JavaObjectInfoCarrier); ok {
-			if info := carrier.JavaObjectInfo(); info != nil {
-				if view := info.resolveView(field.descriptor.Type); view != nil {
-					converted = view
-				}
-			}
-		}
-	}
-	source := reflect.ValueOf(converted)
-	if !source.Type().AssignableTo(target.Type()) {
-		panic(NewIllegalArgumentException("field value has wrong type"))
-	}
-	target.Set(source)
-}
 
 type Method struct {
 	owner      *Class
@@ -380,8 +292,9 @@ func (method *Method) Invoke(execution *Execution, receiver any, arguments ...an
 }
 func reflectionInvocationPanic() {
 	if caught := recover(); caught != nil {
-		exception := reflectionException("InvocationTargetException", "reflective invocation failed")
+		exception := Exception{newJavaThrowableBase("InvocationTargetException", nil)}
 		exception.state.cause = caught
+		exception.state.causeInitialized = true
 		panic(exception)
 	}
 }
@@ -390,7 +303,7 @@ func reflectionException(name, message string) Exception {
 }
 func init() {
 	RegisterException("ReflectiveOperationException", "Exception")
-	for _, name := range []string{"ClassNotFoundException", "NoSuchMethodException", "NoSuchFieldException", "IllegalAccessException", "InvocationTargetException"} {
+	for _, name := range []string{"ClassNotFoundException", "NoSuchMethodException", "NoSuchFieldException", "IllegalAccessException", "InstantiationException", "InvocationTargetException"} {
 		RegisterException(name, "ReflectiveOperationException")
 	}
 }
