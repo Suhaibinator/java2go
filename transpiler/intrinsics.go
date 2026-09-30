@@ -4,6 +4,8 @@ import (
 	"go/ast"
 	"strings"
 
+	"github.com/NickyBoy89/java2go/symbol"
+
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -894,7 +896,7 @@ func tryStaticIntrinsicInvocation(invocation *sitter.Node, className, methodName
 	}
 
 	args := parseTypedIntrinsicInvocationArguments(invocation, nil, className, methodName, source, ctx)
-	if className == "Paths" && methodName == "get" {
+	if (className == "Paths" && methodName == "get") || (className == "Path" && methodName == "of") {
 		if result := lowerPathGetReference(invocation, args, ctx, source); result != nil {
 			return result, true
 		}
@@ -1169,6 +1171,9 @@ func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (
 		root = next
 	}
 	if root != nil && root.Type() == "identifier" {
+		if _, bound := resolveReferenceTypeParameter(symbol.JavaType{Original: root.Content(source)}, ctx); bound {
+			return "", false
+		}
 		if _, value := inferIdentifierJavaType(root.Content(source), ctx); value {
 			return "", false
 		}
@@ -1188,21 +1193,6 @@ func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (
 	if objectNode.Type() != "identifier" {
 		if objectNode.Type() != "field_access" && objectNode.Type() != "scoped_identifier" {
 			return "", false
-		}
-		if name == "Normalizer.Form" || name == "java.text.Normalizer.Form" {
-			if _, value := inferIdentifierJavaType("Normalizer", ctx); value {
-				return "", false
-			}
-			if resolveClassScopeByQualifiedName(ctx, "Normalizer") != nil || resolveClassScopeByQualifiedName(ctx, name) != nil {
-				return "", false
-			}
-			return "Normalizer.Form", true
-		}
-		if name == "java.text.Normalizer" {
-			if resolveClassScopeByQualifiedName(ctx, name) != nil {
-				return "", false
-			}
-			return "Normalizer", true
 		}
 
 		if !strings.HasPrefix(name, "java.lang.") && !strings.HasPrefix(name, "java.util.") {

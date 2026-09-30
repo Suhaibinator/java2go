@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Fresh Normalizer composition and legacy main gates; repair original Codec Path.of canonical ABI mismatch, implement Gson reflection from verified JDK controls, finish native CI and casing, and verify comparator/builder original application correctness before exclusive performance measurements. Continue Sol-only adversarial campaign, commit and push milestones; checkpoint18 remains latest full compatibility acceptance.",
+  "next_action": "Continue Sol-only TDD: legacy argument entry repair, compiler reflection and unchanged full Gson; stale Pattern assertions plus Encoding gate; comparator factory/lambda and builder paired correctness; integrate accepted casing. Original Codec56 independently accepted via semantic module-binding supplement. Commit and push milestones; checkpoint18 remains latest full round.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -754,7 +754,7 @@
       "performance/runtime/list_retention/CANDIDATE.md"
     ],
     "list_removal_candidate": "Isolated vacated-slot clearing candidate: semantic JVM parity + full copied runtime tests; retained payload8/16MiB reduced to528B; live patch not applied, no speed claim",
-    "data_allocation_audit": "Accepted data full-main allocation-only measurements:18 unchanged Go runs match3 live JVM oracles and file hashes; strongest candidates UTF16 comparisons, ASCII substring extraction and direct UTF16\u2192UTF8 construction; no wallclockspeedclaim",
+    "data_allocation_audit": "Accepted data full-main allocation-only measurements:18 unchanged Go runs match3 live JVM oracles and file hashes; strongest candidates UTF16 comparisons, ASCII substring extraction and direct UTF16→UTF8 construction; no wallclockspeedclaim",
     "source_object_construction_audit": {
       "path": "performance/codegen/object_construction/README.md",
       "status": "unmeasured-proposals-only",
@@ -2470,7 +2470,7 @@
       },
       "inherited_member_repair": {
         "path": "/private/tmp/java2go-inherited-member11-scratch",
-        "status": "finalv2 independentlyverified andintegrated after localpackage JVMred\u2192green",
+        "status": "finalv2 independentlyverified andintegrated after localpackage JVMred→green",
         "original_red_log": "/private/tmp/java2go-inherited-member11-red.log",
         "focused_green": "/private/tmp/java2go-inherited-member11-green2.log",
         "review_red": "/private/tmp/java2go-inherited-member11-review-red.log",
@@ -4551,16 +4551,52 @@
         "patch_sha256": "abe447980429435e7506d14e8fd0f7a0d87f18a12b646aee78541a37a2488544",
         "next": "Exact6 frozen controls then broader affected gates; no promotion from prepared patch."
       }
+    },
+    "sol_progress68": {
+      "updated_at": "2026-09-30T14:56:58.055255+00:00",
+      "publication_paths": [
+        "transpiler/intrinsic_owner.go",
+        "transpiler/intrinsic_signatures.go",
+        "transpiler/intrinsics.go",
+        "transpiler/intrinsics_normalizer.go",
+        "transpiler/legacy_main_args_array_campaign_test.go",
+        "transpiler/normalizer_nested_owner_campaign_test.go",
+        "transpiler/path_of_canonical_dispatch66_test.go",
+        "transpiler/qualified_static_receiver.go",
+        "transpiler/qualified_static_receiver_enclosing_application_test.go",
+        "transpiler/qualified_static_receiver_enclosing_campaign_test.go",
+        "transpiler/qualified_static_receiver_enclosing_project_test.go",
+        "transpiler/static_field_codegen.go",
+        "transpiler/testdata/enclosing_qualifier_witness/Main.java",
+        "transpiler/testdata/enclosing_qualifier_witness/instance.stdout",
+        "transpiler/testdata/enclosing_qualifier_witness/priorlocal.stdout",
+        "transpiler/testdata/enclosing_qualifier_witness/static.stdout",
+        "transpiler/campaign_runtime_utf16_test.go",
+        "transpiler/campaign_runtime_oracle_stream_encoding_test.go"
+      ],
+      "source2405_manifest": "ed2c847f6eb0b4f1e02a22eb1f7986f05fd67aa67a294071383e0d41f0af43f2",
+      "normalizer_independent": "97671457aaaef6e3cffb0caeff05ef76abd4738edab064b5aa4cfc3369f2bc43",
+      "codec_independent": "cb03d3afcea08c44c71572c27a0785f278857aeb154e48b1937506b430ab745f",
+      "codec_status": "All56 actualstages pass; independentsemantic supplement accepted; originalaggregatefalse retained quote normalization only",
+      "reflection_runtime_independent": "06322e54fa879f014e33e8a28fa233b0e4bb225e36eafd5686175274097be568",
+      "full_round_promoted": false,
+      "remaining": [
+        "legacy-main RED retained",
+        "full Gson compiler/runtime reflection",
+        "full coherent CI",
+        "Pattern assertion migration and Encoding execution",
+        "fresh paired performance correctness before measurements"
+      ]
     }
   },
   "active_resume": {
-    "last_pushed_revision": "2276161996466a7686533b4925a3ad64db2edbeb",
+    "last_pushed_revision": "4a618d24cb33edb593bcf7c7490d5f294dc3e728",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "Progress62: native source checkpoint9c1d4ac is origin-verified; fresh paired unit removes six candidate-only regressions, retains nine baseline failures. Other compiler/runtime components remain isolated private snapshots, with full integration and dependency gates pending.",
+    "source_checkpoint": "Progress68: exact18-path Normalizer/Path.of/UTF8 publication; independent scoped gates accepted, retained legacy-main RED. Full Gson and full coherent CI remain open.",
     "active_full_challenge": "round02/data Gson",
-    "heavy_policy": "Three isolated Go-heavy correctness lanes GOMAXPROCS=2 plus two lightweight JVM-only oracle lanes; private process trees/outputs and declared bounds. Performance measurements exclusive. Pin actual used inputs/tools, exclude unrelated mutable cache metadata.",
-    "next": "Continue Sol-only TDD: bounded argument general repair/review; integrate enum/field/null fixes on same generic source; Class.isInstance repair for unchanged Function application; rerun repaired runtime composition with all Resources tests; integrate encoding nominal catch repair; rerun original dependency applications, accumulated CI, and then advance to pinned Netty.",
+    "heavy_policy": "Six isolated Go correctness lanes GOMAXPROCS=2 and two JVM-only oracle lanes. Each uses private source/output/process supervision; performance measurements require exclusive execution.",
+    "next": "Continue Sol-only TDD: legacy argument entry repair, compiler reflection and unchanged full Gson; stale Pattern assertions plus Encoding gate; comparator factory/lambda and builder paired correctness; integrate accepted casing. Original Codec56 independently accepted via semantic module-binding supplement. Commit and push milestones; checkpoint18 remains latest full round.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Goal tool ACTIVE, verified 2026-09-30. Latest user requests aggressive Sol-only parallelism; historical displayed tool objective soft agent counts are superseded. API cannot edit objective; no false completion/replacement.",
@@ -5465,7 +5501,7 @@
         "allocation_result_sha256": "4b652d41ebda25f44fe1d13fe1ae6465cd8694111ed4e0d5012c3ba84c286b2a",
         "analysis_sha256": "b81ff701daa9402c35393f5f998aad4e48aba237256105bc938eadcab66a6dc3",
         "canonical_design_sha256": "dfdbaafa5d334314185f1dd3c131b26fb5301065b0759544d66ae17d6613a354",
-        "scope": "315 actual Main calls/31 commands match frozen JVM observations. Adapter/closure sites0.53\u20130.63% of whole-process allocated objects; CPU unmeasured. Canonical comparator reflection and synthesized int/long append Strings are hypotheses; no fastpath implementation. Timing/allocation remain separate and measurement exclusive."
+        "scope": "315 actual Main calls/31 commands match frozen JVM observations. Adapter/closure sites0.53–0.63% of whole-process allocated objects; CPU unmeasured. Canonical comparator reflection and synthesized int/long append Strings are hypotheses; no fastpath implementation. Timing/allocation remain separate and measurement exclusive."
       },
       "durability": {
         "status": "ROOT_VERIFIED_IGNORED_LOCAL_FIXED_CUTOFF; new supplement preparing",
@@ -5949,7 +5985,7 @@
     }
   },
   "work_allocation": {
-    "updated_at": "2026-09-30T13:24:21.060421+00:00",
+    "updated_at": "2026-09-30T14:56:58.055255+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -6003,7 +6039,7 @@
       ],
       "aggregate_rss_kib": 82876384
     },
-    "latest_parallelism": "Eighteen retained Sol roles reassigned across coherent integration, independent prerequisite audits, Normalizer repair, native CI, original Codec/Gson gates, Netty compile inputs and dedicated comparison/builder performance research. No Astra work.",
+    "latest_parallelism": "Eighteen retained Sol roles actively reassigned; no Astra. Compiler reflection, generic metadata, comparator and legacy TDD; runtime reflection/casing; concurrency and generic-interface JVM authors; independent reviews; dedicated comparator and builder performance research.",
     "additional_sol_workers": {
       "model": "gpt-6.1-sol",
       "reasoning": "high",

@@ -101,7 +101,7 @@ func campaignRuntimeJavaOracle(t *testing.T, name, source string) string {
 	}
 	runContext, cancelRun := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelRun()
-	out, err := exec.CommandContext(runContext, java, "-cp", dir, "CampaignRuntimeOracle").CombinedOutput()
+	out, err := exec.CommandContext(runContext, java, "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-cp", dir, "CampaignRuntimeOracle").CombinedOutput()
 	if err != nil {
 		t.Fatalf("JDK oracle execution: %v\n%s", err, out)
 	}

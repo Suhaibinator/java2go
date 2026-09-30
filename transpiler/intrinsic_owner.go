@@ -46,6 +46,22 @@ func canonicalIntrinsicOwner(javaType string, ctx Ctx) (string, bool) {
 		return "", false
 	}
 	if strings.Contains(base, ".") {
+		// An exact registered declaration is already canonical. In particular,
+		// a source class with the outer simple name cannot shadow this owner.
+		if _, exact := owners[base]; exact {
+			return base, true
+		}
+		// A partially qualified nested declaration inherits the identity of
+		// its resolved outer owner. Keep source/value bindings in the caller's
+		// qualifier checks; do not guess a nested owner from its simple name.
+		separator := strings.LastIndexByte(base, '.')
+		outer, recognized := canonicalIntrinsicOwner(base[:separator], ctx)
+		if recognized && intrinsicOwnerSupported(outer) {
+			nested := outer + base[separator:]
+			if _, known := owners[nested]; known {
+				return nested, true
+			}
+		}
 		return base, true
 	}
 	if ctx.currentFile != nil {

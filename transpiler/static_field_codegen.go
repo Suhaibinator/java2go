@@ -77,6 +77,18 @@ func staticFieldQualifierScope(node *sitter.Node, source []byte, ctx Ctx) (scope
 		if resolved := resolveClassScopeByQualifiedName(ctx, node.Content(source)); resolved != nil {
 			return resolved, true
 		}
+	case "field_access":
+		// Dotted source member types are field_access nodes in expression
+		// grammar. Resolve their declaration before treating the path as a
+		// value expression, whose evaluation and side effects must be kept.
+		_, root := qualifiedReceiverName(node, source)
+		imported := resolveStaticImportedField(root, ctx)
+		_, bound := resolveReferenceTypeParameter(symbol.JavaType{Original: root}, ctx)
+		if !bound && imported.source == nil && staticFieldIntrinsics[imported.intrinsic] == nil && imported.problem == "" {
+			if resolved := qualifiedSourceClassReceiver(ctx, source, node); resolved != nil {
+				return resolved, true
+			}
+		}
 	}
 
 	javaType, ok := inferExprJavaType(node, ctx, source)

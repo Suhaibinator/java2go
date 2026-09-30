@@ -25,7 +25,7 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 		return t
 	}
 	if class := staticClass; class != "" {
-		if class == "Paths" && method == "get" {
+		if (class == "Paths" && method == "get") || (class == "Path" && method == "of") {
 			if expected := pathGetReferenceExpected(invocation, ctx, source); expected != nil {
 				return expected
 			}

@@ -16,8 +16,18 @@ func qualifiedSourceClassReceiver(ctx Ctx, source []byte, node *sitter.Node) *sy
 	if ctx.localScope != nil && ctx.localScope.ParameterByName(root) != nil {
 		return nil
 	}
-	if ctx.currentClass != nil && findFieldResolutionInHierarchy(ctx.currentClass, root, ctx) != nil {
-		return nil
+	// Fields declared by enclosing lexical classes share the value namespace
+	// with fields of the current class. Inspect that declaration chain directly:
+	// whole-method local inference also sees declarations after this expression.
+	seen := map[*symbol.ClassScope]struct{}{}
+	for scope := ctx.currentClass; scope != nil; scope = scope.Enclosing {
+		if _, duplicate := seen[scope]; duplicate {
+			return nil
+		}
+		seen[scope] = struct{}{}
+		if findFieldResolutionInHierarchy(scope, root, ctx) != nil {
+			return nil
+		}
 	}
 	// Local symbols are collected for a whole Java method. Inspect lexical
 	// scopes here so a later declaration cannot hide an earlier package name.

@@ -4,6 +4,8 @@ import "go/ast"
 
 func init() {
 	registerIntrinsicOwner("java.text.Normalizer", true)
+	registerIntrinsicOwner("java.text.Normalizer.Form", true)
+	intrinsicOwnerKeys["java.text.Normalizer.Form"] = "Normalizer.Form"
 	for _, name := range []string{"NFC", "NFD", "NFKC", "NFKD"} {
 		name := name
 		registerStaticFieldIntrinsic("Normalizer.Form", name, func(ctx Ctx) ast.Expr { return stdjavaQualifiedExpr("Normalizer"+name, ctx) })
