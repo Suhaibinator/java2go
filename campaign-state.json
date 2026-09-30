@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Continue twenty-role Sol-only TDD; compose independently accepted Future, canonical String/Date/Constructor and generic-null repairs with source-bound checks, repair real original full43 and full120 Gson blockers, and rerun current accumulated regressions/CI before round acceptance.",
+  "next_action": "Continue the twenty-role Sol-only campaign: independently integrate accepted private generic/namespace/Thread/Future/runtime candidates, repair actual original120 Gson and full43 blockers, complete current accumulated CI and unwaived regressions, and compose separately accepted scoped performance successors. Checkpoint18 remains the latest accepted full round.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -6154,7 +6154,7 @@
       ],
       "aggregate_rss_kib": 82876384
     },
-    "latest_parallelism": "Eighteen retained Sol roles actively reassigned; no Astra. Compiler reflection, generic metadata, comparator and legacy TDD; runtime reflection/casing; concurrency and generic-interface JVM authors; independent reviews; dedicated comparator and builder performance research.",
+    "latest_parallelism": "Twenty retained GPT-6.1 Sol/high roles plus the coordinator remain allocated; all21 agent slots assigned. Heavy Go/JVM workloads require bounded serialized lane grants; completed owners remain assigned and can be resumed.",
     "additional_sol_workers": {
       "model": "gpt-6.1-sol",
       "reasoning": "high",
@@ -6188,7 +6188,7 @@
       "sol_performance_v10": "Dedicated general performance research, measurements gated"
     },
     "current_parallel_wave": {
-      "updated_at": "2026-09-30T19:41:13.522656+00:00",
+      "updated_at": "2026-09-30T21:14:09.684105+00:00",
       "requested_by": "latest user aggressive GPT-6.1 Sol fanout",
       "model": "gpt-6.1-sol",
       "reasoning_effort": "high",
@@ -6202,7 +6202,7 @@
         "sol_resume_future": "FutureTask cancellation, interrupted getters and executor worker lifecycle TDD",
         "sol_resume_gson": "Generic dependency storage and canonical reflection descriptor TDD",
         "sol_resume_gson_gate": "Original120-source Gson full application gate and first-failure runner",
-        "sol_resume_integration": "Exact current-public reflection/time composition and affected checks",
+        "sol_resume_integration": "Exact current-public composition, affected checks, source continuity and checkpoint proposals",
         "sol_resume_map_compiler": "Erased Map callbacks, delayed generic consumers and compiler TDD",
         "sol_resume_map_runtime": "Map defaults and ConcurrentMap atomic reservations TDD",
         "sol_resume_maps_author": "Independent generic callback, raw collection and dependency oracles",
@@ -6370,5 +6370,287 @@
     "latest_full_accepted_round": "checkpoint18",
     "limits": "Full coherent CI, original120-source Gson, full43 and Netty translation remain open. No finite corpus establishes all Java compatibility.",
     "resume": "Continue existing twenty GPT-6.1 Sol/high owners with six Go and two JVM slots. Root is sole public/Git writer; preserve actual REDs, frozen applications/oracles and user files."
+  },
+  "sol_progress74": {
+    "updated_at": "2026-09-30T21:26:10.803759+00:00",
+    "public_code_revision": "b9015ecab5dd1e2d26aa0d76f71f9cfa5e979008",
+    "component": "Date/ISO dependency contract, canonicalString overload/messages, boundCharacter, empty replacement identity and generic-null inference",
+    "tested_source_manifest_sha256": "9705884d22414e28b1fa1481dfa1f05f76cdf8ee9536d86b8f350fd486532ad2",
+    "published_paths": 74,
+    "production_paths": 16,
+    "test_fixture_paths": 58,
+    "coordinator_audit": "/private/tmp/java2go-root-publication74-audit.json",
+    "audit_sha256": "b5977cde0c4672fd2c7c63c20a318b15de29fc2ba4e4bf46a7a935907a00af93",
+    "verification": {
+      "historical_composed_source_manifest_sha256": "5f9e4a0b84ac1c915bd824bd5982ae6f29ee557dc0b12ecc51a4f07db9ecf223",
+      "historical_composed_parents": 44,
+      "historical_composed_raw_actions": 108,
+      "historical_composed_fail": 0,
+      "historical_composed_skip": 0,
+      "historical_gate_seal": "/private/tmp/java2go-date-encoding-null-current0441-sol-512eg4zx/PUBLICATION_READY.json",
+      "historical_gate_seal_sha256": "e4f73680dccafd9a22515bf66c6e5375fdb41272b4dccebd587860967158b5a5",
+      "clean_successor_seal": "/private/tmp/java2go-string-dispatch-clean-current0441-sol-4y70vn10/PUBLICATION_READY.json",
+      "clean_successor_seal_sha256": "5dfa8b135ae1068f9399bdd652855f63dfc380ba383f6e9ca0d8b04d4737925b",
+      "cleanup_race_parents": 5,
+      "cleanup_race_actions": 5,
+      "cleanup_only_delta": "Remove second identical11line String.replace(char,char) dispatch block; allother2726 source leaves unchanged. Existing Date dispatch leaf restored exactly.",
+      "independent_historical_review_sha256": "e7efe535aecf4293b81f1896723142a772bbe6670c99c7b38b4918b5847a8e10",
+      "independent_clean_review": "/private/tmp/java2go-string-dispatch-clean-current0441-sol-4y70vn10/independent-actual-review-v1.json",
+      "independent_clean_review_sha256": "e5054d63b4fd0a896e27ca5a67bb1c7751206e8cf2fbea639466e6d79dcfdc8b",
+      "source_hashes": 5454,
+      "retained_evidence_hashes": 136,
+      "clean_receipts": 8,
+      "Date_ISO_native_pairs": 9,
+      "Date_ISO_rows": 171,
+      "Date_generated_race_builds": 2,
+      "Date_original_constructor_javac_controls": 2,
+      "Date_generated_source_unchanged": true,
+      "initial_logged_fresh_JVM_pairs": 43,
+      "cleanup_logged_fresh_JVM_pairs": 21,
+      "retained_legacy_native_raw_pairs": 36,
+      "zero_byte_original_stderr_files": 9,
+      "native_helper_output_limit": "Unchanged strict helper compares native streams byte-for-byte with fresh JVM observations and retains successful execution terminals; successful nested native stdout/stderr are not separately saved. Original108 exercised5f9; only affectedEncoding5 reran on9705.",
+      "exact_inventory": "/private/tmp/java2go-string-dispatch-clean-current0441-sol-4y70vn10/publication-inventory.json",
+      "exact_inventory_sha256": "46b03cc7d593d1bafc8d4129a3a31d074e9b9ca3ebdca6a6104e7e02ffd3e0b7",
+      "publication_patch_sha256": "369b342008177a319447d5af42bbaec9599a456d0b992eb34a824029102cd64c"
+    },
+    "historical_ci_baseline": {
+      "revision": "23a27b1ba6952ab624450a1dceb5319b671ac4e1",
+      "tree": "f2c193e24cd7b941489f2ff7f585d42d1a830133",
+      "source_manifest_sha256": "31353afee0de7403192602aa41b9ff9b4ff0deca13d37ed7aac87c1f8349391c",
+      "aggregate": "/private/tmp/java2go-resume-ci-sdk-sol-xybi4wzz/HISTORICAL_CI_ACTUAL.json",
+      "aggregate_sha256": "4725011984f62ea7d0748c5a6ed544edbb9382e375e1129774d060de7a13f12b",
+      "all_eight_shards_terminal": true,
+      "all_infrastructure_pass": true,
+      "overall_passed": false,
+      "shards": {
+        "unit": {
+          "passed": false,
+          "counts": {
+            "fail": 326,
+            "pass": 2555,
+            "skip": 0
+          },
+          "parent_counts": {
+            "fail": 273,
+            "pass": 1410,
+            "skip": 0
+          },
+          "child_counts": {
+            "fail": 53,
+            "pass": 1145,
+            "skip": 0
+          }
+        },
+        "e2e-other": {
+          "passed": false,
+          "counts": {
+            "fail": 14,
+            "pass": 59,
+            "skip": 0
+          },
+          "parent_counts": {
+            "fail": 3,
+            "pass": 5,
+            "skip": 0
+          },
+          "child_counts": {
+            "fail": 11,
+            "pass": 54,
+            "skip": 0
+          }
+        },
+        "e2e-parity": {
+          "passed": false,
+          "counts": {
+            "fail": 6,
+            "pass": 49,
+            "skip": 0
+          },
+          "parent_counts": {
+            "fail": 1,
+            "pass": 0,
+            "skip": 0
+          },
+          "child_counts": {
+            "fail": 5,
+            "pass": 49,
+            "skip": 0
+          }
+        },
+        "fuzz": {
+          "passed": false,
+          "counts": {
+            "fail": 3,
+            "pass": 31,
+            "skip": 10
+          },
+          "parent_counts": {
+            "fail": 1,
+            "pass": 0,
+            "skip": 0
+          },
+          "child_counts": {
+            "fail": 2,
+            "pass": 31,
+            "skip": 10
+          }
+        },
+        "campaign": {
+          "passed": false,
+          "counts": {
+            "fail": 4,
+            "pass": 3,
+            "skip": 0
+          },
+          "parent_counts": {
+            "fail": 1,
+            "pass": 0,
+            "skip": 0
+          },
+          "child_counts": {
+            "fail": 3,
+            "pass": 3,
+            "skip": 0
+          }
+        },
+        "build": {
+          "passed": true,
+          "counts": null,
+          "parent_counts": {
+            "fail": 0,
+            "pass": 0,
+            "skip": 0
+          },
+          "child_counts": {
+            "fail": 0,
+            "pass": 0,
+            "skip": 0
+          }
+        },
+        "lint": {
+          "passed": false,
+          "counts": null,
+          "parent_counts": {
+            "fail": 0,
+            "pass": 0,
+            "skip": 0
+          },
+          "child_counts": {
+            "fail": 0,
+            "pass": 0,
+            "skip": 0
+          }
+        },
+        "vulnerability-check": {
+          "passed": true,
+          "counts": null,
+          "parent_counts": {
+            "fail": 0,
+            "pass": 0,
+            "skip": 0
+          },
+          "child_counts": {
+            "fail": 0,
+            "pass": 0,
+            "skip": 0
+          }
+        }
+      },
+      "lint_issue_count": 33,
+      "lint_diagnostic_ledger": {
+        "declared_issue_count": 33,
+        "linter_counts": {
+          "errcheck": 4,
+          "ineffassign": 1,
+          "staticcheck": 14,
+          "unused": 14
+        },
+        "path": "/private/tmp/java2go-resume-ci-sdk-sol-xybi4wzz/lint-diagnostic-ledger.json",
+        "sha256": "1a2bec158806efc179ef3c211d08dee884891d279090d25b565780feb8a3aa2d"
+      },
+      "fuzz_skips": 10,
+      "additional_unwaived_fuzz_skips": [
+        "seed245_4331b637",
+        "seed438_3d772ff9"
+      ],
+      "skip_policy_note": "Unchanged per-file known-open marker permits new category skips; retained, not waived. Prior comparison is different source.",
+      "scope": "Actual unchanged23a baseline only; no current-source fullCI acceptance."
+    },
+    "current0441_lint_baseline": {
+      "status": "actualRED",
+      "revision": "0441d3673638e492f84bc93380fe7c6e20b1adf3",
+      "uncapped_findings": 37,
+      "linter_counts": {
+        "errcheck": 6,
+        "ineffassign": 1,
+        "staticcheck": 17,
+        "unused": 13
+      },
+      "default_capped_output_findings": 34,
+      "default_output_note": "Default repeated-diagnostic caps mean34 is not exhaustive. Uncapped exactsame pristine0441 reports37.",
+      "uncapped_summary": "/private/tmp/java2go-current0441-lint-ci-sol-87sk8b_w/current-baseline-lint-uncapped/summary.json",
+      "uncapped_summary_sha256": "ec8d782414b6873d268d1f0aa7875794584b7c4f09c9bc951b7bb4ce9bce2700",
+      "uncapped_stdout_sha256": "38ec042c869e5c915068dc931b3f4b38d862ff7ea3f89c590b699334d9d8d954",
+      "private_fix": "Owner terminal independently accepted4545fd28: uncapped lint zero findings;39 runtime parents/174 race records PASS/no failures or skips;compiler controls24PASS4FAIL exactly match pristine0441 baseline. Current-public composition pending;no fullCI claim.",
+      "private_fix_acceptance": "/private/tmp/java2go-current0441-lint-ci-sol-87sk8b_w/ACTUAL_LINT_ACCEPTANCE.json",
+      "private_fix_acceptance_sha256": "74e446181b642499e091cb61b9f5ec28b6db3181d27e43aa08cbef4cc8aadc75"
+    },
+    "private_followups": {
+      "quality_ListT": "15 focusedchecks GREEN, private scoped result; current-public composition pending.",
+      "quality_synthetic_namespace": "20 focusedchecks GREEN, private scoped result; current-public composition pending.",
+      "Future": "Scoped getter/worker/cancellation repairs and source prerequisites still require current-public composition and originalfull43 application acceptance.",
+      "full43": "Lexical anonymous method boundary repair focused3GREEN;original101 gate100PASS1FAIL at anonymous Function nominal identity. Same-source old42=35PASS7FAIL, all unchanged assertions;compiler nominal repair and separate canonical ClassCastException message ABI remain active. Original application cannot be replaced.",
+      "full120_Gson": "Original120-source dependency closure, strict translation, allpackages/entry builds and unchanged application parity remain required.",
+      "caller_access_and_enum": "Caller-access9 and enum-initializer successors remain separate; dependent Gson Constructor family prerequisites must be certified before promotion.",
+      "current_CI": "Current accumulated unit/e2e/fuzz/campaign/lint/build/scanner acceptance remains open; preserve actualfailures and extraunwaived skips.",
+      "zone_archive_performance": {
+        "status": "independently accepted narrow private allocation trial; not in this74path publication",
+        "owner_report": "/private/tmp/java-time-zone-archive-study-sol-resume-oqy91ngy/report-v2.json",
+        "owner_report_sha256": "4dfd56dd63a3a5b0e0f9af9a46c2079cf4c1eb1a2e1e889b8912843e602230b1",
+        "independent_review_sha256_prefix": "e2cc52af",
+        "shared_missing_ID_allocations_average_before": 2405,
+        "shared_missing_ID_allocations_average_after": 3,
+        "measured_calls": 100,
+        "warmup_calls": 1,
+        "candidate_runtime_controls": 6,
+        "limitations": "Sampled AllocsPerRun average under race; baseline parse count structural only; five candidate-only helper checks are not baseline-equivalent APIs. Initial-index and retained-memory costs unmeasured; no Java/application speedup or new Time34 execution."
+      }
+    },
+    "current_agents": {
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "high",
+      "roles": {
+        "sol_quality_reuse": "Shared code reuse and collision-safe generated identifiers review",
+        "sol_quality_semantics": "Independent generic Map erasure and canonical owner review",
+        "sol_resume_ci": "Historical CI baseline, infrastructure classification and current successor",
+        "sol_resume_concurrency_author": "Independent concurrency/getter/worker Java oracles and fresh supplements",
+        "sol_resume_date": "Actual Gson ISO dependency translation, Locale/TimeZone services",
+        "sol_resume_encoding": "Canonical String overload repair and existing test migration",
+        "sol_resume_future": "FutureTask cancellation, interrupted getters and executor worker lifecycle TDD",
+        "sol_resume_gson": "Generic dependency storage and canonical reflection descriptor TDD",
+        "sol_resume_gson_gate": "Original120-source Gson full application gate and first-failure runner",
+        "sol_resume_integration": "Exact current-public composition, affected checks, source continuity and checkpoint proposals",
+        "sol_resume_map_compiler": "Erased Map callbacks, delayed generic consumers and compiler TDD",
+        "sol_resume_map_runtime": "Map defaults and ConcurrentMap atomic reservations TDD",
+        "sol_resume_maps_author": "Independent generic callback, raw collection and dependency oracles",
+        "sol_resume_perf_builder": "Dedicated allocation and generated-runtime performance improvements",
+        "sol_resume_perf_comparator": "Dedicated comparator research and general SortedMap prerequisites",
+        "sol_resume_perf_verifier": "Independent performance validation and JDK lifetime analysis",
+        "sol_resume_reflection": "Reflection context regression triage and fresh dependency supplements",
+        "sol_resume_runtime_verifier": "Independent actual runtime, time, strings and concurrency evidence",
+        "sol_resume_time": "Time services composition, cross-component regression ownership",
+        "sol_resume_verifier": "Independent Map/defaults/source protocol and dependency evidence"
+      },
+      "role_count": 20,
+      "coordinator_count": 1,
+      "allocated_slots": 21,
+      "slot_capacity": 21,
+      "astra_assignments": 0,
+      "policy": "Retain existing assignments; no additional spawning. Six bounded Go lanes GOMAXPROCS2 and two JVM-only oracle lanes; root grants execution and alone publishes."
+    },
+    "latest_full_accepted_round": "checkpoint18",
+    "limits": "This74path source-based milestone does not accept current fullCI, original120 Gson, full43, a new fullround, Netty, universal Java compatibility or performance speedup. Private successors need exact-current-source independent acceptance before publication.",
+    "resume": "Continue existing twentySol owners under bounded granted lanes; root alone commits/pushes exact reviewed paths. Preserve checkpoint18, historical failures, original fixtures/oracles, earlier docs and user untracked equal_scale work."
   }
 }
