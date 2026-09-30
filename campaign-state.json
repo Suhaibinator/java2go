@@ -6188,38 +6188,45 @@
       "sol_performance_v10": "Dedicated general performance research, measurements gated"
     },
     "current_parallel_wave": {
+      "updated_at": "2026-09-30T19:41:13.522656+00:00",
+      "requested_by": "latest user aggressive GPT-6.1 Sol fanout",
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "high",
       "retained_sol_roles": {
-        "sol_abstract_collections_v2": "java.time14 runtime and compiler services TDD",
-        "sol_bigmath_audit_v6": "Dedicated primitive-builder fair correctness and performance research",
-        "sol_canonical_integration_v3": "Coherent component integration and affected regression gates",
-        "sol_canonical_map_integration_v11": "Generic interface method erasure and physical representation TDD",
-        "sol_data": "Independent source/actual application and publication verification",
-        "sol_data_v2": "Generic process entry preserving callable witnesses",
-        "sol_generic_representation_v2": "Canonical ConcurrentMap/Map interface storage and projection TDD",
-        "sol_hard_semantics_v10": "Canonical harness and execution contract regressions",
-        "sol_ingestion_audit_v3": "Independent corpus, runtime and performance verification",
-        "sol_inheritance_dispatch_v11": "Independent Gson generic-interface and DateFormat JVM author",
-        "sol_io_harness_migration_v5": "Independent strict harness and actual gate verification",
-        "sol_io_string_output_v6": "Locale category and DateFormat/TimeZone TDD",
-        "sol_jdk_runtime_v2": "ConcurrentMap erased runtime protocol and atomic contracts",
-        "sol_map_composition_v6": "Independent reflective array/wildcard/owner JVM author",
-        "sol_objects_reference_v11": "Independent ConcurrentMap/raw heap pollution JVM author",
-        "sol_performance_v10": "Dedicated comparator fair correctness and performance research",
-        "sol_verification_v2": "Independent oracle and dependency harness verification",
-        "sol_writer_dispatch_v6": "Reflection compiler metadata and source namespace TDD"
+        "sol_quality_reuse": "Shared code reuse and collision-safe generated identifiers review",
+        "sol_quality_semantics": "Independent generic Map erasure and canonical owner review",
+        "sol_resume_ci": "Historical CI baseline, infrastructure classification and current successor",
+        "sol_resume_concurrency_author": "Independent concurrency/getter/worker Java oracles and fresh supplements",
+        "sol_resume_date": "Actual Gson ISO dependency translation, Locale/TimeZone services",
+        "sol_resume_encoding": "Canonical String overload repair and existing test migration",
+        "sol_resume_future": "FutureTask cancellation, interrupted getters and executor worker lifecycle TDD",
+        "sol_resume_gson": "Generic dependency storage and canonical reflection descriptor TDD",
+        "sol_resume_gson_gate": "Original120-source Gson full application gate and first-failure runner",
+        "sol_resume_integration": "Exact current-public reflection/time composition and affected checks",
+        "sol_resume_map_compiler": "Erased Map callbacks, delayed generic consumers and compiler TDD",
+        "sol_resume_map_runtime": "Map defaults and ConcurrentMap atomic reservations TDD",
+        "sol_resume_maps_author": "Independent generic callback, raw collection and dependency oracles",
+        "sol_resume_perf_builder": "Dedicated allocation and generated-runtime performance improvements",
+        "sol_resume_perf_comparator": "Dedicated comparator research and general SortedMap prerequisites",
+        "sol_resume_perf_verifier": "Independent performance validation and JDK lifetime analysis",
+        "sol_resume_reflection": "Reflection context regression triage and fresh dependency supplements",
+        "sol_resume_runtime_verifier": "Independent actual runtime, time, strings and concurrency evidence",
+        "sol_resume_time": "Time services composition, cross-component regression ownership",
+        "sol_resume_verifier": "Independent Map/defaults/source protocol and dependency evidence"
       },
-      "role_count": 18,
+      "role_count": 20,
+      "coordinator_count": 1,
+      "capacity": 21,
       "astra_assignments": 0,
-      "new_agent_spawn": "Attempted gpt-6.1-sol/high; thread limit reached. Reused retained Sol workers.",
-      "resource_policy": "Six isolated Go correctness lanes GOMAXPROCS=2 and two JVM-only oracle lanes. Each uses private source/output/process supervision; performance measurements require exclusive execution."
+      "resource_policy": "Six isolated Go lanes GOMAXPROCS=2, two JVM-only oracle lanes; completed agents resumed with followup_task; no additional agent spawning."
     }
   },
   "goal": {
     "objective": "Run the continuous adversarial Java-to-Go TDD campaign using GPT-6.1 Sol agents exclusively, including challenge authoring, compiler/runtime repairs, difficult semantics, independent verification and dedicated performance research. Translate actual dependency implementations, preserve correctness and accumulated regressions, compare JVM and Go observations, commit and push verified milestones to origin branches, and continue toward Netty until the user stops the campaign, subject to execution and usage limits. No finite corpus establishes support for every Java application.",
-    "updated_at": "2026-09-30T10:08:09.757237+00:00",
+    "updated_at": "2026-09-30T19:41:13.522656+00:00",
     "requested_by": "user",
     "agent_policy": "Sol only; gpt-6.1-sol/high; no Astra agents may be spawned or resumed.",
-    "app_goal_api_note": "Goal tool ACTIVE, verified 2026-09-30. Latest user requests aggressive Sol-only parallelism; historical displayed tool objective soft agent counts are superseded. API cannot edit objective; no false completion/replacement."
+    "app_goal_api_note": "Goal tool ACTIVE. Latest user requests twenty assigned GPT-6.1 Sol/high roles plus coordinator; historical displayed tool objective soft agent counts are superseded. API cannot edit objective; no false completion/replacement."
   },
   "sol_progress70": {
     "public_code_revision": "614d6e054a7e7f2b410d5f10cabfbf6d03ddc6e1",
@@ -6275,5 +6282,44 @@
     "full_ci": "pending",
     "full_gson": "pending",
     "updated_at": "2026-09-30T18:48:39.373869+00:00"
+  },
+  "sol_progress72": {
+    "updated_at": "2026-09-30T19:41:13.522656+00:00",
+    "public_code_revision": "7044071a01c0249659be8611440d4e771d047d71",
+    "agent_roles": 20,
+    "agent_policy": "Only GPT-6.1 Sol/high; all21 slots allocated including coordinator",
+    "latest_full_accepted_round": "checkpoint18",
+    "private_component_gates": {
+      "reflection": "144 actions GREEN on704 composition; helper reuse focused6parents16children. Combined Time composition pending.",
+      "time": "34 stages48rawstream comparisons and11parents19children race controls independently accepted.",
+      "future": "Primary81orderedrecords plus180race-stressrecords independently accepted; interruptedGetter RED retained; poolworker JVM45rows captured, repair pending.",
+      "map": "Runtime55 and compiler65 focusedGREEN; firstKey native/sourceGREEN pending independent review. Dynamic14 actualRED: generic method casts in callee before Object consumer.",
+      "strings": "10parents14children scopedRED\u2192GREEN independently accepted; boundCharacter overload gap found by review, new JVM/TDD queued.",
+      "date_iso": "Full actual dependency acceptance in progress, unchanged sixJava/19row oracle."
+    },
+    "historical_ci_baseline": {
+      "revision": "23a27b1",
+      "unit": "Actual1155PASS1runtimeFAIL0SKIP; four compiler packages blocked by local C SDK header transport. Correction and remaining shards in progress.",
+      "runtime_failure": "TestEnumReflectionStaticAndDeclaredBoundaries50 loses invokingExecution before IllegalAccessException; investigation separate from infrastructure."
+    },
+    "builder_performance_pilot": {
+      "audit": "/private/tmp/java2go-builder-pilot-v2-independent-sol-resume/actual-review.json",
+      "audit_sha256": "a72b10b2d8f7b5ab4ed5cd957b661bdb193cf112813e57bae186b196fa5dd9ae",
+      "main_records": 1536,
+      "raw_file_comparisons": 7680,
+      "stability": "INCONCLUSIVE_NO_AUTOMATIC_EXTENSION",
+      "wall_go_over_java": [
+        1.2732390645765748,
+        1.2257451194719096,
+        1.2293529694768008
+      ],
+      "speedup_claim": false
+    },
+    "root_reflection_precomposition_audit": {
+      "path": "/private/tmp/java2go-root-reflection-precomposition-audit.json",
+      "sha256": "20fbef2ec62bb1d6fa78c6e8672d8bd25841fdfe82bba075c99ffe2c7a624386"
+    },
+    "limits": "Private component results do not establish current composed source acceptance. Full original120 Gson/full coherent CI/Netty remain open; no universal Java or faster-than-Java claim.",
+    "resume": "Continue bounded existing Sol ownership. Root alone publishes verified exact paths and commits/pushes origin. Preserve actual RED fixtures and raw evidence; do not weaken assertions or silently replace active challenges."
   }
 }
