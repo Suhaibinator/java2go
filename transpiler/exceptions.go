@@ -65,7 +65,7 @@ func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, a
 		return call
 	}
 	if owner, ok := canonicalIntrinsicOwner(className, ctx); ok && owner == "java.lang.AssertionError" {
-		return stdjavaCall(ctx, "NewAssertionErrorExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
+		return stdjavaCall(ctx, "NewJavaAssertionErrorExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
 	}
 
 	name := stripJavaQualifier(className)
@@ -91,7 +91,7 @@ func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, a
 // Additional builtin constructor families are separate runtime ABI migrations.
 func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
 	name := stripJavaQualifier(className)
-	if name != "Exception" && name != "RuntimeException" && name != "IllegalStateException" {
+	if name != "Exception" && name != "RuntimeException" && name != "IllegalStateException" && name != "IllegalArgumentException" {
 		return nil
 	}
 	if _, builtin := builtinExceptionStorageTypeName(className, ctx); !builtin {
@@ -103,11 +103,11 @@ func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node,
 	if arguments == nil || int(arguments.NamedChildCount()) != len(args) {
 		return nil
 	}
-	if name == "Exception" && len(args) == 2 {
+	if (name == "Exception" || name == "IllegalArgumentException") && len(args) == 2 {
 		// The two-argument declaration is (String, Throwable); coerce a null literal
 		// according to that declaration instead of interpreting its runtime value.
 		message := stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{javaStringReferenceType(ctx)}, []ast.Expr{args[0], stdjavaQualifiedExpr("StringTypeID", ctx)})
-		return stdjavaCall(ctx, "NewJavaExceptionMessageCause", message, args[1])
+		return stdjavaCall(ctx, "NewJava"+name+"MessageCause", message, args[1])
 	}
 	actual, known := inferExprJavaType(arguments.NamedChild(0), ctx, source)
 	if !known {

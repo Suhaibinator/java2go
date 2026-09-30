@@ -29,7 +29,18 @@ func TestCampaignForMultipleDeclaratorsJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "CampaignForInitializers", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestForInitializers(t *testing.T) { if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) } }
- `, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+ j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestForInitializers(t *testing.T) {
+ var got *j.JavaString = Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a String value") }
+ want := utf16.Encode([]rune(%q))
+ if units := got.UTF16Copy(); !slices.Equal(units, want) {
+  t.Fatalf("JVM UTF16 %%x != Go UTF16 %%x", want, units)
+ }
+}`, want))
 }

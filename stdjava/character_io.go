@@ -146,6 +146,16 @@ func writerWrite(execution *Execution, writer Writer, value any, baseDefault boo
 		} else {
 			WriterWriteStringRangeExecution(execution, writer, value, bounds[0], bounds[1])
 		}
+	case *JavaString:
+		if len(bounds) == 0 {
+			if source, ok := writer.(interface{ JavaWriterWriteString(*Execution, *JavaString) }); ok && !baseDefault {
+				source.JavaWriterWriteString(execution, value)
+				return
+			}
+			writerWriteJavaStringRangeExecution(execution, writer, value, false, 0, value.Length())
+			return
+		}
+		writerWriteJavaStringRangeExecution(execution, writer, value, baseDefault, bounds[0], bounds[1])
 	case *PrimitiveArray[rune]:
 		if len(bounds) == 0 {
 			if source, ok := writer.(interface {
@@ -173,6 +183,18 @@ func WriterWriteStringRangeExecution(execution *Execution, writer Writer, value 
 	WriterWriteStringRangeDefaultExecution(execution, writer, value, offset, length)
 }
 func WriterWriteStringRangeDefaultExecution(execution *Execution, writer Writer, value string, offset, length int32) {
+	writerWriteStringRangeDefaultExecution(execution, writer, value, offset, length)
+}
+func writerWriteJavaStringRangeExecution(execution *Execution, writer Writer, value *JavaString, baseDefault bool, offset, length int32) {
+	if source, ok := writer.(interface {
+		JavaWriterWriteStringRange(*Execution, *JavaString, int32, int32)
+	}); ok && !baseDefault {
+		source.JavaWriterWriteStringRange(execution, value, offset, length)
+		return
+	}
+	writerWriteStringRangeDefaultExecution(execution, writer, value, offset, length)
+}
+func writerWriteStringRangeDefaultExecution(execution *Execution, writer Writer, value any, offset, length int32) {
 	state := WriterState(writer)
 	guard := MonitorEnterExecution(execution, state.Lock)
 	defer MonitorExitExecution(guard)
@@ -185,12 +207,26 @@ func WriterWriteStringRangeDefaultExecution(execution *Execution, writer Writer,
 	} else {
 		buffer = NewPrimitiveArray[rune](length, PrimitiveTypeID("char"))
 	}
-	units := StringChars(StringRequireNonNull(value))
-	end := offset + length
-	if offset < 0 || offset > end || end > int32(len(units)) {
-		panic(NewStringIndexOutOfBoundsException(fmt.Sprintf("Range [%d, %d) out of bounds for length %d", offset, end, len(units))))
+	text, canonical := value.(*JavaString)
+	var units []rune
+	var size int32
+	if canonical {
+		size = text.Length()
+	} else {
+		units = StringChars(StringRequireNonNull(value))
+		size = int32(len(units))
 	}
-	copy(buffer.Elements, units[offset:end])
+	end := offset + length
+	if offset < 0 || offset > end || end > size {
+		panic(NewStringIndexOutOfBoundsException(fmt.Sprintf("Range [%d, %d) out of bounds for length %d", offset, end, size)))
+	}
+	if canonical {
+		for index, unit := range text.units[offset:end] {
+			buffer.Elements[index] = rune(unit)
+		}
+	} else {
+		copy(buffer.Elements, units[offset:end])
+	}
 	WriterWriteCharsExecution(execution, writer, buffer, 0, length)
 }
 func WriterWriteCharsExecution(execution *Execution, writer Writer, value *PrimitiveArray[rune], offset, length int32) {
