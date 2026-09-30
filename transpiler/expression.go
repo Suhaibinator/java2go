@@ -10666,6 +10666,15 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 				owner = resolveClassScopeByQualifiedName(ctx, base)
 				ownerTypeArgs = typeArgs
 			}
+			if owner == nil {
+				// A receiver declared as a type variable exposes fields through its
+				// resolved source bound, just as field expression codegen does. Keep
+				// the bound's arguments for declaration-context field substitution.
+				if target := resolveInvocationTarget(obj, ctx, source); target != nil {
+					owner = target.classScope
+					ownerTypeArgs = append([]string(nil), target.classJavaTypeArgs...)
+				}
+			}
 			if owner == nil && obj.Type() == "identifier" {
 				// Static field access through a class name.
 				owner = resolveClassScopeByIdentifier(ctx, source, obj)

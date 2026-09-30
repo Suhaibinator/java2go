@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Continue Sol-only TDD on generic return inference, reflection annotation/constructor typing, genuine Gson generic families, ConcurrentMap/defaults and FutureTask cancellation; integrate independently verified generic process repair and prove real Maven launcher behavior; preserve original full Gson and all CI gates.",
+  "next_action": "Compose accepted Time14, reflection compiler and Encoding migration onto current public tree; run affected gates, original120-source Gson and CI. Continue Map/default/callback/FutureTask TDD and exclusive performance pilot.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -4708,7 +4708,7 @@
     "last_pushed_revision": "614d6e054a7e7f2b410d5f10cabfbf6d03ddc6e1",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "Progress70: private generic process/field seven gates independently clear; scoped ConcurrentMap core green pending independent audit; actual Time14/reflection/interface failures retained; publication and full compatibility gates remain open.",
+    "source_checkpoint": "Progress71: independently verified Maven unnamed-package and generic process fixes published as27 exact paths; Time14/reflection/Encoding successors privately green, composition pending. Full Gson/CI open.",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Six isolated Go correctness lanes GOMAXPROCS=2 and two JVM-only oracle lanes. Each uses private source/output/process supervision; performance measurements require exclusive execution.",
     "next": "Continue Sol-only compiler/runtime TDD and original application parity; retain source-bound gates and periodically commit/push. Performance requires exclusive execution after full fair correctness.",
@@ -6258,5 +6258,22 @@
     "performance": "Builder Java/optimized-Go six-fork pilot remains unrun; review caught runtime-specific JSON seed type issue. New strict transport derivative required, then independent review and exclusive execution.",
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "resume": "Original fixtures and observed REDs remain immutable. Root alone publishes managed checkout/Git changes. Follow existing Sol agents and verified live handles; do not restart on observation timeout."
+  },
+  "sol_progress71": {
+    "component": "Maven unnamed packages and generic main process boundary",
+    "tested_source_manifest_sha256": "984110b77e43c48c401a9c7242a7f74bbea3fe24e707f08270977ec9ed02e691",
+    "published_paths": 27,
+    "production_paths": 6,
+    "test_fixture_paths": 21,
+    "coordinator_audit": "/private/tmp/java2go-root-maven-generic-actual-independent.json",
+    "audit_sha256": "d6a4269c92c600d31efce9b746c9a927a13c3926b8abc327514f290b23c0717a",
+    "parents": 25,
+    "children": 33,
+    "native_jvm_pairs": 27,
+    "publication_source_equivalence": "All unchanged tracked source/test/build inputs match tested snapshot; newer public campaign ledger/progress70 retained. New publication docs are outside behavioral gate.",
+    "full_round_acceptance": "checkpoint18 remains latest",
+    "full_ci": "pending",
+    "full_gson": "pending",
+    "updated_at": "2026-09-30T18:48:39.373869+00:00"
   }
 }

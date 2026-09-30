@@ -25,7 +25,7 @@ func (f *repeatedFlag) Set(value string) error { *f = append(*f, value); return 
 // dependency resolution, conversion, or cycle checks leave the output untouched.
 func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, output, module, excluded string, stdout io.Writer) (resultErr error) {
 	if mainClass == "" || runtimeRoot == "" {
-		return fmt.Errorf("-maven requires -main-class fully.qualified.Class and -runtime /path/to/java2go")
+		return fmt.Errorf("-maven requires -main-class Class (qualified for named packages) and -runtime /path/to/java2go")
 	}
 	if !validProjectModule(module) {
 		return fmt.Errorf("invalid Go module path %q", module)
@@ -131,11 +131,11 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 				return fmt.Errorf("no Java type declaration in %s", path)
 			}
 			pkg := symbols.Package
-			if pkg == "" {
-				return fmt.Errorf("maven source %s requires a named Java package", path)
-			}
 			for _, class := range symbols.TopLevelClasses {
-				key := pkg + "." + class.Class.OriginalName
+				key := class.Class.OriginalName
+				if pkg != "" {
+					key = pkg + "." + key
+				}
 				if previous := classes[key]; previous != "" {
 					return fmt.Errorf("duplicate Java type %s in %s and %s", key, previous, path)
 				}
@@ -170,11 +170,13 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	if err = runInternal(args, stdout, true); err != nil {
 		return err
 	}
-	split := strings.LastIndex(mainClass, ".")
-	mainPackage := mainClass[:split]
-	mainType := mainClass[split+1:]
+	mainPackage, mainType := "", mainClass
+	if split := strings.LastIndex(mainClass, "."); split >= 0 {
+		mainPackage, mainType = mainClass[:split], mainClass[split+1:]
+	}
 	scope := symbol.GlobalScope.FindPackage(mainPackage)
 	entry := ""
+	genericProcessEntry := false
 	if scope != nil {
 		for _, file := range scope.Files {
 			class := file.FindClassScope(mainType)
@@ -184,6 +186,10 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 			for _, method := range class.Methods {
 				if projectMain(method) {
 					entry = symbol.GoIdentifier(method.Name)
+					if genericMainProcessBoundary(method, Ctx{currentFile:file,currentClass:class,localScope:method}) {
+						entry = genericMainProcessEntryName(method,class)
+						genericProcessEntry = true
+					}
 				}
 			}
 		}
@@ -219,6 +225,9 @@ func main() {
  app.%s(args)
 }
 `, mainImport, resourceImport, entry)
+	if genericProcessEntry {
+		launcher = fmt.Sprintf("package main\nimport (app %q; %s)\nfunc main(){app.%s()}\n", mainImport, resourceImport, entry)
+	}
 	data, err := format.Source([]byte(launcher))
 	if err != nil {
 		return err

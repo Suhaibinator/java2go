@@ -60,7 +60,7 @@ or to fix crashes with the symbol handling`,
 	flagSet.StringVar(&modulePath, "module", "generated", "Module path to use when creating go.mod")
 	flagSet.StringVar(&ignoredAnnotations, "exclude-annotations", "", "A comma-separated list of annotations to exclude from the final code generation")
 	flagSet.StringVar(&mavenRoot, "maven", "", "Convert a local Maven reactor (offline, source dependencies only)")
-	flagSet.StringVar(&mainClass, "main-class", "", "Fully qualified Java application main class for -maven")
+	flagSet.StringVar(&mainClass, "main-class", "", "Java application main class (qualified for named packages) for -maven")
 	flagSet.StringVar(&runtimeRoot, "runtime", "", "Local java2go repository providing stdjava for -maven")
 	flagSet.Var(&dependencySources, "dependency-source", "Map groupId:artifactId=/path/to/Maven/source/project (repeatable)")
 	if err := flagSet.Parse(args); err != nil {

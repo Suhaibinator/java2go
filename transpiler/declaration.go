@@ -4262,19 +4262,20 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			body = buildAbstractMethodBody(ctx.localScope.OriginalName, results)
 		}
 
-		if methodName == "main" && bodyNode != nil && !ctx.projectMode {
+		if bodyNode != nil && !ctx.projectMode && len(ctx.localScope.TypeParameters) == 0 && projectMain(ctx.localScope) &&
+			isBuiltinJavaString(strings.TrimSuffix(definitionJavaType(ctx.localScope.Parameters[0]), "[]"), ctx) {
+			argumentName := sourceParams.List[0].Names[0].Name
 			params = nil
-			argsAccess := qualifiedNameExpr("Args", "os", ctx)
 			body.List = append([]ast.Stmt{
 				&ast.AssignStmt{
-					Lhs: []ast.Expr{&ast.Ident{Name: "args"}},
+					Lhs: []ast.Expr{ast.NewIdent(argumentName)},
 					Tok: token.DEFINE,
-					Rhs: []ast.Expr{argsAccess},
+					Rhs: []ast.Expr{legacyMainArgumentsExpr(ctx)},
 				},
 				&ast.AssignStmt{
-					Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
+					Lhs: []ast.Expr{ast.NewIdent("_")},
 					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{&ast.Ident{Name: "args"}},
+					Rhs: []ast.Expr{ast.NewIdent(argumentName)},
 				},
 			}, body.List...)
 		}
@@ -4353,12 +4354,16 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		); bridged {
 			return bridgeDecls
 		}
-		return buildExecutionAwareFuncDecls(
+		decls := buildExecutionAwareFuncDecls(
 			funcDecl,
 			executionImplementationName(ctx.localScope, ctx.currentClass, ctx),
 			executionName,
 			ctx,
 		)
+		if bodyNode != nil && genericMainProcessBoundary(ctx.localScope, ctx) {
+			decls = append(decls, genericMainProcessEntryDecl(ctx.localScope, ctx))
+		}
+		return decls
 	case "static_initializer":
 
 		ctx.localScope = &symbol.Definition{}
