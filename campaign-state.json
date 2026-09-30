@@ -4554,13 +4554,13 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "0a8dfc7d8432494095c236b6e241b0a831b73c22",
+    "last_pushed_revision": "2276161996466a7686533b4925a3ad64db2edbeb",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "See progress61. Native1980 and canonical Supplier2175 pass scoped gates independently; native fresh unit CI identifies six additional failures. Checkpoint18 remains latest full compatibility acceptance.",
+    "source_checkpoint": "Progress62: native source checkpoint9c1d4ac is origin-verified; fresh paired unit removes six candidate-only regressions, retains nine baseline failures. Other compiler/runtime components remain isolated private snapshots, with full integration and dependency gates pending.",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Three isolated Go-heavy correctness lanes GOMAXPROCS=2 plus two lightweight JVM-only oracle lanes; private process trees/outputs and declared bounds. Performance measurements exclusive. Pin actual used inputs/tools, exclude unrelated mutable cache metadata.",
-    "next": "Aggressive Sol-only parallel TDD: repair source Supplier applicability and raw/wildcard generic family demand; Charset/Formatter, Long, Paths/IOException, split/encoding/resources/readers/digest/normalization adapters; compose exact patches and rerun original dependencies, native final16, full Gson and CI. Netty design only until gates pass.",
+    "next": "Continue Sol-only TDD: bounded argument general repair/review; integrate enum/field/null fixes on same generic source; Class.isInstance repair for unchanged Function application; rerun repaired runtime composition with all Resources tests; integrate encoding nominal catch repair; rerun original dependency applications, accumulated CI, and then advance to pinned Netty.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Goal tool ACTIVE, verified 2026-09-30. Latest user requests aggressive Sol-only parallelism; historical displayed tool objective soft agent counts are superseded. API cannot edit objective; no false completion/replacement.",
@@ -4575,7 +4575,7 @@
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Canonical d753 and final IO e6cc392 committed, pushed and origin-verified on component branches. Main campaign latest full compatibility acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-30T07:28:33.068569+00:00",
+    "checkpoint_updated_utc": "2026-09-30T10:08:09.757237+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE_USER_AUTHORIZED_SOL_ONLY",
     "minimal_repair_full22": {
@@ -5691,10 +5691,124 @@
         "scope": "Historical cutoff only, active CI/post-cutoff Long omitted; namespace review absence disclosed. No full round acceptance."
       },
       "acceptance": "Checkpoint18 remains latest complete compatibility acceptance. Full Gson and accumulated CI required. No verified Netty application or measured Go>Java performance advantage."
+    },
+    "progress62": {
+      "updated_utc": "2026-09-30T10:08:09.757237+00:00",
+      "goal_status": "ACTIVE",
+      "native_publication": {
+        "branch": "origin/codex/adversarial-native-checkpoint19",
+        "commit": "9c1d4acdbb466a2ba5d6a86dd269357a0a0f8e99",
+        "origin_verified": true,
+        "implementation_source_sha256": "98f824f3059b14f9417cc4db5089f0d4125dda8b4a5a12e4a65a3c69719ce6b8",
+        "managed_root": "/Users/suhaib/.codex/worktrees/string-candidate/java2go",
+        "baseline_test_records": {
+          "pass": 1924,
+          "fail": 9,
+          "skip": 0
+        },
+        "candidate_test_records": {
+          "pass": 2025,
+          "fail": 9,
+          "skip": 0
+        },
+        "added_passes": 101,
+        "candidate_only_failures": 0,
+        "independent_pair_audit": "/private/tmp/java2go-native-six-paired-unit-sol-independent-comparison.json",
+        "independent_pair_audit_sha256": "d9d79a4ca103c467230d5c64957f12a366cd83acc16525b4e2f2a13ebffd0c93",
+        "scope": "Source repair checkpoint; CI still RED. Fresh all16 and other CI jobs remain required."
+      },
+      "portable_fixed_cutoff": {
+        "path": ".campaign/checkpoints/checkpoint19/sol-progress62-fixed-cutoff",
+        "cutoff": "2026-09-30T08:45:45Z",
+        "archive_sha256": "1e98cb79b8809bad7ad8bc8b9874062c5143d191f2fe599c5c6990cb6c4b6212",
+        "inventory_sha256": "25c8cac868ab8fe2cd935cb6bb134370ee076c11f266acde1b01b340b572dcaf",
+        "root_audit_sha256": "5e40abfd5a1ec7fa6c11dafbf7ee115abd0893872e162aab75e1a80b76477eb1",
+        "members": 6164,
+        "complete_source_scopes": 16,
+        "source_references": 31689,
+        "root_verified": true,
+        "post_cutoff_results_excluded": true
+      },
+      "post_cutoff_scoped_results": {
+        "digest_six": {
+          "status": "INDEPENDENT_GREEN",
+          "rows": 120,
+          "audit_sha256": "56a2427d4f8e37e5c5a4b9468ea97378323c5bacb1979bdd250b394b2282abb3"
+        },
+        "split_v6": {
+          "status": "RACE_GREEN_210_PLUS_SEVEN_NEIGHBORS",
+          "handoff": "/private/tmp/java2go-canonical-split-sol-v6-91dkco2m/component-handoff-v2.json",
+          "handoff_sha256": "d5bcd4cfd65c072126120acb88dc28e69ed09cd7db16fe2f77e9182dda19b15b"
+        },
+        "enum_scope": {
+          "status": "INDEPENDENT_RED_THEN_GREEN_69",
+          "audit_sha256": "24ef8ca05d48ee701b2b59357877255c3690eadcd26eff8154ada4e2c36c2ac1"
+        },
+        "inherited_field": {
+          "status": "FOCUSED_GREEN_11_FULL_APP_PENDING",
+          "result_sha256": "99d72b6013d29454c9feaac9959ae21ada01b069b1d80182ae66b7b9c8ddf239"
+        },
+        "null_array_store": {
+          "status": "FRESH_HELPER_V2_GREEN_11_FULL_APP_PENDING",
+          "receipt": "/private/tmp/java2go-nullstore-helper-v2-green-terminal-sol-v30-_x97vxrf/focused-green-terminal-receipt.json",
+          "receipt_sha256": "a1b6a6886700517e37f444a6525a4bca9e7cf81aa751cf96f7fb4d0045412799",
+          "old_green_transport": "INVALID preserved; native helper did not emit project-specific markers",
+          "race_scope": "Parent race; native generated child helper lacks separate race/raw receipts"
+        },
+        "encoding_catch_v5": {
+          "status": "ACTUAL_GREEN_20_INDEPENDENT_TERMINAL_AUDIT_PENDING",
+          "source_sha_prefix": "dd25de37",
+          "summary": "/private/tmp/java2go-charset-encoding-sol-v11-i7b3vr0c/candidate-v5/green-attempt1/terminal-builder-summary.json",
+          "summary_sha256": "fee236ff8a0ffd4cb4eff01df86e77ec52376ccef279b2a432ddccc0b784ced2"
+        },
+        "generic_adversarial": {
+          "status": "FULL_ORIGINAL_THREE_RED_RETAINED",
+          "result_sha256": "8f52c3e754eb30136034377d4451f21824ec8361ce5ccd91755e7abbf4f5a047",
+          "failures": [
+            "nil array store generic inference",
+            "erased inherited field consuming cast",
+            "bounded wildcard/raw Go type arguments"
+          ],
+          "bounded_candidate": "/private/tmp/java2go-bounded-source-argument-sol-prep/focused-green-runner/readiness.json",
+          "bounded_candidate_status": "STATIC_REVIEW_PENDING_GREEN_UNRUN"
+        },
+        "function_header": {
+          "status": "HEADER_NOMINAL_GREEN_FULL_APP_RED_CLASS_ISINSTANCE",
+          "source_sha_prefix": "338ea7ed",
+          "result_sha256": "4ca6b7d1a0cd865f21dd84a7e9ded6820bfe4b7e2f819e29f601cab6095a6056",
+          "next_owner": "sol_verification_v2"
+        },
+        "runtime_composition": {
+          "status": "STOPPED_MISSING_ORIGINAL_RESOURCE_TEST_LEAF_NO_FULL_ACCEPTANCE",
+          "receipt_sha256": "247d2651c42b1d19fb937c6f8c157a7e9a89066df3e7d960a8d6698df6dfd76e",
+          "repaired62_readiness": "/private/tmp/java2go-runtime-resources-repaired62-sol-cy163814/readiness.json",
+          "repaired62_sha256": "61e152a061ffdf4f804fc43f974a8c5e660d1c45d28ea3a517ac80ebb3f727ab",
+          "repaired69_readiness": "/private/tmp/java2go-runtime-resources-repaired69-sol-_kwfw8af/readiness.json",
+          "status_repaired": "UNRUN review/grant required"
+        }
+      },
+      "performance": {
+        "comparison": "Four baseline/candidate normal/race focused stages GREEN, 40 parent passes; JDK256 oracle captured. No generated-app parity or measurements.",
+        "builder": "Runtime RED new API-only then GREEN7 parents+780 JDK rows; compiler dispatch preparation pending. No measurements.",
+        "speedup_claim": false
+      },
+      "netty_preparation": {
+        "status": "PROPOSED_PIN_ONLY_NO_NETTY_EXECUTION",
+        "root": "/private/tmp/java2go-netty-4.1.138-preparation-v1-fjqjdqiu",
+        "proposed_lock_sha256": "fb96f9d526212c489d3d87106e6c62513e79f7b1b14dd1005b3401b3bfa53c95",
+        "matching_java_sources": 1212,
+        "mandatory_modules": 8,
+        "optional_provider_compile_closure": "OPEN",
+        "active_dependency_locks_changed": false
+      },
+      "latest_full_compatibility_acceptance": "checkpoint18 eee3036c8d3f575307906a1d4c27e935e065ca8d",
+      "current_go_lanes": {},
+      "current_jvm_lanes": {},
+      "resume_rule": "Inspect agents/terminal receipts before granting lanes; never rerun a preserved attempt or infer acceptance from preparation. Sol-only. Root owns managed commit/push."
     }
   },
   "work_allocation": {
-    "updated_at": "2026-09-30T07:28:33.068569+00:00",
+    "updated_at": "2026-09-30T10:08:09.757237+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -5774,11 +5888,37 @@
       "sol_abstract_collections_v2": "Independent Paths actual oracle and Long candidate review",
       "sol_data": "Four native generated-code assertion migrations with preserved semantic contracts",
       "sol_performance_v10": "Dedicated general performance research, measurements gated"
+    },
+    "current_parallel_wave": {
+      "retained_sol_roles": {
+        "sol_abstract_collections_v2": "Native paired unit and runtime review",
+        "sol_bigmath_audit_v6": "Dedicated primitive-builder performance research and compiler dispatch",
+        "sol_canonical_integration_v3": "Compiler semantic integration and Function header",
+        "sol_canonical_map_integration_v11": "Independent runtime composition and oracle verification",
+        "sol_data": "Independent compiler/transport/receipt verification",
+        "sol_data_v2": "String split runtime repair and race checks",
+        "sol_generic_representation_v2": "Generic field repair and same-source adversarial integration",
+        "sol_hard_semantics_v10": "Runtime semantic integration and complete test transport",
+        "sol_ingestion_audit_v3": "Portable checkpoint source/evidence closures",
+        "sol_inheritance_dispatch_v11": "Bounded argument Go representation and namespace adversaries",
+        "sol_io_harness_migration_v5": "Independent dependency/runtime/encoding verification",
+        "sol_io_string_output_v6": "Encoding services and nominal exception catches",
+        "sol_jdk_runtime_v2": "Adversarial Long/Formatter/Supplier oracle",
+        "sol_map_composition_v6": "Digest and byte-array canonical contracts",
+        "sol_objects_reference_v11": "Paths differential validation and pinned Netty preparation",
+        "sol_performance_v10": "Dedicated natural comparison performance research",
+        "sol_verification_v2": "Independent CI verification and general Class.isInstance repair",
+        "sol_writer_dispatch_v6": "Null array store repair and helper-specific differential transport"
+      },
+      "role_count": 18,
+      "astra_assignments": 0,
+      "new_agent_spawn": "Attempted gpt-6.1-sol/high; thread limit reached. Reused retained Sol workers.",
+      "resource_policy": "Three Go-heavy correctness lanes, GOMAXPROCS=2; two JVM-only lanes; private outputs/process trees. Measurements require exclusive grant."
     }
   },
   "goal": {
     "objective": "Run the continuous adversarial Java-to-Go TDD campaign using GPT-6.1 Sol agents exclusively, including challenge authoring, compiler/runtime repairs, difficult semantics, independent verification and dedicated performance research. Translate actual dependency implementations, preserve correctness and accumulated regressions, compare JVM and Go observations, commit and push verified milestones to origin branches, and continue toward Netty until the user stops the campaign, subject to execution and usage limits. No finite corpus establishes support for every Java application.",
-    "updated_at": "2026-09-30T07:28:33.068569+00:00",
+    "updated_at": "2026-09-30T10:08:09.757237+00:00",
     "requested_by": "user",
     "agent_policy": "Sol only; gpt-6.1-sol/high; no Astra agents may be spawned or resumed.",
     "app_goal_api_note": "Goal tool ACTIVE, verified 2026-09-30. Latest user requests aggressive Sol-only parallelism; historical displayed tool objective soft agent counts are superseded. API cannot edit objective; no false completion/replacement."

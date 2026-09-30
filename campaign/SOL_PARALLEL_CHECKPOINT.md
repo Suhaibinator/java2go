@@ -19,3 +19,6 @@ See SOL_PROGRESS60.md for eighteen parallel Sol assignments, independently verif
 ## Progress61
 
 See SOL_PROGRESS61.md for independent native all16 and canonical Objects full34 greens, paired unit CI exposing six additional failures, parallel general repairs, and root-verified portable evidence. Scoped candidate success does not establish full-round or Netty acceptance. The goal controller remains active.
+
+
+Progress62: see [SOL_PROGRESS62.md](SOL_PROGRESS62.md) and active_resume.progress62. Sol-only campaign ACTIVE; native source checkpoint9c1d4ac pushed, new adversarial/compiler/runtime gates remain pending.
