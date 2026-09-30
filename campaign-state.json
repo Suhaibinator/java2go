@@ -6652,5 +6652,292 @@
     "latest_full_accepted_round": "checkpoint18",
     "limits": "This74path source-based milestone does not accept current fullCI, original120 Gson, full43, a new fullround, Netty, universal Java compatibility or performance speedup. Private successors need exact-current-source independent acceptance before publication.",
     "resume": "Continue existing twentySol owners under bounded granted lanes; root alone commits/pushes exact reviewed paths. Preserve checkpoint18, historical failures, original fixtures/oracles, earlier docs and user untracked equal_scale work."
+  },
+  "sol_progress75": {
+    "updated_at_utc": "2026-09-30T22:18:27.632989+00:00",
+    "public_code_revision": "c4f5cd5542a7ef2bc6a7778224dfb71e572f5140",
+    "public_tree": "b7f55b5e0ea5008b408daeff45c01778073e3705",
+    "publication": {
+      "status": "ROOT_COMMITTED_AND_PUSH_CONFIRMED_SCOPED_MILESTONE",
+      "root_push_confirmation": "Root confirmed c4f5cd5 on origin/codex/adversarial-campaign; this metadata proposal performs no push.",
+      "owned_paths": 25,
+      "production_paths": 15,
+      "test_paths": 10,
+      "published_source_manifest_sha256": "0385b72e1541566e0a0cc4f387c5c611a297a8fa1a3a4799307aedbe3461350f",
+      "source_members": 2731,
+      "root_audit": {
+        "path": "/private/tmp/java2go-root-publication75-audit.json",
+        "sha256": "0b0a899569dc3f921e843251b100b31266da23f7f9513b06a22375853a3993c5"
+      },
+      "independent_review": {
+        "path": "/private/tmp/java2go-comment-only-lint-successor-independent-sol-review-v1.json",
+        "sha256": "73661818ffd1295f8d9d73e7c7edc8d6d98e309e9519f85d41116df568d252a7"
+      },
+      "patch": {
+        "path": "/private/tmp/java2go-comment-only-lint-successor-ci-sol-sy2g153r/publication25path-comment-clean.patch",
+        "sha256": "28a4a8b4aab7d8fb03dbf46218dbc212434a50709789a626f1ea93d21e09fe77"
+      }
+    },
+    "source_lineage": {
+      "tested_source_manifest_sha256": "3290ca0788583bf6023702b274c0e23ffbf1440fa672cb952e30fa51cbb1ec9b",
+      "metadata74_successor_manifest_sha256": "baa78c4080bcb236a5c281c284f7a1bee1486787aca7017b2d9c87f78168f796",
+      "published_comment_successor_manifest_sha256": "0385b72e1541566e0a0cc4f387c5c611a297a8fa1a3a4799307aedbe3461350f",
+      "comment_only_change": "Delete orphan // == isNoD line in stdjava/internal/normalization15/properties.go; all other 2730 leaves byte exact and AST plus 770 code tokens identical.",
+      "continuity_proof": {
+        "path": "/private/tmp/java2go-comment-only-lint-successor-ci-sol-sy2g153r/comment-source-continuity-proof.json",
+        "sha256": "49c69e2e258b914a84d40e7bf6491958dde01433ecc270fedc3177b7c2769794"
+      },
+      "metadata75_is_separate_from_all_tested_source_manifests": true
+    },
+    "scoped_validation": {
+      "fresh_uncapped_lint": {
+        "findings": 0,
+        "receipt": {
+          "path": "/private/tmp/java2go-comment-only-lint-successor-ci-sol-sy2g153r/comment-successor-fresh-lint/summary.json",
+          "sha256": "6310022f77af05df1dc018b456431b12aef4b03b591915c77a37b3688cadbbe0"
+        },
+        "acceptance": {
+          "path": "/private/tmp/java2go-comment-only-lint-successor-ci-sol-sy2g153r/ACTUAL_COMMENT_SUCCESSOR_ACCEPTANCE.json",
+          "sha256": "c45b0b9f29cfb40faced2bab1ef679a5e17807aa2f0f6655086301d8bc93c9a1"
+        }
+      },
+      "inherited_test_child_records": 209,
+      "fresh_test_records_on_comment_successor": 0,
+      "runtime": {
+        "parents": 39,
+        "records": 174,
+        "race": true,
+        "pass": 174,
+        "fail": 0,
+        "skip": 0
+      },
+      "compiler": {
+        "parents": 8,
+        "records": 33,
+        "race": true,
+        "pass": 33,
+        "fail": 0,
+        "skip": 0
+      },
+      "original_GenericLinkedList": {
+        "parents": 1,
+        "child": 1,
+        "records": 2,
+        "pass": 2,
+        "fail": 0,
+        "skip": 0,
+        "race_harness": true,
+        "generated_app_race": false
+      },
+      "inherited_actual_acceptance": {
+        "path": "/private/tmp/java2go-currentb901-lint-compose-ci-sol-z_yaidfs/ACTUAL_COMPOSITION_ACCEPTANCE.json",
+        "sha256": "6543046db8e21a49c41bcf13f72d44c96802df489bccc4c5f28de07c3c3c382e"
+      },
+      "inherited_actual_independent_review": {
+        "path": "/private/tmp/java2go-currentb901-lint-compose-independent-actual-sol-review-v1.json",
+        "sha256": "1e0d6bfc2a95d2bcd006f1e8df941c8d85b2c5e4d291ea65cc2212f225f28632"
+      },
+      "prior_four_framework_failures_unwaived_unrerun": [
+        "TestCampaignMapPutAllJVMParity",
+        "TestCampaignMapPutAllMutationJVMParity",
+        "TestInstanceofPattern_BindsVariable",
+        "TestInstanceofPattern_RuntimeBehavior"
+      ],
+      "prior_exact0441_comparison": {
+        "path": "/private/tmp/java2go-current0441-lint-ci-sol-87sk8b_w/compiler-focused-baseline-comparison.json",
+        "sha256": "257b2d6a02bdaf66f6305a7cabedc79c865689615fb06b966c40a077a64c8add"
+      },
+      "native_linkedlist_channels": "Original helper compares JVM and generated Go channels in memory; generated native channels not separately durable.",
+      "source_tool_config_module_and_cleanup_checks": "Bound actual receipts and independent reviews verify stable source, selected tool/config/module pins, terminal cleanup with empty owned process inventory; no timeout."
+    },
+    "historical_ci": {
+      "revision": "23a27b1ba6952ab624450a1dceb5319b671ac4e1",
+      "receipt": {
+        "path": "/private/tmp/java2go-resume-ci-sdk-sol-xybi4wzz/HISTORICAL_CI_ACTUAL.json",
+        "sha256": "4725011984f62ea7d0748c5a6ed544edbb9382e375e1129774d060de7a13f12b"
+      },
+      "status": "ALL_EIGHT_DECLARED_SHARDS_TERMINAL_OVERALL_RED_HISTORICAL_ONLY",
+      "unit": {
+        "pass_records": 2555,
+        "fail_records": 326,
+        "failed_parents": 273,
+        "failed_children": 53
+      },
+      "historical_lint_findings": 33,
+      "pristine0441_uncapped_lint_findings": 37,
+      "pristine0441_default_truncated_lint_findings": 34,
+      "fuzz_skips": 10,
+      "additional_unwaived_skip_keys": [
+        "245_4331b637",
+        "438_3d772ff9"
+      ],
+      "platform_limits": "Local Darwin arm64 Go1.27.1 Oracle JDK21 explicit installed SDK versus workflow Ubuntu Go1.27.0 Temurin21. No current-public full CI inference.",
+      "failure_classification": {
+        "path": "/private/tmp/java2go-historical326-classification-ci-sol-vldp5kxk/classification.json",
+        "sha256": "0924e7fee0c66216d9e052f4a80c0fb1fbb65cbffe4a80f070fe7c004ef50faa",
+        "scope": "Historical only; all326 failure records retained and unwaived. Three actual UTF16 bridge-effect mismatches remain separate from nativeString compile harness failures."
+      }
+    },
+    "private_followups": {
+      "original120_gson": {
+        "status": "ACTUAL_STRICT_TRANSLATION_RED_300_SECOND_TIMEOUT",
+        "actual_sources": 120,
+        "source_breakdown": {
+          "gson": 81,
+          "annotations": 29,
+          "application": 10
+        },
+        "unprofiled_owner": {
+          "path": "/private/tmp/java2go-original-gson-frontier-successor-resume-sol/frontier-owner-terminal.json",
+          "sha256": "18930c41cec87fbfa94d31134b62357c3ad68b5d05df0045ef6a7b079060d8ab"
+        },
+        "unprofiled_source_manifest_sha256": "73e68b6a6cac7b812a58162d02b5822290fbe5a5a8cfd06f773b215e5553f964",
+        "unprofiled_conversion_starts": 107,
+        "all_package_build": "UNRUN",
+        "full65_application_gate": "UNRUN",
+        "profile_diagnosis": {
+          "path": "/private/tmp/java2go-original120-profile-sol82-qwfl3hpa/profile-diagnosis-seal.json",
+          "sha256": "3e86955929319a82bf1c22d48eb23389c21f85c651f217e27443d52deefab64c"
+        },
+        "profile_independent_audit": {
+          "path": "/private/tmp/java2go-original120-profile-independent-audit-resume-sol/independent-audit.json",
+          "sha256": "07a7441922dda5d0325e41174ac0375efe1405f52941b22b1352df64319649a0"
+        },
+        "profile_source_manifest_sha256": "dfbc93d29c1cd06c7bae1b2bb94c5f7dc5ff2e4c17d35e0a115e9243dc080a12",
+        "profile_source_delta": "All 2796 parent members unchanged; diagnostic cmd/java2go-profile/main.go added only.",
+        "profile_conversion_starts": 106,
+        "profile_timeout_seconds": 300,
+        "measured_cpu_samples_seconds": 275.16,
+        "canonical_family_cumulative_seconds": 169.32,
+        "canonical_family_cumulative_percent": 61.54,
+        "profile_limit": "Overlapping cumulative costs are not additive. Allocation sampling is not RSS. Last logged file is not established cause. No production fix, speedup or fullGson acceptance."
+      },
+      "runtime_pair_full43": {
+        "status": "PRIVATE_SCOPED_ORIGINAL101_AND_THREE_FULL43_SEEDS_INDEPENDENTLY_ACCEPTED",
+        "source_manifest_sha256": "ba10f148e80b1065f61f387b6139b95bd812123eb4e3681e6e34d32dc0da5737",
+        "receipt": {
+          "path": "/private/tmp/java2go-full43-runtime-pair-101-sol82-actual1/result.json",
+          "sha256": "57b88e73ccd31905126bc7e484f3bec447c9846f48e0ee028148d926fb8232a3"
+        },
+        "independent_review": {
+          "path": "/private/tmp/sol-resume-full43-runtimepair-independent.json",
+          "sha256": "7bf0a4500219ce35f18854cc48e1dbb86ac3df3ddf65bad4e8bc25b3434865fd"
+        },
+        "parents": 16,
+        "test_child_records": 101,
+        "pass": 101,
+        "fail": 0,
+        "skip": 0,
+        "original43_jvm_observations": 129,
+        "dynamic14_jvm_observations": 42,
+        "native_channel_limit": "JVM and Go stdout/stderr compared byte exact in memory by original helper; JDK channels durable, generated Go channels not separately durable.",
+        "stress20": {
+          "status": "ACTUAL_GREEN_INDEPENDENTLY_ACCEPTED",
+          "receipt": {
+            "path": "/private/tmp/java2go-full43-runtime-pair-race20-sol82-actual1/result.json",
+            "sha256": "a9da6d75b98741d92aacb24503e0f263704233d995e1873c7f7affa28734cfc4"
+          },
+          "native_race_runs": 60,
+          "ordered_rows": 2580,
+          "clean_receipts": 69,
+          "independent_review": {
+            "path": "/private/tmp/sol-resume-full43-race20-independent.json",
+            "sha256": "72ebc48c14c3d2a8b8097ffa4b5819da44ce0c8314c3067aae7b6f6206cfff6f"
+          },
+          "native_channels": "All 60 Go stdout/stderr pairs separately retained and independently byte-compared to fresh and frozen JDK streams."
+        },
+        "original42": {
+          "status": "UNCHANGED_GATE_TERMINAL_RED",
+          "receipt": {
+            "path": "/private/tmp/java2go-full43-runtime-pair-oldmap42-sol82-actual1/result.json",
+            "sha256": "765583da7f8529a6265613ca33aafbdc762f9a9b10377f3e5a1a172f2909affb"
+          },
+          "pass_records": 37,
+          "fail_records": 5,
+          "assertions_unchanged": true,
+          "remaining": "Driver/nativeString harness and Map protocol migration obligations remain unwaived; no production-failure waiver"
+        },
+        "current_public_composition": "UNRUN",
+        "CCE19_and_pair36_focused_review": {
+          "path": "/private/tmp/sol-resume-runtimepair-cce-independent.json",
+          "sha256": "b5cb580b3d3196f136d96f5bc1395ac939e9ee2472b4d3b02056bab9bac38fa6"
+        },
+        "focused_limit": "Ordinary generated-Go helper observations do not establish fresh race coverage beyond parent."
+      },
+      "ThreadGroup": {
+        "status": "PRIVATE_SCOPED_THREADGROUP5JAVA_AND_THREAD8JAVA_INDEPENDENTLY_ACCEPTED_OLDER_PARENT",
+        "independent_review": {
+          "path": "/private/tmp/java2go-thread-group-independent-actual-sol-review-v1.json",
+          "sha256": "f39950ad55f0ac5d93ccba367ff94ab739caf0e16249148d0eaa3c918bb6365f"
+        },
+        "source_manifest_sha256": "b0842877de6d724b8c3878f5800ff17db4db25bdbce63f150300036baa7dc63c",
+        "ordered_native_rows": 408,
+        "native_runs": 35,
+        "launched_terminal_reports": 159,
+        "compiler_records": 35,
+        "runtime_race_records": 30,
+        "current_public_composition": "UNRUN",
+        "composition_dependency": "Older parent uses nullableEmbeddedSuperclassView removed as unused by CI25; compose restore/reuse under Thread ownership and require fresh current-source gate.",
+        "limits": "Finite original group/thread fixture scope; no full43, virtual-thread, arbitrary ThreadGroup API, security-manager or general JMM acceptance."
+      },
+      "comparator_fair112": {
+        "status": "ACTUAL_STAGE34_COMPILE_RED_INDEPENDENTLY_AUDITED_PREEXISTING_CALLBACK_ADAPTER_GAP",
+        "not_map_regression": true,
+        "candidate_measurements": "UNRUN",
+        "focused_fix_preparation": "ACTIVE"
+      }
+    },
+    "current_agents": {
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "high",
+      "retained_roles": {
+        "sol_quality_reuse": "Shared code reuse and collision-safe generated identifiers review",
+        "sol_quality_semantics": "Independent generic Map erasure and canonical owner review",
+        "sol_resume_ci": "Historical CI baseline, infrastructure classification and current successor",
+        "sol_resume_concurrency_author": "Independent concurrency/getter/worker Java oracles and fresh supplements",
+        "sol_resume_date": "Actual Gson ISO dependency translation, Locale/TimeZone services",
+        "sol_resume_encoding": "Canonical String overload repair and existing test migration",
+        "sol_resume_future": "FutureTask cancellation, interrupted getters and executor worker lifecycle TDD",
+        "sol_resume_gson": "Generic dependency storage and canonical reflection descriptor TDD",
+        "sol_resume_gson_gate": "Original120-source Gson full application gate and first-failure runner",
+        "sol_resume_integration": "Exact current-public composition, affected checks, source continuity and checkpoint proposals",
+        "sol_resume_map_compiler": "Erased Map callbacks, delayed generic consumers and compiler TDD",
+        "sol_resume_map_runtime": "Map defaults and ConcurrentMap atomic reservations TDD",
+        "sol_resume_maps_author": "Independent generic callback, raw collection and dependency oracles",
+        "sol_resume_perf_builder": "Dedicated allocation and generated-runtime performance improvements",
+        "sol_resume_perf_comparator": "Dedicated comparator research and general SortedMap prerequisites",
+        "sol_resume_perf_verifier": "Independent performance validation and JDK lifetime analysis",
+        "sol_resume_reflection": "Reflection context regression triage and fresh dependency supplements",
+        "sol_resume_runtime_verifier": "Independent actual runtime, time, strings and concurrency evidence",
+        "sol_resume_time": "Time services composition, cross-component regression ownership",
+        "sol_resume_verifier": "Independent Map/defaults/source protocol and dependency evidence"
+      },
+      "role_count": 20,
+      "coordinator_count": 1,
+      "capacity": 21,
+      "astra_assignments": 0,
+      "root_latest_fanout_confirmation": "All 20 persistent Sol roles reactivated with meaningful adversarial tasks; completion/idle state does not revoke assignment. No new spawn.",
+      "adversarial_work": "Original Java/oracles and existing expectations retained. Owners pursue cross-feature source collisions, shadow/canonical-owner and generic callback cases, Thread/Future lifecycle supplements, String UTF16/chars controls, original Gson/full43 gates, and independent raw/source audits. Performance requires correctness parity before exclusive measurement.",
+      "resource_policy": "Six isolated root-granted Go lanes GOMAXPROCS2 and two JVM oracle lanes; no ungranted workload or spawn; root sole public writer."
+    },
+    "current_public_followup_batch": {
+      "status": "PARTIAL_STOPPED_NOT_ACCEPTED",
+      "root_reported_receipt_prefix": "6be567bc",
+      "race_records_pass": 230,
+      "original_Date_native_comparisons_pass": 9,
+      "clean_reports": 25,
+      "blocker": "Byte-level go.mod invariant after normal generated go build -mod=mod; module-validation TDD successor preparation active",
+      "remaining_Stream_Enum_lint": "UNRUN",
+      "full_receipt_binding": "Root-reported at snapshot; separate owner receipt required before independent acceptance"
+    },
+    "latest_full_accepted_round": "checkpoint18",
+    "limits": [
+      "No fresh current-public full CI or new full compatibility round",
+      "Original120 Gson translation timed out; downstream all-package/full65 unrun",
+      "Private scoped full43/ThreadGroup results do not establish current-public composition",
+      "Four historical framework failures and two additional historical fuzz skips remain unwaived",
+      "No full Netty, universal Java compatibility or Java-versus-Go speedup claim"
+    ],
+    "resume": "Preserve historical receipts and frozen original fixtures; compose narrow reviewed private repairs at current public head, run affected source-bound gates on root grants, then complete original application and round-boundary full gates."
   }
 }
