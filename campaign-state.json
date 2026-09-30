@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Verify Objects candidate and compose onto canonical2170; repair actual Codec Charset/format blockers through TDD; finish inheritance injectivity and original6/full8/Dollar13; rerun final native16 and CI; preserve full Gson before Netty. Sol only; commit and push milestones.",
+  "next_action": "Restore accepted compiler identifier/import prerequisites in new coherent derivative, integrate verified Formatter, rerun original11 and unchanged hard3; repair Normalizer enclosing value ownership through TDD; verify UTF-8 oracle ten controls and native CI; run original Codec/Gson before Netty advancement. Sol only; commit and push milestones.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -4575,7 +4575,7 @@
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Canonical d753 and final IO e6cc392 committed, pushed and origin-verified on component branches. Main campaign latest full compatibility acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-30T10:08:09.757237+00:00",
+    "checkpoint_updated_utc": "2026-09-30T11:50:13.676277+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE_USER_AUTHORIZED_SOL_ONLY",
     "minimal_repair_full22": {
@@ -4804,7 +4804,7 @@
       "full_gson": "REQUIRED_RED",
       "archive_limits": "Progress50 archive does not contain all newer progress51 evidence. Private paths and precise resume points retained; supplemental packaging pending."
     },
-    "record_precedence": "progress59 overrides earlier current-state text; prior results retain their original source scope.",
+    "record_precedence": "Newest progress entry governs current state; historical entries remain immutable.",
     "verified_source_manifest_scope": {
       "checkpoint": "checkpoint18",
       "revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
@@ -5869,10 +5869,59 @@
         "result_sha256": "0720f7e558ce9921fdf25e84d51f3fac6f0daa0374b0036ba5e2e454b9183c24",
         "owner": "sol_data_v2"
       }
+    },
+    "progress64": {
+      "updated_at": "2026-09-30T11:50:13.676277+00:00",
+      "classification": "PROGRESS: independent native all16, bounded33 and Formatter application parity; full coherent original11 exposes omitted prerequisite.",
+      "campaign_checkpoint": "cac2c75a9180a7eaa3ea1a793407fc5ea1df705b",
+      "native_all16": {
+        "status": "INDEPENDENT_SCOPED_GREEN",
+        "published_source_revision": "9c1d4acdbb466a2ba5d6a86dd269357a0a0f8e99",
+        "source_manifest_sha256": "98f824f3059b14f9417cc4db5089f0d4125dda8b4a5a12e4a65a3c69719ce6b8",
+        "result_sha256": "3d514634c3e46d68c259727ef6837b5ba2afac327338075ecaceee3c41ea7568",
+        "independent_audit_sha256": "7cbc2adfe6c993ab0c4517be6a7a8062ccc2cdc267eb80ef3b18c704a29bc37e",
+        "supervised_stages": 119,
+        "raw_byte_comparisons": 128,
+        "stdjava_parents": 377,
+        "stdjava_subtests": 219,
+        "ci_acceptance": false
+      },
+      "bounded_arguments": {
+        "status": "INDEPENDENT_FOCUSED_GREEN33",
+        "independent_audit_sha256": "34c6ed5065e0b2a5db6f0c30c678539e05e385175f7ca2580f2f423de4021d4a",
+        "full_application_acceptance": false
+      },
+      "formatter": {
+        "status": "INDEPENDENT_SCOPED_GREEN_ORIGINAL_APPLICATION9",
+        "independent_audit_sha256": "a84ac1cb2152d1490bb8a28506292390a352e42ae2cef504f55d34683368f720",
+        "fresh_go_executions": 9,
+        "raw_stream_comparisons": 18,
+        "repair": "General JDK Formatter null-format exception message and callback/cleanup contracts",
+        "coherent_port": "Exact dry port verified; new derivative pending"
+      },
+      "coherent2380": {
+        "source_manifest_sha256": "ac561819e7dc3f6f40cc9422d045eced85210a75bf283dabc3e9f203d00e9340",
+        "original11_status": "ACTUAL_RED_10_PASS_DOLLAR_STRICT_TRANSLATION_FAIL",
+        "original11_result_sha256": "658ee5d361b022d2bbd84ab36b7d61ac0d35bd0f9364067ad52a637eb0719099",
+        "root_cause": "Accepted general dollar-identifier prerequisites omitted during composition; original fixture preserved",
+        "hard3": "UNRUN: original11 prerequisite unsatisfied",
+        "new_derivative": "Compiler lead composing accepted identifier/import prerequisites and independently verified Formatter patch; old source immutable"
+      },
+      "native_oracle_transport": {
+        "status": "FOCUSED_RED_GREEN_ORIGINAL_NINE_RERUN_PENDING",
+        "source_manifest_sha256": "809849bfe618daf0738f6aad065419a40ff8295d79bcc1223464f735d7b484ca",
+        "repair": "Only stdout.encoding/stderr.encoding UTF-8 for JVM oracle; Java sources, expected results, native/file/default Charset/Locale contracts preserved",
+        "full_ci": "Still RED until fresh gates"
+      },
+      "normalizer": "Qualified/source nested lowering still blocked; independent enclosing value-field witness pending capture and general repair",
+      "performance": "Dedicated comparator and primitive-builder Sol workers continue correctness TDD. No speedup measurements or claims.",
+      "netty": "Pinned actual source/artifact proposal; five-module pure-Java compile-input closure preparation active, no Netty Go acceptance",
+      "latest_full_compatibility_acceptance": "checkpoint18 eee3036c8d3f575307906a1d4c27e935e065ca8d",
+      "resume": "Inspect live agents and terminal receipts. Complete coherent prerequisite integration, fresh original11/hard3, runtime focused gates, original Codec/Gson and CI. No Astra; root commits/pushes milestones."
     }
   },
   "work_allocation": {
-    "updated_at": "2026-09-30T10:08:09.757237+00:00",
+    "updated_at": "2026-09-30T11:50:13.676277+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -5920,7 +5969,7 @@
       "memory_bytes": 137438953472,
       "reason": "User requested additional parallelism; host capacity checked before increasing concurrency."
     },
-    "latest_parallelism": "Eighteen retained Sol ownership assignments; independent agents repair six CI regressions in parallel with nine JDK/compiler prerequisites, application authors, evidence reviewers, publication and dedicated performance research. No Astra tasks.",
+    "latest_parallelism": "Eighteen retained Sol roles reassigned across coherent integration, independent prerequisite audits, Normalizer repair, native CI, original Codec/Gson gates, Netty compile inputs and dedicated comparison/builder performance research. No Astra work.",
     "additional_sol_workers": {
       "model": "gpt-6.1-sol",
       "reasoning": "high",
