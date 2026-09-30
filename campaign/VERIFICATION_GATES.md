@@ -32,3 +32,7 @@ The historical preparation notes above retain their original scope. `active_resu
 ## Progress56 precedence
 
 `active_resume.progress56` records the published Codec resource-ingestion prerequisite and expanded Sol assignments. BigMath focused scope is independently green; native and AST publication audits continue. IO10 exposes five actual runtime failures; inherited Map.put and full dollar-identifier application remain blocked. Historical failures remain visible. Full Gson, accumulated CI, concurrency stress and network gates remain required.
+
+## Progress57 precedence
+
+`active_resume.progress57` records origin-verified canonical test milestone d753d5f, independently green historical BigMath6, exact Map/raw Set regression scopes, Writer/exception scoped greens, and their unrun joint IO composition. Valid enum dispatch and Set binder failures remain active. Dollar V3 is unrun. Full Gson, cumulative CI, concurrency and network gates remain required; no fixture bypass is accepted.
