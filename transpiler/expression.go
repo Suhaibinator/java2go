@@ -1481,7 +1481,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if rightNull {
 				otherNode = leftNode
 			}
-			if javaType, ok := inferExprJavaType(otherNode, ctx, source); ok && isBuiltinJavaString(javaType, ctx) {
+			javaType, known := inferExprJavaType(otherNode, ctx, source)
+			_, primitive := javaPrimitiveType(javaType)
+			// A wildcard capture is still a Java reference. Its erased Go
+			// interface may contain a typed null, so raw == nil is insufficient.
+			// Primitive operands retain Java's unboxing/comparison path.
+			if known && strings.TrimSpace(javaType) != "" && javaType != "void" && !primitive {
 				comparison := ast.Expr(stdjavaCall(ctx, "JavaReferenceEqual", ParseExpr(otherNode, source, ctx), ast.NewIdent("nil")))
 				if operator == "!=" {
 					comparison = &ast.UnaryExpr{Op: token.NOT, X: comparison}
@@ -9831,7 +9836,7 @@ func instantiatedFieldJavaType(
 		bindings := make(map[string]string, len(current.TypeParameters))
 		for index, parameter := range current.TypeParameters {
 			if index < len(currentArgs) {
-				bindings[parameter.Name] = currentArgs[index]
+				bindings[parameter.EmittedName()] = currentArgs[index]
 			}
 		}
 		if current == resolution.owner {
@@ -9847,9 +9852,32 @@ func instantiatedFieldJavaType(
 		if parent == nil {
 			return readableWildcardProjection(fallback)
 		}
+		// Explicit edge arguments are source syntax in the child's header.
+		// Attach source binder declarations before qualification so a source
+		// name cannot be mistaken for another binder's generated Go name.
+		rawParentArgs := sourceClassRawArgumentSlots(parent, declaredParentArgs, current, currentArgs)
+		declaring := classHeaderTypeCtx(current, ctx)
+		declarations := symbol.VisibleTypeParamBindings(current.TypeParameters)
+		for index, argument := range declaredParentArgs {
+			declaredParentArgs[index] = qualifyDeclaredReferenceType(symbol.JavaType{
+				Original: argument, TypeParameterBindings: declarations,
+			}, declaring)
+		}
 		normalizedParentArgs := normalizeClassTypeArguments(parent, declaredParentArgs, current, currentArgs)
 		parentArgs := make([]string, len(normalizedParentArgs))
+		var parentParameters []symbol.TypeParam
 		for index, argument := range normalizedParentArgs {
+			if index < len(rawParentArgs) && rawParentArgs[index] {
+				// A synthesized raw erasure belongs to the parent's bound
+				// declaration, rather than the child or consuming body.
+				if parentParameters == nil {
+					parentParameters = qualifyTypeParameterBounds(parent.TypeParameters, classHeaderTypeCtx(parent, ctx))
+				}
+				argument = rawTypeParameterErasure(parentParameters[index], parentParameters)
+				if argument == "Object" {
+					argument = "java.lang.Object"
+				}
+			}
 			parentArgs[index] = substituteJavaTypeParameters(argument, bindings)
 		}
 		current = parent

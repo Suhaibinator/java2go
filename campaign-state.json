@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Complete null-equality/header coherent integration and fresh original11/hard3; run corrected Codec56, implement Gson reflection from independently captured JVM controls, finish native CI, Normalizer/casing gates, and correctness prerequisites for performance. Continue Sol-only adversarial loop; checkpoint18 remains latest full compatibility acceptance.",
+  "next_action": "Fresh Normalizer composition and legacy main gates; repair original Codec Path.of canonical ABI mismatch, implement Gson reflection from verified JDK controls, finish native CI and casing, and verify comparator/builder original application correctness before exclusive performance measurements. Continue Sol-only adversarial campaign, commit and push milestones; checkpoint18 remains latest full compatibility acceptance.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -5934,6 +5934,18 @@
       "gson": "Four JVM reflection controls captured4javac36runs; implementation TDD pending independent raw stream acceptance.",
       "performance": "Two dedicated Sol tracks; no measured speedup.",
       "full_compatibility_checkpoint": "checkpoint18"
+    },
+    "progress67": {
+      "updated_at": "2026-09-30T13:40:26.271908+00:00",
+      "scope": "General erased-reference null equality and inherited generic header provenance implementation checkpoint; exact five source delta files from independently green2396 application source.",
+      "source_manifest_sha256": "eb9b56acd5e6b82fee06b252059eb612527a1b84327c73cc5beff9aba5a79f70",
+      "focused_green23_audit": "47dee5dfaa1f6c7ad0e7f793477c9da43225f34657fcc08a98d6f7b6e735daa4",
+      "same_source_full_app_audit": "903316e52d23315f04276a5c6e16c7132c97b8fbf1c646b32af79f332e1862f2",
+      "original11_result": "488043cc8d0a044efcd1b41a94a1dcae60ecb8ba8c3f2b82ae90e28a6d8592d1",
+      "hard3_result": "c39a9c1e16d8a7d4bb715a39f43adb34d22c6c12692d76553652220d53ed750f",
+      "publication_preserves_newer_campaign_files": true,
+      "remaining": "Full coherent CI/Codec/Gson remain unaccepted. Canonical Normalizer passes donor project controls and is undergoing fresh composition; legacy main repair separate. Two performance tracks have no measured speedup.",
+      "last_full_compatibility_checkpoint": "checkpoint18"
     }
   },
   "work_allocation": {
@@ -5978,12 +5990,18 @@
     "astra_scope": "None. All three remaining Astra agents halted at user request; historical results remain immutable.",
     "astra_routine_roles": "None; do not spawn, resume or assign work to Astra.",
     "ownership": "Challenge/oracle authors remain separate from implementation owners. Implementers may not change frozen expectations or weaken challenges.",
-    "execution": "Four isolated Go-heavy correctness lanes GOMAXPROCS=2 and two JVM-only oracle lanes; separately supervised process trees and output directories. Performance measurements exclusive.",
+    "execution": "Six isolated Go correctness lanes GOMAXPROCS=2 and two JVM-only oracle lanes. Each uses private source/output/process supervision; performance measurements require exclusive execution.",
     "capacity_evidence": {
       "logical_cpus": 16,
       "physical_cpus": 16,
       "memory_bytes": 137438953472,
-      "reason": "User requested additional parallelism; host capacity checked before increasing concurrency."
+      "reason": "Fresh host check supports six independent bounded correctness lanes while the user-requested Sol fanout remains active.",
+      "fresh_load_average": [
+        1.7,
+        2.11,
+        2.31
+      ],
+      "aggregate_rss_kib": 82876384
     },
     "latest_parallelism": "Eighteen retained Sol roles reassigned across coherent integration, independent prerequisite audits, Normalizer repair, native CI, original Codec/Gson gates, Netty compile inputs and dedicated comparison/builder performance research. No Astra work.",
     "additional_sol_workers": {
@@ -6042,7 +6060,7 @@
       "role_count": 18,
       "astra_assignments": 0,
       "new_agent_spawn": "Attempted gpt-6.1-sol/high; thread limit reached. Reused retained Sol workers.",
-      "resource_policy": "Four isolated Go-heavy correctness lanes GOMAXPROCS=2 and two JVM-only oracle lanes; separately supervised process trees and output directories. Performance measurements exclusive."
+      "resource_policy": "Six isolated Go correctness lanes GOMAXPROCS=2 and two JVM-only oracle lanes. Each uses private source/output/process supervision; performance measurements require exclusive execution."
     }
   },
   "goal": {
