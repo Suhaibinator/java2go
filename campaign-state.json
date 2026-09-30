@@ -6939,5 +6939,108 @@
       "No full Netty, universal Java compatibility or Java-versus-Go speedup claim"
     ],
     "resume": "Preserve historical receipts and frozen original fixtures; compose narrow reviewed private repairs at current public head, run affected source-bound gates on root grants, then complete original application and round-boundary full gates."
+  },
+  "sol_progress76": {
+    "status": "ACTIVE_CONTINUATION_COMPONENT_MILESTONE_FULL_ROUND_UNACCEPTED",
+    "published_code_commit": "c40ea1622dc435461ace22eeac146e0f1fb6316d",
+    "origin_branch": "codex/adversarial-campaign",
+    "publication": {
+      "paths": 28,
+      "production": 9,
+      "tests_fixtures": 19,
+      "source_manifest": "b0c3404c60f2d5a5d780c356009e3ed2159240158c5cc6b6e0afb7f69a878201",
+      "source_leaves": 2751,
+      "evidence_files_checked": 283,
+      "clean_receipts": 59,
+      "inherited_test_records": 230,
+      "fresh_uncapped_lint_issues": 0,
+      "metadata75_preserved": true
+    },
+    "new_sol_dispatches": [
+      {
+        "agent": "sol_list_family_certificate",
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "scope": "Complete List/ArrayList storage, constructor, operation and escape certificate; private source design, coordinate Gson/reflection ownership"
+      },
+      {
+        "agent": "sol_generic_escape_controls",
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "scope": "New adversarial generic storage and typed-array escape regressions; original guards and observations immutable"
+      },
+      {
+        "agent": "sol_strict_admission_review",
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "scope": "Independent generic signature fail-closed source review; two additional gaps reported before repair freeze"
+      },
+      {
+        "agent": "sol_generated_insert_perf",
+        "model": "gpt-6.1-sol",
+        "reasoning": "high",
+        "scope": "StringBuilder.InsertJavaString owned-buffer allocation proposal and strengthened alias/evaluation controls; common current-public prerequisite pin"
+      }
+    ],
+    "agent_service_limit": "Additional Netty agent launch and some completed-agent reactivations rejected with agent thread limit reached. Those rejected calls did not launch work. Four new launches succeeded; do not count grants sent through failed calls as running workloads.",
+    "policy": "Sol6.1/high only; no Astra; bounded workload lanes and separate private ownership; no extra agent spawning without coordinator assignment",
+    "current_frontiers": {
+      "Gson_original120": "Memo83 strict128.739s and accepted-closure84 strict120.398s PASS on older private closure; all generated packages still FAIL method-owned T in TypeAdapterFactory and missing Time14 anonymous type mapping. Complete-current-public rebase selected, source-only pending review. Full65 remains UNRUN.",
+      "Gson_focused80": "80 PASS in private accepted closure; finite inherited memo and five JVM/race controls, not full application parity.",
+      "generic_method_signature": "Source reviewer found wildcard whitespace usage parsing and separate abstract/interface method-set emitter gaps. Guard proposal withdrawn pending both fixes and new controls. Fail-closed guard is prerequisite only.",
+      "original43": "Private original101 PASS and independent60race/2580orderedrows retained. Current-public composition still unrun.",
+      "original42": "Migrated private suite actual41PASS1FAIL: original sorted putAll JDK comparatorcalls0 versus Go2; genuine unchanged oracle. Runtime26 readiness remains unrun after owner reactivation was rejected.",
+      "bridge_effects": "Current9ed original3 RED reproduced final9 versus JVM5/2/2; narrow redundant uniform-only admission removal independently source-reviewed. GREEN remains unrun.",
+      "stream_provenance": "Actual70 records47PASS23FAIL0skip includes additional outer-class binder control failure. Coordinator admits extra outcome as genuine causal RED; all original53 statuses preserved. Structured declaration origin repair pending; no GREEN grant executed.",
+      "comparator": "Focused general callback/null prerequisites actualRED thenGREEN independently accepted; matched112 private pair source reviewed, sole7line optimization. Actual112 remains unrun, no timing grant or Java speedup claim."
+    },
+    "artifacts": {
+      "root_publication_audit": {
+        "path": "/private/tmp/java2go-root-publication76-audit.json",
+        "sha256": "bdf20c29dd9cf5750d9bb70ca5fbff3c831f700f8e678ce9bef2c298444239d5"
+      },
+      "independent28_acceptance": {
+        "path": "/private/tmp/java2go-search-date-stream-enum28-independent-actual-sol-review-v1.json",
+        "sha256": "09283786115c6ebbc3d2b6468ecec0d8e6c8970fef471e3f4d2f0f024acbf180"
+      },
+      "publication_packet": {
+        "path": "/private/tmp/java2go-module-normalization-harness-successor-sol/PUBLICATION_READY.json",
+        "sha256": "5b8adfe25401fdf27a3a4d3bcece00a3d287419d926514351bd90926f5cfd492"
+      },
+      "original120_frontier": {
+        "path": "/private/tmp/java2go-gson-accepted-closure-sol84-ri9q3eb7/original120-frontier-attempt1/report.json",
+        "sha256": "e259db201c3b6ece7465b5539ac1437630fecf09d68e92649112df1495ca57f1"
+      },
+      "strict_signature_source_review": {
+        "path": "/private/tmp/java2go-strict-admission-sol-review85.json",
+        "sha256": "3daac6db4ee2e3fbb3689a8b85f46f15256e0ac56afb61b625d7ec6f2c8e6519"
+      },
+      "bridge_source_review": {
+        "path": "/private/tmp/sol-resume-bridge-admission-source-independent.json",
+        "sha256": "167efcf996998181371ff3262707e4c2bb16c44d782cfdd451455eb681653d62"
+      },
+      "comparator_pair_source_review": {
+        "path": "/private/tmp/java2go-comparator-factory-independent-sol-resume/review.json",
+        "sha256": "2537a93662db313644fe02cc658430e696af49697f0b39fcf405ed2de64b8386"
+      },
+      "provenance70_red": {
+        "path": "/private/tmp/java2go-complex-stream-provenance-red-time-sol-hki1io2h/ACTUAL_PROVENANCE_RED.json",
+        "sha256": "fb9d34f1bfde6dfb099e5cd4831df52c76af0a1a71795e4e03197692514e2b6d"
+      }
+    },
+    "next_actions": [
+      "Freeze coherent current-public Gson rebase with accepted28 and Time14 prerequisites; review complete generic-family certificate and strict guard before fresh lanes",
+      "Run source-reviewed bridge and sorted putAll focused TDD gates when an assigned executor is available; retain original application acceptance tests",
+      "Repair declaration provenance through fields/method returns and captured binder identities; keep all70 unchanged controls",
+      "Execute matched comparator112 correctness before any exclusive allocation/performance gate",
+      "Keep all historical CI failures/additional skips visible; full accumulated suite and CI-equivalent gates required before accepting another round"
+    ],
+    "limits": [
+      "230 inherited records are not a fresh rerun; successful nested native helper streams not separately retained",
+      "Historical missing Date before snapshots remain unproven; new captured snapshots do not rewrite history",
+      "No full current CI, full Gson, full Netty or full round acceptance; checkpoint18 remains latest full accepted round",
+      "User untracked performance/runtime/bignumbers/equal_scale remains untouched",
+      "No finite application corpus proves arbitrary Java or memory-model equivalence"
+    ]
   }
 }
