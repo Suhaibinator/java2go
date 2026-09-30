@@ -20,11 +20,11 @@ public class ListProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.NewList[string]()")
-	assertContains(t, out, "xs.Add(\"a\")")
+	assertContains(t, out, "stdjava.NewList[*stdjava.JavaString]()")
+	assertContains(t, out, "xs.Add(stdjava.JavaStringLiteralUTF16([]uint16{97}))")
 	assertContains(t, out, "xs.Get(0)")
 	assertContains(t, out, "xs.Size()")
-	assertContains(t, out, "xs.Contains(\"a\", __java2goExecution)")
+	assertContains(t, out, "xs.Contains(stdjava.JavaStringLiteralUTF16([]uint16{97}), __java2goExecution)")
 }
 
 func TestCollections_DeclaredTypeMapsToStdjava(t *testing.T) {
@@ -39,8 +39,8 @@ public class DeclProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "a *stdjava.List[string]")
-	assertContains(t, out, "b *stdjava.Map[string, *stdjava.Integer]")
+	assertContains(t, out, "a *stdjava.List[*stdjava.JavaString]")
+	assertContains(t, out, "b *stdjava.Map[*stdjava.JavaString, *stdjava.Integer]")
 	assertContains(t, out, "c *stdjava.Set[*stdjava.Long]")
 }
 
@@ -75,10 +75,10 @@ public class MapProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.NewMap[string, *stdjava.Integer]()")
-	assertContains(t, out, "m.Put(\"k\", stdjava.BoxInteger(int32(1)), __java2goExecution)")
-	assertContains(t, out, "m.Get(\"k\", __java2goExecution)")
-	assertContains(t, out, "m.ContainsKey(\"k\", __java2goExecution)")
+	assertContains(t, out, "stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]()")
+	assertContains(t, out, "m.Put(stdjava.JavaStringLiteralUTF16([]uint16{107}), stdjava.BoxInteger(int32(1)), __java2goExecution)")
+	assertContains(t, out, "m.Get(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution)")
+	assertContains(t, out, "m.ContainsKey(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution)")
 }
 
 func TestCollections_StaticsAndArrays(t *testing.T) {
@@ -118,8 +118,8 @@ public class KeywordProgram {
 		t.Fatalf("Go keyword `map` was not sanitized:\n%s", out)
 	}
 	assertContains(t, out, "map_ := stdjava.NewMap")
-	assertContains(t, out, "map_.Put(\"a\", stdjava.BoxInteger(int32(1)), __java2goExecution)")
-	assertContains(t, out, "map_.Get(\"a\", __java2goExecution)")
+	assertContains(t, out, "map_.Put(stdjava.JavaStringLiteralUTF16([]uint16{97}), stdjava.BoxInteger(int32(1)), __java2goExecution)")
+	assertContains(t, out, "map_.Get(stdjava.JavaStringLiteralUTF16([]uint16{97}), __java2goExecution)")
 }
 
 func TestOptional_LambdaAndTypeInference(t *testing.T) {
@@ -140,7 +140,7 @@ public class OptProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	// empty() in return position gets its element type from the method return type.
-	assertContains(t, out, "stdjava.OptionalEmpty[string]()")
+	assertContains(t, out, "stdjava.OptionalEmpty[*stdjava.JavaString]()")
 	// of(10) stores a boxed Java Integer inferred from Optional<Integer>.
 	assertContains(t, out, "stdjava.OptionalOf[*stdjava.Integer](stdjava.BoxInteger(int32(10)))")
 	// map's lambda is re-typed from the element type and the chained .get() resolves.
@@ -163,6 +163,6 @@ public class ConcatProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.StringLength(stdjava.StringRequireNonNull(g))")
-	assertContains(t, out, "stdjava.StringLength(stdjava.StringRequireNonNull(h))")
+	assertContains(t, out, "stdjava.RequireJavaString(g).Length()")
+	assertContains(t, out, "stdjava.RequireJavaString(h).Length()")
 }
