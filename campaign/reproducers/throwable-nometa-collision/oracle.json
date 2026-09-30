@@ -1,0 +1,220 @@
+{
+  "canonical_streams": {
+    "17": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-17.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 449,
+        "path": "expected.seed-17.stdout",
+        "sha256": "7b435d4d1cbfad293d219f3d5905940e0f428b8eea0f5c0ab6da40eac38ea14d"
+      }
+    },
+    "41": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-41.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 449,
+        "path": "expected.seed-41.stdout",
+        "sha256": "dad0c4e014eb45a0d481c7801fcee3278f45c1fc195f1efd75ba9c69b3b049f8"
+      }
+    },
+    "97": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-97.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 381,
+        "path": "expected.seed-97.stdout",
+        "sha256": "3a92b14157cfd931fd33b7b26a9237768af6e45fc8cb185e70656163b260fce1"
+      }
+    }
+  },
+  "compile": {
+    "command": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "<oracle-output>/classes",
+      "src/main/java/probe/nometa/Lookalike.java",
+      "src/main/java/probe/app/Main.java"
+    ],
+    "exit": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 300
+  },
+  "go_transpiler_status": "UNRUN",
+  "input_hashes_match_before_after": true,
+  "jdk": {
+    "home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+    "runtime_version": "21.0.6+8-LTS-188",
+    "version": "21.0.6"
+  },
+  "kind": "supplemental-ordinary-object-nometa-jdk21-oracle",
+  "observations": [
+    {
+      "exit": 0,
+      "repeat": 1,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-17.repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 449,
+      "stdout_path": "runs/seed-17.repeat-1.stdout",
+      "stdout_sha256": "7b435d4d1cbfad293d219f3d5905940e0f428b8eea0f5c0ab6da40eac38ea14d",
+      "timeout_seconds": 60
+    },
+    {
+      "exit": 0,
+      "repeat": 2,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-17.repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 449,
+      "stdout_path": "runs/seed-17.repeat-2.stdout",
+      "stdout_sha256": "7b435d4d1cbfad293d219f3d5905940e0f428b8eea0f5c0ab6da40eac38ea14d",
+      "timeout_seconds": 60
+    },
+    {
+      "exit": 0,
+      "repeat": 3,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-17.repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 449,
+      "stdout_path": "runs/seed-17.repeat-3.stdout",
+      "stdout_sha256": "7b435d4d1cbfad293d219f3d5905940e0f428b8eea0f5c0ab6da40eac38ea14d",
+      "timeout_seconds": 60
+    },
+    {
+      "exit": 0,
+      "repeat": 1,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-41.repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 449,
+      "stdout_path": "runs/seed-41.repeat-1.stdout",
+      "stdout_sha256": "dad0c4e014eb45a0d481c7801fcee3278f45c1fc195f1efd75ba9c69b3b049f8",
+      "timeout_seconds": 60
+    },
+    {
+      "exit": 0,
+      "repeat": 2,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-41.repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 449,
+      "stdout_path": "runs/seed-41.repeat-2.stdout",
+      "stdout_sha256": "dad0c4e014eb45a0d481c7801fcee3278f45c1fc195f1efd75ba9c69b3b049f8",
+      "timeout_seconds": 60
+    },
+    {
+      "exit": 0,
+      "repeat": 3,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-41.repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 449,
+      "stdout_path": "runs/seed-41.repeat-3.stdout",
+      "stdout_sha256": "dad0c4e014eb45a0d481c7801fcee3278f45c1fc195f1efd75ba9c69b3b049f8",
+      "timeout_seconds": 60
+    },
+    {
+      "exit": 0,
+      "repeat": 1,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-97.repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 381,
+      "stdout_path": "runs/seed-97.repeat-1.stdout",
+      "stdout_sha256": "3a92b14157cfd931fd33b7b26a9237768af6e45fc8cb185e70656163b260fce1",
+      "timeout_seconds": 60
+    },
+    {
+      "exit": 0,
+      "repeat": 2,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-97.repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 381,
+      "stdout_path": "runs/seed-97.repeat-2.stdout",
+      "stdout_sha256": "3a92b14157cfd931fd33b7b26a9237768af6e45fc8cb185e70656163b260fce1",
+      "timeout_seconds": 60
+    },
+    {
+      "exit": 0,
+      "repeat": 3,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_path": "runs/seed-97.repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 381,
+      "stdout_path": "runs/seed-97.repeat-3.stdout",
+      "stdout_sha256": "3a92b14157cfd931fd33b7b26a9237768af6e45fc8cb185e70656163b260fce1",
+      "timeout_seconds": 60
+    }
+  ],
+  "payload_sha256_excluding_manifest": {
+    "README.md": "a05c15a97031810de17ce3e79d1eb1a75794c73d8aeab4b998aa5186cd799911",
+    "SOURCE_HASHES.sha256": "8b69af6ad53db15caaa509fadd40b477212c384c0d6b112afd081c918eb19460",
+    "expected.seed-17.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-17.stdout": "7b435d4d1cbfad293d219f3d5905940e0f428b8eea0f5c0ab6da40eac38ea14d",
+    "expected.seed-41.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-41.stdout": "dad0c4e014eb45a0d481c7801fcee3278f45c1fc195f1efd75ba9c69b3b049f8",
+    "expected.seed-97.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-97.stdout": "3a92b14157cfd931fd33b7b26a9237768af6e45fc8cb185e70656163b260fce1",
+    "pom.xml": "3e33e6bb8931d91dc42699f3eeef50fc330aebef2d7a42aa69d162cba70910fb",
+    "runs/seed-17.repeat-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-17.repeat-1.stdout": "7b435d4d1cbfad293d219f3d5905940e0f428b8eea0f5c0ab6da40eac38ea14d",
+    "runs/seed-17.repeat-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-17.repeat-2.stdout": "7b435d4d1cbfad293d219f3d5905940e0f428b8eea0f5c0ab6da40eac38ea14d",
+    "runs/seed-17.repeat-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-17.repeat-3.stdout": "7b435d4d1cbfad293d219f3d5905940e0f428b8eea0f5c0ab6da40eac38ea14d",
+    "runs/seed-41.repeat-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-41.repeat-1.stdout": "dad0c4e014eb45a0d481c7801fcee3278f45c1fc195f1efd75ba9c69b3b049f8",
+    "runs/seed-41.repeat-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-41.repeat-2.stdout": "dad0c4e014eb45a0d481c7801fcee3278f45c1fc195f1efd75ba9c69b3b049f8",
+    "runs/seed-41.repeat-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-41.repeat-3.stdout": "dad0c4e014eb45a0d481c7801fcee3278f45c1fc195f1efd75ba9c69b3b049f8",
+    "runs/seed-97.repeat-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-97.repeat-1.stdout": "3a92b14157cfd931fd33b7b26a9237768af6e45fc8cb185e70656163b260fce1",
+    "runs/seed-97.repeat-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-97.repeat-2.stdout": "3a92b14157cfd931fd33b7b26a9237768af6e45fc8cb185e70656163b260fce1",
+    "runs/seed-97.repeat-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-97.repeat-3.stdout": "3a92b14157cfd931fd33b7b26a9237768af6e45fc8cb185e70656163b260fce1",
+    "src/main/java/probe/app/Main.java": "2257e521c4f0762954aec79c4174779d82c08d8c3558d7cdf5966b7f278b42dd",
+    "src/main/java/probe/nometa/Lookalike.java": "60844ce9dbb9107f3a3fb5b907cbd707a3205af39671681d7d3409f3e407db9a"
+  },
+  "run_command_template": [
+    "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+    "-cp",
+    "<oracle-output>/classes",
+    "probe.app.Main",
+    "{seed}"
+  ],
+  "source_hashes": {
+    "README.md": "a05c15a97031810de17ce3e79d1eb1a75794c73d8aeab4b998aa5186cd799911",
+    "pom.xml": "3e33e6bb8931d91dc42699f3eeef50fc330aebef2d7a42aa69d162cba70910fb",
+    "src/main/java/probe/app/Main.java": "2257e521c4f0762954aec79c4174779d82c08d8c3558d7cdf5966b7f278b42dd",
+    "src/main/java/probe/nometa/Lookalike.java": "60844ce9dbb9107f3a3fb5b907cbd707a3205af39671681d7d3409f3e407db9a"
+  },
+  "source_manifest_sha256": "8b69af6ad53db15caaa509fadd40b477212c384c0d6b112afd081c918eb19460"
+}

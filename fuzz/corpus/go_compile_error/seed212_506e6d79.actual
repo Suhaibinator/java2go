@@ -1,0 +1,3 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_212/out
+fuzz/.fuzzbuild/seed_212/out/Gen.go:90:3: invalid operation: i0 += stdjava.Ternary((false && false), 65535, -452) (mismatched types int32 and int)

@@ -1,0 +1,9 @@
+--- a/stdjava/list.go
++++ b/stdjava/list.go
+@@ -88 +88,5 @@
+-	l.elements = append(l.elements[:index], l.elements[index+1:]...)
++	last := len(l.elements) - 1
++	copy(l.elements[index:], l.elements[index+1:])
++	var zero T
++	l.elements[last] = zero
++	l.elements = l.elements[:last]

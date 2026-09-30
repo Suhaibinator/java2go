@@ -1,0 +1,113 @@
+{
+  "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "runs": [
+    {
+      "seed": 17,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=17 accepted=24 applied=16 rejected=13 closed=2 bytes=1300 exportSha256=9dce0c752f1fc3e0456c4100459522542b5c9c8161a86f70e13f04fe02b48aee\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
+        "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76",
+        "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796"
+      }
+    },
+    {
+      "seed": 17,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=17 accepted=24 applied=16 rejected=13 closed=2 bytes=1300 exportSha256=9dce0c752f1fc3e0456c4100459522542b5c9c8161a86f70e13f04fe02b48aee\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
+        "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76",
+        "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796"
+      }
+    },
+    {
+      "seed": 17,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=17 accepted=24 applied=16 rejected=13 closed=2 bytes=1300 exportSha256=9dce0c752f1fc3e0456c4100459522542b5c9c8161a86f70e13f04fe02b48aee\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "88f559ca603c482a7cd3467021e042792228cdfa05fbe9399df8afaa91aaa1af",
+        "out/summary.txt": "55a8b7df4fc2649c1322df52227f184bfdbf14c495bb193286549d5381ff9e76",
+        "out/rejects.tsv": "7a6320138ea26dcee2d1ebd893aad4f5f3aaca07139f7fb11aef74e7b864a796"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=41 accepted=24 applied=16 rejected=13 closed=2 bytes=1300 exportSha256=064093fa65658cc1a29f11d0f81c9cea2613db1710a0b2e35520081d0e788421\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
+        "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224",
+        "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=41 accepted=24 applied=16 rejected=13 closed=2 bytes=1300 exportSha256=064093fa65658cc1a29f11d0f81c9cea2613db1710a0b2e35520081d0e788421\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
+        "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224",
+        "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=41 accepted=24 applied=16 rejected=13 closed=2 bytes=1300 exportSha256=064093fa65658cc1a29f11d0f81c9cea2613db1710a0b2e35520081d0e788421\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "6040078e379268e97e79181d55a0c9a024c26da652675a688c794a1ee754bb12",
+        "out/summary.txt": "fafa9167903aeb6df293fc69fc84faafab8c97023ea2f84fced0e6345ca67224",
+        "out/rejects.tsv": "57e4f9160d0595ba92de205b963573a5c8686037a972f7cd3c923ec9403f2fb0"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=97 accepted=24 applied=20 rejected=9 closed=2 bytes=1300 exportSha256=cb01e2701c16049f3085cb1d8cf19ac2bdc0d36c655ff9d24f0990ba00055b25\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
+        "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9",
+        "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=97 accepted=24 applied=20 rejected=9 closed=2 bytes=1300 exportSha256=cb01e2701c16049f3085cb1d8cf19ac2bdc0d36c655ff9d24f0990ba00055b25\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
+        "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9",
+        "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=97 accepted=24 applied=20 rejected=9 closed=2 bytes=1300 exportSha256=cb01e2701c16049f3085cb1d8cf19ac2bdc0d36c655ff9d24f0990ba00055b25\n",
+      "stderr": "",
+      "files": {
+        "out/accounts.tsv": "073e3ba98219dd1dde9e0232fef4dcc5fd898d03c5ccc23252b3c95652144d5f",
+        "out/summary.txt": "255f3c668ef29c9f939accf3a8798d261933db5282341580453f49f256b930e9",
+        "out/rejects.tsv": "9e2cc46740c16d46618a36af3855424abbbd7ee0e3a0df097507ddc8297d0126"
+      }
+    }
+  ]
+}

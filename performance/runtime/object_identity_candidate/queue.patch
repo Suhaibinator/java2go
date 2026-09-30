@@ -1,0 +1,23 @@
+--- a/stdjava/reference_arrays.go
++++ b/stdjava/reference_arrays.go
+@@ -223,4 +223,5 @@
+-	queue := []TypeID{actual}
+-	for len(queue) > 0 {
+-		current := queue[0]
+-		queue = queue[1:]
++	var initialQueue [8]TypeID
++	queue := initialQueue[:1]
++	queue[0] = actual
++	for head := 0; head < len(queue); head++ {
++		current := queue[head]
+@@ -256 +257,3 @@
+-	queue := []TypeID{actual}
++	var initialQueue [8]TypeID
++	queue := initialQueue[:1]
++	queue[0] = actual
+@@ -258,3 +261,2 @@
+-	for len(queue) > 0 {
+-		current := queue[0]
+-		queue = queue[1:]
++	for head := 0; head < len(queue); head++ {
++		current := queue[head]

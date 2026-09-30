@@ -1,0 +1,11 @@
+application=integer_branch_search
+board_size=13
+search_0=rounds:20,solutions:1474240,nodes:93497800,branches:93497780,dead_ends:32858800,signature:4718431452448581869
+search_1=rounds:20,solutions:593000,nodes:46508200,branches:46508180,dead_ends:16446920,signature:-1399856852879025394
+search_2=rounds:20,solutions:560200,nodes:45579040,branches:45579020,dead_ends:16181600,signature:3793276449394643999
+search_3=rounds:20,solutions:373180,nodes:32585380,branches:32585360,dead_ends:11543500,signature:9079589253886362024
+search_totals=solutions:3000620,nodes:218170420,dead_ends:77030820,checksum:-4062887661421070750
+sieve=rounds:12,limit:5000000,primes:4182156,last:4999999,sum:10063160317296,signature:-3538374922395430327
+sort=length:262144,rounds:16,queries:1048576,hits:786450,misses:262126,comparisons:18087192,signature:4416856632616821923
+walk=rounds:18,table_bits:20,steps:12000000,final_index:204445,hot:121487089,cold:94512911,accumulator:25551278686435,signature:9186759516202993687
+combined_checksum=-1200485526937638697

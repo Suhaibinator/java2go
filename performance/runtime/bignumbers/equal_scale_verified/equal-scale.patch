@@ -1,0 +1,6 @@
+--- a/stdjava/bigdecimal.go
++++ b/stdjava/bigdecimal.go
+@@ -29,0 +30,3 @@
++	if value.scale == other.scale {
++		return int32(value.coefficient.Cmp(&other.coefficient))
++	}

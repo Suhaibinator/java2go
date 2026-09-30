@@ -1,0 +1,13 @@
+equals.self=true|
+equals.peer=true|peer.size,set.size,peer.iterator,peer.has,peer.next,set.iterator,set.has,set.next,eq(b,a),set.has,set.next,eq(b,null),set.has,set.next,eq(b,b),peer.has,peer.next,set.iterator,set.has,set.next,eq(a,a),peer.has,peer.next,set.iterator,set.has,set.next,set.has,set.next,peer.has
+equals.null=false|
+equals.nonset=false|
+hash=195|set.iterator,set.has,set.next,hash(a),set.has,set.next,set.has,set.next,hash(b),set.has
+empty=false|set.size
+removeAll.small=true|set.size,small.size,small.iterator,small.has,small.next,set.iterator,set.has,set.next,eq(b,a),set.has,set.next,eq(b,null),set.has,set.next,eq(b,b),set.remove,small.has
+size.after.small=2|set.size
+removeAll.large=true|set.size,large.size,set.iterator,set.has,set.next,large.iterator,large.has,large.next,eq(a,a),set.remove,set.has,set.next,large.iterator,large.has,large.next,large.has,large.next,set.remove,set.has
+empty.after=true|set.size
+clear=0|set.iterator,set.has,set.next,set.remove,set.has
+equals.cast=false|one.size,cast.size,one.iterator,one.has,one.next,cast.reject
+equals.npe=false|one.size,null.size,one.iterator,one.has,one.next,null.reject

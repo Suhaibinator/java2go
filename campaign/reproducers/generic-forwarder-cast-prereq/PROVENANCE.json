@@ -1,0 +1,258 @@
+{
+  "canonical_streams": {
+    "17": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-17.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 633,
+        "path": "expected.seed-17.stdout",
+        "sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+      }
+    },
+    "41": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-41.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 633,
+        "path": "expected.seed-41.stdout",
+        "sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+      }
+    },
+    "97": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-97.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 568,
+        "path": "expected.seed-97.stdout",
+        "sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+      }
+    }
+  },
+  "compile": {
+    "command": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+      "src/probe/forward/state/Trace.java",
+      "src/probe/forward/source/Token.java",
+      "src/probe/forward/source/RawCursor.java",
+      "src/probe/forward/source/Forwarder.java",
+      "src/probe/forward/app/Main.java"
+    ],
+    "exit": 0,
+    "stderr_bytes": 0,
+    "stderr_path": "javac.stderr",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_bytes": 0,
+    "stdout_path": "javac.stdout",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timed_out": false,
+    "timeout_seconds": 300
+  },
+  "input_hashes_match_before_after": true,
+  "observations": [
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "repeat": 1,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-17.repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 633,
+      "stdout_path": "seed-17.repeat-1.stdout",
+      "stdout_sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3",
+      "timed_out": false,
+      "timeout_seconds": 60
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "repeat": 2,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-17.repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 633,
+      "stdout_path": "seed-17.repeat-2.stdout",
+      "stdout_sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3",
+      "timed_out": false,
+      "timeout_seconds": 60
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "repeat": 3,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-17.repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 633,
+      "stdout_path": "seed-17.repeat-3.stdout",
+      "stdout_sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3",
+      "timed_out": false,
+      "timeout_seconds": 60
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "repeat": 1,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-41.repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 633,
+      "stdout_path": "seed-41.repeat-1.stdout",
+      "stdout_sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95",
+      "timed_out": false,
+      "timeout_seconds": 60
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "repeat": 2,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-41.repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 633,
+      "stdout_path": "seed-41.repeat-2.stdout",
+      "stdout_sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95",
+      "timed_out": false,
+      "timeout_seconds": 60
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "repeat": 3,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-41.repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 633,
+      "stdout_path": "seed-41.repeat-3.stdout",
+      "stdout_sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95",
+      "timed_out": false,
+      "timeout_seconds": 60
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "repeat": 1,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-97.repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 568,
+      "stdout_path": "seed-97.repeat-1.stdout",
+      "stdout_sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb",
+      "timed_out": false,
+      "timeout_seconds": 60
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "repeat": 2,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-97.repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 568,
+      "stdout_path": "seed-97.repeat-2.stdout",
+      "stdout_sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb",
+      "timed_out": false,
+      "timeout_seconds": 60
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+        "probe.forward.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "repeat": 3,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_path": "seed-97.repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 568,
+      "stdout_path": "seed-97.repeat-3.stdout",
+      "stdout_sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb",
+      "timed_out": false,
+      "timeout_seconds": 60
+    }
+  ],
+  "output": "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj",
+  "source_hashes": {
+    "README.md": "b1a67b3a9f904ea4fc6f1a3e4c298e1f7bf2d80299f1047d36ef9de1658bc9c9",
+    "src/probe/forward/app/Main.java": "bd273a8fd043454c46ebfd3549e659a2b69368775b49e8041f0b47e7aa821370",
+    "src/probe/forward/source/Forwarder.java": "14b2ba8550b9913178024eed8704d53dee64fd1a2a23f78c98c06cce35a3d2d1",
+    "src/probe/forward/source/RawCursor.java": "07150a8129596d6e86a5b418351f12da40f0b7c1060f4846ace4d416bae66f09",
+    "src/probe/forward/source/Token.java": "e8e564880f6c3ebccbe4c0e2a6a1fd4eac565181f18ce57199ee3f175531d912",
+    "src/probe/forward/state/Trace.java": "05f1b0fa55c9bac5b1c94d5f41c1f592cb6f2338a32598ff2cbd5ead3615d11b"
+  },
+  "source_manifest_sha256": "c3981c63e32b5faa7280fc4909b037ff6c55c43a0bf60c87ec88cb904be2f573"
+}

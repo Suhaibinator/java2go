@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.anonymouscollision.AnonymousMemberCollisionApplication",
+  "module_path": "parity/anonymouscollision",
+  "status": "passing"
+}

@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.thread_lifecycle.ThreadLifecycle",
+  "module_path": "parity/thread_lifecycle",
+  "status": "passing"
+}

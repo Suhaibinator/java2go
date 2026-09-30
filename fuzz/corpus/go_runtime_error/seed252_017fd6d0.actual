@@ -1,0 +1,11 @@
+exit status 2
+15
+1
+30
+panic: interface conversion: interface {} is *main.GendoubleBox, not *main.Genbox
+
+goroutine 1 [running]:
+main.Main()
+	/Users/suhaib/code/java2go/fuzz/.fuzzbuild/seed_252/out/Gen.go:61 +0x1e4
+main.main()
+	/Users/suhaib/code/java2go/fuzz/.fuzzbuild/seed_252/out/zz_driver.go:3 +0x1c

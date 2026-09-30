@@ -1,0 +1,9 @@
+--- a/stdjava/reference_arrays.go
++++ b/stdjava/reference_arrays.go
+@@ -562,2 +562 @@
+-	index64 := int64(index)
+-	if index64 < 0 || index64 >= int64(len(array.Elements)) {
++	if uint64(index) >= uint64(len(array.Elements)) {
+@@ -566 +565 @@
+-	return int(index64)
++	return int(index)

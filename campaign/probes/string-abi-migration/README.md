@@ -1,0 +1,11 @@
+# Retained String ABI integration gates
+
+These are failing prerequisite gates, not accepted applications. Their Go runner text is deliberately outside Go test discovery until the coordinated String ABI migration. The exact formerly executed runners are preserved with `.frozen.txt` suffix. Source/POM/input bytes and all Java observations are frozen; do not simplify them to pass.
+
+Tracked projects: `campaign/reproducers/string-reference-prereq` and `campaign/reproducers/string-abi-prereq`. Each has `frozen-oracle.json` with individual input/stream hashes, original oracle hash provenance, and all nine argument/repeat/status/stream observations. Repeated identical stdout/stderr bytes are deduplicated into referenced files. All checks remain byte-exact; there is no locale forcing or normalization. Original Java/POM/README/seed input files are unchanged.
+
+Small runner can be restored verbatim into transpiler and reads its expected.stdout directly. Its oracle was nine deterministic fresh JVM processes; the last baseline validated JVM then Go build failed on missing String.intern.
+
+Multi-package runner's .restore.txt variant removes shared helper declarations now provided by campaign_runtime_string_test_helpers_test.go. Before resuming it, adapt artifact lookup from its old sibling oracle folder to the compact frozen-oracle.json in the tracked project; preserve every observation and validate all9JVM processes before strict Go. Do not alter the Java/POM to work around loader restrictions. The retained runner's historical baseline validated all9JVM outputs before strict loading rejected the POM compiler plugin. A later independent checkpoint16 run passed POM loading, strict translation and the race-enabled Go build, then reached semantic mismatches in class-initialization order, concatenation/builder identity, UTF-16 substring and null String-switch handling. The canonical String ABI remains unactivated; this project is still an open integration gate.
+
+Both runners require explicit JDK21, writable Go cache, -race generated builds, per-build300s/per-execution60s bounds. Full source and all arguments must participate. Restore in an isolated candidate branch and retain the frozen expectations. No probe is a substitute for the complete unchanged Gson application.

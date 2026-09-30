@@ -1,0 +1,18 @@
+Step 0:
+  Particle[P1] Pos(0.0, 100.0) Vel(5.0, 0.0) Mass=2.0
+  Particle[P2] Pos(10.0, 50.0) Vel(-2.0, 10.0) Mass=1.5
+Step 1:
+  Particle[P1] Pos(2.5, 97.5475) Vel(5.0, -4.905) Mass=2.0
+  Particle[P2] Pos(9.0, 52.5475) Vel(-2.0, 5.095) Mass=1.5
+Step 2:
+  Particle[P1] Pos(5.0, 92.6425) Vel(5.0, -9.81) Mass=2.0
+  Particle[P2] Pos(8.0, 52.6425) Vel(-2.0, 0.1899999999999995) Mass=1.5
+Step 3:
+  Particle[P1] Pos(7.5, 85.285) Vel(5.0, -14.715) Mass=2.0
+  Particle[P2] Pos(7.0, 50.285) Vel(-2.0, -4.715000000000001) Mass=1.5
+Step 4:
+  Particle[P1] Pos(10.0, 75.475) Vel(5.0, -19.62) Mass=2.0
+  Particle[P2] Pos(6.0, 45.474999999999994) Vel(-2.0, -9.620000000000001) Mass=1.5
+Step 5:
+  Particle[P1] Pos(12.5, 63.21249999999999) Vel(5.0, -24.525000000000002) Mass=2.0
+  Particle[P2] Pos(5.0, 38.21249999999999) Vel(-2.0, -14.525000000000002) Mass=1.5

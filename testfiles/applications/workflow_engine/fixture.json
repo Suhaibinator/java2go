@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.workflow.app.WorkflowApplication",
+  "module_path": "parity/workflow",
+  "status": "passing"
+}

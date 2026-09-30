@@ -1,0 +1,194 @@
+{
+  "all_file_sha256_excluding_manifest_and_package_hash_list": {
+    "PROVENANCE.json": "2a20f978ad3c00ddb1b50431bd346f128d7fd50a064ac78170438156c6794b84",
+    "README.md": "cafdf2132a86d477c7cb06126ccd46b9c62e59260fc1915cbd85f8edf9e2559a",
+    "SOURCE_HASHES.sha256": "1388c6f048f6caa307020bf5b0a88d97f38a4c64322e761933c213d59f951b1e",
+    "expected.seed-17.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-17.stdout": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3",
+    "expected.seed-41.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-41.stdout": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95",
+    "expected.seed-97.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.seed-97.stdout": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb",
+    "oracle-input/README.md": "b1a67b3a9f904ea4fc6f1a3e4c298e1f7bf2d80299f1047d36ef9de1658bc9c9",
+    "oracle-input/SOURCE_HASHES.sha256": "c3981c63e32b5faa7280fc4909b037ff6c55c43a0bf60c87ec88cb904be2f573",
+    "oracle-input/run-oracle.py": "17923c9b407ac93438ee73368c60091495ddb7cf2572f7dbaedd73d59636dc00",
+    "oracle.json": "2247f4a40a60d006d923510b147426470c0169fab47c9108a6eeb39c827d9cad",
+    "runs/seed-17.repeat-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-17.repeat-1.stdout": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3",
+    "runs/seed-17.repeat-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-17.repeat-2.stdout": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3",
+    "runs/seed-17.repeat-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-17.repeat-3.stdout": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3",
+    "runs/seed-41.repeat-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-41.repeat-1.stdout": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95",
+    "runs/seed-41.repeat-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-41.repeat-2.stdout": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95",
+    "runs/seed-41.repeat-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-41.repeat-3.stdout": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95",
+    "runs/seed-97.repeat-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-97.repeat-1.stdout": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb",
+    "runs/seed-97.repeat-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-97.repeat-2.stdout": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb",
+    "runs/seed-97.repeat-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runs/seed-97.repeat-3.stdout": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb",
+    "src/probe/forward/app/Main.java": "bd273a8fd043454c46ebfd3549e659a2b69368775b49e8041f0b47e7aa821370",
+    "src/probe/forward/source/Forwarder.java": "14b2ba8550b9913178024eed8704d53dee64fd1a2a23f78c98c06cce35a3d2d1",
+    "src/probe/forward/source/RawCursor.java": "07150a8129596d6e86a5b418351f12da40f0b7c1060f4846ace4d416bae66f09",
+    "src/probe/forward/source/Token.java": "e8e564880f6c3ebccbe4c0e2a6a1fd4eac565181f18ce57199ee3f175531d912",
+    "src/probe/forward/state/Trace.java": "05f1b0fa55c9bac5b1c94d5f41c1f592cb6f2338a32598ff2cbd5ead3615d11b"
+  },
+  "canonical_stdout_sha256": {
+    "17": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3",
+    "41": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95",
+    "97": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+  },
+  "copy_map": {
+    "PROVENANCE.json": {
+      "from": "validated-oracle/provenance.json",
+      "sha256": "2a20f978ad3c00ddb1b50431bd346f128d7fd50a064ac78170438156c6794b84"
+    },
+    "expected.seed-17.stderr": {
+      "from": "validated-oracle/expected.seed-17.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "expected.seed-17.stdout": {
+      "from": "validated-oracle/expected.seed-17.stdout",
+      "sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+    },
+    "expected.seed-41.stderr": {
+      "from": "validated-oracle/expected.seed-41.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "expected.seed-41.stdout": {
+      "from": "validated-oracle/expected.seed-41.stdout",
+      "sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+    },
+    "expected.seed-97.stderr": {
+      "from": "validated-oracle/expected.seed-97.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "expected.seed-97.stdout": {
+      "from": "validated-oracle/expected.seed-97.stdout",
+      "sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+    },
+    "oracle-input/README.md": {
+      "from": "prepared-source/README.md",
+      "sha256": "b1a67b3a9f904ea4fc6f1a3e4c298e1f7bf2d80299f1047d36ef9de1658bc9c9"
+    },
+    "oracle-input/SOURCE_HASHES.sha256": {
+      "from": "prepared-source/SOURCE_HASHES.sha256",
+      "sha256": "c3981c63e32b5faa7280fc4909b037ff6c55c43a0bf60c87ec88cb904be2f573"
+    },
+    "oracle-input/run-oracle.py": {
+      "from": "prepared-source/run-oracle.py",
+      "sha256": "17923c9b407ac93438ee73368c60091495ddb7cf2572f7dbaedd73d59636dc00"
+    },
+    "oracle.json": {
+      "from": "validated-oracle/oracle.json",
+      "sha256": "2247f4a40a60d006d923510b147426470c0169fab47c9108a6eeb39c827d9cad"
+    },
+    "runs/seed-17.repeat-1.stderr": {
+      "from": "validated-oracle/seed-17.repeat-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-17.repeat-1.stdout": {
+      "from": "validated-oracle/seed-17.repeat-1.stdout",
+      "sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+    },
+    "runs/seed-17.repeat-2.stderr": {
+      "from": "validated-oracle/seed-17.repeat-2.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-17.repeat-2.stdout": {
+      "from": "validated-oracle/seed-17.repeat-2.stdout",
+      "sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+    },
+    "runs/seed-17.repeat-3.stderr": {
+      "from": "validated-oracle/seed-17.repeat-3.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-17.repeat-3.stdout": {
+      "from": "validated-oracle/seed-17.repeat-3.stdout",
+      "sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+    },
+    "runs/seed-41.repeat-1.stderr": {
+      "from": "validated-oracle/seed-41.repeat-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-41.repeat-1.stdout": {
+      "from": "validated-oracle/seed-41.repeat-1.stdout",
+      "sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+    },
+    "runs/seed-41.repeat-2.stderr": {
+      "from": "validated-oracle/seed-41.repeat-2.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-41.repeat-2.stdout": {
+      "from": "validated-oracle/seed-41.repeat-2.stdout",
+      "sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+    },
+    "runs/seed-41.repeat-3.stderr": {
+      "from": "validated-oracle/seed-41.repeat-3.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-41.repeat-3.stdout": {
+      "from": "validated-oracle/seed-41.repeat-3.stdout",
+      "sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+    },
+    "runs/seed-97.repeat-1.stderr": {
+      "from": "validated-oracle/seed-97.repeat-1.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-97.repeat-1.stdout": {
+      "from": "validated-oracle/seed-97.repeat-1.stdout",
+      "sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+    },
+    "runs/seed-97.repeat-2.stderr": {
+      "from": "validated-oracle/seed-97.repeat-2.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-97.repeat-2.stdout": {
+      "from": "validated-oracle/seed-97.repeat-2.stdout",
+      "sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+    },
+    "runs/seed-97.repeat-3.stderr": {
+      "from": "validated-oracle/seed-97.repeat-3.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runs/seed-97.repeat-3.stdout": {
+      "from": "validated-oracle/seed-97.repeat-3.stdout",
+      "sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+    },
+    "src/probe/forward/app/Main.java": {
+      "from": "prepared-source/src/probe/forward/app/Main.java",
+      "sha256": "bd273a8fd043454c46ebfd3549e659a2b69368775b49e8041f0b47e7aa821370"
+    },
+    "src/probe/forward/source/Forwarder.java": {
+      "from": "prepared-source/src/probe/forward/source/Forwarder.java",
+      "sha256": "14b2ba8550b9913178024eed8704d53dee64fd1a2a23f78c98c06cce35a3d2d1"
+    },
+    "src/probe/forward/source/RawCursor.java": {
+      "from": "prepared-source/src/probe/forward/source/RawCursor.java",
+      "sha256": "07150a8129596d6e86a5b418351f12da40f0b7c1060f4846ace4d416bae66f09"
+    },
+    "src/probe/forward/source/Token.java": {
+      "from": "prepared-source/src/probe/forward/source/Token.java",
+      "sha256": "e8e564880f6c3ebccbe4c0e2a6a1fd4eac565181f18ce57199ee3f175531d912"
+    },
+    "src/probe/forward/state/Trace.java": {
+      "from": "prepared-source/src/probe/forward/state/Trace.java",
+      "sha256": "05f1b0fa55c9bac5b1c94d5f41c1f592cb6f2338a32598ff2cbd5ead3615d11b"
+    }
+  },
+  "java_source_count": 5,
+  "kind": "generic-forwarder-cast-prereq-checked-package",
+  "prepared_input_manifest_sha256": "c3981c63e32b5faa7280fc4909b037ff6c55c43a0bf60c87ec88cb904be2f573",
+  "proposed_checked_in_path": "campaign/reproducers/generic-forwarder-cast-prereq",
+  "raw_jvm_run_count": 9,
+  "raw_stream_file_count": 18,
+  "status": {
+    "go_transpiler": "UNRUN",
+    "jdk_oracle": "validated"
+  },
+  "tracked_java_source_manifest_sha256": "1388c6f048f6caa307020bf5b0a88d97f38a4c64322e761933c213d59f951b1e"
+}

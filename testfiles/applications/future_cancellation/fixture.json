@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.future_cancellation.FutureCancellation",
+  "module_path": "parity/future_cancellation",
+  "status": "passing"
+}

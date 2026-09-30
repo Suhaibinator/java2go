@@ -1,0 +1,173 @@
+package stdjava
+
+import "strings"
+
+// This file implements the java.util.stream.Collectors surface.
+//
+// A Collector is not modelled as a runtime value. `collect(Collectors.X(...))`
+// is lowered at the call site into a direct call on the stream, because the
+// element and result types a Collector carries are Java type arguments that a
+// single Go type cannot hold. A collector used in a *downstream* position
+// (groupingBy's second argument, mapping's) is lowered instead to a
+// `func(Stream[T]) R`, which composes: a downstream collector is applied to each
+// group's own stream.
+//
+// Documented divergence: Java's groupingBy and toMap return a HashMap, whose
+// iteration order is unspecified. These return the insertion-ordered stdjava.Map
+// (grouped by first appearance of each key), so generated code is deterministic
+// where Java is not. Printing such a map directly can therefore agree with one
+// JVM run and disagree with another; sort the keys before rendering.
+
+// StreamToSet collects the elements into a Set, matching
+// Collectors.toSet / toUnmodifiableSet. Java gives no ordering guarantee for
+// toSet; stdjava.Set preserves insertion order.
+func StreamToSet[T any](s Stream[T], execution ...*Execution) *Set[T] {
+	out := NewSet[T]()
+	for _, e := range s.elements {
+		out.Add(e, execution...)
+	}
+	return out
+}
+
+// StreamJoining concatenates the elements with a separator between them and the
+// given prefix and suffix, matching all three arities of Collectors.joining
+// (the shorter forms pass empty strings).
+func StreamJoining(s Stream[string], separator, prefix, suffix string) string {
+	var builder strings.Builder
+	builder.WriteString(prefix)
+	for index, e := range s.elements {
+		if index > 0 {
+			builder.WriteString(separator)
+		}
+		builder.WriteString(e)
+	}
+	builder.WriteString(suffix)
+	return builder.String()
+}
+
+// StreamToMap collects the elements into a map keyed and valued by the given
+// extractors, matching Collectors.toMap(keyMapper, valueMapper). Java throws
+// IllegalStateException on a duplicate key rather than overwriting, so this
+// does too; the three-argument form supplies a merge function instead.
+func StreamToMap[T any, K any, V any](s Stream[T], key func(T) K, value func(T) V, execution ...*Execution) *Map[K, V] {
+	out := NewMap[K, V]()
+	for _, e := range s.elements {
+		k := key(e)
+		if out.ContainsKey(k, execution...) {
+			panic(NewIllegalStateException("Duplicate key"))
+		}
+		out.Put(k, value(e), execution...)
+	}
+	return out
+}
+
+// StreamToMapMerging is toMap with a merge function resolving duplicate keys,
+// matching Collectors.toMap(keyMapper, valueMapper, mergeFunction). The merge
+// receives the existing value first, as Java's does.
+func StreamToMapMerging[T any, K any, V any](s Stream[T], key func(T) K, value func(T) V, merge func(V, V) V, execution ...*Execution) *Map[K, V] {
+	out := NewMap[K, V]()
+	for _, e := range s.elements {
+		k := key(e)
+		v := value(e)
+		if out.ContainsKey(k, execution...) {
+			v = merge(out.Get(k, execution...), v)
+		}
+		out.Put(k, v, execution...)
+	}
+	return out
+}
+
+// StreamGroupingBy groups the elements by a classifier, matching
+// Collectors.groupingBy(classifier). Each group keeps encounter order.
+func StreamGroupingBy[T any, K any](s Stream[T], classifier func(T) K, execution ...*Execution) *Map[K, *List[T]] {
+	out := NewMap[K, *List[T]]()
+	for _, e := range s.elements {
+		k := classifier(e)
+		group := out.Get(k, execution...)
+		if !out.ContainsKey(k, execution...) {
+			group = NewList[T]()
+			out.Put(k, group, execution...)
+		}
+		group.Add(e)
+	}
+	return out
+}
+
+// StreamGroupingByDownstream groups the elements and applies a downstream
+// collector to each group, matching
+// Collectors.groupingBy(classifier, downstream). The downstream is a function
+// from the group's own stream to its collected result.
+func StreamGroupingByDownstream[T any, K any, D any](s Stream[T], classifier func(T) K, downstream func(Stream[T]) D, execution ...*Execution) *Map[K, D] {
+	grouped := StreamGroupingBy(s, classifier, execution...)
+	out := NewMap[K, D]()
+	for _, key := range grouped.KeySet() {
+		out.Put(key, downstream(StreamOfSlice(grouped.Get(key, execution...).Slice())), execution...)
+	}
+	return out
+}
+
+// StreamPartitioningBy splits the elements on a predicate, matching
+// Collectors.partitioningBy. Java always returns both the false and true
+// entries, even when one side is empty, and in that order.
+func StreamPartitioningBy[T any](s Stream[T], predicate func(T) bool) *Map[*Boolean, *List[T]] {
+	out := NewMap[*Boolean, *List[T]]()
+	out.Put(BoxBoolean(false), NewList[T]())
+	out.Put(BoxBoolean(true), NewList[T]())
+	for _, e := range s.elements {
+		out.Get(BoxBoolean(predicate(e))).Add(e)
+	}
+	return out
+}
+
+// StreamPartitioningByDownstream is partitioningBy with a downstream collector
+// applied to each side.
+func StreamPartitioningByDownstream[T any, D any](s Stream[T], predicate func(T) bool, downstream func(Stream[T]) D) *Map[*Boolean, D] {
+	partitioned := StreamPartitioningBy(s, predicate)
+	out := NewMap[*Boolean, D]()
+	out.Put(BoxBoolean(false), downstream(StreamOfSlice(partitioned.Get(BoxBoolean(false)).Slice())))
+	out.Put(BoxBoolean(true), downstream(StreamOfSlice(partitioned.Get(BoxBoolean(true)).Slice())))
+	return out
+}
+
+// StreamCounting is Collectors.counting, whose result is a boxed Long.
+func StreamCounting[T any](s Stream[T]) *Long { return BoxLong(s.Count()) }
+
+// StreamAveragingOf and StreamSummingOf back the averaging*/summing* collectors
+// by mapping each element to its numeric contribution first. They exist so the
+// lowering does not have to compose two calls at the call site.
+func StreamSummingOf[T any, N JavaPrimitiveNumber](s Stream[T], value func(T) N) N {
+	return StreamSum(StreamMap(s, value))
+}
+
+func StreamAveragingOf[T any, N JavaPrimitiveNumber](s Stream[T], value func(T) N) float64 {
+	// Java's averaging collectors report 0.0 for an empty stream, unlike
+	// IntStream.average, which reports an empty OptionalDouble.
+	return StreamAverage(StreamMap(s, value)).OrElse(0)
+}
+
+// StreamGroupingByDownstreamWith retains the supplied map's ordering and key
+// comparison semantics while applying the downstream collector to each group.
+func StreamGroupingByDownstreamWith[T, K, D any](s Stream[T], classifier func(T) K, factory any, downstream func(Stream[T]) D, execution ...*Execution) *Map[K, D] {
+	out := CallSupplierExecution[*Map[K, D]](optionalComparisonExecution(execution), factory)
+	ReferenceRequireNonNull(out)
+	grouped := NewMap[K, *List[T]]()
+	// Group using the result map's comparator: TreeMap groups keys for which
+	// compare returns zero, even when their equals methods disagree.
+	if out.sorted {
+		grouped = NewTreeMapWith[K, *List[T]](out.comparator)
+	}
+	for _, element := range s.elements {
+		key := classifier(element)
+		ReferenceRequireNonNull(key)
+		group := grouped.Get(key, execution...)
+		if group == nil {
+			group = NewList[T]()
+			grouped.Put(key, group, execution...)
+		}
+		group.Add(element)
+	}
+	for _, key := range grouped.KeySet() {
+		out.Put(key, downstream(StreamOfSlice(grouped.Get(key, execution...).Slice())), execution...)
+	}
+	return out
+}

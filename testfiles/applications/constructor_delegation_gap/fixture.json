@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.constructordelegation.ConstructorDelegationApplication",
+  "module_path": "parity/constructordelegation",
+  "status": "passing"
+}

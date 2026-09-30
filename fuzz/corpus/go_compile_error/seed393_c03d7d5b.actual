@@ -1,0 +1,3 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_393/out
+fuzz/.fuzzbuild/seed_393/out/Gen.go:27:9: invalid operation: ((0.1 / 2.0) + (d0 * d0)) * (i2 / 1.0) (mismatched types float64 and int32)

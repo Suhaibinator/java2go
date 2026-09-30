@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.integerbranch.app.IntegerBranchSearchApplication",
+  "module_path": "parity/integerbranch",
+  "status": "passing"
+}

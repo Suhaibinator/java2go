@@ -1,0 +1,6 @@
+worker 0 = 0
+worker 1 = 1
+worker 2 = 3
+worker 3 = 6
+worker 4 = 10
+grand 20

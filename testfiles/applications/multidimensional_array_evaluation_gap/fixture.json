@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.multidimorder.MultidimensionalArrayEvaluationApplication",
+  "module_path": "parity/multidimorder",
+  "status": "passing"
+}

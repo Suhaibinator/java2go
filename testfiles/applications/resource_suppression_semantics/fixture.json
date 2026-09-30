@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.resourcesuppression.ResourceSuppressionSemanticsApplication",
+  "module_path": "parity/resourcesuppression",
+  "status": "passing"
+}

@@ -1,0 +1,10 @@
+exit status 2
+panic: runtime error: slice bounds out of range [1:0]
+
+goroutine 1 [running]:
+github.com/NickyBoy89/java2go/stdjava.StringSubstring(...)
+	/Users/suhaib/code/java2go/stdjava/strings.go:76
+main.Main()
+	/Users/suhaib/code/java2go/fuzz/.fuzzbuild/seed_0/out/Gen.go:20 +0xb8
+main.main()
+	/Users/suhaib/code/java2go/fuzz/.fuzzbuild/seed_0/out/zz_driver.go:3 +0x1c

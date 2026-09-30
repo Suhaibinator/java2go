@@ -1,0 +1,11 @@
+MON weekend=false
+TUE weekend=false
+WED weekend=false
+THU weekend=false
+FRI weekend=false
+SAT weekend=true
+SUN weekend=true
+2
+FRI
+98.0
+37.0

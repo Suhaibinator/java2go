@@ -1,0 +1,16 @@
+# Western ledger; malformed records exercise distinct parse failures.
+gamma	PUT	space+%2B+%25	9	4777c6a5ae93
+gamma	ADD	space+%2B+%25	-5	7786309f9269
+gamma	DEL	space+%2B+%25	0	e33127582694
+theta	PUT	%E6%9D%B1%E4%BA%AC	3	9f4c2e00f2e7
+theta	ADD	%E6%9D%B1%E4%BA%AC	10	03ed0028c018
+eta	ADD	space+%2B+%25	-9	8ac226866dcc
+beta	DEL	%E6%9D%B1%E4%BA%AC	0	26b725b3e22f
+iota	PUT	a%CC%88+%2B+b	14	16378dc5017d
+iota	ADD	%C3%A4+%2B+b	-6	bd432cc41a20
+epsilon	ADD	emoji+%F0%9F%A7%AA	11	1c6d81ae197c
+badhex	PUT	valid	4	xz
+badsig	PUT	valid	4	000000000000
+badnum	PUT	valid	NaN	001122334455
+zeta	ADD	cr%C3%A8me+br%C3%BBl%C3%A9e	-1	0bd6dc17eaec
+eta	PUT	space+%2B+%25	5	4709d687da16

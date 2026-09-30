@@ -1,0 +1,260 @@
+package astutil
+
+import (
+	"fmt"
+	"go/ast"
+	"strings"
+
+	sitter "github.com/smacker/go-tree-sitter"
+)
+
+func autoCloseableInterfaceType() ast.Expr {
+	return &ast.InterfaceType{
+		Methods: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{{Name: "Close"}},
+					Type: &ast.FuncType{
+						Params: &ast.FieldList{},
+					},
+				},
+			},
+		},
+	}
+}
+
+// boxedPrimitiveType maps Java's immutable, nullable wrapper objects to their
+// corresponding runtime pointer types. Primitive Java types are handled apart.
+func boxedPrimitiveType(name string) (ast.Expr, bool) {
+	switch name {
+	case "Integer", "Long", "Short", "Byte", "Character", "Float", "Double", "Boolean":
+		return &ast.StarExpr{X: &ast.SelectorExpr{X: &ast.Ident{Name: "stdjava"}, Sel: &ast.Ident{Name: name}}}, true
+	}
+	return nil, false
+}
+
+// ParseType parses a Java type node and converts it to a Go AST expression.
+// This version does not handle type parameters - use ParseTypeWithTypeParams for generic contexts.
+func ParseType(node *sitter.Node, source []byte) ast.Expr {
+	return ParseTypeWithTypeParams(node, source, nil)
+}
+
+// ParseTypeWithTypeParams parses a Java type node and converts it to a Go AST expression.
+// typeParams is a list of type parameter names that should not be wrapped in pointers.
+func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []string) ast.Expr {
+	// Helper function to check if a name is a type parameter
+	isTypeParam := func(name string) bool {
+		for _, tp := range typeParams {
+			if tp == name {
+				return true
+			}
+		}
+		return false
+	}
+
+	switch node.Type() {
+	case "integral_type":
+		switch node.Child(0).Type() {
+		case "int":
+			return &ast.Ident{Name: "int32"}
+		case "short":
+			return &ast.Ident{Name: "int16"}
+		case "long":
+			return &ast.Ident{Name: "int64"}
+		case "char":
+			return &ast.Ident{Name: "rune"}
+		case "byte":
+			// Java byte is signed; Go's predeclared byte is an alias for uint8.
+			return &ast.Ident{Name: "int8"}
+		}
+
+		panic(fmt.Errorf("unknown integral type: %v", node.Child(0).Type()))
+	case "floating_point_type": // Can be either `float` or `double`
+		switch node.Child(0).Type() {
+		case "float":
+			return &ast.Ident{Name: "float32"}
+		case "double":
+			return &ast.Ident{Name: "float64"}
+		}
+
+		panic(fmt.Errorf("unknown float type: %v", node.Child(0).Type()))
+	case "void_type":
+		return &ast.Ident{}
+	case "boolean_type":
+		return &ast.Ident{Name: "bool"}
+	case "generic_type":
+		// A generic type is any type that is of the form GenericType<T>
+		// Extract the base type and type arguments
+		baseNode := node.NamedChild(0)
+		if baseNode == nil {
+			panic(fmt.Errorf("generic_type has no base type"))
+		}
+		baseName := baseNode.Content(source)
+		if baseName == "Comparable" || baseName == "java.lang.Comparable" {
+			return &ast.Ident{Name: "any"}
+		}
+
+		// Find the type_arguments node
+		var typeArgs []ast.Expr
+		for i := 0; i < int(node.NamedChildCount()); i++ {
+			child := node.NamedChild(i)
+			if child.Type() == "type_arguments" {
+				// Parse each type argument
+				for j := 0; j < int(child.NamedChildCount()); j++ {
+					argNode := child.NamedChild(j)
+					typeArgs = append(typeArgs, ParseTypeWithTypeParams(argNode, source, typeParams))
+				}
+				break
+			}
+		}
+
+		// If we have type arguments, create an IndexExpr or IndexListExpr
+		// The pointer wraps the entire indexed expression: *List[T], not (*List)[T]
+		if len(typeArgs) > 0 {
+			baseIdent := &ast.Ident{Name: baseName}
+			var indexedExpr ast.Expr
+			if len(typeArgs) == 1 {
+				indexedExpr = &ast.IndexExpr{
+					X:     baseIdent,
+					Index: typeArgs[0],
+				}
+			} else {
+				// Multiple type arguments use IndexListExpr
+				indexedExpr = &ast.IndexListExpr{
+					X:       baseIdent,
+					Indices: typeArgs,
+				}
+			}
+			return &ast.StarExpr{X: indexedExpr}
+		}
+
+		// No type arguments, just return the base type as a pointer
+		return &ast.StarExpr{X: &ast.Ident{Name: baseName}}
+	case "array_type":
+		elementNode := node.ChildByFieldName("element")
+		if elementNode == nil {
+			elementNode = node.NamedChild(0)
+		}
+		elemType := ParseTypeWithTypeParams(elementNode, source, typeParams)
+
+		// Tree-sitter represents multiple array dimensions as a single dimensions node
+		// containing raw '[' ']' tokens (and possibly annotations). Count the brackets
+		// to determine how many times to wrap the element type.
+		dimensionsNode := node.ChildByFieldName("dimensions")
+		dimensionCount := 1
+		if dimensionsNode != nil {
+			count := 0
+			for i := 0; i < int(dimensionsNode.ChildCount()); i++ {
+				child := dimensionsNode.Child(i)
+				switch child.Type() {
+				case "[":
+					count++
+				case "dimension":
+					count++
+				}
+			}
+			if count > 0 {
+				dimensionCount = count
+			}
+		}
+
+		arrayType := elemType
+		for i := 0; i < dimensionCount; i++ {
+			arrayType = &ast.ArrayType{Elt: arrayType}
+		}
+		return arrayType
+	case "type_identifier": // Any reference type
+		typeName := node.Content(source)
+		// A lexical type parameter shadows java.lang's implicit imports.
+		if isTypeParam(typeName) {
+			return &ast.Ident{Name: typeName}
+		}
+
+		// Special case for strings, because in Go, these are primitive types
+		if typeName == "String" {
+			return &ast.Ident{Name: "string"}
+		}
+		// Java's Object is the universal supertype, which maps to Go's any.
+		if typeName == "Object" {
+			return &ast.Ident{Name: "any"}
+		}
+		if typeName == "Number" {
+			return &ast.SelectorExpr{X: &ast.Ident{Name: "stdjava"}, Sel: &ast.Ident{Name: "JavaNumber"}}
+		}
+		if typeName == "Comparable" {
+			return &ast.Ident{Name: "any"}
+		}
+		if typeName == "AutoCloseable" {
+			return autoCloseableInterfaceType()
+		}
+		// Preserve both reference identity and nullability in generic arguments
+		// and ordinary declarations.
+		if boxed, ok := boxedPrimitiveType(typeName); ok {
+			return boxed
+		}
+
+		return &ast.StarExpr{
+			X: &ast.Ident{Name: typeName},
+		}
+	case "scoped_type_identifier":
+		// This contains a reference to the type of a nested class
+		// Ex: LinkedList.Node
+		if name, builtin := strings.CutPrefix(node.Content(source), "java.lang."); builtin {
+			if boxed, ok := boxedPrimitiveType(name); ok {
+				return boxed
+			}
+			if name == "Number" {
+				return &ast.SelectorExpr{X: &ast.Ident{Name: "stdjava"}, Sel: &ast.Ident{Name: "JavaNumber"}}
+			}
+			if name == "Comparable" || name == "Object" {
+				return &ast.Ident{Name: "any"}
+			}
+			if name == "String" {
+				return &ast.Ident{Name: "string"}
+			}
+		}
+		if strings.HasSuffix(node.Content(source), ".AutoCloseable") {
+			return autoCloseableInterfaceType()
+		}
+		return &ast.StarExpr{X: &ast.Ident{Name: node.Content(source)}}
+	case "wildcard":
+		// Java wildcards are approximated. ? and ? super T become any;
+		// ? extends T maps to T's parsed type.
+		content := node.Content(source)
+		if strings.Contains(content, "super") {
+			return &ast.Ident{Name: "any"}
+		}
+		if node.NamedChildCount() > 0 {
+			last := node.NamedChild(int(node.NamedChildCount()) - 1)
+			if last != nil && last.Type() != "super" {
+				return ParseTypeWithTypeParams(last, source, typeParams)
+			}
+		}
+		return &ast.Ident{Name: "any"}
+	}
+	panic("Unknown type to convert: " + node.Type())
+}
+
+// ExtractTypeArguments extracts type argument strings from a generic_type node.
+// Returns empty slice if node is not a generic type or has no type arguments.
+func ExtractTypeArguments(node *sitter.Node, source []byte) []string {
+	if node.Type() != "generic_type" {
+		return nil
+	}
+
+	var typeArgs []string
+	for i := 0; i < int(node.NamedChildCount()); i++ {
+		child := node.NamedChild(i)
+		if child.Type() == "type_arguments" {
+			for j := 0; j < int(child.NamedChildCount()); j++ {
+				argNode := child.NamedChild(j)
+				if argNode == nil {
+					continue
+				}
+				typeArgs = append(typeArgs, argNode.Content(source))
+			}
+			break
+		}
+	}
+	return typeArgs
+}

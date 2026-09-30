@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.statichiding.StaticMethodHidingApplication",
+  "module_path": "parity/statichiding",
+  "status": "passing"
+}

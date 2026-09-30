@@ -1,0 +1,4 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_207/out
+fuzz/.fuzzbuild/seed_207/out/Gen.go:64:81: int64(9223372036854775807) + int64(4294967296) (constant 9223372041149743103 of type int64) overflows int64
+fuzz/.fuzzbuild/seed_207/out/Gen.go:81:79: constant 9223372036854775808 overflows int64

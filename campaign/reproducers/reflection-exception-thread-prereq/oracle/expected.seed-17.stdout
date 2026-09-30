@@ -1,0 +1,6 @@
+seed=17
+trace=A:open>A:constructed>A:closed>A:publish>B:open>B:failure>B:closed>B:publish>A:complete>main:joined
+threads=distinct:true:isolated:true
+success=ProbeException:job-17:cause=IllegalStateException:root-17:identity:true
+failure=NoSuchMethodException:message:true:cause-null:true
+cleanup=closed:2:reset:true

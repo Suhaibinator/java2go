@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.localrecursion.LocalClassRecursionApplication",
+  "module_path": "parity/localrecursion",
+  "status": "passing"
+}

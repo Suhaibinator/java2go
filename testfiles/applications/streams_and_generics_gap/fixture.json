@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.streams.StreamsApplication",
+  "module_path": "parity/streams",
+  "status": "passing"
+}

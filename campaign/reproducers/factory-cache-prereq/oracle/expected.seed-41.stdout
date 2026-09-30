@@ -1,0 +1,7 @@
+seed=41,identity=true,true,true
+document=doc-41:draft|rev-41#1|rev-41#1:2,other=other-41:new|rev-41#2:1,returned=true
+order=sku-41:4/46:2,returned=true,beforeWrong=sku-41:4/46:2
+nulls=true,true,wrongType=true,calls=2,2,1
+factories=2,1
+primary=11,4,3,2,2:X(document)D(document)X(order)D(order)O(order)X(unknown)D(unknown)O(unknown)X(unknown)D(unknown)O(unknown)
+secondary=2,1,0,1,1:X(document)D(document)

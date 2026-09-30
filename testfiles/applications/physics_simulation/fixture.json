@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.physics.simulation.SimulationApp",
+  "module_path": "parity/physics",
+  "status": "passing"
+}

@@ -1,0 +1,2 @@
+# Transient fuzzer scratch build dirs (generated Go + compiled binaries)
+.fuzzbuild/

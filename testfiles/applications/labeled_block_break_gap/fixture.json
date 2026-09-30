@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.labeledblock.LabeledBlockBreakApplication",
+  "module_path": "parity/labeledblock",
+  "status": "passing"
+}

@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.nullablecompound.NullableStringCompoundApplication",
+  "module_path": "parity/nullablecompound",
+  "status": "passing"
+}

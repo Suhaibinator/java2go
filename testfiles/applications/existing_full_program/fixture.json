@@ -1,0 +1,6 @@
+{
+  "main_class": "com.acme.app.MainApp",
+  "module_path": "com/acme",
+  "source_root": "../../full_program",
+  "status": "passing"
+}

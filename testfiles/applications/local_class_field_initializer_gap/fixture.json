@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.localfieldinit.LocalClassFieldInitializerApplication",
+  "module_path": "parity/localfieldinit",
+  "status": "passing"
+}

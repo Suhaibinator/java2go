@@ -1,0 +1,3 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_208/out
+fuzz/.fuzzbuild/seed_208/out/Gen.go:72:2: undefined: UnsignedRightShiftAssignment

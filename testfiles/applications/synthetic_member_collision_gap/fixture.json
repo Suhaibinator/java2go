@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.syntheticcollision.SyntheticMemberCollisionApplication",
+  "module_path": "parity/syntheticcollision",
+  "status": "passing"
+}

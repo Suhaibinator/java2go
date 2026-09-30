@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.synchronizednull.SynchronizedNullMonitorApplication",
+  "module_path": "parity/synchronizednull",
+  "status": "passing"
+}

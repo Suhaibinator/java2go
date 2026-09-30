@@ -1,0 +1,27 @@
+[pear, kiwi, plum, date]
+[3, 4]
+figpearkiwiplumdate
+fig, pear, kiwi, plum, date
+[fig, pear, kiwi, plum, date]
+count 5
+sumInt 19
+sumLong 19
+avg 3.8
+word date=4
+word fig=3
+word kiwi=4
+word pear=4
+word plum=4
+merged 3 fig
+merged 4 pear|kiwi|plum|date
+group 3 [fig]
+group 4 [pear, kiwi, plum, date]
+count 3 1
+count 4 4
+joined 3 fig
+joined 4 pear/kiwi/plum/date
+initials 3 [f]
+initials 4 [p, k, p, d]
+false=[fig] true=[pear, kiwi, plum, date]
+falseCount=1 trueCount=4
+reduced fpkpd

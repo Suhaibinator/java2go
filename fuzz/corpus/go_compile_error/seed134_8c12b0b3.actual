@@ -1,0 +1,4 @@
+exit status 1
+# github.com/NickyBoy89/java2go/fuzz/.fuzzbuild/seed_134/out
+fuzz/.fuzzbuild/seed_134/out/Gen.go:40:8: invalid operation: ((255 - i0) * (i1 & 255)) - (stdjava.UnsignedRightShift(-(0), 8)) (mismatched types int32 and int)
+fuzz/.fuzzbuild/seed_134/out/Gen.go:41:2: declared and not used: c3
