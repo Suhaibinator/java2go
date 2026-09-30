@@ -159,8 +159,12 @@ func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (s
 		return "", false
 	}
 	declaration := visibleTypeParameterDeclarationForJavaType(javaType, ctx)
-	if declaration == nil || !methodDirectlyUsesTypeParameterDeclaration(ctx.localScope, declaration) ||
-		!ownerTypeParameterCallableShapeSupported(declaration, ctx) {
+	// Callable eligibility above already proves the complete physical body plan,
+	// including specialized override bridges. Repeating the uniform-family shape
+	// audit here would reject those bridges and narrow this body's own erased
+	// locals before their subsequent effects. Keep the lexical declaration and
+	// direct-method-use checks so shadowed binders retain their own representation.
+	if declaration == nil || !methodDirectlyUsesTypeParameterDeclaration(ctx.localScope, declaration) {
 		return "", false
 	}
 	for _, parameter := range ctx.currentClass.TypeParameters {
