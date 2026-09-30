@@ -43,7 +43,7 @@ const (
 )
 
 func DateFormatGetDateTimeInstance(dateStyle, timeStyle int32, locales ...*Locale) DateFormat {
-	locale := LocaleGetDefault()
+	locale := LocaleGetDefaultCategory(LocaleCategoryFORMAT)
 	if len(locales) > 0 {
 		locale = locales[0]
 	}

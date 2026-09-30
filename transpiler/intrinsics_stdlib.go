@@ -78,7 +78,6 @@ func registerStringIntrinsics() {
 		{"toLowerCase", "JavaStringToLowerCase", "java.lang.String", 0, 1},
 		{"trim", "JavaStringTrim", "java.lang.String", 0, 0},
 		{"strip", "JavaStringStrip", "java.lang.String", 0, 0},
-		{"replace", "JavaStringReplace", "java.lang.String", 2, 2},
 		{"split", "JavaStringSplitArray", "java.lang.String[]", 1, 2},
 		{"chars", "JavaStringCharsStream", "IntStream", 0, 0},
 	} {
@@ -91,6 +90,13 @@ func registerStringIntrinsics() {
 		})
 		registerInstanceIntrinsicResultType("String", spec.java, spec.result)
 	}
+	registerInstanceIntrinsic("String", "replace", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 2 {
+			return nil
+		}
+		return stdjavaCall(ctx, "JavaStringReplaceExecution", intrinsicExecutionExpr(ctx), recv, args[0], args[1])
+	})
+	registerInstanceIntrinsicResultType("String", "replace", "java.lang.String")
 	registerInstanceIntrinsic("String", "intern", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 0 {
 			return nil
@@ -378,7 +384,7 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return pkgCall(ctx, "fmt", "Sprint", args[0])
+		return stdjavaCall(ctx, "JavaStringValueOfInt", args[0])
 	})
 	registerStaticFieldIntrinsic("Integer", "MAX_VALUE", func(ctx Ctx) ast.Expr {
 		return qualifiedNameExpr("MaxInt32", "math", ctx)

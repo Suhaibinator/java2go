@@ -14,9 +14,10 @@ import (
 // TimeZone keeps the Java-visible ID separate from the transition rules: setID
 // changes the label, not the UTC offset or daylight-saving rules.
 type TimeZone struct {
-	id       string
-	javaID   *JavaString
-	location *time.Location
+	id            string
+	javaID        *JavaString
+	location      *time.Location
+	rawOffsetDiff int32
 }
 
 func (*TimeZone) JavaDynamicTypeID() TypeID { return "java.util.TimeZone" }
@@ -35,11 +36,11 @@ func (zone *TimeZone) GetOffset(millis int64) int32 {
 	ReferenceRequireNonNull(zone)
 	// The legacy JDK ZoneInfo transition table starts at 1900; earlier
 	// instants use the current raw offset rather than IANA local-mean time.
-	if millis < -2208988800000 {
+	if millis-int64(zone.rawOffsetDiff) < -2208988800000 {
 		return zone.GetRawOffset()
 	}
-	_, offset := time.UnixMilli(millis).In(zone.location).Zone()
-	return int32(offset * 1000)
+	_, offset := time.UnixMilli(millis - int64(zone.rawOffsetDiff)).In(zone.location).Zone()
+	return int32(offset*1000) + zone.rawOffsetDiff
 }
 func (zone *TimeZone) GetRawOffset() int32 {
 	ReferenceRequireNonNull(zone)
@@ -51,11 +52,11 @@ func (zone *TimeZone) GetRawOffset() int32 {
 		value := now.AddDate(0, month, 0)
 		if !value.IsDST() {
 			_, offset := value.Zone()
-			return int32(offset * 1000)
+			return int32(offset*1000) + zone.rawOffsetDiff
 		}
 	}
 	_, offset := now.Zone()
-	return int32(offset * 1000)
+	return int32(offset*1000) + zone.rawOffsetDiff
 }
 func TimeZoneGetTimeZone(id string) *TimeZone {
 	StringRequireNonNull(id)
@@ -185,4 +186,44 @@ func TimeZoneGetTimeZoneJavaString(id *JavaString) *TimeZone {
 		return TimeZoneGetTimeZone("")
 	}
 	return TimeZoneGetTimeZone(text)
+}
+
+func (zone *TimeZone) SetRawOffset(offset int32) {
+	ReferenceRequireNonNull(zone)
+	zone.rawOffsetDiff += offset - zone.GetRawOffset()
+}
+func (zone *TimeZone) HasSameRules(other *TimeZone) bool {
+	ReferenceRequireNonNull(zone)
+	if other == nil || zone.GetRawOffset() != other.GetRawOffset() {
+		return false
+	}
+	if zone.location == other.location {
+		return true
+	}
+	// ZoneInfo rule identity excludes labels and covers its 1900..2037 table.
+	// Compare transitions through public zone bounds, including daylight flags.
+	at := time.Unix(-2208988800, 0)
+	end := time.Unix(2145916800, 0)
+	for at.Before(end) {
+		left, right := at.In(zone.location), at.In(other.location)
+		_, lo := left.Zone()
+		_, ro := right.Zone()
+		if int32(lo*1000)+zone.rawOffsetDiff != int32(ro*1000)+other.rawOffsetDiff || left.IsDST() != right.IsDST() {
+			return false
+		}
+		_, le := left.ZoneBounds()
+		_, re := right.ZoneBounds()
+		next := end
+		if !le.IsZero() && le.Before(next) {
+			next = le
+		}
+		if !re.IsZero() && re.Before(next) {
+			next = re
+		}
+		if !next.After(at) {
+			return false
+		}
+		at = next
+	}
+	return true
 }

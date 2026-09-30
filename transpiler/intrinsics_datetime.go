@@ -28,6 +28,9 @@ func dateTimeRuntimeTypeExpr(base string, ctx Ctx) (ast.Expr, bool) {
 			return stdjavaQualifiedExpr("DateValue", ctx), true
 		}
 	}
+	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered && owner == "java.util.Locale.Category" {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr("LocaleCategory", ctx)}, true
+	}
 	if _, ok := dateTimeRuntimeTypeID(base, ctx); !ok {
 		return nil, false
 	}
@@ -108,7 +111,7 @@ func init() {
 		java, goName, result string
 		arity                int
 	}{
-		{"getID", "GetIDJavaString", "String", 0}, {"setID", "SetIDJavaString", "void", 1}, {"getRawOffset", "GetRawOffset", "int", 0}, {"getOffset", "GetOffset", "int", 1}, {"clone", "Clone", "Object", 0},
+		{"setRawOffset", "SetRawOffset", "void", 1}, {"hasSameRules", "HasSameRules", "boolean", 1}, {"getID", "GetIDJavaString", "String", 0}, {"setID", "SetIDJavaString", "void", 1}, {"getRawOffset", "GetRawOffset", "int", 0}, {"getOffset", "GetOffset", "int", 1}, {"clone", "Clone", "Object", 0},
 	} {
 		registerInstanceIntrinsic("TimeZone", entry.java, ioMethod(entry.goName, entry.arity))
 		registerInstanceIntrinsicResultType("TimeZone", entry.java, entry.result)

@@ -28,7 +28,7 @@ func NewSimpleDateFormat(pattern string, locales ...*Locale) *SimpleDateFormat {
 // NewSimpleDateFormatJavaString retains the exact immutable pattern reference.
 func NewSimpleDateFormatJavaString(pattern *JavaString, locales ...*Locale) *SimpleDateFormat {
 	ReferenceRequireNonNull(pattern)
-	locale := LocaleGetDefault()
+	locale := LocaleGetDefaultCategory(LocaleCategoryFORMAT)
 	if len(locales) > 0 {
 		locale = locales[0]
 	}

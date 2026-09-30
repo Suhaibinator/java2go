@@ -70,19 +70,42 @@ func init() {
 		registerInstanceIntrinsic("SimpleDateFormat", entry.java, ioMethod(entry.goName, entry.arity))
 		registerInstanceIntrinsicResultType("SimpleDateFormat", entry.java, entry.result)
 	}
-	for _, entry := range []struct {
-		java, goName, result string
-		arity                int
-	}{
-		{"getDefault", "LocaleGetDefault", "java.util.Locale", 0}, {"setDefault", "LocaleSetDefault", "void", 1},
-	} {
-		registerStaticIntrinsic("Locale", entry.java, func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-			if len(args) != entry.arity {
-				return nil
-			}
-			return stdjavaCall(ctx, entry.goName, args...)
-		})
-		registerStaticIntrinsicResultType("Locale", entry.java, entry.result)
+	registerIntrinsicOwner("java.util.Locale.Category", true)
+	for _, category := range []string{"DISPLAY", "FORMAT"} {
+		registerStaticFieldIntrinsic("Category", category, func(ctx Ctx) ast.Expr { return stdjavaQualifiedExpr("LocaleCategory"+category, ctx) })
+		registerStaticFieldIntrinsicResultType("Category", category, "java.util.Locale.Category")
+	}
+	registerStaticIntrinsic("Locale", "getDefault", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 0 {
+			return stdjavaCall(ctx, "LocaleGetDefault")
+		}
+		if len(args) == 1 {
+			return stdjavaCall(ctx, "LocaleGetDefaultCategory", args...)
+		}
+		return nil
+	})
+	registerStaticIntrinsicResultType("Locale", "getDefault", "java.util.Locale")
+	registerStaticIntrinsicImportSignature("Locale", "getDefault")
+	registerStaticIntrinsicImportSignature("Locale", "getDefault", "java.util.Locale.Category")
+	registerStaticIntrinsic("Locale", "setDefault", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 1 {
+			return stdjavaCall(ctx, "LocaleSetDefault", args...)
+		}
+		if len(args) == 2 {
+			return stdjavaCall(ctx, "LocaleSetDefaultCategory", args...)
+		}
+		return nil
+	})
+	registerStaticIntrinsicResultType("Locale", "setDefault", "void")
+	registerStaticIntrinsicImportSignature("Locale", "setDefault", "java.util.Locale")
+	registerStaticIntrinsicImportSignature("Locale", "setDefault", "java.util.Locale.Category", "java.util.Locale")
+	for _, method := range []string{"getLanguage", "getCountry"} {
+		goName := "GetLanguageJavaString"
+		if method == "getCountry" {
+			goName = "GetCountryJavaString"
+		}
+		registerInstanceIntrinsic("Locale", method, ioMethod(goName, 0))
+		registerInstanceIntrinsicResultType("Locale", method, "java.lang.String")
 	}
 	registerInstanceIntrinsic("Locale", "equals", ioMethod("Equals", 1))
 	registerInstanceIntrinsicResultType("Locale", "equals", "boolean")
@@ -120,6 +143,14 @@ func dateFormatExpectedArgumentTypes(owner, method string, count int) ([]string,
 			if count == 1 {
 				return []string{"boolean"}, true
 			}
+		}
+	}
+	if owner == "Locale" {
+		if method == "setDefault" && count == 2 {
+			return []string{"java.util.Locale.Category", "java.util.Locale"}, true
+		}
+		if method == "getDefault" && count == 1 {
+			return []string{"java.util.Locale.Category"}, true
 		}
 	}
 	if owner == "Locale" && count == 1 {

@@ -227,6 +227,17 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 			}
 		}
 	}
+	if receiverType == "String" && methodName == "replace" && invocationArgumentCount(objectNode.Parent()) == 2 {
+		expected := intrinsicInvocationExpectedArgumentTypes(objectNode.Parent(), objectNode, "", methodName, ctx, source)
+		if len(expected) == 2 && expected[0] == "char" {
+			gen = func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				if len(args) != 2 {
+					return nil
+				}
+				return stdjavaCall(ctx, "JavaStringReplaceChar", recv, args[0], args[1])
+			}
+		}
+	}
 	recv := ParseExpr(objectNode, source, ctx)
 	recv = projectDirectOwnerErasedIntrinsicReceiver(recv, objectNode, ctx, source)
 	if intrinsicLaterArgumentsMayWrite(objectNode.Parent(), -1) {

@@ -74,6 +74,14 @@ func datetimeExpectedArgumentTypes(owner, method string, count int) ([]string, b
 	if count == 1 && ((owner == "TimeZone" && (method == "getTimeZone" || method == "setID")) || (owner == "Locale" && method == "forLanguageTag")) {
 		return []string{"java.lang.String"}, true
 	}
+	if owner == "TimeZone" && count == 1 {
+		if method == "setRawOffset" {
+			return []string{"int"}, true
+		}
+		if method == "hasSameRules" {
+			return []string{"java.util.TimeZone"}, true
+		}
+	}
 	sql := sqlDateRuntimeNames[owner] != ""
 	if sql && method == "valueOf" && count == 1 {
 		return []string{"String"}, true

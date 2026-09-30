@@ -1,0 +1,25 @@
+{
+  "status": "STABLE_JDK21_ORACLES",
+  "main_class": "app.Main",
+  "seeds": {
+    "17": {
+      "stdout": "clock:17:1615703520000\nstyle:3:3/14/21, 6:32\u202fAM:true:true:16:-1\nstyle:2:Mar 14, 2021, 6:32:00\u202fAM:true:true:24:-1\nstyle:1:March 14, 2021, 6:32:00\u202fAM UTC:true:true:30:-1\nstyle:0:Sunday, March 14, 2021, 6:32:00\u202fAM Coordinated Universal Time:true:true:61:-1\nmixed:3/14/21, 6:32:00\u202fAM UTC:UTC\nlocale:en:US:en::en:\nsnapshot:true:Mar 14, 2021, 6:32:00\u202fAM:Mar 14, 2021, 1:32:00\u202fAM:America/New_York\ntimezone:Mar 14, 2021, 8:32:00\u202fAM:Mar 14, 2021, 9:32:00\u202fAM:true:Mar 14, 2021, 6:32:00\u202fAM\nposition:21:27:0:0:0:19:-1:true\ninvalid:java.text.ParseException:19:none:true\ndst:2021-03-14 01:32:00:2021-03-14 03:32:00:-18000000:-14400000:0:19:1636266600000:19\niso-offsets:1615703400000:1615707000000:1636263000000:1636266600000:1615707000000\niso-leap:2016-12-31T23:59:59.000Z:true:0:20\niso-position:1615703400120:25:-1:2021-03-14T01:32:00.000-05:00\niso-invalid:2021-02-29T12:00:00Z:20:20:-1:java.lang.IllegalArgumentException\niso-invalid:2021-03-14T12:00:00+25:00:0:0:-1:java.lang.IndexOutOfBoundsException\niso-invalid:2021-03-14T12:00:00:0:0:-1:java.lang.IllegalArgumentException\nrestore:true:true:true:true\n",
+      "stderr": "",
+      "stdout_sha256": "35f872821f103c21c3a40a51e7d8912999784ffbb21f74f7d57a7ea3ad978b03",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "41": {
+      "stdout": "clock:41:1615703520000\nstyle:3:3/14/21, 6:32\u202fAM:true:true:16:-1\nstyle:2:Mar 14, 2021, 6:32:00\u202fAM:true:true:24:-1\nstyle:1:March 14, 2021, 6:32:00\u202fAM UTC:true:true:30:-1\nstyle:0:Sunday, March 14, 2021, 6:32:00\u202fAM Coordinated Universal Time:true:true:61:-1\nmixed:3/14/21, 6:32:00\u202fAM UTC:UTC\nlocale:en:US:en::en:\nsnapshot:true:Mar 14, 2021, 6:32:00\u202fAM:Mar 14, 2021, 1:32:00\u202fAM:America/New_York\ntimezone:Mar 14, 2021, 8:32:00\u202fAM:Mar 14, 2021, 9:32:00\u202fAM:true:Mar 14, 2021, 6:32:00\u202fAM\nposition:21:27:0:0:0:19:-1:true\ninvalid:java.text.ParseException:19:none:true\ndst:2021-03-14 01:32:00:2021-03-14 03:32:00:-18000000:-14400000:0:19:1636266600000:19\niso-offsets:1615703400000:1615707000000:1636263000000:1636266600000:1615707000000\niso-leap:2016-12-31T23:59:59.000Z:true:0:20\niso-position:1615703400120:25:-1:2021-03-14T01:32:00.000-05:00\niso-invalid:2021-02-29T12:00:00Z:20:20:-1:java.lang.IllegalArgumentException\niso-invalid:2021-03-14T12:00:00+25:00:0:0:-1:java.lang.IndexOutOfBoundsException\niso-invalid:2021-03-14T12:00:00:0:0:-1:java.lang.IllegalArgumentException\nrestore:true:true:true:true\n",
+      "stderr": "",
+      "stdout_sha256": "9eeadc57456606f49b311f796b2b74d4139dd28aa86e67b9711ba66c76c3274b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "97": {
+      "stdout": "clock:97:1615703460000\nstyle:3:3/14/21, 6:31\u202fAM:true:true:16:-1\nstyle:2:Mar 14, 2021, 6:31:00\u202fAM:true:true:24:-1\nstyle:1:March 14, 2021, 6:31:00\u202fAM UTC:true:true:30:-1\nstyle:0:Sunday, March 14, 2021, 6:31:00\u202fAM Coordinated Universal Time:true:true:61:-1\nmixed:3/14/21, 6:31:00\u202fAM UTC:UTC\nlocale:en:US:en::en:\nsnapshot:true:Mar 14, 2021, 6:31:00\u202fAM:Mar 14, 2021, 1:31:00\u202fAM:America/New_York\ntimezone:Mar 14, 2021, 8:31:00\u202fAM:Mar 14, 2021, 9:31:00\u202fAM:true:Mar 14, 2021, 6:31:00\u202fAM\nposition:21:27:0:0:0:19:-1:true\ninvalid:java.text.ParseException:19:none:true\ndst:2021-03-14 01:31:00:2021-03-14 03:31:00:-18000000:-14400000:0:19:1636266600000:19\niso-offsets:1615703400000:1615707000000:1636263000000:1636266600000:1615707000000\niso-leap:2016-12-31T23:59:59.000Z:true:0:20\niso-position:1615703400120:25:-1:2021-03-14T01:31:00.000-05:00\niso-invalid:2021-02-29T12:00:00Z:20:20:-1:java.lang.IllegalArgumentException\niso-invalid:2021-03-14T12:00:00+25:00:0:0:-1:java.lang.IndexOutOfBoundsException\niso-invalid:2021-03-14T12:00:00:0:0:-1:java.lang.IllegalArgumentException\nrestore:true:true:true:true\n",
+      "stderr": "",
+      "stdout_sha256": "afa4662bc0f2361d1f8eee27309a29a7c354ec2233a6f46991f760e4a7584d48",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "repeats_per_seed": 3
+}

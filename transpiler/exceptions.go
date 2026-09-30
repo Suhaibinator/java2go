@@ -79,6 +79,9 @@ func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, a
 			}
 		}
 	}
+	if call := canonicalMessagePrerequisiteConstructorExpr(className, arguments, args, ctx, source); call != nil {
+		return call
+	}
 	if call := canonicalThrowableConstructorExpr(className, arguments, args, ctx, source); call != nil {
 		return call
 	}
@@ -101,6 +104,40 @@ func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, a
 		Fun:  stdjavaQualifiedExpr("New"+name, ctx),
 		Args: []ast.Expr{message},
 	}
+}
+
+// These declarations select String messages rather than interpreting an erased
+// value as a cause. Resolve the actual JDK owner before matching a simple name.
+func canonicalMessagePrerequisiteConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	name := stripJavaQualifier(className)
+	if name != "IndexOutOfBoundsException" && name != "NumberFormatException" && name != "ParseException" {
+		return nil
+	}
+	if _, builtin := builtinExceptionStorageTypeName(className, ctx); !builtin {
+		return nil
+	}
+	helper := "NewJava" + name + "Message"
+	if name == "NumberFormatException" {
+		helper = "NewJavaNumberFormatException"
+	}
+	if len(args) == 0 && name != "ParseException" {
+		return stdjavaCall(ctx, helper, ast.NewIdent("nil"))
+	}
+	if arguments == nil || int(arguments.NamedChildCount()) != len(args) {
+		return nil
+	}
+	if name == "ParseException" && len(args) == 2 {
+		message := stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{javaStringReferenceType(ctx)}, []ast.Expr{args[0], stdjavaQualifiedExpr("StringTypeID", ctx)})
+		return stdjavaCall(ctx, helper, message, args[1])
+	}
+	if name != "ParseException" && len(args) == 1 {
+		actual, known := inferExprJavaType(arguments.NamedChild(0), ctx, source)
+		if known && (actual == "null" || throwableConstructorMessageType(symbol.JavaType{Original: actual}, ctx, map[typeParameterIdentityKey]bool{})) {
+			message := stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{javaStringReferenceType(ctx)}, []ast.Expr{args[0], stdjavaQualifiedExpr("StringTypeID", ctx)})
+			return stdjavaCall(ctx, helper, message)
+		}
+	}
+	return nil
 }
 
 // canonicalThrowableConstructorExpr selects modeled Java overloads from their

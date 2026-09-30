@@ -132,6 +132,13 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 	if class == "Path" && method == "equals" {
 		return set("java.lang.Object")
 	}
+	if class == "String" && method == "replace" && count == 2 {
+		primitive, wrapper := javaUnboxingPrimitive(actual(0), ctx)
+		if actual(0) == "char" || wrapper && primitive == "char" {
+			return set("char", "char")
+		}
+		return set("java.lang.CharSequence", "java.lang.CharSequence")
+	}
 	if (class == "StringBuilder" || class == "StringBuffer") && method == "setLength" {
 		return set("int")
 	}

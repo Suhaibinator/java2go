@@ -263,6 +263,9 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 		return stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(base)}), true
 	}
 	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered {
+		if owner == "java.util.Locale.Category" {
+			return javaTypeIDLiteral("java.util.Locale$Category", ctx), true
+		}
 		return javaTypeIDLiteral(owner, ctx), true
 	}
 	if constant := characterIONominalConstant(javaType, ctx); constant != "" {

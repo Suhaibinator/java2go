@@ -50,6 +50,11 @@ func dateFormatZoneName(zone *TimeZone, millis int64, long bool) string {
 			return data.names[index]
 		}
 	}
+	// TimeZone.getDisplayName preserves a custom GMT label even when its
+	// mutable raw offset has changed (JDK21 TimeZone.java fallback).
+	if strings.HasPrefix(zone.id, "GMT") && len(zone.id) > 3 && (zone.id[3] == '+' || zone.id[3] == '-') {
+		return zone.id
+	}
 	return "GMT" + dateFormatZoneOffset(zone.GetOffset(millis), 'X', 3)
 }
 func dateFormatZoneDaylight(zone *TimeZone, millis int64) bool {

@@ -11284,6 +11284,11 @@ func collectGenericMethodInferenceBounds(
 ) {
 	formal = strings.TrimSpace(formal)
 	actual = strings.TrimSpace(actual)
+	// Null is the bottom reference type, not an informative inference bound.
+	// Leave null-only variables available for the target or declared upper bound.
+	if actual == "null" || actual == ternaryNullJavaType {
+		return
+	}
 	if formal == "" || actual == "" || formal == "?" {
 		return
 	}
