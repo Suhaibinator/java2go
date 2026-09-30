@@ -21,15 +21,6 @@ func (m *Map[K, V]) javaMapVisitEntries(visit func(any, any)) {
 		visit(record.key, record.value)
 	}
 }
-func putAllValue[T any](value any) T {
-	if javaReferenceIsNull(value) {
-		return collectionZero[T]()
-	}
-	if typed, ok := value.(T); ok {
-		return typed
-	}
-	panic(NewClassCastException("incompatible Map.putAll element view"))
-}
 func (m *Map[K, V]) PutAll(source any, execution ...*Execution) {
 	ReferenceRequireNonNull(m)
 	ReferenceRequireNonNull(source)
