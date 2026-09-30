@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "active; checkpoint19 adversarial repairs resumed; checkpoint18 remains latest production acceptance",
+  "status": "active; Sol-only campaign; checkpoint18 remains latest full compatibility acceptance",
   "base_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
   "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
   "round": 2,
@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Finish immutable canonicalList and reflection baselines; integrate Enum minimally onto90359d2 while preserving Numbernominal; verify nativev5 and repair source catch/Set boundary, DateFormat constructor, nested static qualifier and dependency resource ingestion. Preserve original full Gson and accumulated gates; no Netty advancement.",
+  "next_action": "Finalize independently verified IO publication and push; Sol owners verify descriptor/native composition and original Dollar/full8; build executable canonical Codec performance baseline; preserve full Gson/full22 requirements.",
   "performance_team": {
     "astra_perf_codegen": "Difficult optimization design/correctness review only, invoked after material baseline evidence",
     "astra_perf_runtime": "Difficult runtime optimization, lifetime/concurrency review only",
@@ -4546,16 +4546,16 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "9a800349f76dd83cd2c7fa8c504de3f88444e475",
+    "last_pushed_revision": "725fda26200758af48559036d1d125e30f6f327e",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "Multiple immutable component candidates; progress53 supersedes current-status prose only. Checkpoint18 remains latest full compatibility acceptance.",
+    "source_checkpoint": "See progress58. Separate immutable native and canonical String component lines; checkpoint18 remains latest complete compatibility acceptance.",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Continue source-preserving Sol repairs: Dollar identifier hygiene on actual fullv3 red, canonical BigMath TDD and identity controls, reviewed Go test migrations, Map nominal projection. Independently verify and publish composed native callback and Codec resource candidates. Full Gson and accumulated CI remain required.",
+    "next": "Finalize independently verified IO publication and push; Sol owners verify descriptor/native composition and original Dollar/full8; build executable canonical Codec performance baseline; preserve full Gson/full22 requirements.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
-    "automatic_goal_controller": "Active after user resumed goal",
+    "automatic_goal_controller": "Goal tool reports paused; user authorized continued work. Available API cannot resume or edit objective. Campaign proceeds under explicit user continuation.",
     "checkpoint16_review_hold": {
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
@@ -4566,10 +4566,10 @@
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
-    "publication_status": "Canonical28e50af and reflection90b45262692c71fb905fd52d49e01231ffa37020 committed, pushed and remote verified on their component branches. Latest full compatibility acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-29T23:22:25.798936+00:00",
+    "publication_status": "Canonical d753 and final IO e6cc392 committed, pushed and origin-verified on component branches. Main campaign latest full compatibility acceptance remains checkpoint18.",
+    "checkpoint_updated_utc": "2026-09-30T02:58:40.180923+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
-    "status": "ACTIVE",
+    "status": "ACTIVE_USER_AUTHORIZED_SOL_ONLY",
     "minimal_repair_full22": {
       "source": "/private/tmp/java2go-native-bounds46-full-sol-hgstcnrz/source",
       "source_manifest_sha256": "ede7cb11500f00855b78c95682be6763b453562d362364dd46aafe1e34355fab",
@@ -5405,10 +5405,109 @@
         "lane2": "Minimal shadow V11 session70312; receipt-key normalization transport-only; v10 rejection retained.",
         "lane3": "Joint IO23 execution granted readiness87a52aadde5f2175955e1546c3f9567582de70c007453919fc91cce464370165; full originalIO10 and explicit generated-child race required."
       }
+    },
+    "progress58": {
+      "recorded_at": "2026-09-30T02:53:01.717328+00:00",
+      "goal": "Run the continuous adversarial Java-to-Go TDD campaign using GPT-6.1 Sol agents exclusively, including challenge authoring, compiler/runtime repairs, difficult semantics, independent verification and dedicated performance research. Translate actual dependency implementations, preserve correctness and accumulated regressions, compare JVM and Go observations, commit and push verified milestones to origin branches, and continue toward Netty until the user stops the campaign, subject to execution and usage limits. No finite corpus establishes support for every Java application.",
+      "sol_only": true,
+      "io_publication": {
+        "status": "INDEPENDENTLY_VERIFIED_COMMITTED_PUSHED_ORIGIN_VERIFIED",
+        "branch": "codex/adversarial-io-checkpoint19",
+        "base_revision": "d753d5f1b6a730f15068d504974f017cd121b8c0",
+        "source": "/private/tmp/java2go-io-lint-repair4-sol-v10-x7z4n80e/source",
+        "source_manifest_sha256": "0e87c93cea12f0628bcecb5b92adb3f2fe3eb1b267fcda97fb27da6119a7177b",
+        "terminal_sha256": "61e4ddac51dc97a05c12f0c449f7fd49604fba5f696c08b487149e57ed1fce90",
+        "focused_runtime_lint_sha256": "6e201b6b2e0f849146be69aac493029d71959bec54cf3a3d0dd4456118d5d6e7",
+        "scope": "73 parents/141 keys pass; 23 generated race tests and nine race builds, 64 nested receipts. Four test return sites strengthened; no production/Java/oracle delta from prior accepted publication source. Lint2.14 affected three packages passes. FullCI/Gson not accepted.",
+        "revision": "e6cc392da55b93716c5d159fffeb91680d82fb3f",
+        "origin_verified": true,
+        "independent_audit_sha256": "801b1d6ca5ec42e25644f8fef48e6e6f2b64bd3932eb3332bd3f0e213534bae9",
+        "independent_checks": 1283,
+        "root_byte_correspondence_sha256": "9f9a587bc938601c11e4752ce54c95f26be1f337d2d8069bdcfc83e43edd4754"
+      },
+      "descriptor": {
+        "owner": "sol_hard_semantics_v10",
+        "status": "FOCUSED_AND_EXPANDED_GREEN; remaining composed gates required",
+        "root": "/private/tmp/java2go-descriptor-binder56-astra-i8x9wm89",
+        "source_manifest_sha256": "47ba6266bd5eeead5dabd0922d03b2f37aadaea1ce982cb6ba33347ef8401770",
+        "production_patch_sha256": "994e45a17b752f81504f048874c432f65762b007a05847f7b5e9cda124830cc0",
+        "focused_red_sha256": "983a9dcf38e19b09c7e1edc761c586a1171d9d584b38202f8ed567ddf4e8c877",
+        "focused_green_sha256": "07841a2a75ae9b9f315662471dd3d8c6114c2007101b954dfb0d125b3f426d94",
+        "expanded_green_sha256": "03f540d668cb1f8e8357f721a8eb65c481c3a74c3e83a08f2a73bc8c830333cc",
+        "scope": "Three focused parents/ten subtests preserve source-cast control. Original expanded workflow passes all47 stages/72 comparisons, 18 normal and18 race executions. Source/emitted binder provenance and captured first-bound identity repaired; runtime array-store checks unchanged. Historical Astra paths retained, no further Astra work.",
+        "sol_static_review_sha256": "d17b852571877056c6f62ce5eba23dc9930eed2e01454d62a588458734c3b9cb"
+      },
+      "native_restoration": {
+        "status": "INDEPENDENT_ORIGINAL22_GREEN; other composed gates pending",
+        "root": "/private/tmp/java2go-map-restoration57-sol-8hms2qk2",
+        "source_manifest_sha256": "4a670e095885d79a2cf018c7d5720d5ebfa3e79e81df95b36bb1d175123a60fd",
+        "lineage_audit_sha256": "adb6f298236b804af4c6e6082ee72f805bed66820eef627ad91e1156271926a3",
+        "terminal_sha256": "35db9cf5bffa73509979fbd4636f2f93ca2e0b3620d4f19c5a66559bcaff3312",
+        "independent_audit_sha256": "72d8f60b9433a5752366958d36bafe840c9477b5019b80a75a9121449d02b468",
+        "scope": "Eight restored modules and nine bounded shared-file hunk paths; Map/binder changes and509 tests/fixtures retained. All22 parents/24 keys pass after prior17 failures. Outer transport has no aggregate supervisor receipt; three Queue helpers have plain child Go and no separate nested receipts."
+      },
+      "native_descriptor_composition": {
+        "status": "FOCUSED3_GREEN; ORIGINAL22_RUNNING; remaining gates unrun",
+        "owner": "sol_abstract_collections_v2",
+        "source": "/private/tmp/java2go-map-descriptor-compose58-sol-ojx30t8b/candidate-v1",
+        "source_manifest_sha256": "f40a20179e832125166a9a75689e11063cbe98e2aa835c5e4bafc8665b801a29",
+        "source_files": 1978,
+        "remaining": "Focused descriptor, original22, Map/source/native/imported/raw/fullshadow/minimal/expanded affected gates; full accumulated CI/Gson. Older nativeString ABI stays separate from unrun canonical2081 composition.",
+        "focused_green_sha256": "0b7a4bb61936243bac488cbd22459f6bb6fe9339c42ccbb83838b1f5df45bb46"
+      },
+      "ordinary_imports": {
+        "status": "AUTHOR_ASSUMPTIONS_INVALID; correct direct-member V3 preparation only",
+        "discovery_root": "/private/tmp/java2go-sol-ordinary-discovery-author-v9-t7EXYClk",
+        "capture_seal_sha256": "11a875182d2074e5902e4b897a9a44199beee552af97df6886ed2b9c575e32e8",
+        "accepted_observations_sha256": "03a6bd3b4691f0d5d34f0a4f1523c11b0c0ec2450a1aa63935bc4bb7ad04837f",
+        "scope": "Actual JDK21 selects q.X under ordinary Owner.*; inherited diamond prediction rejects unresolvedX. Direct Owner.X hiding is valid. Two valid observations seed17 repeated3times each, not three distinct seeds. Invalid fixtures and receipts preserved; proposed inherited enumeration withdrawn. Ordinary imports use direct declared types, static inherited handling separate."
+      },
+      "basename": {
+        "status": "INDEPENDENT_FOCUSED_GREEN; original13/full8 pending",
+        "source_manifest_sha256": "cb8cccc4385c0a21923c5dfc87b8264daefd64e0d2991f5e3107aa328db03301",
+        "red_result_sha256": "c503ad5819e881c5d47a743ac37a461a28ba64c4b7bb7231ca118f094e5c6f0e",
+        "green_result_sha256": "8ccd7335cf7084314450f6f3feb30bf156b7a9ad172956472ee6eeb1b4a33570",
+        "scope": "Two parents/three branches; original Java oracle preserved, dollar/leading reserved basenames encoded injectively, fresh JVM/generated race parity. Original Dollar13/full8 and dollar package remain mandatory.",
+        "independent_audit_sha256": "88d7533ab9a2054096802e243964e2ac22888c07045dcbcea53f08268523b22d"
+      },
+      "performance": {
+        "owner": "sol_performance_v10",
+        "harness_owner": "sol_bigmath_audit_v6",
+        "status": "OLDER_ABI_ALLOCATION_GREEN; canonical executable baseline preparation, no speed gain claim",
+        "allocation_result_sha256": "4b652d41ebda25f44fe1d13fe1ae6465cd8694111ed4e0d5012c3ba84c286b2a",
+        "analysis_sha256": "b81ff701daa9402c35393f5f998aad4e48aba237256105bc938eadcab66a6dc3",
+        "canonical_design_sha256": "dfdbaafa5d334314185f1dd3c131b26fb5301065b0759544d66ae17d6613a354",
+        "scope": "315 actual Main calls/31 commands match frozen JVM observations. Adapter/closure sites0.53\u20130.63% of whole-process allocated objects; CPU unmeasured. Canonical comparator reflection and synthesized int/long append Strings are hypotheses; no fastpath implementation. Timing/allocation remain separate and measurement exclusive."
+      },
+      "durability": {
+        "status": "ROOT_VERIFIED_IGNORED_LOCAL_FIXED_CUTOFF; new supplement preparing",
+        "store": ".campaign/checkpoints/checkpoint19/sol-progress57-fixed-cutoff",
+        "root_audit_sha256": "50032a40bdca3f1b775a851481642add5270d7b6089fc0d300a267c051767529",
+        "core_cutoff_utc": "2026-09-30 01:38:57 UTC",
+        "core_archive_sha256": "1853ffdde5de68e0fe015c1d523f7543f6b5bb4acfb4ae3a53b59521769cb18d",
+        "npe_supplement_sha256": "20a1c94ce56e62b20012133c67521c7aee8600b598ef2dac5de48e0225301bdb",
+        "scope": "Core2681 safe members/14 source scopes plus NPEindependent21member supplement. Later IO1943, binder/descriptor/native1977/ordinary/performance not claimed in older archive. Local ignored artifacts, no remote evidence claim.",
+        "new_supplement": {
+          "status": "ROOT_VERIFIED_IGNORED_LOCAL_COPY",
+          "store": ".campaign/checkpoints/checkpoint19/sol-progress58-fixed-cutoff",
+          "cutoff_UTC": "2026-09-30 02:48:34 UTC",
+          "archive_sha256": "0ca9a19716c418d97a950087a6d2ef65f988d9b62bf109279e917ce5d742ba03",
+          "inventory_sha256": "344a186059a7807f53cc1ac5ca0dc91ed55c8cd6aa5bbf7dba5c52ac77fd8d5b",
+          "root_audit_sha256": "a1e5ec855098fad5c334b86d7b4d7d7c579371a40df77fc79d7cccd9eb7db844",
+          "members": 3273,
+          "source_scopes": 19,
+          "limits": "Local evidence only; later Sol handoffs/reviews, composed1978 results and final root IO publication/commit are outside this fixed cutoff. Compiled artifacts omitted explicitly; profiling data retained."
+        }
+      },
+      "current_execution": {
+        "lane1": "Sol native-descriptor1978 original22 session41397 after accepted composedfocused3; no later gate automatically granted.",
+        "lane2": "Free; canonical actualCodec executable readiness preparation by Solbigmath/performance only, no measurement grant.",
+        "lane3": "Solhard standalone1970 priorfocus8 then fullshadow14/minimal15 only after verifiedGREENcleanup; no implementation edits."
+      }
     }
   },
   "work_allocation": {
-    "updated_at": "2026-09-30T01:21:09.379276+00:00",
+    "updated_at": "2026-09-30T02:53:01.717328+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -5437,12 +5536,12 @@
       "sol_dollar_v2_audit_v6": "Independent dollar identifier v2 readiness and naming injectivity",
       "sol_set_shadow_prep_v6": "Original Set and shadow oracle/acceptance preparation",
       "sol_io_string_output_v6": "Canonical String output mismatch repair through TDD",
-      "sol_writer_dispatch_v6": "Writer.write canonical argument dispatch repair through TDD"
+      "sol_writer_dispatch_v6": "Writer.write canonical argument dispatch repair through TDD",
+      "sol_hard_semantics_v10": "Hardest compiler/runtime semantics, descriptor provenance and import review",
+      "sol_performance_v10": "Dedicated general optimization research, proof obligations and measurement design"
     },
-    "astra_model": "gpt-6-astra",
-    "astra_reasoning_effort": "high",
-    "astra_scope": "Hard semantics/design and specific inherited Enum override planner and native EntrySet callback repairs. Sol owns routine implementation, integration, regression authoring, harnesses and independent reviews.",
-    "astra_routine_roles": "Build/verifier agents idle; runtime/performance agents consult only when hard issues arise.",
+    "astra_scope": "None. All three remaining Astra agents halted at user request; historical results remain immutable.",
+    "astra_routine_roles": "None; do not spawn, resume or assign work to Astra.",
     "ownership": "Challenge/oracle authors remain separate from implementation owners. Implementers may not change frozen expectations or weaken challenges.",
     "execution": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
     "capacity_evidence": {
@@ -5451,7 +5550,7 @@
       "memory_bytes": 137438953472,
       "reason": "User requested additional parallelism; host capacity checked before increasing concurrency."
     },
-    "latest_parallelism": "Resumed two independent Sol challenge/oracle authors and five Sol implementation lanes after user continue; three heavy correctness lanes maximum.",
+    "latest_parallelism": "Two independent Sol author/auditor roles, five existing Sol implementation/harness lanes, plus Sol hard-semantics and dedicated Sol performance owners. At most three heavy correctness workloads; performance measurements exclusive.",
     "additional_sol_workers": {
       "model": "gpt-6.1-sol",
       "reasoning": "high",
@@ -5462,6 +5561,14 @@
         "sol_codec_terminal_audit_v5": "independent actualCodec finalv2 raw audit"
       },
       "rule": "Astra reserved hardest semantics; new Sol work isolated/private with explicit ownership and root-granted heavy workloads."
-    }
+    },
+    "agent_policy": "ONLY_SOL"
+  },
+  "goal": {
+    "objective": "Run the continuous adversarial Java-to-Go TDD campaign using GPT-6.1 Sol agents exclusively, including challenge authoring, compiler/runtime repairs, difficult semantics, independent verification and dedicated performance research. Translate actual dependency implementations, preserve correctness and accumulated regressions, compare JVM and Go observations, commit and push verified milestones to origin branches, and continue toward Netty until the user stops the campaign, subject to execution and usage limits. No finite corpus establishes support for every Java application.",
+    "updated_at": "2026-09-30T02:53:01.717328+00:00",
+    "requested_by": "user",
+    "agent_policy": "Sol only; gpt-6.1-sol/high; no Astra agents may be spawned or resumed.",
+    "app_goal_api_note": "Existing app goal objective already names Sol authors and implementers. Available goal API exposes status changes only; its displayed objective cannot be edited or resumed through that API. No false completion or replacement was performed."
   }
 }
