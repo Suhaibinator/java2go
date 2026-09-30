@@ -1,6 +1,10 @@
 package transpiler
 
-import "go/ast"
+import (
+	"go/ast"
+
+	"github.com/NickyBoy89/java2go/symbol"
+)
 
 func init() { registerIntrinsicOwner("java.util.function.Function", true) }
 
@@ -53,4 +57,21 @@ func isFunctionCallbackExpr(value ast.Expr, ctx Ctx) bool {
 	}
 	owner, ok := selector.X.(*ast.Ident)
 	return ok && owner.Name == markStdjavaUsage(ctx)
+}
+
+// A source implementation already supplies Function's Go method contract.
+// Register its declared Java edge as well, so erased reads retain the same
+// nominal proof as statically typed uses. Source shadows and unrelated names
+// are excluded by the canonical owner resolver, never by method shape.
+func sourceFunctionInterfaceIDs(scope *symbol.ClassScope, ctx Ctx) []ast.Expr {
+	if scope == nil {
+		return nil
+	}
+	declaring := classHeaderTypeCtx(scope, ctx)
+	for _, parent := range append(append([]string(nil), scope.ImplementedInterfaces...), scope.Superclass) {
+		if isExternalFunctionType(parent, declaring) {
+			return []ast.Expr{javaTypeIDLiteral("java.util.function.Function", ctx)}
+		}
+	}
+	return nil
 }

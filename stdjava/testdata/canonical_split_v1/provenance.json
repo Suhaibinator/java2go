@@ -1,0 +1,23 @@
+{
+  "17": {
+    "report": "/private/tmp/java2go-canonical-split-sol-v1-z4_85lgx/oracles/run-canonical-split-v1-seed-17-_kns_huq/report.json",
+    "report_sha256": "5531a0193b74f4cdcfa79147c7ac57a9c9fde2c47c58a1cfb7a5e06a50a11792",
+    "stdout": "/private/tmp/java2go-canonical-split-sol-v1-z4_85lgx/oracles/run-canonical-split-v1-seed-17-_kns_huq/oracle.stdout",
+    "stdout_sha256": "6ae31a818923fe96d11d3cb85736fd7044d88c5f434f56d52ddac83b9683a678",
+    "target": "/private/tmp/java2go-canonical-split-sol-v2-hwjaqngj/source/stdjava/testdata/canonical_split_v1/seed-17.stdout"
+  },
+  "41": {
+    "report": "/private/tmp/java2go-canonical-split-sol-v1-z4_85lgx/oracles/run-canonical-split-v1-seed-41-enswuj31/report.json",
+    "report_sha256": "c2b1bd95389ea8807e1d32b77d60a2bc19b815cdca655599691af5088790aee2",
+    "stdout": "/private/tmp/java2go-canonical-split-sol-v1-z4_85lgx/oracles/run-canonical-split-v1-seed-41-enswuj31/oracle.stdout",
+    "stdout_sha256": "330ef4830c8ca48202162faf03a3d829c61bbb629db7d06f28bede6df683c35d",
+    "target": "/private/tmp/java2go-canonical-split-sol-v2-hwjaqngj/source/stdjava/testdata/canonical_split_v1/seed-41.stdout"
+  },
+  "97": {
+    "report": "/private/tmp/java2go-canonical-split-sol-v1-z4_85lgx/oracles/run-canonical-split-v1-seed-97-kd3rel7z/report.json",
+    "report_sha256": "8a0c52fe3c7ce2b9550f14f343c58a23d981a873c8bcd203d73359f8af56457b",
+    "stdout": "/private/tmp/java2go-canonical-split-sol-v1-z4_85lgx/oracles/run-canonical-split-v1-seed-97-kd3rel7z/oracle.stdout",
+    "stdout_sha256": "257a35bdc0a89af12a0f030927c7f14b139d1082377a3f4bfe0be9ca69af04bd",
+    "target": "/private/tmp/java2go-canonical-split-sol-v2-hwjaqngj/source/stdjava/testdata/canonical_split_v1/seed-97.stdout"
+  }
+}

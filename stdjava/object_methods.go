@@ -15,7 +15,7 @@ func ObjectInstanceOf(value any, expected TypeID) bool {
 		return true
 	}
 	actual, ok := ObjectDynamicType(value)
-	return ok && JavaTypeAssignable(actual, expected)
+	return (ok && JavaTypeAssignable(actual, expected)) || nativeJavaInterfaceAssignable(value, expected)
 }
 
 // ObjectPattern supplies the source-declared view after a successful pattern

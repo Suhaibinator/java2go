@@ -38,6 +38,9 @@ func intrinsicOwnerKey(owner string) string {
 // unqualified names; exact qualified external names never borrow a source name.
 func canonicalIntrinsicOwner(javaType string, ctx Ctx) (string, bool) {
 	base, _ := parseJavaTypeString(strings.TrimSpace(javaType))
+	if owner := canonicalMapEntryOwner(base, ctx); owner != "" {
+		return owner, true
+	}
 	owners, registered := intrinsicOwners[stripJavaQualifier(base)]
 	if !registered || resolveClassScopeByQualifiedName(ctx, base) != nil {
 		return "", false

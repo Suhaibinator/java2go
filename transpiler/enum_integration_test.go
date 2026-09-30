@@ -133,7 +133,7 @@ public enum State { ON, OFF }
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "return StateValueOf(in)") {
+	if !strings.Contains(flat, "return StateValueOfJava2goExecution(__java2goExecution, in)") {
 		t.Fatalf("expected valueOf invocation to call generated helper, got:\n%s", out)
 	}
 }
@@ -152,7 +152,7 @@ public enum Switch implements Flag {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "type Switch struct { enumName string enumOrdinal int32 Flag }") {
+	if !strings.Contains(flat, "type Switch struct { enumName string enumOrdinal int32 __java2goEnumMetadata stdjava.EnumMetadata Flag }") {
 		t.Fatalf("expected enum to embed implemented interfaces, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "Switch) IsOn() bool") {

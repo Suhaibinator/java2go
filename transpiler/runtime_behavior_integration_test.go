@@ -1,6 +1,9 @@
 package transpiler
 
 import (
+	"fmt"
+	"go/parser"
+	"go/token"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -8,8 +11,46 @@ import (
 	"testing"
 )
 
+// main and main_test are companion templates for same-package and external
+// tests respectively. Explicit package names must already match the generated
+// package. Bind only the companion identifier; generated code and test bodies
+// retain their original bytes.
+func bindGeneratedBehaviorTestPackage(generatedGo, goTestSource string) (string, error) {
+	generated, err := parser.ParseFile(token.NewFileSet(), "generated.go", generatedGo, parser.PackageClauseOnly)
+	if err != nil {
+		return "", fmt.Errorf("parse generated Go package: %w", err)
+	}
+	companionPositions := token.NewFileSet()
+	companion, err := parser.ParseFile(companionPositions, "generated_behavior_test.go", goTestSource, parser.PackageClauseOnly)
+	if err != nil {
+		return "", fmt.Errorf("parse companion Go test package: %w", err)
+	}
+	generatedName, companionName := generated.Name.Name, companion.Name.Name
+	var boundName string
+	switch companionName {
+	case "main":
+		boundName = generatedName
+	case "main_test":
+		boundName = generatedName + "_test"
+	default:
+		if companionName == generatedName || companionName == generatedName+"_test" {
+			return goTestSource, nil
+		}
+		return "", fmt.Errorf("companion Go test package %q does not match generated package %q", companionName, generatedName)
+	}
+	start := companionPositions.Position(companion.Name.Pos()).Offset
+	end := companionPositions.Position(companion.Name.End()).Offset
+	return goTestSource[:start] + boundName + goTestSource[end:], nil
+}
+
 func runGoTestInTempModule(t *testing.T, generatedGo string, goTestSource string) {
 	t.Helper()
+
+	boundTestSource, err := bindGeneratedBehaviorTestPackage(generatedGo, goTestSource)
+	if err != nil {
+		t.Fatal(err)
+	}
+	goTestSource = boundTestSource
 
 	tempDir := t.TempDir()
 

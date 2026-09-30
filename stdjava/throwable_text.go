@@ -26,6 +26,12 @@ func ThrowableToStringExecution(execution *Execution, receiver any) string {
 	if invoke, ok := throwableToStringOverrides.Load(reflect.TypeOf(receiver)); ok {
 		return invoke.(func(*Execution, any) string)(execution, receiver)
 	}
+	if registeredJavaSourceValue(receiver) {
+		if rendered, ok := callRegisteredSourceToString(execution, receiver); ok {
+			return rendered
+		}
+		return ThrowableToStringDefaultExecution(execution, receiver)
+	}
 	// Existing generated execution companions and runtime implementations also
 	// expose Java overrides through this protocol. Preserve their exact result,
 	// including a null String, without falling back to native Error formatting.

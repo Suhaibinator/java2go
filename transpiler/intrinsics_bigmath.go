@@ -59,13 +59,20 @@ func init() {
 			// String reference identity/null conversions use the reference coercion
 			// path; convertJavaValue only reports the conversions it actively emits.
 			converted := coerceArgumentToExpectedType(args[0], invocationArgumentNode(node, 0), "String", ctx, source)
-			return stdjavaCall(ctx, "New"+name, converted)
+			return stdjavaCall(ctx, "New"+name+"JavaString", converted)
 		})
+		registerInstanceIntrinsic(name, "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return methodCall(recv, "StringJava2goExecution", intrinsicExecutionExpr(ctx))
+		})
+		registerInstanceIntrinsicResultType(name, "toString", "String")
 		for _, method := range []struct {
 			java, goName, result string
 			arity                int
 		}{
-			{"toString", "String", "String", 0}, {"equals", "Equals", "boolean", 1}, {"compareTo", "CompareTo", "int", 1}, {"hashCode", "HashCode", "int", 0},
+			{"equals", "Equals", "boolean", 1}, {"compareTo", "CompareTo", "int", 1}, {"hashCode", "HashCode", "int", 0},
 			{"byteValue", "ByteValue", "byte", 0}, {"shortValue", "ShortValue", "short", 0}, {"intValue", "IntValue", "int", 0}, {"longValue", "LongValue", "long", 0}, {"floatValue", "FloatValue", "float", 0}, {"doubleValue", "DoubleValue", "double", 0},
 		} {
 			registerInstanceIntrinsic(name, method.java, ioMethod(method.goName, method.arity))

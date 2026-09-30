@@ -59,7 +59,7 @@ func resolveGenericMethodHelperNames() {
 			reserve(pkg, classDispatchTypeName(scope))
 			reserve(pkg, interfaceDefaultCarrierName(scope))
 		}
-		for _, field := range scope.Fields {
+		for _, field := range classFieldBindings(scope) {
 			if field != nil {
 				reserve(pkg, field.Name)
 			}

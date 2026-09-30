@@ -12,6 +12,9 @@ func digestIORuntimeTypeExpr(baseName string, ctx Ctx) (ast.Expr, bool) {
 	if resolveClassScopeByQualifiedName(ctx, baseName) != nil {
 		return nil, false
 	}
+	if owner, known := canonicalIntrinsicOwner(baseName, ctx); known && owner == "java.io.BufferedReader" {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr("BufferedReader", ctx)}, true
+	}
 	base := stripJavaQualifier(baseName)
 	switch base {
 	case "InputStream", "OpenOption", "StandardOpenOption":
@@ -79,7 +82,7 @@ func registerDigestIOIntrinsics() {
 		}
 		return stdjavaCall(ctx, "NewInputStreamReaderExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
 	})
-	registerInstanceIntrinsic("Class", "getResourceAsStream", ioMethod("GetResourceAsStream", 1))
+	registerInstanceIntrinsic("Class", "getResourceAsStream", ioMethod("GetResourceAsStreamReference", 1))
 	registerInstanceIntrinsicResultType("Class", "getResourceAsStream", "InputStream")
 
 	registerConstructorIntrinsic("BufferedInputStream", func(_ []ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {

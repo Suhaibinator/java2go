@@ -7,9 +7,12 @@ type mapKeysIterable[K, V any] struct{ source *Map[K, V] }
 
 func (view *mapKeysIterable[K, V]) Slice() []K { return view.source.KeySet() }
 
-func MapKeysView[K, V any](source *Map[K, V]) IterableView[K] {
+func MapKeysView[K, V any](source *Map[K, V]) *mapKeysIterable[K, V] {
 	ReferenceRequireNonNull(source)
-	return &mapKeysIterable[K, V]{source: source}
+	if source.keyView == nil {
+		source.keyView = &mapKeysIterable[K, V]{source: source}
+	}
+	return source.keyView.(*mapKeysIterable[K, V])
 }
 
 func (view *mapKeysIterable[K, V]) IteratorJava2goExecution(execution *Execution) JavaIterator {

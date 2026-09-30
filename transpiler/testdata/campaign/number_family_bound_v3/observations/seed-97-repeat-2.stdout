@@ -1,0 +1,15 @@
+identity=true:true:true,state=1:1:1:0
+method-shadow=true
+factory=true:true:true:true:true,calls=4
+reject-string=1:1:1:0
+reject-shadow=1:1:1:0
+retained=true,state=2:1:1:0
+bound-cast=true,state=2:1:1:1
+bound-cast-reject=2:1:1:2
+bound-cast-consumer=2:1:1:3
+broad=true,state=4:2:1:3
+read-cast=5:2:1:3
+snapshot-cast=5:2:2:3
+same-pollution=true,state=5:2:3:3
+null=true:true,state=6:3:4:3
+restored=true,state=7:4:4:3

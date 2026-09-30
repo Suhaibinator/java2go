@@ -19,8 +19,8 @@ func LocaleForLanguageTag(tag string) *Locale {
 	StringRequireNonNull(tag)
 	return &Locale{language.Make(tag)}
 }
-func (*Locale) JavaDynamicTypeID() TypeID { return "Locale" }
-func init()                               { RegisterJavaType("Locale", ObjectTypeID) }
+func (*Locale) JavaDynamicTypeID() TypeID { return "java.util.Locale" }
+func init()                               { RegisterJavaType("java.util.Locale", ObjectTypeID, SerializableTypeID, CloneableTypeID) }
 func StringToUpperCaseLocale(value string, locale *Locale) string {
 	StringRequireNonNull(value)
 	ReferenceRequireNonNull(locale)
@@ -31,4 +31,13 @@ func StringToLowerCaseLocale(value string, locale *Locale) string {
 	StringRequireNonNull(value)
 	ReferenceRequireNonNull(locale)
 	return cases.Lower(locale.tag).String(value)
+}
+
+func LocaleForLanguageTagJavaString(tag *JavaString) *Locale {
+	ReferenceRequireNonNull(tag)
+	text, scalar := dateFormatScalarLookupText(tag)
+	if !scalar {
+		panic(NewUnsupportedOperationException("non-scalar locale language-tag lookup"))
+	}
+	return LocaleForLanguageTag(text)
 }

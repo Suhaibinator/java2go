@@ -39,7 +39,7 @@ func assertionErrorConstructorArguments(className string, arguments *sitter.Node
 		count = int(arguments.NamedChildCount())
 	}
 	expected := []string{}
-	helper := "NewAssertionErrorExecution"
+	helper := "NewJavaAssertionErrorExecution"
 	switch count {
 	case 0:
 	case 1:
@@ -49,7 +49,7 @@ func assertionErrorConstructorArguments(className string, arguments *sitter.Node
 		}
 		switch actual {
 		case "char":
-			helper = "NewAssertionErrorCharExecution"
+			helper = "NewJavaAssertionErrorCharExecution"
 			expected = []string{"char"}
 		case "byte", "short", "int":
 			expected = []string{"int"}

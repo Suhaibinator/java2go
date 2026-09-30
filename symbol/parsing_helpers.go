@@ -29,6 +29,9 @@ func Lowercase(name string) string {
 // HandleExportStatus is a convenience method for renaming methods that may be
 // either public or private, and need to be renamed
 func HandleExportStatus(exported bool, name string) string {
+	if dollarName := dollarIdentifierVisibility(exported, name); dollarName != "" {
+		return dollarName
+	}
 	if exported {
 		return Uppercase(name)
 	}

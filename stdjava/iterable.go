@@ -58,5 +58,8 @@ func (view *mapValuesIterable[K, V]) Slice() []V { return view.source.Values() }
 // Both collection protocols retain the same view without copying the backing map.
 func MapValuesView[K, V any](source *Map[K, V]) IterableView[V] {
 	ReferenceRequireNonNull(source)
-	return &mapValuesIterable[K, V]{source: source}
+	if source.valueView == nil {
+		source.valueView = &mapValuesIterable[K, V]{source: source}
+	}
+	return source.valueView.(*mapValuesIterable[K, V])
 }

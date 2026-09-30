@@ -14,8 +14,9 @@ import (
 // MessageDigest implements the stateful digest operations using Go's standard
 // cryptographic hashes. Provider selection, cloning and MD2 are not supported.
 type MessageDigest struct {
-	algorithm string
-	hash      hash.Hash
+	algorithm          string
+	algorithmReference *JavaString
+	hash               hash.Hash
 }
 
 type NoSuchAlgorithmException struct{ ThrowableBase }

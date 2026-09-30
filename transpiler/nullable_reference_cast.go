@@ -2,17 +2,14 @@ package transpiler
 
 import "go/ast"
 
-// Java checkcast preserves all null references, including a typed nil or the
-// concrete String ABI's null sentinel behind Object. Go assertions reject nil
-// interfaces, so normalize null before using the existing non-null assertion.
+// Java checkcast preserves all null references, including a typed nil behind
+// Object. Go assertions reject nil interfaces, so normalize null before using
+// the existing non-null assertion.
 // A parameterized IIFE evaluates the operand exactly once without capturing
 // caller identifiers. Nominal/subobject and array casts use their own helpers.
 func nullableReferenceAssertion(value, target ast.Expr, targetJavaType string, ctx Ctx) ast.Expr {
 	operand := ast.NewIdent("value")
 	zero := zeroValueForType(target)
-	if isJavaStringType(targetJavaType) {
-		zero = javaNullStringExpr()
-	}
 	return &ast.CallExpr{
 		Fun: &ast.FuncLit{
 			Type: &ast.FuncType{

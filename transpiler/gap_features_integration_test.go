@@ -117,6 +117,7 @@ import (
 )
 
 func TestGenericEnumRuntime(t *testing.T) {
+    GenericOperationJava2goEnsureInitialized(stdjava.NewExecution())
     helper := NewGenericOperationApplyHelper[*stdjava.Double](DOUBLE)
     if got := helper.Apply(stdjava.BoxDouble(2.5)); got != 5 {
         t.Fatalf("DOUBLE.apply(2.5) = %v, want 5", got)

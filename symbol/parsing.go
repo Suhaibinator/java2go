@@ -139,6 +139,19 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 		case "package_declaration":
 			filePackage = node.NamedChild(0).Content(source)
 		case "import_declaration":
+			// The table binds individual imported names. On-demand imports do
+			// not import their owner as a type (Math.* does not import Math).
+			// Their declarations remain in the AST for on-demand resolution.
+			// Static members have separate type and value namespaces; resolve them
+			// from their retained declarations once their owner symbols are known.
+			wildcard, static := false, false
+			for index := 0; index < int(node.ChildCount()); index++ {
+				wildcard = wildcard || node.Child(index).Content(source) == "*"
+				static = static || node.Child(index).Type() == "static"
+			}
+			if wildcard || static {
+				continue
+			}
 			importedItem := node.NamedChild(0).ChildByFieldName("name").Content(source)
 			importPath := node.NamedChild(0).ChildByFieldName("scope").Content(source)
 
@@ -279,6 +292,11 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 				Name:      constName,
 				Arguments: args,
 				Body:      node.ChildByFieldName("body"),
+				Field: &Definition{
+					Name: ExportedGoBinding(constName), OriginalName: constName,
+					OriginalType: className, Type: className,
+					IsStatic: true, IsFinal: true, DeclarationNode: node,
+				},
 			})
 		case "enum_body_declarations":
 			// Parse the methods and constructors inside the enum
@@ -303,7 +321,7 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			&Definition{
 				Name:         HandleExportStatus(true, "name"),
 				OriginalName: "name",
-				OriginalType: "String",
+				OriginalType: "java.lang.String",
 				Type:         "string",
 			},
 			&Definition{
@@ -327,13 +345,14 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			&Definition{
 				Name:         scope.Class.Name + "ValueOf",
 				OriginalName: "valueOf",
+				OriginalType: scope.Class.OriginalName,
 				Type:         baseType,
 				IsStatic:     true,
 				Parameters: []*Definition{{
 					Name:         "name",
 					OriginalName: "name",
 					Type:         "string",
-					OriginalType: "String",
+					OriginalType: "java.lang.String",
 				}},
 			},
 		)
@@ -342,6 +361,20 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	discoverTrivialArrayAccessors(scope, source)
 
 	return scope
+}
+
+// ParseMethodDefinition parses an actual method declaration in its declaring
+// class's lexical type context, including parameter and local definitions. The
+// declaring scope is not modified; callers can lower a constant-specific body
+// without borrowing the enum-level method's locals or constructing a Java AST.
+func ParseMethodDefinition(node *sitter.Node, source []byte, declaring *ClassScope) *Definition {
+	if node == nil || node.Type() != "method_declaration" || declaring == nil {
+		return nil
+	}
+	scope := *declaring
+	scope.Methods = nil
+	parseClassMember(&scope, node, source)
+	return scope.Methods[0]
 }
 
 // parseClassMember parses a single class member (field, method, constructor, or nested class)

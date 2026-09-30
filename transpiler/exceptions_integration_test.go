@@ -85,9 +85,7 @@ public class ExProgram {
 	if !strings.Contains(out, `stdjava.NewIllegalArgumentExceptionExecution(__java2goExecution, "negative input")`) {
 		t.Fatalf("expected thrown exception constructor to forward the invoking execution, got:\n%s", out)
 	}
-	if !strings.Contains(out, `stdjava.CaughtAs(`) {
-		t.Fatalf("expected catch dispatch via stdjava.CaughtAs, got:\n%s", out)
-	}
+	requireNominalThrowableCatchGuard(t, out, "java.lang.RuntimeException")
 
 	runGeneratedWithStdjava(t, out, `
 package main
@@ -374,9 +372,7 @@ public class ErrorProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, `stdjava.CaughtAs(`) {
-		t.Fatalf("catch (Exception) should now dispatch through CaughtAs, got:\n%s", out)
-	}
+	requireNominalThrowableCatchGuard(t, out, "java.lang.Exception")
 
 	runGeneratedWithStdjava(t, out, `
 package main

@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"strconv"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/NickyBoy89/java2go/astutil"
 	"github.com/NickyBoy89/java2go/nodeutil"
@@ -80,23 +81,30 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// The declarations and fields for the class
 		declarations := []ast.Decl{}
 		fields := &ast.FieldList{}
+		if state := abstractMapStateField(ctx); state != nil {
+			fields.List = append(fields.List, state)
+		}
 
 		// Handle inheritance: embed superclass and implemented interfaces
 		typeParams := ctx.currentClass.TypeParameterNames()
 
 		if superNode := node.ChildByFieldName("superclass"); superNode != nil {
+			headerCtx := classHeaderTypeCtx(ctx.currentClass, ctx)
 			for _, t := range collectTypeNodes(superNode) {
 				// Resolve the written owner before reducing a builtin name. A qualified
 				// source superclass can share its simple name with a JDK class.
 				superBase, _ := parseJavaTypeString(t.Content(source))
-				superScope := resolveClassScopeByQualifiedName(ctx, superBase)
+				superScope := resolveClassScopeByQualifiedName(headerCtx, superBase)
+				if skipAbstractCollectionSuperclass(t.Content(source), headerCtx) {
+					continue
+				}
 				// A class extending a built-in exception embeds the stdjava runtime
 				// type so it inherits the Throwable method set and message storage.
-				if storage, builtin := builtinExceptionStorageTypeName(superBase, ctx); builtin {
+				if storage, builtin := builtinExceptionStorageTypeName(superBase, headerCtx); builtin {
 					fields.List = append(fields.List, &ast.Field{Type: stdjavaQualifiedExpr(storage, ctx)})
 					continue
 				}
-				if baseType := characterIOBaseTypeExpr(t.Content(source), ctx); baseType != nil {
+				if baseType := characterIOBaseTypeExpr(t.Content(source), headerCtx); baseType != nil {
 					fields.List = append(fields.List, &ast.Field{Type: baseType})
 					continue
 				}
@@ -118,11 +126,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				// embed would use the verbatim Java name (e.g. *Animal) while the type
 				// is generated as `animal`.
 				if superScope != nil && superScope.Class != nil && superScope.Class.Name != "" {
-					fields.List = append(fields.List, &ast.Field{Type: javaTypeStringToGoTypeExpr(
-						t.Content(source),
-						typeParams,
-						ctx,
-					)})
+					fields.List = append(fields.List, &ast.Field{Type: superclassEmbeddingTypeExpr(ctx.currentClass, t.Content(source), typeParams, headerCtx)})
 					continue
 				}
 				fields.List = append(fields.List, &ast.Field{Type: astutil.ParseTypeWithTypeParams(t, source, typeParams)})
@@ -247,11 +251,11 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 					if staticField {
 						spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}
-						if isJavaStringType(fieldDef.OriginalType) {
+						if isBuiltinJavaString(fieldDef.OriginalType, ctx) {
 							// A Java String field starts as null, not Go's empty-string zero.
 							// Keep that state observable even when a later static initializer
 							// overwrites it.
-							spec.Values = []ast.Expr{javaNullStringExpr()}
+							spec.Values = []ast.Expr{javaStringNullExpr(ctx)}
 						}
 						if fieldValueNode != nil && (!consolidateStaticInitialization || fieldDef.IsCompileTimeConstant) {
 							valueCtx := ctx.Clone()
@@ -314,11 +318,20 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		// Add the struct for the class (with type parameters if present)
+		if alias := superclassEmbeddingAliasDecl(ctx.currentClass, ctx); alias != nil {
+			declarations = append(declarations, alias)
+		}
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
 		declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
 		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
 		declarations = append(declarations, generateCharacterIOBridgeDecls(ctx)...)
 		declarations = append(declarations, generateFunctionSAMBridgeDecls(ctx)...)
+		declarations = append(declarations, generateIterationBridgeDecls(ctx)...)
+		declarations = append(declarations, generateMapEntryBridgeDecls(ctx)...)
+		declarations = append(declarations, generateAbstractCollectionDefaultDecls(ctx)...)
+		declarations = append(declarations, generateAbstractCollectionBridgeDecls(ctx)...)
+		declarations = append(declarations, generateAbstractMapDefaultDecls(ctx)...)
+		declarations = append(declarations, generateAbstractMapBridgeDecls(ctx)...)
 		declarations = append(declarations, generateRawUnboundReceiverEntryDecls(ctx)...)
 		declarations = append(declarations, generateClassSubobjectInstallerDecls(ctx)...)
 		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
@@ -515,6 +528,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			},
 		}
 
+		fields.List = append(fields.List, enumMetadataField(ctx))
 		// Embed implemented interfaces
 		typeParams := ctx.currentClass.TypeParameterNames()
 		if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
@@ -552,9 +566,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			declarations = append(declarations, registration)
 		}
 		declarations = append(declarations, sourceClassReferenceIdentityDecls(ctx.currentClass, ctx)...)
+		declarations = append(declarations, enumInstanceInitializerDecls(node.ChildByFieldName("body"), source, ctx)...)
 
 		// Generate ordinal constants to preserve declaration order
-		if len(ctx.currentClass.EnumConstants) > 0 {
+		{
 			ordinalSpecs := []ast.Spec{}
 			ordinalPrefix := "_" + symbol.Lowercase(ctx.className) + "_ordinal_"
 			for i, enumConst := range ctx.currentClass.EnumConstants {
@@ -565,36 +580,32 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				ordinalSpecs = append(ordinalSpecs, spec)
 			}
 
-			declarations = append(declarations, &ast.GenDecl{Tok: token.CONST, Specs: ordinalSpecs})
+			if len(ordinalSpecs) > 0 {
+				declarations = append(declarations, &ast.GenDecl{Tok: token.CONST, Specs: ordinalSpecs})
+			}
 
 			// Build enum instances
 			valueSpecs := []ast.Spec{}
 			valuesVarName := "_" + symbol.Lowercase(ctx.className) + "Values"
-			valuesSlice := []ast.Expr{}
 			for _, enumConst := range ctx.currentClass.EnumConstants {
-				ordinalIdent := &ast.Ident{Name: ordinalPrefix + enumConst.Name}
-				initializer := buildEnumConstantInitializer(enumConst, ordinalIdent, ctx, source)
-
 				valueSpecs = append(valueSpecs, &ast.ValueSpec{
-					Names:  []*ast.Ident{{Name: enumConst.Name}},
-					Values: []ast.Expr{initializer},
+					Names: []*ast.Ident{{Name: enumConst.EmittedName()}},
+					Type:  &ast.StarExpr{X: ast.NewIdent(ctx.className)},
 				})
-				valuesSlice = append(valuesSlice, &ast.Ident{Name: enumConst.Name})
 			}
 
-			declarations = append(declarations, &ast.GenDecl{Tok: token.VAR, Specs: valueSpecs})
+			if len(valueSpecs) > 0 {
+				variables := &ast.GenDecl{Tok: token.VAR, Specs: valueSpecs}
+				declarations = append(declarations, variables)
+				declarations = append(declarations, staticFieldStorageHelperDecls(variables, ctx)...)
+			}
 
 			declarations = append(declarations, &ast.GenDecl{
 				Tok: token.VAR,
 				Specs: []ast.Spec{
 					&ast.ValueSpec{
 						Names: []*ast.Ident{{Name: valuesVarName}},
-						Values: []ast.Expr{
-							&ast.CompositeLit{
-								Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}},
-								Elts: valuesSlice,
-							},
-						},
+						Type:  &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}},
 					},
 				},
 			})
@@ -608,31 +619,36 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						List: []*ast.Field{{Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}},
 					},
 				},
-				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valuesVarName}}}}},
+				Body: &ast.BlockStmt{List: []ast.Stmt{classInitializationEnsureStmt(ctx.currentClass, ast.NewIdent(executionNameForClass(ctx.currentClass)), ctx), &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valuesVarName}}}}},
 			})
 
 			// Generate valueOf(String) method
 			valueOfCases := []ast.Stmt{}
 			for _, enumConst := range ctx.currentClass.EnumConstants {
 				valueOfCases = append(valueOfCases, &ast.CaseClause{
-					List: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + enumConst.Name + "\""}},
-					Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: enumConst.Name}}}},
+					List: []ast.Expr{stdjavaCall(ctx, "JavaStringSwitchKey", javaStringLiteralUnitsExpr(utf16.Encode([]rune(enumConst.Name)), ctx))},
+					Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: enumConst.EmittedName()}}}},
 				})
 			}
 			valueOfCases = append(valueOfCases, &ast.CaseClause{
 				List: nil,
-				Body: []ast.Stmt{&ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.Ident{Name: "panic"}, Args: []ast.Expr{&ast.BinaryExpr{X: &ast.BasicLit{Kind: token.STRING, Value: "\"No enum constant \""}, Op: token.ADD, Y: &ast.Ident{Name: "name"}}}}}, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}},
+				Body: []ast.Stmt{&ast.ExprStmt{X: callIdent("panic", stdjavaCall(ctx, "NewJavaIllegalArgumentExceptionMessage", stdjavaCall(ctx, "ConcatJavaStrings", javaStringLiteralUnitsExpr(utf16.Encode([]rune("No enum constant "+javaSourceClassCanonicalName(ctx.currentClass)+".")), ctx), ast.NewIdent("name"))))}},
 			})
 
 			declarations = append(declarations, &ast.FuncDecl{
 				Name: &ast.Ident{Name: ctx.className + "ValueOf"},
 				Type: &ast.FuncType{
-					Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: "name"}}, Type: &ast.Ident{Name: "string"}}}},
+					Params:  &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: "name"}}, Type: javaStringReferenceType(ctx)}}},
 					Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}},
 				},
 				Body: &ast.BlockStmt{List: []ast.Stmt{
+					classInitializationEnsureStmt(ctx.currentClass, ast.NewIdent(executionNameForClass(ctx.currentClass)), ctx),
+					&ast.IfStmt{
+						Cond: &ast.BinaryExpr{X: ast.NewIdent("name"), Op: token.EQL, Y: ast.NewIdent("nil")},
+						Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ExprStmt{X: callIdent("panic", stdjavaCall(ctx, "NewJavaNullPointerExceptionMessage", javaStringLiteralUnitsExpr(utf16.Encode([]rune("Name is null")), ctx)))}}},
+					},
 					&ast.SwitchStmt{
-						Tag:  &ast.Ident{Name: "name"},
+						Tag:  stdjavaCall(ctx, "JavaStringSwitchKey", ast.NewIdent("name")),
 						Body: &ast.BlockStmt{List: valueOfCases},
 					},
 				}},
@@ -645,14 +661,14 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			declarations = append(declarations, &ast.FuncDecl{
 				Name: &ast.Ident{Name: symbol.HandleExportStatus(true, "name")},
 				Recv: receiver,
-				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "string"}}}}},
-				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: enumMetaNameField}}}}}},
+				Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: javaStringReferenceType(ctx)}}}},
+				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{stdjavaCall(ctx, "EnumNameJavaString", ast.NewIdent(ShortName(ctx.className)))}}}},
 			})
 
 			// String implements fmt.Stringer so every Go formatting path used for
 			// println, string concatenation, and String.valueOf observes Java's
 			// default Enum.toString() result instead of the backing Go struct.
-			declarations = append(declarations, buildEnumStringerBridgeDecls(ctx)...)
+			declarations = append(declarations, buildEnumStringerBridgeDecls(ctx, source)...)
 
 			// ordinal() accessor
 			declarations = append(declarations, &ast.FuncDecl{
@@ -675,7 +691,9 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		// Parse the enum body declarations (methods, constructors, etc.)
-		declarations = append(declarations, ParseDecls(node.ChildByFieldName("body"), source, ctx)...)
+		declarations = append(declarations, parseClassBodyDeclarations(node.ChildByFieldName("body"), source, ctx, true)...)
+		declarations = append(declarations, buildLazyClassInitializationDecls(node.ChildByFieldName("body"), source, ctx)...)
+		declarations = enumStaticExecutionDecls(declarations, ctx)
 
 		return declarations
 	}
@@ -839,7 +857,8 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) [
 // parameters from the implementing class, applies generated name casing, and
 // qualifies types that live in another generated package.
 func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
-	if isExternalFunctionType(javaType, ctx) {
+	ctx = classHeaderTypeCtx(ctx.currentClass, ctx)
+	if isExternalFunctionType(javaType, ctx) || canonicalIterationOwner(javaType, ctx) != "" || canonicalMapEntryOwner(javaType, ctx) != "" {
 		return nil
 	}
 	base, _ := parseJavaTypeString(javaType)
@@ -905,6 +924,7 @@ func interfaceHasDefaultMethods(scope *symbol.ClassScope, ctx Ctx) bool {
 			currentCtx.currentClass = current
 		}
 		for _, parentType := range current.ImplementedInterfaces {
+			currentCtx = classHeaderTypeCtx(current, currentCtx)
 			base, _ := parseJavaTypeString(parentType)
 			if hasDefaults(resolveClassScopeByQualifiedName(currentCtx, base), currentCtx) {
 				return true
@@ -979,6 +999,7 @@ func collectInterfaceDefaultMethods(scope *symbol.ClassScope, ctx Ctx, seen map[
 		ctx.currentClass = scope
 	}
 	for _, parentType := range scope.ImplementedInterfaces {
+		ctx = classHeaderTypeCtx(scope, ctx)
 		base, _ := parseJavaTypeString(parentType)
 		for _, inherited := range collectInterfaceDefaultMethods(resolveClassScopeByQualifiedName(ctx, base), ctx, seen) {
 			key := interfaceMethodSignature(inherited)
@@ -1384,9 +1405,10 @@ func sourceMethodIdentifierExists(name string) bool {
 }
 
 type classSubobjectAncestorPath struct {
-	scope         *symbol.ClassScope
-	typeArguments []string
-	selectors     []string
+	scope           *symbol.ClassScope
+	typeArguments   []string
+	goTypeArguments []ast.Expr
+	selectors       []string
 }
 
 // classSubobjectAncestorPaths records how a receiver reaches each separately
@@ -1400,6 +1422,10 @@ func classSubobjectAncestorPaths(scope *symbol.ClassScope, ctx Ctx) []classSubob
 
 	current := scope
 	currentArgs := append([]string(nil), scope.GoTypeParameterNames()...)
+	var receiverGoArguments []ast.Expr
+	for _, parameter := range scope.GoTypeParameterNames() {
+		receiverGoArguments = append(receiverGoArguments, &ast.Ident{Name: parameter})
+	}
 	selectors := []string{}
 	seen := map[*symbol.ClassScope]struct{}{}
 	var paths []classSubobjectAncestorPath
@@ -1427,11 +1453,14 @@ func classSubobjectAncestorPaths(scope *symbol.ClassScope, ctx Ctx) []classSubob
 			parentArgs = append(parentArgs, substituteJavaTypeParameters(argument, bindings))
 		}
 
-		selectors = append(selectors, parent.Class.Name)
+		selectors = append(selectors, superclassEmbeddedSelectorName(current, ctx))
 		paths = append(paths, classSubobjectAncestorPath{
 			scope:         parent,
 			typeArguments: append([]string(nil), parentArgs...),
-			selectors:     append([]string(nil), selectors...),
+			// Go storage arguments compose across raw edges independently of
+			// Java source arguments, whose erasures remain unchanged.
+			goTypeArguments: mapClassTypeArgsToAncestor(scope, receiverGoArguments, parent, ctx),
+			selectors:       append([]string(nil), selectors...),
 		})
 		current = parent
 		currentArgs = parentArgs
@@ -1450,17 +1479,20 @@ func classSubobjectPointerTypeExpr(
 		return &ast.InterfaceType{Methods: &ast.FieldList{}}
 	}
 
-	typeExpr := qualifiedNameExpr(scope.Class.Name, findJavaPackageForClassScope(scope), ctx)
 	typeParams := []string(nil)
 	if receiverScope != nil {
 		typeParams = append(receiverScope.TypeParameterNames(), receiverScope.GoTypeParameterNames()...)
 	}
-	effectiveTypeArguments := classTypeArgumentsWithRawFallback(scope, typeArguments, receiverScope)
-	if len(effectiveTypeArguments) > 0 {
-		args := make([]ast.Expr, 0, len(effectiveTypeArguments))
-		for _, argument := range effectiveTypeArguments {
-			args = append(args, javaTypeStringToGoTypeExpr(argument, typeParams, ctx))
-		}
+	args := sourceClassGoTypeArgumentExprs(scope, typeArguments, receiverScope, nil, typeParams, ctx)
+	return classSubobjectPointerTypeWithGoArguments(scope, args, ctx)
+}
+
+func classSubobjectPointerTypeWithGoArguments(scope *symbol.ClassScope, args []ast.Expr, ctx Ctx) ast.Expr {
+	if scope == nil || scope.Class == nil {
+		return &ast.InterfaceType{Methods: &ast.FieldList{}}
+	}
+	typeExpr := qualifiedNameExpr(scope.Class.Name, findJavaPackageForClassScope(scope), ctx)
+	if len(args) > 0 {
 		typeExpr = applyTypeArguments(typeExpr, args)
 	}
 	return &ast.StarExpr{X: typeExpr}
@@ -1514,7 +1546,7 @@ func generateClassSubobjectInstallerDecls(ctx Ctx) []ast.Decl {
 			}}},
 			Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
 				Names: []*ast.Ident{{Name: valueName}},
-				Type:  classSubobjectPointerTypeExpr(path.scope, path.typeArguments, scope, ctx),
+				Type:  classSubobjectPointerTypeWithGoArguments(path.scope, path.goTypeArguments, ctx),
 			}}}},
 			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{
 				Lhs: []ast.Expr{destination},
@@ -1698,6 +1730,7 @@ func defaultInterfaceTypes(scope *symbol.ClassScope, ctx Ctx) []string {
 		return nil
 	}
 	var defaults []string
+	ctx = classHeaderTypeCtx(scope, ctx)
 	for _, implemented := range scope.ImplementedInterfaces {
 		base, _ := parseJavaTypeString(implemented)
 		if interfaceHasDefaultMethods(resolveClassScopeByQualifiedName(ctx, base), ctx) {
@@ -1770,9 +1803,10 @@ func generateClassSelfSetter(ctx Ctx) ast.Decl {
 
 	for _, implemented := range defaultInterfaceTypes(scope, ctx) {
 		base, _ := parseJavaTypeString(implemented)
-		interfaceScope := resolveClassScopeByQualifiedName(ctx, base)
-		carrierConstructor := interfaceDefaultCarrierConstructorExpr(implemented, scope.TypeParameterNames(), ctx)
-		interfaceType := javaTypeStringToGoTypeExpr(implemented, scope.TypeParameterNames(), ctx)
+		headerCtx := classHeaderTypeCtx(scope, ctx)
+		interfaceScope := resolveClassScopeByQualifiedName(headerCtx, base)
+		carrierConstructor := interfaceDefaultCarrierConstructorExpr(implemented, scope.TypeParameterNames(), headerCtx)
+		interfaceType := javaTypeStringToGoTypeExpr(implemented, scope.TypeParameterNames(), headerCtx)
 		body = append(body, &ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.SelectorExpr{
 				X:   &ast.Ident{Name: recvName},
@@ -1794,7 +1828,7 @@ func generateClassSelfSetter(ctx Ctx) ast.Decl {
 			Fun: &ast.SelectorExpr{
 				X: &ast.SelectorExpr{
 					X:   &ast.Ident{Name: recvName},
-					Sel: &ast.Ident{Name: parent.Class.Name},
+					Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(scope, ctx)},
 				},
 				Sel: &ast.Ident{Name: classSelfSetterName(parent)},
 			},
@@ -2056,29 +2090,9 @@ func defaultStringFieldInitializationStmts(scope *symbol.ClassScope, receiverNam
 // by synthetic classes whose scope also contains compiler-generated capture
 // fields. Captures already hold their enclosing values before super() runs and
 // must not be reset while installing Java defaults for source-declared fields.
-func defaultStringFieldInitializationForFieldsStmts(
-	fields []*symbol.Definition,
-	receiverName string,
-	ctx Ctx,
-) []ast.Stmt {
-	if receiverName == "" {
-		return nil
-	}
-	var statements []ast.Stmt
-	for _, field := range fields {
-		if field == nil || field.IsStatic || !isJavaStringType(field.OriginalType) {
-			continue
-		}
-		statements = append(statements, &ast.AssignStmt{
-			Lhs: []ast.Expr{&ast.SelectorExpr{
-				X:   &ast.Ident{Name: receiverName},
-				Sel: &ast.Ident{Name: field.Name},
-			}},
-			Tok: token.ASSIGN,
-			Rhs: []ast.Expr{javaNullStringExpr()},
-		})
-	}
-	return statements
+func defaultStringFieldInitializationForFieldsStmts(fields []*symbol.Definition, receiverName string, ctx Ctx) []ast.Stmt {
+	// A zeroed *JavaString is already Java null, including during superclass construction.
+	return nil
 }
 
 func constructorMostDerivedInitStmt(receiverName string) ast.Stmt {
@@ -2317,6 +2331,9 @@ func explicitSuperConstructorAssignment(
 	if superType == "" {
 		return nil
 	}
+	if skipAbstractCollectionSuperclass(superType, ctx) && len(invocation.parsedArgs) == 0 {
+		return &ast.EmptyStmt{Implicit: true}
+	}
 	if statement := characterIOSuperConstructor(invocation.parsedArgs, ctx); statement != nil {
 		return statement
 	}
@@ -2341,7 +2358,7 @@ func explicitSuperConstructorAssignment(
 		return &ast.AssignStmt{
 			Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(storage)}},
 			Tok: token.ASSIGN,
-			Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, invocation.parsedArgs, ctx)},
+			Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, invocation.arguments, invocation.parsedArgs, ctx, source)},
 		}
 	} else {
 		if invocation.target != nil && invocation.target.Name != "" {
@@ -2359,9 +2376,7 @@ func explicitSuperConstructorAssignment(
 		}
 		constructorClassTypeArgs = classTypeArgumentsWithRawFallback(parent, superArgStrs, ctx.currentClass)
 		args := make([]ast.Expr, 0, len(constructorClassTypeArgs)+methodTypeArgCapacity)
-		for _, arg := range constructorClassTypeArgs {
-			args = append(args, javaTypeStringToGoTypeExpr(arg, inScopeTypeParameters(ctx), ctx))
-		}
+		args = append(args, sourceClassGoTypeArgumentExprs(parent, superArgStrs, ctx.currentClass, nil, ctx.currentClass.TypeParameterNames(), classHeaderTypeCtx(ctx.currentClass, ctx))...)
 		args = append(args, constructorInvocationMethodTypeArgs(invocation, source, ctx)...)
 		if mostDerived != nil && parent != nil && constructorUsesMostDerived(parent, ctx) {
 			constructorName = constructorWithSelfName(constructorName)
@@ -2389,10 +2404,14 @@ func explicitSuperConstructorAssignment(
 		callArgs = append([]ast.Expr{execution}, callArgs...)
 	}
 	call := &ast.CallExpr{Fun: constructor, Args: callArgs}
+	storageName := superName
+	if parent != nil {
+		storageName = superclassEmbeddedSelectorName(ctx.currentClass, ctx)
+	}
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.SelectorExpr{
 			X:   &ast.Ident{Name: receiverName},
-			Sel: &ast.Ident{Name: superName},
+			Sel: &ast.Ident{Name: storageName},
 		}},
 		Tok: token.ASSIGN,
 		Rhs: []ast.Expr{call},
@@ -2414,7 +2433,7 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 			return &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(storage)}},
 				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, nil, ctx)},
+				Rhs: []ast.Expr{builtinExceptionConstructorExpr(base, nil, nil, ctx, nil)},
 			}
 		}
 		return nil
@@ -2450,16 +2469,14 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 	}
 
 	base, typeArgs := parseJavaTypeString(scope.Superclass)
+	sourceTypeArgs := typeArgs
 	typeArgs = classTypeArgumentsWithRawFallback(parent, typeArgs, scope)
 	constructor := qualifiedNameExpr(
 		constructorName,
 		resolveJavaPackageForType(ctx, base, parent),
 		ctx,
 	)
-	goTypeArgs := make([]ast.Expr, 0, len(typeArgs))
-	for _, typeArg := range typeArgs {
-		goTypeArgs = append(goTypeArgs, javaTypeStringToGoTypeExpr(typeArg, scope.TypeParameterNames(), ctx))
-	}
+	goTypeArgs := sourceClassGoTypeArgumentExprs(parent, sourceTypeArgs, scope, nil, scope.TypeParameterNames(), classHeaderTypeCtx(scope, ctx))
 	// Generic constructor-only parameters cannot be inferred through the erased
 	// ReferenceArray ABI. Java's implicit empty invocation selects their bounds.
 	for _, typeArg := range methodInvocationTypeArgumentJavaTypes(varargsTarget, nil, ctx, nil) {
@@ -2483,7 +2500,7 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 	return &ast.AssignStmt{
 		Lhs: []ast.Expr{&ast.SelectorExpr{
 			X:   &ast.Ident{Name: receiverName},
-			Sel: &ast.Ident{Name: parent.Class.Name},
+			Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(scope, ctx)},
 		}},
 		Tok: token.ASSIGN,
 		Rhs: []ast.Expr{call},
@@ -2849,22 +2866,47 @@ func declarationParameterMatchesDefinition(param *sitter.Node, def *symbol.Defin
 }
 
 func enumConstantMethodDeclarations(body *sitter.Node) []*sitter.Node {
-	methods := []*sitter.Node{}
-	var walk func(node *sitter.Node)
-	walk = func(node *sitter.Node) {
-		if node == nil {
-			return
-		}
-		if node.Type() == "method_declaration" {
-			methods = append(methods, node)
-			return
-		}
-		for _, child := range nodeutil.NamedChildrenOf(node) {
-			walk(child)
+	var methods []*sitter.Node
+	if body != nil {
+		for _, child := range nodeutil.NamedChildrenOf(body) {
+			// Methods of nested classes are not overrides on this constant.
+			if child.Type() == "method_declaration" {
+				methods = append(methods, child)
+			}
 		}
 	}
-	walk(body)
 	return methods
+}
+
+// Both declared and inherited enum methods use the same exact signature match
+// and lower the real constant method with its own parameters and local scope.
+func buildEnumConstantMethodImplementations(def *symbol.Definition, ctx Ctx, source []byte, receiverBaseType ast.Expr) ([]ast.Decl, map[string]string) {
+	var declarations []ast.Decl
+	overrides := map[string]string{}
+	for _, enumConst := range ctx.currentClass.EnumConstants {
+		for _, child := range enumConstantMethodDeclarations(enumConst.Body) {
+			if !methodNodeMatchesDefinition(child, def, source) {
+				continue
+			}
+			method := symbol.ParseMethodDefinition(child, source, ctx.currentClass)
+			if method == nil || method.IsStatic || method.IsPrivate {
+				continue
+			}
+			if def.OriginalName == "toString" && len(def.Parameters) == 0 {
+				methodCtx := ctx.Clone()
+				methodCtx.localScope = method
+				result := symbol.JavaType{Original: method.OriginalType, TypeParameterBindings: method.TypeParameterBindings}
+				if len(method.TypeParameters) != 0 || qualifyDeclaredReferenceType(result, methodCtx) != "java.lang.String" {
+					continue
+				}
+			}
+			implName := "_" + ctx.className + "_" + enumConst.Name + "_" + def.Name
+			declarations = append(declarations, buildEnumMethodImplementation(implName, child, method, ctx, source, receiverBaseType))
+			overrides[enumConst.Name] = implName
+			break
+		}
+	}
+	return declarations, overrides
 }
 
 func declarationHasModifier(node *sitter.Node, modifierName string) bool {
@@ -3301,44 +3343,31 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 }
 
 // buildEnumConstantInitializer constructs the Go expression used to initialize a single enum constant.
-// It invokes a matching constructor if one exists, then injects the synthetic enum metadata fields
-// to mirror Java enum metadata.
+// Hidden metadata enters the constructor before instance initialization and user
+// code, so virtual callbacks observe the original enum object's identity.
 func buildEnumConstantInitializer(enumConst symbol.EnumConstant, ordinal ast.Expr, ctx Ctx, source []byte) ast.Expr {
-	args := parseEnumConstantArguments(enumConst, ctx, source)
-
-	var baseInit ast.Expr = &ast.UnaryExpr{Op: token.AND, X: &ast.CompositeLit{Type: &ast.Ident{Name: ctx.className}}}
-	if ctor := findEnumConstructor(ctx, len(args)); ctor != nil {
-		baseInit = &ast.CallExpr{Fun: &ast.Ident{Name: ctor.Name}, Args: args}
+	metadata := enumConstantMetadata(enumConst, ordinal, ctx)
+	var arguments *sitter.Node
+	if len(enumConst.Arguments) > 0 {
+		arguments = enumConst.Arguments[0].Parent()
 	}
-
-	return &ast.CallExpr{
-		Fun: &ast.FuncLit{
-			Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}}},
-			Body: &ast.BlockStmt{List: []ast.Stmt{
-				&ast.AssignStmt{Lhs: []ast.Expr{&ast.Ident{Name: "inst"}}, Tok: token.DEFINE, Rhs: []ast.Expr{baseInit}},
-				&ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "inst"}, Sel: &ast.Ident{Name: enumMetaNameField}}}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: "\"" + enumConst.Name + "\""}}},
-				&ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: "inst"}, Sel: &ast.Ident{Name: enumMetaOrdinalField}}}, Tok: token.ASSIGN, Rhs: []ast.Expr{ordinal}},
-				&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "inst"}}},
-			}},
-		},
+	if resolution := findBestConstructor(ctx.currentClass, arguments, ctx, source); resolution != nil {
+		expected := instantiatedConstructorParameterTypes(resolution.def, ctx.currentClass, nil, nil)
+		args, expand := parseResolvedInvocationArguments(resolution, arguments, source, ctx, expected, nil, nil)
+		return markDirectVarargsExpansion(&ast.CallExpr{Fun: ast.NewIdent(executionConstructorImplementationName(resolution.def.Name, ctx.currentClass)), Args: append([]ast.Expr{intrinsicExecutionExpr(ctx), metadata}, args...)}, expand)
 	}
-}
-
-func parseEnumConstantArguments(enumConst symbol.EnumConstant, ctx Ctx, source []byte) []ast.Expr {
-	args := []ast.Expr{}
-	for _, arg := range enumConst.Arguments {
-		args = append(args, ParseExpr(arg, source, ctx))
+	recv := ast.NewIdent("inst")
+	body := []ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{recv}, Tok: token.DEFINE, Rhs: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: &ast.CompositeLit{Type: ast.NewIdent(ctx.className), Elts: []ast.Expr{
+		&ast.KeyValueExpr{Key: ast.NewIdent(enumMetadataFieldName(ctx.currentClass)), Value: metadata},
+		&ast.KeyValueExpr{Key: ast.NewIdent(enumMetaNameField), Value: metadataString(enumConst.Name)},
+		&ast.KeyValueExpr{Key: ast.NewIdent(enumMetaOrdinalField), Value: ordinal},
+	}}}}}}
+	body = append(body, defaultStringFieldInitializationStmts(ctx.currentClass, "inst", ctx)...)
+	if ctx.currentClass.HasInstanceFieldInitializers {
+		body = append(body, &ast.ExprStmt{X: &ast.CallExpr{Fun: &ast.SelectorExpr{X: recv, Sel: ast.NewIdent(fieldInitMethodName + executionMethodSuffix)}, Args: []ast.Expr{intrinsicExecutionExpr(ctx)}}})
 	}
-	return args
-}
-
-func findEnumConstructor(ctx Ctx, argumentCount int) *symbol.Definition {
-	for _, def := range ctx.currentClass.Methods {
-		if def.Constructor && len(def.Parameters) == argumentCount {
-			return def
-		}
-	}
-	return nil
+	body = append(body, &ast.ReturnStmt{Results: []ast.Expr{recv}})
+	return &ast.CallExpr{Fun: &ast.FuncLit{Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: ast.NewIdent(ctx.className)}}}}}, Body: &ast.BlockStmt{List: body}}}
 }
 
 func findDeclaredToStringMethod(scope *symbol.ClassScope) *symbol.Definition {
@@ -3364,13 +3393,53 @@ func buildClassStringerBridgeDecls(ctx Ctx) []ast.Decl {
 	return buildStringerBridgeDecls(ctx, toString, nil)
 }
 
-func buildEnumStringerBridgeDecls(ctx Ctx) []ast.Decl {
+func buildEnumStringerBridgeDecls(ctx Ctx, source []byte) []ast.Decl {
 	receiverName := ShortName(ctx.className)
-	defaultResult := ast.Expr(&ast.SelectorExpr{
-		X:   &ast.Ident{Name: receiverName},
-		Sel: &ast.Ident{Name: enumMetaNameField},
+	defaultResult := stdjavaCall(ctx, "EnumNameJavaString", ast.NewIdent(receiverName))
+	if declared := findDeclaredToStringMethod(ctx.currentClass); declared != nil {
+		return buildStringerBridgeDecls(ctx, declared, defaultResult)
+	}
+
+	// Enum.toString is inherited even when the enum does not redeclare it.
+	// Its canonical signature participates in the same override planner as
+	// source members; its Go selector is private and collision-safe so a source
+	// toString overload keeps its own ABI. No source declaration is fabricated.
+	inherited := &symbol.Definition{
+		OriginalName: "toString",
+		OriginalType: "java.lang.String",
+		Name:         collisionSafeExecutionIdentifier("__java2goEnumToString", ctx.currentClass),
+	}
+	receiverBase := instantiateGenericType(ctx.className, typeParamExprs(ctx.currentClass.GoTypeParameterNames()))
+	declarations, overrides := buildEnumConstantMethodImplementations(inherited, ctx, source, receiverBase)
+	if len(overrides) == 0 {
+		return buildStringerBridgeDecls(ctx, nil, defaultResult)
+	}
+
+	inheritedCtx := ctx.Clone()
+	inheritedCtx.localScope = inherited
+	inheritedCtx.executionContextName = executionNameForClass(ctx.currentClass)
+	receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{ast.NewIdent(receiverName)}, Type: &ast.StarExpr{X: receiverBase}}}}
+	params := &ast.FieldList{}
+	results := &ast.FieldList{List: []*ast.Field{{Type: javaStringReferenceType(ctx)}}}
+	defaultImpl := "_" + ctx.className + "_" + inherited.Name + "_default"
+	declarations = append(declarations, &ast.FuncDecl{
+		Name: ast.NewIdent(defaultImpl),
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{List: []*ast.Field{
+				executionParameterField(inheritedCtx.executionContextName, ctx),
+				{Names: []*ast.Ident{ast.NewIdent(receiverName)}, Type: &ast.StarExpr{X: receiverBase}},
+			}},
+			Results: cloneFieldList(results),
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{defaultResult}}}},
 	})
-	return buildStringerBridgeDecls(ctx, findDeclaredToStringMethod(ctx.currentClass), defaultResult)
+	wrapper := buildEnumMethodWrapper(inherited, overrides, defaultImpl, params, results, receiver, inheritedCtx)
+	implementationName := executionImplementationName(inherited, ctx.currentClass, inheritedCtx)
+	declarations = append(declarations, buildExecutionAwareFuncDecls(wrapper, implementationName, inheritedCtx.executionContextName, inheritedCtx)...)
+	// This generated inherited entry has no DeclarationNode. Carry the caller's
+	// execution explicitly instead of applying the source-only ABI predicate.
+	result := methodCall(ast.NewIdent(receiverName), implementationName, executionExpr(inheritedCtx))
+	return append(declarations, buildCanonicalSourceStringBridgeDecls(receiverName, receiverBase, inheritedCtx.executionContextName, result, inheritedCtx)...)
 }
 
 // buildStringerBridgeDecls exposes Java's toString through fmt.Stringer while
@@ -3406,29 +3475,70 @@ func buildStringerBridgeDecls(ctx Ctx, toString *symbol.Definition, defaultResul
 		}
 	}
 
-	declaration := &ast.FuncDecl{
-		Name: &ast.Ident{Name: "String"},
-		Recv: &ast.FieldList{List: []*ast.Field{{
-			Names: []*ast.Ident{{Name: receiverName}},
-			Type:  &ast.StarExpr{X: receiverBase},
-		}}},
-		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "string"}}}}},
+	return buildCanonicalSourceStringBridgeDecls(receiverName, receiverBase, executionName, result, stringCtx)
+}
+
+// buildCanonicalSourceStringBridgeDecls keeps Java's exact pointer result out
+// of the optional fmt.Stringer adapter. Java conversion calls the registered
+// source execution method directly; host presentation is the only bytes path.
+func buildCanonicalSourceStringBridgeDecls(receiverName string, receiverBase ast.Expr, executionName string, result ast.Expr, ctx Ctx) []ast.Decl {
+	receiver := &ast.FieldList{List: []*ast.Field{{
+		Names: []*ast.Ident{ast.NewIdent(receiverName)},
+		Type:  &ast.StarExpr{X: receiverBase},
+	}}}
+	implementationName := executionStringMethodName(ctx.currentClass)
+	implementation := &ast.FuncDecl{
+		Name: ast.NewIdent(implementationName),
+		Recv: cloneFieldList(receiver),
+		Type: &ast.FuncType{
+			Params:  &ast.FieldList{List: []*ast.Field{executionParameterField(executionName, ctx)}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: javaStringReferenceType(ctx)}}},
+		},
 		Body: &ast.BlockStmt{List: []ast.Stmt{
-			&ast.IfStmt{
-				Cond: &ast.BinaryExpr{X: &ast.Ident{Name: receiverName}, Op: token.EQL, Y: &ast.Ident{Name: "nil"}},
-				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
-					&ast.BasicLit{Kind: token.STRING, Value: `"null"`},
-				}}}},
-			},
+			&ast.ExprStmt{X: stdjavaCall(ctx, "ReferenceRequireNonNull", ast.NewIdent(receiverName))},
 			&ast.ReturnStmt{Results: []ast.Expr{result}},
 		}},
 	}
-	return buildExecutionAwareFuncDecls(
-		declaration,
-		executionStringMethodName(scope),
-		executionName,
-		stringCtx,
-	)
+	if sourceOwnsNativeStringSelector(ctx.currentClass, ctx) {
+		return []ast.Decl{implementation}
+	}
+
+	// This wrapper takes one callback snapshot with a fresh logical execution.
+	// A returned null is preserved above and rendered as text only below.
+	text := ast.NewIdent("__java2goHostText")
+	encoded := ast.NewIdent("__java2goHostEncoded")
+	octets := ast.NewIdent("__java2goHostBytes")
+	index := ast.NewIdent("__java2goHostIndex")
+	value := ast.NewIdent("__java2goHostByte")
+	nativeNull := func(operand ast.Expr) ast.Stmt {
+		return &ast.IfStmt{
+			Cond: &ast.BinaryExpr{X: operand, Op: token.EQL, Y: ast.NewIdent("nil")},
+			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: `"null"`}}}}},
+		}
+	}
+	wrapper := &ast.FuncDecl{
+		Name: ast.NewIdent("String"),
+		Recv: cloneFieldList(receiver),
+		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("string")}}}},
+		Body: &ast.BlockStmt{List: []ast.Stmt{
+			nativeNull(ast.NewIdent(receiverName)),
+			&ast.AssignStmt{Lhs: []ast.Expr{text}, Tok: token.DEFINE, Rhs: []ast.Expr{
+				methodCall(ast.NewIdent(receiverName), implementationName, newExecutionExpr(ctx)),
+			}},
+			nativeNull(text),
+			&ast.AssignStmt{Lhs: []ast.Expr{encoded}, Tok: token.DEFINE, Rhs: []ast.Expr{
+				stdjavaCall(ctx, "PrimitiveArrayElements", stdjavaCall(ctx, "JavaStringGetBytes", text, stdjavaQualifiedExpr("UTF_8", ctx))),
+			}},
+			&ast.AssignStmt{Lhs: []ast.Expr{octets}, Tok: token.DEFINE, Rhs: []ast.Expr{
+				callIdent("make", &ast.ArrayType{Elt: ast.NewIdent("byte")}, callIdent("len", encoded)),
+			}},
+			&ast.RangeStmt{Key: index, Value: value, Tok: token.DEFINE, X: encoded, Body: &ast.BlockStmt{List: []ast.Stmt{
+				&ast.AssignStmt{Lhs: []ast.Expr{&ast.IndexExpr{X: octets, Index: index}}, Tok: token.ASSIGN, Rhs: []ast.Expr{callIdent("byte", value)}},
+			}}},
+			&ast.ReturnStmt{Results: []ast.Expr{callIdent("string", octets)}},
+		}},
+	}
+	return []ast.Decl{wrapper, implementation}
 }
 
 func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.CommentGroup, params, results *ast.FieldList, body *ast.BlockStmt, receiverBaseType ast.Expr) []ast.Decl {
@@ -3993,6 +4103,9 @@ func buildSourceConstructorDecls(
 func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
 	case "constructor_declaration":
+		if ctx.currentClass.IsEnum {
+			return buildSourceConstructorDecls(node, source, ctx, enumConstructorOptions(node, source, ctx))
+		}
 		return buildSourceConstructorDecls(node, source, ctx, constructorLoweringOptions{})
 	case "method_declaration", "abstract_method_declaration":
 		var static bool
@@ -4096,21 +4209,8 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				implDecls = append(implDecls, buildEnumMethodImplementation(defaultImpl, node, ctx.localScope, ctx, source, receiverBaseType))
 			}
 
-			overrides := map[string]string{}
-			for _, enumConst := range ctx.currentClass.EnumConstants {
-				if enumConst.Body == nil {
-					continue
-				}
-				for _, child := range enumConstantMethodDeclarations(enumConst.Body) {
-					if !methodNodeMatchesDefinition(child, ctx.localScope, source) {
-						continue
-					}
-					implName := "_" + ctx.className + "_" + enumConst.Name + "_" + ctx.localScope.Name
-					implDecls = append(implDecls, buildEnumMethodImplementation(implName, child, ctx.localScope, ctx, source, receiverBaseType))
-					overrides[enumConst.Name] = implName
-					break
-				}
-			}
+			constantDecls, overrides := buildEnumConstantMethodImplementations(ctx.localScope, ctx, source, receiverBaseType)
+			implDecls = append(implDecls, constantDecls...)
 
 			wrapper := buildEnumMethodWrapper(ctx.localScope, overrides, defaultImpl, params, results, receiver, ctx)
 			if ctx.localScope.RequiresHelper {

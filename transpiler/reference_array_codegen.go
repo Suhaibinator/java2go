@@ -19,6 +19,12 @@ const (
 // Source descriptor methods are emitted even for leaves without ObjectInfo.
 // Reserve exactly that selector independently of hierarchy carrier eligibility.
 func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx Ctx) bool {
+	if iterationProtocolReservedSelector(name) {
+		return true
+	}
+	if scope != nil && scope.IsEnum && name == "JavaEnumMetadata" {
+		return true
+	}
 	if scope != nil && !scope.IsInterface && name == "JavaDynamicTypeID" {
 		return true
 	}
@@ -26,6 +32,9 @@ func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx 
 }
 
 func referenceIdentityReservedSelector(name string) bool {
+	if iterationProtocolReservedSelector(name) {
+		return true
+	}
 	switch name {
 	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod:
 		return true
@@ -164,40 +173,53 @@ func javaPrimitiveTypeIDExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 // the caller's inferred instantiation in its static descriptor. Java instead
 // uses the first declared bound, or Object when T is unbounded.
 func javaTypeParameterErasure(javaType string, ctx Ctx) (string, bool) {
-	base, arguments := parseJavaTypeString(strings.TrimSpace(javaType))
-	name := stripJavaQualifier(base)
-	if name == "" || len(arguments) != 0 {
+	binding, found := resolveReferenceTypeParameter(symbol.JavaType{Original: strings.TrimSpace(javaType)}, ctx)
+	if !found {
 		return "", false
 	}
+	// Inferred declaration references carry emitted names, while bounds retain
+	// captured declaration pointers. Resolve each step in its declaration's
+	// context rather than interpreting a bound's source spelling in the caller.
+	seen := map[typeParameterIdentityKey]bool{}
+	for {
+		identity := identityKeyForTypeParameter(binding.parameter)
+		if seen[identity] {
+			// Legal Java bounds are acyclic. Keep incomplete symbols finite.
+			return "java.lang.Object", true
+		}
+		seen[identity] = true
+		if len(binding.parameter.Bounds) == 0 || strings.TrimSpace(binding.parameter.Bounds[0].Original) == "" {
+			return "java.lang.Object", true
+		}
+		bound := binding.parameter.Bounds[0]
+		if next, boundParameter := resolveReferenceTypeParameter(bound, binding.context); boundParameter {
+			binding = next
+			continue
+		}
+		return qualifyDeclaredReferenceType(bound, binding.context), true
+	}
+}
 
-	find := func(parameters []symbol.TypeParam) (string, bool) {
-		for _, parameter := range parameters {
-			if parameter.Name != name {
-				continue
+// javaSourceTypeDescriptorExpr is the source-syntax entry point. A bare name
+// in a cast denotes the nearest lexical Java binder, not an outer binder whose
+// emitted Go alias happens to have that spelling. Inferred declaration types
+// instead call javaTypeDescriptorExpr directly with their emitted identities.
+func javaSourceTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
+	component, rank := javaArrayTypeParts(javaType)
+	base, arguments := parseJavaTypeString(component)
+	if len(arguments) == 0 && !strings.Contains(base, ".") {
+		bindings := referenceTypeParameterBindings(ctx)
+		for index := len(bindings) - 1; index >= 0; index-- {
+			parameter := bindings[index].parameter
+			if parameter.Name == base {
+				return javaTypeDescriptorExpr(parameter.EmittedName()+strings.Repeat("[]", rank), ctx)
 			}
-			if len(parameter.Bounds) == 0 || strings.TrimSpace(parameter.Bounds[0].Original) == "" {
-				return "Object", true
-			}
-			return strings.TrimSpace(parameter.Bounds[0].Original), true
-		}
-		return "", false
-	}
-
-	// Method parameters shadow synthetic/raw parameters and class parameters.
-	if ctx.localScope != nil {
-		if erased, ok := find(ctx.localScope.TypeParameters); ok {
-			return erased, true
 		}
 	}
-	if erased, ok := find(ctx.syntheticTypeParameters); ok {
-		return erased, true
-	}
-	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
-		if erased, ok := find(ctx.currentClass.TypeParameters); ok {
-			return erased, true
-		}
-	}
-	return "", false
+	// Qualify source classes before entering the emitted-name path: a class
+	// may itself have the same spelling as another declaration's emitted alias.
+	nominal := qualifyDeclaredNominalReference(base, ctx)
+	return javaTypeDescriptorExpr(nominal+strings.Repeat("[]", rank), ctx)
 }
 
 // javaTypeDescriptorExpr returns the nominal runtime descriptor for a Java
@@ -227,9 +249,15 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 		return javaTypeDescriptorExpr(erased, ctx)
 	}
 	base, _ := parseJavaTypeString(javaType)
+	if canonicalMapEntryOwner(base, ctx) != "" {
+		return stdjavaQualifiedExpr("JavaMapEntryTypeID", ctx), true
+	}
 	baseName := stripJavaQualifier(base)
 	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
 		return source, true
+	}
+	if isBuiltinEnum(javaType, ctx) {
+		return stdjavaQualifiedExpr("EnumTypeID", ctx), true
 	}
 	if isExceptionJavaType(ctx, base) {
 		return stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(base)}), true
@@ -730,11 +758,15 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		return nil
 	}
 	args := []ast.Expr{javaTypeIDLiteral(id, ctx)}
-	if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
+	if scope.IsEnum {
+		args = append(args, stdjavaQualifiedExpr("EnumTypeID", ctx))
+	} else if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(parent), ctx))
 	} else if isExceptionJavaType(classScopeCtx(scope, ctx), scope.Superclass) {
 		args = append(args, stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(scope.Superclass)}))
 	} else if constant := characterIONominalConstant(scope.Superclass, classScopeCtx(scope, ctx)); constant != "" {
+		args = append(args, stdjavaQualifiedExpr(constant, ctx))
+	} else if constant := abstractCollectionSuperclassConstant(scope.Superclass, classScopeCtx(scope, ctx)); constant != "" {
 		args = append(args, stdjavaQualifiedExpr(constant, ctx))
 	} else {
 		args = append(args, stdjavaQualifiedExpr("ObjectTypeID", ctx))
@@ -743,6 +775,10 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(implementedScope), ctx))
 	}
 
+	args = append(args, sourceIterationInterfaceIDs(scope, ctx)...)
+	args = append(args, sourceFunctionInterfaceIDs(scope, ctx)...)
+	args = append(args, sourceMapEntryInterfaceIDs(scope, ctx)...)
+	args = append(args, sourceAbstractCollectionInterfaceIDs(scope, ctx)...)
 	if sourceDirectCharSequence(scope, ctx) {
 		args = append(args, stdjavaQualifiedExpr("CharSequenceTypeID", ctx))
 	}
@@ -762,6 +798,12 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	statements := []ast.Stmt{
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(id, ctx))},
+	}
+	if scope.IsEnum {
+		statements = append(statements, enumConstantRegistrationStmts(scope, ctx)...)
+	}
+	if text := sourceToStringRegistration(scope, id, ctx); text != nil {
+		statements = append(statements, text)
 	}
 	if metadata := sourceClassMetadataStmt(scope, ctx); metadata != nil {
 		statements = append(statements, metadata)
@@ -819,7 +861,7 @@ func sourceClassViewExpr(scope, requested *symbol.ClassScope, receiver ast.Expr,
 		if parent == nil || parent.Class == nil {
 			return nil
 		}
-		view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: parent.Class.Name}}
+		view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(current, ctx)}}
 		current = parent
 	}
 	return view
@@ -830,10 +872,7 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 		return nil
 	}
 	if scope.IsEnum {
-		if declaration := fixedJavaDynamicTypeDecl(scope.Class.Name, javaClassBinaryName(scope), ctx); declaration != nil {
-			return []ast.Decl{declaration}
-		}
-		return nil
+		return enumReferenceIdentityDecls(scope, ctx)
 	}
 	receiverName := ShortName(scope.Class.Name)
 	receiverType := &ast.StarExpr{X: instantiateGenericType(scope.Class.Name, typeParamExprs(scope.GoTypeParameterNames()))}
@@ -950,14 +989,21 @@ func syntheticReferenceRegistrationDecl(
 	}
 	args := []ast.Expr{javaTypeIDLiteral(dynamicID, ctx), superID}
 	args = append(args, interfaceIDs...)
+	args = append(args, sourceIterationInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
+	args = append(args, sourceFunctionInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
+	args = append(args, sourceMapEntryInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	registrationName := "__java2goSyntheticTypeRegistration" + sanitizeGoIdent(structName)
+	statements := []ast.Stmt{
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(dynamicID, ctx))},
+	}
+	if text := sourceToStringRegistration(syntheticSourceTextScope(structName, ctx), dynamicID, ctx); text != nil {
+		statements = append(statements, text)
+	}
+	statements = append(statements, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}})
 	initializer := &ast.CallExpr{Fun: &ast.FuncLit{
 		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "bool"}}}}},
-		Body: &ast.BlockStmt{List: []ast.Stmt{
-			&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
-			&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(dynamicID, ctx))},
-			&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}},
-		}},
+		Body: &ast.BlockStmt{List: statements},
 	}}
 	return &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{
 		Names:  []*ast.Ident{{Name: registrationName}},
@@ -972,6 +1018,7 @@ func syntheticReferenceRegistrationDecl(
 func syntheticHierarchicalReferenceIdentityDecls(
 	structName string,
 	dynamicID string,
+	scope *symbol.ClassScope,
 	superScope *symbol.ClassScope,
 	directInterfaces []*symbol.ClassScope,
 	typeParams []string,
@@ -1027,7 +1074,7 @@ func syntheticHierarchicalReferenceIdentityDecls(
 
 	var view ast.Expr
 	if superScope != nil {
-		view = &ast.SelectorExpr{X: receiverExpr, Sel: &ast.Ident{Name: superScope.Class.Name}}
+		view = &ast.SelectorExpr{X: receiverExpr, Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(scope, ctx)}}
 	}
 	seenScopes := map[*symbol.ClassScope]struct{}{}
 	for current := superScope; current != nil && current.Class != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
@@ -1041,7 +1088,7 @@ func syntheticHierarchicalReferenceIdentityDecls(
 		}
 		parent := resolveSuperclassScopeInDeclaringContext(ctx, current)
 		if parent != nil && parent.Class != nil {
-			view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: parent.Class.Name}}
+			view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(current, ctx)}}
 		}
 	}
 	cases = append(cases, &ast.CaseClause{Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}}})

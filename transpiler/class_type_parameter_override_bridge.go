@@ -678,6 +678,9 @@ func overrideBridgePlainResultWideningSupported(javaType string, owner *symbol.C
 	if stripJavaQualifier(base) == "Object" {
 		return true
 	}
+	if isBuiltinEnum(component, classScopeCtx(owner, ctx)) {
+		return true
+	}
 	if builtinJavaNumericReference(base, classScopeCtx(owner, ctx)) {
 		return stripJavaQualifier(base) == "Number"
 	}
@@ -994,14 +997,24 @@ func buildDirectOwnerOverrideBridgeMethodDecls(
 		return nil, false
 	}
 	if family, ok := planDirectOwnerCallableOverrideBridgeFamily(ctx.currentClass, ctx.localScope, ctx); ok {
-		return buildDirectOwnerErasedFamilyMethodDecls(
+		declarations := buildDirectOwnerErasedFamilyMethodDecls(
 			declaration,
 			sourceParams,
 			sourceResults,
 			executionName,
 			family,
 			ctx,
-		), true
+		)
+		// A declaration can introduce its own erased descriptor while also
+		// overriding an ancestor with a wider descriptor. Keep the owner body
+		// and wrapper, and emit the checked ancestor entry as well. Otherwise
+		// the promoted ancestor body incorrectly handles virtual calls.
+		if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(ctx.currentClass, ctx.localScope, ctx); bridged {
+			if bridge := buildDirectOwnerSpecializedOverrideBridgeDecl(declaration, executionName, selection, ctx); bridge != nil {
+				declarations = append(declarations, bridge)
+			}
+		}
+		return declarations, true
 	}
 	if selection, ok := directOwnerSpecializedOverrideBridgeForMethod(ctx.currentClass, ctx.localScope, ctx); ok {
 		exactName := directOwnerOverrideBridgeExactExecutionName(selection.bridge)
@@ -1124,6 +1137,7 @@ func buildDirectOwnerSpecializedOverrideBridgeDecl(
 		if parameter.requiresCast {
 			castName := synchronizedUniqueLocalName("__java2goBridgeArg"+strconv.Itoa(index), usedNames)
 			targetType := javaTypeStringToGoTypeExpr(parameter.overrideJavaType, inScopeTypeParameters(bridgeCtx), bridgeCtx)
+			targetType = genericFamilyPhysicalGoType(targetType, selection.bridge.owner.TypeParameters, bridgeCtx)
 			descriptor, ok := javaTypeDescriptorExpr(parameter.overrideJavaType, bridgeCtx)
 			if !ok {
 				return nil
@@ -1188,11 +1202,12 @@ func overrideBridgeConcreteResultPath(actual string, actualOwner *symbol.ClassSc
 			return nil, false
 		}
 		seen[current] = true
+		selector := superclassEmbeddedSelectorName(current, ctx)
 		current = resolveSuperclassScopeInDeclaringContext(ctx, current)
 		if current == nil || current.Class == nil {
 			return nil, false
 		}
-		path = append(path, current.Class.Name)
+		path = append(path, selector)
 	}
 	return path, true
 }

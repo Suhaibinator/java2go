@@ -1,0 +1,16 @@
+seed=17
+child=null
+base=one
+platform=two
+contract=three
+inherited=four
+value=five;calls=5
+raw-key=CCE
+raw-value=CCE
+after-raw=5;size=1;value=five
+super=UOE
+after-super=5;size=1
+cache=true;live=true
+null-key=null
+keys-remove=true;size=1;null=nil
+cleared=true;calls=6

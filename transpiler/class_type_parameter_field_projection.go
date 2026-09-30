@@ -124,7 +124,7 @@ func projectDirectOwnerErasedExpressionForExpected(
 	var sourceView, erasure string
 	var ok bool
 	switch node.Type() {
-	case "field_access":
+	case "identifier", "field_access":
 		sourceView, erasure, ok = directOwnerFieldAccessView(node, ctx, source)
 	case "method_invocation":
 		sourceView, erasure, ok = directOwnerMethodResultView(node, ctx, source)
@@ -214,19 +214,39 @@ func directOwnerFieldAccessView(
 	ctx Ctx,
 	source []byte,
 ) (string, string, bool) {
-	if node == nil || node.Type() != "field_access" {
+	if node == nil {
 		return "", "", false
 	}
-	objectNode := node.ChildByFieldName("object")
-	fieldNode := node.ChildByFieldName("field")
-	if objectNode == nil || fieldNode == nil {
+	var target *invocationTargetInfo
+	var fieldName string
+	switch node.Type() {
+	case "identifier":
+		// Java's implicit receiver selects the same inherited field as `this`.
+		// Match expression lookup's local/parameter precedence before planning
+		// its physical field ABI; a same-named variable is not erased storage.
+		fieldName = node.Content(source)
+		if ctx.currentClass == nil || (ctx.localScope != nil && ctx.localScope.FindVariable(fieldName) != nil) {
+			return "", "", false
+		}
+		target = &invocationTargetInfo{
+			classScope:        ctx.currentClass,
+			classJavaTypeArgs: ctx.currentClass.GoTypeParameterNames(),
+		}
+	case "field_access":
+		objectNode := node.ChildByFieldName("object")
+		fieldNode := node.ChildByFieldName("field")
+		if objectNode == nil || fieldNode == nil {
+			return "", "", false
+		}
+		target = resolveInvocationTarget(objectNode, ctx, source)
+		fieldName = fieldNode.Content(source)
+	default:
 		return "", "", false
 	}
-	target := resolveInvocationTarget(objectNode, ctx, source)
 	if target == nil || target.classScope == nil {
 		return "", "", false
 	}
-	resolution := findFieldResolutionInHierarchy(target.classScope, fieldNode.Content(source), ctx)
+	resolution := findFieldResolutionInHierarchy(target.classScope, fieldName, ctx)
 	if resolution == nil || resolution.owner == nil || resolution.def == nil || resolution.def.IsStatic {
 		return "", "", false
 	}

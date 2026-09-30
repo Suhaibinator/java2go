@@ -24,9 +24,9 @@ public class CampaignRuntimeNormalizer {
 	t.Logf("JDK normalization oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import("testing";j "github.com/NickyBoy89/java2go/stdjava")
 func TestNormalizerOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); !got.Equals(j.JavaStringFromHostUTF8(%q)) { t.Fatalf("JVM %%q != generated Go %%v", %q, got) }
 }
 `, want, want))
 }

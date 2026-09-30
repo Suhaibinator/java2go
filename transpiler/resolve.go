@@ -49,7 +49,10 @@ func ResolveFile(file parsing.SourceFile) {
 		return
 	}
 	prepareBuiltinInterfaceMethods()
+	prepareAbstractCollectionDefaults()
+	prepareAbstractMapDefaults()
 	resolveTypeParameterNominalNames(file)
+	resolvePackageStaticFieldNames(symbol.GlobalScope.FindPackage(file.Symbols.Package))
 	// Complete ordinary member resolution for the entire file before allocating
 	// synthesized names. A Java source may contain multiple top-level classes and
 	// arbitrarily deep nested classes; helper naming must observe their final Go
@@ -137,7 +140,7 @@ func packageHasOtherStaticFieldName(packageScope *symbol.PackageScope, current *
 				if class == nil || found {
 					return
 				}
-				for _, field := range class.Fields {
+				for _, field := range classFieldBindings(class) {
 					if field != nil && field != current && field.IsStatic && field.Name == name {
 						found = true
 						return
@@ -199,7 +202,7 @@ func classHasOtherFieldName(class *symbol.ClassScope, current *symbol.Definition
 	if class == nil {
 		return false
 	}
-	for _, field := range class.Fields {
+	for _, field := range classFieldBindings(class) {
 		if field != nil && field != current && field.Name == name {
 			return true
 		}
@@ -355,7 +358,7 @@ func resolvePromotedFieldMethodCollisionsInTree(class *symbol.ClassScope) bool {
 			}
 		}
 	}
-	for _, field := range class.Fields {
+	for _, field := range classFieldBindings(class) {
 		if field == nil || field.IsStatic {
 			continue
 		}
@@ -393,7 +396,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 	packageScope := symbol.GlobalScope.FindPackage(file.Symbols.Package)
 
 	// Resolve all the fields in that respective class
-	for _, field := range class.Fields {
+	for _, field := range classFieldBindings(class) {
 
 		// Since a private global variable is able to be accessed in the package, it must be renamed
 		// to avoid conflicts with other global variables
@@ -405,6 +408,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 			(!field.IsStatic && sourceReferenceReservedSelector(class, field.Name, Ctx{})) ||
 			classHasOtherFieldName(class, field, field.Name) ||
 			(!field.IsStatic && classHasOtherInstanceMethodName(class, field, field.Name)) ||
+			(field.IsStatic && packageHasEmittedSourceTypeName(packageScope, field.Name)) ||
 			(field.IsStatic && packageHasOtherStaticFieldName(packageScope, field, field.Name)) ||
 			(field.IsStatic && packageHasOtherStaticMethodName(packageScope, field, field.Name)); i++ {
 			field.Rename(field.Name + strconv.Itoa(i))

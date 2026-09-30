@@ -190,6 +190,7 @@ import (
 )
 
 func TestVariadicEnum(t *testing.T) {
+    VariadicEnumProgramcalculatorJava2goEnsureInitialized(stdjava.NewExecution())
     values := stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 4, 6, 8)
     if got := SUM.Calculate(values); got != 18 {
         t.Fatalf("Calculate() = %d, want 18", got)

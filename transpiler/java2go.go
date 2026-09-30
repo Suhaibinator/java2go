@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -327,8 +328,23 @@ func bestInputRootForFile(fileName string, inputRoots []string) string {
 	return best
 }
 
+// goSourceBasename maps original Java unit filenames at one emission boundary.
+// File naming is independent of Java class/member visibility and identity.
+// Escape the entire UTF-8 stem, including the reserved escape namespace, so a
+// legal Java filename that resembles an encoded filename cannot overwrite it.
+// Hex endings cannot introduce Go's _test or platform filename suffixes.
+func goSourceBasename(name string) string {
+	const prefix = "java2goSource_"
+	stem := strings.TrimSuffix(filepath.Base(name), filepath.Ext(name))
+	if strings.Contains(stem, "$") || strings.HasPrefix(stem, "_") || strings.HasPrefix(stem, ".") ||
+		strings.HasPrefix(strings.ToLower(stem), strings.ToLower(prefix)) {
+		stem = prefix + hex.EncodeToString([]byte(stem))
+	}
+	return stem + ".go"
+}
+
 func outputRelativePath(file parsing.SourceFile, inputRoots []string, modulePath string) string {
-	baseFile := strings.TrimSuffix(filepath.Base(file.Name), filepath.Ext(file.Name)) + ".go"
+	baseFile := goSourceBasename(file.Name)
 
 	if file.Symbols != nil {
 		if packageSuffix, ok := packageRelativeToModule(file.Symbols.Package, modulePath); ok {
@@ -343,12 +359,12 @@ func outputRelativePath(file parsing.SourceFile, inputRoots []string, modulePath
 		absFile, err := filepath.Abs(file.Name)
 		if err == nil {
 			if rel, err := filepath.Rel(root, absFile); err == nil {
-				return strings.TrimSuffix(rel, filepath.Ext(rel)) + ".go"
+				return filepath.Join(filepath.Dir(rel), baseFile)
 			}
 		}
 	}
 
-	fallback := strings.TrimSuffix(filepath.Clean(file.Name), filepath.Ext(file.Name)) + ".go"
+	fallback := filepath.Join(filepath.Dir(filepath.Clean(file.Name)), baseFile)
 	// Avoid absolute paths under output directory in fallback.
 	fallback = strings.TrimPrefix(fallback, filepath.VolumeName(fallback))
 	fallback = strings.TrimPrefix(fallback, string(filepath.Separator))

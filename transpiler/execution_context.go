@@ -61,6 +61,12 @@ func executionImplementationName(def *symbol.Definition, owner *symbol.ClassScop
 	if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(owner, def, classScopeCtx(owner, ctx)); bridged {
 		return directOwnerOverrideBridgeExactExecutionName(selection.bridge)
 	}
+	if name := mapEntrySourceImplementationName(def, owner, ctx); name != "" {
+		return name
+	}
+	if name := iterationSourceImplementationName(def, owner, ctx); name != "" {
+		return name
+	}
 	return collisionSafeExecutionIdentifier(def.Name+executionMethodSuffix, owner)
 }
 
@@ -95,7 +101,7 @@ func generatedIdentifierExists(name string, owner *symbol.ClassScope) bool {
 			}
 		}
 		for _, enumConstant := range scope.EnumConstants {
-			if enumConstant.Name == name {
+			if enumConstant.EmittedName() == name {
 				return true
 			}
 		}
@@ -131,7 +137,7 @@ func prependExecutionArgument(ctx Ctx, args []ast.Expr) []ast.Expr {
 }
 
 func prependExecutionMethodArgument(ctx Ctx, def *symbol.Definition, args []ast.Expr) []ast.Expr {
-	if def == nil || def.DeclarationNode == nil {
+	if def == nil || (def.DeclarationNode == nil && !def.RuntimeDefault) {
 		return args
 	}
 	return prependExecutionArgument(ctx, args)
@@ -144,7 +150,7 @@ func executionMethodCallName(def *symbol.Definition, owner *symbol.ClassScope, c
 	// Runtime/synthetic members (enum name/ordinal/valueOf, record accessors,
 	// generated equality helpers) have no source declaration and are emitted only
 	// in their public form. They contain no Java synchronized body to re-enter.
-	if executionExpr(ctx) == nil || def.DeclarationNode == nil {
+	if executionExpr(ctx) == nil || (def.DeclarationNode == nil && !def.RuntimeDefault) {
 		return def.Name
 	}
 	return executionImplementationName(def, owner, ctx)
@@ -179,7 +185,29 @@ func executionFieldInitializerMethodName() string {
 }
 
 func executionStringMethodName(scope *symbol.ClassScope) string {
-	return collisionSafeExecutionIdentifier("String"+executionMethodSuffix, scope)
+	base := "String" + executionMethodSuffix
+	for suffix := 0; ; suffix++ {
+		candidate := base
+		if suffix > 0 {
+			candidate += strconv.Itoa(suffix)
+		}
+		if generatedIdentifierExists(candidate, scope) {
+			continue
+		}
+		occupied := false
+		if scope != nil {
+			for _, method := range scope.Methods {
+				if method != nil && !method.IsStatic && !method.Constructor &&
+					candidate == collisionSafeExecutionIdentifier(method.Name+executionMethodSuffix, scope) {
+					occupied = true
+					break
+				}
+			}
+		}
+		if !occupied {
+			return candidate
+		}
+	}
 }
 
 func executionNameForParams(params *ast.FieldList, reservedNames ...string) string {

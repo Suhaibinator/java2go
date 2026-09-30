@@ -37,6 +37,8 @@ func NewStringBuilderString(s string) *StringBuilder {
 // and runes append directly, everything else uses its default string form.
 func (b *StringBuilder) Append(value any) *StringBuilder {
 	switch v := value.(type) {
+	case *JavaString:
+		return b.AppendJavaString(v)
 	case string:
 		b.buf = append(b.buf, StringChars(v)...)
 	case rune:
@@ -57,6 +59,8 @@ func (b *StringBuilder) Insert(offset int32, value any) *StringBuilder {
 	b.checkOffset(offset)
 	var inserted []rune
 	switch v := value.(type) {
+	case *JavaString:
+		return b.InsertJavaString(offset, v)
 	case string:
 		inserted = StringChars(v)
 	case rune:

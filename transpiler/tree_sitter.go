@@ -47,7 +47,9 @@ type Ctx struct {
 	genericFamilies *genericFamilyAnalysis
 	// Active member-type hierarchy lookups; extended immutably per lookup.
 	memberTypeLookupPath map[*symbol.ClassScope]bool
-	localBindingBody     *sitter.Node
+	// Header lookup keeps the declaration and its binders, but excludes body-only members.
+	memberTypeHeaderOwner *symbol.ClassScope
+	localBindingBody      *sitter.Node
 	// Used to generate the names of all the methods, as well as the names
 	// of the constructors
 	className string
@@ -406,6 +408,7 @@ func (c Ctx) Clone() Ctx {
 		projectMode:                         c.projectMode,
 		genericFamilies:                     c.genericFamilies,
 		memberTypeLookupPath:                c.memberTypeLookupPath,
+		memberTypeHeaderOwner:               c.memberTypeHeaderOwner,
 		localBindingBody:                    c.localBindingBody,
 		className:                           c.className,
 		currentFile:                         c.currentFile,
@@ -487,8 +490,11 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			switch c.Type() {
 			case "package_declaration":
 				pkg := c.NamedChild(0)
-				if pkg != nil && pkg.NamedChildCount() > 0 {
-					program.Name = &ast.Ident{Name: pkg.NamedChild(int(pkg.NamedChildCount() - 1)).Content(source)}
+				if pkg != nil {
+					if pkg.NamedChildCount() > 0 {
+						pkg = pkg.NamedChild(int(pkg.NamedChildCount() - 1))
+					}
+					program.Name = identFromNode(pkg, source)
 				}
 			case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
 				declCtx := ctx.Clone()
@@ -518,6 +524,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 				},
 			}, program.Decls...)
 		}
+		lowerGeneratedGoIdentifiers(program, ctx)
 		return program
 	case "field_declaration":
 		var public bool
@@ -1098,11 +1105,16 @@ func buildCatchDispatchStmt(catches []*sitter.Node, recoveredName, didPanicName,
 			if len(catchTypes) > 0 {
 				originalType = catchTypes[0]
 			}
+			catchValue := ast.Expr(&ast.TypeAssertExpr{X: &ast.Ident{Name: recoveredName}, Type: stdjavaQualifiedExpr("Throwable", ctx)})
+			if sourceView, physicalType, source := sourceCatchVariableView(catchTypes, recoveredName, catchCtx); source {
+				catchValue = sourceView
+				catchType = physicalType
+			}
 			recordLocalVariableDefinition(catchCtx, catchName, originalType, catchType)
 			bodyStmts = append(bodyStmts, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: localBindingName(catchName, catchCtx)}},
 				Tok: token.DEFINE,
-				Rhs: []ast.Expr{&ast.TypeAssertExpr{X: &ast.Ident{Name: recoveredName}, Type: stdjavaQualifiedExpr("Throwable", ctx)}},
+				Rhs: []ast.Expr{catchValue},
 			})
 			bodyStmts = append(bodyStmts, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
@@ -1193,6 +1205,10 @@ func catchConditionExpr(catchTypes []string, recoveredName string, ctx Ctx) ast.
 
 	checks := []ast.Expr{}
 	for _, catchType := range catchTypes {
+		if descriptor, source := sourceCatchDescriptor(catchType, ctx); source {
+			checks = append(checks, stdjavaCall(ctx, "ObjectInstanceOf", ast.NewIdent(recoveredName), descriptor))
+			continue
+		}
 		if shouldTreatAsCatchAll(catchType, ctx) {
 			return &ast.Ident{Name: "true"}
 		}
@@ -1200,10 +1216,13 @@ func catchConditionExpr(catchTypes []string, recoveredName string, ctx Ctx) ast.
 		// Match by hierarchy through the stdjava runtime: a thrown
 		// IllegalArgumentException is caught by `catch (RuntimeException e)`.
 		// Multi-catch (catch (A | B e)) is handled by OR-ing each type's check.
-		base, _ := parseJavaTypeString(catchType)
-		typeName := stripJavaQualifier(base)
+		typeName, nominal, _ := throwableCatchDescriptor(catchType, ctx)
+		helper := "CaughtAs"
+		if nominal {
+			helper = "CaughtAsType"
+		}
 		checks = append(checks, &ast.CallExpr{
-			Fun: stdjavaQualifiedExpr("CaughtAs", ctx),
+			Fun: stdjavaQualifiedExpr(helper, ctx),
 			Args: []ast.Expr{
 				&ast.Ident{Name: recoveredName},
 				&ast.BasicLit{Kind: token.STRING, Value: `"` + typeName + `"`},
@@ -1227,36 +1246,8 @@ func catchConditionExpr(catchTypes []string, recoveredName string, ctx Ctx) ast.
 }
 
 func shouldTreatAsCatchAll(javaType string, ctx Ctx) bool {
-	base, _ := parseJavaTypeString(javaType)
-	base = stripJavaQualifier(base)
-
-	// Throwable and Object are the only true catch-alls: they match anything that
-	// escaped the try body. Everything else — including Exception and
-	// RuntimeException — is matched by hierarchy through stdjava.CaughtAs. This is
-	// sound because stdjava.NormalizePanic converts every raw Go panic into a
-	// typed exception (RuntimeException by default) at the recover boundary, so a
-	// thrown Error/Throwable is correctly NOT caught by catch (Exception e), while
-	// more specific clauses still win by appearing earlier in the dispatch chain.
-	switch base {
-	case "Throwable", "Object":
-		return true
-	}
-
-	// Built-in exception types are modelled by stdjava and matched by hierarchy.
-	if isBuiltinExceptionType(base) {
-		return false
-	}
-
-	if resolveClassScopeByQualifiedName(ctx, javaType) != nil {
-		return false
-	}
-	if resolveClassScopeByQualifiedName(ctx, base) != nil {
-		return false
-	}
-
-	// Unknown exception classes from external libraries are treated as catch-all,
-	// so generated code does not depend on unavailable type declarations.
-	return true
+	_, _, catchAll := throwableCatchDescriptor(javaType, ctx)
+	return catchAll
 }
 
 func cloneLocalScopeDefinition(local *symbol.Definition) *symbol.Definition {

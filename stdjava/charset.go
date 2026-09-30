@@ -3,6 +3,7 @@ package stdjava
 import (
 	"encoding/binary"
 	"strings"
+	"sync"
 	"unicode/utf16"
 
 	"golang.org/x/text/transform"
@@ -10,15 +11,19 @@ import (
 
 // Charset implements the six mandatory standard charsets used by Java byte
 // string conversion. Additional installed encodings are not modeled.
-type Charset struct{ name string }
+type Charset struct {
+	name         string
+	javaNameOnce sync.Once
+	javaName     *JavaString
+}
 
 var (
-	US_ASCII   = &Charset{"US-ASCII"}
-	ISO_8859_1 = &Charset{"ISO-8859-1"}
-	UTF_8      = &Charset{"UTF-8"}
-	UTF_16BE   = &Charset{"UTF-16BE"}
-	UTF_16LE   = &Charset{"UTF-16LE"}
-	UTF_16     = &Charset{"UTF-16"}
+	US_ASCII   = &Charset{name: "US-ASCII"}
+	ISO_8859_1 = &Charset{name: "ISO-8859-1"}
+	UTF_8      = &Charset{name: "UTF-8"}
+	UTF_16BE   = &Charset{name: "UTF-16BE"}
+	UTF_16LE   = &Charset{name: "UTF-16LE"}
+	UTF_16     = &Charset{name: "UTF-16"}
 )
 
 func (c *Charset) Name() string            { return c.name }

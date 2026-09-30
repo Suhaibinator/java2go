@@ -6,8 +6,10 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
+	"reflect"
 	"testing"
 
+	stdjava "github.com/NickyBoy89/java2go/stdjava"
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/java"
 )
@@ -68,6 +70,28 @@ func findNode(node *sitter.Node, typeName string) *sitter.Node {
 	return nil
 }
 
+// assertCanonicalJavaStringType checks the exact reference ABI and nominal
+// runtime package binding; the astutil API returns a type expression, not imports.
+func assertCanonicalJavaStringType(t *testing.T, result ast.Expr) {
+	t.Helper()
+	star, ok := result.(*ast.StarExpr)
+	if !ok {
+		t.Fatalf("Expected canonical JavaString pointer, got %T", result)
+	}
+	selector, ok := star.X.(*ast.SelectorExpr)
+	if !ok || selector.Sel == nil || selector.Sel.Name != "JavaString" {
+		t.Fatalf("Expected pointer element stdjava.JavaString, got %#v", star.X)
+	}
+	qualifier, ok := selector.X.(*ast.Ident)
+	if !ok || qualifier.Name != "stdjava" {
+		t.Fatalf("Expected canonical runtime qualifier stdjava, got %#v", selector.X)
+	}
+	runtimeType := reflect.TypeFor[*stdjava.JavaString]().Elem()
+	if runtimeType.Name() != selector.Sel.Name || runtimeType.PkgPath() != "github.com/NickyBoy89/java2go/stdjava" {
+		t.Fatalf("Unexpected canonical String runtime import provenance: %s.%s", runtimeType.PkgPath(), runtimeType.Name())
+	}
+}
+
 func TestParseTypeWithTypeParams_TypeIdentifier(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -119,11 +143,11 @@ func TestParseTypeWithTypeParams_TypeIdentifier(t *testing.T) {
 			wantName:   "X",
 		},
 		{
-			name:       "String type becomes string (primitive)",
+			name:       "String type becomes canonical reference",
 			source:     "class C { String field; }",
 			typeParams: nil,
-			wantType:   "ident",
-			wantName:   "string",
+			wantType:   "java-string",
+			wantName:   "JavaString",
 		},
 	}
 
@@ -138,6 +162,8 @@ func TestParseTypeWithTypeParams_TypeIdentifier(t *testing.T) {
 			result := ParseTypeWithTypeParams(typeNode, []byte(tt.source), tt.typeParams)
 
 			switch tt.wantType {
+			case "java-string":
+				assertCanonicalJavaStringType(t, result)
 			case "ident":
 				ident, ok := result.(*ast.Ident)
 				if !ok {
@@ -179,8 +205,8 @@ func TestParseTypeWithTypeParams_GenericType(t *testing.T) {
 			typeParams:    nil,
 			wantBaseName:  "List",
 			wantArgCount:  1,
-			wantFirstArg:  "string",
-			wantArgIsStar: false,
+			wantFirstArg:  "stdjava.JavaString",
+			wantArgIsStar: true,
 		},
 		{
 			name:          "generic type List<T> with T in typeParams",
@@ -259,7 +285,9 @@ func TestParseTypeWithTypeParams_GenericType(t *testing.T) {
 
 			if len(typeArgs) > 0 {
 				firstArg := typeArgs[0]
-				if tt.wantArgIsStar {
+				if tt.wantFirstArg == "stdjava.JavaString" {
+					assertCanonicalJavaStringType(t, firstArg)
+				} else if tt.wantArgIsStar {
 					star, ok := firstArg.(*ast.StarExpr)
 					if !ok {
 						t.Fatalf("Expected first type arg to be *ast.StarExpr, got %T", firstArg)

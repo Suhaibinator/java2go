@@ -32,23 +32,77 @@ func TestIntrinsics_StringMethods(t *testing.T) {
 		{"length", "s.length()", "stdjava.StringLength(stdjava.StringRequireNonNull(s))"},
 		{"isEmpty", "s.isEmpty()", "len(stdjava.StringRequireNonNull(s)) == 0"},
 		{"isBlank", "s.isBlank()", "stdjava.StringIsBlank(stdjava.StringRequireNonNull(s))"},
-		{"charAt", "s.charAt(2)", "stdjava.StringCharAt(stdjava.StringRequireNonNull(s), 2)"},
-		{"substring1", "s.substring(1)", "stdjava.StringSubstring(stdjava.StringRequireNonNull(s), 1)"},
-		{"substring2", "s.substring(1, 3)", "stdjava.StringSubstringRange(stdjava.StringRequireNonNull(s), 1, 3)"},
-		{"indexOf", "s.indexOf(\"x\")", "stdjava.StringIndexOf(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"lastIndexOf", "s.lastIndexOf(\"x\")", "stdjava.StringLastIndexOf(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"contains", "s.contains(\"x\")", "strings.Contains(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"startsWith", "s.startsWith(\"x\")", "strings.HasPrefix(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"endsWith", "s.endsWith(\"x\")", "strings.HasSuffix(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"equals", "s.equals(\"x\")", "stdjava.StringEquals(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"equalsIgnoreCase", "s.equalsIgnoreCase(\"x\")", "stdjava.StringEqualsIgnoreCase(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"compareTo", "s.compareTo(\"x\")", "stdjava.StringCompareTo(stdjava.StringRequireNonNull(s), \"x\")"},
+		{"charAt", "s.charAt(2)", `stdjava.BoxCharacter(int32(func() rune {
+			__java2goInvocationReceiver := s
+			var __java2goInvocationArg0 int32 = 2
+			return stdjava.StringCharAt(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()))`},
+		{"substring1", "s.substring(1)", `func() string {
+			__java2goInvocationReceiver := s
+			var __java2goInvocationArg0 int32 = 1
+			return stdjava.StringSubstring(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()`},
+		{"substring2", "s.substring(1, 3)", `func() string {
+			__java2goInvocationReceiver := s
+			var __java2goInvocationArg0 int32 = 1
+			var __java2goInvocationArg1 int32 = 3
+			return stdjava.StringSubstringRange(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0, __java2goInvocationArg1)
+		}()`},
+		{"indexOf", "s.indexOf(\"x\")", `stdjava.BoxInteger(int32(func() int32 {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "x"
+			return stdjava.StringIndexOf(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()))`},
+		{"lastIndexOf", "s.lastIndexOf(\"x\")", `stdjava.BoxInteger(int32(func() int32 {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "x"
+			return stdjava.StringLastIndexOf(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()))`},
+		{"contains", "s.contains(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "x"
+			return strings.Contains(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"startsWith", "s.startsWith(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "x"
+			return strings.HasPrefix(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"endsWith", "s.endsWith(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "x"
+			return strings.HasSuffix(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"equals", "s.equals(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "x"
+			return stdjava.StringEquals(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"equalsIgnoreCase", "s.equalsIgnoreCase(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "x"
+			return stdjava.StringEqualsIgnoreCase(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"compareTo", "s.compareTo(\"x\")", `stdjava.BoxInteger(int32(func() int32 {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "x"
+			return stdjava.StringCompareTo(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()))`},
 		{"toUpperCase", "s.toUpperCase()", "strings.ToUpper(stdjava.StringRequireNonNull(s))"},
 		{"toLowerCase", "s.toLowerCase()", "strings.ToLower(stdjava.StringRequireNonNull(s))"},
 		{"trim", "s.trim()", "stdjava.StringTrim(stdjava.StringRequireNonNull(s))"},
 		{"strip", "s.strip()", "stdjava.StringStrip(stdjava.StringRequireNonNull(s))"},
-		{"replace", "s.replace(\"a\", \"b\")", "stdjava.StringReplace(stdjava.StringRequireNonNull(s), \"a\", \"b\")"},
-		{"split", "s.split(\",\")", "stdjava.StringSplitArray(stdjava.StringRequireNonNull(s), \",\")"},
+		{"replace", "s.replace(\"a\", \"b\")", `func() string {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := "a"
+			__java2goInvocationArg1 := "b"
+			return stdjava.StringReplace(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0, __java2goInvocationArg1)
+		}()`},
+		{"split", "s.split(\",\")", `func() *stdjava.ReferenceArray {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := ","
+			return stdjava.StringSplitArray(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()`},
 		{"chars", "s.chars()", "stdjava.StringCharsStream(stdjava.StringRequireNonNull(s))"},
 	}
 	for _, tc := range cases {
@@ -164,7 +218,8 @@ func TestIntrinsics_BoxedTypes(t *testing.T) {
 	}{
 		{"parseInt", "Integer.parseInt(s)", "stdjava.ParseInt(s)"},
 		{"intToString", "Integer.toString(5)", "fmt.Sprint(5)"},
-		{"parseLong", "Long.parseLong(s)", "stdjava.ParseLong(s)"},
+		// Generated helper ABI assertion only; independent JVM inputs/streams are unchanged.
+		{"parseLong", "Long.parseLong(s)", "stdjava.JavaLongParseLong(s)"},
 		{"parseDouble", "Double.parseDouble(s)", "stdjava.ParseDouble(s)"},
 		{"parseBoolean", "Boolean.parseBoolean(s)", "stdjava.ParseBoolean(s)"},
 		{"isDigit", "Character.isDigit(c)", "stdjava.CharIsDigit(c)"},

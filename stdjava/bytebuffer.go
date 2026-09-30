@@ -32,6 +32,7 @@ func (b *ByteBuffer) Remaining() int32             { return b.limit - b.position
 func (b *ByteBuffer) HasArray() bool               { return true }
 func (b *ByteBuffer) Array() *PrimitiveArray[int8] { return b.array }
 func (b *ByteBuffer) Position() int32              { return b.position }
+func (b *ByteBuffer) Limit() int32                 { return b.limit }
 func (b *ByteBuffer) SetPosition(position int32) *ByteBuffer {
 	if position < 0 || position > b.limit {
 		panic(NewIllegalArgumentException("position out of bounds"))

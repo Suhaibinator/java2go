@@ -15,15 +15,20 @@ import (
 // changes the label, not the UTC offset or daylight-saving rules.
 type TimeZone struct {
 	id       string
+	javaID   *JavaString
 	location *time.Location
 }
 
 func (*TimeZone) JavaDynamicTypeID() TypeID { return "java.util.TimeZone" }
-func (zone *TimeZone) GetID() string        { ReferenceRequireNonNull(zone); return zone.id }
+func (zone *TimeZone) GetID() string {
+	ReferenceRequireNonNull(zone)
+	return dateFormatNativeText(zone.javaID)
+}
 func (zone *TimeZone) SetID(id string) {
 	ReferenceRequireNonNull(zone)
 	StringRequireNonNull(id)
 	zone.id = id
+	zone.javaID = dateFormatNativeJavaString(id)
 }
 func (zone *TimeZone) Clone() *TimeZone { ReferenceRequireNonNull(zone); copy := *zone; return &copy }
 func (zone *TimeZone) GetOffset(millis int64) int32 {
@@ -58,7 +63,7 @@ func TimeZoneGetTimeZone(id string) *TimeZone {
 		if zone := customGMTTimeZone(id); zone != nil {
 			return zone
 		}
-		return &TimeZone{"GMT", time.UTC}
+		return newTimeZoneWithID("GMT", time.UTC)
 	}
 	// Java's legacy short IDs are not all present in the IANA database.
 	aliases := map[string]string{"ACT": "Australia/Darwin", "AET": "Australia/Sydney", "AGT": "America/Argentina/Buenos_Aires", "ART": "Africa/Cairo", "AST": "America/Anchorage", "BET": "America/Sao_Paulo", "BST": "Asia/Dhaka", "CAT": "Africa/Harare", "CNT": "America/St_Johns", "CST": "America/Chicago", "CTT": "Asia/Shanghai", "EAT": "Africa/Addis_Ababa", "ECT": "Europe/Paris", "IET": "America/Indiana/Indianapolis", "IST": "Asia/Kolkata", "JST": "Asia/Tokyo", "MIT": "Pacific/Apia", "NET": "Asia/Yerevan", "NST": "Pacific/Auckland", "PLT": "Asia/Karachi", "PNT": "America/Phoenix", "PRT": "America/Puerto_Rico", "PST": "America/Los_Angeles", "SST": "Pacific/Guadalcanal", "VST": "Asia/Ho_Chi_Minh"}
@@ -67,12 +72,12 @@ func TimeZoneGetTimeZone(id string) *TimeZone {
 		name = alias
 	}
 	if id == "GMT" || id == "UTC" {
-		return &TimeZone{id, time.UTC}
+		return newTimeZoneWithID(id, time.UTC)
 	}
 	if location, err := time.LoadLocation(name); err == nil && id != "Local" && id != "" {
-		return &TimeZone{id, location}
+		return newTimeZoneWithID(id, location)
 	}
-	return &TimeZone{"GMT", time.UTC}
+	return newTimeZoneWithID("GMT", time.UTC)
 }
 func customGMTTimeZone(id string) *TimeZone {
 	if len(id) < 5 || (id[3] != '+' && id[3] != '-') {
@@ -114,7 +119,7 @@ func customGMTTimeZone(id string) *TimeZone {
 		offset = -offset
 	}
 	canonical := fmt.Sprintf("GMT%c%02d:%02d", id[3], hours, minutes)
-	return &TimeZone{canonical, time.FixedZone(canonical, offset)}
+	return newTimeZoneWithID(canonical, time.FixedZone(canonical, offset))
 }
 
 var defaultTimeZoneState struct {
@@ -134,7 +139,7 @@ func systemTimeZone() *TimeZone {
 	if id != "" {
 		return TimeZoneGetTimeZone(id)
 	}
-	return &TimeZone{time.Local.String(), time.Local}
+	return newTimeZoneWithID(time.Local.String(), time.Local)
 }
 func TimeZoneGetDefault() *TimeZone {
 	defaultTimeZoneState.Lock()
@@ -155,4 +160,29 @@ func TimeZoneSetDefault(zone *TimeZone) {
 }
 func init() {
 	RegisterJavaType("java.util.TimeZone", ObjectTypeID, SerializableTypeID, CloneableTypeID)
+}
+
+func newTimeZoneWithID(id string, location *time.Location) *TimeZone {
+	return &TimeZone{id: id, javaID: dateFormatNativeJavaString(id), location: location}
+}
+func (zone *TimeZone) GetIDJavaString() *JavaString {
+	ReferenceRequireNonNull(zone)
+	return zone.javaID
+}
+func (zone *TimeZone) SetIDJavaString(id *JavaString) {
+	ReferenceRequireNonNull(zone)
+	ReferenceRequireNonNull(id)
+	// Lookup names are scalar metadata; the Java-visible label retains all units.
+	zone.id, _ = dateFormatScalarLookupText(id)
+	zone.javaID = id
+}
+func TimeZoneGetTimeZoneJavaString(id *JavaString) *TimeZone {
+	ReferenceRequireNonNull(id)
+	text, scalar := dateFormatScalarLookupText(id)
+	if !scalar {
+		// Such units cannot name an IANA or custom GMT zone. Retain the existing
+		// unknown-zone GMT result without introducing replacement characters.
+		return TimeZoneGetTimeZone("")
+	}
+	return TimeZoneGetTimeZone(text)
 }

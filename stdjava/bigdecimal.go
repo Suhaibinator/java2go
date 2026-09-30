@@ -4,21 +4,46 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 // BigDecimal preserves coefficient and scale independently. Equal numeric
 // values with different scales intentionally have different equals/hash values.
 type BigDecimal struct {
-	coefficient big.Int
-	scale       int32
+	coefficient     big.Int
+	scale           int32
+	javaStringCache atomic.Pointer[JavaString]
 }
 
 func NewBigDecimal(text string) *BigDecimal {
 	coefficient, scale := parseBigDecimal(text)
 	return &BigDecimal{coefficient: coefficient, scale: scale}
 }
+
+// NewBigDecimalJavaString is the canonical Java constructor boundary. The parser
+// reads the original UTF16 units and retains them in NumberFormatException.
+func NewBigDecimalJavaString(text *JavaString) *BigDecimal {
+	coefficient, scale := parseBigDecimalJavaString(text)
+	return &BigDecimal{coefficient: coefficient, scale: scale}
+}
+
 func (*BigDecimal) JavaDynamicTypeID() TypeID { return "java.math.BigDecimal" }
 func (value *BigDecimal) Scale() int32        { ReferenceRequireNonNull(value); return value.scale }
+
+// StringJava2goExecution implements the nominal Java toString result ABI.
+// The native String method remains available for legacy Go callers.
+func (value *BigDecimal) StringJava2goExecution(_ *Execution) *JavaString {
+	ReferenceRequireNonNull(value)
+	if cached := value.javaStringCache.Load(); cached != nil {
+		return cached
+	}
+	text := bigNumberJavaString(value.String())
+	if value.javaStringCache.CompareAndSwap(nil, text) {
+		return text
+	}
+	return value.javaStringCache.Load()
+}
+
 func (value *BigDecimal) Equals(other any) bool {
 	ReferenceRequireNonNull(value)
 	right, ok := other.(*BigDecimal)

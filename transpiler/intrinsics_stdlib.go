@@ -29,227 +29,98 @@ func expectArgs(args []ast.Expr, n int) bool {
 // --- java.lang.String -------------------------------------------------------
 
 func registerStringIntrinsics() {
-	// length() -> int32(len(s))
-	// length() counts characters. Go's len() counts UTF-8 bytes, which differs
-	// from Java's UTF-16 code-unit count for non-ASCII text, so use the
-	// rune-based stdjava helper (matches Java for BMP characters).
-	registerInstanceIntrinsic("String", "length", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 0) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringLength", recv)
-	})
-
-	// isEmpty() -> len(s) == 0
+	for _, spec := range []struct {
+		java, goName, result string
+		arguments            int
+	}{
+		{"length", "Length", "int", 0}, {"charAt", "CharAt", "char", 1},
+		{"equals", "Equals", "boolean", 1}, {"compareTo", "CompareTo", "int", 1},
+		{"concat", "Concat", "java.lang.String", 1},
+	} {
+		spec := spec
+		registerInstanceIntrinsic("String", spec.java, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != spec.arguments {
+				return nil
+			}
+			return methodCall(recv, spec.goName, args...)
+		})
+		registerInstanceIntrinsicResultType("String", spec.java, spec.result)
+	}
 	registerInstanceIntrinsic("String", "isEmpty", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 0) {
+		if len(args) != 0 {
 			return nil
 		}
-		return &ast.BinaryExpr{X: callIdent("len", recv), Op: token.EQL, Y: &ast.BasicLit{Kind: token.INT, Value: "0"}}
+		return &ast.BinaryExpr{X: methodCall(recv, "Length"), Op: token.EQL, Y: &ast.BasicLit{Kind: token.INT, Value: "0"}}
 	})
-
-	// isBlank() -> stdjava.StringIsBlank(s)  (rune/whitespace aware, Java 11+)
-	registerInstanceIntrinsic("String", "isBlank", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 0) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringIsBlank", recv)
-	})
-
-	// charAt(i) -> stdjava.StringCharAt(s, i)  (returns rune; rune-indexed)
-	registerInstanceIntrinsic("String", "charAt", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringCharAt", recv, args[0])
-	})
-
-	// substring(begin) / substring(begin, end) -> rune-indexed helpers.
+	registerInstanceIntrinsicResultType("String", "isEmpty", "boolean")
 	registerInstanceIntrinsic("String", "substring", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		switch len(args) {
 		case 1:
-			return stdjavaCall(ctx, "StringSubstring", recv, args[0])
+			return stdjavaCall(ctx, "JavaStringSubstringFrom", recv, args[0])
 		case 2:
-			return stdjavaCall(ctx, "StringSubstringRange", recv, args[0], args[1])
+			return methodCall(recv, "Substring", args...)
 		}
 		return nil
 	})
-
-	// Search overloads accept a String or int code point and optional start index.
-	registerInstanceIntrinsic("String", "indexOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) < 1 || len(args) > 2 {
+	registerInstanceIntrinsicResultType("String", "substring", "java.lang.String")
+	for _, spec := range []struct {
+		java, helper, result string
+		min, max             int
+	}{
+		{"isBlank", "JavaStringIsBlank", "boolean", 0, 0},
+		{"indexOf", "JavaStringIndexOf", "int", 1, 2},
+		{"lastIndexOf", "JavaStringLastIndexOf", "int", 1, 2},
+		{"contains", "JavaStringContains", "boolean", 1, 1},
+		{"startsWith", "JavaStringStartsWith", "boolean", 1, 2},
+		{"endsWith", "JavaStringEndsWith", "boolean", 1, 1},
+		{"equalsIgnoreCase", "JavaStringEqualsIgnoreCase", "boolean", 1, 1},
+		{"toUpperCase", "JavaStringToUpperCase", "java.lang.String", 0, 1},
+		{"toLowerCase", "JavaStringToLowerCase", "java.lang.String", 0, 1},
+		{"trim", "JavaStringTrim", "java.lang.String", 0, 0},
+		{"strip", "JavaStringStrip", "java.lang.String", 0, 0},
+		{"replace", "JavaStringReplace", "java.lang.String", 2, 2},
+		{"split", "JavaStringSplitArray", "java.lang.String[]", 1, 2},
+		{"chars", "JavaStringCharsStream", "IntStream", 0, 0},
+	} {
+		spec := spec
+		registerInstanceIntrinsic("String", spec.java, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) < spec.min || len(args) > spec.max {
+				return nil
+			}
+			return stdjavaCall(ctx, spec.helper, append([]ast.Expr{recv}, args...)...)
+		})
+		registerInstanceIntrinsicResultType("String", spec.java, spec.result)
+	}
+	registerInstanceIntrinsic("String", "intern", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringIndexOf", append([]ast.Expr{recv}, args...)...)
+		return stdjavaCall(ctx, "InternJavaString", recv)
 	})
-	registerInstanceIntrinsic("String", "lastIndexOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) < 1 || len(args) > 2 {
+	registerInstanceIntrinsicResultType("String", "intern", "java.lang.String")
+	registerInstanceIntrinsic("String", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringLastIndexOf", append([]ast.Expr{recv}, args...)...)
+		return stdjavaCall(ctx, "RequireJavaString", recv)
 	})
-
-	// contains(s) -> strings.Contains(s, sub)
-	registerInstanceIntrinsic("String", "contains", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
-		}
-		return pkgCall(ctx, "strings", "Contains", recv, args[0])
-	})
-
-	// startsWith / endsWith -> strings.HasPrefix / HasSuffix
-	registerInstanceIntrinsic("String", "startsWith", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
-		}
-		return pkgCall(ctx, "strings", "HasPrefix", recv, args[0])
-	})
-	registerInstanceIntrinsic("String", "endsWith", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
-		}
-		return pkgCall(ctx, "strings", "HasSuffix", recv, args[0])
-	})
-
-	// equals(o) -> s == o  (Java String.equals on two strings is value equality).
-	registerInstanceIntrinsic("String", "equals", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringEquals", recv, args[0])
-	})
-
-	// concat(s) -> recv + s. Both operands are Java references, so normalize the
-	// argument as well as the receiver and retain concat(null)'s NPE behavior.
-	registerInstanceIntrinsic("String", "concat", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
-		}
-		return &ast.BinaryExpr{X: recv, Op: token.ADD, Y: stdjavaCall(ctx, "StringRequireNonNull", args[0])}
-	})
-
-	// equalsIgnoreCase(o) -> strings.EqualFold via stdjava wrapper.
-	registerInstanceIntrinsic("String", "equalsIgnoreCase", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringEqualsIgnoreCase", recv, args[0])
-	})
-
-	// compareTo(o) -> int32(strings.Compare(...)) via stdjava wrapper.
-	registerInstanceIntrinsic("String", "compareTo", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringCompareTo", recv, args[0])
-	})
-
-	// toUpperCase / toLowerCase -> strings.ToUpper / ToLower
-	registerInstanceIntrinsic("String", "toUpperCase", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) == 1 {
-			return stdjavaCall(ctx, "StringToUpperCaseLocale", recv, args[0])
-		}
-		if !expectArgs(args, 0) {
-			return nil
-		}
-		return pkgCall(ctx, "strings", "ToUpper", recv)
-	})
-	registerInstanceIntrinsic("String", "toLowerCase", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) == 1 {
-			return stdjavaCall(ctx, "StringToLowerCaseLocale", recv, args[0])
-		}
-		if !expectArgs(args, 0) {
-			return nil
-		}
-		return pkgCall(ctx, "strings", "ToLower", recv)
-	})
-
-	// Java trim and strip use different character predicates.
-	registerInstanceIntrinsic("String", "trim", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 0) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringTrim", recv)
-	})
-	registerInstanceIntrinsic("String", "strip", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 0) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringStrip", recv)
-	})
-
-	// replace(old, new) -> stdjava.StringReplace (strings.ReplaceAll). Java's
-	// replace replaces all literal occurrences.
-	registerInstanceIntrinsic("String", "replace", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 2) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringReplace", recv, args[0], args[1])
-	})
-
-	// split(regex) -> stdjava.StringSplitArray, which treats the separator as a Java
-	// regex (RE2 approximation), splits literally when the pattern has no regex
-	// metacharacters, and removes trailing empty strings like Java's one-arg split.
-	registerInstanceIntrinsic("String", "split", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) != 1 && len(args) != 2 {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringSplitArray", append([]ast.Expr{recv}, args...)...)
-	})
-
-	// chars() -> stdjava.StringCharsStream(s). Java's String.chars returns an
-	// IntStream, so it must be a stream for the pipeline operations chained onto
-	// it to resolve; the previous []rune result only worked when the caller
-	// immediately ranged over it.
-	registerInstanceIntrinsic("String", "chars", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 0) {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringCharsStream", recv)
-	})
-	registerInstanceIntrinsicResultType("String", "chars", "IntStream")
-
-	// --- static String methods ---
-
-	// String.valueOf(x) uses the stdjava conversion bridge so floating-point
-	// values, null, and generated fmt.Stringer implementations (notably enums)
-	// retain Java's textual form.
+	registerInstanceIntrinsicResultType("String", "toString", "java.lang.String")
+	// Static callsite/method-reference lowering supplies the selected overload.
 	registerStaticIntrinsic("String", "valueOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if !expectArgs(args, 1) {
+		if len(args) != 1 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringValueOf", args[0])
+		return stdjavaCall(ctx, "JavaStringValueOfExecution", intrinsicExecutionExpr(ctx), args[0])
 	})
-
-	// String.format(fmt, args...) -> fmt.Sprintf(convertedFmt, args...). The Java
-	// format string is passed through unchanged, which works for the %s/%d/%f
-	// conversions shared with Go; locale and Java-specific conversions are not
-	// translated.
 	registerStaticIntrinsic("String", "format", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) == 0 {
 			return nil
 		}
-		return pkgCall(ctx, "fmt", "Sprintf", args...)
+		return lowerStringFormatReference(args, ctx)
 	})
-
-	// Overload selection needs the static Java argument type, retained by
-	// lowerStringJoin after the canonical String owner guard in tryStaticIntrinsic.
-	registerStaticIntrinsic("String", "join", func(_ ast.Expr, _ []ast.Expr, _ Ctx) ast.Expr {
-		return nil
-	})
-	for _, method := range []string{"length", "indexOf", "lastIndexOf", "compareTo"} {
-		registerInstanceIntrinsicResultType("String", method, "int")
-	}
-	registerInstanceIntrinsicResultType("String", "charAt", "char")
-	for _, method := range []string{"isEmpty", "isBlank", "contains", "startsWith", "endsWith", "equals", "equalsIgnoreCase"} {
-		registerInstanceIntrinsicResultType("String", method, "boolean")
-	}
-	for _, method := range []string{"substring", "concat", "toUpperCase", "toLowerCase", "trim", "strip", "replace"} {
-		registerInstanceIntrinsicResultType("String", method, "String")
-	}
-	registerInstanceIntrinsicResultType("String", "split", "String[]")
+	registerStaticIntrinsic("String", "join", func(_ ast.Expr, _ []ast.Expr, _ Ctx) ast.Expr { return nil })
 	for _, method := range []string{"valueOf", "format", "join"} {
-		registerStaticIntrinsicResultType("String", method, "String")
+		registerStaticIntrinsicResultType("String", method, "java.lang.String")
 	}
 }
 
@@ -282,7 +153,7 @@ func registerStringBuilderIntrinsics() {
 			if !expectArgs(args, 0) {
 				return nil
 			}
-			return methodCall(recv, "String")
+			return methodCall(recv, "ToJavaString")
 		})
 		registerInstanceIntrinsic(typeName, "length", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, 0) {
@@ -333,12 +204,6 @@ func lowerStringBuilderTextCall(javaMethod, goMethod string, valueIndex int) nod
 			return methodCall(recv, goMethod+"Chars", args...)
 		}
 		converted := javaStringConversionExpr(valueNode, args[valueIndex], ctx, source)
-		switch javaType {
-		case "byte", "short", "int", "long", "boolean":
-			// Concatenation can hand these values directly to fmt, but builders
-			// need a string to distinguish a numeric int32 from a character.
-			converted = javaStringValueOfForType(javaType, converted, ctx)
-		}
 		args[valueIndex] = converted
 		return methodCall(recv, goMethod, args...)
 	}
@@ -494,14 +359,14 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "IntegerToHexString", args[0])
+		return stdjavaCall(ctx, "JavaIntegerToHexString", args[0])
 	})
-	registerStaticIntrinsicResultType("Integer", "toHexString", "String")
+	registerStaticIntrinsicResultType("Integer", "toHexString", "java.lang.String")
 	registerStaticIntrinsic("Integer", "parseInt", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "ParseInt", args[0])
+		return stdjavaCall(ctx, "JavaIntegerParseInt", args[0])
 	})
 	registerStaticIntrinsic("Integer", "valueOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
@@ -527,7 +392,7 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "ParseLong", args[0])
+		return stdjavaCall(ctx, "JavaLongParseLong", args[0])
 	})
 	registerStaticIntrinsic("Long", "valueOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
@@ -692,10 +557,17 @@ func registerBoxedTypeIntrinsics() {
 // All wrappers are references. Factories and constructors must remain distinct:
 // valueOf may return a cached object, whereas new always preserves fresh identity.
 func registerBoxedObjectIntrinsics() {
+	registerIntrinsicOwner("java.lang.Integer", true)
+	registerIntrinsicOwner("java.lang.Long", true)
+	// Imported calls use the same lowering only after declared overload applicability.
+	registerStaticIntrinsicImportSignature("Integer", "parseInt", "java.lang.String")
+	registerStaticIntrinsicImportSignature("Integer", "parseInt", "java.lang.String", "int")
+	registerStaticIntrinsicImportSignature("Long", "parseLong", "java.lang.String")
+	registerStaticIntrinsicImportSignature("Long", "parseLong", "java.lang.String", "int")
 	for _, spec := range []struct{ wrapper, primitive, parser string }{
 		{"Boolean", "boolean", "ParseBoolean"}, {"Byte", "byte", "ParseByte"},
 		{"Short", "short", "ParseShort"}, {"Character", "char", ""},
-		{"Integer", "int", "ParseInt"}, {"Long", "long", "ParseLong"},
+		{"Integer", "int", "JavaIntegerParseInt"}, {"Long", "long", "JavaLongParseLong"},
 		{"Float", "float", "ParseFloat"}, {"Double", "double", "ParseDouble"},
 	} {
 		registerStaticIntrinsic(spec.wrapper, "valueOf", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
@@ -906,7 +778,7 @@ func registerBoxedObjectIntrinsics() {
 			if len(args) != 0 {
 				return nil
 			}
-			return stdjavaCall(ctx, "StringValueOfExecution", intrinsicExecutionExpr(ctx), stdjavaCall(ctx, "ReferenceRequireNonNull", recv))
+			return stdjavaCall(ctx, "JavaStringValueOfExecution", intrinsicExecutionExpr(ctx), stdjavaCall(ctx, "ReferenceRequireNonNull", recv))
 		})
 		registerInstanceIntrinsicResultType(receiverType, "toString", "String")
 		registerInstanceIntrinsic(receiverType, "getClass", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
@@ -936,7 +808,7 @@ func registerLocaleIntrinsics() {
 		if len(args) != 1 {
 			return nil
 		}
-		return stdjavaCall(ctx, "LocaleForLanguageTag", args[0])
+		return stdjavaCall(ctx, "LocaleForLanguageTagJavaString", args[0])
 	})
 	registerStaticIntrinsicResultType("Locale", "forLanguageTag", "Locale")
 }

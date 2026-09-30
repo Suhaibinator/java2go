@@ -18,7 +18,7 @@ func (m *Map[K, V]) javaMapVisitEntries(visit func(any, any)) {
 		if m.modCount != version {
 			panic(NewConcurrentModificationException(""))
 		}
-		visit(record.entry.Key, record.entry.Value)
+		visit(record.key, record.value)
 	}
 }
 func putAllValue[T any](value any) T {
@@ -47,9 +47,9 @@ func (m *Map[K, V]) PutAll(source any, execution ...*Execution) {
 	if m.sorted && m.comparator == nil && len(m.entries) == 0 && input.javaMapNaturalSorted() {
 		m.modCount++
 		input.javaMapVisitEntries(func(key, value any) {
-			m.entries = append(m.entries, &mapRecord[K, V]{entry: MapEntry[K, V]{Key: putAllValue[K](key), Value: putAllValue[V](value)}})
+			m.entries = append(m.entries, &mapRecord[K, V]{key: key, value: value})
 		})
 		return
 	}
-	input.javaMapVisitEntries(func(key, value any) { m.Put(putAllValue[K](key), putAllValue[V](value), exec) })
+	input.javaMapVisitEntries(func(key, value any) { m.putObject(key, value, false, exec) })
 }

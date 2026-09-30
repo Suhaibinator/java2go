@@ -80,7 +80,7 @@ func canonicalGenericTypeSpecs(name string, fields *ast.FieldList, parameters []
 	}
 	raw := availableCanonicalGenericName(name + "Java2goErased")
 	if canonicalGenericFamily(ctx.currentClass, ctx) != nil {
-		genericFamilyPhysicalFields(fields, parameters)
+		genericFamilyPhysicalFields(fields, parameters, ctx)
 	}
 	return []ast.Spec{
 		&ast.TypeSpec{Name: ast.NewIdent(raw), Type: &ast.StructType{Fields: fields}},
@@ -154,6 +154,9 @@ func canonicalGenericMethodType(typ string, def *symbol.Definition, ctx Ctx) boo
 		contains = contains || javaTypeContainsParameter(typ, parameter.Name) || javaTypeContainsParameter(typ, parameter.EmittedName())
 	}
 	if !contains {
+		return true
+	}
+	if mapEntryArgumentIndependent(typ, ctx) {
 		return true
 	}
 	if _, rank := javaArrayTypeParts(typ); rank != 0 {

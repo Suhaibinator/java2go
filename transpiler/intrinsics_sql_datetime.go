@@ -68,6 +68,12 @@ func dateConstructorNode(runtimeName string, noArgument bool) constructorNodeGen
 }
 
 func datetimeExpectedArgumentTypes(owner, method string, count int) ([]string, bool) {
+	if expected, ok := dateFormatExpectedArgumentTypes(owner, method, count); ok {
+		return expected, true
+	}
+	if count == 1 && ((owner == "TimeZone" && (method == "getTimeZone" || method == "setID")) || (owner == "Locale" && method == "forLanguageTag")) {
+		return []string{"java.lang.String"}, true
+	}
 	sql := sqlDateRuntimeNames[owner] != ""
 	if sql && method == "valueOf" && count == 1 {
 		return []string{"String"}, true

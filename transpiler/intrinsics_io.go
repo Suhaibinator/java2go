@@ -1,6 +1,11 @@
 package transpiler
 
-import "go/ast"
+import (
+	"go/ast"
+
+	"github.com/NickyBoy89/java2go/symbol"
+	sitter "github.com/smacker/go-tree-sitter"
+)
 
 // This file registers the java.io / java.nio.file / java.util.Scanner
 // intrinsics, mapping them onto the os/bufio-backed shims in stdjava/io.go and
@@ -30,6 +35,7 @@ import "go/ast"
 // String rather than a Path.
 
 func init() {
+	registerIntrinsicOwner("java.io.BufferedReader", true)
 	registerIOConstructors()
 	registerIOInstanceMethods()
 	registerIOStatics()
@@ -169,7 +175,14 @@ func registerIOConstructors() {
 	// reader layer (new BufferedReader(new FileReader(x)) -> x) and pass through;
 	// the stdjava constructor accepts a path string, a File/Path, or another
 	// stdjava reader such as the InputStreamReader shim.
-	for _, name := range []string{"BufferedReader", "FileReader"} {
+	registerConstructorIntrinsic("BufferedReader", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 && len(args) != 2 {
+			return nil
+		}
+		args = append([]ast.Expr{unwrapReaderArg(args[0])}, args[1:]...)
+		return stdjavaCall(ctx, "NewBufferedReaderReference", args...)
+	})
+	for _, name := range []string{"FileReader"} {
 		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) != 1 {
 				return nil
@@ -265,7 +278,12 @@ func registerIOInstanceMethods() {
 		// for the call site. For the common `while ((line = r.readLine()) != null)`
 		// pattern the transpiler would need a loop rewrite, which is out of scope
 		// here, so readLine is emitted as a method call returning the line.
-		registerInstanceIntrinsic(t, "readLine", ioMethod("ReadLine", 0))
+		if t == "BufferedReader" {
+			registerInstanceIntrinsic(t, "readLine", ioMethod("ReadLineReference", 0))
+			registerInstanceIntrinsicResultType(t, "readLine", "String")
+		} else {
+			registerInstanceIntrinsic(t, "readLine", ioMethod("ReadLine", 0))
+		}
 		registerInstanceIntrinsic(t, "ready", ioMethod("Ready", 0))
 		registerInstanceIntrinsic(t, "lines", ioMethod("Lines", 0))
 		registerInstanceIntrinsicResultType(t, "lines", "Stream<String>")
@@ -332,6 +350,9 @@ var nioPathMethods = []struct {
 }
 
 func registerNioIntrinsics() {
+	registerIntrinsicOwner("java.nio.file.Paths", true)
+	registerIntrinsicOwner("java.nio.file.Path", true)
+	registerIntrinsicOwner("java.nio.file.InvalidPathException", true)
 	// Paths.get(a, b, ...) / Path.of(a, b, ...) -> stdjava.PathsGet(a, b, ...).
 	// Java's overload is varargs, so any non-empty argument list is accepted.
 	pathsGet := func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
@@ -358,6 +379,92 @@ func registerNioIntrinsics() {
 			registerInstanceIntrinsicResultType("Path", method.javaName, method.resultType)
 		}
 	}
+	registerInstanceIntrinsic("Path", "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "PathToStringReference", recv)
+	})
+	registerInstanceIntrinsic("Path", "isAbsolute", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "PathIsAbsoluteReference", recv)
+	})
+	registerInstanceIntrinsicResultType("Path", "isAbsolute", "boolean")
+	registerInstanceIntrinsic("Path", "equals", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "ObjectEqualsExecution", intrinsicExecutionExpr(ctx), recv, args[0])
+	})
+	registerInstanceIntrinsicResultType("Path", "equals", "boolean")
+	for _, method := range []struct{ java, goName, result string }{
+		{"getInput", "GetInput", "String"}, {"getReason", "GetReason", "String"}, {"getIndex", "GetIndex", "int"},
+	} {
+		registerInstanceIntrinsic("InvalidPathException", method.java, ioMethod(method.goName, 0))
+		registerInstanceIntrinsicResultType("InvalidPathException", method.java, method.result)
+	}
+}
+
+// Select only the declared String varargs overload. The separate URI
+// declaration retains its existing dispatcher outside this ABI migration.
+func pathGetReferenceExpected(invocation *sitter.Node, ctx Ctx, source []byte) []string {
+	count := invocationArgumentCount(invocation)
+	if count == 0 {
+		return nil
+	}
+	first, known := inferExprJavaType(invocationArgumentNode(invocation, 0), ctx, source)
+	if !known || (!throwableConstructorMessageType(symbol.JavaType{Original: first}, ctx, map[typeParameterIdentityKey]bool{}) && !(first == "null" && count > 1)) {
+		return nil
+	}
+	expected := make([]string, count)
+	for index := range expected {
+		expected[index] = "java.lang.String"
+	}
+	if count == 2 {
+		second, _ := inferExprJavaType(invocationArgumentNode(invocation, 1), ctx, source)
+		base, rank := javaArrayTypeParts(second)
+		if second == "null" || (rank == 1 && throwableConstructorMessageType(symbol.JavaType{Original: base}, ctx, map[typeParameterIdentityKey]bool{})) {
+			expected[1] = "java.lang.String[]"
+		}
+	}
+	return expected
+}
+
+func lowerPathGetReference(invocation *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	expected := pathGetReferenceExpected(invocation, ctx, source)
+	if len(expected) == 0 {
+		return nil
+	}
+	name := "PathsGetReference"
+	if len(expected) == 2 && expected[1] == "java.lang.String[]" {
+		name = "PathsGetArrayReference"
+	}
+	return stdjavaCall(ctx, name, args...)
+}
+
+func pathResolveReferenceExpected(invocation *sitter.Node, ctx Ctx, source []byte) []string {
+	if invocationArgumentCount(invocation) != 1 {
+		return nil
+	}
+	actual, known := inferExprJavaType(invocationArgumentNode(invocation, 0), ctx, source)
+	if known && throwableConstructorMessageType(symbol.JavaType{Original: actual}, ctx, map[typeParameterIdentityKey]bool{}) {
+		return []string{"java.lang.String"}
+	}
+	return []string{"java.nio.file.Path"}
+}
+
+func lowerPathResolveReference(invocation *sitter.Node, recv ast.Expr, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	expected := pathResolveReferenceExpected(invocation, ctx, source)
+	if len(expected) != 1 || len(args) != 1 {
+		return nil
+	}
+	name := "PathResolvePathReference"
+	if expected[0] == "java.lang.String" {
+		name = "PathResolveStringReference"
+	}
+	return stdjavaCall(ctx, name, recv, args[0])
 }
 
 // filesFunction builds a generator emitting stdjava.<goName>(args) for a Files
@@ -449,6 +556,7 @@ func stdjavaCallArg(arg ast.Expr, name string) (ast.Expr, bool) {
 }
 
 func registerCharsetIntrinsics() {
+	registerIntrinsicOwner("java.nio.charset.StandardCharsets", true)
 	for _, name := range []string{"US_ASCII", "ISO_8859_1", "UTF_8", "UTF_16BE", "UTF_16LE", "UTF_16"} {
 		name := name
 		registerStaticFieldIntrinsic("StandardCharsets", name, func(ctx Ctx) ast.Expr { return stdjavaQualifiedExpr(name, ctx) })
@@ -458,31 +566,34 @@ func registerCharsetIntrinsics() {
 		if len(args) != 1 {
 			return nil
 		}
-		return stdjavaCall(ctx, "CharsetForName", args[0])
+		return stdjavaCall(ctx, "CharsetForNameReference", args[0])
 	})
 	registerStaticIntrinsicResultType("Charset", "forName", "Charset")
-	registerInstanceIntrinsic("Charset", "name", ioMethod("Name", 0))
+	registerInstanceIntrinsic("Charset", "name", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "CharsetJavaName", recv)
+	})
 	registerInstanceIntrinsicResultType("Charset", "name", "String")
 	registerInstanceIntrinsic("String", "getBytes", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) > 1 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringGetBytes", append([]ast.Expr{recv}, args...)...)
+		if len(args) == 0 {
+			return stdjavaCall(ctx, "JavaStringGetBytes", recv, stdjavaQualifiedExpr("UTF_8", ctx))
+		}
+		return stdjavaCall(ctx, "JavaStringGetBytes", recv, args[0])
 	})
 	registerInstanceIntrinsicResultType("String", "getBytes", "byte[]")
 	registerInstanceIntrinsic("String", "toCharArray", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 0 {
 			return nil
 		}
-		return stdjavaCall(ctx, "StringToCharArray", recv)
+		return stdjavaCall(ctx, "JavaStringToCharArray", recv)
 	})
 	registerInstanceIntrinsicResultType("String", "toCharArray", "char[]")
-	registerConstructorIntrinsic("String", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) > 2 {
-			return nil
-		}
-		return stdjavaCall(ctx, "StringNew", args...)
-	})
+	registerConstructorNodeIntrinsic("String", lowerCanonicalStringConstructor)
 }
 
 func registerByteBufferIntrinsics() {
@@ -502,6 +613,7 @@ func registerByteBufferIntrinsics() {
 	registerStaticIntrinsicResultType("ByteBuffer", "allocate", "ByteBuffer")
 	for _, method := range []struct{ java, goName, result string }{
 		{"remaining", "Remaining", "int"}, {"hasArray", "HasArray", "boolean"}, {"array", "Array", "byte[]"},
+		{"limit", "Limit", "int"},
 	} {
 		registerInstanceIntrinsic("ByteBuffer", method.java, ioMethod(method.goName, 0))
 		registerInstanceIntrinsicResultType("ByteBuffer", method.java, method.result)

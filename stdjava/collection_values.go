@@ -16,8 +16,8 @@ type javaEntryValue interface{ javaEntry() (any, any) }
 
 func (l *List[T]) javaListElements() []any {
 	out := make([]any, int(l.Size()))
-	for i, element := range l.Slice() {
-		out[i] = element
+	for i := range out {
+		out[i] = l.rawGet(int32(i))
 	}
 	return out
 }
@@ -38,7 +38,7 @@ func (l *List[T]) EqualsJava2goExecution(execution *Execution, other any) bool {
 	if int(l.Size()) != len(elements) {
 		return false
 	}
-	for i, element := range l.Slice() {
+	for i, element := range l.javaListElements() {
 		if !ObjectsEqual(element, elements[i], execution) {
 			return false
 		}
@@ -49,7 +49,7 @@ func (l *List[T]) HashCode() int32 { return l.HashCodeJava2goExecution(nil) }
 func (l *List[T]) HashCodeJava2goExecution(execution *Execution) int32 {
 	ReferenceRequireNonNull(l)
 	hash := int32(1)
-	for _, element := range l.Slice() {
+	for _, element := range l.javaListElements() {
 		hash = 31*hash + ObjectsHashCode(element, execution)
 	}
 	return hash
@@ -96,7 +96,7 @@ func (s *Set[T]) HashCodeJava2goExecution(execution *Execution) int32 {
 
 func (m *Map[K, V]) javaMapLookup(key any, execution *Execution) (any, bool) {
 	if record, _, _ := m.find(key, execution); record != nil {
-		return record.entry.Value, true
+		return record.value, true
 	}
 	return nil, false
 }
@@ -115,8 +115,8 @@ func (m *Map[K, V]) EqualsJava2goExecution(execution *Execution, other any) (equ
 		return false
 	}
 	for _, record := range m.entries {
-		value, present := right.javaMapLookup(record.entry.Key, execution)
-		if !present || !ObjectsEqual(record.entry.Value, value, execution) {
+		value, present := right.javaMapLookup(record.key, execution)
+		if !present || !ObjectsEqual(record.value, value, execution) {
 			return false
 		}
 	}
@@ -127,7 +127,7 @@ func (m *Map[K, V]) HashCodeJava2goExecution(execution *Execution) int32 {
 	ReferenceRequireNonNull(m)
 	var hash int32
 	for _, record := range m.entries {
-		hash += record.entry.HashCodeJava2goExecution(execution)
+		hash += ObjectsHashCode(record.key, execution) ^ ObjectsHashCode(record.value, execution)
 	}
 	return hash
 }

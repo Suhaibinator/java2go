@@ -59,35 +59,8 @@ func ObjectsHashCode(value any, execution ...*Execution) int32 {
 // ordering covers any Comparable, including a user class whose compareTo the
 // transpiler generates. Element types with a direct Go ordering keep a fast
 // path; everything else goes through the CompareTo bridge.
-func SortOrdered[T any](l *List[T], execution ...*Execution) {
-	if l == nil {
-		panic(NewNullPointerException("Collections.sort on null"))
-	}
-	// The floating-point types are deliberately absent from the fast path: Go's
-	// `<` is not Java's ordering for them (it leaves NaN where it lies and treats
-	// -0.0 and 0.0 as equal), so they must go through the same Java total order
-	// the slow path uses. Sorting them with `<` here would also make
-	// Collections.sort and Stream.sorted disagree within one program.
-	elementsToSort := l.Slice()
-	switch elements := any(elementsToSort).(type) {
-	case []string:
-		SortSlice(elements)
-	case []int32:
-		SortSlice(elements)
-	case []int64:
-		SortSlice(elements)
-	case []int16:
-		SortSlice(elements)
-	case []int8:
-		SortSlice(elements)
-	default:
-		SortSliceStableNatural(elementsToSort, execution...)
-	}
-	if l.array != nil {
-		for i, element := range elementsToSort {
-			l.Set(int32(i), element)
-		}
-	}
+func SortOrdered(l JavaIterable, execution ...*Execution) {
+	CollectionSortOrderedExecution(optionalComparisonExecution(execution), l)
 }
 
 // ReverseList reverses a list in place, matching Collections.reverse.

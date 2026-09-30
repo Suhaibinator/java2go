@@ -4,35 +4,70 @@ import (
 	"math"
 	"math/big"
 	"strconv"
-	"strings"
 	"unicode/utf16"
 )
 
-func parseBigIntegerDecimal(text string) big.Int {
+// bigNumberNativeJavaString is the legacy host-text ingress. Canonical Java
+// callers enter the shared parsers directly without decoding their UTF16 units.
+func bigNumberNativeJavaString(text string) *JavaString {
 	ReferenceRequireNonNull(text)
-	chars := StringChars(text)
+	return NewJavaStringUTF16(utf16.Encode([]rune(text)))
+}
+
+// bigNumberJavaString converts runtime-authored numeric output or diagnostics;
+// application String payloads must never pass through this host-text boundary.
+func bigNumberJavaString(text string) *JavaString {
+	return NewJavaStringUTF16(utf16.Encode([]rune(text)))
+}
+
+func bigNumberFormatException(message string) NumberFormatException {
+	return NewJavaNumberFormatException(bigNumberJavaString(message))
+}
+
+func bigNumberDecimalDigit(unit uint16) int32 {
+	digit := javaIntegerDigit21(unit)
+	if digit >= 10 {
+		return -1
+	}
+	return digit
+}
+
+func parseBigIntegerDecimal(text string) big.Int {
+	return parseBigIntegerDecimalJavaString(bigNumberNativeJavaString(text))
+}
+
+func parseBigIntegerDecimalJavaString(text *JavaString) big.Int {
+	ReferenceRequireNonNull(text)
+	chars := text.units
 	negative := false
 	start := 0
 	if len(chars) == 0 {
-		panic(NewNumberFormatException("Zero length BigInteger"))
+		panic(bigNumberFormatException("Zero length BigInteger"))
 	}
-	minus, plus := strings.LastIndex(text, "-"), strings.LastIndex(text, "+")
+	minus, plus := -1, -1
+	for i, unit := range chars {
+		if unit == '-' {
+			minus = i
+		} else if unit == '+' {
+			plus = i
+		}
+	}
 	if minus >= 0 {
 		if minus != 0 || plus >= 0 {
-			panic(NewNumberFormatException("Illegal embedded sign character"))
+			panic(bigNumberFormatException("Illegal embedded sign character"))
 		}
 		negative = true
 		start = 1
 	} else if plus >= 0 {
 		if plus != 0 {
-			panic(NewNumberFormatException("Illegal embedded sign character"))
+			panic(bigNumberFormatException("Illegal embedded sign character"))
 		}
 		start = 1
 	}
 	if start == len(chars) {
-		panic(NewNumberFormatException("Zero length BigInteger"))
+		panic(bigNumberFormatException("Zero length BigInteger"))
 	}
-	for start < len(chars) && CharDigit(chars[start], 10) == 0 {
+	for start < len(chars) && bigNumberDecimalDigit(chars[start]) == 0 {
 		start++
 	}
 	if start == len(chars) {
@@ -48,13 +83,9 @@ func parseBigIntegerDecimal(text string) big.Int {
 	for start < len(chars) {
 		end := start + width
 		for _, c := range chars[start:end] {
-			digit := CharDigit(c, 10)
+			digit := bigNumberDecimalDigit(c)
 			if digit < 0 {
-				units := make([]uint16, end-start)
-				for i, r := range chars[start:end] {
-					units[i] = uint16(r)
-				}
-				panic(NewNumberFormatException("For input string: \"" + string(utf16.Decode(units)) + "\""))
+				panic(javaIntegerParseInputException(&JavaString{units: chars[start:end]}, 10))
 			}
 			digits = append(digits, byte('0'+digit))
 		}
@@ -70,7 +101,7 @@ func parseBigIntegerDecimal(text string) big.Int {
 }
 
 func bigDecimalMissingCharacter(index, length int) {
-	failure := NewNumberFormatException(NullString())
+	failure := NewJavaNumberFormatException(nil)
 	cause := NewArrayIndexOutOfBoundsException("Index " + strconv.Itoa(index) + " out of bounds for length " + strconv.Itoa(length))
 	// The freshly allocated exception has not escaped. Initialize its cause
 	// directly rather than allocate a logical thread and monitor for construction.
@@ -79,8 +110,12 @@ func bigDecimalMissingCharacter(index, length int) {
 	panic(failure)
 }
 func parseBigDecimal(text string) (big.Int, int32) {
+	return parseBigDecimalJavaString(bigNumberNativeJavaString(text))
+}
+
+func parseBigDecimalJavaString(text *JavaString) (big.Int, int32) {
 	ReferenceRequireNonNull(text)
-	chars := StringChars(text)
+	chars := text.units
 	if len(chars) == 0 {
 		bigDecimalMissingCharacter(0, 0)
 	}
@@ -96,7 +131,7 @@ func parseBigDecimal(text string) (big.Int, int32) {
 	var scale int64
 	for i := start; i < len(chars); i++ {
 		c := chars[i]
-		digit := CharDigit(c, 10)
+		digit := bigNumberDecimalDigit(c)
 		if digit >= 0 {
 			digits = append(digits, byte('0'+digit))
 			if dot {
@@ -106,7 +141,7 @@ func parseBigDecimal(text string) (big.Int, int32) {
 		}
 		if c == '.' {
 			if dot {
-				panic(NewNumberFormatException("Character array contains more than one decimal point."))
+				panic(bigNumberFormatException("Character array contains more than one decimal point."))
 			}
 			dot = true
 			continue
@@ -116,15 +151,16 @@ func parseBigDecimal(text string) (big.Int, int32) {
 			break
 		}
 		if compact {
-			panic(NewNumberFormatException("Character " + string(c) + " is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark."))
+			message := ConcatJavaStrings(ConcatJavaStrings(bigNumberJavaString("Character "), NewJavaStringUTF16([]uint16{c})), bigNumberJavaString(" is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark."))
+			panic(NewJavaNumberFormatException(message))
 		}
-		panic(NewNumberFormatException("Character array is missing \"e\" notation exponential mark."))
+		panic(bigNumberFormatException("Character array is missing \"e\" notation exponential mark."))
 	}
 	if len(digits) == 0 {
-		panic(NewNumberFormatException("No digits found."))
+		panic(bigNumberFormatException("No digits found."))
 	}
 	if scale < math.MinInt32 || scale > math.MaxInt32 {
-		panic(NewNumberFormatException("Exponent overflow."))
+		panic(bigNumberFormatException("Exponent overflow."))
 	}
 	var coefficient big.Int
 	coefficient.SetString(string(digits), 10)
@@ -133,7 +169,7 @@ func parseBigDecimal(text string) (big.Int, int32) {
 	}
 	return coefficient, int32(scale)
 }
-func parseBigDecimalExponent(chars []rune, start int) int64 {
+func parseBigDecimalExponent(chars []uint16, start int) int64 {
 	if start >= len(chars) {
 		bigDecimalMissingCharacter(start, len(chars))
 	}
@@ -145,17 +181,17 @@ func parseBigDecimalExponent(chars []rune, start int) int64 {
 			bigDecimalMissingCharacter(start, len(chars))
 		}
 	}
-	for len(chars)-start > 10 && CharDigit(chars[start], 10) == 0 {
+	for len(chars)-start > 10 && bigNumberDecimalDigit(chars[start]) == 0 {
 		start++
 	}
 	if len(chars)-start > 10 {
-		panic(NewNumberFormatException("Too many nonzero exponent digits."))
+		panic(bigNumberFormatException("Too many nonzero exponent digits."))
 	}
 	var exponent int64
 	for _, c := range chars[start:] {
-		digit := CharDigit(c, 10)
+		digit := bigNumberDecimalDigit(c)
 		if digit < 0 {
-			panic(NewNumberFormatException("Not a digit."))
+			panic(bigNumberFormatException("Not a digit."))
 		}
 		exponent = exponent*10 + int64(digit)
 	}

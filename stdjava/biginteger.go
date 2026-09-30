@@ -15,6 +15,13 @@ var bigIntegerSmallValues = func() [33]*BigInteger {
 }()
 
 func NewBigInteger(text string) *BigInteger { return &BigInteger{value: parseBigIntegerDecimal(text)} }
+
+// NewBigIntegerJavaString is the canonical Java constructor boundary. The parser
+// reads the original UTF16 units and retains them in NumberFormatException.
+func NewBigIntegerJavaString(text *JavaString) *BigInteger {
+	return &BigInteger{value: parseBigIntegerDecimalJavaString(text)}
+}
+
 func BigIntegerValueOf(value int64) *BigInteger {
 	if value >= -16 && value <= 16 {
 		return bigIntegerSmallValues[value+16]
@@ -25,6 +32,17 @@ func BigIntegerValueOf(value int64) *BigInteger {
 }
 func (*BigInteger) JavaDynamicTypeID() TypeID { return "java.math.BigInteger" }
 func (value *BigInteger) String() string      { ReferenceRequireNonNull(value); return value.value.String() }
+
+// StringJava2goExecution implements the nominal Java toString result ABI.
+// The native String method remains available for legacy Go callers.
+func (value *BigInteger) StringJava2goExecution(_ *Execution) *JavaString {
+	ReferenceRequireNonNull(value)
+	if value.value.Sign() == 0 {
+		return JavaStringLiteralUTF16([]uint16{'0'})
+	}
+	return bigNumberJavaString(value.String())
+}
+
 func (value *BigInteger) Equals(other any) bool {
 	ReferenceRequireNonNull(value)
 	right, ok := other.(*BigInteger)

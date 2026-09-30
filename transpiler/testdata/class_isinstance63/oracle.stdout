@@ -1,0 +1,8 @@
+nominal:true:true:true:false
+null:false:false
+boxing:true:true:false
+primitive:false:false
+arrays:true:false:true:false
+array-interfaces:true:true:true
+shadow:7
+null-receiver-effects:12

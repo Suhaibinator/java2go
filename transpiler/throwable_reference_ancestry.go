@@ -28,6 +28,7 @@ var builtinThrowableReferencePackages = map[string]string{
 	"CancellationException":           "java.util.concurrent",
 	"RejectedExecutionException":      "java.util.concurrent",
 	"IOException":                     "java.io",
+	"InvalidPathException":            "java.nio.file",
 	"UnsupportedEncodingException":    "java.io",
 	"NoSuchAlgorithmException":        "java.security",
 	"NoSuchElementException":          "java.util",

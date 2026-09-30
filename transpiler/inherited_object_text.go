@@ -26,10 +26,10 @@ func inheritedObjectTextInvocation(object *sitter.Node, method string, ctx Ctx, 
 		return nil
 	}
 	if object.Type() == "super" {
-		return stdjavaCall(ctx, "ObjectDefaultStringExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+		return stdjavaCall(ctx, "ObjectDefaultJavaStringExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
 	}
 	receiver := stdjavaCall(ctx, "ReferenceRequireNonNull", ParseExpr(object, source, ctx))
-	return stdjavaCall(ctx, "StringValueOfExecution", intrinsicExecutionExpr(ctx), receiver)
+	return stdjavaCall(ctx, "JavaStringValueOfExecution", intrinsicExecutionExpr(ctx), receiver)
 }
 
 // Implicit lookup observes the same fixed-arity phase as an explicit receiver;

@@ -14,6 +14,9 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
 		return scope.IsInterface
 	}
+	if isBuiltinEnum(javaType, ctx) {
+		return true
+	}
 	if isExternalFunctionType(javaType, ctx) {
 		return true
 	}
@@ -24,7 +27,7 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	// SQL subclasses can share the same erased field and method descriptor.
 	// Resolve the canonical owner: java.sql.Date and source Date classes remain
 	// concrete representations and must not inherit this classification.
-	if owner, ok := dateTimeRuntimeTypeID(base, ctx); ok && owner == "java.util.Date" {
+	if owner, ok := dateTimeRuntimeTypeID(base, ctx); ok && (owner == "java.util.Date" || owner == "java.text.DateFormat") {
 		return true
 	}
 	switch stripJavaQualifier(base) {
@@ -61,6 +64,15 @@ func builtinJavaNumericReference(javaType string, ctx Ctx) bool {
 // builtinJavaReferenceAssignable provides nominal library relationships that
 // are absent from the source-class symbol graph. Comparable<T> is invariant.
 func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
+	return builtinJavaReferenceAssignableWithTypeParameters(actual, expected, nil, ctx)
+}
+
+// Only invocation applicability may infer the candidate method's own binders.
+// Ordinary assignability and override checks keep invariant arguments.
+func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
+	if enumReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
 	if dateTimeReferenceAssignable(actual, expected, ctx) {
 		return true
 	}
@@ -71,6 +83,12 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 		return false
 	}
 	if sourceCharSequenceAssignable(actual, expected, ctx) {
+		return true
+	}
+	if sourceAbstractCollectionAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
+	if sourceMapEntryAssignable(actual, expected, candidateTypeParams, ctx) {
 		return true
 	}
 	if characterIOReferenceAssignable(actual, expected, ctx) {
@@ -91,7 +109,7 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 		resolveClassScopeByQualifiedName(ctx, actualBase) != nil {
 		return false
 	}
-	if builtinCollectionReferenceAssignable(actual, expected) {
+	if builtinCollectionReferenceAssignable(actual, expected, candidateTypeParams) {
 		return true
 	}
 	if len(expectedArguments) == 0 && digestIOAssignable(actualBase, expectedBase) {
@@ -144,13 +162,15 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 
 // Runtime collection declarations retain their Java nominal ancestry even when
 // their Go implementations share an interface or a concrete container.
-func builtinCollectionReferenceAssignable(actual, expected string) bool {
+func builtinCollectionReferenceAssignable(actual, expected string, candidateTypeParams []string) bool {
 	actualBase, actualArguments := parseJavaTypeString(actual)
 	expectedBase, expectedArguments := parseJavaTypeString(expected)
 	actualBase, expectedBase = stripJavaQualifier(actualBase), stripJavaQualifier(expectedBase)
 	parents := map[string][]string{
 		"Collection": {"Iterable"}, "List": {"Collection"}, "Set": {"Collection"},
-		"ArrayList": {"AbstractList"}, "LinkedList": {"List"}, "AbstractList": {"List"},
+		"AbstractCollection": {"Collection"}, "Queue": {"Collection"}, "Deque": {"Queue"},
+		"ArrayDeque": {"AbstractCollection", "Deque"},
+		"ArrayList":  {"AbstractList"}, "LinkedList": {"List"}, "AbstractList": {"List"},
 		"HashSet": {"AbstractSet"}, "LinkedHashSet": {"HashSet"}, "TreeSet": {"Set"}, "AbstractSet": {"Set"},
 		"HashMap": {"AbstractMap"}, "LinkedHashMap": {"HashMap"}, "TreeMap": {"Map"}, "AbstractMap": {"Map"},
 	}
@@ -163,5 +183,5 @@ func builtinCollectionReferenceAssignable(actual, expected string) bool {
 		}
 		return false
 	}
-	return reaches(actualBase) && javaGenericArgumentsApplicable(actualArguments, expectedArguments, nil)
+	return reaches(actualBase) && javaGenericArgumentsApplicable(actualArguments, expectedArguments, candidateTypeParams)
 }

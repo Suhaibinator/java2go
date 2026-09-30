@@ -47,6 +47,7 @@ var builtinThrowableDescriptors = map[string]struct {
 	"NoSuchAlgorithmException":        {id: "java.security.NoSuchAlgorithmException", parent: "Exception"},
 	"BufferUnderflowException":        {id: "java.nio.BufferUnderflowException", parent: "RuntimeException"},
 	"ClosedChannelException":          {id: "java.nio.channels.ClosedChannelException", parent: "IOException"},
+	"IllegalCharsetNameException":     {id: "java.nio.charset.IllegalCharsetNameException", parent: "IllegalArgumentException"},
 	"UnsupportedCharsetException":     {id: "java.nio.charset.UnsupportedCharsetException", parent: "IllegalArgumentException"},
 	"CharacterCodingException":        {id: "java.nio.charset.CharacterCodingException", parent: "IOException"},
 	"UnmappableCharacterException":    {id: "java.nio.charset.UnmappableCharacterException", parent: "CharacterCodingException"},

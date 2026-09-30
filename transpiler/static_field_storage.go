@@ -102,7 +102,7 @@ func staticFieldStorageHelperDecls(variables *ast.GenDecl, ctx Ctx) []ast.Decl {
 		}
 		for _, name := range value.Names {
 			var field *symbol.Definition
-			for _, candidate := range ctx.currentClass.Fields {
+			for _, candidate := range classFieldBindings(ctx.currentClass) {
 				if candidate.IsStatic && candidate.Name == name.Name {
 					field = candidate
 					break

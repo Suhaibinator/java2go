@@ -41,6 +41,9 @@ func javaClassBinaryName(scope *symbol.ClassScope) string {
 }
 
 func classScopeHasInitializationWork(scope *symbol.ClassScope) bool {
+	if scope != nil && scope.IsEnum {
+		return true
+	}
 	if scope == nil || scope.Class == nil || scope.Class.DeclarationNode == nil {
 		return false
 	}
@@ -133,6 +136,8 @@ func orderedStaticInitializationStatements(body *sitter.Node, source []byte, ctx
 	var statements []ast.Stmt
 	for _, child := range nodeutil.NamedChildrenOf(body) {
 		switch child.Type() {
+		case "enum_body_declarations":
+			statements = append(statements, orderedStaticInitializationStatements(child, source, ctx, executionName)...)
 		case "field_declaration", "constant_declaration":
 			for _, declarator := range nodeutil.VariableDeclarators(child) {
 				valueNode := declarator.ChildByFieldName("value")
@@ -184,6 +189,9 @@ func buildLazyClassInitializationDecls(body *sitter.Node, source []byte, ctx Ctx
 
 	executionName := executionParameterName(body, source, ctx)
 	statements := orderedStaticInitializationStatements(body, source, ctx, executionName)
+	if ctx.currentClass.IsEnum {
+		statements = append(enumInitializationStatements(ctx, source, executionName), statements...)
+	}
 	stateName := classInitializationStateName(ctx.currentClass)
 	ensureName := classInitializationEnsureName(ctx.currentClass)
 	stateDeclaration := &ast.GenDecl{

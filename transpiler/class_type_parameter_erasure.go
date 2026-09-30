@@ -1224,6 +1224,7 @@ func callablePhysicalTypeKey(javaType string, ctx Ctx) string {
 func classScopeCtx(scope *symbol.ClassScope, ctx Ctx) Ctx {
 	result := ctx.Clone()
 	result.currentClass = scope
+	result.memberTypeHeaderOwner = nil
 	result.localScope = nil
 	result.localBindingBody = nil
 	for current := scope; current != nil; current = current.Enclosing {

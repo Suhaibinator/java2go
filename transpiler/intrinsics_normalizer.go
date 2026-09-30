@@ -3,13 +3,14 @@ package transpiler
 import "go/ast"
 
 func init() {
+	registerIntrinsicOwner("java.text.Normalizer", true)
 	for _, name := range []string{"NFC", "NFD", "NFKC", "NFKD"} {
 		name := name
 		registerStaticFieldIntrinsic("Normalizer.Form", name, func(ctx Ctx) ast.Expr { return stdjavaQualifiedExpr("Normalizer"+name, ctx) })
 		registerStaticFieldIntrinsicResultType("Normalizer.Form", name, "java.text.Normalizer.Form")
 	}
 	for _, method := range []struct{ java, runtime, result string }{
-		{"normalize", "NormalizerNormalize", "String"}, {"isNormalized", "NormalizerIsNormalized", "boolean"},
+		{"normalize", "JavaNormalizerNormalize", "java.lang.String"}, {"isNormalized", "JavaNormalizerIsNormalized", "boolean"},
 	} {
 		runtime := method.runtime
 		registerStaticIntrinsic("Normalizer", method.java, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {

@@ -183,7 +183,7 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 			}
 			for _, method := range class.Methods {
 				if projectMain(method) {
-					entry = method.Name
+					entry = symbol.GoIdentifier(method.Name)
 				}
 			}
 		}
@@ -214,8 +214,8 @@ import (
  stdjava "github.com/NickyBoy89/java2go/stdjava"
 )
 func main() {
- args := stdjava.NewReferenceArrayOf[string](len(os.Args)-1, stdjava.StringTypeID)
- for i, value := range os.Args[1:] { stdjava.ReferenceArraySet(args, i, value) }
+ args := stdjava.NewReferenceArrayOf[*stdjava.JavaString](len(os.Args)-1, stdjava.StringTypeID)
+ for i, value := range os.Args[1:] { stdjava.ReferenceArraySet(args, i, stdjava.JavaStringFromHostUTF8(value)) }
  app.%s(args)
 }
 `, mainImport, resourceImport, entry)

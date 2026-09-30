@@ -45,6 +45,9 @@ type Definition struct {
 	// body must be inherited by implementing classes rather than represented as a
 	// nil embedded Go interface.
 	HasBody bool
+	// RuntimeDefault marks an inherited platform body with an execution-aware
+	// generated entry. It has no fabricated source DeclarationNode.
+	RuntimeDefault bool
 	// Indicates that this definition requires a helper to model method-level type parameters
 	RequiresHelper bool
 	// Name of the helper type to use (if RequiresHelper)

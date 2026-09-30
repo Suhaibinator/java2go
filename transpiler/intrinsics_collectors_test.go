@@ -39,7 +39,7 @@ public class JoiningProgram {
     }
 }
 `)
-	assertContains(t, out, "stdjava.StreamJoining(")
+	assertContains(t, out, "stdjava.JavaStringStreamJoining(")
 }
 
 func TestCollectors_CountingSummingAveraging(t *testing.T) {
@@ -128,7 +128,7 @@ public class DownstreamProgram {
 `)
 	assertContains(t, out, "stdjava.StreamGroupingByDownstream(")
 	assertContains(t, out, "stdjava.StreamPartitioningByDownstream(")
-	assertContains(t, out, "func(__java2goGroup stdjava.Stream[string])")
+	assertContains(t, out, "func(__java2goGroup stdjava.Stream[*stdjava.JavaString])")
 }
 
 // mapping transforms elements before the nested collector sees them.
@@ -168,6 +168,6 @@ public class ThreeArgReduceProgram {
 `)
 	assertContains(t, out, "stdjava.StreamReduceCombining(")
 	// The accumulator takes (U, T); the combiner takes (U, U).
-	assertContains(t, out, "func(acc string, x *stdjava.Integer) string")
-	assertContains(t, out, "func(a string, b string) string")
+	assertContains(t, out, "func(acc *stdjava.JavaString, x *stdjava.Integer) *stdjava.JavaString")
+	assertContains(t, out, "func(a *stdjava.JavaString, b *stdjava.JavaString) *stdjava.JavaString")
 }

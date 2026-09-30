@@ -1,0 +1,1 @@
+package p; public class Base<T> {public T value;public int reads,writes;public Base(T value){this.value=value;}public int base(){return 11;}public T read(){reads++;return value;}public void write(T value){writes++;this.value=value;}}

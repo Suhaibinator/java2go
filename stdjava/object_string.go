@@ -1,6 +1,9 @@
 package stdjava
 
-import "strconv"
+import (
+	"strconv"
+	"unicode/utf16"
+)
 
 // ObjectDefaultStringExecution is Object.toString's implementation. It bypasses
 // a toString override while retaining virtual hashCode dispatch and the most
@@ -11,4 +14,11 @@ func ObjectDefaultStringExecution(execution *Execution, value any) string {
 	name := ObjectGetClass(value).GetName()
 	hash := ObjectHashCodeExecution(execution, value)
 	return name + "@" + strconv.FormatUint(uint64(uint32(hash)), 16)
+}
+
+// ObjectDefaultJavaStringExecution allocates Object.toString's Java reference
+// result. The nominal class name and virtual hashCode share the caller's logical
+// execution; this path does not invoke host formatting or a native text method.
+func ObjectDefaultJavaStringExecution(execution *Execution, value any) *JavaString {
+	return NewJavaStringUTF16(utf16.Encode([]rune(ObjectDefaultStringExecution(execution, value))))
 }

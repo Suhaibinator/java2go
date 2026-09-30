@@ -25,9 +25,9 @@ func throwableTextInvocation(object *sitter.Node, method string, ctx Ctx, source
 	if !builtinThrowableTextSelected(object, method, ctx, source) {
 		return nil
 	}
-	runtimeName := "ThrowableToString"
+	runtimeName := "JavaThrowableToString"
 	if method == "getLocalizedMessage" {
-		runtimeName = "ThrowableLocalizedMessage"
+		runtimeName = "JavaThrowableLocalizedMessage"
 	}
 	var receiver ast.Expr
 	if object.Type() == "super" {
@@ -37,4 +37,14 @@ func throwableTextInvocation(object *sitter.Node, method string, ctx Ctx, source
 		receiver = ParseExpr(object, source, ctx)
 	}
 	return stdjavaCall(ctx, runtimeName+"Execution", intrinsicExecutionExpr(ctx), receiver)
+}
+
+// Implicit inherited calls use the same Throwable protocol as an explicit this
+// receiver. A real source override continues through normal virtual dispatch.
+func implicitBuiltinThrowableTextSelected(node *sitter.Node, selected *methodResolution, ctx Ctx, source []byte) bool {
+	if node == nil || node.ChildByFieldName("object") != nil || ctx.localScope == nil || ctx.localScope.IsStatic || !sourceInheritsThrowable(ctx.currentClass, ctx) || !builtinMessageWinsSourceResolution(selected) || invocationArgumentCount(node) != 0 {
+		return false
+	}
+	name := node.ChildByFieldName("name")
+	return name != nil && (name.Content(source) == "toString" || name.Content(source) == "getLocalizedMessage")
 }

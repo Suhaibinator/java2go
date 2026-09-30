@@ -51,13 +51,17 @@ func appendableAppend(execution *Execution, value Appendable, text any, baseDefa
 		return source.JavaAppendRange(execution, text, bounds[0], bounds[1])
 	}
 	if text == nil || javaReferenceIsNull(text) {
-		text = "null"
+		text = JavaStringLiteralUTF16([]uint16{'n', 'u', 'l', 'l'})
 	}
 	if writer, ok := value.(Writer); ok {
 		if len(bounds) == 2 {
 			return WriterAppendExecution(execution, writer, characterSubSequence(execution, text, bounds[0], bounds[1]))
 		}
-		WriterWriteExecution(execution, writer, StringValueOfExecution(execution, text))
+		if native, ok := text.(string); ok {
+			WriterWriteExecution(execution, writer, native)
+		} else {
+			WriterWriteExecution(execution, writer, JavaStringValueOfExecution(execution, text))
+		}
 		return value
 	}
 	start, end := int32(0), CharSequenceLength(execution, text)
@@ -84,6 +88,9 @@ func appendableAppend(execution *Execution, value Appendable, text any, baseDefa
 func (*StringBuilder) JavaAppendableMarker() {}
 
 func characterSubSequence(execution *Execution, text any, start, end int32) any {
+	if text, ok := text.(*JavaString); ok {
+		return text.Substring(start, end)
+	}
 	if source, ok := objectExecutionMethod(execution, text, "SubSequenceJava2goExecution", []any{start, end}); ok {
 		return source.Interface()
 	}
@@ -92,7 +99,10 @@ func characterSubSequence(execution *Execution, text any, start, end int32) any 
 	for i := range units {
 		units[i] = CharSequenceCharAt(execution, text, start+int32(i))
 	}
-	return StringFromChars(units)
+	if _, native := text.(string); native {
+		return StringFromChars(units)
+	}
+	return JavaStringFromChars(PrimitiveArrayLiteral(PrimitiveTypeID("char"), units...))
 }
 func WriterAppendDefaultExecution(execution *Execution, writer Writer, text any, bounds ...int32) Writer {
 	return appendableAppend(execution, writer, text, true, bounds...).(Writer)

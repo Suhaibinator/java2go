@@ -4,9 +4,11 @@ package stdjava
 // ArrayList.Itr, hasNext compares the live size and next checks structural
 // revision before reading; replacement via set remains visible and nonstructural.
 type listJavaIterator[T any] struct {
-	source   *List[T]
-	index    int32
-	expected uint64
+	source    *List[T]
+	index     int32
+	expected  uint64
+	last      int32
+	canRemove bool
 }
 
 func (list *List[T]) IteratorJava2goExecution(execution *Execution) JavaIterator {
@@ -26,9 +28,25 @@ func (cursor *listJavaIterator[T]) NextJava2goExecution(execution *Execution) an
 	if cursor.index >= cursor.source.Size() {
 		panic(NewNoSuchElementException(""))
 	}
-	value := cursor.source.Get(cursor.index)
+	value := cursor.source.rawGet(cursor.index)
+	cursor.last = cursor.index
+	cursor.canRemove = true
 	cursor.index++
 	return value
+}
+
+func (cursor *listJavaIterator[T]) IteratorRemoveJava2goExecution(execution *Execution) {
+	requireExecution(execution)
+	if !cursor.canRemove {
+		panic(NewIllegalStateException(""))
+	}
+	if cursor.expected != cursor.source.modCount {
+		panic(NewConcurrentModificationException(""))
+	}
+	cursor.source.rawRemove(cursor.last)
+	cursor.index = cursor.last
+	cursor.canRemove = false
+	cursor.expected = cursor.source.modCount
 }
 
 // Map-backed iteration retains next-record identity, not a snapshot of element
@@ -39,6 +57,8 @@ type mapJavaIterator[K, V any] struct {
 	index    int
 	expected uint64
 	keys     bool
+	entries  bool
+	last     *mapRecord[K, V]
 }
 
 func newMapJavaIterator[K, V any](source *Map[K, V], keys bool) JavaIterator {
@@ -64,10 +84,14 @@ func (cursor *mapJavaIterator[K, V]) NextJava2goExecution(execution *Execution) 
 	}
 	record := cursor.records[cursor.index]
 	cursor.index++
-	if cursor.keys {
-		return record.entry.Key
+	cursor.last = record
+	if cursor.entries {
+		return record
 	}
-	return record.entry.Value
+	if cursor.keys {
+		return record.key
+	}
+	return record.value
 }
 func (set *Set[T]) IteratorJava2goExecution(execution *Execution) JavaIterator {
 	requireExecution(execution)
@@ -79,3 +103,18 @@ func (view *mapValuesIterable[K, V]) IteratorJava2goExecution(execution *Executi
 	ReferenceRequireNonNull(view)
 	return newMapJavaIterator(view.source, false)
 }
+
+func (cursor *mapJavaIterator[K, V]) IteratorRemoveJava2goExecution(execution *Execution) {
+	requireExecution(execution)
+	ReferenceRequireNonNull(cursor)
+	if cursor.last == nil {
+		panic(NewIllegalStateException(""))
+	}
+	if cursor.expected != cursor.source.modCount {
+		panic(NewConcurrentModificationException(""))
+	}
+	cursor.source.removeRecord(cursor.last)
+	cursor.expected = cursor.source.modCount
+	cursor.last = nil
+}
+func (cursor *mapJavaIterator[K, V]) nativeJavaInterfaces() []TypeID { return []TypeID{IteratorTypeID} }

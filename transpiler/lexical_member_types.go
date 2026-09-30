@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/NickyBoy89/java2go/symbol"
+
+	sitter "github.com/smacker/go-tree-sitter"
 )
 
 // Member types are resolved in the nearest enclosing declaration, not by a
@@ -15,6 +17,9 @@ func lexicalMemberType(name string, ctx Ctx) *symbol.ClassScope {
 			if found := directMemberTypePath(owner, parts[1:], ctx); found != nil {
 				return found
 			}
+		}
+		if owner == ctx.memberTypeHeaderOwner && !classHeaderIncludesMemberTypes(owner) {
+			continue
 		}
 		if member := memberTypeInHierarchy(owner, parts[0], ctx); member != nil {
 			return directMemberTypePath(member, parts[1:], ctx)
@@ -133,4 +138,32 @@ func relativeMemberType(name string, ctx Ctx) *symbol.ClassScope {
 		return nil
 	}
 	return directMemberTypePath(owner, parts[1:], ctx)
+}
+
+// Class and interface members begin at the body; record members also include
+// the header. Preserve the original declaration pointer and binder identities
+// while selecting that lookup region, rather than synthesizing a class scope.
+func classHeaderTypeCtx(scope *symbol.ClassScope, ctx Ctx) Ctx {
+	result := classScopeCtx(scope, ctx)
+	result.memberTypeHeaderOwner = scope
+	return result
+}
+
+func classHeaderIncludesMemberTypes(scope *symbol.ClassScope) bool {
+	return scope != nil && scope.Class != nil && scope.Class.DeclarationNode != nil &&
+		scope.Class.DeclarationNode.Type() == "record_declaration"
+}
+
+// Select context from the actual declaration child, not from its spelling:
+// identical p.Cell text can denote different declarations in header and body.
+func classDeclarationChildCtx(root, child *sitter.Node, ctx Ctx) Ctx {
+	if !sourceGenericViewTypeDeclaration(root) || ctx.currentClass == nil ||
+		ctx.currentClass.Class == nil || !sameSourceNode(root, ctx.currentClass.Class.DeclarationNode) {
+		return ctx
+	}
+	switch child.Type() {
+	case "class_body", "interface_body", "enum_body", "annotation_type_body":
+		return classScopeCtx(ctx.currentClass, ctx)
+	}
+	return classHeaderTypeCtx(ctx.currentClass, ctx)
 }

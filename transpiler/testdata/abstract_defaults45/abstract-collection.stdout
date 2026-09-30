@@ -1,0 +1,12 @@
+empty.before=false|size
+contains.b=true|iterator,has,next,eq(b,a),has,next,eq(b,null),has,next,eq(b,b)
+contains.null=true|iterator,has,next,has,next
+contains.absent=false|iterator,has,next,eq(q,a),has,next,eq(q,null),has,next,eq(q,b),has,next,eq(q,b),has
+remove.b=true|iterator,has,next,eq(b,a),has,next,eq(b,null),has,next,eq(b,b),remove
+size.after.b=3|size
+remove.null=true|iterator,has,next,has,next,remove
+remove.absent=false|iterator,has,next,eq(q,a),has,next,eq(q,b),has
+clear=0|iterator,has,next,remove,has,next,remove,has
+empty.after=true|size
+consumer.cast=good:true:tail:false|iterator,next,next,next,has
+null.argument=true|argument

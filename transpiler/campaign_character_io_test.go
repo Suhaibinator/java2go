@@ -19,8 +19,20 @@ public class CampaignReaderUnits {public static String run()throws Exception{
 	want := campaignRuntimeJavaOracle(t, "CampaignReaderUnits", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestReader(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+ j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestReader(t *testing.T) {
+ var got *j.JavaString = Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a String value") }
+ want := utf16.Encode([]rune(%q))
+ if units := got.UTF16Copy(); !slices.Equal(units, want) {
+  t.Fatalf("JVM UTF16 %%x != Go UTF16 %%x", want, units)
+ }
+}`, want))
 }
 
 func TestCampaignAnonymousReaderJVMParity(t *testing.T) {
@@ -32,8 +44,20 @@ public class CampaignAnonymousReader {public static String run()throws Exception
 	want := campaignRuntimeJavaOracle(t, "CampaignAnonymousReader", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestReader(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+ j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestReader(t *testing.T) {
+ var got *j.JavaString = Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a String value") }
+ want := utf16.Encode([]rune(%q))
+ if units := got.UTF16Copy(); !slices.Equal(units, want) {
+  t.Fatalf("JVM UTF16 %%x != Go UTF16 %%x", want, units)
+ }
+}`, want))
 }
 
 func TestCampaignWriterDefaultsUTF16JVMParity(t *testing.T) {
@@ -49,8 +73,20 @@ public class CampaignWriterUnits{public static String run()throws Exception{
 	want := campaignRuntimeJavaOracle(t, "CampaignWriterUnits", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestWriter(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+ j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestWriter(t *testing.T) {
+ var got *j.JavaString = Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a String value") }
+ want := utf16.Encode([]rune(%q))
+ if units := got.UTF16Copy(); !slices.Equal(units, want) {
+  t.Fatalf("JVM UTF16 %%x != Go UTF16 %%x", want, units)
+ }
+}`, want))
 }
 
 func TestCampaignAppendableSourceDispatchJVMParity(t *testing.T) {
@@ -70,8 +106,20 @@ public class CampaignAppendable{public static String run()throws Exception{
 	want := campaignRuntimeJavaOracle(t, "CampaignAppendable", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestAppendable(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+ j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestAppendable(t *testing.T) {
+ var got *j.JavaString = Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a String value") }
+ want := utf16.Encode([]rune(%q))
+ if units := got.UTF16Copy(); !slices.Equal(units, want) {
+  t.Fatalf("JVM UTF16 %%x != Go UTF16 %%x", want, units)
+ }
+}`, want))
 }
 
 func TestCampaignWriterMonitorBufferAndVirtualDefaultsJVMParity(t *testing.T) {
@@ -99,8 +147,20 @@ public class CampaignWriterContracts{public static String run()throws Exception{
 	want := campaignRuntimeJavaOracle(t, "CampaignWriterContracts", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestWriterContracts(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+ j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestWriterContracts(t *testing.T) {
+ var got *j.JavaString = Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a String value") }
+ want := utf16.Encode([]rune(%q))
+ if units := got.UTF16Copy(); !slices.Equal(units, want) {
+  t.Fatalf("JVM UTF16 %%x != Go UTF16 %%x", want, units)
+ }
+}`, want))
 }
 
 func TestCampaignAnonymousWriterAndUnrelatedOverloadsJVMParity(t *testing.T) {
@@ -119,6 +179,18 @@ public class CampaignAnonymousWriter{public static String run()throws Exception{
 	want := campaignRuntimeJavaOracle(t, "CampaignAnonymousWriter", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestWriter(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+ j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestWriter(t *testing.T) {
+ var got *j.JavaString = Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a String value") }
+ want := utf16.Encode([]rune(%q))
+ if units := got.UTF16Copy(); !slices.Equal(units, want) {
+  t.Fatalf("JVM UTF16 %%x != Go UTF16 %%x", want, units)
+ }
+}`, want))
 }

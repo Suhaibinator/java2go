@@ -4,7 +4,7 @@ import (
 	"go/ast"
 )
 
-var dateTimePackages = map[string]string{"Date": "java.util", "TimeZone": "java.util", "Calendar": "java.util", "GregorianCalendar": "java.util", "ParsePosition": "java.text"}
+var dateTimePackages = map[string]string{"Date": "java.util", "TimeZone": "java.util", "Calendar": "java.util", "GregorianCalendar": "java.util", "ParsePosition": "java.text", "DateFormat": "java.text", "SimpleDateFormat": "java.text", "Locale": "java.util"}
 
 func dateTimeRuntimeTypeID(javaType string, ctx Ctx) (string, bool) {
 	owner, registered := canonicalIntrinsicOwner(javaType, ctx)
@@ -33,7 +33,10 @@ func dateTimeRuntimeTypeExpr(base string, ctx Ctx) (ast.Expr, bool) {
 	}
 	name := stripJavaQualifier(base)
 	value := stdjavaQualifiedExpr(name, ctx)
-	if name == "Calendar" {
+	if name == "DateFormat" {
+		return stdjavaQualifiedExpr("JavaDateFormat", ctx), true
+	}
+	if name == "Calendar" || name == "DateFormat" {
 		return value, true
 	}
 	return &ast.StarExpr{X: value}, true
@@ -46,7 +49,7 @@ func dateTimeReferenceAssignable(actual, expected string, ctx Ctx) bool {
 	}
 	left, lok := dateTimeRuntimeTypeID(actual, ctx)
 	right, rok := dateTimeRuntimeTypeID(expected, ctx)
-	return lok && rok && left == "java.util.GregorianCalendar" && right == "java.util.Calendar"
+	return lok && rok && ((left == "java.util.GregorianCalendar" && right == "java.util.Calendar") || (left == "java.text.SimpleDateFormat" && right == "java.text.DateFormat"))
 }
 func init() {
 	for name, pkg := range dateTimePackages {
@@ -91,7 +94,7 @@ func init() {
 		java, goName, result string
 		arity                int
 	}{
-		{"getTimeZone", "TimeZoneGetTimeZone", "TimeZone", 1}, {"getDefault", "TimeZoneGetDefault", "TimeZone", 0}, {"setDefault", "TimeZoneSetDefault", "void", 1},
+		{"getTimeZone", "TimeZoneGetTimeZoneJavaString", "TimeZone", 1}, {"getDefault", "TimeZoneGetDefault", "TimeZone", 0}, {"setDefault", "TimeZoneSetDefault", "void", 1},
 	} {
 		registerStaticIntrinsic("TimeZone", entry.java, func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) != entry.arity {
@@ -105,7 +108,7 @@ func init() {
 		java, goName, result string
 		arity                int
 	}{
-		{"getID", "GetID", "String", 0}, {"setID", "SetID", "void", 1}, {"getRawOffset", "GetRawOffset", "int", 0}, {"getOffset", "GetOffset", "int", 1}, {"clone", "Clone", "Object", 0},
+		{"getID", "GetIDJavaString", "String", 0}, {"setID", "SetIDJavaString", "void", 1}, {"getRawOffset", "GetRawOffset", "int", 0}, {"getOffset", "GetOffset", "int", 1}, {"clone", "Clone", "Object", 0},
 	} {
 		registerInstanceIntrinsic("TimeZone", entry.java, ioMethod(entry.goName, entry.arity))
 		registerInstanceIntrinsicResultType("TimeZone", entry.java, entry.result)
@@ -137,7 +140,7 @@ func init() {
 			java, goName, result string
 			arity                int
 		}{
-			{"get", "Get", "int", 1}, {"getTime", "GetTime", "Date", 0}, {"setTime", "SetTime", "void", 1},
+			{"get", "Get", "int", 1}, {"getTime", "GetTime", "java.util.Date", 0}, {"setTime", "SetTime", "void", 1},
 			{"getTimeInMillis", "GetTimeInMillis", "long", 0}, {"setTimeInMillis", "SetTimeInMillis", "void", 1},
 			{"setLenient", "SetLenient", "void", 1}, {"isLenient", "IsLenient", "boolean", 0},
 			{"getTimeZone", "GetTimeZone", "TimeZone", 0}, {"setTimeZone", "SetTimeZone", "void", 1},

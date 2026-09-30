@@ -79,7 +79,7 @@ public class ListSortProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.SortWith(names, func(a string, b string) int32")
+	assertContains(t, out, "stdjava.SortWith(names, func(a *stdjava.JavaString, b *stdjava.JavaString) int32")
 }
 
 func TestComparator_ArraysSortOverloads(t *testing.T) {
@@ -95,7 +95,7 @@ public class ArraySortProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.SortArray(words, __java2goExecution)")
-	assertContains(t, out, "stdjava.SortArrayWith(words, func(a string, b string) int32")
+	assertContains(t, out, "stdjava.SortArrayWith(words, func(a *stdjava.JavaString, b *stdjava.JavaString) int32")
 }
 
 // A Comparator local must carry the named runtime type, not the unnamed func

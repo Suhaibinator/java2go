@@ -45,7 +45,11 @@ func identifierHasValueBinding(name string, ctx Ctx) bool {
 	if ctx.currentClass != nil && findFieldInHierarchy(ctx.currentClass, name, ctx) != nil {
 		return true
 	}
-	return false
+	// Imported fields share Java's value namespace with lexical fields. When
+	// one import also introduces a member type, the value must still be
+	// evaluated as a qualifier so its declaring class initialization runs.
+	imported := resolveStaticImportedField(name, ctx)
+	return imported.source != nil || staticFieldIntrinsics[imported.intrinsic] != nil || imported.problem != ""
 }
 
 func identifierHasLocalBinding(name string, ctx Ctx) bool {

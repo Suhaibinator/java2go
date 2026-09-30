@@ -825,7 +825,7 @@ func affineRowClassDeclaresPackageIdent(class *symbol.ClassScope, name string) b
 		}
 	}
 	for _, constant := range class.EnumConstants {
-		if sanitizeGoIdent(constant.Name) == name {
+		if sanitizeGoIdent(constant.EmittedName()) == name {
 			return true
 		}
 	}
