@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Continue Sol-only TDD: legacy argument entry repair, compiler reflection and unchanged full Gson; stale Pattern assertions plus Encoding gate; comparator factory/lambda and builder paired correctness; integrate accepted casing. Original Codec56 independently accepted via semantic module-binding supplement. Commit and push milestones; checkpoint18 remains latest full round.",
+  "next_action": "Continue Sol-only TDD on generic return inference, reflection annotation/constructor typing, genuine Gson generic families, ConcurrentMap/defaults and FutureTask cancellation; integrate independently verified generic process repair and prove real Maven launcher behavior; preserve original full Gson and all CI gates.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -754,7 +754,7 @@
       "performance/runtime/list_retention/CANDIDATE.md"
     ],
     "list_removal_candidate": "Isolated vacated-slot clearing candidate: semantic JVM parity + full copied runtime tests; retained payload8/16MiB reduced to528B; live patch not applied, no speed claim",
-    "data_allocation_audit": "Accepted data full-main allocation-only measurements:18 unchanged Go runs match3 live JVM oracles and file hashes; strongest candidates UTF16 comparisons, ASCII substring extraction and direct UTF16→UTF8 construction; no wallclockspeedclaim",
+    "data_allocation_audit": "Accepted data full-main allocation-only measurements:18 unchanged Go runs match3 live JVM oracles and file hashes; strongest candidates UTF16 comparisons, ASCII substring extraction and direct UTF16\u2192UTF8 construction; no wallclockspeedclaim",
     "source_object_construction_audit": {
       "path": "performance/codegen/object_construction/README.md",
       "status": "unmeasured-proposals-only",
@@ -2470,7 +2470,7 @@
       },
       "inherited_member_repair": {
         "path": "/private/tmp/java2go-inherited-member11-scratch",
-        "status": "finalv2 independentlyverified andintegrated after localpackage JVMred→green",
+        "status": "finalv2 independentlyverified andintegrated after localpackage JVMred\u2192green",
         "original_red_log": "/private/tmp/java2go-inherited-member11-red.log",
         "focused_green": "/private/tmp/java2go-inherited-member11-green2.log",
         "review_red": "/private/tmp/java2go-inherited-member11-review-red.log",
@@ -4705,10 +4705,10 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "0e2e1a3ab700ae09a3ba4ad56da60e321ff5c1ee",
+    "last_pushed_revision": "614d6e054a7e7f2b410d5f10cabfbf6d03ddc6e1",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
-    "source_checkpoint": "Progress69: exact88 runtime/casing delta independently passes combined117 affected test events; full Gson and full coherent CI remain open.",
+    "source_checkpoint": "Progress70: private generic process/field seven gates independently clear; scoped ConcurrentMap core green pending independent audit; actual Time14/reflection/interface failures retained; publication and full compatibility gates remain open.",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Six isolated Go correctness lanes GOMAXPROCS=2 and two JVM-only oracle lanes. Each uses private source/output/process supervision; performance measurements require exclusive execution.",
     "next": "Continue Sol-only compiler/runtime TDD and original application parity; retain source-bound gates and periodically commit/push. Performance requires exclusive execution after full fair correctness.",
@@ -4719,14 +4719,14 @@
       "status": "Resolved: full v8 verification passed all historical gates and five previously accepted applications; unchanged full Gson build failure retained. Implementation committed as6b5f02f.",
       "owner": "astra_compiler; root independent verifier"
     },
-    "heavy_owner": "Root schedules three Go-heavy and two JVM-only lanes; consult current owners and terminal receipts before relaunch.",
+    "heavy_owner": "Six isolated Go lanes and two JVM-only lanes, assigned by root; only explicit exclusive grants permit performance measurements.",
     "heavy_session": null,
     "push_authentication": "Origin SSH key failed; verified existing GitHub CLI HTTPS via command-local url rewrite/credential helper succeeded, no savedconfigchanges.",
     "last_compatibility_checkpoint": "checkpoint18 (implementation in this commit)",
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Canonical d753 and final IO e6cc392 committed, pushed and origin-verified on component branches. Main campaign latest full compatibility acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-30T11:50:13.676277+00:00",
+    "checkpoint_updated_utc": "2026-09-30T16:58:05.575295+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE_USER_AUTHORIZED_SOL_ONLY",
     "minimal_repair_full22": {
@@ -5616,7 +5616,7 @@
         "allocation_result_sha256": "4b652d41ebda25f44fe1d13fe1ae6465cd8694111ed4e0d5012c3ba84c286b2a",
         "analysis_sha256": "b81ff701daa9402c35393f5f998aad4e48aba237256105bc938eadcab66a6dc3",
         "canonical_design_sha256": "dfdbaafa5d334314185f1dd3c131b26fb5301065b0759544d66ae17d6613a354",
-        "scope": "315 actual Main calls/31 commands match frozen JVM observations. Adapter/closure sites0.53–0.63% of whole-process allocated objects; CPU unmeasured. Canonical comparator reflection and synthesized int/long append Strings are hypotheses; no fastpath implementation. Timing/allocation remain separate and measurement exclusive."
+        "scope": "315 actual Main calls/31 commands match frozen JVM observations. Adapter/closure sites0.53\u20130.63% of whole-process allocated objects; CPU unmeasured. Canonical comparator reflection and synthesized int/long append Strings are hypotheses; no fastpath implementation. Timing/allocation remain separate and measurement exclusive."
       },
       "durability": {
         "status": "ROOT_VERIFIED_IGNORED_LOCAL_FIXED_CUTOFF; new supplement preparing",
@@ -6220,5 +6220,43 @@
     "requested_by": "user",
     "agent_policy": "Sol only; gpt-6.1-sol/high; no Astra agents may be spawned or resumed.",
     "app_goal_api_note": "Goal tool ACTIVE, verified 2026-09-30. Latest user requests aggressive Sol-only parallelism; historical displayed tool objective soft agent counts are superseded. API cannot edit objective; no false completion/replacement."
+  },
+  "sol_progress70": {
+    "public_code_revision": "614d6e054a7e7f2b410d5f10cabfbf6d03ddc6e1",
+    "latest_full_accepted_round": "checkpoint18",
+    "private_generic_process_and_field": {
+      "status": "independently verified focused acceptance; public composition underway",
+      "audit": "/private/tmp/generic-bound-field-seven-actual-independent-sol70.json",
+      "audit_sha256": "5c3c8d77410b62e2e9a96fad6f66e80171ccb84d72db1a2d89c1aec8f5f37d16",
+      "parents": 12,
+      "children": 31,
+      "new_native_jvm_comparisons": 18,
+      "maven_launcher": "unverified; unchanged fixture reveals unnamed-package ingestion blocker"
+    },
+    "private_concurrentmap_core": {
+      "status": "owner scoped race green; independent actual review assigned; full43/raw/defaults/cancellation pending",
+      "owner_seal": "/private/tmp/java2go-concurrentmap-runtime-green-sol68-_syqkwft/actual-runtime-rqequ6ji/owner-green-seal.json",
+      "owner_sha256": "ad666c28d12950a0abd6ec5312efab0be5424ebee895f56975b3423a9e460c0a",
+      "parents": 10,
+      "children": 15
+    },
+    "date_iso_oracle": {
+      "status": "independently verified JVM-only",
+      "audit": "/private/tmp/java2go-date-iso-independent-sol70/audit.json",
+      "audit_sha256": "0aa87fb54b0bd95e167d822c7a705ca1cd45c3a7ab6c19a02c553aa48c780351",
+      "jvm_runs": 9,
+      "labeled_rows": 171
+    },
+    "actual_remaining_failures": [
+      "Time14 generated build: generic identity result fails canonical Duration method selection",
+      "Reflection full86: 84 pass, two generated build failures in annotation and constructor result typing",
+      "Generic interface candidate: 27 pass, four failures in genuine Gson family constructor/nested interface prerequisites",
+      "Comparator pair: unchanged application needs TreeMap/SortedMap firstKey",
+      "Maven generic launcher: original unnamed-package Java entry is rejected",
+      "Full43 ConcurrentMap: broader map/default/callback/cancellation contracts remain unproved"
+    ],
+    "performance": "Builder Java/optimized-Go six-fork pilot remains unrun; review caught runtime-specific JSON seed type issue. New strict transport derivative required, then independent review and exclusive execution.",
+    "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
+    "resume": "Original fixtures and observed REDs remain immutable. Root alone publishes managed checkout/Git changes. Follow existing Sol agents and verified live handles; do not restart on observation timeout."
   }
 }
