@@ -5805,6 +5805,70 @@
       "current_go_lanes": {},
       "current_jvm_lanes": {},
       "resume_rule": "Inspect agents/terminal receipts before granting lanes; never rerun a preserved attempt or infer acceptance from preparation. Sol-only. Root owns managed commit/push."
+    },
+    "progress63": {
+      "updated_at": "2026-09-30T10:38:07.548756+00:00",
+      "classification_of_previous_goal_turn": "PROGRESS: two pushed milestone commits, fresh independent scoped verification and launched TDD gates.",
+      "campaign_checkpoint": "19251147cb10bccdd3dc05bfbfc28c96dcb3d0b3",
+      "native_source_checkpoint": "9c1d4acdbb466a2ba5d6a86dd269357a0a0f8e99",
+      "runtime62": {
+        "status": "RED_AFTER_FIRST8_GREEN_REMAINING3_UNRUN",
+        "source_sha256": "41ef5b3fccd2b4975c581eb2ea4f2e64dcd0785213ac61c99df4a80251655dac",
+        "owner_receipt_sha256": "d6d0335b3c2ff8e478400a4d2406846fabd00eb05a164626c5223ec0eec8c5c5",
+        "independent_audit_sha256": "dab0a7a52330bf9148fff8ff43a30f37adb1741c7a977431a563bfdeb3440156",
+        "passed_parents": 44,
+        "passed_children": 387,
+        "blockers": [
+          "Normalizer companion Fatalf %q diagnostic rejects *JavaString; separate test-only repair frozen.",
+          "Qualified java.text.Normalizer.Form.NFC emits undefined java; compiler repair owned by sol_data_v2."
+        ],
+        "later_stages": "UNRUN"
+      },
+      "class_is_instance": {
+        "status": "INDEPENDENT_SCOPED_GREEN58_PENDING_COHERENT_INTEGRATION",
+        "result": "/private/tmp/java2go-class-isinstance-sol-v5-2_p56m3p/candidate-attempt1/result.json",
+        "result_sha256": "497109a3110559191b9a5513f68b0a8d3d4ffd46ff3852cda3b5f31db5814fcd",
+        "prechange_red_sha256": "21c1af586451ce0e07c86c2dee0b4c24cb00e1a7b20a3db642134ce06e0f94bd",
+        "original_header_observations": 6,
+        "independent_audit_sha256": "fb1a470727976fc61c768719781f600fd56ef9b1d9a8401fe6e8666925059b17"
+      },
+      "long_formatter_supplier": {
+        "status": "JVM9_STABLE_GO_PARITY_RED_FIRST_SEED_REMAINING8_UNRUN",
+        "result": "/private/tmp/java2go-long-formatter-supplier-diff-sol-v1-ewsenzx6/actual-differential-evzgnuoj/result.json",
+        "result_sha256": "ae503707b60f7e58eb15486abaf288627e6fd818af08d937fe3d0494dc48ffaa",
+        "discrepancy": "Formatter null-format exception message differs from installed JDK21; preserve full exception observations.",
+        "owner": "sol_jdk_runtime_v2",
+        "independent_audit_sha256": "4431477d9efa2f4d27dcb0763ec6b3f245e5829a2b7a1448e2db46614b7be6d4",
+        "scope": "Only line89 differs; other101 lines match exactly. Remaining8 executions unrun."
+      },
+      "netty": {
+        "status": "PINNED_PROPOSAL_ONLY_SOURCE_BUILD_CLOSURE_OPEN",
+        "public_proposal": "campaign/netty/dependency-proposal.json",
+        "ignored_copy": ".campaign/netty/4.1.138.Final",
+        "independent_audit_sha256": "d5e28e0ece286fd2780e18d0181c2a0058edad3cb7c2497268d51e35aea48a9a",
+        "active_locks_unchanged": true
+      },
+      "native_unit_baseline": "Nine shared failures diagnosed as JDK21 stdout/stderr encoding under C locale. General test-oracle transport TDD owned by sol_data; no waiver or expected result changes.",
+      "native_all16": "Corrected v28 inventory377 prepared4738236e; original375+2List parents, original command/source unchanged. Independent delta review pending; no workload.",
+      "active_ownership": "18 Sol roles, no Astra; three Go-heavy lanes and two JVM-only lanes; only root writes managed checkouts.",
+      "acceptance_limit": "Checkpoint18 remains latest full round. Full current applications, coherent runtime/compiler, accumulated regressions and CI remain required.",
+      "class_bound_header": {
+        "status": "FOCUSED_PRECHANGE_RED10_VALID_GENERAL_FIX_PENDING",
+        "owner_receipt_sha256": "ffa535711614313120b5c9e9c3e2561d74ae3e9bd92c8542045a497daadf6b92",
+        "jdk_oracle_receipt_sha256": "9a1c87a5dabf8d3cf557eb99b772ddf5f4f7523b3a3063c568989f9b0cc6ceda",
+        "unchanged_controls": "Method and constructor body bounds plus record-header guards pass.",
+        "owner": "sol_inheritance_dispatch_v11"
+      },
+      "builder_dispatch": {
+        "status": "GENERATION_RED_VALID_GENERAL_FIX_PENDING",
+        "owner_receipt_sha256": "a27116dce4de38f4a8f5e1276b4a6c2c2898ccb2a1905368d6220ffb60f524e5",
+        "scope": "Primitive direct append dispatch absent; runtime780 rows pass. No measured speedup."
+      },
+      "normalizer_prechange_red": {
+        "status": "QUALIFIED_LOWERING_RED_CONFIRMED_DIAGNOSTIC_VET_FIXED_ONLY",
+        "result_sha256": "0720f7e558ce9921fdf25e84d51f3fac6f0daa0374b0036ba5e2e454b9183c24",
+        "owner": "sol_data_v2"
+      }
     }
   },
   "work_allocation": {
