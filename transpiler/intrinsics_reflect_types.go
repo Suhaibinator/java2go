@@ -22,9 +22,9 @@ func init() {
 			if len(args) != 0 {
 				return nil
 			}
-			return stdjavaCall(ctx, "ReflectTypeNameExecution", intrinsicExecutionExpr(ctx), recv)
+			return stdjavaCall(ctx, "ReflectTypeNameJavaStringExecution", intrinsicExecutionExpr(ctx), recv)
 		})
-		registerInstanceIntrinsicResultType(receiver, "getTypeName", "String")
+		registerInstanceIntrinsicResultType(receiver, "getTypeName", "java.lang.String")
 		registerInstanceIntrinsic(receiver, "getClass", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) != 0 {
 				return nil
@@ -45,7 +45,7 @@ func init() {
 		{"WildcardType", "getUpperBounds", "GetUpperBounds", "Type[]", "ReflectArrayMemberExecution", "ReflectTypeTypeID"},
 		{"WildcardType", "getLowerBounds", "GetLowerBounds", "Type[]", "ReflectArrayMemberExecution", "ReflectTypeTypeID"},
 		{"TypeVariable", "getBounds", "GetBounds", "Type[]", "ReflectArrayMemberExecution", "ReflectTypeTypeID"},
-		{"TypeVariable", "getName", "GetName", "String", "ReflectStringMemberExecution", ""},
+		{"TypeVariable", "getName", "GetName", "java.lang.String", "ReflectStringMemberJavaStringExecution", ""},
 		{"TypeVariable", "getGenericDeclaration", "GetGenericDeclaration", "GenericDeclaration", "ReflectDeclarationMemberExecution", ""},
 		{"GenericDeclaration", "getTypeParameters", "GetTypeParameters", "TypeVariable<?>[]", "ReflectArrayMemberExecution", "TypeVariableTypeID"},
 	}

@@ -24,6 +24,7 @@ func TestLegacyMainExplicitGenericOriginalJVMParity(t *testing.T) {
  if err:=writeProjectFile(input,source);err!=nil{t.Fatal(err)}
  caller,err:=os.ReadFile("testdata/explicit_generic_main_witness/Caller.java");if err!=nil{t.Fatal(err)};callerInput:=filepath.Join(root,"Caller.java");if err:=writeProjectFile(callerInput,caller);err!=nil{t.Fatal(err)}
  previous:=symbol.GlobalScope;t.Cleanup(func(){symbol.GlobalScope=previous})
+ symbol.GlobalScope = &symbol.GlobalSymbols{Packages: make(map[string]*symbol.PackageScope)}
  artifact:=os.Getenv("JAVA2GO_NORMALIZER_ARTIFACTS")
  t.Cleanup(func(){if artifact==""{return};err:=filepath.WalkDir(root,func(p string,d os.DirEntry,e error)error{if e!=nil||d.IsDir(){return e};if filepath.Ext(p)!=".go"&&filepath.Ext(p)!=".java"&&filepath.Base(p)!="go.mod"{return nil};rel,e:=filepath.Rel(root,p);if e!=nil{return e};raw,e:=os.ReadFile(p);if e!=nil{return e};return writeProjectFile(filepath.Join(artifact,"explicit-generic",rel),raw)});if err!=nil{t.Error(err)}})
  var compilerOutput bytes.Buffer

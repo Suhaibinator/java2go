@@ -36,6 +36,9 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 		if expected, known := bigMathExpectedArgumentTypes(class, method, count); known {
 			return expected
 		}
+		if expected, known := javaTimeExpectedArgumentTypes(class, method, count, ctx); known {
+			return expected
+		}
 		if expected, known := datetimeExpectedArgumentTypes(class, method, count); known {
 			return expected
 		}

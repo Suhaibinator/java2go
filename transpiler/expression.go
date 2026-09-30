@@ -10066,17 +10066,13 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 	// In particular identity(1) returns Integer even when no assignment provides
 	// a target type (for example a var declaration or a nested invocation).
 	if len(resolution.def.TypeParameters) > 0 {
-		bindings := genericArrayInvocationTypeBindings(resolution.def, node, ctx, source)
-		rt = substituteJavaTypeParameters(rt, bindings)
-	}
-	// A genuinely unresolved return variable must not leak as an unbound type
-	// into a caller; its assignment target may still supply the missing view.
-	base, _ := parseJavaTypeString(rt)
-	for _, tp := range resolution.def.TypeParameterNames() {
-		if base == tp {
+		inferred, known := inferredGenericInvocationResult(resolution.def, node, ctx, source)
+		if !known {
 			return "", false
 		}
+		rt = inferred
 	}
+	base, _ := parseJavaTypeString(rt)
 	if resolution.owner != nil {
 		bindings := make(map[string]string)
 		ownerTypeArgs := receiverTypeArgs

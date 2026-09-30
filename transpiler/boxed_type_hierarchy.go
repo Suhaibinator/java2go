@@ -14,6 +14,9 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
 		return scope.IsInterface
 	}
+	if owner, known := javaTime14Owner(base, ctx); known && owner == "java.time.ZoneId" {
+		return true
+	}
 	if isBuiltinEnum(javaType, ctx) {
 		return true
 	}
@@ -71,6 +74,9 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 // Ordinary assignability and override checks keep invariant arguments.
 func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
 	if enumReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
+	if javaTimeReferenceAssignable(actual, expected, ctx) {
 		return true
 	}
 	if dateTimeReferenceAssignable(actual, expected, ctx) {

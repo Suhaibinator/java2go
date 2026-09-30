@@ -14,7 +14,7 @@ import (
 
 // A dynamically supplied binary name can select any source class in the
 // compilation. Enable descriptors for the complete source set in that case.
-var reflectionUsePattern = regexp.MustCompile(`\b(getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getDeclaredField|getMethod|isEnum|isEnumConstant|isAnnotationPresent|getSuperclass|isAssignableFrom|isInstance)\b`)
+var reflectionUsePattern = regexp.MustCompile(`\b(getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getDeclaredField|getDeclaredFields|getDeclaredConstructor|getGenericSuperclass|getGenericType|getTypeParameters|getAnnotation|getMethod|isEnum|isEnumConstant|isAnnotationPresent|getSuperclass|isAssignableFrom|isInstance)\b`)
 
 func sourceUsesReflection() bool {
 	seen := map[*symbol.FileScope]bool{}
@@ -63,7 +63,10 @@ func metadataKey(name string, value ast.Expr) ast.Expr {
 	return &ast.KeyValueExpr{Key: ast.NewIdent(name), Value: value}
 }
 func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
-	if !sourceUsesReflection() && !scope.IsEnum {
+	return sourceClassMetadataForTypeIDStmt(scope, sourceClassRuntimeTypeID(scope, ctx), ctx)
+}
+func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx Ctx) ast.Stmt {
+	if scope == nil || scope.Class == nil || (!sourceUsesReflection() && !scope.IsEnum) {
 		return nil
 	}
 	simpleName := ""
@@ -75,12 +78,13 @@ func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
 		}
 	}
 	descriptor := &ast.CompositeLit{Type: stdjavaQualifiedExpr("ClassDescriptor", ctx), Elts: []ast.Expr{
-		metadataKey("Type", javaTypeIDLiteral(javaClassBinaryName(scope), ctx)),
+		metadataKey("Type", javaTypeIDLiteral(id, ctx)),
 		metadataKey("SimpleName", metadataString(simpleName)),
 		metadataKey("HasSimpleName", ast.NewIdent("true")),
 		metadataKey("Interface", ast.NewIdent(strconv.FormatBool(scope.IsInterface))),
 		metadataKey("Enum", ast.NewIdent(strconv.FormatBool(scope.IsEnum))),
 	}}
+	extendSourceReflectionMetadata(descriptor, scope, ctx)
 	execution := ast.NewIdent("execution")
 	if initialize := classInitializationEnsureCall(scope, execution, ctx); initialize != nil {
 		descriptor.Elts = append(descriptor.Elts, metadataKey("Initialize", &ast.FuncLit{
@@ -90,7 +94,7 @@ func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
 	}
 	// Inner/local/generic classes require extra ABI arguments and are outside
 	// this public no-argument reflection surface.
-	if !scope.IsInterface && !scope.IsAbstract && !scope.IsEnum && !scope.IsInner && len(scope.TypeParameters) == 0 {
+	if !scope.IsInterface && !scope.IsAbstract && !scope.IsEnum && !scope.IsInner && len(scope.TypeParameters) == 0 && !sourceReflectionAnonymousClass(scope) {
 		constructor := noArgConstructorName(scope)
 		public := reflectionPublic(scope.Class, scope)
 		for _, method := range scope.Methods {
@@ -110,17 +114,10 @@ func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
 	if scope.IsEnum {
 		fields.Elts = append(fields.Elts, enumReflectionFieldDescriptors(scope, ctx)...)
 	}
+	if !scope.IsEnum {
+		fields.Elts = append(fields.Elts, sourceReflectionFields(scope, ctx)...)
+	}
 	if len(scope.TypeParameters) == 0 && !scope.IsInterface && !scope.IsEnum {
-		for _, field := range scope.Fields {
-			if !reflectionPublic(field, scope) || field.IsStatic {
-				continue
-			}
-			id, ok := javaTypeDescriptorExpr(field.OriginalType, ctx)
-			if !ok {
-				continue
-			}
-			fields.Elts = append(fields.Elts, &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Name", metadataString(field.OriginalName)), metadataKey("GoName", metadataGoName(field.Name)), metadataKey("Type", id), metadataKey("Final", ast.NewIdent(strconv.FormatBool(field.IsFinal)))}})
-		}
 		for _, method := range scope.Methods {
 			if method.Constructor || method.IsStatic || method.RequiresHelper || len(method.Parameters) != 0 || !reflectionPublic(method, scope) {
 				continue
@@ -152,6 +149,7 @@ func sourceClassMetadataStmt(scope *symbol.ClassScope, ctx Ctx) ast.Stmt {
 		}
 	}
 	descriptor.Elts = append(descriptor.Elts, metadataKey("Annotations", annotations))
+	descriptor.Elts = append(descriptor.Elts, metadataKey("AnnotationValues", sourceAnnotationDescriptors(scope.Class.DeclarationNode, scope, ctx)))
 	if _, inherited := runtimeMarkerPolicy(scope); inherited {
 		descriptor.Elts = append(descriptor.Elts, metadataKey("InheritedAnnotation", ast.NewIdent("true")))
 	}
@@ -168,9 +166,9 @@ func init() {
 	})
 	registerStaticIntrinsicResultType("Class", "forName", "Class")
 	for receiver, methods := range map[string]map[string]string{
-		"Class":       {"getName": "java.lang.String", "getSimpleName": "String", "getSuperclass": "Class", "isAssignableFrom": "boolean", "isInstance": "boolean", "isAnnotationPresent": "boolean", "getConstructor": "Constructor", "getField": "Field", "getDeclaredField": "Field", "isEnum": "boolean", "getMethod": "Method"},
-		"Field":       {"get": "Object", "set": "void", "getName": "String", "isEnumConstant": "boolean"},
-		"Method":      {"invoke": "Object", "getName": "String"},
+		"Class":       {"getName": "java.lang.String", "getSimpleName": "java.lang.String", "getSuperclass": "Class", "isAssignableFrom": "boolean", "isInstance": "boolean", "isAnnotationPresent": "boolean", "getConstructor": "Constructor", "getField": "Field", "getDeclaredField": "Field", "isEnum": "boolean", "getMethod": "Method"},
+		"Field":       {"get": "Object", "set": "void", "getName": "java.lang.String", "isEnumConstant": "boolean"},
+		"Method":      {"invoke": "Object", "getName": "java.lang.String"},
 		"Constructor": {"newInstance": "Object"},
 	} {
 		for name, result := range methods {
@@ -255,6 +253,9 @@ func reflectionVarargsIntrinsic(receiver, name string) nodeIntrinsicGenerator {
 		if spread {
 			call.Ellipsis = 1
 		}
+		if receiver == "Constructor" && name == "newInstance" {
+			return reflectionTypedResultExpr(call, invocation, ctx, source)
+		}
 		return call
 	}
 }
@@ -292,16 +293,11 @@ func annotationNameIs(name, qualified string, scope *symbol.ClassScope) bool {
 	return true
 }
 
-// Only marker annotations are represented. CLASS is the Java default retention;
+// CLASS is the Java default retention for marker and valued annotations;
 // RUNTIME must be explicitly declared, and @Inherited applies to class ancestry.
 func runtimeMarkerPolicy(scope *symbol.ClassScope) (runtime, inherited bool) {
 	if scope == nil || scope.Class == nil || scope.Class.DeclarationNode == nil || scope.Class.DeclarationNode.Type() != "annotation_type_declaration" {
 		return false, false
-	}
-	for _, member := range nodeutil.NamedChildrenOf(scope.Class.DeclarationNode.ChildByFieldName("body")) {
-		if member.Type() == "annotation_type_element_declaration" {
-			return false, false
-		}
 	}
 	file := findFileScopeForClassScope(scope)
 	if file == nil {

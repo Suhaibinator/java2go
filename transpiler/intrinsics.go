@@ -67,6 +67,8 @@ var (
 	// type depends on the call's arguments (Stream.of yields Stream<T> for the T
 	// of its first argument), which a fixed result-type string cannot express.
 	staticIntrinsicDerivedResultTypes = map[intrinsicKey]derivedResultType{}
+	// Instance results can depend on receiver arguments and method arguments.
+	instanceIntrinsicDerivedResultTypes = map[intrinsicKey]derivedResultType{}
 	// staticIntrinsicTypeArgs holds static intrinsics that need explicit Go type
 	// arguments computed from the Java call site.
 	staticIntrinsicTypeArgs = map[intrinsicKey]typeArgDeriver{}
@@ -129,6 +131,10 @@ func registerInstanceIntrinsicResultType(typeName, methodName, resultType string
 
 func registerStaticIntrinsicResultType(typeName, methodName, resultType string) {
 	staticIntrinsicResultTypes[intrinsicKey{typeName, methodName}] = canonicalIntrinsicResultType(resultType)
+}
+
+func registerInstanceIntrinsicDerivedResultType(className, methodName string, derive derivedResultType) {
+	instanceIntrinsicDerivedResultTypes[intrinsicKey{className, methodName}] = derive
 }
 
 // typeArgDeriver computes the explicit Go type arguments a static intrinsic
@@ -1110,6 +1116,11 @@ func inferIntrinsicMethodResultType(node *sitter.Node, ctx Ctx, source []byte) (
 		return "String", true
 	}
 	if receiverType, ok := intrinsicMethodReceiverTypeName(objectNode, methodName, ctx, source); ok {
+		if derive := instanceIntrinsicDerivedResultTypes[intrinsicKey{receiverType, methodName}]; derive != nil {
+			if resultType, known := derive(node, ctx, source); known {
+				return resultType, true
+			}
+		}
 		if resultType, known := intrinsicCollectionMethodResultType(node, receiverType, ctx, source); known {
 			return resultType, true
 		}

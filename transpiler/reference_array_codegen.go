@@ -1000,6 +1000,15 @@ func syntheticReferenceRegistrationDecl(
 	if text := sourceToStringRegistration(syntheticSourceTextScope(structName, ctx), dynamicID, ctx); text != nil {
 		statements = append(statements, text)
 	}
+	if scope := syntheticSourceTextScope(structName, ctx); scope != nil {
+		for _, accessor := range sourceReflectionFieldAccessors(scope, classScopeCtx(scope, ctx)) {
+			ctx.addHoistedDecl(accessor)
+		}
+		if metadata := sourceClassMetadataForTypeIDStmt(scope, dynamicID, classScopeCtx(scope, ctx)); metadata != nil {
+			statements = append(statements, metadata)
+		}
+	}
+
 	statements = append(statements, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}})
 	initializer := &ast.CallExpr{Fun: &ast.FuncLit{
 		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "bool"}}}}},

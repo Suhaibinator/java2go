@@ -71,10 +71,7 @@ func collectTypeNodes(node *sitter.Node) []*sitter.Node {
 func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
 	case "annotation_type_declaration":
-		if registration := sourceClassRegistrationDecl(ctx.currentClass, ctx); registration != nil {
-			return []ast.Decl{registration}
-		}
-		return nil
+		return sourceAnnotationDecls(ctx.currentClass, ctx)
 	case "record_declaration":
 		return parseRecordDecls(node, source, ctx)
 	case "class_declaration":
@@ -322,6 +319,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			declarations = append(declarations, alias)
 		}
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
+		declarations = append(declarations, sourceReflectionFieldAccessors(ctx.currentClass, ctx)...)
 		declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
 		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
 		declarations = append(declarations, generateCharacterIOBridgeDecls(ctx)...)

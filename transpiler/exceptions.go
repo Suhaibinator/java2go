@@ -15,6 +15,9 @@ import (
 // produces the corresponding stdjava value, and the names double as the parent
 // links recognised by stdjava.CaughtAs.
 var builtinExceptionTypes = map[string]string{
+	"DateTimeException":               "RuntimeException",
+	"DateTimeParseException":          "DateTimeException",
+	"ZoneRulesException":              "DateTimeException",
 	"Throwable":                       "",
 	"ParseException":                  "Exception",
 	"ExecutionException":              "Exception",

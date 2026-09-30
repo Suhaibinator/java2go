@@ -358,6 +358,9 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 		)
 	}
 
+	if root.Type() == "annotation_type_declaration" {
+		scope.Methods = append(scope.Methods, &Definition{Name: "AnnotationType", OriginalName: "annotationType", OriginalType: "java.lang.Class", Type: "*Class", Parameters: []*Definition{}})
+	}
 	discoverTrivialArrayAccessors(scope, source)
 
 	return scope
@@ -438,7 +441,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 				DeclarationNode: node,
 			})
 		}
-	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
+	case "method_declaration", "abstract_method_declaration", "constructor_declaration", "annotation_type_element_declaration":
 		var public bool
 		var isStatic bool
 		var isPrivate bool
@@ -489,7 +492,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			DeclarationNode: node,
 		}
 
-		if node.Type() == "method_declaration" {
+		if node.Type() == "method_declaration" || node.Type() == "annotation_type_element_declaration" {
 			declaration.Type = nodeToStr(astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, combinedTypeParamNames))
 			declaration.OriginalType = node.ChildByFieldName("type").Content(source)
 			declaration.DirectTypeParameter = DirectTypeParamForJavaType(declaration.OriginalType, combinedTypeParams)
@@ -508,7 +511,11 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		// Parse the parameters
 
-		for _, parameter := range nodeutil.NamedChildrenOf(node.ChildByFieldName("parameters")) {
+		var annotationParameters []*sitter.Node
+		if parameters := node.ChildByFieldName("parameters"); parameters != nil {
+			annotationParameters = nodeutil.NamedChildrenOf(parameters)
+		}
+		for _, parameter := range annotationParameters {
 
 			paramType, nameNode := nodeutil.JavaParameterNodes(parameter)
 			paramName := nameNode.Content(source)
