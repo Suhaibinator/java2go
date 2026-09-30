@@ -4554,13 +4554,13 @@
     }
   },
   "active_resume": {
-    "last_pushed_revision": "80324496303f1247db609b85a59594cee8605861",
+    "last_pushed_revision": "a907dd88cd5347ab2f5c121e95abd258ee751566",
     "branch": "origin/codex/adversarial-campaign",
     "active_root_session": null,
     "source_checkpoint": "See progress59. Separate immutable native and canonical String component lines; checkpoint18 remains latest complete compatibility acceptance.",
     "active_full_challenge": "round02/data Gson",
     "heavy_policy": "Coordinator assigns at most three concurrent isolated correctness lanes, each GOMAXPROCS=2 with unchanged bounds and private outputs/process trees. Performance measurements remain exclusive. No subagent spawning without coordinator assignment.",
-    "next": "Verify Objects candidate and compose onto canonical2170; repair actual Codec Charset/format blockers through TDD; finish inheritance injectivity and original6/full8/Dollar13; rerun final native16 and CI; preserve full Gson before Netty. Sol only; commit and push milestones.",
+    "next": "Aggressive Sol-only parallel TDD: repair source Supplier applicability and raw/wildcard generic family demand; Charset/Formatter, Long, Paths/IOException, split/encoding/resources/readers/digest/normalization adapters; compose exact patches and rerun original dependencies, native final16, full Gson and CI. Netty design only until gates pass.",
     "deferred_untracked": "performance/runtime/bignumbers/equal_scale/ remains excluded",
     "last_compatibility_revision": "eee3036c8d3f575307906a1d4c27e935e065ca8d",
     "automatic_goal_controller": "Goal tool reports paused; user authorized continued work. Available API cannot resume or edit objective. Campaign proceeds under explicit user continuation.",
@@ -4575,7 +4575,7 @@
     "verified_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
     "verification_archive": ".campaign/checkpoints/checkpoint18-full-v4/completion-evidence-v1/completion.json",
     "publication_status": "Canonical d753 and final IO e6cc392 committed, pushed and origin-verified on component branches. Main campaign latest full compatibility acceptance remains checkpoint18.",
-    "checkpoint_updated_utc": "2026-09-30T05:13:47.132305+00:00",
+    "checkpoint_updated_utc": "2026-09-30T05:59:06.755744+00:00",
     "prepared_endpoints": "Queued focused endpoints require individual lane grants; two short correctness lanes may overlap full-suite lane.",
     "status": "ACTIVE_USER_AUTHORIZED_SOL_ONLY",
     "minimal_repair_full22": {
@@ -5573,10 +5573,63 @@
       "full_acceptance": "Checkpoint18 eee3036c8d3f575307906a1d4c27e935e065ca8d remains latest full compatibility acceptance. Full Gson and CI required; no Netty advancement.",
       "durability": "New receipts are private temporary artifacts; older fixed-cutoff archives do not cover them. Code and checkpoint ledger are pushed separately from verbose local evidence.",
       "current_execution": "Consult live root scheduler and each immutable terminal receipt before relaunch. At most three heavy correctness lanes; measurements exclusive. No automatic retries or weakened fixtures."
+    },
+    "progress60": {
+      "recorded_at": "2026-09-30T05:59:06.755744+00:00",
+      "status": "ACTIVE_SOL_ONLY_PARALLEL_REPAIRS_NO_FULL_ROUND_ACCEPTANCE",
+      "active_sol_assignments": 18,
+      "canonical_objects_map": {
+        "source": "/private/tmp/java2go-canonical-map-objects-v11-e5fkwske/source",
+        "source_manifest_sha256": "f76b68b403fb116fc1d6fde5e1f5b6fb29b1e32d1fe3770e252a1f09fd65c1bb",
+        "ordered3": "Objects9+15 / Map3+9 / original22+2 independently green under race",
+        "ordered3_independent_audit": "/private/tmp/java2go-sol-canonical2174-ordered3-audit-v11-KtrZMmX0/independent-ordered3-audit.json",
+        "ordered3_audit_sha256": "c37f156b84cf5bf348a973b5a697f7b8630b4c3c7839f6c65d5a93035825d5cf",
+        "full34": "First12 pass incl9 JVM; stage13 generated Go build RED: concrete source Supplier does not select exported generic static supplied entry. Remaining21 unrun; zero Go application/race runs.",
+        "full34_independent_audit": "/private/tmp/java2go-canonical2174-objects-full34-independent-sol-cu3xjuk6/audit.json",
+        "full34_audit_sha256": "529829a630d6f9fe32f6b9941f269fa61f572066ea9fb574b94af58cf11fc47e"
+      },
+      "inheritance": {
+        "candidate_sha256": "4670c8cde54802c914151c4a6ef2a25908324fb75acb4f686019772906d678e1",
+        "injectivity": "GREEN",
+        "original11": "10PASS/1runtimeRED generic_views: Leaf cannot cast to Base[any]. Both Go race builds pass; raw/wildcard physical family demand repair active."
+      },
+      "charset_format": {
+        "JDK_oracle": "6javac+18JVM stable; source-free refinement captures fresh empty String.format output",
+        "oracle_owner_sha256": "4515d0a762d38a2114d12248308cc11aa4f62b4d500b6ba42b7d5948d20b0c93",
+        "focused_red_owner_sha256": "1c717cdb98487345620958bd5040b9445f61d5043f01e9926035dd202f96c378",
+        "focused_red": "All6 parents fail anticipated missing APIs/canonical types; general bounded implementation active. No green candidate accepted."
+      },
+      "additional_codec_frontier": {
+        "status": "STATIC_ONLY_NOT_NEW_EXECUTED_DIAGNOSTICS",
+        "items": [
+          "Long.parseLong",
+          "Paths.get/toString/resolve(String)",
+          "IOException constructors",
+          "String.split",
+          "String named byte encodings",
+          "Charset.forName",
+          "MessageDigest names",
+          "Normalizer canonical result",
+          "Class resources",
+          "BufferedReader.readLine canonical String/EOF null"
+        ]
+      },
+      "portable_checkpoint": {
+        "path": ".campaign/checkpoints/checkpoint19/sol-progress59-fixed-cutoff",
+        "cutoff": "2026-09-30T05:21:16Z",
+        "archive_sha256": "c6bc24c88170430a6174a0905d7b36b1c650fc52500c045d9cab5e4bcbd57911",
+        "root_audit_sha256": "ce54a12d6c65480d60b3c4647a59d4302644830f96174da8d499ffbdd5c3b0a8",
+        "verified_members": 2999,
+        "complete_source_scopes": 12,
+        "source_index_references": 25074,
+        "copied_and_hash_verified": true,
+        "excludes": "Later ordered3/inheritance green/full34 RED/CharsetFormat evidence; fixed cutoff disclosed."
+      },
+      "acceptance": "Checkpoint18 remains latest full compatibility acceptance; full Gson and CI required. No Netty implementation verified; performance research unmeasured."
     }
   },
   "work_allocation": {
-    "updated_at": "2026-09-30T05:13:47.132305+00:00",
+    "updated_at": "2026-09-30T05:59:06.755744+00:00",
     "requested_by": "user",
     "default_model": "gpt-6.1-sol",
     "default_reasoning_effort": "high",
@@ -5636,7 +5689,27 @@
       },
       "rule": "Sol only, including hardest semantics; isolated private ownership and coordinator-granted heavy workloads."
     },
-    "agent_policy": "ONLY_SOL"
+    "agent_policy": "ONLY_SOL",
+    "current_sol_owners": {
+      "sol_generic_representation_v2": "Raw/wildcard generic physical-core demand and TDD",
+      "sol_canonical_integration_v3": "Nominal source Supplier invocation applicability and TDD",
+      "sol_hard_semantics_v10": "Charset cached canonical name and general bounded Formatter",
+      "sol_jdk_runtime_v2": "Independent JDK oracle audit and canonical Long parsing",
+      "sol_objects_reference_v11": "Canonical Paths/resolve and IOException contracts",
+      "sol_data_v2": "Canonical String split and regex contracts",
+      "sol_io_string_output_v6": "Named byte encodings and canonical Charset lookup",
+      "sol_map_composition_v6": "Canonical MessageDigest names and contracts",
+      "sol_ingestion_audit_v3": "Canonical Unicode normalization",
+      "sol_canonical_map_integration_v11": "Class resources and BufferedReader canonical EOF contract",
+      "sol_bigmath_audit_v6": "Original Codec dependency frontier and composition recipe",
+      "sol_io_harness_migration_v5": "Independent focused/result/candidate verification",
+      "sol_concurrent_v2": "Independent full application and generic aliasing review",
+      "sol_inheritance_dispatch_v11": "New independent generic mutation/bridge adversaries",
+      "sol_writer_dispatch_v6": "Final native publication source and CI preparation",
+      "sol_abstract_collections_v2": "Final native16 regression gates preparation",
+      "sol_data": "Netty source readiness audit and future stateful fixture design",
+      "sol_performance_v10": "Dedicated general performance research, measurements gated"
+    }
   },
   "goal": {
     "objective": "Run the continuous adversarial Java-to-Go TDD campaign using GPT-6.1 Sol agents exclusively, including challenge authoring, compiler/runtime repairs, difficult semantics, independent verification and dedicated performance research. Translate actual dependency implementations, preserve correctness and accumulated regressions, compare JVM and Go observations, commit and push verified milestones to origin branches, and continue toward Netty until the user stops the campaign, subject to execution and usage limits. No finite corpus establishes support for every Java application.",
