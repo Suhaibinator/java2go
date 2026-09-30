@@ -3644,11 +3644,10 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 // Root> box` both accept multiple concrete instantiations, while Go generic
 // types are invariant. Fresh function type parameters preserve that call-site
 // flexibility and let Go infer the concrete arguments without mutating the Java
-// symbols. Reference arrays are the exception: their generated ABI is the
-// non-generic *stdjava.ReferenceArray, so a fresh parameter would be absent from
-// the Go signature and could not be inferred. Array wildcards therefore use
-// their readable upper projection; the runtime array descriptor retains the
-// reified component identity independently.
+// symbols. Reference arrays and admitted canonical aliases have nongeneric
+// physical types, so a fresh parameter would be absent from the Go signature
+// and could not be inferred. These parameters retain their readable Java
+// projection; the runtime descriptor retains nominal identity independently.
 func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]symbol.TypeParam, map[string]string) {
 	if def == nil || !def.IsStatic {
 		return nil, nil
@@ -3690,6 +3689,7 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 		if target == nil || len(target.TypeParameters) == 0 {
 			continue
 		}
+		inferable := arraySuffix == "" && !canonicalGenericClass(target, classScopeCtx(target, ctx))
 
 		stem := symbol.Uppercase(sanitizeGoIdent(param.Name))
 		if stem == "" {
@@ -3712,8 +3712,8 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 				}
 				changed = true
 				targetParam := genericTargetParameterForArgument(target, len(explicitArgs), index)
-				if arraySuffix != "" {
-					rewrittenArgs[index] = readableWildcardUpperBound(upperBound, targetParam, nil)
+				if !inferable {
+					rewrittenArgs[index] = readableWildcardUpperBound(upperBound, targetParam, genericTargetArgumentBindings(target, rewrittenArgs))
 					continue
 				}
 
@@ -3742,6 +3742,14 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 			}
 
 			rewritten := base + "<" + strings.Join(rewrittenArgs, ", ") + ">" + arraySuffix
+			rewrittenTypes[param.OriginalName] = rewritten
+			rewrittenTypes[param.Name] = rewritten
+			continue
+		}
+
+		if !inferable {
+			arguments := normalizeClassTypeArguments(target, nil, nil, nil)
+			rewritten := base + "<" + strings.Join(arguments, ", ") + ">" + arraySuffix
 			rewrittenTypes[param.OriginalName] = rewritten
 			rewrittenTypes[param.Name] = rewritten
 			continue

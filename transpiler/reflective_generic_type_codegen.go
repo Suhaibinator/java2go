@@ -158,14 +158,15 @@ func reflectiveNamedTypeParts(original string) (string, []string, bool) {
 				last = index
 			}
 		case ',':
-			if depth == 1 {
+			switch depth {
+			case 1:
 				argument := strings.TrimSpace(original[start:index])
 				if argument == "" {
 					return "", nil, false
 				}
 				arguments = append(arguments, argument)
 				start = index + 1
-			} else if depth == 0 {
+			case 0:
 				return "", nil, false
 			}
 		}

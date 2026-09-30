@@ -201,7 +201,10 @@ func TestReflectionConstructorPlatformActualJDK66(t *testing.T) {
 				t.Fatal("target callback count, fresh wrapper, or cause identity changed")
 			}
 			reflectionPlatformObservedMessage(t, execution, j.GetCause(first), row[3])
-			rejection := reflectionPlatformPanic(func() { j.ThrowableInitCauseExecution(execution, first, nil) })
+			rejection := reflectionPlatformPanic(func() {
+				returned := j.ThrowableInitCauseExecution(execution, first, nil)
+				t.Fatalf("expected locked wrapper cause rejection, returned %T", returned)
+			})
 			reflectionPlatformFailure(t, rejection, "IllegalStateException")
 			reflectionPlatformObservedMessage(t, execution, rejection, actual["wrapper-cause-locked"][1])
 			if !j.JavaReferenceEqual(j.GetCause(first), target) || !j.JavaReferenceEqual(j.GetCause(rejection), first) {

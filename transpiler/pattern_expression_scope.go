@@ -104,7 +104,7 @@ func lowerPatternExpressionCondition(node *sitter.Node, source []byte, ctx Ctx, 
 	}
 	if pattern := instanceofPatternNode(node); pattern != nil {
 		branchCtx := patternExpressionContext(ctx)
-		init, condition, branchCtx := lowerInstanceofPattern(pattern, source, branchCtx)
+		init, _, branchCtx := lowerInstanceofPattern(pattern, source, branchCtx)
 		assignment := init.(*ast.AssignStmt)
 		binding := localBindingIdent(pattern.ChildByFieldName("name"), source, branchCtx)
 		success := "__java2goPatternMatched"
@@ -112,7 +112,7 @@ func lowerPatternExpressionCondition(node *sitter.Node, source []byte, ctx Ctx, 
 			success += "_"
 		}
 		assignment.Lhs = []ast.Expr{binding, ast.NewIdent(success)}
-		condition = ast.NewIdent(success)
+		condition := ast.NewIdent(success)
 		body := patternExpressionBlock(matched(branchCtx))
 		body.List = append([]ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{ast.NewIdent("_")}, Tok: token.ASSIGN, Rhs: []ast.Expr{binding}}}, body.List...)
 		return &ast.IfStmt{Init: init, Cond: condition, Body: body, Else: patternExpressionBlock(unmatched(ctx))}

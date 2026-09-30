@@ -5,19 +5,17 @@
 package normalization15
 
 import (
-    "encoding/binary"
-    "unicode/utf8"
+	"encoding/binary"
+	"unicode/utf8"
 )
 
 const (
-	qcInfoMask      = 0x3F // to clear all but the relevant bits in a qcInfo
 	headerLenMask   = 0x1F // extract the length value from the header byte (31 => 33)
 	headerFlagsMask = 0xE0 // extract the qcInfo bits from the header byte
 )
 
 // Properties provides access to normalization properties of a rune.
 type Properties struct {
-	pos   uint8  // start position in reorderBuffer; used in composition.go
 	size  uint8  // length of UTF-8 encoding of this rune
 	ccc   uint8  // leading canonical combining class (ccc if not decomposition)
 	tccc  uint8  // trailing canonical combining class (ccc if not decomposition)
@@ -28,30 +26,10 @@ type Properties struct {
 
 type qcInfo uint8
 
-func (p Properties) isInvalid() bool { return p.flags == 0x80 }
-
 func (p Properties) isYesC() bool { return p.flags&0x10 == 0 }
 func (p Properties) isYesD() bool { return p.flags&0x4 == 0 }
 
-func (p Properties) combinesForward() bool  { return p.flags&0x20 != 0 }
 func (p Properties) combinesBackward() bool { return p.flags&0x8 != 0 } // == isMaybe
-func (p Properties) hasDecomposition() bool { return p.flags&0x4 != 0 } // == isNoD
-
-func (p Properties) isInert() bool {
-	return p.flags&qcInfoMask == 0 && p.ccc == 0
-}
-
-func (p Properties) multiSegment() bool {
-	return p.index >= firstMulti && p.index < endMulti
-}
-
-func (p Properties) nLeadingNonStarters() uint8 {
-	return p.nLead
-}
-
-func (p Properties) nTrailingNonStarters() uint8 {
-	return uint8(p.flags & 0x03)
-}
 
 // Decomposition returns the decomposition for the underlying rune
 // or nil if there is none.
@@ -165,8 +143,10 @@ func compInfo(v uint16, sz int) Properties {
 
 // properties uses the fixed Unicode15 trie; no host Unicode tables participate.
 func properties(r rune, compatibility bool) Properties {
-    var buf [utf8.UTFMax]byte
-    n := utf8.EncodeRune(buf[:], r)
-    if compatibility { return compInfo(nfkcData.lookup(buf[:n])) }
-    return compInfo(nfcData.lookup(buf[:n]))
+	var buf [utf8.UTFMax]byte
+	n := utf8.EncodeRune(buf[:], r)
+	if compatibility {
+		return compInfo(nfkcData.lookup(buf[:n]))
+	}
+	return compInfo(nfcData.lookup(buf[:n]))
 }

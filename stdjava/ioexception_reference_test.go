@@ -52,7 +52,10 @@ func TestJavaIOExceptionReferenceMessageAndCauseSlots(t *testing.T) {
 					t.Fatal("String constructor did not leave initCause available or preserve returned/cause identity")
 				}
 			} else {
-				failure := ioExceptionReferencePanic(t, func() { ThrowableInitCauseExecution(execution, test.failure, replacement) })
+				failure := ioExceptionReferencePanic(t, func() {
+					returned := ThrowableInitCauseExecution(execution, test.failure, replacement)
+					t.Fatalf("expected locked cause rejection, returned %T", returned)
+				})
 				if exception, ok := failure.(Throwable); !ok || exception.ThrowableTypeName() != "IllegalStateException" || GetCause(test.failure) != test.cause {
 					t.Fatal("explicit cause overload failed to close the cause slot")
 				}
@@ -146,8 +149,9 @@ func TestJavaIOExceptionReferenceAbruptCauseIdentityAndMonitorCleanup(t *testing
 		guard := MonitorEnterExecution(execution, cause)
 		defer MonitorExitExecution(guard)
 		trace = append(trace, "enter")
-		NewJavaIOExceptionCauseExecution(execution, cause)
+		returned := NewJavaIOExceptionCauseExecution(execution, cause)
 		trace = append(trace, "unreachable")
+		t.Fatalf("expected abrupt cause callback, returned %T", returned)
 	})
 	if failure != marker || cause.calls != 1 || !cause.held || !cause.same || ThreadHoldsLockExecution(execution, cause) {
 		t.Fatal("IOException changed abrupt callback identity or caller context/cleanup")

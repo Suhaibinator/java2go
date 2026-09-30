@@ -20,11 +20,13 @@ func objectsReferencePanic(t *testing.T, invoke func()) (failure any) {
 }
 
 func TestJavaObjectsReferenceIdentityAndStaticType(t *testing.T) {
+	// Keep the API result representation checked by assignment.
+	var one, two, three *JavaString
 	value := NewJavaStringUTF16([]uint16{'v', 0xd800, 0})
 	message := NewJavaStringUTF16([]uint16{'m'})
-	var one *JavaString = ObjectsRequireNonNullReference(value)
-	var two *JavaString = ObjectsRequireNonNullMessageReference(value, message)
-	var three *JavaString = ObjectsRequireNonNullSupplierReference(NewExecution(), value, nil)
+	one = ObjectsRequireNonNullReference(value)
+	two = ObjectsRequireNonNullMessageReference(value, message)
+	three = ObjectsRequireNonNullSupplierReference(NewExecution(), value, nil)
 	if one != value || two != value || three != value {
 		t.Fatal("requireNonNull changed the static result type or reference identity")
 	}
@@ -66,7 +68,9 @@ func TestJavaObjectsReferenceNullMessagesAndCauseSlot(t *testing.T) {
 			if GetCause(failure) != nil {
 				t.Fatal("new NullPointerException unexpectedly has a cause")
 			}
-			ThrowableInitCauseExecution(execution, failure, cause)
+			if returned := ThrowableInitCauseExecution(execution, failure, cause); !JavaReferenceEqual(returned, failure) {
+				t.Fatal("initCause did not return the original receiver")
+			}
 			if GetCause(failure) != cause {
 				t.Fatal("canonical NullPointerException did not retain its initialized cause")
 			}
@@ -143,7 +147,9 @@ func TestJavaObjectsReferenceSupplierAbruptIdentityCauseAndCleanup(t *testing.T)
 	cause := NewJavaExceptionMessage(nil)
 	markerValue := NewJavaRuntimeExceptionMessage(NewJavaStringUTF16([]uint16{'b', 0xd800, 0}))
 	marker := &markerValue
-	ThrowableInitCauseExecution(execution, marker, cause)
+	if returned := ThrowableInitCauseExecution(execution, marker, cause); !JavaReferenceEqual(returned, marker) {
+		t.Fatal("initCause did not retain abrupt marker receiver identity")
+	}
 	probe := &objectsReferenceSupplierProbe{execution: execution, abrupt: marker}
 	failure := objectsReferencePanic(t, func() {
 		guard := MonitorEnterExecution(execution, probe)

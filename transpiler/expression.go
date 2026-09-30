@@ -6622,7 +6622,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	}
 	if superScope != nil && superScope.Class != nil {
 		if superScope.IsInterface {
-			if embedded := implementedInterfaceTypeExpr(supertype, syntheticScope.TypeParameterNames(), ctx); embedded != nil {
+			if embedded := implementedInterfaceTypeExpr(supertype, syntheticScope.TypeParameterNames(), classScopeCtx(syntheticScope, ctx)); embedded != nil {
 				fields.List = append(fields.List, &ast.Field{Type: embedded})
 			}
 		} else {
@@ -8272,7 +8272,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	}
 	if interfacesNode := node.ChildByFieldName("interfaces"); interfacesNode != nil {
 		for _, interfaceType := range collectTypeNodes(interfacesNode) {
-			if embed := implementedInterfaceTypeExpr(interfaceType.Content(source), inScopeTypeParameters(ctx), ctx); embed != nil {
+			if embed := implementedInterfaceTypeExpr(interfaceType.Content(source), syntheticScope.TypeParameterNames(), fieldTypeCtx); embed != nil {
 				fields.List = append(fields.List, &ast.Field{Type: embed})
 			}
 		}

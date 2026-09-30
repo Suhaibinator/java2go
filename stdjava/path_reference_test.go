@@ -36,11 +36,13 @@ func pathReferenceArray(values ...*JavaString) *ReferenceArray {
 }
 
 func TestJavaPathReferenceStringArrayAndExpandedVarargs(t *testing.T) {
+	// Keep the API result representation checked by assignment.
+	var expanded, packed *JavaPath
 	first := pathReferenceString("root//")
 	parts := []*JavaString{pathReferenceString(""), pathReferenceString("part/"), pathReferenceString("leaf17")}
 	array := pathReferenceArray(parts...)
-	var expanded *JavaPath = PathsGetReference(first, parts...)
-	var packed *JavaPath = PathsGetArrayReference(first, array)
+	expanded = PathsGetReference(first, parts...)
+	packed = PathsGetArrayReference(first, array)
 	want := pathReferenceString("root/part/leaf17").UTF16Copy()
 	for name, path := range map[string]*JavaPath{"expanded": expanded, "array": packed} {
 		t.Run(name, func(t *testing.T) {

@@ -1005,7 +1005,7 @@ func (m *splitRegexMatcher) eval(n *splitRegexNode, s splitRegexState) []splitRe
 		if p == 0 {
 			return succeed(p)
 		}
-		if n.flags&splitMultiline != 0 && p < len(m.units) && splitRegexLine(rune(m.units[p-1]), n.flags) && !(m.units[p-1] == '\r' && m.units[p] == '\n' && n.flags&splitUnixLines == 0) {
+		if n.flags&splitMultiline != 0 && p < len(m.units) && splitRegexLine(rune(m.units[p-1]), n.flags) && (m.units[p-1] != '\r' || m.units[p] != '\n' || n.flags&splitUnixLines != 0) {
 			return succeed(p)
 		}
 	case '$', 'Z':

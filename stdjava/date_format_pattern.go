@@ -11,9 +11,6 @@ type dateFormatToken struct {
 	literal []uint16
 }
 
-func compileDateFormatPattern(pattern string) []dateFormatToken {
-	return compileDateFormatPatternUnits(StringChars(pattern))
-}
 func compileDateFormatPatternUnits(units []rune) []dateFormatToken {
 	var result []dateFormatToken
 	quoted := false
@@ -35,7 +32,7 @@ func compileDateFormatPatternUnits(units []rune) []dateFormatToken {
 			quoted = !quoted
 			continue
 		}
-		if quoted || !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+		if quoted || (c < 'A' || c > 'Z') && (c < 'a' || c > 'z') {
 			literal(c)
 			continue
 		}
@@ -110,11 +107,8 @@ func dateFormatParseText(units []rune, start int, values []string) (int32, int, 
 	return found, best, found >= 0
 }
 
-// parsePosition preserves Java's lexical and calendar failure boundaries. In
+// parsePositionUnits preserves Java's lexical and calendar failure boundaries. In
 // particular, a successful parse does not clear a previously set errorIndex.
-func (f *SimpleDateFormat) parsePosition(text string, pos *ParsePosition) *Date {
-	return f.parsePositionUnits(StringChars(text), pos)
-}
 func (f *SimpleDateFormat) parsePositionUnits(units []rune, pos *ParsePosition) (result *Date) {
 	start := int(pos.index)
 	index := start

@@ -20,7 +20,7 @@ func TestBridgeErasedCanonicalNullRuntime(t *testing.T) {
 		var array *j.ReferenceArray
 		var source *bridgeNullIdentityImpostor
 		var erased any = text
-		if erased == nil {
+		if reflect.TypeOf(erased) != reflect.TypeOf(text) || !reflect.ValueOf(erased).IsNil() {
 			t.Fatal("test did not preserve the typed-null erasure boundary")
 		}
 		if !j.JavaReferenceEqual(erased, nil) || !j.JavaReferenceEqual(nil, erased) ||

@@ -501,9 +501,10 @@ func formatJavaInteger(locale *Locale, spec *javaFormatSpecifier, value any) []u
 		prefix = " "
 	}
 	if spec.has("#") {
-		if base == 8 {
+		switch base {
+		case 8:
 			prefix += "0"
-		} else if base == 16 {
+		case 16:
 			prefix += "0x"
 		}
 	}

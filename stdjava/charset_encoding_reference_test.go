@@ -19,6 +19,8 @@ func charsetEncodingReferenceFailure(t *testing.T, name string, action func() an
 }
 
 func TestCharsetEncodingReferenceAliasesAndNativeBoundary(t *testing.T) {
+	// Keep the API result representation checked by assignment.
+	var nativeName string
 	cases := []struct {
 		name string
 		want *Charset
@@ -29,7 +31,7 @@ func TestCharsetEncodingReferenceAliasesAndNativeBoundary(t *testing.T) {
 			t.Fatalf("alias %q changed singleton", c.name)
 		}
 	}
-	var nativeName string = UTF_8.Name()
+	nativeName = UTF_8.Name()
 	if nativeName != "UTF-8" || CharsetForName("UTF8") != UTF_8 || UTF_8.String() != "UTF-8" {
 		t.Fatal("native Charset APIs changed")
 	}

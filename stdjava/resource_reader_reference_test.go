@@ -115,8 +115,10 @@ func TestCanonicalResourceReaderLineAndEOFContract(t *testing.T) {
 					t.Fatalf("line %d: %v != %v", index, got, want)
 				}
 			}
-			if reader.ReadLineReference() != nil || reader.ReadLineReference() != nil {
-				t.Fatal("repeated EOF must be null")
+			for read := 0; read < 2; read++ {
+				if reader.ReadLineReference() != nil {
+					t.Fatal("repeated EOF must be null")
+				}
 			}
 			reader.Close()
 			resourceReaderExpectException(t, "IOException", "Stream closed", func() { reader.ReadLineReference() })

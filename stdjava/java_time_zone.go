@@ -124,8 +124,8 @@ func javaTimeLoadZone(id string) *time.Location {
 			break
 		}
 		payload, err := io.ReadAll(reader)
-		reader.Close()
-		if err != nil {
+		closeErr := reader.Close()
+		if err != nil || closeErr != nil {
 			break
 		}
 		location, err := time.LoadLocationFromTZData(id, payload)

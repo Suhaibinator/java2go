@@ -415,7 +415,7 @@ func pathGetReferenceExpected(invocation *sitter.Node, ctx Ctx, source []byte) [
 		return nil
 	}
 	first, known := inferExprJavaType(invocationArgumentNode(invocation, 0), ctx, source)
-	if !known || (!throwableConstructorMessageType(symbol.JavaType{Original: first}, ctx, map[typeParameterIdentityKey]bool{}) && !(first == "null" && count > 1)) {
+	if !known || (!throwableConstructorMessageType(symbol.JavaType{Original: first}, ctx, map[typeParameterIdentityKey]bool{}) && (first != "null" || count <= 1)) {
 		return nil
 	}
 	expected := make([]string, count)

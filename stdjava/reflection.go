@@ -154,7 +154,6 @@ func (class *Class) IsAnnotationPresent(annotation *Class) bool {
 
 type Constructor struct {
 	owner      *Class
-	construct  func(*Execution) any
 	descriptor ConstructorDescriptor
 	accessible atomic.Bool
 }

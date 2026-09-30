@@ -46,9 +46,10 @@ func parseBigIntegerDecimalJavaString(text *JavaString) big.Int {
 	}
 	minus, plus := -1, -1
 	for i, unit := range chars {
-		if unit == '-' {
+		switch unit {
+		case '-':
 			minus = i
-		} else if unit == '+' {
+		case '+':
 			plus = i
 		}
 	}

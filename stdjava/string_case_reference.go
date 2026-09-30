@@ -234,14 +234,18 @@ type javaCaseWordSpan struct{ start, end int }
 
 func javaCaseWordLetter(cp rune) bool {
 	kind := javaCase15Category(cp)
-	if !(kind >= 1 && kind <= 5) && kind != 8 {
+	if (kind < 1 || kind > 5) && kind != 8 {
 		return false
 	}
 	// The JDK word rules group these scripts separately from letter/number words.
-	return !(cp == 0x3005 || (cp >= 0x4e00 && cp <= 0x9fa5) || (cp >= 0xf900 && cp <= 0xfa2d) ||
+	switch {
+	case cp == 0x3005 || (cp >= 0x4e00 && cp <= 0x9fa5) || (cp >= 0xf900 && cp <= 0xfa2d) ||
 		(cp >= 0x30a1 && cp <= 0x30fa) || cp == 0x30fd || cp == 0x30fe ||
 		(cp >= 0x3041 && cp <= 0x3094) || cp == 0x309d || cp == 0x309e ||
-		(cp >= 0x3099 && cp <= 0x309c) || cp == 0x30fb || cp == 0x30fc)
+		(cp >= 0x3099 && cp <= 0x309c) || cp == 0x30fb || cp == 0x30fc:
+		return false
+	}
+	return true
 }
 func javaCaseWordNumber(cp rune) bool {
 	kind := javaCase15Category(cp)
