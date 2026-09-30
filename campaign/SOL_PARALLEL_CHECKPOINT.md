@@ -7,3 +7,7 @@ Use SOL_PROGRESS58.md and active_resume.progress58 for the exact current evidenc
 The IO publication passes 73 parents/141 test keys and affected-package lint; independent final audit passes1,283 checks, and e6cc392 is committed, pushed and origin-verified on codex/adversarial-io-checkpoint19. The descriptor repair passes its focused controls and unchanged expanded application; a 1,978-file native composition still needs its affected gates. Original22 restoration passes independently. Ordinary-import author predictions were disproved by JDK21 and are preserved as invalid oracles. Dollar basename controls pass after an actual red, with broader original challenge gates pending.
 
 Performance evidence identifies a small callback allocation share on the older native ABI; it establishes no speed advantage over Java. Sol is preparing the canonical Codec experiment and bounded general optimization controls. Latest full compatibility acceptance remains checkpoint18. Full Gson and accumulated CI remain required; no Netty advancement is accepted.
+
+## Progress59
+
+See SOL_PROGRESS59.md and active_resume.progress59 for canonical Map greens, original22 Objects failures, actual Codec dependency build blockers and inheritance injectivity TDD. Sol-only ownership remains mandatory. Candidate results retain their exact source manifests; no full round acceptance or performance gain is claimed.
