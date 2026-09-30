@@ -19,6 +19,8 @@ import (
 // ArrayList reports type List; one declared `ArrayList<T>` reports ArrayList).
 
 func init() {
+	// Nominal descriptors use this canonical owner after source/binder resolution.
+	registerIntrinsicOwner("java.util.List", true)
 	registerCollectionConstructors()
 	registerListIntrinsics()
 	registerErasedCollectionIntrinsics()

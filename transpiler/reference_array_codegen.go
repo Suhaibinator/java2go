@@ -768,6 +768,7 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	}
 
 	args = append(args, sourceIterationInterfaceIDs(scope, ctx)...)
+	args = append(args, sourceFunctionInterfaceIDs(scope, ctx)...)
 	args = append(args, sourceMapEntryInterfaceIDs(scope, ctx)...)
 	args = append(args, sourceAbstractCollectionInterfaceIDs(scope, ctx)...)
 	if sourceDirectCharSequence(scope, ctx) {
@@ -981,6 +982,7 @@ func syntheticReferenceRegistrationDecl(
 	args := []ast.Expr{javaTypeIDLiteral(dynamicID, ctx), superID}
 	args = append(args, interfaceIDs...)
 	args = append(args, sourceIterationInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
+	args = append(args, sourceFunctionInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	args = append(args, sourceMapEntryInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	registrationName := "__java2goSyntheticTypeRegistration" + sanitizeGoIdent(structName)
 	statements := []ast.Stmt{

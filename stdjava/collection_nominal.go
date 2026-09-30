@@ -27,3 +27,9 @@ func nativeJavaInterfaceAssignable(value any, expected TypeID) bool {
 	}
 	return false
 }
+
+// List's shared backend proves interface membership without inventing an
+// ArrayList/LinkedList concrete descriptor or admitting public method lookalikes.
+func (*List[T]) nativeJavaInterfaces() []TypeID {
+	return []TypeID{nativeListTypeID}
+}

@@ -52,13 +52,21 @@ public class FieldBackedCalls {
 		"stdjava.EvaluationValue(fs.values).Add(",
 		".values.Get(0)",
 		".values.Size()",
-		"stdjava.EvaluationValue(fs.byKey).Put(",
-		".byKey.Get(",
+		"stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey), \"worker\", fs.worker.NameJava2goExecution(__java2goExecution))",
+		"stdjava.ObjectView[string](fs.byKey.GetObject(\"worker\", __java2goExecution), stdjava.StringTypeID)",
 	}
 	for _, check := range checks {
 		if !strings.Contains(out, check) {
 			t.Errorf("generated field receiver is missing %q:\n%s", check, out)
 		}
+	}
+	add := strings.Index(out, "stdjava.EvaluationValue(fs.values).Add(")
+	put := strings.Index(out, "stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey),")
+	getList := strings.Index(out, "fs.values.Get(0)")
+	getMap := strings.Index(out, "fs.byKey.GetObject(\"worker\", __java2goExecution)")
+	size := strings.Index(out, "fs.values.Size()")
+	if add < 0 || put <= add || getList <= put || getMap <= getList || size <= getMap {
+		t.Errorf("generated calls changed Java statement or return-expression evaluation order:\n%s", out)
 	}
 	for _, stale := range []string{".parser.parse(", ".worker.name(", ".values.add(", ".values.get(", ".values.size(", ".byKey.put(", ".byKey.get("} {
 		if strings.Contains(out, stale) {
