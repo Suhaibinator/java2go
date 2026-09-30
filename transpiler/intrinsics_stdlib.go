@@ -68,7 +68,7 @@ func registerStringIntrinsics() {
 		min, max             int
 	}{
 		{"isBlank", "JavaStringIsBlank", "boolean", 0, 0},
-		{"indexOf", "JavaStringIndexOf", "int", 1, 2},
+		{"indexOf", "JavaStringIndexOf", "int", 1, 3},
 		{"lastIndexOf", "JavaStringLastIndexOf", "int", 1, 2},
 		{"contains", "JavaStringContains", "boolean", 1, 1},
 		{"startsWith", "JavaStringStartsWith", "boolean", 1, 2},
@@ -410,7 +410,7 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return pkgCall(ctx, "fmt", "Sprint", args[0])
+		return stdjavaCall(ctx, "JavaStringValueOfLong", args[0])
 	})
 	registerStaticFieldIntrinsic("Long", "MAX_VALUE", func(ctx Ctx) ast.Expr {
 		return qualifiedNameExpr("MaxInt64", "math", ctx)

@@ -308,14 +308,14 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 			return set("Object")
 		case "indexOf", "lastIndexOf":
 			target := actual(0)
-			if primitive, boxed := builtinJavaWrapperPrimitive(target, ctx); boxed {
+			if primitive, boxed := javaUnboxingPrimitive(target, ctx); boxed {
 				target = primitive
 			}
 			switch target {
 			case "byte", "short", "char", "int":
-				return set("int", "int")
+				return set("int", "int", "int")
 			default:
-				return set("String", "int")
+				return set("java.lang.String", "int", "int")
 			}
 		case "concat", "compareTo", "equalsIgnoreCase", "startsWith", "endsWith", "split":
 			return set("String", "int")

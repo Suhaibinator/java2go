@@ -87,6 +87,8 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 	extendSourceReflectionMetadata(descriptor, scope, ctx)
 	execution := ast.NewIdent("execution")
 	if initialize := classInitializationEnsureCall(scope, execution, ctx); initialize != nil {
+		target := classInitializationTarget(scope, ctx)
+		descriptor.Elts = append(descriptor.Elts, metadataKey("Initialization", qualifiedNameExpr(classInitializationStateName(target), findJavaPackageForClassScope(target), ctx)))
 		descriptor.Elts = append(descriptor.Elts, metadataKey("Initialize", &ast.FuncLit{
 			Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}},
 			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ExprStmt{X: initialize}}},

@@ -311,7 +311,9 @@ func calendarCivilFromJulianDay(day int64) (year, month, date int64) {
 }
 func (calendar *GregorianCalendar) populateFields() {
 	offset := int64(calendar.zone.GetOffset(calendar.millis))
-	seconds := calendarFloorDiv(calendar.millis, 1000) + offset/1000
+	// Keep the offset remainder and its carry without overflowing millis+offset.
+	wallRemainder := calendarFloorMod(calendar.millis, 1000) + offset
+	seconds := calendarFloorDiv(calendar.millis, 1000) + calendarFloorDiv(wallRemainder, 1000)
 	fixed := calendarFloorDiv(seconds, 86400) + 2440588
 	year, month, day := calendarCivilFromJulianDay(fixed)
 	era := int32(1)
@@ -330,7 +332,7 @@ func (calendar *GregorianCalendar) populateFields() {
 	calendar.fields[CalendarAM_PM] = int32(within / 43200)
 	calendar.fields[CalendarMINUTE] = int32(within / 60 % 60)
 	calendar.fields[CalendarSECOND] = int32(within % 60)
-	calendar.fields[CalendarMILLISECOND] = int32(calendarFloorMod(calendar.millis, 1000))
+	calendar.fields[CalendarMILLISECOND] = int32(calendarFloorMod(wallRemainder, 1000))
 	calendar.fields[CalendarDAY_OF_WEEK] = int32(calendarFloorMod(fixed+1, 7) + 1)
 	calendar.fields[CalendarDAY_OF_YEAR] = int32(fixed - calendarJulianDay(year, 1, 1, year > 1582) + 1)
 	raw := calendar.zone.GetRawOffset()

@@ -122,3 +122,12 @@ func runClassInitializer(execution *Execution, body func(*Execution)) (failure i
 	}
 	return nil
 }
+
+// isInitialized allows reflection to reuse an accessor only after the shared
+// declaring-class coordinator has completed successfully. In-progress and
+// erroneous classes must continue through their ordinary Ensure entry point.
+func (initialization *ClassInitialization) isInitialized() bool {
+	initialization.mu.Lock()
+	defer initialization.mu.Unlock()
+	return initialization.state == classInitialized
+}

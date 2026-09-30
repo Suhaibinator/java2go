@@ -10363,7 +10363,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		// String). This lets intrinsics dispatch on a concatenation result.
 		if op := node.ChildByFieldName("operator"); op != nil && op.Content(source) == "+" {
 			if isStringLikeExprNode(node.ChildByFieldName("left"), ctx, source) || isStringLikeExprNode(node.ChildByFieldName("right"), ctx, source) {
-				return "String", true
+				return "java.lang.String", true
 			}
 		}
 		// For an arithmetic or bitwise binary op, infer the type chosen by Java

@@ -29,6 +29,10 @@ type ClassDescriptor struct {
 	genericVariables    []*metadataTypeVariable
 	Constructors        []ConstructorDescriptor
 	AnnotationValues    []AnnotationDescriptor
+	// Initialization is the shared coordinator used by direct active uses.
+	// A callback that enters an independently used coordinator must bind it
+	// here; without one, Initialize is a reflection-owned initialization body.
+	Initialization *ClassInitialization
 }
 type FieldDescriptor struct {
 	nameJavaString *JavaString
@@ -55,6 +59,25 @@ type MethodDescriptor struct {
 var reflectionRegistry sync.Map
 
 func RegisterClassDescriptor(descriptor ClassDescriptor) {
+	if initialize := descriptor.Initialize; initialize != nil {
+		state := descriptor.Initialization
+		if state == nil {
+			// Hand-authored descriptors supply an initialization callback. Give every
+			// reflected member and Class.forName one shared, reentrant coordinator.
+			state = NewClassInitialization(string(descriptor.Type))
+			descriptor.Initialization = state
+			descriptor.Initialize = func(execution *Execution) { state.Ensure(execution, initialize) }
+		} else {
+			// Generated callbacks already enter this coordinator. Do not wrap them
+			// in Ensure again: that would be mistaken for recursive initialization.
+			descriptor.Initialize = func(execution *Execution) {
+				requireExecution(execution)
+				if !state.isInitialized() {
+					initialize(execution)
+				}
+			}
+		}
+	}
 	descriptor = cloneReflectionMetadata(descriptor)
 	descriptor.Fields = append([]FieldDescriptor(nil), descriptor.Fields...)
 	descriptor.Methods = append([]MethodDescriptor(nil), descriptor.Methods...)

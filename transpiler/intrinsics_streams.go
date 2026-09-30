@@ -88,9 +88,13 @@ func registerStreamIntrinsics() {
 		registerInstanceIntrinsic(t, "filter", streamMethod("Filter", 1))
 		registerInstanceIntrinsic(t, "forEach", streamMethod("ForEach", 1))
 		registerInstanceIntrinsic(t, "count", streamMethod("Count", 0))
+		registerInstanceIntrinsicResultType(t, "count", "long")
 		registerInstanceIntrinsic(t, "anyMatch", streamMethod("AnyMatch", 1))
+		registerInstanceIntrinsicResultType(t, "anyMatch", "boolean")
 		registerInstanceIntrinsic(t, "allMatch", streamMethod("AllMatch", 1))
+		registerInstanceIntrinsicResultType(t, "allMatch", "boolean")
 		registerInstanceIntrinsic(t, "noneMatch", streamMethod("NoneMatch", 1))
+		registerInstanceIntrinsicResultType(t, "noneMatch", "boolean")
 		registerInstanceIntrinsic(t, "limit", streamMethod("Limit", 1))
 
 		// map changes element type, so it is the free function StreamMap.
