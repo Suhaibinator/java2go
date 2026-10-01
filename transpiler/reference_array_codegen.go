@@ -28,7 +28,7 @@ func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx 
 	if scope != nil && !scope.IsInterface && name == "JavaDynamicTypeID" {
 		return true
 	}
-	return classNeedsReferenceIdentity(scope, ctx) && referenceIdentityReservedSelector(name)
+	return referenceIdentityReservedSelector(name) && classNeedsReferenceIdentity(scope, ctx)
 }
 
 func referenceIdentityReservedSelector(name string) bool {

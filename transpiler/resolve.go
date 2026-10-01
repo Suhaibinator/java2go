@@ -48,27 +48,61 @@ func ResolveFile(file parsing.SourceFile) {
 	if file.Symbols == nil {
 		return
 	}
+	ResolveFiles([]parsing.SourceFile{file})
+}
+
+// ResolveFiles finishes ordinary declarations before performing whole-program
+// inheritance and synthesized-name analysis. Compilation-unit boundaries must
+// not cause those global passes to repeat for every source file.
+func ResolveFiles(files []parsing.SourceFile) {
+	if len(files) == 0 {
+		return
+	}
+	previousIndex := activeResolutionFiles
+	activeResolutionFiles = newResolutionFileIndex()
+	defer func() { activeResolutionFiles = previousIndex }()
+
 	prepareBuiltinInterfaceMethods()
 	prepareAbstractCollectionDefaults()
 	prepareAbstractMapDefaults()
-	resolveTypeParameterNominalNames(file)
-	resolvePackageStaticFieldNames(symbol.GlobalScope.FindPackage(file.Symbols.Package))
-	// Complete ordinary member resolution for the entire file before allocating
-	// synthesized names. A Java source may contain multiple top-level classes and
-	// arbitrarily deep nested classes; helper naming must observe their final Go
-	// member names, not the pre-resolution spellings.
-	for _, top := range file.Symbols.TopLevelClasses {
-		resolveClassTree(top, file)
+	preparedPackages := make(map[*symbol.PackageScope]bool)
+	for _, file := range files {
+		if file.Symbols == nil {
+			continue
+		}
+		pkg := symbol.GlobalScope.FindPackage(file.Symbols.Package)
+		if !preparedPackages[pkg] {
+			resolveTypeParameterNominalNames(file)
+			resolvePackageStaticFieldNames(pkg)
+			preparedPackages[pkg] = true
+		}
+	}
+	for _, file := range files {
+		if file.Symbols == nil {
+			continue
+		}
+		for _, top := range file.Symbols.TopLevelClasses {
+			resolveClassTree(top, file)
+		}
+	}
+	// Constructor and static-method overloads now have their final names. Refresh
+	// package bindings against those names before emitting helpers or references;
+	// the initial allocation could only reserve their unresolved spellings.
+	for pkg := range preparedPackages {
+		resolvePackageStaticFieldNames(pkg)
 	}
 	// Java keeps fields and methods in separate namespaces, while Go promotion
 	// gives an embedded superclass's members and the child type's direct members
-	// one selector namespace. Run this package-wide after each file; on the final
-	// file all ordinary names are resolved, and the pass is idempotent before
-	// then because it only renames an actual remaining collision.
+	// one selector namespace. Allocate inherited selectors after every ordinary
+	// member has its final name, then repair promotion collisions to a fixed point.
 	resolveInheritedInterfaceOverloadNames()
 	resolveInheritedClassOverloadNames()
 	resolvePromotedFieldMethodCollisions()
-	resolveAffineArrayViewHelperNames(file)
+	for _, file := range files {
+		if file.Symbols != nil {
+			resolveAffineArrayViewHelperNames(file)
+		}
+	}
 	resolveLocalIdentifierHygiene()
 	resolveGenericMethodHelperNames()
 }

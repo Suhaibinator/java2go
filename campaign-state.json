@@ -8496,5 +8496,163 @@
     "protected_source": "All18 metadata85 leaves unchanged; only13 NIO primitive paths applied. User untracked performance files untouched.",
     "remaining_limits": "Direct/read-only buffers, compact, broader NIO contracts, full Netty translation, current accumulated CI/round acceptance and performance superiority remain unaccepted. Checkpoint18 remains latest accepted full round. No failed or timed-out stage counts as parity.",
     "continuation": "Sol-only resolver full1212-source gates, original27 Commons application Comparator/Objects/hash/bounds/collection fixes, Gson connected source lowering, volatile parentheses repair and functional/runtime composition. Preserve every challenge, old failure and exact resume evidence."
+  },
+  "sol_progress87": {
+    "status": "ACCEPTED_SCOPED_RESOLVER_FULL_ROUND_UNACCEPTED",
+    "parent": "0fa9d321f94bc0a18c1f40978e56089bcb43ef1c",
+    "publication_packet": {
+      "path": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/PUBLICATION-READY.json",
+      "sha256": "fd4b145953ca19eeb4f8a8af2995011ecdab519315c8a05c3072220e20deb5fc"
+    },
+    "owned13": [
+      {
+        "after_bytes": 13383,
+        "after_sha256": "38f536e2d9483cd8187043951534b4d15fb58600b0441ecea83a2a16ab44ac21",
+        "before_exists": true,
+        "before_sha256": "91f7c346c320eca90c286a4994412d8abd85c682c5e1f4560e9b07568d0d4201",
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/imports.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/imports.go"
+      },
+      {
+        "after_bytes": 12513,
+        "after_sha256": "afb0fbe7e29e4e48b83b8d7cc999b25320eefa994f12cc49105597165ee2e26f",
+        "before_exists": true,
+        "before_sha256": "e0abab43035c8706e8b8db613eba61494efbeec667f75ac1760688f2d52cd655",
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/java2go.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/java2go.go"
+      },
+      {
+        "after_bytes": 43000,
+        "after_sha256": "930be7034386d024986dafe004cc86e8c00236f309ffdf8c3a70b4758296ab2a",
+        "before_exists": true,
+        "before_sha256": "cbb62ab7b2507abf14b42b62482e5fa11cee295dcefe607e650e20e11a96e4f4",
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/reference_array_codegen.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/reference_array_codegen.go"
+      },
+      {
+        "after_bytes": 3607,
+        "after_sha256": "48a19b14b152b36539bb13d2d7ec4e7e4367faea0f6bb7e4d2a48d36f36f0dee",
+        "before_exists": false,
+        "before_sha256": null,
+        "gofmt_only_from_original_review": true,
+        "relative": "transpiler/resolution_batch_complexity_test.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/resolution_batch_complexity_test.go"
+      },
+      {
+        "after_bytes": 2459,
+        "after_sha256": "65798ddbc5d7c94815ebd70b056cf78df47122bdcbff8a1ca18fc35b77d55ca8",
+        "before_exists": false,
+        "before_sha256": null,
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/resolution_constructor_static_order_test.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/resolution_constructor_static_order_test.go"
+      },
+      {
+        "after_bytes": 1174,
+        "after_sha256": "8561554f1c6507b9eb879b7a8efecfe43c937c719b05954acbe1269393aba098",
+        "before_exists": false,
+        "before_sha256": null,
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/resolution_file_index.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/resolution_file_index.go"
+      },
+      {
+        "after_bytes": 2590,
+        "after_sha256": "9a4cdf68980ac687087ad94cbf946a17edfad65290256cdbe5bb7a008ac95fe7",
+        "before_exists": false,
+        "before_sha256": null,
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/resolution_selector_guard_test.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/resolution_selector_guard_test.go"
+      },
+      {
+        "after_bytes": 15771,
+        "after_sha256": "968b969dd70295adb2785b8c8c07e5bdfed3c1b7f3825ab49dcc1c4bd26c95f8",
+        "before_exists": true,
+        "before_sha256": "87b0446695c932f622298644e45a5e897adea07975c6d557a3eca56b3f9254fb",
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/resolve.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/resolve.go"
+      },
+      {
+        "after_bytes": 6843,
+        "after_sha256": "31ad05a54e84af17bfba1ca95012069125c8aeaa683d8ef93cbdac7787da2d49",
+        "before_exists": true,
+        "before_sha256": "d0d5788c03630824de364cc1decce2d10479f316c1c6f4f616ddf0f2aa2be38d",
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/resolve_field_collision_integration_test.go",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/resolve_field_collision_integration_test.go"
+      },
+      {
+        "after_bytes": 119,
+        "after_sha256": "3755282013ae87923e75e91d30b90c352cba02b1371439896680a0453d9cd773",
+        "before_exists": false,
+        "before_sha256": null,
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/testdata/resolution_constructor_static_collision/pom.xml",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/testdata/resolution_constructor_static_collision/pom.xml"
+      },
+      {
+        "after_bytes": 112,
+        "after_sha256": "0997afb6935c74fd056b87cf7326fdd245892d0845c42e8bb4caf1417df409e8",
+        "before_exists": false,
+        "before_sha256": null,
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/testdata/resolution_constructor_static_collision/src/main/java/p/A.java",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/testdata/resolution_constructor_static_collision/src/main/java/p/A.java"
+      },
+      {
+        "after_bytes": 125,
+        "after_sha256": "31328d6d6e3ae58b753dc61146c64e86ff0658bd9b9da8abf92325ef2c1f9ed3",
+        "before_exists": false,
+        "before_sha256": null,
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/testdata/resolution_constructor_static_collision/src/main/java/p/B.java",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/testdata/resolution_constructor_static_collision/src/main/java/p/B.java"
+      },
+      {
+        "after_bytes": 209,
+        "after_sha256": "50acbb09f3d7df3c57d742014a7fb10c01978e2ab1013bd59c0e002e4b489ca3",
+        "before_exists": false,
+        "before_sha256": null,
+        "gofmt_only_from_original_review": false,
+        "relative": "transpiler/testdata/resolution_constructor_static_collision/src/main/java/p/Main.java",
+        "source": "/private/tmp/java2go-resolver-matching86-milestone87-v1/publication/files/transpiler/testdata/resolution_constructor_static_collision/src/main/java/p/Main.java"
+      }
+    ],
+    "independent_matching_audit": {
+      "path": "/private/tmp/java2go-resolver-matching86-milestone87-v1/terminal-audit.json",
+      "sha256": "bd2dddd4a5007b639a7f1c87d1d8442827b49b4fb4ad34727e061ba46c0179d7"
+    },
+    "coordinator_raw_receipts": [
+      {
+        "receipt": {
+          "bytes": 3165,
+          "path": "/private/tmp/java2go-resolver-matching86-milestone87-v1/evidence-attempt1/01-resolver27/command.json",
+          "sha256": "2219836f2b2be435a4d4713054efcc9e71f0aab11dbf99ae070432b5b9600a79"
+        },
+        "actual_runs": 27
+      },
+      {
+        "receipt": {
+          "bytes": 2767,
+          "path": "/private/tmp/java2go-resolver-matching86-milestone87-v1/evidence-attempt1/02-explicit-package20-compile/command.json",
+          "sha256": "b2a0d3ea1f4936e40c8eba8aff2bc311f4e6d3bd4d389eb86ed6f8c0dd3aaba1"
+        },
+        "actual_runs": 0
+      }
+    ],
+    "change": "Resolve all ordinary compilation units before one package hierarchy and static allocation pass; transient declaration-to-file index; cheap reserved selector check before reference identity analysis. Constructor collision correction remains covered.",
+    "TDD": "File partition allocation RED and constructor/static collision RED precede general fixes. Ordinary selector allocations drop849 to0 with exact semantic guards. Fresh matching current86 preserves original27 tests/four JVM observations, compiles all20 explicit packages. Compilation-only9 packages without tests are declared, not skipped assertions.",
+    "remaining_blocker": {
+      "bytes": 1810,
+      "path": "/private/tmp/java2go-netty-resolution-sol-v1/full-current85-resolver5-timeout-audit.json",
+      "sha256": "d5ddb77ecb8dfb9cb1a363335252182732b4a11a67b50569ad53b8a27003e877"
+    },
+    "limits": "Full Netty1212+8 strict translation still times out at first AbstractByteBuf, one empty file. New experimental generic-inventory fix is excluded. Full application/CI/round and Java-faster performance remain unaccepted. Checkpoint18 remains latest accepted full round.",
+    "continuation": "Full unchanged Netty strict300 gate for pure inventory reuse, Commons original27 objects/comparator/bounds/subList composition, Gson consumed physical lowering, volatile parser recovery, original Maven acquisition/build, native atomic matching allocation gate."
   }
 }

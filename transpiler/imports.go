@@ -368,6 +368,11 @@ func findFileScopeForClassScope(scope *symbol.ClassScope) *symbol.FileScope {
 	if scope == nil {
 		return nil
 	}
+	if activeResolutionFiles != nil && activeResolutionFiles.graph == symbol.GlobalScope {
+		if file := activeResolutionFiles.files[scope]; file != nil {
+			return file
+		}
+	}
 	for _, pkg := range symbol.GlobalScope.Packages {
 		if pkg == nil {
 			continue

@@ -170,11 +170,13 @@ or to fix crashes with the symbol handling`,
 
 		log.Info("Resolving symbols...")
 
+		var resolvingFiles []parsing.SourceFile
 		for _, file := range files {
 			if file.Symbols.BaseClass != nil {
-				ResolveFile(file)
+				resolvingFiles = append(resolvingFiles, file)
 			}
 		}
+		ResolveFiles(resolvingFiles)
 	}
 
 	if projectMode {

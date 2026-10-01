@@ -74,22 +74,26 @@ public class StaticHidingProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "func kind0() string") || !strings.Contains(flat, "func kind() string") {
+	if !strings.Contains(flat, "func kind0() *stdjava.JavaString") || !strings.Contains(flat, "func kind() *stdjava.JavaString") {
 		t.Fatalf("hidden static methods did not receive distinct package names:\n%s", out)
 	}
-	if strings.Count(flat, "func (ie *instanceOne) kind() string") != 1 ||
-		strings.Count(flat, "func (io *instanceTwo) kind() string") != 1 {
+	if strings.Count(flat, "func (ie *instanceOne) kind() *stdjava.JavaString") != 1 ||
+		strings.Count(flat, "func (io *instanceTwo) kind() *stdjava.JavaString") != 1 {
 		t.Fatalf("instance methods in distinct method sets were unnecessarily renamed:\n%s", out)
 	}
 
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestStaticHidingRuntime(t *testing.T) {
-	if got := run(); got != "parent:child:one:two" {
-		t.Fatalf("run() = %q", got)
+	if got := run(); got == nil || !got.Equals(stdjava.NewJavaStringUTF16(utf16.Encode([]rune("parent:child:one:two")))) {
+		t.Fatalf("run() = %v", got)
 	}
 }
 `)
@@ -153,11 +157,15 @@ public class MemberCollisionProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestMemberNamespaceRuntime(t *testing.T) {
-	if got := Run(); got != "7:7:8:56:3:4" {
-		t.Fatalf("Run() = %q, want 7:7:8:56:3:4", got)
+	if got := Run(); got == nil || !got.Equals(stdjava.NewJavaStringUTF16(utf16.Encode([]rune("7:7:8:56:3:4")))) {
+		t.Fatalf("Run() = %v, want 7:7:8:56:3:4", got)
 	}
 }
 `)
@@ -204,11 +212,15 @@ public class PromotedMemberCollisionProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestPromotedMemberNamespaceRuntime(t *testing.T) {
-	if got := Run(); got != "34:65" {
-		t.Fatalf("Run() = %q, want 34:65", got)
+	if got := Run(); got == nil || !got.Equals(stdjava.NewJavaStringUTF16(utf16.Encode([]rune("34:65")))) {
+		t.Fatalf("Run() = %v, want 34:65", got)
 	}
 }
 `)
@@ -280,11 +292,15 @@ public class InterfaceMemberCollisionProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestInterfaceMemberNamespaceRuntime(t *testing.T) {
-	if got := Run(); got != "34:3:4:2:3:4:4" {
-		t.Fatalf("Run() = %q, want 34:3:4:2:3:4:4", got)
+	if got := Run(); got == nil || !got.Equals(stdjava.NewJavaStringUTF16(utf16.Encode([]rune("34:3:4:2:3:4:4")))) {
+		t.Fatalf("Run() = %v, want 34:3:4:2:3:4:4", got)
 	}
 }
 `)
