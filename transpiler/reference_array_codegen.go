@@ -356,61 +356,34 @@ func classHasSyntheticSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 			break
 		}
 	}
-	for _, owner := range allSourceClassScopes() {
-		if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil {
-			continue
-		}
-		file := findFileScopeForClassScope(owner)
-		if file == nil {
-			continue
-		}
+	matches := func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
 		ownerCtx := Ctx{currentFile: file, currentClass: owner}
 		if activeLocalTarget {
 			// A method-local target exists only in the active lowering registry.
-			// Preserve that map solely while scanning the same source file; carrying
-			// it into another file could hijack an unrelated same-simple-name type.
+			// Preserve it solely for source events from that same source file.
 			if file != ctx.currentFile {
-				continue
+				return false
 			}
 			ownerCtx = ctx.Clone()
 			ownerCtx.currentFile = file
 		}
-		var visit func(*sitter.Node) bool
-		visit = func(node *sitter.Node) bool {
-			if node == nil {
-				return false
-			}
-			var supertype *sitter.Node
-			switch resolvedSourceNodeType(node, ctx) {
-			case "object_creation_expression":
-				for _, child := range resolvedSourceNamedChildren(node, ctx) {
-					if resolvedSourceNodeType(child, ctx) == "class_body" {
-						supertype = node.ChildByFieldName("type")
-						break
-					}
-				}
-			case "class_declaration":
-				if superclass := node.ChildByFieldName("superclass"); superclass != nil {
-					types := collectTypeNodes(superclass)
-					if len(types) > 0 {
-						supertype = types[0]
-					}
-				}
-			}
-			if supertype != nil {
-				base, _ := parseJavaTypeString(supertype.Content(file.Source))
-				if resolveClassScopeByQualifiedName(ownerCtx, base) == target {
-					return true
-				}
-			}
-			for _, child := range resolvedSourceNamedChildren(node, ctx) {
-				if visit(child) {
-					return true
-				}
-			}
+		base, _ := parseJavaTypeString(supertype.Content(file.Source))
+		return resolveClassScopeByQualifiedName(ownerCtx, base) == target
+	}
+	inventory := resolvedSourceInventory(ctx)
+	if inventory == nil {
+		// Fileless and standalone queries retain their original early exit.
+		return visitSyntheticSuperclassSources(matches, ctx)
+	}
+	if !inventory.syntheticReady {
+		visitSyntheticSuperclassSources(func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
+			inventory.syntheticEvents = append(inventory.syntheticEvents, callableSubclassSourceEvent{owner: owner, file: file, supertype: supertype})
 			return false
-		}
-		if visit(owner.Class.DeclarationNode) {
+		}, ctx)
+		inventory.syntheticReady = true
+	}
+	for _, event := range inventory.syntheticEvents {
+		if matches(event.owner, event.file, event.supertype) {
 			return true
 		}
 	}

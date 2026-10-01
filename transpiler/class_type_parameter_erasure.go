@@ -339,14 +339,16 @@ func directOwnerCallableMethodFamilyEligible(owner *symbol.ClassScope, method *s
 // syntax and selector names; target resolution, ancestry and admission remain
 // fresh for every file and query. Standalone renders own a one-file batch.
 type callableSubclassSourceInventory struct {
-	graph          *symbol.GlobalSymbols
-	ownership      *resolutionFileIndex
-	staticImports  map[*symbol.FileScope]staticMethodImportSourceFacts
-	ready          bool
-	events         []callableSubclassSourceEvent
-	nodes          map[*sitter.Node]resolvedSourceNodeFacts
-	selectorsReady bool
-	selectors      map[string]struct{}
+	graph           *symbol.GlobalSymbols
+	ownership       *resolutionFileIndex
+	staticImports   map[*symbol.FileScope]staticMethodImportSourceFacts
+	ready           bool
+	events          []callableSubclassSourceEvent
+	syntheticReady  bool
+	syntheticEvents []callableSubclassSourceEvent
+	nodes           map[*sitter.Node]resolvedSourceNodeFacts
+	selectorsReady  bool
+	selectors       map[string]struct{}
 }
 
 type callableSubclassSourceEvent struct {
