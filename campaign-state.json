@@ -7133,5 +7133,155 @@
       "Historical failures and extra skips remain visible; inherited evidence does not become a fresh run",
       "User untracked performance/runtime/bignumbers/equal_scale remains untouched"
     ]
+  },
+  "sol_progress78": {
+    "status": "ACTIVE_SOL_ONLY_COMPONENT_CHECKPOINT_FULL_ROUND_UNACCEPTED",
+    "code_revision": "e586f3132dec38f54e99dec9a6fbe27dfa724679",
+    "checkpoint_parent": "9b9cd0bac79b03d0a906ff8e90e195efc1087607",
+    "branch": "codex/adversarial-campaign",
+    "agent_policy": "Only GPT-6.1 Sol/high; expand by explicit coordinator assignment. No Astra or nested spawning.",
+    "additional_fanout": {
+      "new_agent": "sol_current_patch_quality",
+      "reactivated_assignments": [
+        "sol_gson86_gate_audit: independent receipts and sealed Map integration runner",
+        "sol_strict_admission_review: volatile semantics and gate review",
+        "sol_resume_ci: affected current regression inventory and driver migrations",
+        "sol_resume_perf_builder: current archive rebase and separate performance gates",
+        "sol_bridge_effects: new adversarial UTF16/generic/effect workflow"
+      ],
+      "capacity": "A second new agent launch and Map-owner reactivation reached thread limit and launched no work; active reviewer now owns new private runner revision."
+    },
+    "gson86": {
+      "focused_unique_PASS": 116,
+      "fresh_JVM_observations": 21,
+      "original120": "Actual strict RED exit1 at TypeAdapterFactory.java:169 generic-method-set-signature; no timeout",
+      "all_package_build": "UNRUN",
+      "full65": "UNRUN"
+    },
+    "gson87": {
+      "source_members": 2914,
+      "focused50": "Authorized once-only Go6; first observed ObjectAlias value-graph failure, bounded run terminal pending",
+      "admission_enabled": false,
+      "original120_retry": "NOT_AUTHORIZED"
+    },
+    "atomic_updater": {
+      "normal_PASS": 9,
+      "race_PASS": 9,
+      "original_JVM_byte_matches": 6,
+      "independently_verified": true,
+      "prior_failures": "V2 receipt normalization infrastructure error and V3 undefined-e build RED preserved separately",
+      "new_finding": "Native Object token rejected by reference updater membership; test-only four-record regression and isolated source-only fix pending actual RED/GREEN",
+      "generated_dispatch": "New compiler/SAM/canonical-storage derivative source-only; no Netty acceptance"
+    },
+    "stream_receiver_origin": {
+      "expanded80_RED": "49PASS31FAIL",
+      "causal83_RED": "80PASS3FAIL, including valid nominal Base/Child conditional regression",
+      "private_GREEN": {
+        "unit_PASS": 83,
+        "neighbors_PASS": 2,
+        "original_applications": 2,
+        "clean_stages": 34,
+        "raw_comparisons": 32,
+        "fresh_JVM_main_runs": 6
+      },
+      "current_public_rebase_and_verification": "PENDING",
+      "publication_accepted": false,
+      "infrastructure": "Neighbor approval review timed out before process launch; one explicitly permitted identical infrastructure retry succeeded, no semantic retry"
+    },
+    "map_future": {
+      "current_source_members": 2824,
+      "source_exact_replay_verified": true,
+      "runner_v2": "Pregrant review found missing cgo/module/SDK inputs and package-terminal any() weakness; successor private-only assigned",
+      "current_actual_workloads": 0,
+      "CI": "42 bounded shards/1803 lexical parents, separate grant only after initial full actual greens"
+    },
+    "volatile": {
+      "source_members": {
+        "base": 2753,
+        "red": 2754,
+        "green": 2768
+      },
+      "source_only": true,
+      "independent_review": "Shared storage coherent; GREEN prerequisite chain and generated-tree drift rejection must be enforced in new runner",
+      "actual_workloads": 0
+    },
+    "performance": {
+      "archive_prior_source_race_PASS": 15,
+      "current_rebase_source_members": 2757,
+      "current_actual_workloads": 0,
+      "allocation_gate": "Separate exclusive grant, pending; no Java speedup claim"
+    },
+    "adversarial_supplement": {
+      "Java_files": 8,
+      "packages": 3,
+      "promoted": false,
+      "JVM_expectations": "UNVALIDATED",
+      "scope": "UTF16/reference identity, generic override and binder shadowing, exception/finally and once-only effects"
+    },
+    "regression_policy": "Preserve original120/original31/full43/original42 and historical failure/skip inventory. No new skips or waived assertions. Six bounded Go lanes, two JVM lanes; exclusive performance measurements separately authorized.",
+    "latest_full_round_accepted": "checkpoint18",
+    "artifacts": {
+      "gson116_independent": {
+        "path": "/private/tmp/java2go-sol86-independent-focused-actual-audit.json",
+        "sha256": "14866790b9548513ace171a6571082a1a0d90c3873331a486f7d2e0f82b4e854"
+      },
+      "gson120_strict_independent": {
+        "path": "/private/tmp/java2go-sol86-independent-original120-actual-audit.json",
+        "sha256": "4ecd1b5ff14f53d87b4b933378a171dc05e8a1dc8abb2ce5557644f661feda40"
+      },
+      "atomic18_independent": {
+        "path": "/private/tmp/java2go-atomic-updater-v4-independent-audit.json",
+        "sha256": "9f38f17087c3ac763a9c46938d07891374394c308ae6c6ac9d2867882f91cea3"
+      },
+      "atomic_opaque_object_review": {
+        "path": "/private/tmp/java2go-sol-atomic-updater-quality-v4/source-review.json",
+        "sha256": "ea7008cfbfcd0451d59994bf27ee628a3e318705f99c3ce6432c8668c43d0717"
+      },
+      "stream80_RED": {
+        "path": "/private/tmp/java2go-complex-stream-join-red-time-sol-exx4x1ny/ACTUAL_EXPANDED_JOIN_RED.json",
+        "sha256": "10d1bc4f697fd97b571f4116672daf1c17f6f28f530ad3c81d10e6efe1c2613a"
+      },
+      "stream83_causal_RED": {
+        "path": "/private/tmp/java2go-complex-stream-lub-red-time-sol-ch4ifv10/ACTUAL_CAUSAL_LUB_RED.json",
+        "sha256": "e5b563a1049defc12d15517f5706da29a7a5063e916bbfa85733b8db8bfd9f8f"
+      },
+      "stream83_private_GREEN": {
+        "path": "/private/tmp/java2go-complex-stream-lub-green-time-sol-et9meft4/ACTUAL_GREEN83_FULLFIXTURES.json",
+        "sha256": "d5c9a1b2bdf8b61d9a7b33d011d23ca44d844b72a824f78101afc5c2d02f53c2"
+      },
+      "gson87_focused50_grant": {
+        "path": "/private/tmp/java2go-root-gson87-grant.json",
+        "sha256": "58a7121f4b7e1fb3a411eab2f29ac7c953bd47ff268ef3a007eea4cc305cf237"
+      },
+      "map_current_source_audit": {
+        "path": "/private/tmp/java2go-map43-current-compound-sol87-independent-source-audit.json",
+        "sha256": "67412a8de3737d7d5113299990d6a4bf105f148eefb698b86295d9a6622d8f77"
+      },
+      "archive15_prior_independent": {
+        "path": "/private/tmp/java2go-root-archive-correctness77-independent-audit.json",
+        "sha256": "3613f8f49ee2e2ace6a884e0928ff895b4b27c26d946b6f7c5e1130a32b02594"
+      },
+      "archive_current_source_readiness": {
+        "path": "/private/tmp/java-time-zone-archive-current-e586-sol-resume-0ponllbm/READINESS.json",
+        "sha256": "6a7f38ee37e1741f0eb6042ae075a571d4d980f6d5d7510e32ddb2b771d7ed36"
+      },
+      "current_ci_source_inventory": {
+        "path": "/private/tmp/java2go-current-e586-regression-inventory-ci-sol-qnne0yqk/SOURCE_ONLY_REVIEW.json",
+        "sha256": "dc3f76d919e4e7bc466dfc72a2d8febc8fe622839fad08e40c6beed6955ad375"
+      },
+      "bridge_adversarial_source": {
+        "path": "/private/tmp/java2go-sol-utf16-bridge-workflow-source-o1q4ozvd/manifest.json",
+        "sha256": "18ed6495c5ea413956f9c6b148e92298eec4e9cc866ed38cfd262916656eed5b"
+      }
+    },
+    "resume": [
+      "Finish actual Gson50 receipt and repair ObjectAlias provenance without erasure bypass",
+      "Verify current e586 Stream rebase, original applications and affected guards before publication",
+      "Run atomic opaque-reference causal RED then general membership fix; finish generated updater compiler/SAM bridge",
+      "Run volatile test-only RED and JVM witnesses; then enforced GREEN/generated gates on successor runner",
+      "Seal Map/Future full cgo/module/tool closure and strict package acceptance before current-source full/stress/CI gates",
+      "Verify current archive15, then separately scheduled matched allocation tests; keep performance claims evidence-bound",
+      "Commit and push independently verified component milestones; continue Sol adversarial campaign"
+    ]
   }
 }
