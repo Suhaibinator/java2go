@@ -12,6 +12,14 @@ type staticMethodImport struct {
 	owner, member string
 	wildcard      bool
 }
+
+// Only import source tuples are shared within a resolved analysis. Every
+// namespace, owner, accessibility and invocation query remains fresh.
+type staticMethodImportSourceFacts struct {
+	declaration *sitter.Node
+	imports     []staticMethodImport
+}
+
 type staticImportMethodResolution struct {
 	source    *methodResolution
 	intrinsic string
@@ -19,6 +27,29 @@ type staticImportMethodResolution struct {
 }
 
 func staticMethodImports(ctx Ctx) []staticMethodImport {
+	file := ctx.currentFile
+	if file == nil || file.BaseClass == nil || file.BaseClass.Class == nil || file.BaseClass.Class.DeclarationNode == nil {
+		return nil
+	}
+	inventory := resolvedSourceInventory(ctx)
+	if inventory == nil {
+		return staticMethodImportsFromFile(ctx)
+	}
+	declaration := file.BaseClass.Class.DeclarationNode
+	if facts, ok := inventory.staticImports[file]; ok && facts.declaration == declaration {
+		// Preserve the caller's ownership of the returned slice, including on
+		// the first query: callers cannot mutate shared source facts.
+		return append([]staticMethodImport(nil), facts.imports...)
+	}
+	imports := staticMethodImportsFromFile(ctx)
+	if inventory.staticImports == nil {
+		inventory.staticImports = make(map[*symbol.FileScope]staticMethodImportSourceFacts)
+	}
+	inventory.staticImports[file] = staticMethodImportSourceFacts{declaration: declaration, imports: append([]staticMethodImport(nil), imports...)}
+	return imports
+}
+
+func staticMethodImportsFromFile(ctx Ctx) []staticMethodImport {
 	if ctx.currentFile == nil {
 		return nil
 	}

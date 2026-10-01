@@ -2,10 +2,10 @@ package transpiler
 
 import "github.com/NickyBoy89/java2go/symbol"
 
-// Declaration ownership is constant while resolving a registered source graph.
-// Keep this index only for that phase: later synthesized local classes continue
-// to use the ordinary ownership fallback, and another conversion cannot reuse
-// entries belonging to a previous graph.
+// Declaration ownership is constant for a registered resolved source graph.
+// Resolution installs a temporary index; an explicit conversion inventory may
+// own another index for its batch. Unindexed synthesized classes retain ordinary
+// ownership fallback, and no index crosses a conversion's graph identity.
 type resolutionFileIndex struct {
 	graph *symbol.GlobalSymbols
 	files map[*symbol.ClassScope]*symbol.FileScope

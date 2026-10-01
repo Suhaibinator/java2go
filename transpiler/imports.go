@@ -364,13 +364,23 @@ func findJavaPackageForClassScope(scope *symbol.ClassScope) string {
 	return ""
 }
 
-func findFileScopeForClassScope(scope *symbol.ClassScope) *symbol.FileScope {
+func findFileScopeForClassScope(scope *symbol.ClassScope, contexts ...Ctx) *symbol.FileScope {
 	if scope == nil {
 		return nil
 	}
 	if activeResolutionFiles != nil && activeResolutionFiles.graph == symbol.GlobalScope {
 		if file := activeResolutionFiles.files[scope]; file != nil {
 			return file
+		}
+	}
+	if len(contexts) > 0 {
+		if inventory := resolvedSourceInventory(contexts[0]); inventory != nil {
+			if inventory.ownership == nil {
+				inventory.ownership = newResolutionFileIndex()
+			}
+			if file := inventory.ownership.files[scope]; file != nil {
+				return file
+			}
 		}
 	}
 	for _, pkg := range symbol.GlobalScope.Packages {

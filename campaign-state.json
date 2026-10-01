@@ -9608,5 +9608,100 @@
     "limitations": "Checkpoint18 latest accepted full round. Netty1212+8 still 300.217664s timeout with8 complete outputs/empty9; no full translation/build/parity. Commons27, Gson118 and accumulated current CI remain unaccepted. Private four collection applications require SAM/Stream composition, not accepted as public93 parity. Legacy atomic intermediate generated guards and direct binary MAX2 are not claimed.",
     "resume": "Sol-only parallel: declaration-aware generic overload/member returns, actual reflection metadata, PrintStream null ordering, collection live-node searches, current93 volatile/SAM matching union, Gson physical/target inference, typed dependency ingestion and Netty ownership lookup complexity.",
     "formatting_only": "Coordinator gofmt of one new runtime test after all checks; frozen verified source retained. No production or assertion change."
+  },
+  "sol_progress94": {
+    "status": "ACCEPTED_SCOPED_COMPILER_CACHE_FULL_ROUND_UNACCEPTED",
+    "parent": "dc84c304b1b86b9a80d0b4eba9d9253d6dc2885f",
+    "changed7": {
+      "transpiler/class_type_parameter_erasure.go": {
+        "after": "3eeab69ecb7205eeb6b4592fd243b6233f3e4db223ded7e7ffe2d3212f35c44d",
+        "before": "4d6e8dab5f9618c2115141f51f9531dffcdb8610e1cd516541439f4633d5dd6e",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source/transpiler/class_type_parameter_erasure.go"
+      },
+      "transpiler/conversion_file_ownership_complexity_test.go": {
+        "after": "793590182d68a932cbd7602145f6f66727d4d9e1b46ba803d8ce6cfc98dbb875",
+        "before": null,
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source/transpiler/conversion_file_ownership_complexity_test.go"
+      },
+      "transpiler/imports.go": {
+        "after": "599dd382ce263e9070768f57e8bc9928bdf35d34a38fc97c20cb4ce5a3d478b7",
+        "before": "38f536e2d9483cd8187043951534b4d15fb58600b0441ecea83a2a16ab44ac21",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source/transpiler/imports.go"
+      },
+      "transpiler/resolution_file_index.go": {
+        "after": "a23960c20503cba5f877a097196d8e0bf62186b7e540ddc0321e5eb9a9ce360b",
+        "before": "8561554f1c6507b9eb879b7a8efecfe43c937c719b05954acbe1269393aba098",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source/transpiler/resolution_file_index.go"
+      },
+      "transpiler/static_import_inventory_complexity_test.go": {
+        "after": "eb164d621d78e04e241a28afefed1fef549b3a1c2b489d2b8f58b29ef48aa633",
+        "before": null,
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source/transpiler/static_import_inventory_complexity_test.go"
+      },
+      "transpiler/static_import_inventory_lifetime_test.go": {
+        "after": "1325ea8bb74c96d5f674653ddf7f59f04fc99e00661c76c3b91c62dd9b2486a6",
+        "before": null,
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source/transpiler/static_import_inventory_lifetime_test.go"
+      },
+      "transpiler/static_import_resolution.go": {
+        "after": "4a049102411b86cea6446cacb3f2daffd8e26af405fa4af32a3f85d4dd364ddb",
+        "before": "987769135db2d9d59d749f4ae31fe056add20c581521daf64c17a3a677bc4f4e",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source/transpiler/static_import_resolution.go"
+      }
+    },
+    "source_manifest": {
+      "path": "/private/tmp/java2go-root-netty94/source-manifest.json",
+      "sha256": "f080af7cccf622510a296a42a70a4091632463d8d2d1db8a9cb4b0a70f07c6a8",
+      "files": 2884
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-netty-static-import93-independent-review.json",
+      "sha256": "2e5a10382b733af173c74d6a11b0e01d41c5942f2bd9f0bcd6022f01d519b52e"
+    },
+    "coordinator_raw_stages": [
+      {
+        "command": [
+          "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+          "test",
+          "-p=1",
+          "-json",
+          "-count=1",
+          "-parallel=1",
+          "-timeout=240s",
+          "-benchtime=200ms",
+          "-run=^(TestCallableSubclassInventory_CachedQueriesKeepSourceIdentityAndLifetime|TestCallableSubclassInventory_WholeASTQueriesArePerRender|TestCampaignAnonymousParameterKeywords|TestCampaignInheritedInterfaceOverloads|TestCampaignInheritedMemberLookupIdentity|TestCampaignInheritedOverloadPreservesDispatch|TestCampaignStaticImport26CanonicalWildcardJVM|TestCampaignStaticImport26LexicalAndImportPrecedenceJVM|TestCampaignStaticImport26RejectAmbiguity|TestCampaignStaticImport26SourceOverloadsJVM|TestCampaignStaticImportHiddenType26CanonicalJVM|TestCampaignStaticImportHiddenType26SourceShadowJVM|TestCampaignStaticImportReview26PrivateAncestorJVM|TestConstructorSubobjectAttachment_AnonymousSubclassOfLocalClass|TestConversionOwnership_CompleteGraphLookupsDoNotScanUnrelatedFiles|TestCtxClone|TestCtxClonePreservesExecutionContext|TestGenericFamilyBoundRepresentationEnumUsesNominalView|TestGenericFamilyBoundRepresentationKeepsDeclarationIdentity|TestGenericFamilyBoundRepresentationRejectsUnprovenBounds|TestGenericFamilyCacheRenderLifetimeAndSyntheticIsolation|TestGenericFamilyInventory_WholeGraphWorkIsPerDiscovery|TestGenericFamilyPlanClosesSourceStorageDependencies|TestGenericFamilyPlanInventoriesConnectedDeclarations|TestGenericFamilyPlanRejectsPartialStorageMigration|TestGenericFamilyPlanUsesDeclarationIdentity|TestGenericFamilySourceEvents_WholeASTTraversalIsPerDiscovery|TestRawCompilationUnitExplicitDiagnosticsBeforeWrites|TestRawCompilationUnitNamesDoNotClassifyContent|TestRawCompilationUnitPackageMetadataRetained|TestRawUnboundReceiverViewAdversarial_QualifiedNestedOwnersRemainDistinct|TestRawUnboundReceiverViewAdversarial_StaticReferenceKeepsExplicitRawParameter|TestResolutionBatch_ConstructorHelperStaticFieldOrdering|TestResolutionBatch_FilePartitionDoesNotMultiplyHierarchyWork|TestResolutionSelectorGuard_OrdinaryNamesAvoidHierarchyAnalysis|TestResolveFile_FieldMethodNamespacesRemainDistinctAtRuntime|TestResolveFile_InstanceFieldDoesNotConflictWithOtherClassStaticField|TestResolveFile_InterfaceDefaultsAndCarriersRemainDistinctAtRuntime|TestResolveFile_PromotedFieldMethodNamespacesRemainDistinctAtRuntime|TestResolveFile_StaticMethodHidingGetsPackageUniqueNames|TestResolvedSourceInventory_AnonymousParametersKeepCommentAndKeywordRoles|TestResolvedSourceInventory_DemandsKeepLexicalBindersAndHeaderContexts|TestResolvedSourceInventory_SelectorsKeepOverloadsAndGraphLifetime|TestSourceGenericViewDemandBinderPrefix|TestSourceGenericViewDemandContextBoundaries|TestSourceGenericViewDemandRecordHeader|TestSourceQueryInventory_ProjectContextsKeepLifetimeAndLexicalSemantics|TestSourceQueryInventory_ProjectFilesDoNotMultiplyUnrelatedASTWork|TestStaticImportInventory_QueriesReuseOnlySourceTuples|TestStaticImportInventory_ReturnedTuplesRemainCallerOwned|TestStaticMethodImportsUsesFileDeclaration46)$",
+          "./transpiler"
+        ],
+        "cwd": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source",
+        "stdout_sha256": "13a7ade3232f244dfbc45322069aa56d6de1da44f77d52b9bbb27a24cecd4f32",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 101.436859,
+        "cleanup_clean": true
+      },
+      {
+        "command": [
+          "/private/tmp/java2go-lint214-restore-8oanhliu/bin/golangci-lint",
+          "run",
+          "--no-config",
+          "--max-issues-per-linter=0",
+          "--max-same-issues=0",
+          "--timeout=180s",
+          "./campaign",
+          "./stdjava",
+          "./symbol",
+          "./transpiler"
+        ],
+        "cwd": "/private/tmp/java2go-netty-resolution-sol-v1/static-import-inventory-green-source",
+        "stdout_sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 31.008217,
+        "cleanup_clean": true
+      }
+    ],
+    "behavior": "Exact class-to-file structural ownership inventory and ordered static-import tuple inventory. Fresh graph lifetimes and caller-owned tuple returns preserve resolution and permissions. No resolved symbol or semantic admission caching.",
+    "validation": "Coordinator clean evidence: 114 RUN/PASS, no FAIL/SKIP, metadata10; pinned default lint2.14 zero issues. Independently reviewed unchanged11 JVM comparisons and three strict rejection pairs on identical candidate.",
+    "performance": "Ownership lookup allocation ratio21.08 RED to1.14 GREEN; cold static-import inventory31.99 RED to1.01 GREEN under unchanged6 limits. No JVM speed advantage claimed.",
+    "limitations": "Latest full Netty strict before static-import repair timed out300.202944s with8 complete outputs/empty9. Updated full strict gate remains required. Checkpoint18 latest accepted full round; Commons27/Gson118/current fullCI remain unaccepted. Foundation99 crossing rejected misplaced test and ratios7.97/14.99>6; exact relocation sealed, measured volatile syntax scan repair pending. None of foundation99 is published here.",
+    "resume": "Continue Sol-only parallel campaign; compose matching foundation syntax-cost repair against this new cache milestone, then same-source96/600/80/nativeCI/lint. Continue source ClassLiteral linkage/covariant bridge, generic bounds, source Collection overrides, Gson direct signature/core, and typed Maven completeness repairs. Preserve every original challenge and failure."
   }
 }

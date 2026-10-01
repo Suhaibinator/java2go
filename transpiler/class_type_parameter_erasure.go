@@ -340,6 +340,8 @@ func directOwnerCallableMethodFamilyEligible(owner *symbol.ClassScope, method *s
 // fresh for every file and query. Standalone renders own a one-file batch.
 type callableSubclassSourceInventory struct {
 	graph          *symbol.GlobalSymbols
+	ownership      *resolutionFileIndex
+	staticImports  map[*symbol.FileScope]staticMethodImportSourceFacts
 	ready          bool
 	events         []callableSubclassSourceEvent
 	nodes          map[*sitter.Node]resolvedSourceNodeFacts
@@ -1276,7 +1278,7 @@ func classScopeCtx(scope *symbol.ClassScope, ctx Ctx) Ctx {
 	result.localScope = nil
 	result.localBindingBody = nil
 	for current := scope; current != nil; current = current.Enclosing {
-		if file := findFileScopeForClassScope(current); file != nil {
+		if file := findFileScopeForClassScope(current, ctx); file != nil {
 			result.currentFile = file
 			break
 		}
