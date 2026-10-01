@@ -8206,5 +8206,173 @@
     "protected_source": "Atomic6 and NIO10 publication hashes unchanged; matching current83 baseline/candidate paired20package compile complete.",
     "limitations": "Outer compiler test binary and native helper are race checked; generated behavioral modules execute normally. No full Java Stream laziness/close, full application, full current CI, Netty or Java-faster claim. Checkpoint18 remains latest accepted full round.",
     "continuation": "Sol-only parallel comment semantics, volatile/SAM/reflection, Map/Future original42 timeout diagnosis, Gson logical/physical lowering, real Maven build export and unchanged Netty ingestion. Original failed and invalid receipts retained."
+  },
+  "sol_progress85": {
+    "status": "ACCEPTED_SCOPED_RAW_COMPILATION_UNIT_INGESTION_FULL_ROUND_UNACCEPTED",
+    "parent": "c9f1f17b329add3714d3d1984ca9c734f979951b",
+    "publication_packet_sha256": "d3f6bc0dbd646ac785fb449afc096ccf5b364bbf1c19a2dbe3843d6b1246d31c",
+    "publication_paths": [
+      {
+        "after_sha256": "ddd7448c96381db0bdfbaf2c3bcd517f396cbeb9cdc9334097fa1f7770320ef2",
+        "bytes": 1350,
+        "current84_before_sha256": "a748221bbc4e8bb0350629a5923f972d461ab082d4fb73c7623620b96ad11d59",
+        "relative": "symbol/globals.go",
+        "role": "production",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/symbol/globals.go"
+      },
+      {
+        "after_sha256": "c73813429669a3790d56850a1369f57dfdab23091065897b168df24b1f9f7068",
+        "bytes": 851,
+        "current84_before_sha256": null,
+        "relative": "symbol/metadata_registration_test.go",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/symbol/metadata_registration_test.go"
+      },
+      {
+        "after_sha256": "ead72f7e101f29949d3ad89453ebebaab04418c1c9b2ef181e1aa2a3687344f7",
+        "bytes": 2917,
+        "current84_before_sha256": null,
+        "relative": "transpiler/compilation_unit.go",
+        "role": "production",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/compilation_unit.go"
+      },
+      {
+        "after_sha256": "e0abab43035c8706e8b8db613eba61494efbeec667f75ac1760688f2d52cd655",
+        "bytes": 12412,
+        "current84_before_sha256": "4c0483d924ed9ff8ce783cf8aa8acb75bc47bb71e8c3c35c73d96a86fb79e3bc",
+        "relative": "transpiler/java2go.go",
+        "role": "production",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/java2go.go"
+      },
+      {
+        "after_sha256": "aebd9cc1b0b587efd8a26b235cd9f326ae2ecf9a30d60128d68591788df76c42",
+        "bytes": 5494,
+        "current84_before_sha256": null,
+        "relative": "transpiler/raw_compilation_unit_test.go",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/raw_compilation_unit_test.go"
+      },
+      {
+        "after_sha256": "bbb812eed8c4103e8362889b71ff01b11e1f38aaa6031db5e3d962b673aa597c",
+        "bytes": 76,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/class_named_metadata/raw/names/package-info.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/class_named_metadata/raw/names/package-info.java"
+      },
+      {
+        "after_sha256": "8299ff6a5929b998e8d688d41f3f94b4f2b4eefff29de9fff7489c5af0e762cc",
+        "bytes": 65,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/empty/Empty.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/empty/Empty.java"
+      },
+      {
+        "after_sha256": "acf10495df6324c74c8b8a239b586c52ae2c4f379f2c12152365ecfca6ec056f",
+        "bytes": 23,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/import_only/Loose.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/import_only/Loose.java"
+      },
+      {
+        "after_sha256": "174def8ad0e354e12be03449262dfcf0e0471f1934f92200966362a499f48194",
+        "bytes": 36,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/invalid/Bad.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/invalid/Bad.java"
+      },
+      {
+        "after_sha256": "721657121ffb05fcd0bddf1c2396a1300a31101e48ac51cbf4e1df88cd6f79c5",
+        "bytes": 42,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/module/module-info.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/module/module-info.java"
+      },
+      {
+        "after_sha256": "bb236ed6144ee386b757c73e0aa2f847bd103a1d8ea4c1836bd87ec060d2b3c4",
+        "bytes": 48,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/module_other_name/Descriptor.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/module_other_name/Descriptor.java"
+      },
+      {
+        "after_sha256": "f8514e8a23c06c673307c0b063761992fca956cd2dbdd10f4de1e7568314405a",
+        "bytes": 126,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/positive/raw/alpha/Value.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/positive/raw/alpha/Value.java"
+      },
+      {
+        "after_sha256": "bc7edf24b7cd74f17921d39aa813541662f6021fba0b1915cfb1b3b00884da33",
+        "bytes": 121,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/positive/raw/alpha/package-info.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/positive/raw/alpha/package-info.java"
+      },
+      {
+        "after_sha256": "21c31ea9d88f453b1168718af49845b18636678d84f9200d5e8c79f4f341ef7c",
+        "bytes": 120,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/positive/raw/beta/Consumer.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/positive/raw/beta/Consumer.java"
+      },
+      {
+        "after_sha256": "fe24c2fbc2620c657ba8f1494a6b514eddf8f2eadb6f6baa5b2e1ca34a4789ec",
+        "bytes": 46,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/positive/raw/beta/package-info.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/positive/raw/beta/package-info.java"
+      },
+      {
+        "after_sha256": "31dc2a5b3463b7833aea4e0df1660a8011052945c48e32bc0eb1df6f001f7f91",
+        "bytes": 41,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/positive/raw/gamma/Gamma.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/positive/raw/gamma/Gamma.java"
+      },
+      {
+        "after_sha256": "2542f41617c6e3b7fc81e0c523d7447bc598007d16c871ce10b145db05337962",
+        "bytes": 60,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/positive/raw/gamma/Metadata.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/positive/raw/gamma/Metadata.java"
+      },
+      {
+        "after_sha256": "a5a16519995e333904e1c5416b4275e04308c14887ed7a25e4c99c1785fff191",
+        "bytes": 62,
+        "current84_before_sha256": null,
+        "relative": "transpiler/testdata/raw_compilation_units/positive/raw/meta/Scope.java",
+        "role": "focused_test_or_frozen_fixture",
+        "source": "/private/tmp/java2go-raw-metadata-registration-sol-OwBzybn6/green/source/transpiler/testdata/raw_compilation_units/positive/raw/meta/Scope.java"
+      }
+    ],
+    "coordinator_raw_audit": {
+      "path": "/private/tmp/java2go-root-metadata85-raw-audit.json",
+      "sha256": "20dffc0b0def6f2bb03864935c52c80771f75c4d7854989c2e9f074bcdbe0552"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-sol-metadata-independent-gate-milestone85/audit-report.json",
+      "sha256": "a023337b5a8895b9555cd468e23d2d110c24613a607697970b4c782a9c221b41"
+    },
+    "matching_current84_gate": {
+      "path": "/private/tmp/java2go-root-metadata85-matching-audit.json",
+      "sha256": "3e078d12f7c6b9b6b360a29135a9f2c5fa1e42363de22c8ba6b113bdf409bd1e"
+    },
+    "TDD": "Frozen 11 actions: RED 10 FAIL and named-class control PASS; GREEN all 11 PASS. Matching current84 original/candidate compile all 20 packages and candidate runs exactly 11 focused actions. No skipped assertions or filename exemptions.",
+    "change": "Classify Java compilation units by AST; retain package metadata without inventing a class. Diagnose modules, invalid, empty and import-only units before writes. Normal classes retain their usual conversion regardless of filename.",
+    "Netty_frontier": "Actual unchanged 1212 Netty plus 8 application Java sources clear the former registration panic but strict translation times out after 300 seconds during symbol resolution. Timeout remains a failure with observed process cleanup; no generated application parity.",
+    "remaining_limits": "Package annotations are retained as source comments; package reflection semantics are not established. Full Maven lifecycle/export, classpath mediation, current CI, full campaign round, Netty runtime, and Java performance superiority remain unaccepted. Checkpoint18 remains the latest accepted full round.",
+    "continuation": "Sol-only parallel batch resolver repair, unchanged27 Commons application build discrepancies, generic Gson lowering, volatile/functional/runtime contracts, authentic Maven ingestion and independent verification. Preserve every failed receipt and all frozen application assertions."
   }
 }

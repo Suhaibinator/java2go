@@ -139,8 +139,10 @@ or to fix crashes with the symbol handling`,
 	}
 
 	for _, file := range files {
-		if file.Ast == nil {
-			return errors.New("not all files have ASTs")
+		// Check the entire raw input inventory before registering symbols or
+		// writing output. Metadata units are valid inputs, not missing classes.
+		if _, err := classifyCompilationUnit(file); err != nil {
+			return err
 		}
 	}
 
@@ -154,15 +156,12 @@ or to fix crashes with the symbol handling`,
 	if symbolAware {
 		log.Info("Generating symbol tables...")
 
-		for index, file := range files {
-			if file.Ast.HasError() {
-				log.WithFields(log.Fields{
-					"fileName": file.Name,
-				}).Warn("AST parse error in file, skipping file")
-				continue
-			}
-
+		for index := range files {
 			symbols := files[index].ParseSymbols()
+			unit, _ := classifyCompilationUnit(files[index])
+			if unit.packageMetadata {
+				symbols.Package = unit.packageName
+			}
 			// Add the symbols to the global symbol table
 			symbol.AddSymbolsToPackage(symbols)
 		}
@@ -172,7 +171,7 @@ or to fix crashes with the symbol handling`,
 		log.Info("Resolving symbols...")
 
 		for _, file := range files {
-			if !file.Ast.HasError() {
+			if file.Symbols.BaseClass != nil {
 				ResolveFile(file)
 			}
 		}
@@ -267,6 +266,13 @@ func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error
 		}
 	}()
 
+	unit, err := classifyCompilationUnit(file)
+	if err != nil {
+		return nil, err
+	}
+	if unit.packageMetadata {
+		return packageMetadataGoFile(file, unit, ctx), nil
+	}
 	node = ParseNode(file.Ast, file.Source, ctx).(ast.Node)
 	return node, nil
 }
