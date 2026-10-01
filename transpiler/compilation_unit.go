@@ -20,7 +20,7 @@ func classifyCompilationUnit(file parsing.SourceFile) (compilationUnitInfo, erro
 		return compilationUnitInfo{}, fmt.Errorf("missing Java AST in %s", file.Name)
 	}
 	if file.Ast.HasError() {
-		return compilationUnitInfo{}, fmt.Errorf("Java parse error in %s", file.Name)
+		return compilationUnitInfo{}, fmt.Errorf("java parse error in %s", file.Name)
 	}
 	var unit compilationUnitInfo
 	types, imports := 0, 0

@@ -110,7 +110,7 @@ func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, a
 // value as a cause. Resolve the actual JDK owner before matching a simple name.
 func canonicalMessagePrerequisiteConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
 	name := stripJavaQualifier(className)
-	if name != "IndexOutOfBoundsException" && name != "NumberFormatException" && name != "ParseException" {
+	if name != "IndexOutOfBoundsException" && name != "NumberFormatException" && name != "ParseException" && name != "ArithmeticException" {
 		return nil
 	}
 	if _, builtin := builtinExceptionStorageTypeName(className, ctx); !builtin {
@@ -123,7 +123,7 @@ func canonicalMessagePrerequisiteConstructorExpr(className string, arguments *si
 	if len(args) == 0 && name != "ParseException" {
 		return stdjavaCall(ctx, helper, ast.NewIdent("nil"))
 	}
-	if arguments == nil || int(arguments.NamedChildCount()) != len(args) {
+	if arguments == nil || nodeutil.SemanticNamedChildCount(arguments) != len(args) {
 		return nil
 	}
 	if name == "ParseException" && len(args) == 2 {
@@ -131,7 +131,7 @@ func canonicalMessagePrerequisiteConstructorExpr(className string, arguments *si
 		return stdjavaCall(ctx, helper, message, args[1])
 	}
 	if name != "ParseException" && len(args) == 1 {
-		actual, known := inferExprJavaType(arguments.NamedChild(0), ctx, source)
+		actual, known := inferExprJavaType(nodeutil.SemanticNamedChild(arguments, 0), ctx, source)
 		if known && (actual == "null" || throwableConstructorMessageType(symbol.JavaType{Original: actual}, ctx, map[typeParameterIdentityKey]bool{})) {
 			message := stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{javaStringReferenceType(ctx)}, []ast.Expr{args[0], stdjavaQualifiedExpr("StringTypeID", ctx)})
 			return stdjavaCall(ctx, helper, message)
@@ -155,7 +155,7 @@ func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node,
 	if len(args) == 0 {
 		return stdjavaCall(ctx, "NewJava"+name+"Message", ast.NewIdent("nil"))
 	}
-	if arguments == nil || int(arguments.NamedChildCount()) != len(args) {
+	if arguments == nil || nodeutil.SemanticNamedChildCount(arguments) != len(args) {
 		return nil
 	}
 	if (name == "Throwable" || name == "Exception" || name == "IllegalArgumentException" || name == "IOException") && len(args) == 2 {
@@ -164,7 +164,7 @@ func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node,
 		message := stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{javaStringReferenceType(ctx)}, []ast.Expr{args[0], stdjavaQualifiedExpr("StringTypeID", ctx)})
 		return stdjavaCall(ctx, "NewJava"+name+"MessageCause", message, args[1])
 	}
-	actual, known := inferExprJavaType(arguments.NamedChild(0), ctx, source)
+	actual, known := inferExprJavaType(nodeutil.SemanticNamedChild(arguments, 0), ctx, source)
 	if !known {
 		return nil
 	}

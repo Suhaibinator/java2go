@@ -92,6 +92,10 @@ func ErasedCollectionIterationElements(execution *Execution, collection JavaIter
 // A raw Java write cannot check the instantiation's T: ArrayList stores Object.
 // Promote the existing allocation's storage once; typed consumers check reads.
 func (list *List[T]) collectionAdd(value any, execution *Execution) bool {
+	if list.viewRoot != nil {
+		list.viewInsert(list.viewSize, []any{value}, true)
+		return true
+	}
 	list.requireResizable()
 	list.promoteCollectionStorage()
 	list.modCount++
@@ -99,6 +103,11 @@ func (list *List[T]) collectionAdd(value any, execution *Execution) bool {
 	return true
 }
 func (list *List[T]) rawGet(index int32) any {
+	if list.viewRoot != nil {
+		list.checkElementIndex(index)
+		list.checkViewModification()
+		return list.viewRoot.rawGet(list.viewOffset + index)
+	}
 	if list.array != nil {
 		return ReferenceArrayGet[any](list.array, index, ObjectTypeID)
 	}
@@ -108,6 +117,12 @@ func (list *List[T]) rawGet(index int32) any {
 	return list.elements[index]
 }
 func (list *List[T]) rawSet(index int32, value any) {
+	if list.viewRoot != nil {
+		list.checkElementIndex(index)
+		list.checkViewModification()
+		list.viewRoot.rawSet(list.viewOffset+index, value)
+		return
+	}
 	if list.array != nil {
 		ReferenceArraySet(list.array, index, value)
 		return
@@ -119,16 +134,20 @@ func (list *List[T]) rawSet(index int32, value any) {
 	list.elements[index] = collectionElementView[T](value)
 }
 func (list *List[T]) rawRemove(index int32) any {
-	list.requireResizable()
+	if list.viewRoot == nil {
+		list.requireResizable()
+	}
 	old := list.rawGet(index)
-	list.modCount++
-	if list.erasedStorage {
-		list.erasedElements = append(list.erasedElements[:index], list.erasedElements[index+1:]...)
+	list.requireResizable()
+	if list.viewRoot != nil {
+		list.viewRoot.removeRange(list.viewOffset+index, list.viewOffset+index+1)
+		list.updateViewSizes(-1)
 	} else {
-		list.elements = append(list.elements[:index], list.elements[index+1:]...)
+		list.removeRange(index, index+1)
 	}
 	return old
 }
+
 func collectionElementView[T any](value any) T {
 	// Existing runtime callers also use native primitive instantiations.
 	if direct, ok := value.(T); ok {
@@ -170,6 +189,10 @@ func (list *List[T]) SetObject(index int32, element T) any {
 func (list *List[T]) RemoveAtObject(index int32) any { return list.rawRemove(index) }
 
 func (list *List[T]) promoteCollectionStorage() {
+	if list.viewRoot != nil {
+		list.viewRoot.promoteCollectionStorage()
+		return
+	}
 	if list.erasedStorage {
 		return
 	}
@@ -196,7 +219,7 @@ func CollectionListSetExecution(execution *Execution, collection JavaIterable, i
 }
 func (list *List[T]) collectionSet(index int32, value any) any {
 	old := list.rawGet(index)
-	if list.array == nil && !list.fixed {
+	if list.storageRoot().array == nil && !list.storageRoot().fixed {
 		list.promoteCollectionStorage()
 	}
 	list.rawSet(index, value)
@@ -211,6 +234,15 @@ func CollectionSortOrderedExecution(execution *Execution, collection JavaIterabl
 	panic(NewUnsupportedOperationException("list sort is unavailable"))
 }
 func (list *List[T]) collectionSort(execution *Execution) {
+	if list.viewRoot != nil {
+		list.checkViewModification()
+		values := list.javaListElements()
+		sort.SliceStable(values, func(i, j int) bool { return javaCompareValuesExecution(execution, values[i], values[j]) < 0 })
+		list.writeSortedView(execution, len(values), func(index int32) {
+			list.rawSet(index, values[index])
+		})
+		return
+	}
 	if list.array != nil {
 		sort.SliceStable(list.array.elements, func(i, j int) bool {
 			return javaCompareValuesExecution(execution, list.array.elements[i], list.array.elements[j]) < 0

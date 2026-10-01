@@ -218,7 +218,7 @@ func reflectionVarargsIntrinsic(receiver, name string) nodeIntrinsicGenerator {
 			return nil
 		}
 		args := intrinsicArgs(object, name, source, ctx)
-		nodes := nodeutil.NamedChildrenOf(invocation.ChildByFieldName("arguments"))
+		nodes := nodeutil.SemanticNamedChildrenOf(invocation.ChildByFieldName("arguments"))
 		fixed := 0
 		if name == "getMethod" || name == "invoke" {
 			fixed = 1

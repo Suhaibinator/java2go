@@ -210,7 +210,7 @@ func enumConstantNamed(scope *symbol.ClassScope, name string) bool {
 func enumSyntheticStaticCall(scope *symbol.ClassScope, name string, arguments *sitter.Node, ctx Ctx, source []byte) bool {
 	count := 0
 	if arguments != nil {
-		count = int(arguments.NamedChildCount())
+		count = nodeutil.SemanticNamedChildCount(arguments)
 	}
 	if name == "values" {
 		return count == 0

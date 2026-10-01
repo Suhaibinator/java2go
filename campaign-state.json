@@ -8842,5 +8842,186 @@
     "TDD": "Frozen missing-surface native/generated build REDs retained. Fresh exact public88 composition passes compile20, native9, codegen2, original primitive4/heap4, native race6, fresh JDK compile/run, strict transpilation, all generated race builds and race executable parity. No generated edits.",
     "remaining_limits": "Mutable heap buffers only; direct/read-only buffers and performance not claimed. Full Netty still times out at300 seconds; original Commons27/Gson and full accumulated CI remain unaccepted. Checkpoint18 latest full accepted round.",
     "continuation": "Continue Sol-only residual Netty translation, Commons bounds/Comparator/subList, volatile/parser integration, Gson physical lowering, authentic Maven lifecycle and actual generated performance baseline."
+  },
+  "sol_progress90": {
+    "status": "ACCEPTED_SCOPED_COMMONS_FOUNDATION_AND_LINT_FULL_ROUND_UNACCEPTED",
+    "parent": "f1ff4d69546361dc2a8eecf3bfdaf7249f81e5ab",
+    "source_manifest_sha256": "bb0ecf5ee8220596334f1c13a1878e15a92af2ba30e377ba9a8b895b011b2e73",
+    "publication_packet": {
+      "path": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/handoff.json",
+      "sha256": "dbf345171985dfec45b4e0d3e8006c2a6575955d3f6061b8259cde12c11f1347"
+    },
+    "quality_handoff": {
+      "path": "/private/tmp/java2go-sol-quality-foundation90-v1/QUALITY_HANDOFF.json",
+      "sha256": "36c31d173628d75e7add4554c3663f7e8c822a9c99fb72de598d77aa9c0fda02"
+    },
+    "changed67": {
+      "nodeutil/semantic_children.go": "b1c9a1bd95462657bf001e3e86bac03828244b5d3e77a9016892dc13fbc8eb6c",
+      "stdjava/arithmetic_exception_reference.go": "c42e7d8bd185bed4c36bfb995a85e533090b00e1aea1cee934ee0440a4aa19a9",
+      "stdjava/atomic_field_updater.go": "0ccd4dee85727ae4b4d6f7f1809a58fcb02d5d0a369f3a9e7ad5339178b026bf",
+      "stdjava/atomic_field_updater_test.go": "03784c641a86bb21b7d65193cbd54354b9f9600ab4f49a34c5abaa0328fa2dbd",
+      "stdjava/atomic_optimization_review_test.go": "35034a122da743665c93a54650da52c53f2f892a51eb68261a505ab86ad51d39",
+      "stdjava/biginteger.go": "035212ddf9b66b51a0ce1e25f91742af9bc9777a0c49629f73778f18228c6dbf",
+      "stdjava/campaign_biginteger_arithmetic_test.go": "15973d13920a41fe1c61110dd5569683a55abdda2e50520cc5c0778a08dd2a61",
+      "stdjava/campaign_scalar_nan_raw_test.go": "a81503ac0f3904d03a28288383ca7519d22cb3e6bc3bc70c63e2466be1b54e34",
+      "stdjava/campaign_scalar_text_boundary_test.go": "1eb95615db492c5354d9691d0269f2d0144bab8866981fb818d5aa95dc8c0e03",
+      "stdjava/campaign_sublist_live_view_test.go": "3e685898e8142fc226a095e3fbf75e0faad36069ac9e020f63ebc4c68cb8b084",
+      "stdjava/campaign_sublist_reentrant_sort_test.go": "f6535a12bafe8abadc852124fbf4d75d668c92f41c60a44100c2e66b30dc5ca4",
+      "stdjava/collection_erased.go": "d143e0b93b64b0a427cdd1356ccca471e624e81ddca02531e94aac967635b29a",
+      "stdjava/collection_iterators.go": "9db49b30ecdbaf43b6b7def4d5fdb0b0be6e6a40b1cbb88c0bcef457e53329eb",
+      "stdjava/comparator.go": "54b28a716aa2343a54dd4382675a912d26dd55a6bd399a64330def48bcd35248",
+      "stdjava/iterable.go": "a7c72f4aaf237012d6b2f08983b732b8b59476e4e6bf6fb42f5525e90447bc97",
+      "stdjava/list.go": "b4edfd584176e8f71adbe64a810d1a1a625ee97544191dd2ce214d90ac164708",
+      "stdjava/list_sublist.go": "52f20a18f7d21a21c41fa3b4a2dfc936d6f7af58d73d372cbdfeff0aff5af4a5",
+      "stdjava/objects_hash.go": "4ef34db1ca89cab788b5ad41e8aa732387dcb2803ba06afeb6e22046bba755bd",
+      "stdjava/objects_hash_contract_test.go": "954646a6b446e2289e6aa81c6304ac207b712ee554066bdbb412433a0e2dc62d",
+      "stdjava/scalar_text_reference.go": "99c8d94e11cbeb756904149dc638e986774d494e423243f1164ec8bdf7ab55e3",
+      "symbol/definition.go": "d2b87bbb6af252e82b95b997c366a61cfa1bea585c86da8365ff3f41e96b86eb",
+      "symbol/parsing.go": "15c2052889b8376c5ea2ce4f38151cf4caa68cae3a298dcce0543709eef4efdf",
+      "transpiler/affine_array_loop.go": "b82619e13689430d0d7c7880b4e2c8ceab63b2ebc87d8d1ce8d0c398f6c95fc9",
+      "transpiler/affine_array_row_loop.go": "69a0aad284588d1a9a70bcb75a74c3e0b8cec7585659025224ba6478f9bbbfed",
+      "transpiler/array_assignment_timing_integration_test.go": "8da3a13c3fed8388c962da9320e1bc579c364cbe0d158a4eb7496fc43b7c7776",
+      "transpiler/campaign_biginteger_arithmetic_test.go": "253bd8f7bc3890d3e6239a7a2aaf4b3b8c228a062e7a117e52601387c9b0ab26",
+      "transpiler/campaign_expression_comments_primitive_sam_test.go": "0e47d628f4eb053be3e1cc805946c2c866cf647d747d0e73cfa7c675d22d36ae",
+      "transpiler/campaign_expression_comments_test.go": "149866ce97e75efbd0cba8e321ca161b3252dbd667b9559ce6de02c3b84c88cb",
+      "transpiler/campaign_objects_hash_import_test.go": "f017bfbd0ebf76d8530af61dbfbf7b283eb0ddd9f62439e2f05118633020e6a2",
+      "transpiler/campaign_objects_hash_test.go": "316bce2f84fca55a794da603050eb07444b0e694aa8e417816df0d5d5e8f0c4b",
+      "transpiler/campaign_scalar_nan_raw_test.go": "065edf40f4ceff80e56a758d6d48794f96d1c18047b07c42e3ae6abbb37fd99d",
+      "transpiler/campaign_scalar_text_boundary_test.go": "addbeab2cce38558b979036dbf88c23e669bbf53a49109300012c140e83dd85f",
+      "transpiler/campaign_statement_comment_contracts_test.go": "4473a8f2de2fe155056c7feb962f2b27e4d7cd0c7682c7bc07fbd0c0a73e4a2c",
+      "transpiler/character_io_lowering.go": "923de52f2fbf964cfffd18c23407c7015a287c77d415aa86e99759d571a08b9d",
+      "transpiler/compilation_unit.go": "e7e9fe421ae60a1fcc5534a9b2dd4d6b23bb8a18f60b2aebb5277fc28dc08b87",
+      "transpiler/declaration.go": "b4c35c38c1cdd110e362d1b7fa9960f262fd227c41e16b3463e6ac5af9ead728",
+      "transpiler/enum_reference_codegen.go": "1cca5951d11d5140fbe70e0e71b53b42cf5870bcdafd4b8d2c816916e5a90acc",
+      "transpiler/exceptions.go": "5378879d417b73d892a28fb195c17099d3e53f50cd073dce0b2c1b8144bf5254",
+      "transpiler/execution_context.go": "8eee49ff4dd29d91c316b39bb240114ec71ba0d5d35144bf388f12eda8a3b779",
+      "transpiler/expression.go": "46a834191aab43d8ccc01209ebc0088fe4bd36d79304e8c9d7019499ebc864e6",
+      "transpiler/expression_roles.go": "a16050004d36dff0dc01068e80299fdbc5a37732ce94da74741bb68c23567760",
+      "transpiler/filter_input_stream_lowering.go": "74753efcb29cacdf4a97c27099f9715d6b052e3b306d2586eb9c16715b79cad0",
+      "transpiler/for_initializer.go": "0d9720c2fad4b0ceccee9817c47cba58685a5a9b527b9423cbad952413872d90",
+      "transpiler/intrinsic_signatures.go": "77dd3e686acae9eaa70317466bb46188862e8d4396f1e920eb04d074a211f59d",
+      "transpiler/intrinsics.go": "224f69e00d5a51bbf69796ab97e807744a7263f1bf993b1ced1a1d5c663b69ae",
+      "transpiler/intrinsics_assertion_error.go": "41916033e19ef1e2e641b51baddd83e5b88d2a5bedaa1b1977d986896486c5ea",
+      "transpiler/intrinsics_bigmath.go": "14f7fad4d82c45c55b8fe1e67b7e8d77ad20148ade22fea69ef4d10f1608e74a",
+      "transpiler/intrinsics_nio_heap.go": "9a12e17f197030d44f912eeee6ad37f1935071042684b333d76af82a56bad0db",
+      "transpiler/intrinsics_objects_hash.go": "e76ee57b2710504169e5d7b9ff0845846e512cead70f01df5ef6d8f73e7873e7",
+      "transpiler/intrinsics_stdlib.go": "49912e862de611f62cb83cd805cf1625a37a14fb933ceaa80d320c66fef92988",
+      "transpiler/list_sublist.go": "4d8e77f2c6e4b89eeb8bcbcfeac8f2f99448a1a9217d9e9bade151ccdc337c0a",
+      "transpiler/monitor_identity_codegen.go": "46493afd15c93c8388da7b8d08652488459406c56597b4aee8e6a4591b61bd9e",
+      "transpiler/primitive_operator_intrinsics.go": "b6a3ecf86cbd6ab3f5213122d781152879b3cc294cc3a5d6151fae43bf500546",
+      "transpiler/raw_compilation_unit_test.go": "73f756d2fd0030cf74c466517c3fe9539ac0d4935a4fe03cf29c1c1e852f434a",
+      "transpiler/runtime_metadata.go": "326e79f0ec21a223b6e1d5a1ad892cf839d05f25693557bfaf0bc8f50fe64c2e",
+      "transpiler/statement.go": "016d6241d065fcdb8d14a5b822e597326d92feef7d07d0654c60abba253d4dc2",
+      "transpiler/static_field_codegen.go": "e34832085000d344572ed04db5f5025a81a425717b973707c24478b45f629c17",
+      "transpiler/static_import_resolution.go": "987769135db2d9d59d749f4ae31fe056add20c581521daf64c17a3a677bc4f4e",
+      "transpiler/testdata/campaign_objects_hash/ImportedObjectsHashProbe.java": "b205b6946aff95057d489f7ef4b94f9753eeec30848ce99b7dbc440a586c8613",
+      "transpiler/testdata/campaign_objects_hash/ObjectsHashProbe.java": "4cd6539b9e629ed8b4e8f6e4e35f827413f8328922c1ece06433f16d8af4f69b",
+      "transpiler/testdata/campaign_scalar_boundary/ArithmeticMessageProbe.java": "19d183fb637d66ce928cfb90169120fbd3ebbc582ef4878a2377b153e8d96c90",
+      "transpiler/testdata/campaign_scalar_boundary/ScalarNaNRawProbe.java": "d3d0fc04f41f2baeee2b6d1522187fb731114eba17a7b6b2bb521d7811094d32",
+      "transpiler/testdata/campaign_scalar_boundary/ScalarTextProbe.java": "29422b15c74f97a4fadd21704e7b49e3b4da681b1521310bf2438c46d17ff4b8",
+      "transpiler/testdata/statement_comment_contracts/StatementDeclarationForFlow.java": "e645070dab3a450c268dc468a56d8f2c7369c8760c0795106757b5fa2ff28858",
+      "transpiler/testdata/statement_comment_contracts/StatementFormalControlFlow.java": "7ccb975623f52531757153de047d01c3691de25a600a97c74891f3697ec97482",
+      "transpiler/testdata/statement_comment_contracts/StatementUpdateAssignmentFlow.java": "89accc131bdf5e8ca7db334c5fdf3dd2df90709cc973f9249383a8aec3a06831",
+      "transpiler/tree_sitter.go": "2a3d5e4a67a54213eb156f0cb06861968c255e5e41da3c78aea46686b0085197"
+    },
+    "coordinator_raw_stages": [
+      {
+        "stage": "01-native-components",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/01-native-components/command.json",
+        "sha256": "ca12edcee6abdf2d46f9a7052e571db51f8048658bb2d78d14b6d6fcb89405d7",
+        "test_actions": 29
+      },
+      {
+        "stage": "02-comments10",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/02-comments10/command.json",
+        "sha256": "a90cbf535037bdc99ea5451bb2092c686df6f7915b62bd3ab04321a51531cd41",
+        "test_actions": 11
+      },
+      {
+        "stage": "03-BigInteger",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/03-BigInteger/command.json",
+        "sha256": "6c715f5a5a5ae63f00bb1e45cef48cdfdd85f2c447126dbf4c5f3557917c494e",
+        "test_actions": 1
+      },
+      {
+        "stage": "04-scalar",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/04-scalar/command.json",
+        "sha256": "86632f1ac52f271801752615ec6d6d6a51fab4b10fa8c5c8d5b27e058c328a08",
+        "test_actions": 3
+      },
+      {
+        "stage": "05-Objects",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/05-Objects/command.json",
+        "sha256": "865476ebfbc0e3210802de6f00c690b1b79f1a12bfc373e67adfc5a820ec9589",
+        "test_actions": 2
+      },
+      {
+        "stage": "06-fraction-compiler",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/06-fraction-compiler/command.json",
+        "sha256": "e06cbc971bef84bcff7714b23c49e1c94d753dc7ba3215247d6a5c3bad106e7e",
+        "test_actions": 0
+      },
+      {
+        "stage": "07-fraction-strict",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/07-fraction-strict/command.json",
+        "sha256": "4fc04f63577a61227881aacabc280caf368e6268a28b316e5014673c1177b13c",
+        "test_actions": 0
+      },
+      {
+        "stage": "08-fraction-build-all",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/08-fraction-build-all/command.json",
+        "sha256": "e56b019c52f849b91879d941f8246b9e0f27efd36acc8d0162daf22e5c3512a9",
+        "test_actions": 0
+      },
+      {
+        "stage": "09-fraction-run",
+        "receipt": "/private/tmp/java2go-sol-foundation90-combined67-gyazk0ol/evidence/09-fraction-run/command.json",
+        "sha256": "24180c96c59395c4f4759d9946df1ebb2ee2d90200d66f0677e872c0c18eda9d",
+        "test_actions": 0
+      },
+      {
+        "stage": "lint-green-attempt1",
+        "receipt": "/private/tmp/java2go-sol-quality-foundation90-v1/lint-green-attempt1/command.json",
+        "sha256": "5c931ea5eecc0b9650101a9fb34779a4770a63833e535f6d054466cbdb884369",
+        "test_actions": 0
+      },
+      {
+        "stage": "atomic191-candidate-normal-attempt1",
+        "receipt": "/private/tmp/java2go-sol-quality-foundation90-v1/atomic191-candidate-normal-attempt1/command.json",
+        "sha256": "557c1762c959f8fa85a7953fc930cb3b55b82cf8cfee1cde42ffd179a1c9c6c8",
+        "test_actions": 191
+      },
+      {
+        "stage": "atomic191-candidate-race-attempt1",
+        "receipt": "/private/tmp/java2go-sol-quality-foundation90-v1/atomic191-candidate-race-attempt1/command.json",
+        "sha256": "1903d3c290da424c5d4c97d9befe87cd2d52116abb76af7dec224fc5861dece6",
+        "test_actions": 191
+      },
+      {
+        "stage": "parser-bounds-codegen-attempt1",
+        "receipt": "/private/tmp/java2go-sol-quality-foundation90-v1/parser-bounds-codegen-attempt1/command.json",
+        "sha256": "547e55817f0646dc2ea9bcf608de341c5e3248fcc3c80f8aaed2f2224a8b2433",
+        "test_actions": 12
+      },
+      {
+        "stage": "metadata-symbol-attempt1",
+        "receipt": "/private/tmp/java2go-sol-quality-foundation90-v1/metadata-symbol-attempt1/command.json",
+        "sha256": "5e3b4ade6034d47b539cba6cf2676cf251234b6ca0254455a7bb13c140cdbbfe",
+        "test_actions": 1
+      },
+      {
+        "stage": "nio-put-original-contracts-attempt1",
+        "receipt": "/private/tmp/java2go-sol-quality-foundation90-v1/nio-put-original-contracts-attempt1/command.json",
+        "sha256": "286453f5f5407f6e3daefb8c3b53e82a02d27324d1b17eb7fc3a7235ae7dae4e",
+        "test_actions": 4
+      }
+    ],
+    "fresh_stage_count": 15,
+    "selected_test_actions": 445,
+    "quality_actions": 399,
+    "change": "Semantic comment handling and primitive update/operator lowering; BigInteger arithmetic; typed UTF16 scalar ingress and exceptions; Objects.hash metadata/runtime; live subList mutation and reentrant sorting; nine lint findings repaired.",
+    "verification": "All nine Commons and six quality stages freshly pass on the same sealed candidate, with exact JVM/Go Fraction parity, lint2.14 zero issues, atomic normal/race191 each, zero write allocations, parser/bounds12, symbol1, original NIO4. Generated sources unchanged.",
+    "limits": "No full27 or full-round acceptance. Generic Object.equals frontier remains; Netty full translation has timed out; Gson integration compile and full accumulated CI remain open. Existing iterator null-vs-empty exception-detail limitation retained; BigInteger maximum bit range not established. Performance measurements show significant Go scalar/object costs, not Java-faster acceptance. Checkpoint18 latest full accepted round.",
+    "continuation": "Sol-only TDD: original Commons27 equality/bounds/Range, Netty scan cost/full-source translation and authentic Maven implementation closure, Gson physical lowering, volatile/SAM integration, original CI repairs, performance profiles and cost regressions."
   }
 }

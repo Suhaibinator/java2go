@@ -116,5 +116,5 @@ func isObjectMonitorInvocation(receiver *sitter.Node, method string) bool {
 		return false
 	}
 	arguments := invocation.ChildByFieldName("arguments")
-	return arguments != nil && arguments.NamedChildCount() == 0
+	return arguments != nil && nodeutil.SemanticNamedChildCount(arguments) == 0
 }

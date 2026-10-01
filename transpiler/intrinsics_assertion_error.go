@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"github.com/NickyBoy89/java2go/nodeutil"
 	sitter "github.com/smacker/go-tree-sitter"
 	"go/ast"
 )
@@ -36,14 +37,14 @@ func assertionErrorConstructorArguments(className string, arguments *sitter.Node
 	}
 	count := 0
 	if arguments != nil {
-		count = int(arguments.NamedChildCount())
+		count = nodeutil.SemanticNamedChildCount(arguments)
 	}
 	expected := []string{}
 	helper := "NewJavaAssertionErrorExecution"
 	switch count {
 	case 0:
 	case 1:
-		actual, known := inferExprJavaType(arguments.NamedChild(0), ctx, source)
+		actual, known := inferExprJavaType(nodeutil.SemanticNamedChild(arguments, 0), ctx, source)
 		if !known {
 			actual = "Object"
 		}
@@ -68,7 +69,7 @@ func assertionErrorConstructorArguments(className string, arguments *sitter.Node
 	} else {
 		converted := make([]ast.Expr, len(parsed))
 		for index, value := range parsed {
-			converted[index] = coerceArgumentToExpectedType(value, arguments.NamedChild(index), expected[index], ctx, source)
+			converted[index] = coerceArgumentToExpectedType(value, nodeutil.SemanticNamedChild(arguments, index), expected[index], ctx, source)
 		}
 		parsed = converted
 	}

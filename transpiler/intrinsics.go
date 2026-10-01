@@ -6,6 +6,8 @@ import (
 
 	"github.com/NickyBoy89/java2go/symbol"
 
+	"github.com/NickyBoy89/java2go/nodeutil"
+
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -39,6 +41,23 @@ import (
 // call. recv is the parsed receiver (nil for static calls); args are the parsed
 // arguments. Returning nil signals that this particular call is not handled.
 type intrinsicGenerator func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr
+
+// Invocation-aware static adapters select fixed versus variable arity from the
+// source argument types. They receive arguments that have already been lowered.
+type staticIntrinsicNodeGenerator func(invocation *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr
+type intrinsicExpectedArguments func(invocation *sitter.Node, ctx Ctx, source []byte) []string
+
+var staticNodeIntrinsics = map[intrinsicKey]staticIntrinsicNodeGenerator{}
+var staticIntrinsicExpectedArguments = map[intrinsicKey]intrinsicExpectedArguments{}
+
+func registerStaticNodeIntrinsic(class, method string, gen staticIntrinsicNodeGenerator) {
+	staticNodeIntrinsics[intrinsicKey{class, method}] = gen
+	registerStaticIntrinsic(class, method, func(ast.Expr, []ast.Expr, Ctx) ast.Expr { return nil })
+}
+
+func registerStaticIntrinsicExpectedArguments(class, method string, derive intrinsicExpectedArguments) {
+	staticIntrinsicExpectedArguments[intrinsicKey{class, method}] = derive
+}
 
 // intrinsicKey identifies an entry by Java type (or class) name and method name.
 type intrinsicKey struct {
@@ -799,10 +818,10 @@ func invocationArgumentNode(invocation *sitter.Node, index int) *sitter.Node {
 		return nil
 	}
 	argsNode := invocation.ChildByFieldName("arguments")
-	if argsNode == nil || index >= int(argsNode.NamedChildCount()) {
+	if argsNode == nil || index >= nodeutil.SemanticNamedChildCount(argsNode) {
 		return nil
 	}
-	return argsNode.NamedChild(index)
+	return nodeutil.SemanticNamedChild(argsNode, index)
 }
 
 // invocationArgumentCount returns how many arguments a method invocation passes.
@@ -814,7 +833,7 @@ func invocationArgumentCount(invocation *sitter.Node) int {
 	if argsNode == nil {
 		return 0
 	}
-	return int(argsNode.NamedChildCount())
+	return nodeutil.SemanticNamedChildCount(argsNode)
 }
 
 // intrinsicLambdaResultTypeExpr returns the Go type that the index'th lambda
@@ -913,6 +932,11 @@ func tryStaticIntrinsicInvocation(invocation *sitter.Node, className, methodName
 	}
 
 	args := parseTypedIntrinsicInvocationArguments(invocation, nil, className, methodName, source, ctx)
+	if lower := staticNodeIntrinsics[intrinsicKey{className, methodName}]; lower != nil {
+		if result := lower(invocation, args, ctx, source); result != nil {
+			return result, true
+		}
+	}
 	if (className == "Paths" && methodName == "get") || (className == "Path" && methodName == "of") {
 		if result := lowerPathGetReference(invocation, args, ctx, source); result != nil {
 			return result, true
@@ -1033,7 +1057,7 @@ func intrinsicMethodReceiverTypeName(objectNode *sitter.Node, methodName string,
 		arguments := invocation.ChildByFieldName("arguments")
 		arity := 0
 		if arguments != nil {
-			arity = int(arguments.NamedChildCount())
+			arity = nodeutil.SemanticNamedChildCount(arguments)
 		}
 		if (methodName == "compareTo" && arity == 1) || (methodName != "compareTo" && arity == 0) {
 			if typ, known := inferExprJavaType(objectNode, ctx, source); known && enumReferenceType(typ, ctx) {
@@ -1054,7 +1078,7 @@ func intrinsicMethodReceiverTypeName(objectNode *sitter.Node, methodName string,
 		parent := objectNode.Parent()
 		if parent != nil && parent.Type() == "method_invocation" {
 			arguments := parent.ChildByFieldName("arguments")
-			if arguments == nil || arguments.NamedChildCount() == 0 {
+			if arguments == nil || nodeutil.SemanticNamedChildCount(arguments) == 0 {
 				if javaType, known := inferExprJavaType(objectNode, ctx, source); known {
 					if _, primitive := javaPrimitiveType(javaType); !primitive {
 						return "Object", true

@@ -238,9 +238,9 @@ func lowerStaticFieldAssignment(node *sitter.Node, source []byte, ctx Ctx) (ast.
 	if node == nil || node.Type() != "assignment_expression" || node.ChildCount() < 3 {
 		return nil, false
 	}
-	lhsNode := node.Child(0)
-	opNode := node.Child(1)
-	rhsNode := node.Child(2)
+	lhsNode := node.ChildByFieldName("left")
+	opNode := node.ChildByFieldName("operator")
+	rhsNode := node.ChildByFieldName("right")
 	access, ok := resolveStaticFieldAccess(lhsNode, source, ctx)
 	if !ok || opNode == nil || rhsNode == nil {
 		return nil, false

@@ -4,7 +4,9 @@ import (
 	"go/ast"
 	"go/token"
 
+	"github.com/NickyBoy89/java2go/nodeutil"
 	"github.com/NickyBoy89/java2go/symbol"
+
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
@@ -153,7 +155,7 @@ func sourceInputStreamInvocation(object *sitter.Node, name string, argsNode *sit
 		if argsNode == nil {
 			return nil
 		}
-		argType, _ := inferExprJavaType(argsNode.NamedChild(0), ctx, source)
+		argType, _ := inferExprJavaType(nodeutil.SemanticNamedChild(argsNode, 0), ctx, source)
 		if argType != "byte[]" {
 			return nil
 		}

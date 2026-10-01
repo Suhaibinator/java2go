@@ -424,7 +424,7 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "ParseDouble", args[0])
+		return stdjavaCall(ctx, "JavaDoubleParseDouble", args[0])
 	})
 	registerStaticIntrinsic("Double", "valueOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
@@ -571,10 +571,10 @@ func registerBoxedObjectIntrinsics() {
 	registerStaticIntrinsicImportSignature("Long", "parseLong", "java.lang.String")
 	registerStaticIntrinsicImportSignature("Long", "parseLong", "java.lang.String", "int")
 	for _, spec := range []struct{ wrapper, primitive, parser string }{
-		{"Boolean", "boolean", "ParseBoolean"}, {"Byte", "byte", "ParseByte"},
-		{"Short", "short", "ParseShort"}, {"Character", "char", ""},
+		{"Boolean", "boolean", "JavaBooleanParseBoolean"}, {"Byte", "byte", "JavaByteParseByte"},
+		{"Short", "short", "JavaShortParseShort"}, {"Character", "char", ""},
 		{"Integer", "int", "JavaIntegerParseInt"}, {"Long", "long", "JavaLongParseLong"},
-		{"Float", "float", "ParseFloat"}, {"Double", "double", "ParseDouble"},
+		{"Float", "float", "JavaFloatParseFloat"}, {"Double", "double", "JavaDoubleParseDouble"},
 	} {
 		registerStaticIntrinsic(spec.wrapper, "valueOf", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) < 1 || len(args) > 2 {

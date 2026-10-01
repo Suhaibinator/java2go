@@ -63,7 +63,7 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 
 	// If a variable is being declared, but not set to a value
 	// Ex: `int value;`
-	if variableDeclarator.NamedChildCount() == 1 {
+	if nodeutil.SemanticNamedChildCount(variableDeclarator) == 1 {
 		return &ast.DeclStmt{
 			Decl: &ast.GenDecl{
 				Tok: token.VAR,
@@ -81,8 +81,8 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 	// Set expected type for diamond operator inference
 	ctx.expectedType = node.ChildByFieldName("type").Content(source)
 	initializerNode := variableDeclarator.ChildByFieldName("value")
-	if initializerNode == nil && variableDeclarator.NamedChildCount() > 1 {
-		initializerNode = variableDeclarator.NamedChild(1)
+	if initializerNode == nil && nodeutil.SemanticNamedChildCount(variableDeclarator) > 1 {
+		initializerNode = nodeutil.SemanticNamedChild(variableDeclarator, 1)
 	}
 	ctx.expectedTypeRoot = initializerNode
 
@@ -100,8 +100,8 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 		// Java overload resolution uses a local's declared static type, not the
 		// concrete type of its initializer. Only `var` declarations derive their
 		// static type from the initializer.
-		if isVarKeywordType(strings.TrimSpace(originalType)) && variableDeclarator.NamedChildCount() == 2 {
-			if inferredType, ok := inferExprJavaType(variableDeclarator.NamedChild(1), ctx, source); ok && strings.TrimSpace(inferredType) != "" {
+		if isVarKeywordType(strings.TrimSpace(originalType)) && nodeutil.SemanticNamedChildCount(variableDeclarator) == 2 {
+			if inferredType, ok := inferExprJavaType(nodeutil.SemanticNamedChild(variableDeclarator, 1), ctx, source); ok && strings.TrimSpace(inferredType) != "" {
 				recordedOriginalType = inferredType
 			}
 		}
@@ -157,8 +157,8 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 	}
 	// `var x = <int expr>` carries no declared type, so infer it from the
 	// initializer and pin if it is a sized integer primitive.
-	if !pin && isVarKeywordType(strings.TrimSpace(originalType)) && variableDeclarator.NamedChildCount() == 2 {
-		if inferred, ok := inferExprJavaType(variableDeclarator.NamedChild(1), ctx, source); ok && needsExplicitPrimitiveType(inferred) {
+	if !pin && isVarKeywordType(strings.TrimSpace(originalType)) && nodeutil.SemanticNamedChildCount(variableDeclarator) == 2 {
+		if inferred, ok := inferExprJavaType(nodeutil.SemanticNamedChild(variableDeclarator, 1), ctx, source); ok && needsExplicitPrimitiveType(inferred) {
 			pin = true
 			pinType = javaTypeStringToGoTypeExpr(inferred, inScopeTypeParameters(ctx), ctx)
 		}

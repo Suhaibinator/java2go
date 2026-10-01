@@ -21,6 +21,10 @@ type List[T any] struct {
 	elementType    TypeID
 	fixed          bool
 	modCount       uint64
+	viewRoot       *List[T]
+	viewParent     *List[T]
+	viewOffset     int32
+	viewSize       int32
 }
 
 // NewList returns an empty List, matching `new ArrayList<>()` / `new LinkedList<>()`.
@@ -38,6 +42,10 @@ func NewListFrom[T any](elements ...T) *List[T] {
 // Add appends an element and returns true, matching List.add (which always
 // returns true for a List).
 func (l *List[T]) Add(element T) bool {
+	if l.viewRoot != nil {
+		l.viewInsert(l.viewSize, []any{element}, false)
+		return true
+	}
 	l.requireResizable()
 	l.modCount++
 	if l.erasedStorage {
@@ -66,6 +74,10 @@ func (l *List[T]) Set(index int32, element T) T {
 
 // Size returns the number of elements, matching List.size.
 func (l *List[T]) Size() int32 {
+	if l.viewRoot != nil {
+		l.checkViewModification()
+		return l.viewSize
+	}
 	if l.array != nil {
 		return ReferenceArrayLength(l.array)
 	}
@@ -82,6 +94,12 @@ func (l *List[T]) IsEmpty() bool {
 
 // Clear removes all elements, matching List.clear.
 func (l *List[T]) Clear() {
+	if l.viewRoot != nil {
+		l.checkViewModification()
+		l.viewRoot.removeRange(l.viewOffset, l.viewOffset+l.viewSize)
+		l.updateViewSizes(-l.viewSize)
+		return
+	}
 	if l.Size() != 0 {
 		l.requireResizable()
 	}
@@ -100,26 +118,35 @@ func (l *List[T]) RemoveAt(index int32) T {
 // AddAll appends every element of other and returns true if any were added,
 // matching List.addAll.
 func (l *List[T]) AddAll(other *List[T]) bool {
-	if other == nil {
-		return false
+	ReferenceRequireNonNull(other)
+	if l.viewRoot != nil {
+		if other.Size() == 0 {
+			return false
+		}
+		l.checkViewModification()
+		values := other.javaListElements()
+		l.viewInsert(l.viewSize, values, other.storageRoot().erasedStorage)
+		return true
+	}
+	// Read the source before changing the destination's revision: it may be a
+	// view of this same allocation, and Java addAll first copies the collection.
+	copied := other.javaListElements()
+	if len(copied) != 0 {
+		l.requireResizable()
 	}
 	if !l.fixed {
 		l.modCount++
 	}
-	if other.Size() == 0 {
+	if len(copied) == 0 {
 		return false
 	}
-	l.requireResizable()
-	if l.erasedStorage || other.erasedStorage {
-		copied := other.javaListElements()
-		if !l.erasedStorage {
-			l.erasedElements = l.javaListElements()
-			l.erasedStorage = true
-			l.elements = nil
-		}
+	if l.erasedStorage || other.storageRoot().erasedStorage {
+		l.promoteCollectionStorage()
 		l.erasedElements = append(l.erasedElements, copied...)
 	} else {
-		l.elements = append(l.elements, other.Slice()...)
+		for _, element := range copied {
+			l.elements = append(l.elements, collectionElementView[T](element))
+		}
 	}
 	return true
 }
@@ -164,6 +191,18 @@ func (l *List[T]) RemoveObject(target any, execution ...*Execution) bool {
 // array-backed view. Java iteration uses CollectionIterationElements so each
 // array slot is read only when the iterator advances.
 func (l *List[T]) Slice() []T {
+	if l.viewRoot != nil {
+		l.checkViewModification()
+		root := l.viewRoot
+		if !root.erasedStorage && root.array == nil {
+			return root.elements[l.viewOffset : l.viewOffset+l.viewSize]
+		}
+		values := make([]T, l.viewSize)
+		for i := range values {
+			values[i] = l.Get(int32(i))
+		}
+		return values
+	}
 	if l.array != nil {
 		return ReferenceArrayElements[T](l.array, l.elementType)
 	}
@@ -197,7 +236,7 @@ func listElementEqual(query, element any, execution *Execution) bool {
 }
 
 func (l *List[T]) requireResizable() {
-	if l.fixed {
+	if l.storageRoot().fixed {
 		panic(NewUnsupportedOperationException("fixed-size list"))
 	}
 }

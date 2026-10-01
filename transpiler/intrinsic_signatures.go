@@ -25,6 +25,9 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 		return t
 	}
 	if class := staticClass; class != "" {
+		if derive := staticIntrinsicExpectedArguments[intrinsicKey{class, method}]; derive != nil {
+			return derive(invocation, ctx, source)
+		}
 		if (class == "Paths" && method == "get") || (class == "Path" && method == "of") {
 			if expected := pathGetReferenceExpected(invocation, ctx, source); expected != nil {
 				return expected
@@ -227,6 +230,8 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 			return set(element(0))
 		case "get":
 			return set("int")
+		case "subList":
+			return set("int", "int")
 		case "set":
 			return set("int", element(0))
 		case "contains", "indexOf", "lastIndexOf":
@@ -694,7 +699,7 @@ func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, sta
 			perArgument = typed
 		} else if kind, found := lookupLambdaShape(receiver, method); found {
 			if elements := receiverElementJavaTypes(object, ctx, source); len(elements) == 1 {
-				for index, arg := range nodeutil.NamedChildrenOf(argList) {
+				for index, arg := range nodeutil.SemanticNamedChildrenOf(argList) {
 					if arg.Type() == "lambda_expression" || arg.Type() == "method_reference" {
 						perArgument[index] = intrinsicShapeLambdaTypes(arg, elements, kind, ctx, source)
 					}
@@ -713,8 +718,8 @@ func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, sta
 			}
 		}
 	}
-	args := make([]ast.Expr, 0, argList.NamedChildCount())
-	for index, arg := range nodeutil.NamedChildrenOf(argList) {
+	args := make([]ast.Expr, 0, nodeutil.SemanticNamedChildCount(argList))
+	for index, arg := range nodeutil.SemanticNamedChildrenOf(argList) {
 		argCtx := ctx.Clone()
 		argCtx.expectedType = ""
 		argCtx.expectedTypeRoot = arg

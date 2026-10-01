@@ -403,7 +403,7 @@ func TestAtomicOptimizationBehavior08ProviderReentrantWrite(t *testing.T) {
 						VolatileStore(&p.r, b)
 					}
 				}
-				var old, next any = a, NewObject()
+				old, next := a, NewObject()
 				if stage == "old_view" {
 					old = probe
 				} else {
@@ -444,7 +444,7 @@ func TestAtomicOptimizationBehavior09AbruptAfterWrite(t *testing.T) {
 				calls := 0
 				probe := &optimizationProvider{}
 				probe.onInfo = func() { VolatileStore(&p.r, b); panic(marker) }
-				var old any = a
+				old := a
 				if stage == "old_provider" {
 					old = probe
 				}
@@ -545,9 +545,10 @@ func TestAtomicOptimizationBehavior11ResolverTrace(t *testing.T) {
 			calls++
 			optimizationCheck(actual == e, "trace Execution")
 			if calls == 2 {
-				if name == "i" {
+				switch name {
+				case "i":
 					VolatileStore(&p.i, int32(7))
-				} else if name == "l" {
+				case "l":
 					VolatileStore(&p.l, int64(7))
 				}
 			}

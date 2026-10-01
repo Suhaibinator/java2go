@@ -34,7 +34,7 @@ func AsIterable[T any](value any) Iterable[T] {
 func CollectionIterationElements[T any](collection Iterable[T]) func(func(int, T) bool) {
 	return func(yield func(int, T) bool) {
 		ReferenceRequireNonNull(collection)
-		if list, ok := collection.(*List[T]); ok && list.array != nil {
+		if list, ok := collection.(*List[T]); ok && list.storageRoot().array != nil {
 			for index := int32(0); index < list.Size(); index++ {
 				if !yield(int(index), list.Get(index)) {
 					return

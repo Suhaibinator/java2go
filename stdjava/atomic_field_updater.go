@@ -10,7 +10,7 @@ import (
 // It must never be copied after first use. No lock surrounds a raw Go field.
 // A single synchronization order covers cells of every primitive/reference
 // type. Callbacks and Java object view resolution run outside this lock.
-type volatileFieldStamp struct{ used byte }
+type volatileFieldStamp struct{ _ byte }
 type VolatileFieldCell struct {
 	value any
 	stamp *volatileFieldStamp

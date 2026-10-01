@@ -182,20 +182,20 @@ func lowerSimpleArrayAssignmentCall(node *sitter.Node, source []byte, ctx Ctx) (
 	if node == nil || node.Type() != "assignment_expression" || node.ChildCount() < 3 {
 		return nil, false
 	}
-	lhsNode := node.Child(0)
-	operatorNode := node.Child(1)
-	rhsNode := node.Child(2)
+	lhsNode := node.ChildByFieldName("left")
+	operatorNode := node.ChildByFieldName("operator")
+	rhsNode := node.ChildByFieldName("right")
 	if lhsNode == nil || lhsNode.Type() != "array_access" || operatorNode == nil || operatorNode.Content(source) != "=" || rhsNode == nil {
 		return nil, false
 	}
 
 	arrayNode := lhsNode.ChildByFieldName("array")
 	indexNode := lhsNode.ChildByFieldName("index")
-	if arrayNode == nil && lhsNode.NamedChildCount() > 0 {
-		arrayNode = lhsNode.NamedChild(0)
+	if arrayNode == nil && nodeutil.SemanticNamedChildCount(lhsNode) > 0 {
+		arrayNode = nodeutil.SemanticNamedChild(lhsNode, 0)
 	}
-	if indexNode == nil && lhsNode.NamedChildCount() > 1 {
-		indexNode = lhsNode.NamedChild(1)
+	if indexNode == nil && nodeutil.SemanticNamedChildCount(lhsNode) > 1 {
+		indexNode = nodeutil.SemanticNamedChild(lhsNode, 1)
 	}
 	if arrayNode == nil || indexNode == nil {
 		return nil, false
@@ -352,9 +352,9 @@ func lowerSimpleLocalNumericCompoundAssignmentStmt(node *sitter.Node, source []b
 		return nil, false
 	}
 
-	lhsNode := node.Child(0)
-	opNode := node.Child(1)
-	rhsNode := node.Child(2)
+	lhsNode := node.ChildByFieldName("left")
+	opNode := node.ChildByFieldName("operator")
+	rhsNode := node.ChildByFieldName("right")
 	if lhsNode == nil || lhsNode.Type() != "identifier" || opNode == nil || rhsNode == nil {
 		return nil, false
 	}
@@ -449,27 +449,27 @@ func isSideEffectFreeCompoundAssignmentRHS(node *sitter.Node) bool {
 		"decimal_floating_point_literal", "hex_floating_point_literal", "character_literal":
 		return true
 	case "parenthesized_expression":
-		return node.NamedChildCount() == 1 && isSideEffectFreeCompoundAssignmentRHS(node.NamedChild(0))
+		return nodeutil.SemanticNamedChildCount(node) == 1 && isSideEffectFreeCompoundAssignmentRHS(nodeutil.SemanticNamedChild(node, 0))
 	case "unary_expression":
-		count := node.NamedChildCount()
-		return count > 0 && isSideEffectFreeCompoundAssignmentRHS(node.NamedChild(int(count)-1))
+		count := nodeutil.SemanticNamedChildCount(node)
+		return count > 0 && isSideEffectFreeCompoundAssignmentRHS(nodeutil.SemanticNamedChild(node, int(count)-1))
 	case "cast_expression":
-		return node.NamedChildCount() == 2 && isSideEffectFreeCompoundAssignmentRHS(node.NamedChild(1))
+		return nodeutil.SemanticNamedChildCount(node) == 2 && isSideEffectFreeCompoundAssignmentRHS(nodeutil.SemanticNamedChild(node, 1))
 	case "binary_expression":
 		return node.ChildCount() >= 3 &&
-			isSideEffectFreeCompoundAssignmentRHS(node.Child(0)) &&
-			isSideEffectFreeCompoundAssignmentRHS(node.Child(2))
+			isSideEffectFreeCompoundAssignmentRHS(node.ChildByFieldName("left")) &&
+			isSideEffectFreeCompoundAssignmentRHS(node.ChildByFieldName("right"))
 	case "field_access":
 		object := node.ChildByFieldName("object")
 		return object != nil && isSideEffectFreeCompoundAssignmentRHS(object)
 	case "array_access":
 		array := node.ChildByFieldName("array")
 		index := node.ChildByFieldName("index")
-		if array == nil && node.NamedChildCount() > 0 {
-			array = node.NamedChild(0)
+		if array == nil && nodeutil.SemanticNamedChildCount(node) > 0 {
+			array = nodeutil.SemanticNamedChild(node, 0)
 		}
-		if index == nil && node.NamedChildCount() > 1 {
-			index = node.NamedChild(1)
+		if index == nil && nodeutil.SemanticNamedChildCount(node) > 1 {
+			index = nodeutil.SemanticNamedChild(node, 1)
 		}
 		return isSideEffectFreeCompoundAssignmentRHS(array) && isSideEffectFreeCompoundAssignmentRHS(index)
 	default:
@@ -500,30 +500,25 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "local_variable_declaration":
 		return parseLocalVariableDeclaration(node, source, ctx)
 	case "variable_declarator":
-		var names, values []ast.Expr
-
-		// If there is only one node, then that node is just a name
-		if node.NamedChildCount() == 1 {
-			names = append(names, localBindingIdent(node.NamedChild(0), source, ctx))
+		nameNode := node.ChildByFieldName("name")
+		valueNode := node.ChildByFieldName("value")
+		if nameNode == nil {
+			return &ast.BadStmt{}
 		}
-
-		// Loop through every pair of name and value
-		for ind := 0; ind < int(node.NamedChildCount())-1; ind += 2 {
-			names = append(names, localBindingIdent(node.NamedChild(ind), source, ctx))
-			valueNode := node.NamedChild(ind + 1)
+		declaration := &ast.AssignStmt{Lhs: []ast.Expr{localBindingIdent(nameNode, source, ctx)}, Tok: token.DEFINE}
+		if valueNode != nil {
 			value := ParseExpr(valueNode, source, ctx)
 			if expectedType := strings.TrimSpace(ctx.expectedType); expectedType != "" && !isVarKeywordType(expectedType) {
 				value = coerceArgumentToExpectedType(value, valueNode, expectedType, ctx, source)
 			}
-			values = append(values, value)
+			declaration.Rhs = []ast.Expr{value}
 		}
-
-		return &ast.AssignStmt{Lhs: names, Tok: token.DEFINE, Rhs: values}
+		return declaration
 	case "assignment_expression":
 		if lowered, ok := lowerStaticFieldAssignment(node, source, ctx); ok {
 			return &ast.ExprStmt{X: lowered}
 		}
-		operator := node.Child(1).Content(source)
+		operator := node.ChildByFieldName("operator").Content(source)
 		// Compound assignment in Java is not just Go's corresponding assignment
 		// token: String += converts arbitrary operands, arithmetic narrows back to
 		// the target type, and the target is evaluated exactly once. Reuse the
@@ -539,8 +534,8 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			return &ast.ExprStmt{X: call}
 		}
 
-		lhsNode := node.Child(0)
-		rhsNode := node.Child(2)
+		lhsNode := node.ChildByFieldName("left")
+		rhsNode := node.ChildByFieldName("right")
 		assignVar := ParseExpr(lhsNode, source, ctx)
 		rhsCtx := ctx.Clone()
 		if lhsJavaType, ok := inferExprJavaType(lhsNode, ctx, source); ok {
@@ -558,11 +553,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			Rhs: []ast.Expr{assignVal},
 		}
 	case "update_expression":
-		var operandNode *sitter.Node
-		if node.Child(0).IsNamed() {
-			operandNode = node.Child(0)
-		} else {
-			operandNode = node.Child(1)
+		operandNode, operatorNode, _ := javaUpdateExpressionParts(node)
+		if operandNode == nil || operatorNode == nil {
+			return &ast.BadStmt{}
 		}
 		if _, ok := resolveStaticFieldAccess(operandNode, source, ctx); ok {
 			return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
@@ -572,19 +565,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
 			}
 		}
-		if node.Child(0).IsNamed() {
-			return &ast.IncDecStmt{
-				X:   ParseExpr(node.Child(0), source, ctx),
-				Tok: StrToToken(node.Child(1).Content(source)),
-			}
-		}
-
-		return &ast.IncDecStmt{
-			X:   ParseExpr(node.Child(1), source, ctx),
-			Tok: StrToToken(node.Child(0).Content(source)),
-		}
+		return &ast.IncDecStmt{X: ParseExpr(operandNode, source, ctx), Tok: StrToToken(operatorNode.Type())}
 	case "resource_specification":
-		return ParseStmt(node.NamedChild(0), source, ctx)
+		return ParseStmt(nodeutil.SemanticNamedChild(node, 0), source, ctx)
 	case "resource":
 		// Resource variables retain their declared Java type for overload and
 		// intrinsic dispatch inside the try body, just like ordinary locals.
@@ -600,29 +583,29 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			recordLocalVariableDefinition(ctx, nameNode.Content(source), originalType, parsedType)
 		}
 		var offset int
-		if node.NamedChild(0).Type() == "modifiers" {
+		if nodeutil.SemanticNamedChild(node, 0).Type() == "modifiers" {
 			offset = 1
 		}
 		return &ast.AssignStmt{
-			Lhs: []ast.Expr{ParseExpr(node.NamedChild(1+offset), source, ctx)},
+			Lhs: []ast.Expr{ParseExpr(nodeutil.SemanticNamedChild(node, 1+offset), source, ctx)},
 			Tok: token.DEFINE,
-			Rhs: []ast.Expr{ParseExpr(node.NamedChild(2+offset), source, ctx)},
+			Rhs: []ast.Expr{ParseExpr(nodeutil.SemanticNamedChild(node, 2+offset), source, ctx)},
 		}
 	case "method_invocation":
 		return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
 	case "constructor_body", "block":
 		return parseStatementBlock(node, nil, source, ctx)
 	case "expression_statement":
-		if stmt := TryParseStmt(node.NamedChild(0), source, ctx); stmt != nil {
+		if stmt := TryParseStmt(nodeutil.SemanticNamedChild(node, 0), source, ctx); stmt != nil {
 			return stmt
 		}
-		return &ast.ExprStmt{X: ParseExpr(node.NamedChild(0), source, ctx)}
+		return &ast.ExprStmt{X: ParseExpr(nodeutil.SemanticNamedChild(node, 0), source, ctx)}
 	case "explicit_constructor_invocation":
 		// This is when a constructor calls another constructor with the use of
 		// something such as `this(args...)`
 		argsNode := node.ChildByFieldName("arguments")
-		if argsNode == nil && node.NamedChildCount() > 1 {
-			argsNode = node.NamedChild(1)
+		if argsNode == nil && nodeutil.SemanticNamedChildCount(node) > 1 {
+			argsNode = nodeutil.SemanticNamedChild(node, 1)
 		}
 		var args []ast.Expr
 		if argsNode != nil {
@@ -630,8 +613,8 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 
 		constructorNode := node.ChildByFieldName("constructor")
-		if constructorNode == nil && node.NamedChildCount() > 0 {
-			constructorNode = node.NamedChild(0)
+		if constructorNode == nil && nodeutil.SemanticNamedChildCount(node) > 0 {
+			constructorNode = nodeutil.SemanticNamedChild(node, 0)
 		}
 		if constructorNode != nil && constructorNode.Type() == "super" && ctx.currentClass != nil {
 			if statement := characterIOSuperConstructor(args, ctx); statement != nil {
@@ -717,16 +700,16 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "return_statement":
 		if ctx.tryReturnTarget != nil {
 			stmts := []ast.Stmt{}
-			if ctx.tryReturnTarget.HasValue && node.NamedChildCount() > 0 {
+			if ctx.tryReturnTarget.HasValue && nodeutil.SemanticNamedChildCount(node) > 0 {
 				returnCtx := ctx.Clone()
 				if ctx.localScope != nil && strings.TrimSpace(ctx.localScope.OriginalType) != "" {
 					returnCtx.expectedType = ctx.localScope.OriginalType
-					returnCtx.expectedTypeRoot = node.NamedChild(0)
+					returnCtx.expectedTypeRoot = nodeutil.SemanticNamedChild(node, 0)
 				}
 				stmts = append(stmts, &ast.AssignStmt{
 					Lhs: []ast.Expr{&ast.Ident{Name: ctx.tryReturnTarget.ValueName}},
 					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{parseReturnValue(node.NamedChild(0), source, returnCtx)},
+					Rhs: []ast.Expr{parseReturnValue(nodeutil.SemanticNamedChild(node, 0), source, returnCtx)},
 				})
 			}
 			// A return in a finally block supersedes any break/continue that was
@@ -748,15 +731,15 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			return &ast.BlockStmt{List: stmts}
 		}
 
-		if node.NamedChildCount() < 1 {
+		if nodeutil.SemanticNamedChildCount(node) < 1 {
 			return replayedMethodReturnStmt(ctx, false, "")
 		}
 		returnCtx := ctx.Clone()
 		if ctx.localScope != nil && strings.TrimSpace(ctx.localScope.OriginalType) != "" {
 			returnCtx.expectedType = ctx.localScope.OriginalType
-			returnCtx.expectedTypeRoot = node.NamedChild(0)
+			returnCtx.expectedTypeRoot = nodeutil.SemanticNamedChild(node, 0)
 		}
-		return &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(node.NamedChild(0), source, returnCtx)}}
+		return &ast.ReturnStmt{Results: []ast.Expr{parseReturnValue(nodeutil.SemanticNamedChild(node, 0), source, returnCtx)}}
 	case "labeled_statement":
 		return lowerLabeledStatement(node, source, ctx)
 	case "break_statement":
@@ -766,7 +749,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	case "throw_statement":
 		return &ast.ExprStmt{X: &ast.CallExpr{
 			Fun:  &ast.Ident{Name: "panic"},
-			Args: []ast.Expr{ParseExpr(node.NamedChild(0), source, ctx)},
+			Args: []ast.Expr{ParseExpr(nodeutil.SemanticNamedChild(node, 0), source, ctx)},
 		}}
 	case "if_statement":
 		if instanceofPatternNode(node.ChildByFieldName("condition")) == nil && patternConditionHasBindings(node.ChildByFieldName("condition"), source) {
@@ -828,7 +811,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		// then the expression that is being ranged over
 		// and finally, the block of the expression
 
-		total := int(node.NamedChildCount())
+		total := int(nodeutil.SemanticNamedChildCount(node))
 		typeNode := node.ChildByFieldName("type")
 		nameNode := node.ChildByFieldName("name")
 		valueNode := node.ChildByFieldName("value")
@@ -836,13 +819,13 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 
 		// Fallback for grammars that don't provide named fields.
 		if nameNode == nil && total >= 3 {
-			nameNode = node.NamedChild(total - 3)
+			nameNode = nodeutil.SemanticNamedChild(node, total-3)
 		}
 		if valueNode == nil && total >= 2 {
-			valueNode = node.NamedChild(total - 2)
+			valueNode = nodeutil.SemanticNamedChild(node, total-2)
 		}
 		if bodyNode == nil && total >= 1 {
-			bodyNode = node.NamedChild(total - 1)
+			bodyNode = nodeutil.SemanticNamedChild(node, total-1)
 		}
 
 		loopCtx := ctx.Clone()
@@ -1046,8 +1029,8 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			return readLineLoop
 		}
 		return &ast.ForStmt{
-			Cond: parseJavaBooleanExpr(node.NamedChild(0), source, ctx),
-			Body: parseLoopBody(node.NamedChild(1), source, ctx),
+			Cond: parseJavaBooleanExpr(node.ChildByFieldName("condition"), source, ctx),
+			Body: parseLoopBody(node.ChildByFieldName("body"), source, ctx),
 		}
 	case "do_statement":
 		// Java continue in a do-while evaluates the condition before deciding
@@ -1064,13 +1047,13 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if key, ok := javaControlKey(node); ok {
 			doCtx.doWhileContinueTargets[key] = continueTarget
 		}
-		body := parseLoopBody(node.NamedChild(0), source, doCtx)
+		body := parseLoopBody(node.ChildByFieldName("body"), source, doCtx)
 
 		conditionGuard := &ast.IfStmt{
 			Cond: &ast.UnaryExpr{
 				Op: token.NOT,
 				X: &ast.ParenExpr{
-					X: parseJavaBooleanExpr(node.NamedChild(1), source, ctx),
+					X: parseJavaBooleanExpr(node.ChildByFieldName("condition"), source, ctx),
 				},
 			},
 			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.BranchStmt{Tok: token.BREAK}}},
@@ -1125,8 +1108,8 @@ func lowerBufferedReaderReadLineWhile(node *sitter.Node, source []byte, ctx Ctx)
 }
 
 func unwrapParenthesizedExpressionNode(node *sitter.Node) *sitter.Node {
-	for node != nil && node.Type() == "parenthesized_expression" && node.NamedChildCount() > 0 {
-		node = node.NamedChild(0)
+	for node != nil && node.Type() == "parenthesized_expression" && nodeutil.SemanticNamedChildCount(node) > 0 {
+		node = nodeutil.SemanticNamedChild(node, 0)
 	}
 	return node
 }
@@ -1256,7 +1239,7 @@ func javaIdentifierIsRead(node *sitter.Node, source []byte) bool {
 	}
 	switch parent.Type() {
 	case "variable_declarator", "formal_parameter", "spread_parameter", "catch_formal_parameter":
-		if sameNode(parent.ChildByFieldName("name")) || (parent.Type() == "variable_declarator" && sameNode(parent.NamedChild(0))) {
+		if sameNode(parent.ChildByFieldName("name")) || (parent.Type() == "variable_declarator" && sameNode(nodeutil.SemanticNamedChild(parent, 0))) {
 			return false
 		}
 	case "enhanced_for_statement":
@@ -1264,7 +1247,7 @@ func javaIdentifierIsRead(node *sitter.Node, source []byte) bool {
 			return false
 		}
 	case "assignment_expression":
-		if sameNode(parent.Child(0)) && parent.Child(1) != nil && parent.Child(1).Content(source) == "=" {
+		if sameNode(parent.ChildByFieldName("left")) && parent.ChildByFieldName("operator") != nil && parent.ChildByFieldName("operator").Content(source) == "=" {
 			return false
 		}
 	case "field_access":
@@ -1352,8 +1335,8 @@ func instanceofPatternNode(condNode *sitter.Node) *sitter.Node {
 		return nil
 	}
 	// Unwrap a parenthesized condition.
-	for condNode.Type() == "parenthesized_expression" && condNode.NamedChildCount() > 0 {
-		condNode = condNode.NamedChild(0)
+	for condNode.Type() == "parenthesized_expression" && nodeutil.SemanticNamedChildCount(condNode) > 0 {
+		condNode = nodeutil.SemanticNamedChild(condNode, 0)
 	}
 	if condNode.Type() == "instanceof_expression" && condNode.ChildByFieldName("name") != nil {
 		return condNode
@@ -1441,7 +1424,7 @@ func parseArrowSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.Block
 func splitSwitchRule(rule *sitter.Node, source []byte, ctx Ctx) (caseExprs []ast.Expr, isDefault bool, bodyNodes []*sitter.Node) {
 	for _, child := range nodeutil.NamedChildrenOf(rule) {
 		if child.Type() == "switch_label" {
-			if child.NamedChildCount() == 0 {
+			if nodeutil.SemanticNamedChildCount(child) == 0 {
 				isDefault = true
 			} else {
 				for _, labelExpr := range nodeutil.NamedChildrenOf(child) {
@@ -1461,11 +1444,11 @@ func splitSwitchRule(rule *sitter.Node, source []byte, ctx Ctx) (caseExprs []ast
 func splitSwitchGroup(group *sitter.Node, source []byte, ctx Ctx) (caseExprs []ast.Expr, isDefault bool, bodyNodes []*sitter.Node) {
 	for _, child := range nodeutil.NamedChildrenOf(group) {
 		if child.Type() == "switch_label" {
-			if child.NamedChildCount() == 0 {
+			if nodeutil.SemanticNamedChildCount(child) == 0 {
 				// A `default` label has no child expression.
 				isDefault = true
 			} else {
-				caseExprs = append(caseExprs, ParseExpr(child.NamedChild(0), source, ctx))
+				caseExprs = append(caseExprs, ParseExpr(nodeutil.SemanticNamedChild(child, 0), source, ctx))
 			}
 			continue
 		}
@@ -1482,7 +1465,7 @@ func parseSwitchGroupBody(bodyNodes []*sitter.Node, source []byte, ctx Ctx) (bod
 		if stmtNode.Type() == "break_statement" {
 			// A plain `break` ends the case in Java; Go does this implicitly. A
 			// labeled break is rare in switches and is preserved as-is.
-			if stmtNode.NamedChildCount() == 0 {
+			if nodeutil.SemanticNamedChildCount(stmtNode) == 0 {
 				terminatedByBreak = true
 				continue
 			}
@@ -1566,10 +1549,10 @@ func lowerJavaControlTransferStmt(tok token.Token, label string, javaTarget *sit
 
 func activeDoWhileContinueTarget(javaTarget *sitter.Node, ctx Ctx) *doWhileContinueTarget {
 	for javaTarget != nil && javaTarget.Type() == "labeled_statement" {
-		if javaTarget.NamedChildCount() < 2 {
+		if nodeutil.SemanticNamedChildCount(javaTarget) < 2 {
 			return nil
 		}
-		javaTarget = javaTarget.NamedChild(1)
+		javaTarget = nodeutil.SemanticNamedChild(javaTarget, 1)
 	}
 	if javaTarget == nil || javaTarget.Type() != "do_statement" {
 		return nil

@@ -122,7 +122,7 @@ func TestRawCompilationUnitNamesDoNotClassifyContent(t *testing.T) {
 func TestRawCompilationUnitExplicitDiagnosticsBeforeWrites(t *testing.T) {
 	for _, test := range []struct{ directory, message string }{
 		{"module", "module_declaration"}, {"module_other_name", "module_declaration"},
-		{"empty", "empty Java compilation unit"}, {"invalid", "Java parse error"},
+		{"empty", "empty Java compilation unit"}, {"invalid", "java parse error"},
 		{"import_only", "no type or package declaration"},
 	} {
 		t.Run(test.directory, func(t *testing.T) {

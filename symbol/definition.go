@@ -29,6 +29,9 @@ type Definition struct {
 	TypeParameters []TypeParam
 	// Whether this definition is static (applies to methods/fields)
 	IsStatic bool
+	// IsVariadic records a variable-arity platform signature without a source
+	// AST. Its final formal stores the element type, just as source declarations.
+	IsVariadic bool
 	// IsFinal preserves Java's final modifier for classes, methods, and fields.
 	// Optimizations may rely on it only together with the relevant Java dispatch
 	// and mutation rules; it is metadata, not permission to drop checks by itself.

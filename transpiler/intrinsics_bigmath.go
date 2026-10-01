@@ -34,6 +34,12 @@ func bigMathExpectedArgumentTypes(owner, method string, count int) ([]string, bo
 		if owner == "BigInteger" && method == "valueOf" {
 			return []string{"long"}, true
 		}
+		if owner == "BigInteger" {
+			switch method {
+			case "add", "subtract", "multiply", "divide", "mod":
+				return []string{"java.math.BigInteger"}, true
+			}
+		}
 	case "Float":
 		if method == "floatToRawIntBits" || method == "floatToIntBits" {
 			return []string{"float"}, true
@@ -86,6 +92,14 @@ func init() {
 		return stdjavaCall(ctx, "BigIntegerValueOf", args...)
 	})
 	registerStaticIntrinsicResultType("BigInteger", "valueOf", "java.math.BigInteger")
+	for _, method := range []struct{ java, goName string }{
+		{"add", "Add"}, {"subtract", "Subtract"}, {"multiply", "Multiply"}, {"divide", "Divide"}, {"mod", "Mod"},
+	} {
+		registerInstanceIntrinsic("BigInteger", method.java, ioMethod(method.goName, 1))
+		registerInstanceIntrinsicResultType("BigInteger", method.java, "java.math.BigInteger")
+	}
+	registerInstanceIntrinsic("BigInteger", "bitLength", ioMethod("BitLength", 0))
+	registerInstanceIntrinsicResultType("BigInteger", "bitLength", "int")
 	registerInstanceIntrinsic("BigDecimal", "scale", ioMethod("Scale", 0))
 	registerInstanceIntrinsicResultType("BigDecimal", "scale", "int")
 	for _, method := range []struct{ owner, java, goName, result string }{

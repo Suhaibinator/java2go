@@ -291,6 +291,9 @@ func executionParameterTypeExpr(def *symbol.Definition, index int, javaType stri
 }
 
 func executionParameterIsVariadic(def *symbol.Definition, index int) bool {
+	if def != nil && def.IsVariadic && index >= 0 && index == len(def.Parameters)-1 {
+		return true
+	}
 	if def == nil || def.DeclarationNode == nil {
 		return false
 	}

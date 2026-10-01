@@ -8,8 +8,8 @@ import (
 const updaterOwner TypeID = "updater.fixture.Owner"
 
 type updaterTarget struct {
-	i, l, r, ordinary, shadow VolatileFieldCell
-	info                      *ObjectInfo
+	i, l, r, shadow VolatileFieldCell
+	info            *ObjectInfo
 }
 
 func (v *updaterTarget) JavaDynamicTypeID() TypeID {

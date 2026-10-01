@@ -461,7 +461,7 @@ func affineArrayArgumentsSafe(argsNode *sitter.Node, source []byte, ctx Ctx) boo
 	if argsNode == nil {
 		return true
 	}
-	for _, argument := range nodeutil.NamedChildrenOf(argsNode) {
+	for _, argument := range nodeutil.SemanticNamedChildrenOf(argsNode) {
 		if !affineArrayArgumentSafe(argument, source, ctx) {
 			return false
 		}

@@ -204,7 +204,7 @@ func resolveStaticImportedMethod(invocation *sitter.Node, ctx Ctx, source []byte
 	}
 	var argNodes []*sitter.Node
 	if args := invocation.ChildByFieldName("arguments"); args != nil {
-		argNodes = nodeutil.NamedChildrenOf(args)
+		argNodes = nodeutil.SemanticNamedChildrenOf(args)
 	}
 	type candidate struct {
 		resolution *methodResolution

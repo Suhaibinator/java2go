@@ -285,7 +285,7 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 
 			var args []*sitter.Node
 			if argsNode := node.ChildByFieldName("arguments"); argsNode != nil {
-				args = nodeutil.NamedChildrenOf(argsNode)
+				args = nodeutil.SemanticNamedChildrenOf(argsNode)
 			}
 
 			scope.EnumConstants = append(scope.EnumConstants, EnumConstant{
@@ -513,7 +513,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		var annotationParameters []*sitter.Node
 		if parameters := node.ChildByFieldName("parameters"); parameters != nil {
-			annotationParameters = nodeutil.NamedChildrenOf(parameters)
+			annotationParameters = nodeutil.SemanticNamedChildrenOf(parameters)
 		}
 		for _, parameter := range annotationParameters {
 
@@ -589,7 +589,7 @@ func injectRecordMembers(scope *ClassScope, root *sitter.Node, source []byte) {
 		goType   string
 	}
 	var components []component
-	for _, param := range nodeutil.NamedChildrenOf(paramsNode) {
+	for _, param := range nodeutil.SemanticNamedChildrenOf(paramsNode) {
 		if param.Type() != "formal_parameter" {
 			continue
 		}
@@ -770,21 +770,11 @@ func parseScope(root *sitter.Node, source []byte, typeParams []TypeParam) *Defin
 			typeStr := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, typeParamNames))
 			originalType := typeNode.Content(source)
 
-			if declarator.NamedChildCount() == 1 {
-				nameNode := declarator.NamedChild(0)
-				def.Children = append(def.Children, &Definition{
-					OriginalName:          nameNode.Content(source),
-					Name:                  nameNode.Content(source),
-					OriginalType:          originalType,
-					DirectTypeParameter:   DirectTypeParamForJavaType(originalType, typeParams),
-					TypeParameterBindings: typeParamBindings,
-					Type:                  typeStr,
-				})
-				continue
-			}
-
-			for ind := 0; ind < int(declarator.NamedChildCount())-1; ind += 2 {
-				nameNode := declarator.NamedChild(ind)
+			for _, declarator := range nodeutil.VariableDeclarators(node) {
+				nameNode := declarator.ChildByFieldName("name")
+				if nameNode == nil {
+					continue
+				}
 				def.Children = append(def.Children, &Definition{
 					OriginalName:          nameNode.Content(source),
 					Name:                  nameNode.Content(source),

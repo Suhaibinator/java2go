@@ -94,16 +94,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		//
 		// A post expression has the operand first (`i++`); a pre expression has the
 		// operator first (`++i`).
-		var operandNode *sitter.Node
-		var post bool
-		if node.Child(0).IsNamed() {
-			operandNode = node.Child(0)
-			post = true
-		} else {
-			operandNode = node.Child(1)
+		operandNode, operatorNode, post := javaUpdateExpressionParts(node)
+		if operandNode == nil || operatorNode == nil {
+			return &ast.BadExpr{}
 		}
-
-		increment := strings.Contains(node.Content(source), "++")
+		increment := operatorNode.Type() == "++"
 		if lowered, ok := lowerBoxedUpdateExpression(node, operandNode, post, increment, source, ctx); ok {
 			return lowered
 		}
@@ -171,7 +166,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		paramNode := node.ChildByFieldName("parameters")
 		paramCount := 0
 		if paramNode != nil {
-			paramCount = int(paramNode.NamedChildCount())
+			paramCount = nodeutil.SemanticNamedChildCount(paramNode)
 			if paramNode.Type() != "inferred_parameters" && paramNode.Type() != "formal_parameters" {
 				paramCount = 1
 			}
@@ -193,7 +188,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			lambdaParameters = ParseNode(paramNode, source, lambdaCtx).(*ast.FieldList)
 		case "inferred_parameters":
 			lambdaParameters = &ast.FieldList{}
-			for ind, param := range nodeutil.NamedChildrenOf(paramNode) {
+			for ind, param := range nodeutil.SemanticNamedChildrenOf(paramNode) {
 				paramType := ast.Expr(&ast.Ident{Name: "any"})
 				if ind < len(inferredParamTypes) && inferredParamTypes[ind] != nil {
 					paramType = inferredParamTypes[ind]
@@ -287,8 +282,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		samType, samExecutionName := executionAwareSAMFuncType(node, samMethod, samBindings, source, ctx)
 
 		// For class constructors such as `Class::new`, you only get one node.
-		if node.NamedChildCount() < 2 {
-			targetNode := node.NamedChild(0)
+		if nodeutil.SemanticNamedChildCount(node) < 2 {
+			targetNode := nodeutil.SemanticNamedChild(node, 0)
 			if targetNode != nil && samMethod != nil {
 				if targetScope := resolveClassScopeByQualifiedName(ctx, targetNode.Content(source)); targetScope != nil && targetScope.Class != nil {
 					constructorName := constructorFuncName(targetScope)
@@ -323,8 +318,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			return constructorRef
 		}
 
-		targetNode := node.NamedChild(0)
-		methodName := node.NamedChild(int(node.NamedChildCount()) - 1).Content(source)
+		targetNode := nodeutil.SemanticNamedChild(node, 0)
+		methodName := nodeutil.SemanticNamedChild(node, nodeutil.SemanticNamedChildCount(node)-1).Content(source)
 		methodReferenceExecutionAware := false
 		parameterTypes, _ := methodReferenceJavaSignature(ctx)
 
@@ -365,7 +360,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
-		methodExpr := ast.Expr(&ast.SelectorExpr{X: ParseExpr(targetNode, source, ctx), Sel: identFromNode(node.NamedChild(int(node.NamedChildCount())-1), source)})
+		methodExpr := ast.Expr(&ast.SelectorExpr{X: ParseExpr(targetNode, source, ctx), Sel: identFromNode(nodeutil.SemanticNamedChild(node, nodeutil.SemanticNamedChildCount(node)-1), source)})
 		if samMethod != nil && samType != nil {
 			if target := resolveInvocationTarget(targetNode, ctx, source); target != nil && target.classScope != nil {
 				if resolution, selectedTarget := findInstanceMethodForInvocationTarget(target, methodName, len(samMethod.Parameters), ctx); resolution != nil && resolution.def != nil {
@@ -423,7 +418,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		} else if primitiveArray {
 			expectedElementType = primitiveComponent
 		}
-		itemNodes := nodeutil.NamedChildrenOf(node)
+		itemNodes := nodeutil.SemanticNamedChildrenOf(node)
 		laterItemEffects := javaLaterExpressionEffects(itemNodes, source, ctx)
 		for itemIndex, c := range itemNodes {
 			itemCtx := ctx.Clone()
@@ -497,7 +492,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				// floating-point values retain their Java spellings; chars need their
 				// static type here because Go represents both char and int as int32.
 				if argListNode != nil {
-					for ind, argNode := range nodeutil.NamedChildrenOf(argListNode) {
+					for ind, argNode := range nodeutil.SemanticNamedChildrenOf(argListNode) {
 						if ind < len(args) {
 							args[ind] = javaStringConversionExpr(argNode, args[ind], ctx, source)
 						}
@@ -518,7 +513,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if objectNode != nil && objectNode.Type() == "super" && methodName == "toString" && ctx.currentClass != nil {
 				parent := strings.TrimSpace(ctx.currentClass.Superclass)
 				args := node.ChildByFieldName("arguments")
-				if (parent == "" || parent == "java.lang.Object" || (parent == "Object" && resolveClassScopeByQualifiedName(ctx, parent) == nil)) && (args == nil || args.NamedChildCount() == 0) {
+				if (parent == "" || parent == "java.lang.Object" || (parent == "Object" && resolveClassScopeByQualifiedName(ctx, parent) == nil)) && (args == nil || nodeutil.SemanticNamedChildCount(args) == 0) {
 					return stdjavaCall(ctx, "ObjectDefaultJavaStringExecution", intrinsicExecutionExpr(ctx), &ast.Ident{Name: ShortName(ctx.className)})
 				}
 			}
@@ -537,7 +532,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			argListNode := node.ChildByFieldName("arguments")
 			argCount := 0
 			if argListNode != nil {
-				argCount = int(argListNode.NamedChildCount())
+				argCount = nodeutil.SemanticNamedChildCount(argListNode)
 			}
 
 			// Throwable.getCause()/getMessage()/getSuppressed()/printStackTrace() on a caught exception are
@@ -590,7 +585,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 						name = "ValueOf"
 					}
 					args := []ast.Expr{intrinsicExecutionExpr(ctx)}
-					for _, argument := range nodeutil.NamedChildrenOf(argListNode) {
+					for _, argument := range nodeutil.SemanticNamedChildrenOf(argListNode) {
 						args = append(args, ParseExpr(argument, source, ctx))
 					}
 					return &ast.CallExpr{
@@ -778,7 +773,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		argListNode := node.ChildByFieldName("arguments")
 		argCount := 0
 		if argListNode != nil {
-			argCount = int(argListNode.NamedChildCount())
+			argCount = nodeutil.SemanticNamedChildCount(argListNode)
 		}
 		var expectedArgTypes []string
 		implicitInstanceResolution := (*methodResolution)(nil)
@@ -1377,12 +1372,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		return GenMultiDimArray(elementType, dimensions, arrayDimensions, ctx)
 	case "instanceof_expression":
 		left := node.ChildByFieldName("left")
-		if left == nil && node.NamedChildCount() > 0 {
-			left = node.NamedChild(0)
+		if left == nil && nodeutil.SemanticNamedChildCount(node) > 0 {
+			left = nodeutil.SemanticNamedChild(node, 0)
 		}
 		right := node.ChildByFieldName("right")
-		if right == nil && node.NamedChildCount() > 1 {
-			right = node.NamedChild(1)
+		if right == nil && nodeutil.SemanticNamedChildCount(node) > 1 {
+			right = nodeutil.SemanticNamedChild(node, 1)
 		}
 		if left == nil || right == nil {
 			return &ast.BadExpr{}
@@ -1436,7 +1431,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			},
 		}
 	case "dimensions_expr":
-		return parseJavaIndexExpr(node.NamedChild(0), source, ctx)
+		return parseJavaIndexExpr(nodeutil.SemanticNamedChild(node, 0), source, ctx)
 	case "binary_expression":
 		operator := node.ChildByFieldName("operator").Content(source)
 		if (operator == "&&" || operator == "||") && patternConditionHasBindings(node, source) {
@@ -1595,8 +1590,8 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		if literal := javaIntegralUnaryLiteral(node, source); literal != nil {
 			return literal
 		}
-		operator := node.Child(0).Content(source)
-		operandNode := node.Child(1)
+		operator := node.ChildByFieldName("operator").Content(source)
+		operandNode := node.ChildByFieldName("operand")
 		operand := ParseExpr(operandNode, source, ctx)
 		switch operator {
 		case "+", "-", "~":
@@ -1630,13 +1625,13 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 	case "parenthesized_expression":
 		return &ast.ParenExpr{
-			X: ParseExpr(node.NamedChild(0), source, ctx),
+			X: ParseExpr(nodeutil.SemanticNamedChild(node, 0), source, ctx),
 		}
 	case "ternary_expression":
 		return buildTernaryExpressionIIFE(node, source, ctx)
 	case "cast_expression":
-		targetJavaType := node.NamedChild(0).Content(source)
-		valueNode := node.NamedChild(1)
+		targetJavaType := node.ChildByFieldName("type").Content(source)
+		valueNode := node.ChildByFieldName("value")
 		if isBuiltinJavaString(targetJavaType, ctx) && isStaticallyNullReference(valueNode) {
 			return javaStringNullExpr(ctx)
 		}
@@ -1827,11 +1822,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "array_access":
 		arrayNode := node.ChildByFieldName("array")
 		indexNode := node.ChildByFieldName("index")
-		if arrayNode == nil && node.NamedChildCount() > 0 {
-			arrayNode = node.NamedChild(0)
+		if arrayNode == nil && nodeutil.SemanticNamedChildCount(node) > 0 {
+			arrayNode = nodeutil.SemanticNamedChild(node, 0)
 		}
-		if indexNode == nil && node.NamedChildCount() > 1 {
-			indexNode = node.NamedChild(1)
+		if indexNode == nil && nodeutil.SemanticNamedChildCount(node) > 1 {
+			indexNode = nodeutil.SemanticNamedChild(node, 1)
 		}
 		if arrayNode != nil && indexNode != nil {
 			if _, componentType, componentID, reified := expressionUsesReifiedReferenceArray(arrayNode, ctx, source); reified {
@@ -1852,14 +1847,14 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 		return &ast.IndexExpr{
-			X: ParseExpr(node.NamedChild(0), source, ctx),
+			X: ParseExpr(nodeutil.SemanticNamedChild(node, 0), source, ctx),
 			// Java index expressions are int32 now that int locals are pinned, but
 			// Go requires an `int` index, so coerce. Plain integer literals are
 			// untyped constants and need no cast.
-			Index: goIndexExpr(node.NamedChild(1), source, ctx),
+			Index: goIndexExpr(nodeutil.SemanticNamedChild(node, 1), source, ctx),
 		}
 	case "scoped_identifier":
-		return ParseExpr(node.NamedChild(0), source, ctx)
+		return ParseExpr(nodeutil.SemanticNamedChild(node, 0), source, ctx)
 	case "this":
 		return &ast.Ident{Name: ShortName(ctx.className)}
 	case "identifier":
@@ -2032,7 +2027,7 @@ func ternaryExpressionParts(node *sitter.Node) (condition, consequence, alternat
 	if condition != nil && consequence != nil && alternative != nil {
 		return condition, consequence, alternative
 	}
-	children := nodeutil.NamedChildrenOf(node)
+	children := nodeutil.SemanticNamedChildrenOf(node)
 	if len(children) == 3 {
 		return children[0], children[1], children[2]
 	}
@@ -2080,8 +2075,8 @@ func expressionCanProduceNull(node *sitter.Node) bool {
 	if node.Type() == "null_literal" {
 		return true
 	}
-	if node.Type() == "cast_expression" && node.NamedChildCount() > 1 {
-		return expressionCanProduceNull(node.NamedChild(1))
+	if node.Type() == "cast_expression" && nodeutil.SemanticNamedChildCount(node) > 1 {
+		return expressionCanProduceNull(nodeutil.SemanticNamedChild(node, 1))
 	}
 	if node.Type() != "ternary_expression" {
 		return false
@@ -2098,8 +2093,8 @@ func expressionAlwaysProducesNull(node *sitter.Node) bool {
 	if node.Type() == "null_literal" {
 		return true
 	}
-	if node.Type() == "cast_expression" && node.NamedChildCount() > 1 {
-		return expressionAlwaysProducesNull(node.NamedChild(1))
+	if node.Type() == "cast_expression" && nodeutil.SemanticNamedChildCount(node) > 1 {
+		return expressionAlwaysProducesNull(nodeutil.SemanticNamedChild(node, 1))
 	}
 	if node.Type() != "ternary_expression" {
 		return false
@@ -2120,7 +2115,7 @@ func isStaticallyNullReference(node *sitter.Node) bool {
 	if node.Type() == "null_literal" {
 		return true
 	}
-	return node.Type() == "cast_expression" && node.NamedChildCount() > 1 && isStaticallyNullReference(node.NamedChild(1))
+	return node.Type() == "cast_expression" && nodeutil.SemanticNamedChildCount(node) > 1 && isStaticallyNullReference(nodeutil.SemanticNamedChild(node, 1))
 }
 
 // expressionUsesNullableValueStorage tracks interface-backed nullable locals
@@ -2501,13 +2496,13 @@ func javaIntConstantExpression(node *sitter.Node, source []byte) (int64, bool) {
 	if node == nil {
 		return 0, false
 	}
-	if node.Type() == "unary_expression" && node.NamedChildCount() > 0 {
-		value, ok := javaIntConstantExpression(node.NamedChild(int(node.NamedChildCount())-1), source)
+	if node.Type() == "unary_expression" && nodeutil.SemanticNamedChildCount(node) > 0 {
+		value, ok := javaIntConstantExpression(nodeutil.SemanticNamedChild(node, nodeutil.SemanticNamedChildCount(node)-1), source)
 		if !ok {
 			return 0, false
 		}
 		intValue := int32(value)
-		switch node.Child(0).Content(source) {
+		switch node.ChildByFieldName("operator").Content(source) {
 		case "-":
 			return int64(-intValue), true
 		case "+":
@@ -2519,14 +2514,14 @@ func javaIntConstantExpression(node *sitter.Node, source []byte) (int64, bool) {
 		}
 	}
 	if node.Type() == "binary_expression" && node.ChildCount() >= 3 {
-		left, leftOK := javaIntConstantExpression(node.Child(0), source)
-		right, rightOK := javaIntConstantExpression(node.Child(2), source)
+		left, leftOK := javaIntConstantExpression(node.ChildByFieldName("left"), source)
+		right, rightOK := javaIntConstantExpression(node.ChildByFieldName("right"), source)
 		if !leftOK || !rightOK {
 			return 0, false
 		}
 		a, b := int32(left), int32(right)
 		var result int32
-		switch node.Child(1).Content(source) {
+		switch node.ChildByFieldName("operator").Content(source) {
 		case "+":
 			result = a + b
 		case "-":
@@ -2715,17 +2710,17 @@ func lowerReferenceArrayCompoundAssignment(node *sitter.Node, lhsJavaType, opera
 	if node == nil || node.ChildCount() < 3 || operator == "=" {
 		return nil, false
 	}
-	lhsNode, rhsNode := node.Child(0), node.Child(2)
+	lhsNode, rhsNode := node.ChildByFieldName("left"), node.ChildByFieldName("right")
 	if lhsNode == nil || lhsNode.Type() != "array_access" || rhsNode == nil {
 		return nil, false
 	}
 	arrayNode := lhsNode.ChildByFieldName("array")
 	indexNode := lhsNode.ChildByFieldName("index")
-	if arrayNode == nil && lhsNode.NamedChildCount() > 0 {
-		arrayNode = lhsNode.NamedChild(0)
+	if arrayNode == nil && nodeutil.SemanticNamedChildCount(lhsNode) > 0 {
+		arrayNode = nodeutil.SemanticNamedChild(lhsNode, 0)
 	}
-	if indexNode == nil && lhsNode.NamedChildCount() > 1 {
-		indexNode = lhsNode.NamedChild(1)
+	if indexNode == nil && nodeutil.SemanticNamedChildCount(lhsNode) > 1 {
+		indexNode = nodeutil.SemanticNamedChild(lhsNode, 1)
 	}
 	if arrayNode == nil || indexNode == nil {
 		return nil, false
@@ -2879,9 +2874,9 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 		return &ast.BadExpr{}
 	}
 
-	lhsNode := node.Child(0)
-	opNode := node.Child(1)
-	rhsNode := node.Child(2)
+	lhsNode := node.ChildByFieldName("left")
+	opNode := node.ChildByFieldName("operator")
+	rhsNode := node.ChildByFieldName("right")
 	if lhsNode == nil || opNode == nil || rhsNode == nil {
 		return &ast.BadExpr{}
 	}
@@ -3384,11 +3379,11 @@ func resolveObjectCreationTargetScope(
 	ctx Ctx,
 ) *symbol.ClassScope {
 	fallback := resolveClassScopeByQualifiedName(ctx, className)
-	if node == nil || objectType == nil || node.NamedChildCount() == 0 {
+	if node == nil || objectType == nil || nodeutil.SemanticNamedChildCount(node) == 0 {
 		return fallback
 	}
 
-	qualifierNode := node.NamedChild(0)
+	qualifierNode := nodeutil.SemanticNamedChild(node, 0)
 	if qualifierNode == nil || qualifierNode.StartByte() == objectType.StartByte() {
 		return fallback
 	}
@@ -3435,8 +3430,8 @@ func resolveObjectCreationEnclosingView(
 	}
 	desired := targetScope.Enclosing
 
-	if node != nil && node.NamedChildCount() > 0 {
-		first := node.NamedChild(0)
+	if node != nil && nodeutil.SemanticNamedChildCount(node) > 0 {
+		first := nodeutil.SemanticNamedChild(node, 0)
 		// A leading named child that is not the type node is the explicit
 		// qualifier in `qualifier.new Inner()`.
 		if first != nil && objectType != nil && first.StartByte() != objectType.StartByte() {
@@ -3940,7 +3935,7 @@ func stageVirtualDispatchInvocation(
 	receiverName := synchronizedUniqueLocalName("__java2goInvocationReceiver", usedNames)
 	body := []ast.Stmt{stagedInvocationLocal(receiverName, receiver)}
 	stagedArgs := make([]ast.Expr, len(args))
-	argumentNodes := nodeutil.NamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
+	argumentNodes := nodeutil.SemanticNamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
 	for index, argument := range args {
 		name := synchronizedUniqueLocalName("__java2goInvocationArg"+strconv.Itoa(index), usedNames)
 		javaType := invocationPhysicalParameterJavaType(resolution, index, ctx)
@@ -4000,7 +3995,7 @@ func executionCompanionDispatchInvocation(
 	okName := synchronizedUniqueLocalName("__java2goHasExecutionReceiver", usedNames)
 	body := []ast.Stmt{stagedInvocationLocal(receiverName, receiver)}
 	stagedArgs := make([]ast.Expr, len(args))
-	argumentNodes := nodeutil.NamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
+	argumentNodes := nodeutil.SemanticNamedChildrenOf(invocationNode.ChildByFieldName("arguments"))
 	for index, argument := range args {
 		name := synchronizedUniqueLocalName("__java2goInvocationArg"+strconv.Itoa(index), usedNames)
 		javaType := invocationPhysicalParameterJavaType(resolution, index, ctx)
@@ -4155,8 +4150,8 @@ func invocationArgumentNeedsContextualType(value ast.Expr, valueNode *sitter.Nod
 		case "null_literal", "decimal_integer_literal", "decimal_floating_point_literal":
 			return true
 		case "parenthesized_expression", "unary_expression":
-			if valueNode.NamedChildCount() > 0 {
-				return invocationArgumentNeedsContextualType(value, valueNode.NamedChild(int(valueNode.NamedChildCount())-1))
+			if nodeutil.SemanticNamedChildCount(valueNode) > 0 {
+				return invocationArgumentNeedsContextualType(value, nodeutil.SemanticNamedChild(valueNode, nodeutil.SemanticNamedChildCount(valueNode)-1))
 			}
 		}
 	}
@@ -4271,7 +4266,7 @@ func findBestConstructor(scope *symbol.ClassScope, argsNode *sitter.Node, ctx Ct
 
 	var argNodes []*sitter.Node
 	if argsNode != nil {
-		argNodes = nodeutil.NamedChildrenOf(argsNode)
+		argNodes = nodeutil.SemanticNamedChildrenOf(argsNode)
 	}
 	var best *methodResolution
 	var bestScore methodCandidateScore
@@ -4341,7 +4336,7 @@ func findBestMethodInHierarchies(
 
 	var argNodes []*sitter.Node
 	if argsNode != nil {
-		argNodes = nodeutil.NamedChildrenOf(argsNode)
+		argNodes = nodeutil.SemanticNamedChildrenOf(argsNode)
 	}
 	var best *methodResolution
 	var bestScore methodCandidateScore
@@ -5370,7 +5365,7 @@ func parseResolvedInvocationArguments(
 	}
 	argumentCount := 0
 	if argsNode != nil {
-		argumentCount = int(argsNode.NamedChildCount())
+		argumentCount = nodeutil.SemanticNamedChildCount(argsNode)
 	}
 	if len(expectedTypes) == 0 {
 		expectedTypes = definitionParameterOriginalTypes(def)
@@ -5430,8 +5425,8 @@ func parseArgumentListWithExpectedTypes(argsNode *sitter.Node, source []byte, ct
 	if argsNode == nil {
 		return nil
 	}
-	args := make([]ast.Expr, 0, argsNode.NamedChildCount())
-	argumentNodes := nodeutil.NamedChildrenOf(argsNode)
+	args := make([]ast.Expr, 0, nodeutil.SemanticNamedChildCount(argsNode))
+	argumentNodes := nodeutil.SemanticNamedChildrenOf(argsNode)
 	laterArgumentEffects := javaLaterExpressionEffects(argumentNodes, source, ctx)
 	for ind, argNode := range argumentNodes {
 		argCtx := ctx.Clone()
@@ -5748,6 +5743,11 @@ func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Def
 
 	scope := resolveClassScopeByQualifiedName(ctx, baseType)
 	if scope == nil {
+		if _, primitiveOperator := primitiveOperatorSAMs["java.util.function."+stripJavaQualifier(baseType)]; primitiveOperator {
+			if _, canonical := primitiveOperatorSAMSignature(expectedType, ctx); !canonical {
+				return nil, nil
+			}
+		}
 		if stripJavaQualifier(baseType) == "Iterable" && !isExternalIterableType(expectedType, ctx) {
 			return nil, nil
 		}
@@ -5889,7 +5889,7 @@ func contextWithLambdaParameters(ctx Ctx, parameters *sitter.Node, inferredTypes
 	lambdaCtx := ctx.Clone()
 	parameterNodes := []*sitter.Node{}
 	if parameters != nil {
-		parameterNodes = nodeutil.NamedChildrenOf(parameters)
+		parameterNodes = nodeutil.SemanticNamedChildrenOf(parameters)
 		if parameters.Type() != "formal_parameters" && parameters.Type() != "inferred_parameters" {
 			parameterNodes = []*sitter.Node{parameters}
 		}
@@ -6347,7 +6347,7 @@ func objectCreationClassBody(node *sitter.Node) *sitter.Node {
 
 func anonymousCreationExpressionRoot(node *sitter.Node) *sitter.Node {
 	for node != nil && node.Type() == "parenthesized_expression" {
-		node = node.NamedChild(0)
+		node = nodeutil.SemanticNamedChild(node, 0)
 	}
 	if node != nil && node.Type() == "object_creation_expression" && objectCreationClassBody(node) != nil {
 		return node
@@ -7728,7 +7728,7 @@ func syntheticConstructorParameterDefinitions(node *sitter.Node, source []byte) 
 		return nil
 	}
 	var parameters []*symbol.Definition
-	for _, parameter := range nodeutil.NamedChildrenOf(parametersNode) {
+	for _, parameter := range nodeutil.SemanticNamedChildrenOf(parametersNode) {
 		typeNode, nameNode := nodeutil.JavaParameterNodes(parameter)
 		if nameNode == nil || typeNode == nil {
 			continue
@@ -8934,21 +8934,21 @@ func shiftOperandIsLong(node *sitter.Node, source []byte, ctx Ctx) bool {
 		lit := node.Content(source)
 		return strings.HasSuffix(lit, "L") || strings.HasSuffix(lit, "l")
 	case "parenthesized_expression":
-		if node.NamedChildCount() > 0 {
-			return shiftOperandIsLong(node.NamedChild(0), source, ctx)
+		if nodeutil.SemanticNamedChildCount(node) > 0 {
+			return shiftOperandIsLong(nodeutil.SemanticNamedChild(node, 0), source, ctx)
 		}
 	case "cast_expression":
-		if typeNode := node.NamedChild(0); typeNode != nil {
+		if typeNode := nodeutil.SemanticNamedChild(node, 0); typeNode != nil {
 			return isLongJavaType(typeNode.Content(source), ctx)
 		}
 	case "unary_expression":
 		// Sign/complement preserve the operand's type.
-		if count := int(node.NamedChildCount()); count > 0 {
-			return shiftOperandIsLong(node.NamedChild(count-1), source, ctx)
+		if count := nodeutil.SemanticNamedChildCount(node); count > 0 {
+			return shiftOperandIsLong(nodeutil.SemanticNamedChild(node, count-1), source, ctx)
 		}
 	case "binary_expression":
 		// A binary op is long if either side is long (Java numeric promotion).
-		if node.NamedChildCount() >= 2 {
+		if nodeutil.SemanticNamedChildCount(node) >= 2 {
 			return shiftOperandIsLong(node.ChildByFieldName("left"), source, ctx) || shiftOperandIsLong(node.ChildByFieldName("right"), source, ctx)
 		}
 	}
@@ -9305,9 +9305,9 @@ func javaBinaryOperandMayHaveEffects(node *sitter.Node, source []byte, ctx Ctx) 
 	case "method_invocation", "object_creation_expression", "array_creation_expression", "assignment_expression", "update_expression", "array_access":
 		return true
 	case "cast_expression":
-		if node.NamedChildCount() >= 2 {
-			_, targetPrimitive := javaPrimitiveType(node.NamedChild(0).Content(source))
-			actualType, _ := inferExprJavaType(node.NamedChild(1), ctx, source)
+		if nodeutil.SemanticNamedChildCount(node) >= 2 {
+			_, targetPrimitive := javaPrimitiveType(nodeutil.SemanticNamedChild(node, 0).Content(source))
+			actualType, _ := inferExprJavaType(nodeutil.SemanticNamedChild(node, 1), ctx, source)
 			_, sourcePrimitive := javaPrimitiveType(actualType)
 			if !targetPrimitive || !sourcePrimitive {
 				return true
@@ -9548,6 +9548,12 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 	// java.util collection types map to the stdjava runtime types, provided the
 	// name is not shadowed by a user-defined class.
 	if resolvedScope == nil {
+		if operatorType := primitiveOperatorTypeExpr(typeStr, ctx); operatorType != nil {
+			for dimension := 0; dimension < arrayDims; dimension++ {
+				operatorType = &ast.ArrayType{Elt: operatorType}
+			}
+			return operatorType
+		}
 		if collExpr := collectionTypeExpr(base, typeArgs, typeParams, ctx); collExpr != nil {
 			expr := collExpr
 			for i := 0; i < arrayDims; i++ {
@@ -10163,14 +10169,14 @@ func lambdaParameterNames(parameters *sitter.Node, source []byte) []string {
 	}
 	switch parameters.Type() {
 	case "inferred_parameters":
-		names := make([]string, 0, parameters.NamedChildCount())
-		for _, child := range nodeutil.NamedChildrenOf(parameters) {
+		names := make([]string, 0, nodeutil.SemanticNamedChildCount(parameters))
+		for _, child := range nodeutil.SemanticNamedChildrenOf(parameters) {
 			names = append(names, child.Content(source))
 		}
 		return names
 	case "formal_parameters":
-		names := make([]string, 0, parameters.NamedChildCount())
-		for _, child := range nodeutil.NamedChildrenOf(parameters) {
+		names := make([]string, 0, nodeutil.SemanticNamedChildCount(parameters))
+		for _, child := range nodeutil.SemanticNamedChildrenOf(parameters) {
 			if nameNode := child.ChildByFieldName("name"); nameNode != nil {
 				names = append(names, nameNode.Content(source))
 			}
@@ -10265,8 +10271,8 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 		// Prefix and postfix update expressions retain the operand's Java type,
 		// including wrapper types. Consumers then apply boxing or unboxing at
 		// the same assignment, invocation, and return boundaries as other values.
-		if node.NamedChildCount() == 1 {
-			return inferExprJavaType(node.NamedChild(0), ctx, source)
+		if nodeutil.SemanticNamedChildCount(node) == 1 {
+			return inferExprJavaType(nodeutil.SemanticNamedChild(node, 0), ctx, source)
 		}
 		return "", false
 	case "assignment_expression":
@@ -10274,7 +10280,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 		// including compound assignments whose operation is promoted and then
 		// implicitly narrowed back to the target type.
 		if node.ChildCount() > 0 {
-			return inferExprJavaType(node.Child(0), ctx, source, origins...)
+			return inferExprJavaType(node.ChildByFieldName("left"), ctx, source, origins...)
 		}
 		return "", false
 	case "this":
@@ -10314,7 +10320,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 		// A cast's static type is its target type, e.g. `(char)(c+1)` is char.
 		// This lets println wrap a char-casted value in string(...) so it prints
 		// the character rather than its code point.
-		if target := node.NamedChild(0); target != nil {
+		if target := nodeutil.SemanticNamedChild(node, 0); target != nil {
 			javaType := target.Content(source)
 			recordSyntaxJavaTypeOrigin(origins, javaType, ctx)
 			return javaType, true
@@ -10328,7 +10334,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 		// dimension removed (e.g. Worker[] indexed -> Worker).
 		arrayNode := node.ChildByFieldName("array")
 		if arrayNode == nil {
-			arrayNode = node.NamedChild(0)
+			arrayNode = nodeutil.SemanticNamedChild(node, 0)
 		}
 		if arrayNode == nil {
 			return "", false
@@ -10375,12 +10381,12 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 		// This is especially important for overloads invoked with negative numeric
 		// literals, which tree-sitter represents as a unary expression around the
 		// literal node.
-		if count := int(node.NamedChildCount()); count > 0 {
-			operandType, ok := inferExprJavaType(node.NamedChild(count-1), ctx, source)
+		if count := nodeutil.SemanticNamedChildCount(node); count > 0 {
+			operandType, ok := inferExprJavaType(nodeutil.SemanticNamedChild(node, count-1), ctx, source)
 			if !ok {
 				return "", false
 			}
-			operator := node.Child(0).Content(source)
+			operator := node.ChildByFieldName("operator").Content(source)
 			if operator == "!" {
 				return "boolean", true
 			}
@@ -10396,7 +10402,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 			return operandType, true
 		}
 	case "parenthesized_expression":
-		if inner := node.NamedChild(0); inner != nil {
+		if inner := nodeutil.SemanticNamedChild(node, 0); inner != nil {
 			return inferExprJavaType(inner, ctx, source, origins...)
 		}
 	case "ternary_expression":
@@ -11000,7 +11006,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		// resolve members declared only by Secondary as well as transitive bounds.
 		boundTypes = resolvableTypeParameterDeclarationBounds(className, origin.parameter, ctx, &boundOrigins)
 		if len(boundTypes) > 0 {
-			className, classTypeArgs = parseJavaTypeString(boundTypes[0])
+			_, classTypeArgs = parseJavaTypeString(boundTypes[0])
 			classScope = boundOrigins[0].nominalScope
 		}
 	}
@@ -11043,14 +11049,6 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		}
 	}
 	return target
-}
-
-// resolvableTypeParameterBounds returns every declared upper bound that
-// transitively reaches a class or interface visible from ctx. Method type
-// parameters shadow synthetic/raw and class type parameters, matching Java's
-// scope rules. The traversal is cycle-safe and preserves declaration order.
-func resolvableTypeParameterBounds(name string, ctx Ctx) []string {
-	return resolvableTypeParameterDeclarationBounds(name, nil, ctx)
 }
 
 func resolvableTypeParameterDeclarationBounds(name string, declaration *symbol.TypeParamDeclaration, ctx Ctx, origins ...*[]inferredJavaTypeOrigin) []string {
@@ -11226,7 +11224,7 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 	if argsNode == nil {
 		return bindings
 	}
-	argNodes := nodeutil.NamedChildrenOf(argsNode)
+	argNodes := nodeutil.SemanticNamedChildrenOf(argsNode)
 	declaring, owner := invocationMethodDeclarationContext(def, ctx)
 	parameters := qualifyTypeParameterBounds(def.TypeParameters, declaring)
 	lowerBounds := make(map[string][]string, len(parameters))

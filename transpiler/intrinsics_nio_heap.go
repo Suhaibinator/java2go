@@ -117,7 +117,7 @@ func lowerNIOHeapGet(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []b
 func lowerNIOHeapPut(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr {
 	count := invocationArgumentCount(invocation)
 	name := ""
-	expected := []string{}
+	var expected []string
 	switch count {
 	case 1:
 		switch nioHeapArgumentKind(invocation, 0, ctx, source) {

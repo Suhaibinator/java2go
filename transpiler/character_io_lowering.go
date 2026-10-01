@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"github.com/NickyBoy89/java2go/nodeutil"
 	"github.com/NickyBoy89/java2go/symbol"
 	sitter "github.com/smacker/go-tree-sitter"
 	"go/ast"
@@ -100,8 +101,8 @@ func characterIOInvocation(object *sitter.Node, name string, argsNode *sitter.No
 	if !isSuper && (!ok || len(sourceCharacterIOProtocols(resolveClassScopeByQualifiedName(ctx, javaType), ctx)) == 0) {
 		return nil
 	}
-	if argsNode != nil && argsNode.NamedChildCount() > 0 {
-		first := argsNode.NamedChild(0)
+	if argsNode != nil && nodeutil.SemanticNamedChildCount(argsNode) > 0 {
+		first := nodeutil.SemanticNamedChild(argsNode, 0)
 		argType, _ := inferExprJavaType(first, ctx, source)
 		if name == "read" && argType != "char[]" && first.Type() != "null_literal" {
 			return nil

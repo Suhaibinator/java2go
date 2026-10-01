@@ -97,7 +97,16 @@ func SortWith[T any](l *List[T], c Comparator[T], execution ...*Execution) {
 		panic(NewNullPointerException("Collections.sort on null"))
 	}
 	elements := l.Slice()
+	if l.viewRoot != nil {
+		elements = append([]T(nil), elements...)
+	}
 	SortSliceWith(elements, c, execution...)
+	if l.viewRoot != nil {
+		l.writeSortedView(optionalComparisonExecution(execution), len(elements), func(index int32) {
+			l.Set(index, elements[index])
+		})
+		return
+	}
 	if l.array != nil || l.erasedStorage {
 		for i, element := range elements {
 			l.Set(int32(i), element)

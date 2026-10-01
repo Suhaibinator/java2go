@@ -2242,7 +2242,7 @@ func emptyConstructorVarargsArgument(
 	}
 	argumentCount := 0
 	if arguments != nil {
-		argumentCount = int(arguments.NamedChildCount())
+		argumentCount = nodeutil.SemanticNamedChildCount(arguments)
 	}
 	if argumentCount != len(target.Parameters)-1 {
 		return nil, false
@@ -2838,13 +2838,13 @@ func methodNodeMatchesDefinition(node *sitter.Node, def *symbol.Definition, sour
 
 	paramsNode := node.ChildByFieldName("parameters")
 	if def.Parameters == nil {
-		return paramsNode.NamedChildCount() == 0
+		return nodeutil.SemanticNamedChildCount(paramsNode) == 0
 	}
-	if len(def.Parameters) != int(paramsNode.NamedChildCount()) {
+	if len(def.Parameters) != int(nodeutil.SemanticNamedChildCount(paramsNode)) {
 		return false
 	}
 
-	for index, param := range nodeutil.NamedChildrenOf(paramsNode) {
+	for index, param := range nodeutil.SemanticNamedChildrenOf(paramsNode) {
 		if !declarationParameterMatchesDefinition(param, def, index, source) {
 			return false
 		}
@@ -3948,10 +3948,10 @@ func buildSourceConstructorDecls(
 			if d == nil || constructorName != d.OriginalName {
 				return false
 			}
-			if int(paramNode.NamedChildCount()) != len(d.Parameters) {
+			if int(nodeutil.SemanticNamedChildCount(paramNode)) != len(d.Parameters) {
 				return false
 			}
-			for index, param := range nodeutil.NamedChildrenOf(paramNode) {
+			for index, param := range nodeutil.SemanticNamedChildrenOf(paramNode) {
 				if !declarationParameterMatchesDefinition(param, d, index, source) {
 					return false
 				}
@@ -4170,10 +4170,10 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			if d.OriginalName != methodName {
 				return false
 			}
-			if len(d.Parameters) != int(methodParameters.NamedChildCount()) {
+			if len(d.Parameters) != int(nodeutil.SemanticNamedChildCount(methodParameters)) {
 				return false
 			}
-			for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
+			for index, param := range nodeutil.SemanticNamedChildrenOf(methodParameters) {
 				if !declarationParameterMatchesDefinition(param, d, index, source) {
 					return false
 				}

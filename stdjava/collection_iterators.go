@@ -14,15 +14,16 @@ type listJavaIterator[T any] struct {
 func (list *List[T]) IteratorJava2goExecution(execution *Execution) JavaIterator {
 	requireExecution(execution)
 	ReferenceRequireNonNull(list)
-	return &listJavaIterator[T]{source: list, expected: list.modCount}
+	list.checkViewModification()
+	return &listJavaIterator[T]{source: list, expected: list.storageRoot().modCount}
 }
 func (cursor *listJavaIterator[T]) HasNextJava2goExecution(execution *Execution) bool {
 	requireExecution(execution)
-	return cursor.index != cursor.source.Size()
+	return cursor.index != cursor.source.uncheckedSize()
 }
 func (cursor *listJavaIterator[T]) NextJava2goExecution(execution *Execution) any {
 	requireExecution(execution)
-	if cursor.expected != cursor.source.modCount {
+	if cursor.expected != cursor.source.storageRoot().modCount {
 		panic(NewConcurrentModificationException(""))
 	}
 	if cursor.index >= cursor.source.Size() {
@@ -40,13 +41,13 @@ func (cursor *listJavaIterator[T]) IteratorRemoveJava2goExecution(execution *Exe
 	if !cursor.canRemove {
 		panic(NewIllegalStateException(""))
 	}
-	if cursor.expected != cursor.source.modCount {
+	if cursor.expected != cursor.source.storageRoot().modCount {
 		panic(NewConcurrentModificationException(""))
 	}
 	cursor.source.rawRemove(cursor.last)
 	cursor.index = cursor.last
 	cursor.canRemove = false
-	cursor.expected = cursor.source.modCount
+	cursor.expected = cursor.source.storageRoot().modCount
 }
 
 // Map-backed iteration retains next-record identity, not a snapshot of element

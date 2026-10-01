@@ -586,12 +586,12 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			}
 
 			// Size of parameters must match
-			if int(methodParameters.NamedChildCount()) != len(d.Parameters) {
+			if int(nodeutil.SemanticNamedChildCount(methodParameters)) != len(d.Parameters) {
 				return false
 			}
 
 			// Go through the types and check to see if they differ
-			for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
+			for index, param := range nodeutil.SemanticNamedChildrenOf(methodParameters) {
 				typeNode, _ := nodeutil.JavaParameterNodes(param)
 				paramType := typeNode.Content(source)
 				if paramType != d.Parameters[index].OriginalType {
@@ -606,7 +606,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		ctx.localScope = def
 
 		parameters := &ast.FieldList{}
-		for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
+		for index, param := range nodeutil.SemanticNamedChildrenOf(methodParameters) {
 			field := ParseNode(param, source, ctx).(*ast.Field)
 			if index < len(def.Parameters) && def.Parameters[index] != nil {
 				field.Type = rawUnboundReceiverParameterType(
@@ -654,14 +654,14 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		return &ast.CaseClause{}
 	case "argument_list":
 		args := []ast.Expr{}
-		for _, c := range nodeutil.NamedChildrenOf(node) {
+		for _, c := range nodeutil.SemanticNamedChildrenOf(node) {
 			args = append(args, ParseExpr(c, source, ctx))
 		}
 		return args
 
 	case "formal_parameters":
 		params := &ast.FieldList{}
-		for _, param := range nodeutil.NamedChildrenOf(node) {
+		for _, param := range nodeutil.SemanticNamedChildrenOf(node) {
 			params.List = append(params.List, ParseNode(param, source, ctx).(*ast.Field))
 		}
 		return params
