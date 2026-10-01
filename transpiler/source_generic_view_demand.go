@@ -21,7 +21,7 @@ func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
 		if owner.Class == nil || owner.Class.DeclarationNode == nil {
 			continue
 		}
-		file := findFileScopeForClassScope(owner)
+		file := findFileScopeForClassScope(owner, ctx)
 		if file == nil {
 			continue
 		}

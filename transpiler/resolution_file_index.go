@@ -40,3 +40,24 @@ func newResolutionFileIndex() *resolutionFileIndex {
 	}
 	return index
 }
+
+// sourceOwnershipIndex carries only declaration ownership. A fresh matcher must
+// still resolve names in its own file/class context on every query. Registered
+// graph replacement resets this shared facts holder; late synthesized classes
+// remain unindexed and use the ordinary ownership search.
+func sourceOwnershipIndex(ctx Ctx) *resolutionFileIndex {
+	if index := ctx.sourceOwnership; index != nil {
+		if index.graph != symbol.GlobalScope {
+			*index = *newResolutionFileIndex()
+		}
+		return index
+	}
+	inventory := resolvedSourceInventory(ctx)
+	if inventory == nil {
+		return nil
+	}
+	if inventory.ownership == nil {
+		inventory.ownership = newResolutionFileIndex()
+	}
+	return inventory.ownership
+}

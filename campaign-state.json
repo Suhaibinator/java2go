@@ -10492,5 +10492,96 @@
     "complete_outputs": 9,
     "empty_tenth": "AdvancedLeakAwareByteBuf.go",
     "note": "Progress95 prose carried an earlier partial eight-complete/ninth-empty observation. Final retained report has nine complete Go files including AdaptivePoolingAllocator.go450385bytes and an empty tenth. Strict300 timeout remains failure, no parity."
+  },
+  "sol_progress97": {
+    "status": "ACCEPTED_SCOPED_OWNERSHIP8_FULL_ROUND_UNACCEPTED",
+    "parent": "06b90c6f3d8ebd8fa1fa921841db33250a2ab79e",
+    "source_manifest": {
+      "bytes": 391958,
+      "path": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source-manifest.json",
+      "sha256": "3918cb95166196f80fe176606d7762d12cc084c0c0800df998ccc472e334ce05"
+    },
+    "changes8": {
+      "transpiler/fresh_matcher_ownership_lifetime_test.go": {
+        "before": null,
+        "after": "dc2da716d8fa63ec92ddf92c39c9c87d2de97a1ebbea0c672a5120f6d6b286a4",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source/transpiler/fresh_matcher_ownership_lifetime_test.go"
+      },
+      "transpiler/fresh_superclass_matcher_ownership_test.go": {
+        "before": null,
+        "after": "7a0a3bd22c525dba19915ed943c650f5ac2c95f9f7e1c4c3d3ef70928261744c",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source/transpiler/fresh_superclass_matcher_ownership_test.go"
+      },
+      "transpiler/generic_family_plan.go": {
+        "before": "8a5588b9263b1e833183523ccba993caaa5b4489eda0c5e5d4e8c5ccdc06f169",
+        "after": "e8dd1a0a41a17a3fbae2f222bc4a275723de0b3533987a6fb296e1a5b2d20d31",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source/transpiler/generic_family_plan.go"
+      },
+      "transpiler/imports.go": {
+        "before": "599dd382ce263e9070768f57e8bc9928bdf35d34a38fc97c20cb4ce5a3d478b7",
+        "after": "e749c996e278bbe36bea745873cc4813fa00da3e45f7219f08ec536072d3b1c1",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source/transpiler/imports.go"
+      },
+      "transpiler/reference_array_codegen.go": {
+        "before": "5f07f4cf3f0b94906e4c0ee97c8ab75e0fcd419f60f8b93e66a89bfc7c3add53",
+        "after": "c279edd847fe9347a0906d3b87537f5003795333968060ce1baba53726baad0e",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source/transpiler/reference_array_codegen.go"
+      },
+      "transpiler/resolution_file_index.go": {
+        "before": "a23960c20503cba5f877a097196d8e0bf62186b7e540ddc0321e5eb9a9ce360b",
+        "after": "f263befc8eea12948dc14eae2471153ac49c1ac537fea650bf1b71d08b5a9a42",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source/transpiler/resolution_file_index.go"
+      },
+      "transpiler/source_generic_view_demand.go": {
+        "before": "1596b088818ae4e6b0c11421e991c7ebb44efeb3422a51597cba77fb5c40e8db",
+        "after": "e8d5afb57124e606c3781eb436e27204b2dd44436ccd976f85b6551e9c4d76b0",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source/transpiler/source_generic_view_demand.go"
+      },
+      "transpiler/tree_sitter.go": {
+        "before": "8af1e20f0a533471a836a0e852c9729e6a413eeb139361c796ef68af11c04953",
+        "after": "5fc2d9896b8fe52473322e50c97efbd29b24b0e93a2a4b66bf60c42855cb8f85",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/source/transpiler/tree_sitter.go"
+      }
+    },
+    "coordinator_audit": {
+      "path": "/private/tmp/java2go-root-ownership97/coordinator-full-publication-audit.json",
+      "sha256": "1a2a2aee8f2b228ad20e99251f3876dbb4adc08c70c9648c78406754109fba84"
+    },
+    "component_audit": {
+      "path": "/private/tmp/java2go-root-ownership97/coordinator-component-audit.json",
+      "sha256": "4677f45b4856bbffbaa9deb6bb61667b31c9ee4c321749d169782a20461ab612"
+    },
+    "full_strict_failed": {
+      "path": "/private/tmp/java2go-netty-resolution-sol-v1/ownership-context-sol61/composition96-public/execution/FULL-TERMINAL-AUDIT.json",
+      "sha256": "91daae43700e0da690fa42c681ff4e43cf8b46734bfd879ad3f34cfea05c58d9"
+    },
+    "validation": {
+      "actual_named_actions": 160,
+      "distinct_tests": 130,
+      "original_Netty_tests_retained": 121,
+      "JVM_oracles": 11,
+      "metadata_actual": 40,
+      "metadata_distinct": 10,
+      "cost_bound": 6,
+      "lint_issues": 0,
+      "focused_fail": 0,
+      "focused_skip": 0
+    },
+    "behavior": "Share only declaration-to-file structural ownership facts across fresh contexts. Resolve caller-dependent names on every query; retain lexical identity, graph replacement reset and late synthetic fallback. Propagate facts to superclass matchers and generic-family inventories. No semantic result, admission or generated body caching.",
+    "full_strict_observation": {
+      "Netty_Java": 1212,
+      "application_Java": 8,
+      "POMs": 9,
+      "resources": 53,
+      "build_seconds": 4.194296,
+      "strict_timeout_seconds": 300,
+      "strict_elapsed_seconds": 300.179713,
+      "strict_exit_code": -15,
+      "partial_nonempty_Go_files": 10,
+      "empty_eleventh": "AdvancedLeakAwareCompositeByteBuf.go",
+      "all_generated_Go_build_run_parity": false
+    },
+    "limitations": "Scoped milestone only, full strict timeout is a failure. OriginalCommons27, genuineGson118, fullNetty and accumulated full application/compiler CI remain open; checkpoint18 remains latest accepted full round. Manual Netty source graph is not authenticated Maven closure acceptance. No Java-faster claim.",
+    "resume": "Sol-only current measured native Netty profile, fresh guarded performance matching, originalCommons27/reflection integration, genuineGson118 container carrier and failclosed Maven requested-membership repairs. Commit AND push verified milestones."
   }
 }

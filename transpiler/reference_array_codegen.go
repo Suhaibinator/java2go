@@ -356,8 +356,9 @@ func classHasSyntheticSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 			break
 		}
 	}
+	ownership := sourceOwnershipIndex(ctx)
 	matches := func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
-		ownerCtx := Ctx{currentFile: file, currentClass: owner}
+		ownerCtx := Ctx{currentFile: file, currentClass: owner, sourceOwnership: ownership}
 		if activeLocalTarget {
 			// A method-local target exists only in the active lowering registry.
 			// Preserve it solely for source events from that same source file.

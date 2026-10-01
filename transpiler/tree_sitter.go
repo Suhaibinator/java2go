@@ -52,6 +52,8 @@ type Ctx struct {
 	genericFamilies *genericFamilyAnalysis
 	// Structural source facts shared only within a resolved conversion batch.
 	callableSubclasses *callableSubclassSourceInventory
+	// Declaration-to-file facts can cross fresh lookup contexts without caller semantics.
+	sourceOwnership *resolutionFileIndex
 	// Active member-type hierarchy lookups; extended immutably per lookup.
 	memberTypeLookupPath map[*symbol.ClassScope]bool
 	// Header lookup keeps the declaration and its binders, but excludes body-only members.
@@ -420,6 +422,7 @@ func (c Ctx) Clone() Ctx {
 		projectMode:                         c.projectMode,
 		genericFamilies:                     c.genericFamilies,
 		callableSubclasses:                  c.callableSubclasses,
+		sourceOwnership:                     c.sourceOwnership,
 		memberTypeLookupPath:                c.memberTypeLookupPath,
 		memberTypeHeaderOwner:               c.memberTypeHeaderOwner,
 		localBindingBody:                    c.localBindingBody,

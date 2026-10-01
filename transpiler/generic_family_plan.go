@@ -89,7 +89,7 @@ func (inventory *genericFamilyInventory) genericFamilySourceEvents(ctx Ctx) []ge
 		if owner.Class == nil || owner.Class.DeclarationNode == nil {
 			continue
 		}
-		file := findFileScopeForClassScope(owner)
+		file := findFileScopeForClassScope(owner, ctx)
 		if file == nil {
 			inventory.sourceEvents = append(inventory.sourceEvents, genericFamilySourceEvent{err: fmt.Errorf("missing source for generic family inventory")})
 			break

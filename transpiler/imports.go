@@ -374,11 +374,8 @@ func findFileScopeForClassScope(scope *symbol.ClassScope, contexts ...Ctx) *symb
 		}
 	}
 	if len(contexts) > 0 {
-		if inventory := resolvedSourceInventory(contexts[0]); inventory != nil {
-			if inventory.ownership == nil {
-				inventory.ownership = newResolutionFileIndex()
-			}
-			if file := inventory.ownership.files[scope]; file != nil {
+		if ownership := sourceOwnershipIndex(contexts[0]); ownership != nil {
+			if file := ownership.files[scope]; file != nil {
 				return file
 			}
 		}
