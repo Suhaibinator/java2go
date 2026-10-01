@@ -70,8 +70,8 @@ public class ConversionProgram {
 	assertContains(t, out, "stdjava.StreamAsDoubleStream(")
 	// mapToLong pins the closure to int64, so a body of type int32 needs the
 	// widening conversion Java applies implicitly.
-	assertContains(t, out, "stdjava.FunctionCallbackExecution[string, int64](__java2goExecution, stdjava.NewFunctionFuncAdapter[string, int64](func(__java2goExecution *stdjava.Execution, w string) int64")
-	assertContains(t, out, "return int64(stdjava.StringLength(")
+	assertContains(t, out, "stdjava.FunctionCallbackExecution[*stdjava.JavaString, int64](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.JavaString, int64](func(__java2goExecution *stdjava.Execution, w *stdjava.JavaString) int64")
+	assertContains(t, out, "return int64(stdjava.RequireJavaString(w).Length())")
 }
 
 // A primitive stream's terminal returns an OptionalInt/OptionalDouble, whose
@@ -108,7 +108,7 @@ public class CharsProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.StringCharsStream(")
+	assertContains(t, out, "stdjava.JavaStringCharsStream(")
 	assertContains(t, out, ".Count()")
 	assertContains(t, out, "stdjava.StreamSum(")
 }

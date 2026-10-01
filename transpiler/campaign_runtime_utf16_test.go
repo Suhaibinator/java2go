@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+	"unicode/utf16"
 )
 
 // This oracle uses supplementary characters as present in real JSON records and
@@ -26,11 +27,11 @@ func TestCampaignRuntimeUTF16Observations(t *testing.T) {
 	t.Logf("JDK UTF-16 oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import ("testing"; "slices")
 func TestUTF16Oracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), %#v) { t.Fatalf("JVM %%q != generated Go UTF16 %%#v", %q, got) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }
 
 func TestCampaignRuntimeUTF16NaturalOrdering(t *testing.T) {
@@ -58,11 +59,11 @@ public class CampaignRuntimeUTF16Ordering {
 	t.Logf("JDK natural-order oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import ("testing"; "slices")
 func TestUTF16OrderingOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), %#v) { t.Fatalf("JVM %%q != generated Go UTF16 %%#v", %q, got) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }
 
 func TestCampaignRuntimeOraclePreservesWhitespace(t *testing.T) {

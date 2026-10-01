@@ -8069,5 +8069,142 @@
     "limitations": "Direct/read-only buffers, byte order, multibyte/typed views, compact and absolute bulk operations remain unsupported. No full Netty, generated race suite, performance superiority or universal Java claim. Existing legacy String companion failures remain unwaived.",
     "full_CI_and_round": "UNACCEPTED; checkpoint18 remains latest accepted full round. Matching Map/Future7 and CI42 in progress.",
     "next": "Primitive ByteBuffer oracle/RED/repair gates; Stream current composed package compilation; strict Netty Maven and metadata-only raw source repairs; volatile and generic/SAM application behavior."
+  },
+  "sol_progress84": {
+    "status": "ACCEPTED_SCOPED_STREAM_CHARS_COMPONENT_FULL_ROUND_UNACCEPTED",
+    "parent": "251e15d6d6ba6ac442455ad8bbc2a11add80f457",
+    "publication_packet_sha256": "7bc398986ae83eca73644d957d070f6870c5131be09cefe0345c546b027f31ec",
+    "publication_paths": [
+      {
+        "path": "stdjava/stream_java_string.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/stream_java_string.go",
+        "before_present": false,
+        "before_sha256": null,
+        "source_path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/candidate/stdjava/stream_java_string.go",
+        "desired_after_sha256": "796f20f682e447437890595bc8fb6d0fd40c4adc133bdf5df058100abc1a65b2",
+        "actual_green_byte_identity": true
+      },
+      {
+        "path": "stdjava/stream_java_string_test.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/stream_java_string_test.go",
+        "before_present": false,
+        "before_sha256": null,
+        "source_path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/candidate/stdjava/stream_java_string_test.go",
+        "desired_after_sha256": "d9c9234b7ade8cecb3e331b2ba5cd96199e2d1dba9c529ddf2e02be5765325e3",
+        "actual_green_byte_identity": true
+      },
+      {
+        "path": "transpiler/campaign_runtime_utf16_test.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/campaign_runtime_utf16_test.go",
+        "before_present": true,
+        "before_sha256": "2efec970b6a5cfc8eacf2e33d8130c545c1eaca362e9f2924e14cba3e2be9c03",
+        "source_path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/candidate/transpiler/campaign_runtime_utf16_test.go",
+        "desired_after_sha256": "ab5fb8975b124cc60ea84bd5a6680b60af838c1585c15c6c18e7ebc9c2778cc8",
+        "actual_green_byte_identity": true
+      },
+      {
+        "path": "transpiler/intrinsics_streams_numeric_integration_test.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/intrinsics_streams_numeric_integration_test.go",
+        "before_present": true,
+        "before_sha256": "b4756efd01d4e9f405988cd3bfcc01bdc1796e983e8ed0386b6f51690989efc0",
+        "source_path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/candidate/transpiler/intrinsics_streams_numeric_integration_test.go",
+        "desired_after_sha256": "8d61f6eef4f0da33a80546ac6b873cc8ce4fbb499b577c8e681b467ff0d211b9",
+        "actual_green_byte_identity": true
+      },
+      {
+        "path": "transpiler/stream_canonical_string_behavior_test.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/stream_canonical_string_behavior_test.go",
+        "before_present": false,
+        "before_sha256": null,
+        "source_path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/candidate/transpiler/stream_canonical_string_behavior_test.go",
+        "desired_after_sha256": "5f81234e85ab971380f6654a427442022b84422339fff504396f2eabebcc861b",
+        "actual_green_byte_identity": true
+      }
+    ],
+    "coordinator_raw_counts": {
+      "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/compile20-pair/job/baseline-compile-all-tests/command.json": {
+        "packages": 20,
+        "test_bearing_pass": 11,
+        "declared_no_test_markers": 9,
+        "test_events": 0
+      },
+      "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/compile20-pair/job/candidate-compile-all-tests/command.json": {
+        "packages": 20,
+        "test_bearing_pass": 11,
+        "declared_no_test_markers": 9,
+        "test_events": 0
+      },
+      "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/green-stdjava/selected-tests/command.json": {
+        "run": 2,
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/green-transpiler/selected-tests/command.json": {
+        "run": 33,
+        "pass": 33,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "verified_supervisors": [
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/serial-supervision/command.json",
+        "sha256": "e69cd944cf13b46fd903b0c304051e30e56f315c9b0bfd84608e29e550fcee03"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/launch-compile20-pair/command.json",
+        "sha256": "5139f1dd7111ba08df75c729396c41286f3efa480f1b5043849846fa4e8d3273"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/launch-green-stdjava/command.json",
+        "sha256": "48aea534110165aaaa773e1662ee893cecb528599c4cb9efce555c1b4899b06f"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/launch-green-transpiler/command.json",
+        "sha256": "a18002e025f2fdbae8318cd3b09845f1e22f1ed18b0334acc4f01f3f13dc2ffd"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/compile20-pair/outer-supervision/command.json",
+        "sha256": "dd837e4168ccd3ce6a2f464ab9b4016da3f6fc582d1922dcab1294cea9ce0afc"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/compile20-pair/job/baseline-compile-all-tests/command.json",
+        "sha256": "53f9bb58d217bcab54cbe810d00e1ac895ede7a0e0fa2a0dff2fc0636925bc06"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/compile20-pair/job/candidate-compile-all-tests/command.json",
+        "sha256": "c8ddbc2ed15e45249fdc10a5da39e3c81d0aa903ca036fab8d6883bb568c2938"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/green-stdjava/supervision/command.json",
+        "sha256": "5ca6bbdadbdcc61d9b9210276ca9e408cc429f1721f30c695a0316ece0300663"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/green-stdjava/test-binary-build/command.json",
+        "sha256": "ce22e1f91bcac19ac4ab0b7fb3f7a2fea12b134a2319a1fb3bf2fb72c023f6ea"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/green-stdjava/selected-tests/command.json",
+        "sha256": "5fe05c5cb565dbcd365dc2f97df4137e9bb019fab4663edd6a412d9936b6b442"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/green-transpiler/supervision/command.json",
+        "sha256": "8e325ca0176052e431ecedc43e9a2bf3df823dfccb94993576dc744a00fdc7ae"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/green-transpiler/test-binary-build/command.json",
+        "sha256": "58c65114b9f3c6a8f17b16330b1663f50f36d9f8faa87179b6cc279e894e77d2"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-four-current83-compose-sol-w69xyite/observations/green-transpiler/selected-tests/command.json",
+        "sha256": "2439a2f42a21f883395dc6ad16fa5f41d9db8735663945b9074dc8749503c7a0"
+      }
+    ],
+    "TDD": "Canonical String.chars missing-helper RED retained; native2race and original30+new3 compiler checks pass, including all4 historical failures. Java oracle source/output unchanged; driver and structural assertions explicitly migrate canonical String representation.",
+    "change": "JavaString chars streams copy exact UTF16 units, preserving NUL and paired/unpaired surrogates, with eager null rejection and no backing alias.",
+    "protected_source": "Atomic6 and NIO10 publication hashes unchanged; matching current83 baseline/candidate paired20package compile complete.",
+    "limitations": "Outer compiler test binary and native helper are race checked; generated behavioral modules execute normally. No full Java Stream laziness/close, full application, full current CI, Netty or Java-faster claim. Checkpoint18 remains latest accepted full round.",
+    "continuation": "Sol-only parallel comment semantics, volatile/SAM/reflection, Map/Future original42 timeout diagnosis, Gson logical/physical lowering, real Maven build export and unchanged Netty ingestion. Original failed and invalid receipts retained."
   }
 }
