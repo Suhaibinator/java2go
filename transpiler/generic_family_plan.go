@@ -38,6 +38,114 @@ func genericFamilyKey(file *symbol.FileScope, node *sitter.Node) genericFamilySo
 }
 
 func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, error) {
+	return planGenericFamilyWithInventory(seed, ctx, nil)
+}
+
+// A discovery audits every seed independently, but its source declarations and
+// hierarchy edges stay unchanged throughout those audits. Reuse only that
+// structural inventory; eligibility and physical storage remain plan-owned.
+type genericFamilyInventory struct {
+	scopes          []*symbol.ClassScope
+	localInterfaces [][]*symbol.ClassScope
+	parents         map[*symbol.ClassScope][]*symbol.ClassScope
+	sourceEvents    []genericFamilySourceEvent
+	eventsLoaded    bool
+}
+
+func newGenericFamilyInventory(ctx Ctx) *genericFamilyInventory {
+	scopes := allSourceClassScopes()
+	inventory := &genericFamilyInventory{
+		scopes:          scopes,
+		localInterfaces: genericFamilyLocalInterfaceEdges(scopes, ctx),
+		parents:         make(map[*symbol.ClassScope][]*symbol.ClassScope, len(scopes)),
+	}
+	for _, scope := range scopes {
+		inventory.parents[scope] = genericFamilyParents(scope, ctx)
+	}
+	return inventory
+}
+
+// A source event contains declaration structure only. In particular it never
+// retains a synthesized local scope, a binder representation, or an admission
+// result. Events preserve source traversal order and lexical method ownership.
+type genericFamilySourceEvent struct {
+	file       *symbol.FileScope
+	owner      *symbol.ClassScope
+	parent     *symbol.ClassScope
+	node, body *sitter.Node
+	lexical    Ctx
+	javaType   string
+	local      bool
+	superclass bool
+	err        error
+}
+
+func (inventory *genericFamilyInventory) genericFamilySourceEvents(ctx Ctx) []genericFamilySourceEvent {
+	if inventory.eventsLoaded {
+		return inventory.sourceEvents
+	}
+	inventory.eventsLoaded = true
+	for _, owner := range inventory.scopes {
+		if owner.Class == nil || owner.Class.DeclarationNode == nil {
+			continue
+		}
+		file := findFileScopeForClassScope(owner)
+		if file == nil {
+			inventory.sourceEvents = append(inventory.sourceEvents, genericFamilySourceEvent{err: fmt.Errorf("missing source for generic family inventory")})
+			break
+		}
+		var scan func(*sitter.Node, Ctx)
+		scan = func(node *sitter.Node, lexical Ctx) {
+			if node == nil {
+				return
+			}
+			kind := node.Type()
+			if node != owner.Class.DeclarationNode && (kind == "class_declaration" || kind == "interface_declaration" || kind == "enum_declaration") {
+				parent := node.Parent()
+				if parent != nil && parent.Type() != "class_body" && parent.Type() != "program" {
+					for _, field := range []string{"interfaces", "superclass"} {
+						if clause := node.ChildByFieldName(field); clause != nil {
+							for _, typ := range collectTypeNodes(clause) {
+								javaType := typ.Content(file.Source)
+								base, _ := parseJavaTypeString(javaType)
+								inventory.sourceEvents = append(inventory.sourceEvents, genericFamilySourceEvent{file: file, owner: owner, parent: resolveClassScopeByQualifiedName(lexical, base), node: node, body: node.ChildByFieldName("body"), lexical: lexical, javaType: javaType, local: true, superclass: field == "superclass"})
+							}
+						}
+					}
+				}
+				return
+			}
+			if kind == "method_declaration" || kind == "constructor_declaration" {
+				for _, method := range owner.Methods {
+					if method.DeclarationNode != nil && method.DeclarationNode.StartByte() == node.StartByte() && method.DeclarationNode.EndByte() == node.EndByte() {
+						lexical = lexical.Clone()
+						lexical.localScope = method
+						break
+					}
+				}
+			}
+			if kind == "object_creation_expression" {
+				if typ := node.ChildByFieldName("type"); typ != nil {
+					javaType := typ.Content(file.Source)
+					base, _ := parseJavaTypeString(javaType)
+					parent := resolveClassScopeByQualifiedName(lexical, base)
+					for _, child := range nodeutil.NamedChildrenOf(node) {
+						if child.Type() == "class_body" {
+							inventory.sourceEvents = append(inventory.sourceEvents, genericFamilySourceEvent{file: file, owner: owner, parent: parent, node: node, body: child, lexical: lexical, javaType: javaType})
+						}
+					}
+				}
+			}
+			for _, child := range nodeutil.NamedChildrenOf(node) {
+				scan(child, classDeclarationChildCtx(node, child, lexical))
+			}
+		}
+		scan(owner.Class.DeclarationNode, classScopeCtx(owner, ctx))
+	}
+	return inventory.sourceEvents
+}
+
+func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory *genericFamilyInventory) (*genericFamilyPlan, error) {
 	if seed == nil || seed.Class == nil || len(seed.TypeParameters) == 0 {
 		return nil, fmt.Errorf("generic family requires a source generic declaration")
 	}
@@ -48,8 +156,11 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 		binders:         map[*symbol.TypeParamDeclaration]struct{}{},
 		representations: map[*symbol.TypeParamDeclaration]genericFamilyBinderRepresentation{},
 	}
-	scopes := allSourceClassScopes()
-	localInterfaces := genericFamilyLocalInterfaceEdges(scopes, ctx)
+	if inventory == nil {
+		inventory = newGenericFamilyInventory(ctx)
+	}
+	scopes := inventory.scopes
+	localInterfaces := inventory.localInterfaces
 	// Treat implemented source interfaces as hierarchy edges too. Discovering
 	// another implementor later cannot change an already emitted method ABI.
 	changed := true
@@ -75,7 +186,7 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 			}
 		}
 		for _, scope := range scopes {
-			parents := genericFamilyParents(scope, ctx)
+			parents := inventory.parents[scope]
 			for _, parent := range parents {
 				_, childPresent := plan.members[scope]
 				_, parentPresent := plan.members[parent]
@@ -101,104 +212,42 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 			return nil, fmt.Errorf("generic family %s: %w", scope.Class.OriginalName, err)
 		}
 	}
-	// Scan each physical source file once, preserving the lexical owner and
-	// method binder environment. Anonymous classes are inventoried from source,
-	// not from the order in which expression rendering happens to discover them.
-	for _, owner := range scopes {
-		if owner.Class == nil || owner.Class.DeclarationNode == nil {
+	// Source traversal is shared by the discovery. Eligibility, synthesized
+	// scopes, binder representations and storage audits remain fresh per plan.
+	for _, event := range inventory.genericFamilySourceEvents(ctx) {
+		if event.err != nil {
+			return nil, event.err
+		}
+		if _, member := plan.members[event.parent]; !member {
 			continue
 		}
-		file := findFileScopeForClassScope(owner)
-		if file == nil {
-			return nil, fmt.Errorf("missing source for generic family inventory")
+		if event.superclass {
+			return nil, fmt.Errorf("local subclass requires a planned source scope")
 		}
-		ownerCtx := classScopeCtx(owner, ctx)
-		var scan func(*sitter.Node, Ctx) error
-		scan = func(node *sitter.Node, lexical Ctx) error {
-			if node == nil {
-				return nil
+		if event.local {
+			parameters := planLocalClassTypeParameters(event.node, nil, event.file.Source, event.lexical)
+			local := synthLocalClassScope(event.node, event.body, event.node.ChildByFieldName("name").Content(event.file.Source), "", nil, nil, nil, parameters.carried, parameters.declared, anonymousClassMethods(event.body), localClassConstructors(event.body), nil, event.file.Source)
+			local.Enclosing = event.owner
+			localCtx := event.lexical.Clone()
+			localCtx.currentClass = local
+			localCtx.localScope = nil
+			if err := plan.addBinderRepresentations(local, localCtx); err != nil {
+				return nil, err
 			}
-			if node != owner.Class.DeclarationNode && (node.Type() == "class_declaration" || node.Type() == "interface_declaration" || node.Type() == "enum_declaration") {
-				// Named member declarations have their own resolved ClassScope. Local
-				// classes do not, so they must be diagnosed if they extend this family.
-				parent := node.Parent()
-				if parent != nil && parent.Type() != "class_body" && parent.Type() != "program" {
-					if interfaces := node.ChildByFieldName("interfaces"); interfaces != nil {
-						for _, typ := range collectTypeNodes(interfaces) {
-							javaType := typ.Content(file.Source)
-							base, _ := parseJavaTypeString(javaType)
-							parent := resolveClassScopeByQualifiedName(lexical, base)
-							if _, member := plan.members[parent]; !member {
-								continue
-							}
-							body := node.ChildByFieldName("body")
-							parameters := planLocalClassTypeParameters(node, nil, file.Source, lexical)
-							local := synthLocalClassScope(node, body, node.ChildByFieldName("name").Content(file.Source), "", nil, nil, nil, parameters.carried, parameters.declared, anonymousClassMethods(body), localClassConstructors(body), nil, file.Source)
-							local.Enclosing = owner
-							localCtx := lexical.Clone()
-							localCtx.currentClass = local
-							localCtx.localScope = nil
-							if err := plan.addBinderRepresentations(local, localCtx); err != nil {
-								return err
-							}
-							if !plan.typeSupported(javaType, localCtx, true) {
-								return fmt.Errorf("local generic family specialization needs shared storage: %s", javaType)
-							}
-							if err := plan.auditTypeSyntax(node, file.Source, localCtx); err != nil {
-								return err
-							}
-							plan.locals[genericFamilyKey(file, node)] = genericFamilyAnonymous{owner: owner, parent: parent, node: node, javaType: javaType}
-						}
-					}
-					if superclass := node.ChildByFieldName("superclass"); superclass != nil {
-						for _, typ := range collectTypeNodes(superclass) {
-							base, _ := parseJavaTypeString(typ.Content(file.Source))
-							if _, member := plan.members[resolveClassScopeByQualifiedName(lexical, base)]; member {
-								return fmt.Errorf("local subclass requires a planned source scope")
-							}
-						}
-					}
-				}
-				return nil
+			if !plan.typeSupported(event.javaType, localCtx, true) {
+				return nil, fmt.Errorf("local generic family specialization needs shared storage: %s", event.javaType)
 			}
-			if node.Type() == "method_declaration" || node.Type() == "constructor_declaration" {
-				for _, method := range owner.Methods {
-					if method.DeclarationNode != nil && method.DeclarationNode.StartByte() == node.StartByte() && method.DeclarationNode.EndByte() == node.EndByte() {
-						lexical = lexical.Clone()
-						lexical.localScope = method
-						break
-					}
-				}
+			if err := plan.auditTypeSyntax(event.node, event.file.Source, localCtx); err != nil {
+				return nil, err
 			}
-			if node.Type() == "object_creation_expression" {
-				typ := node.ChildByFieldName("type")
-				if typ != nil {
-					base, _ := parseJavaTypeString(typ.Content(file.Source))
-					parent := resolveClassScopeByQualifiedName(lexical, base)
-					if _, member := plan.members[parent]; member {
-						for _, child := range nodeutil.NamedChildrenOf(node) {
-							if child.Type() == "class_body" {
-								key := genericFamilyKey(file, node)
-								plan.anonymous[key] = genericFamilyAnonymous{owner: owner, parent: parent, node: node, javaType: typ.Content(file.Source)}
-								if !plan.typeSupported(typ.Content(file.Source), lexical, true) {
-									return fmt.Errorf("anonymous generic family specialization needs shared storage: %s", typ.Content(file.Source))
-								}
-								if err := plan.auditTypeSyntax(child, file.Source, lexical); err != nil {
-									return err
-								}
-							}
-						}
-					}
-				}
-			}
-			for _, child := range nodeutil.NamedChildrenOf(node) {
-				if err := scan(child, classDeclarationChildCtx(node, child, lexical)); err != nil {
-					return err
-				}
-			}
-			return nil
+			plan.locals[genericFamilyKey(event.file, event.node)] = genericFamilyAnonymous{owner: event.owner, parent: event.parent, node: event.node, javaType: event.javaType}
+			continue
 		}
-		if err := scan(owner.Class.DeclarationNode, ownerCtx); err != nil {
+		plan.anonymous[genericFamilyKey(event.file, event.node)] = genericFamilyAnonymous{owner: event.owner, parent: event.parent, node: event.node, javaType: event.javaType}
+		if !plan.typeSupported(event.javaType, event.lexical, true) {
+			return nil, fmt.Errorf("anonymous generic family specialization needs shared storage: %s", event.javaType)
+		}
+		if err := plan.auditTypeSyntax(event.body, event.file.Source, event.lexical); err != nil {
 			return nil, err
 		}
 	}

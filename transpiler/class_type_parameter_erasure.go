@@ -335,9 +335,61 @@ func directOwnerCallableMethodFamilyEligible(owner *symbol.ClassScope, method *s
 	return eligible
 }
 
+// This inventory belongs to one resolved file render. It stores source syntax
+// and selector names; target resolution, ancestry and admission remain fresh.
+type callableSubclassSourceInventory struct {
+	graph          *symbol.GlobalSymbols
+	ready          bool
+	events         []callableSubclassSourceEvent
+	nodes          map[*sitter.Node]resolvedSourceNodeFacts
+	selectorsReady bool
+	selectors      map[string]struct{}
+}
+
+type callableSubclassSourceEvent struct {
+	owner     *symbol.ClassScope
+	file      *symbol.FileScope
+	supertype *sitter.Node
+}
+
 func classHasUnmodeledCallableSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 	if target == nil {
 		return false
+	}
+	matches := func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
+		ownerCtx := classScopeCtx(owner, ctx)
+		base, _ := parseJavaTypeString(supertype.Content(file.Source))
+		resolved := resolveClassScopeByQualifiedName(ownerCtx, base)
+		return resolved == target || classScopeDescendsFrom(resolved, target, ownerCtx)
+	}
+	inventory := resolvedSourceInventory(ctx)
+	if inventory == nil {
+		// Standalone callers retain the original early exit and do not retain
+		// source data beyond this query.
+		return visitCallableSubclassSources(matches)
+	}
+	if !inventory.ready {
+		visitCallableSubclassSources(func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
+			inventory.events = append(inventory.events, callableSubclassSourceEvent{owner: owner, file: file, supertype: supertype})
+			return false
+		}, ctx)
+		inventory.ready = true
+	}
+	for _, event := range inventory.events {
+		if matches(event.owner, event.file, event.supertype) {
+			return true
+		}
+	}
+	return false
+}
+
+// Visit anonymous and local superclass syntax in the same source order as an
+// uncached query. Returning true preserves its early exit without caching a
+// target's eligibility or a descendant relation.
+func visitCallableSubclassSources(visit func(*symbol.ClassScope, *symbol.FileScope, *sitter.Node) bool, contexts ...Ctx) bool {
+	var ctx Ctx
+	if len(contexts) > 0 {
+		ctx = contexts[0]
 	}
 	for _, owner := range allSourceClassScopes() {
 		if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil {
@@ -347,24 +399,23 @@ func classHasUnmodeledCallableSubclass(target *symbol.ClassScope, ctx Ctx) bool 
 		if file == nil {
 			continue
 		}
-		ownerCtx := classScopeCtx(owner, ctx)
 		var walk func(node *sitter.Node) bool
 		walk = func(node *sitter.Node) bool {
 			if node == nil {
 				return false
 			}
 			var supertype *sitter.Node
-			switch node.Type() {
+			switch resolvedSourceNodeType(node, ctx) {
 			case "object_creation_expression":
-				for _, child := range nodeutil.NamedChildrenOf(node) {
-					if child.Type() == "class_body" {
+				for _, child := range resolvedSourceNamedChildren(node, ctx) {
+					if resolvedSourceNodeType(child, ctx) == "class_body" {
 						supertype = node.ChildByFieldName("type")
 						break
 					}
 				}
 			case "class_declaration":
 				parent := node.Parent()
-				if parent != nil && parent.Type() != "program" && parent.Type() != "class_body" {
+				if parent != nil && resolvedSourceNodeType(parent, ctx) != "program" && resolvedSourceNodeType(parent, ctx) != "class_body" {
 					if superclass := node.ChildByFieldName("superclass"); superclass != nil {
 						types := collectTypeNodes(superclass)
 						if len(types) > 0 {
@@ -373,14 +424,10 @@ func classHasUnmodeledCallableSubclass(target *symbol.ClassScope, ctx Ctx) bool 
 					}
 				}
 			}
-			if supertype != nil {
-				base, _ := parseJavaTypeString(supertype.Content(file.Source))
-				resolved := resolveClassScopeByQualifiedName(ownerCtx, base)
-				if resolved == target || classScopeDescendsFrom(resolved, target, ownerCtx) {
-					return true
-				}
+			if supertype != nil && visit(owner, file, supertype) {
+				return true
 			}
-			for _, child := range nodeutil.NamedChildrenOf(node) {
+			for _, child := range resolvedSourceNamedChildren(node, ctx) {
 				if walk(child) {
 					return true
 				}

@@ -9093,5 +9093,284 @@
     "TDD": "Frozen canonical/static-import/native failures retained. Fresh same-public90 five gates pass including original unchanged analytics_pipeline JVM/Go parity. Helper unchanged, duplicate runtime omitted.",
     "limits": "Scoped Boolean ingress only. Full CI/original Commons27/Netty/Gson remain unaccepted; checkpoint18 latest full accepted round. No intermediate generated-output guard claim for this legacy e2e runner.",
     "continuation": "Continue Sol-only generic equality/fullCommons integration, Netty translation, Gson physical controls, volatile/SAM, CI repairs and runtime performance."
+  },
+  "sol_progress92": {
+    "status": "ACCEPTED_SCOPED_STRUCTURAL_QUERY_OPTIMIZATION_FULL_ROUND_UNACCEPTED",
+    "parent": "a1c4a21f7260a467a6f2612759c4a039c668c15f",
+    "publication": {
+      "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-publication-readiness.json",
+      "sha256": "3ce03852159be3766033975b8a6e19ecf3503bb465d0b8f06827b27efd46b9d9"
+    },
+    "files17": [
+      {
+        "after": {
+          "bytes": 1711,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/anonymous_parameter_names.go",
+          "sha256": "ab8ae0802504904318e112888ce85291a0c1eb96856774e33b75b3f39c9aee74"
+        },
+        "before": {
+          "bytes": 1463,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/anonymous_parameter_names.go",
+          "sha256": "6a4d24c5a176e08d018cc610d8ee7da596454af5bb087f2309dbbf8ecf19b60d"
+        },
+        "relative": "transpiler/anonymous_parameter_names.go"
+      },
+      {
+        "after": {
+          "bytes": 4379,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/callable_subclass_inventory_complexity_test.go",
+          "sha256": "fec65f59de35071e81ac7a7110db9c61e153525cb37f0fbff6e4f4c7e7379fb9"
+        },
+        "before": null,
+        "relative": "transpiler/callable_subclass_inventory_complexity_test.go"
+      },
+      {
+        "after": {
+          "bytes": 2430,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/callable_subclass_inventory_lifetime_test.go",
+          "sha256": "786e52fb96d4c49246c4c54c1a41549222d26cd49da1bb87e8c542996ad1a52f"
+        },
+        "before": null,
+        "relative": "transpiler/callable_subclass_inventory_lifetime_test.go"
+      },
+      {
+        "after": {
+          "bytes": 46693,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/class_type_parameter_erasure.go",
+          "sha256": "31d0ce43229652b00d96ba517f77f4739413be2df9e64905ec2bce55ba8b626b"
+        },
+        "before": {
+          "bytes": 44838,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/class_type_parameter_erasure.go",
+          "sha256": "c0afebe237d47162dae142f31c7991f12f993cade1f54b417e752d918c7188ac"
+        },
+        "relative": "transpiler/class_type_parameter_erasure.go"
+      },
+      {
+        "after": {
+          "bytes": 162771,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/declaration.go",
+          "sha256": "376963fee3eaed089f933f070222c29630473d9af2d05a1ab1bf4959d463a415"
+        },
+        "before": {
+          "bytes": 161961,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/declaration.go",
+          "sha256": "b4c35c38c1cdd110e362d1b7fa9960f262fd227c41e16b3463e6ac5af9ead728"
+        },
+        "relative": "transpiler/declaration.go"
+      },
+      {
+        "after": {
+          "bytes": 450822,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/expression.go",
+          "sha256": "da481671a714e626052fe2e5852fcfd7af7f89657b3e16be8786acc6e137f512"
+        },
+        "before": {
+          "bytes": 450797,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/expression.go",
+          "sha256": "46a834191aab43d8ccc01209ebc0088fe4bd36d79304e8c9d7019499ebc864e6"
+        },
+        "relative": "transpiler/expression.go"
+      },
+      {
+        "after": {
+          "bytes": 12950,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/generic_family_codegen.go",
+          "sha256": "fd7b9bf1c29494ce7d025f6ed0d8c7d890eb5d329f226aea083953e506d5788f"
+        },
+        "before": {
+          "bytes": 12727,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/generic_family_codegen.go",
+          "sha256": "60d09fda7e20caec1a322dced3b90c38f0f475d87223e24110ef9ac10e62c4b0"
+        },
+        "relative": "transpiler/generic_family_codegen.go"
+      },
+      {
+        "after": {
+          "bytes": 3595,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/generic_family_inventory_complexity_test.go",
+          "sha256": "07ceab3095659a29bb167fbc42f0a975f7f4531e9217d083a6f4a667fc86337f"
+        },
+        "before": null,
+        "relative": "transpiler/generic_family_inventory_complexity_test.go"
+      },
+      {
+        "after": {
+          "bytes": 18703,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/generic_family_plan.go",
+          "sha256": "8a5588b9263b1e833183523ccba993caaa5b4489eda0c5e5d4e8c5ccdc06f169"
+        },
+        "before": {
+          "bytes": 16825,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/generic_family_plan.go",
+          "sha256": "a37e942f8b5faf46fdff20b44c3f1f3ffe98cf168e00a8fa758c11309ddfbd44"
+        },
+        "relative": "transpiler/generic_family_plan.go"
+      },
+      {
+        "after": {
+          "bytes": 3563,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/generic_family_source_events_test.go",
+          "sha256": "3583f0ff49aa1d44e90e22f82dae181e2b0fbb860f82f99de4aef509439efc57"
+        },
+        "before": null,
+        "relative": "transpiler/generic_family_source_events_test.go"
+      },
+      {
+        "after": {
+          "bytes": 12719,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/java2go.go",
+          "sha256": "ed4de98e489474debdc9470f809791d2e6ddba8b44b749138d668953e14bd71f"
+        },
+        "before": {
+          "bytes": 12513,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/java2go.go",
+          "sha256": "afb0fbe7e29e4e48b83b8d7cc999b25320eefa994f12cc49105597165ee2e26f"
+        },
+        "relative": "transpiler/java2go.go"
+      },
+      {
+        "after": {
+          "bytes": 19876,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/raw_unbound_receiver_view.go",
+          "sha256": "1b5cdac9485fc9a62069b5c2ef950d9bd64cfad5c42a37acc636342f7004163c"
+        },
+        "before": {
+          "bytes": 19706,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/raw_unbound_receiver_view.go",
+          "sha256": "57c14a67e96cf314571d6276c50fd00bf275588d85a4c46950af40dbef3dc885"
+        },
+        "relative": "transpiler/raw_unbound_receiver_view.go"
+      },
+      {
+        "after": {
+          "bytes": 43060,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/reference_array_codegen.go",
+          "sha256": "b5ee2831ae5e334d66b1b32f152b0fa69b0fcd1fc2c4c866c0427b65912a8080"
+        },
+        "before": {
+          "bytes": 43000,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/reference_array_codegen.go",
+          "sha256": "930be7034386d024986dafe004cc86e8c00236f309ffdf8c3a70b4758296ab2a"
+        },
+        "relative": "transpiler/reference_array_codegen.go"
+      },
+      {
+        "after": {
+          "bytes": 4238,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/resolved_source_inventory_semantics_test.go",
+          "sha256": "ff51581ae5eba5fe6e08cdc41c38e1e51a06a3edf0ebed5c05bc597039d7aff4"
+        },
+        "before": null,
+        "relative": "transpiler/resolved_source_inventory_semantics_test.go"
+      },
+      {
+        "after": {
+          "bytes": 1851,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/resolved_source_node_inventory.go",
+          "sha256": "a35b2b1c75e926cdd6170dd8d54fb2937e3f4f908a3cce97b5beda82956ab5dd"
+        },
+        "before": null,
+        "relative": "transpiler/resolved_source_node_inventory.go"
+      },
+      {
+        "after": {
+          "bytes": 6722,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/source_generic_view_demand.go",
+          "sha256": "1596b088818ae4e6b0c11421e991c7ebb44efeb3422a51597cba77fb5c40e8db"
+        },
+        "before": {
+          "bytes": 6135,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/source_generic_view_demand.go",
+          "sha256": "d868cdea40d1343ddb96f76dd45a76ac77e08d0b4a5a4c10a6f92916bd7221a9"
+        },
+        "relative": "transpiler/source_generic_view_demand.go"
+      },
+      {
+        "after": {
+          "bytes": 47998,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source/transpiler/tree_sitter.go",
+          "sha256": "e9c2ab6dec86b798b4c183a6da3c92fb40b2745cab53a0990cc76dd16bd6c76f"
+        },
+        "before": {
+          "bytes": 47808,
+          "path": "/private/tmp/java2go-root-current91-source/source/transpiler/tree_sitter.go",
+          "sha256": "2a3d5e4a67a54213eb156f0cb06861968c255e5e41da3c78aea46686b0085197"
+        },
+        "relative": "transpiler/tree_sitter.go"
+      }
+    ],
+    "coordinator_raw_stages": [
+      {
+        "command": [
+          "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+          "test",
+          "-p=1",
+          "-json",
+          "-count=1",
+          "-parallel=1",
+          "-timeout=240s",
+          "-run=^(TestCallableSubclassInventory_WholeASTQueriesArePerRender|TestCallableSubclassInventory_CachedQueriesKeepSourceIdentityAndLifetime|TestCtxClone|TestCtxClonePreservesExecutionContext|TestGenericFamilySourceEvents_WholeASTTraversalIsPerDiscovery|TestGenericFamilyInventory_WholeGraphWorkIsPerDiscovery|TestGenericFamilyPlan.*|TestGenericFamilyCacheRenderLifetimeAndSyntheticIsolation|TestGenericFamilyBoundRepresentation.*|TestResolutionSelectorGuard_OrdinaryNamesAvoidHierarchyAnalysis|TestResolutionBatch_FilePartitionDoesNotMultiplyHierarchyWork|TestResolutionBatch_ConstructorHelperStaticFieldOrdering|TestCampaignInheritedInterfaceOverloads|TestCampaignInheritedOverloadPreservesDispatch|TestCampaignInheritedMemberLookupIdentity|TestResolveFile_.*|TestRawCompilationUnitPackageMetadataRetained|TestRawCompilationUnitNamesDoNotClassifyContent|TestRawCompilationUnitExplicitDiagnosticsBeforeWrites|TestResolvedSourceInventory_SelectorsKeepOverloadsAndGraphLifetime|TestResolvedSourceInventory_DemandsKeepLexicalBindersAndHeaderContexts|TestResolvedSourceInventory_AnonymousParametersKeepCommentAndKeywordRoles|TestSourceGenericViewDemandRecordHeader|TestSourceGenericViewDemandBinderPrefix|TestSourceGenericViewDemandContextBoundaries|TestRawUnboundReceiverViewAdversarial_StaticReferenceKeepsExplicitRawParameter|TestRawUnboundReceiverViewAdversarial_QualifiedNestedOwnersRemainDistinct|TestConstructorSubobjectAttachment_AnonymousSubclassOfLocalClass|TestCampaignAnonymousParameterKeywords)$",
+          "./transpiler"
+        ],
+        "cwd": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source",
+        "stdout_sha256": "a47f647e1597bf400b92b1b45de2698f2b03a220b158e0f3d5d4170a4acae923",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "report": {
+          "bytes": 26401,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/evidence-source-query-matching91-green-attempt1/report.json",
+          "sha256": "8b9d26399b8f1258ac34f279c912d4ef9b77cf4f7032159c01fcd121141fa427"
+        },
+        "elapsed_seconds": 31.955019,
+        "cleanup_clean": true
+      },
+      {
+        "command": [
+          "/private/tmp/java2go-lint214-restore-8oanhliu/bin/golangci-lint",
+          "run",
+          "--no-config",
+          "--max-issues-per-linter=0",
+          "--max-same-issues=0",
+          "--timeout=180s",
+          "./campaign",
+          "./stdjava",
+          "./symbol",
+          "./transpiler"
+        ],
+        "cwd": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-matching91-source",
+        "stdout_sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "report": {
+          "bytes": 4089,
+          "path": "/private/tmp/java2go-netty-resolution-sol-v1/evidence-source-query-matching91-lint-attempt1/report.json",
+          "sha256": "0592c66247f27489d9979eccd0ff62805165fb374c36b4eace9ea4edae53cc0a"
+        },
+        "elapsed_seconds": 31.251787,
+        "cleanup_clean": true
+      }
+    ],
+    "independent_review": {
+      "bytes": 20488,
+      "path": "/private/tmp/java2go-sol-netty91-independent-review.json",
+      "sha256": "b2bffbe9b0b7d2cd0a2800fc8c4a4914cde8b6500bcaf97e0a5d435761186ebe"
+    },
+    "behavior": "Reuse ordered pure AST structural facts within each render/planning operation; fresh lexical binders, dispatch, admission and storage authority remain uncached. Source identity and graph/render lifetime guards retained.",
+    "TDD": "Original allocation RED151.72 and failed candidate24.71 retained; fixed ratio3.95 meets unchanged bound6. Fresh matching91 exact82 RUN/PASS, five JVM oracles, metadata10 and pinned lint2.14 zero issues.",
+    "full_netty": {
+      "status": "UNACCEPTED_TIMEOUT",
+      "source_failure_private89": {
+        "bytes": 5335,
+        "path": "/private/tmp/java2go-netty-resolution-sol-v1/full-private89-source-query-failure-audit.json",
+        "sha256": "1e79bc08d26a609764d9b04589fd63c3dd8bcfe7238190516f3180ea981469ad"
+      },
+      "matching91_timeout": {
+        "bytes": 5390,
+        "path": "/private/tmp/java2go-netty-resolution-sol-v1/full-matching91-source-query-timeout-audit.json",
+        "sha256": "112ae711f59bcffb150434b45e29e2d6c8417837233571daba368d17ec169a33"
+      },
+      "details": "Actual1212+8 translation timed out300.201115s;8 nonempty outputs plus empty ninth. No full build/runtime/parity accepted."
+    },
+    "limits": "Full CI, originalCommons27 and genuineGson118 remain unaccepted. Checkpoint18 latest accepted full round.",
+    "continuation": "Sol-only parallel source-query project repetition, generic equality full application gates, Object/UTF16 performance, integer/Float/harness, collections, volatile/SAM, Gson physical lowering and typed Maven ingestion."
   }
 }

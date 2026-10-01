@@ -72,9 +72,16 @@ func canonicalGenericFamily(scope *symbol.ClassScope, ctx Ctx) *genericFamilyPla
 func discoverCanonicalGenericFamilies(ctx Ctx) []*genericFamilyPlan {
 	seen := map[*symbol.ClassScope]bool{}
 	var plans []*genericFamilyPlan
+	var inventory *genericFamilyInventory
+	planSeed := func(seed *symbol.ClassScope) (*genericFamilyPlan, error) {
+		if inventory == nil {
+			inventory = newGenericFamilyInventory(ctx)
+		}
+		return planGenericFamilyWithInventory(seed, ctx, inventory)
+	}
 	for _, seed := range sourceGenericViewDemandSeeds(ctx) {
 		seen[seed] = true
-		if plan, err := planGenericFamily(seed, ctx); err == nil {
+		if plan, err := planSeed(seed); err == nil {
 			plans = append(plans, plan)
 		}
 	}
@@ -107,7 +114,7 @@ func discoverCanonicalGenericFamilies(ctx Ctx) []*genericFamilyPlan {
 					continue
 				}
 				seen[seed] = true
-				plan, err := planGenericFamily(seed, ctx)
+				plan, err := planSeed(seed)
 				if err != nil {
 					continue
 				}

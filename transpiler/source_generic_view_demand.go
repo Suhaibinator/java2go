@@ -31,22 +31,22 @@ func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
 			if node == nil {
 				return
 			}
-			if !node.Equal(root) && sourceGenericViewTypeDeclaration(node) {
+			if !node.Equal(root) && sourceGenericViewTypeDeclaration(node, ctx) {
 				// Named classes are visited in their own declaration context. Local
 				// class scopes are not in the resolved graph; do not resolve their
 				// private binders or nested type names as enclosing declarations.
 				return
 			}
-			if node.Type() == "class_body" {
+			if resolvedSourceNodeType(node, ctx) == "class_body" {
 				parent := node.Parent()
-				if parent != nil && (parent.Type() == "object_creation_expression" || parent.Type() == "enum_constant") {
+				if parent != nil && (resolvedSourceNodeType(parent, ctx) == "object_creation_expression" || resolvedSourceNodeType(parent, ctx) == "enum_constant") {
 					// Anonymous declarations are hoisted later. Their lexical type
 					// namespace is not this resolved owner; do not invent a demand
 					// by resolving an anonymous member's shadow as an outer type.
 					return
 				}
 			}
-			if node.Type() == "method_declaration" || node.Type() == "constructor_declaration" {
+			if resolvedSourceNodeType(node, ctx) == "method_declaration" || resolvedSourceNodeType(node, ctx) == "constructor_declaration" {
 				lexical = lexical.Clone()
 				lexical.localScope = nil
 				for _, method := range owner.Methods {
@@ -60,8 +60,14 @@ func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
 				seen[seed] = true
 				seeds = append(seeds, seed)
 			}
-			for _, child := range nodeutil.NamedChildrenOf(node) {
-				walk(child, classDeclarationChildCtx(node, child, lexical))
+			for _, child := range resolvedSourceNamedChildren(node, ctx) {
+				childCtx := lexical
+				// The original helper returns this context for non-declarations.
+				// Reuse its structural guard while keeping header/body selection fresh.
+				if sourceGenericViewTypeDeclaration(node, ctx) {
+					childCtx = classDeclarationChildCtx(node, child, lexical)
+				}
+				walk(child, childCtx)
 			}
 		}
 		walk(root, classScopeCtx(owner, ctx))
@@ -75,17 +81,17 @@ func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
 }
 
 func sourceGenericViewDemandType(node *sitter.Node, ctx Ctx, source []byte) *symbol.ClassScope {
-	switch node.Type() {
+	switch resolvedSourceNodeType(node, ctx) {
 	case "generic_type", "type_identifier", "scoped_type_identifier":
 	default:
 		return nil
 	}
 	parent := node.Parent()
 	if parent != nil {
-		if parent.Type() == "scoped_type_identifier" {
+		if resolvedSourceNodeType(parent, ctx) == "scoped_type_identifier" {
 			return nil // resolve the complete qualified spelling only
 		}
-		if parent.Type() == "generic_type" && node.Type() != "generic_type" {
+		if resolvedSourceNodeType(parent, ctx) == "generic_type" && resolvedSourceNodeType(node, ctx) != "generic_type" {
 			return nil // the base of Cell<String> is not a raw Cell occurrence
 		}
 	}
@@ -95,7 +101,7 @@ func sourceGenericViewDemandType(node *sitter.Node, ctx Ctx, source []byte) *sym
 		return nil
 	}
 	demanded := sourceGenericViewCastType(node)
-	if node.Type() == "generic_type" {
+	if resolvedSourceNodeType(node, ctx) == "generic_type" {
 		// Cell<> is diamond inference, not a raw source view. Cell<String>
 		// alone needs no additional migration; casts and wildcard views do.
 		for _, argument := range arguments {
@@ -128,11 +134,15 @@ func sourceGenericViewCastType(node *sitter.Node) bool {
 // Match the declaration kinds registered as source ClassScopes. A nested record
 // has its own binders just as a nested class does; visiting either in its outer
 // declaration context would confuse a private type name with an imported one.
-func sourceGenericViewTypeDeclaration(node *sitter.Node) bool {
+func sourceGenericViewTypeDeclaration(node *sitter.Node, contexts ...Ctx) bool {
+	var ctx Ctx
+	if len(contexts) > 0 {
+		ctx = contexts[0]
+	}
 	if node == nil {
 		return false
 	}
-	switch node.Type() {
+	switch resolvedSourceNodeType(node, ctx) {
 	case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
 		return true
 	}

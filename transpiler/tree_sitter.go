@@ -45,6 +45,8 @@ type Ctx struct {
 	projectMode bool
 	// Immutable named-family analysis shared only within this resolved file render.
 	genericFamilies *genericFamilyAnalysis
+	// Structural superclass syntax shared only within a resolved file render.
+	callableSubclasses *callableSubclassSourceInventory
 	// Active member-type hierarchy lookups; extended immutably per lookup.
 	memberTypeLookupPath map[*symbol.ClassScope]bool
 	// Header lookup keeps the declaration and its binders, but excludes body-only members.
@@ -407,6 +409,7 @@ func (c Ctx) Clone() Ctx {
 	return Ctx{
 		projectMode:                         c.projectMode,
 		genericFamilies:                     c.genericFamilies,
+		callableSubclasses:                  c.callableSubclasses,
 		memberTypeLookupPath:                c.memberTypeLookupPath,
 		memberTypeHeaderOwner:               c.memberTypeHeaderOwner,
 		localBindingBody:                    c.localBindingBody,

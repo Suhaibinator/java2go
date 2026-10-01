@@ -258,6 +258,9 @@ or to fix crashes with the symbol handling`,
 // strict mode an unsupported construct panics with a strictModeError, which this
 // function recovers into a returned error to restore fail-fast behavior.
 func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error) {
+	// A render starts after resolution and owns fresh source analysis. Copies
+	// of this context share structural facts only for this conversion.
+	ctx.callableSubclasses = &callableSubclassSourceInventory{}
 	defer func() {
 		if r := recover(); r != nil {
 			if strictErr, ok := r.(strictModeError); ok {

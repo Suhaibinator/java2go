@@ -7499,7 +7499,7 @@ func anonymousInheritedSelectorNames(supertype string, superScope *symbol.ClassS
 			reserved[classSelfSetterName(current)] = struct{}{}
 		}
 		if !current.IsInterface && current.Class != nil && constructorUsesMostDerived(current, ctx) {
-			reserved[classSubobjectInstallerName(current)] = struct{}{}
+			reserved[classSubobjectInstallerName(current, ctx)] = struct{}{}
 		}
 		queue = append(queue, resolveSuperclassScopeInDeclaringContext(ctx, current))
 		queue = append(queue, resolveImplementedInterfaceScopesInDeclaringContext(ctx, current)...)
@@ -7516,7 +7516,7 @@ func inheritedSubobjectInstallerSelectorNames(superScope *symbol.ClassScope, ctx
 		}
 		seen[current] = struct{}{}
 		if !current.IsInterface && current.Class != nil && constructorUsesMostDerived(current, ctx) {
-			reserved[classSubobjectInstallerName(current)] = struct{}{}
+			reserved[classSubobjectInstallerName(current, ctx)] = struct{}{}
 		}
 	}
 	return reserved
@@ -8205,7 +8205,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		}
 		seenInstallerScopes[current] = struct{}{}
 		if !current.IsInterface && current.Class != nil && constructorUsesMostDerived(current, ctx) {
-			reservedInstallerSelectors[classSubobjectInstallerName(current)] = struct{}{}
+			reservedInstallerSelectors[classSubobjectInstallerName(current, ctx)] = struct{}{}
 		}
 	}
 	reserveSyntheticSubobjectStorageNames(
@@ -8534,12 +8534,12 @@ func executionAwareMethodReferenceForwarder(
 	body := []ast.Stmt{}
 	callReceiver := receiver
 	if unbound && target.rawGenericView && target.classScope == resolution.owner &&
-		rawUnboundFunctionUsesReceiverView(functionType, target.classScope) &&
+		rawUnboundFunctionUsesReceiverView(functionType, target.classScope, ctx) &&
 		rawUnboundReceiverMethodEligible(resolution.owner, resolution.def, ctx) {
 		call := &ast.CallExpr{
 			Fun: &ast.SelectorExpr{
 				X:   receiver,
-				Sel: &ast.Ident{Name: rawUnboundReceiverEntryName(resolution.owner, resolution.def)},
+				Sel: &ast.Ident{Name: rawUnboundReceiverEntryName(resolution.owner, resolution.def, ctx)},
 			},
 			Args: append([]ast.Expr{execution}, javaArgs...),
 		}

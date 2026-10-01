@@ -20,15 +20,15 @@ type rawUnboundReceiverMethod struct {
 	method *symbol.Definition
 }
 
-func rawUnboundReceiverViewTypeName(scope *symbol.ClassScope) string {
+func rawUnboundReceiverViewTypeName(scope *symbol.ClassScope, contexts ...Ctx) string {
 	if scope == nil || scope.Class == nil {
 		return ""
 	}
 	base := "Java2goRawReceiverFrom" + rawUnboundHexIdentity(javaClassBinaryName(scope))
-	return collisionSafeRawUnboundIdentifier(base, scope)
+	return collisionSafeRawUnboundIdentifier(base, scope, contexts...)
 }
 
-func rawUnboundReceiverEntryName(owner *symbol.ClassScope, method *symbol.Definition) string {
+func rawUnboundReceiverEntryName(owner *symbol.ClassScope, method *symbol.Definition, contexts ...Ctx) string {
 	if owner == nil || method == nil {
 		return ""
 	}
@@ -41,7 +41,7 @@ func rawUnboundReceiverEntryName(owner *symbol.ClassScope, method *symbol.Defini
 	}
 	identity += ")" + method.OriginalType
 	base := "Java2goRawInvokeFrom" + rawUnboundHexIdentity(identity)
-	return collisionSafeRawUnboundIdentifier(base, owner)
+	return collisionSafeRawUnboundIdentifier(base, owner, contexts...)
 }
 
 func rawUnboundHexIdentity(value string) string {
@@ -53,13 +53,13 @@ func rawUnboundHexIdentity(value string) string {
 	return result.String()
 }
 
-func collisionSafeRawUnboundIdentifier(base string, owner *symbol.ClassScope) string {
+func collisionSafeRawUnboundIdentifier(base string, owner *symbol.ClassScope, contexts ...Ctx) string {
 	for suffix := 0; ; suffix++ {
 		candidate := base
 		if suffix > 0 {
 			candidate += fmt.Sprintf("%d", suffix)
 		}
-		if !generatedIdentifierExists(candidate, owner) && !sourceMethodIdentifierExists(candidate) {
+		if !generatedIdentifierExists(candidate, owner) && !sourceMethodIdentifierExists(candidate, contexts...) {
 			return candidate
 		}
 	}
@@ -134,11 +134,11 @@ func generateRawUnboundReceiverViewDecl(ctx Ctx) ast.Decl {
 	fields := &ast.FieldList{}
 	for _, method := range methods {
 		fields.List = append(fields.List, &ast.Field{
-			Names: []*ast.Ident{{Name: rawUnboundReceiverEntryName(method.owner, method.method)}},
+			Names: []*ast.Ident{{Name: rawUnboundReceiverEntryName(method.owner, method.method, ctx)}},
 			Type:  rawUnboundEntryFuncType(method.owner, method.method, ctx),
 		})
 	}
-	return genInterfaceInContext(rawUnboundReceiverViewTypeName(scope), fields, nil, ctx)
+	return genInterfaceInContext(rawUnboundReceiverViewTypeName(scope, ctx), fields, nil, ctx)
 }
 
 func generateRawUnboundReceiverEntryDecls(ctx Ctx) []ast.Decl {
@@ -183,7 +183,7 @@ func generateRawUnboundReceiverEntryDecls(ctx Ctx) []ast.Decl {
 			body = append(body, &ast.ExprStmt{X: call})
 		}
 		declarations = append(declarations, &ast.FuncDecl{
-			Name: &ast.Ident{Name: rawUnboundReceiverEntryName(candidate.owner, candidate.method)},
+			Name: &ast.Ident{Name: rawUnboundReceiverEntryName(candidate.owner, candidate.method, ctx)},
 			Recv: &ast.FieldList{List: []*ast.Field{{
 				Names: []*ast.Ident{{Name: receiverName}},
 				Type:  &ast.StarExpr{X: receiverType},
@@ -374,7 +374,7 @@ func rawUnboundReceiverHasSourceReference(target *symbol.ClassScope, ctx Ctx) bo
 					if node == nil {
 						return false
 					}
-					if node.Type() == "method_reference" && node.NamedChildCount() >= 2 {
+					if resolvedSourceNodeType(node, ctx) == "method_reference" && node.NamedChildCount() >= 2 {
 						qualifier := node.NamedChild(0)
 						methodNode := node.NamedChild(1)
 						if qualifier != nil && methodNode != nil &&
@@ -395,7 +395,7 @@ func rawUnboundReceiverHasSourceReference(target *symbol.ClassScope, ctx Ctx) bo
 							}
 						}
 					}
-					for _, child := range nodeutil.NamedChildrenOf(node) {
+					for _, child := range resolvedSourceNamedChildren(node, ctx) {
 						if visit(child) {
 							return true
 						}
@@ -446,7 +446,7 @@ func rawUnboundReceiverParameterType(
 		return fallback
 	}
 	return qualifiedNameExpr(
-		rawUnboundReceiverViewTypeName(target),
+		rawUnboundReceiverViewTypeName(target, ctx),
 		findJavaPackageForClassScope(target),
 		ctx,
 	)
@@ -469,11 +469,11 @@ func classScopeOwningMethodDefinition(method *symbol.Definition) *symbol.ClassSc
 	return owner
 }
 
-func rawUnboundFunctionUsesReceiverView(functionType *ast.FuncType, target *symbol.ClassScope) bool {
+func rawUnboundFunctionUsesReceiverView(functionType *ast.FuncType, target *symbol.ClassScope, contexts ...Ctx) bool {
 	if functionType == nil || functionType.Params == nil || len(functionType.Params.List) < 2 || target == nil {
 		return false
 	}
-	name := rawUnboundReceiverViewTypeName(target)
+	name := rawUnboundReceiverViewTypeName(target, contexts...)
 	switch parameterType := functionType.Params.List[1].Type.(type) {
 	case *ast.Ident:
 		return parameterType.Name == name

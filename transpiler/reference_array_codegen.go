@@ -381,10 +381,10 @@ func classHasSyntheticSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 				return false
 			}
 			var supertype *sitter.Node
-			switch node.Type() {
+			switch resolvedSourceNodeType(node, ctx) {
 			case "object_creation_expression":
-				for _, child := range nodeutil.NamedChildrenOf(node) {
-					if child.Type() == "class_body" {
+				for _, child := range resolvedSourceNamedChildren(node, ctx) {
+					if resolvedSourceNodeType(child, ctx) == "class_body" {
 						supertype = node.ChildByFieldName("type")
 						break
 					}
@@ -403,7 +403,7 @@ func classHasSyntheticSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 					return true
 				}
 			}
-			for _, child := range nodeutil.NamedChildrenOf(node) {
+			for _, child := range resolvedSourceNamedChildren(node, ctx) {
 				if visit(child) {
 					return true
 				}

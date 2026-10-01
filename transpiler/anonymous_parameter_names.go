@@ -11,6 +11,12 @@ import (
 // Reserve identifiers throughout the method so a renamed parameter cannot
 // capture another parameter or local (for example type alongside type_).
 func anonymousMethodParameters(method *sitter.Node, source []byte) []*symbol.Definition {
+	parametersNode := method.ChildByFieldName("parameters")
+	// With no parameter syntax, the original reservation walk produces no
+	// definitions and has no effect outside this function.
+	if parametersNode == nil || parametersNode.NamedChildCount() == 0 {
+		return nil
+	}
 	used := map[string]struct{}{}
 	var reserve func(*sitter.Node)
 	reserve = func(node *sitter.Node) {
@@ -26,7 +32,7 @@ func anonymousMethodParameters(method *sitter.Node, source []byte) []*symbol.Def
 	}
 	reserve(method)
 	var parameters []*symbol.Definition
-	for _, parameter := range nodeutil.NamedChildrenOf(method.ChildByFieldName("parameters")) {
+	for _, parameter := range nodeutil.NamedChildrenOf(parametersNode) {
 		javaType, nameNode := nodeutil.JavaParameterNodes(parameter)
 		if javaType == nil || nameNode == nil {
 			continue

@@ -1333,7 +1333,7 @@ func classSelfSetterName(scope *symbol.ClassScope) string {
 // interface. Choosing the name through the same global collision check as the
 // execution helpers keeps legal Java members with the synthetic spelling from
 // occupying the Go method slot.
-func classSubobjectInstallerName(scope *symbol.ClassScope) string {
+func classSubobjectInstallerName(scope *symbol.ClassScope, contexts ...Ctx) string {
 	if scope == nil || scope.Class == nil || scope.Class.Name == "" {
 		return ""
 	}
@@ -1350,7 +1350,7 @@ func classSubobjectInstallerName(scope *symbol.ClassScope) string {
 		if suffix > 0 {
 			candidate += strconv.Itoa(suffix)
 		}
-		if !generatedIdentifierExists(candidate, scope) && !sourceMethodIdentifierExists(candidate) {
+		if !generatedIdentifierExists(candidate, scope) && !sourceMethodIdentifierExists(candidate, contexts...) {
 			return candidate
 		}
 	}
@@ -1360,10 +1360,35 @@ func classSubobjectInstallerName(scope *symbol.ClassScope) string {
 // method-local classes, which are intentionally absent from GlobalScope. A
 // source method must retain its Java override spelling, so an installer avoids
 // it instead of trying to rename it after hoisting.
-func sourceMethodIdentifierExists(name string) bool {
+func sourceMethodIdentifierExists(name string, contexts ...Ctx) bool {
 	if name == "" {
 		return false
 	}
+	var ctx Ctx
+	if len(contexts) > 0 {
+		ctx = contexts[0]
+	}
+	if inventory := resolvedSourceInventory(ctx); inventory != nil {
+		if !inventory.selectorsReady {
+			inventory.selectors = make(map[string]struct{})
+			visitSourceMethodSelectorNames(ctx, func(selectors map[string]struct{}) bool {
+				for selector := range selectors {
+					inventory.selectors[selector] = struct{}{}
+				}
+				return false
+			})
+			inventory.selectorsReady = true
+		}
+		_, collision := inventory.selectors[name]
+		return collision
+	}
+	return visitSourceMethodSelectorNames(ctx, func(selectors map[string]struct{}) bool {
+		_, collision := selectors[name]
+		return collision
+	})
+}
+
+func visitSourceMethodSelectorNames(ctx Ctx, check func(map[string]struct{}) bool) bool {
 	for _, pkg := range symbol.GlobalScope.Packages {
 		if pkg == nil {
 			continue
@@ -1377,15 +1402,15 @@ func sourceMethodIdentifierExists(name string) bool {
 				if node == nil {
 					return false
 				}
-				if node.Type() == "class_body" {
-					if _, collision := anonymousDeclaredMethodSelectorNames(
+				if resolvedSourceNodeType(node, ctx) == "class_body" {
+					if check(anonymousDeclaredMethodSelectorNames(
 						anonymousClassMethods(node),
 						file.Source,
-					)[name]; collision {
+					)) {
 						return true
 					}
 				}
-				for _, child := range nodeutil.NamedChildrenOf(node) {
+				for _, child := range resolvedSourceNamedChildren(node, ctx) {
 					if visit(child) {
 						return true
 					}
@@ -1537,7 +1562,7 @@ func generateClassSubobjectInstallerDecls(ctx Ctx) []ast.Decl {
 			destination = &ast.SelectorExpr{X: destination, Sel: &ast.Ident{Name: selector}}
 		}
 		declarations = append(declarations, &ast.FuncDecl{
-			Name: &ast.Ident{Name: classSubobjectInstallerName(path.scope)},
+			Name: &ast.Ident{Name: classSubobjectInstallerName(path.scope, ctx)},
 			Recv: &ast.FieldList{List: []*ast.Field{{
 				Names: []*ast.Ident{{Name: receiverName}},
 				Type:  receiverType,
@@ -1572,7 +1597,7 @@ func constructorSubobjectInstallerCallStmt(
 
 	installerName := "__java2goSubobjectInstaller"
 	okName := "__java2goHasSubobjectInstaller"
-	hookName := classSubobjectInstallerName(scope)
+	hookName := classSubobjectInstallerName(scope, ctx)
 	hookType := &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{
 		Names: []*ast.Ident{{Name: hookName}},
 		Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
