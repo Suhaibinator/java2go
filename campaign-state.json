@@ -7283,5 +7283,136 @@
       "Verify current archive15, then separately scheduled matched allocation tests; keep performance claims evidence-bound",
       "Commit and push independently verified component milestones; continue Sol adversarial campaign"
     ]
+  },
+  "sol_progress79": {
+    "status": "ACTIVE_SOL_ONLY_COMPONENT_CHECKPOINT_FULL_ROUND_UNACCEPTED",
+    "code_revision": "e586f3132dec38f54e99dec9a6fbe27dfa724679",
+    "checkpoint_parent": "2b71f77",
+    "branch": "codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; no Astra or unassigned nested spawning; explicit private ownership and bounded workload lanes.",
+    "new_fanout": {
+      "launched": [
+        "sol_gson_logical_quality: independent logical-resolution source and actual-run review",
+        "sol_stream_bridge_gate: exact current Stream Bridge53 race gate",
+        "sol_atomic_publication_quality: native updater quality review and new bounded exchange regression",
+        "sol_archive_publication_quality: archive review, gofmt successor and independent Map runner review"
+      ],
+      "capacity": "Two additional Netty launches and an older completed reviewer reactivation returned service thread limit; those calls launched no work. New completed reviewers were successfully reused."
+    },
+    "gson87_authoritative_terminal": {
+      "correction_to_prior_partial_observation": "First reproducible failure is UniformTypedReturnsAndConstructors, not the earlier partial ObjectAlias update in progress78.",
+      "RUN": 50,
+      "terminal": 49,
+      "PASS": 36,
+      "FAIL": 13,
+      "SKIP": 0,
+      "last_original120_graph": "Go-owned 270-second timeout, not parity; no supervisor timeout; preserved as RED.",
+      "diagnosis": "Twelve pure model fixtures have invalid producer/binder evidence. Parsed aliases do have their value paths. Genuine ArrayList nominal owner was absent from intrinsic-owner registry.",
+      "handoff": {
+        "path": "/private/tmp/java2go-gson-source-carrier-sol87-ucybpn1b/actual-handoff.json",
+        "sha256": "d15c0e0fd6a619f57ce1bcdf648cc51cb4d3544df2cf53ccc514e9d22fb8df95"
+      }
+    },
+    "gson88_89": {
+      "RED8": "2PASS6FAIL, exact eight terminals, no skip/timeout/race/infrastructure acceptance",
+      "GREEN8": "Exact same eight controls PASS under race; whole2916 source and declared26040 tool descriptors stable; independently audited.",
+      "general_fix": "Separate Java receiver resolution from physical Go generic arguments; register the genuine existing ArrayList intrinsic owner with existing namespace guards.",
+      "admission": "DISABLED; no full120 graph retry or full65/all-package acceptance",
+      "green_terminal": {
+        "path": "/private/tmp/java2go-gson-logical-graph-green-sol89-di4cmiu6/focused-attempt1/terminal.json",
+        "sha256": "5b85a2ee3818cfd908c6158876fe186e445e2e5bf8e3789c91a45f29eed6f6d6"
+      },
+      "independent_source_review": {
+        "path": "/private/tmp/java2go-sol89-logical-quality-review-7mmxm9q3/review.json",
+        "sha256": "44496a2d47810600d4db97c5b592d076f564375eb6c4e0a0e0c669e056d52b80"
+      },
+      "grant": {
+        "path": "/private/tmp/java2go-root-gson89-green8-grant.json",
+        "sha256": "660869cb9af72cd5a8da12c89d66b5485a06bb2b55baadd84eeb3c9cd9c5c64b"
+      },
+      "orchestration": "First grant-record check compared MD digest with JSON path and failed read-only; root-authorized following call launched once; corrected binding recorded, no retry.",
+      "independent_actual_audit": {
+        "path": "/private/tmp/java2go-sol89-actual-quality-audit-eokkjpbs/audit.json",
+        "sha256": "5e8b2c6fcf1acd814743d37fb3bfc10bbf48e44c9b20d1682d3b48879e6cc637"
+      }
+    },
+    "atomic_updater_v5": {
+      "semantic_RED": "13RUN11PASS2FAIL; existing nine and two rejection controls pass; opaque Object acceptance fails precisely",
+      "normal_PASS": 13,
+      "race_PASS": 13,
+      "original_JVM_matches_carried": 6,
+      "actual_audit": {
+        "path": "/private/tmp/java2go-component-actual-independent-quality/atomic-v5-audit.json",
+        "sha256": "f42e96cf16166f3cadddc0e00842a903f9995be5c968f87ef6b60db4cd1b5275"
+      },
+      "publication": "HELD: new reviewer found potential unconditional GetAndSet identity-CAS endless retry for accepted nonreflexive opaque callable values. NEW V6 source-only successor proposes precise RED15 and general stamp exchange, no workload launched.",
+      "exchange_successor": {
+        "path": "/private/tmp/java2go-sol-atomic-updater-runtime-v6-exchange/READINESS.json",
+        "sha256": "ed8dd3e33958df4fb19f58bcc5c72e6469372ed3204cde1a089906edc680b5d7"
+      },
+      "infrastructure": "Initial ps denial was NO_LAUNCH, followed by one documented ps-capable infrastructure reissue before actual semantic RED.",
+      "compiler_SAM_successor": {
+        "path": "/private/tmp/java2go-sol-updater-functional-v2/READINESS.json",
+        "sha256": "7399200463d88a3ab0bf664579901b46df88b043c04e1416c95dd229355d43d5"
+      },
+      "generated_Netty_gate": "UNRUN"
+    },
+    "stream_current": {
+      "controls_PASS": 83,
+      "neighbors_PASS": 2,
+      "full_original_applications_PASS": 2,
+      "clean_inner_stages": 34,
+      "raw_pairs": 32,
+      "original_JVM_continuity": 18,
+      "actual_audit": {
+        "path": "/private/tmp/java2go-component-actual-independent-quality/stream-current-e586-audit.json",
+        "sha256": "5caa1b84fb9ee994f34d3501d76f304b573410e3ee473f891070c0bebc425d35"
+      },
+      "declared_tool_closure": "22152 entries checked; missing SDK/module-cache consumption must not be claimed covered by this older runner.",
+      "Bridge53": "Exact53 PASS under race on current Stream source; four clean durable receipts; full120351 SDK/tool/module closure stable before/after.",
+      "bridge_verified": {
+        "path": "/private/tmp/java2go-stream-current-bridge53-sol-qvkri4fd/verified.json",
+        "sha256": "189348128135711a579521ec2cf8dff018b76afbd45e0d5a236b8d74f542f934"
+      },
+      "bridge_grant": {
+        "path": "/private/tmp/java2go-root-current-stream-bridge53-grant.json",
+        "sha256": "cd802400bb8a0664d71898d63a1b6494bb0fa897b587919dc0f182b168fa7665"
+      },
+      "publication": "Matching current Bridge53 passed; publication still requires affected regression review. No current fullCI/fullround acceptance."
+    },
+    "archive_current": {
+      "race_PASS": 15,
+      "actual_audit": {
+        "path": "/private/tmp/java2go-component-actual-independent-quality/archive-current-v3-audit.json",
+        "sha256": "c0f9144a66a1fde4fc4c8bcd236c5d010928e3723ed6ea70a57275ea2a4c5097"
+      },
+      "source_only_formatted_successor": {
+        "path": "/private/tmp/java-time-zone-archive-publication-gofmt-e586-zhbjkc93/quality-review.json",
+        "sha256": "ecdfede52a83f9c3c0437f4ee7bbe13829fa267bc892151841f4c958e5511c9f"
+      },
+      "formatting": "Only miss-allocation test whitespace changed; all tokens, comments, fixture literals and expectations retained. Successor correctness gate still unrun.",
+      "allocation_gate": "NOT_AUTHORIZED; no Java speedup claimed"
+    },
+    "volatile": {
+      "actual_RED12": "9FAIL3PASS; original JVM semantic/static witnesses each compile and run successfully",
+      "original_receipt": {
+        "path": "/private/tmp/java2go-sol-volatile-prerequisite-v5/red-original-oracle-terminal.json",
+        "sha256": "1d13925cd1feb1e1132a9b111ff8c09677bb1cc08524c13f05b7c9e2da75b850"
+      },
+      "anonymous_successor": {
+        "path": "/private/tmp/java2go-sol-volatile-anonymous-prerequisite-v2/READINESS.json",
+        "sha256": "c8fb6900dd5449a4c6749c494b57b7e1a309f3170de0ca92a994d2d26d00eea3"
+      },
+      "anonymous_gate": "HELD source-only: cache context must not duplicate emission across Clone/intrinsic type-argument changes; independent review pending.",
+      "compiler_GREEN_generated_stress": "UNRUN"
+    },
+    "Map_Future": {
+      "runner_v3": {
+        "path": "/private/tmp/java2go-map43-current-compound-sol87-v3-handoff.json",
+        "sha256": "195d12dc760ca3abcfdd0c82db68d50e282fe3cd00bfc89733fef39ac135906e"
+      },
+      "status": "Independent reviewer found classifier accepts test terminal before RUN or package START. NEW minimal runner-v4 repair assigned; v3 preserved and all current seven initial gates and conditional42 CI shards UNRUN."
+    },
+    "acceptance_boundary": "Checkpoint18 remains latest accepted full round. No new Netty, full Gson, fullCI or Java-faster acceptance; original challenges, failures and skips remain unwaived."
   }
 }
