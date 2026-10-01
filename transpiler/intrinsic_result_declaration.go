@@ -15,7 +15,7 @@ var intrinsicResultDeclarations = func() map[string]string {
 		"java.util.stream":     "Stream IntStream LongStream DoubleStream",
 		"java.lang.reflect":    "Constructor Field Method Type ParameterizedType GenericArrayType WildcardType TypeVariable GenericDeclaration",
 		"java.io":              "File InputStream Writer StringWriter OutputStreamWriter BufferedWriter FileWriter PrintWriter",
-		"java.nio":             "ByteBuffer",
+		"java.nio":             "ByteBuffer ByteOrder",
 		"java.nio.charset":     "Charset",
 		"java.nio.file":        "Path StandardOpenOption",
 		"java.security":        "MessageDigest",

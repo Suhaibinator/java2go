@@ -8374,5 +8374,127 @@
     "Netty_frontier": "Actual unchanged 1212 Netty plus 8 application Java sources clear the former registration panic but strict translation times out after 300 seconds during symbol resolution. Timeout remains a failure with observed process cleanup; no generated application parity.",
     "remaining_limits": "Package annotations are retained as source comments; package reflection semantics are not established. Full Maven lifecycle/export, classpath mediation, current CI, full campaign round, Netty runtime, and Java performance superiority remain unaccepted. Checkpoint18 remains the latest accepted full round.",
     "continuation": "Sol-only parallel batch resolver repair, unchanged27 Commons application build discrepancies, generic Gson lowering, volatile/functional/runtime contracts, authentic Maven ingestion and independent verification. Preserve every failed receipt and all frozen application assertions."
+  },
+  "sol_progress86": {
+    "status": "ACCEPTED_SCOPED_NIO_PRIMITIVES_FULL_ROUND_UNACCEPTED",
+    "parent": "515fee996c2bbde4cc79ff3daa6bb0c9901ae772",
+    "publication_packet_sha256": "03393f8f254c8dd0ed9cd69ff04408709e9cf0b681a75b33f49126c5ef3c2374",
+    "publication_paths": [
+      {
+        "after_sha256": "3dbb2e65f3b2f43085af05ddd4984c05d5a5a1122c7875a1b168d176fedaab7c",
+        "bytes": 6791,
+        "current85_before_sha256": "3116b35faa26f4a1a02c3b0e4b22084118bae48170ddec1d85d6ed7cc29ec943",
+        "relative": "stdjava/bytebuffer.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/stdjava/bytebuffer.go"
+      },
+      {
+        "after_sha256": "b61fca9a12c7477f3b3c802605dcde60e724a478448ab22084fcf1b911628efb",
+        "bytes": 4596,
+        "current85_before_sha256": null,
+        "relative": "stdjava/bytebuffer_primitives.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/stdjava/bytebuffer_primitives.go"
+      },
+      {
+        "after_sha256": "d0959a142bda2a1cf93490252a65cc3c7d7d5f12e6460015fbf538577746a0af",
+        "bytes": 1867,
+        "current85_before_sha256": null,
+        "relative": "stdjava/nio_byteorder_reference_test.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/stdjava/nio_byteorder_reference_test.go"
+      },
+      {
+        "after_sha256": "093b011ddf8cb17bbb15641401c48af0e487f57e3ab57e298847a0a7b4b0eead",
+        "bytes": 652,
+        "current85_before_sha256": null,
+        "relative": "stdjava/nio_primitive_surface_test.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/stdjava/nio_primitive_surface_test.go"
+      },
+      {
+        "after_sha256": "62c2ef339e09802fc5079eb7b765cb3daf4e2465045597a54c9870aa3817d163",
+        "bytes": 1010,
+        "current85_before_sha256": null,
+        "relative": "transpiler/campaign_nio_primitive_contracts_test.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/campaign_nio_primitive_contracts_test.go"
+      },
+      {
+        "after_sha256": "d3d27e4f6a1ff8e74cf6ca24730bf2de98c8fff0d1b9dd3f39ee4af3c708d282",
+        "bytes": 3018,
+        "current85_before_sha256": "1b040aa38da673750eab8f38aa2d38b2d9feab423259b6ca3050b7d02b5dd4eb",
+        "relative": "transpiler/intrinsic_result_declaration.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/intrinsic_result_declaration.go"
+      },
+      {
+        "after_sha256": "df304f9d2ba576fc952a01bb2bf37921bbaef5a935b97973615f9c37993b1a6e",
+        "bytes": 19272,
+        "current85_before_sha256": "2686f07618e0c6f8d7b75d5a05f2710bfeb5b778753f4d9e1b7618226e0ea98d",
+        "relative": "transpiler/intrinsics_concurrency.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/intrinsics_concurrency.go"
+      },
+      {
+        "after_sha256": "bf03e841bdf53edd040f2df80f5c21306658e8f05e3621d2b6345532712e7048",
+        "bytes": 25871,
+        "current85_before_sha256": "f6f4baec8e24e455cca39e9dcc3c5a71cfa8814ba0e02a4e797f068994d0aef7",
+        "relative": "transpiler/intrinsics_io.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/intrinsics_io.go"
+      },
+      {
+        "after_sha256": "7e97b6de4537d615667d31dfffdaa17ff8ad6aac52d6105917e03de5296f7b40",
+        "bytes": 2864,
+        "current85_before_sha256": null,
+        "relative": "transpiler/intrinsics_nio_primitives.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/intrinsics_nio_primitives.go"
+      },
+      {
+        "after_sha256": "12c357cbc5c2d7472714f264fdf6e942c9c0d63e5e815f18ba3a9ebd6d38d51f",
+        "bytes": 2098,
+        "current85_before_sha256": null,
+        "relative": "transpiler/nio_byteorder_typed_string_test.go",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/nio_byteorder_typed_string_test.go"
+      },
+      {
+        "after_sha256": "c050ee8c08a09db686542d57fa9915d705b0949049d04759c0db336684351853",
+        "bytes": 2738,
+        "current85_before_sha256": null,
+        "relative": "transpiler/testdata/nio_primitive_contracts/PrimitiveEndianFlow.java",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/testdata/nio_primitive_contracts/PrimitiveEndianFlow.java"
+      },
+      {
+        "after_sha256": "a47ef2246ec748dedcae28c512017646064e241b59e3e8e19559c8a3be52e48f",
+        "bytes": 5504,
+        "current85_before_sha256": null,
+        "relative": "transpiler/testdata/nio_primitive_contracts/PrimitiveFailureFlow.java",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/testdata/nio_primitive_contracts/PrimitiveFailureFlow.java"
+      },
+      {
+        "after_sha256": "68f1a779b08eb1c2c3c2041edb362031382d495efee82bad35c56d9bb0f6ba13",
+        "bytes": 1631,
+        "current85_before_sha256": null,
+        "relative": "transpiler/testdata/nio_primitive_contracts/PrimitiveFloatBitsFlow.java",
+        "source": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/source/transpiler/testdata/nio_primitive_contracts/PrimitiveFloatBitsFlow.java"
+      }
+    ],
+    "coordinator_matching_audit": {
+      "path": "/private/tmp/java2go-root-nio86-formatted-matching-audit.json",
+      "sha256": "5af22734f3d87f0bc83e656ff57026f84ee15297595c498e1c1ebe2269d76fa3"
+    },
+    "format_only_proof": {
+      "bytes": 3721,
+      "path": "/private/tmp/java2go-current85-nio-formatted-sol-iv8p699m/format-only-proof.json",
+      "sha256": "7d709e818ee160e1db7efc95c095989f92cf4ee0a059af51aef897ac6efcccd7"
+    },
+    "earlier_unformatted_gate_preserved": {
+      "bytes": 10525,
+      "path": "/private/tmp/java2go-current85-nio-publication-sol-d7boec0h/publication-ready-matching-current85.json",
+      "sha256": "3d666364566682a1cdfaf190199dcb8ccd91db891fa5048b970bf5b8b8e41c5b"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-sol-nio-independent-gate-current85/audit-report.json",
+      "sha256": "f7e2c02ca69b7b8f20294a94f6fbead6063542aef78091be6d61a40a073b7019"
+    },
+    "TDD": "Original missing primitive APIs RED retained with explicit compiler diagnostic-cap limitation. ByteOrder canonical String adapter and toString intrinsic each have causal RED before general fixes. Original three JDK-derived workflows and their assertions remain unchanged.",
+    "change": "Heap ByteBuffer relative and absolute primitive access preserves endian order, limits, cursor failure atomicity, slice offsets, quiet NaN and signed-zero bits. ByteOrder references expose canonical JavaString values; derived buffers retain exercised JDK order defaults.",
+    "matching_verification": "Fresh formatted current85 plus exact13 leaves compiles all20 packages; native2, typed codegen1, original3 parent4, heap3 parent4 and digest/channel5 produce exact16 PASS actions. Seven durable supervisors and raw channels independently verified; full source/tool closure stable. Baseline20 compile explicitly carried through identical code preimages, with only checkpoint JSON/Markdown differences.",
+    "protected_source": "All18 metadata85 leaves unchanged; only13 NIO primitive paths applied. User untracked performance files untouched.",
+    "remaining_limits": "Direct/read-only buffers, compact, broader NIO contracts, full Netty translation, current accumulated CI/round acceptance and performance superiority remain unaccepted. Checkpoint18 remains latest accepted full round. No failed or timed-out stage counts as parity.",
+    "continuation": "Sol-only resolver full1212-source gates, original27 Commons application Comparator/Objects/hash/bounds/collection fixes, Gson connected source lowering, volatile parentheses repair and functional/runtime composition. Preserve every challenge, old failure and exact resume evidence."
   }
 }

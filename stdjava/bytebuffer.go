@@ -2,14 +2,15 @@ package stdjava
 
 // ByteBuffer models a mutable heap buffer. Views retain their Java byte[]
 // identity while each buffer has independent capacity, position, limit and mark.
-// Direct buffers, read-only buffers, byte order and typed views remain unsupported.
+// Direct buffers, read-only buffers and typed views remain unsupported.
 type ByteBuffer struct {
-	array    *PrimitiveArray[int8]
-	offset   int32
-	capacity int32
-	position int32
-	limit    int32
-	mark     int32
+	array        *PrimitiveArray[int8]
+	offset       int32
+	capacity     int32
+	position     int32
+	limit        int32
+	mark         int32
+	littleEndian bool
 }
 
 func ByteBufferWrap(array *PrimitiveArray[int8], bounds ...int32) *ByteBuffer {
@@ -103,6 +104,8 @@ func (b *ByteBuffer) Slice(bounds ...int32) *ByteBuffer {
 func (b *ByteBuffer) Duplicate() *ByteBuffer {
 	ReferenceRequireNonNull(b)
 	duplicate := *b
+	// JDK byte-buffer views always begin in BIG_ENDIAN order.
+	duplicate.littleEndian = false
 	return &duplicate
 }
 func (b *ByteBuffer) Get(indices ...int32) int8 {

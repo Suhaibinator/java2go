@@ -50,6 +50,9 @@ func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx 
 		return expression, true
 	}
 	baseName := stripJavaQualifier(javaType)
+	if owner, admitted := canonicalIntrinsicOwner(javaType, ctx); admitted && owner == "java.nio.ByteOrder" {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr("ByteOrder", ctx)}, true
+	}
 	if expression, ok := reflectRuntimeTypeExpr(javaType, ctx); ok {
 		return expression, true
 	}
