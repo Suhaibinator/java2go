@@ -494,7 +494,7 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "ParseBoolean", args[0])
+		return stdjavaCall(ctx, "JavaBooleanParseBoolean", args[0])
 	})
 	registerStaticIntrinsic("Boolean", "valueOf", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
@@ -565,7 +565,9 @@ func registerBoxedTypeIntrinsics() {
 func registerBoxedObjectIntrinsics() {
 	registerIntrinsicOwner("java.lang.Integer", true)
 	registerIntrinsicOwner("java.lang.Long", true)
+	registerIntrinsicOwner("java.lang.Boolean", true)
 	// Imported calls use the same lowering only after declared overload applicability.
+	registerStaticIntrinsicImportSignature("Boolean", "parseBoolean", "java.lang.String")
 	registerStaticIntrinsicImportSignature("Integer", "parseInt", "java.lang.String")
 	registerStaticIntrinsicImportSignature("Integer", "parseInt", "java.lang.String", "int")
 	registerStaticIntrinsicImportSignature("Long", "parseLong", "java.lang.String")
@@ -589,7 +591,7 @@ func registerBoxedObjectIntrinsics() {
 				method = "parseInt"
 			}
 			registerStaticIntrinsic(spec.wrapper, method, func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-				if len(args) < 1 || len(args) > 2 {
+				if len(args) < 1 || len(args) > 2 || spec.wrapper == "Boolean" && len(args) != 1 {
 					return nil
 				}
 				return stdjavaCall(ctx, spec.parser, args...)

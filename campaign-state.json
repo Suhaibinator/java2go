@@ -9023,5 +9023,75 @@
     "verification": "All nine Commons and six quality stages freshly pass on the same sealed candidate, with exact JVM/Go Fraction parity, lint2.14 zero issues, atomic normal/race191 each, zero write allocations, parser/bounds12, symbol1, original NIO4. Generated sources unchanged.",
     "limits": "No full27 or full-round acceptance. Generic Object.equals frontier remains; Netty full translation has timed out; Gson integration compile and full accumulated CI remain open. Existing iterator null-vs-empty exception-detail limitation retained; BigInteger maximum bit range not established. Performance measurements show significant Go scalar/object costs, not Java-faster acceptance. Checkpoint18 latest full accepted round.",
     "continuation": "Sol-only TDD: original Commons27 equality/bounds/Range, Netty scan cost/full-source translation and authentic Maven implementation closure, Gson physical lowering, volatile/SAM integration, original CI repairs, performance profiles and cost regressions."
+  },
+  "sol_progress91": {
+    "status": "ACCEPTED_SCOPED_TYPED_BOOLEAN_INGRESS_FULL_ROUND_UNACCEPTED",
+    "parent": "3dba02597f8360a9b8b078705d10a5981a0c6f90",
+    "handoff": {
+      "path": "/private/tmp/java2go-sol-boolean-ingress90-rebased-green-v1-tuxncfxw/handoff.json",
+      "sha256": "afa987d538b1579cf83497f3d8c01114e12a461215f8541045480648ee2843c4"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-sol-boolean90-independent-review.json",
+      "sha256": "f26653086aebaec83303dcaa4c50dcaf6385fed033b957c3bd05e7980df1c652"
+    },
+    "source_manifest_sha256": "52c37f369fcceacc513e20f1057a5dc52ca1ca8715e26ab9cd65ec2024508075",
+    "files6": {
+      "stdjava/boolean_parse_reference_tdd_test.go": {
+        "before": null,
+        "after": "c20dfd49e87640e624f883e5a68e99cd20af55e499bb6103b652ceceb9bfdfe8"
+      },
+      "transpiler/boolean_ingress_tdd_test.go": {
+        "before": null,
+        "after": "f6cc03dcb810322ab09eff80b21d536d4300ac59c2897703ed26a0e3b24d55e1"
+      },
+      "transpiler/intrinsics_stdlib.go": {
+        "before": "49912e862de611f62cb83cd805cf1625a37a14fb933ceaa80d320c66fef92988",
+        "after": "307b321b27906e5e520498c0d3dfaf48d622190aaaeb758494c0e27b33a21cba"
+      },
+      "transpiler/testdata/boolean_ingress89/BooleanIngressProbe.java": {
+        "before": null,
+        "after": "204865521cbfe1cbc03ae75aa4b33ea52c95ef59c69506a6b702a864114d6010"
+      },
+      "transpiler/testdata/boolean_ingress89/BooleanSourceShadowProbe.java": {
+        "before": null,
+        "after": "c86cbb1e6d31e559b02b208f3836ec73d9caa74e606f56bf21377dd93011b865"
+      },
+      "transpiler/testdata/boolean_ingress89/BooleanStaticImportProbe.java": {
+        "before": null,
+        "after": "58d4994d3dae1382e8bb3502f6b3cc126f4d397c1a9fe21351a4b5ef324bd2e5"
+      }
+    },
+    "coordinator_raw_stages": [
+      {
+        "stage": "BooleanSourceShadowProbe-compiler-green",
+        "receipt": "/private/tmp/java2go-sol-boolean-ingress90-rebased-green-v1-tuxncfxw/evidence-green/BooleanSourceShadowProbe-compiler-green/command.json",
+        "sha256": "f35162801cd1f3b30d745c9b8fe625898c607709bd9e29fbddbb06fa6cabe3ca"
+      },
+      {
+        "stage": "BooleanIngressProbe-compiler-green",
+        "receipt": "/private/tmp/java2go-sol-boolean-ingress90-rebased-green-v1-tuxncfxw/evidence-green/BooleanIngressProbe-compiler-green/command.json",
+        "sha256": "a9e8617c027ebcfb12320d8226104eb272c9c067062b27638410f5dda97d5694"
+      },
+      {
+        "stage": "BooleanStaticImportProbe-compiler-green",
+        "receipt": "/private/tmp/java2go-sol-boolean-ingress90-rebased-green-v1-tuxncfxw/evidence-green/BooleanStaticImportProbe-compiler-green/command.json",
+        "sha256": "941d6a0e91eaed68392568bf8bd510d59fb261cb532a2b5027a24a0383302d6e"
+      },
+      {
+        "stage": "native-typed-parser-green",
+        "receipt": "/private/tmp/java2go-sol-boolean-ingress90-rebased-green-v1-tuxncfxw/evidence-green/native-typed-parser-green/command.json",
+        "sha256": "e3f1a0622944d026e9eb75208870471d99d0e31c060bf14bc22afa285649d5ea"
+      },
+      {
+        "stage": "original-analytics-full-parity",
+        "receipt": "/private/tmp/java2go-sol-boolean-ingress90-rebased-green-v1-tuxncfxw/evidence-green/original-analytics-full-parity/command.json",
+        "sha256": "db9abb57d882f4b39dbc82aaa37a475ea1ec4e2232db1dd5626990d57068108d"
+      }
+    ],
+    "change": "Boolean.parseBoolean routes canonical JavaString through the existing UTF16 helper; canonical java.lang.Boolean static-import ownership/signature and exact arity restored. Source-shadow calls retained.",
+    "TDD": "Frozen canonical/static-import/native failures retained. Fresh same-public90 five gates pass including original unchanged analytics_pipeline JVM/Go parity. Helper unchanged, duplicate runtime omitted.",
+    "limits": "Scoped Boolean ingress only. Full CI/original Commons27/Netty/Gson remain unaccepted; checkpoint18 latest full accepted round. No intermediate generated-output guard claim for this legacy e2e runner.",
+    "continuation": "Continue Sol-only generic equality/fullCommons integration, Netty translation, Gson physical controls, volatile/SAM, CI repairs and runtime performance."
   }
 }
