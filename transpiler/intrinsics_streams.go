@@ -62,7 +62,7 @@ func registerStreamIntrinsics() {
 		return []ast.Expr{javaTypeStringToGoTypeExpr(intrinsicFactoryElementJavaType(invocation, ctx, source), inScopeTypeParameters(ctx), ctx)}
 	})
 	registerStaticIntrinsicDerivedResultType("Stream", "of", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
-		return "Stream<" + intrinsicFactoryElementJavaType(invocation, ctx, source) + ">", true
+		return declaredIntrinsicResultShell("Stream", intrinsicFactoryElementJavaType(invocation, ctx, source)), true
 	})
 
 	for _, t := range streamTypeNames {

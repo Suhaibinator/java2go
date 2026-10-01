@@ -90,13 +90,13 @@ func registerNumericStreamSources() {
 		}
 		switch component {
 		case "int":
-			return "IntStream", true
+			return declaredIntrinsicResultShell("IntStream"), true
 		case "long":
-			return "LongStream", true
+			return declaredIntrinsicResultShell("LongStream"), true
 		case "double":
-			return "DoubleStream", true
+			return declaredIntrinsicResultShell("DoubleStream"), true
 		}
-		return "Stream<" + component + ">", true
+		return declaredIntrinsicResultShell("Stream", component), true
 	})
 }
 

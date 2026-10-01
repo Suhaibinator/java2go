@@ -51,3 +51,14 @@ func canonicalIntrinsicResultType(javaType string) string {
 	}
 	return base + suffix
 }
+
+// declaredIntrinsicResultShell attaches the library declaration to a derived
+// result's outer type. Its arguments already carry their inference-site
+// identities and must not be reinterpreted as library declarations.
+func declaredIntrinsicResultShell(owner string, arguments ...string) string {
+	result := canonicalIntrinsicResultType(owner)
+	if len(arguments) > 0 {
+		result += "<" + strings.Join(arguments, ", ") + ">"
+	}
+	return result
+}

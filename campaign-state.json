@@ -7526,5 +7526,194 @@
     },
     "performance": "Comparator explicit erased companion/general factory order/singleton identity hook private. Actual JVM/race/alloc gates unrun; no speedup claim. Prior Go-slower/inconclusive pilot remains visible.",
     "acceptance": "Checkpoint18 remains latest accepted full round; no current fullCI/full Gson/Netty acceptance. All prior failures/skips remain visible. User untracked equal_scale files untouched."
+  },
+  "sol_progress81": {
+    "status": "ACCEPTED_SCOPED_STREAM_COMPONENT_FULL_ROUND_UNACCEPTED",
+    "parent": "5f4e3ba0893de7def6690892849c4fd82bab7d9b",
+    "publication_paths": {
+      "transpiler/expression.go": {
+        "base_sha256": "45590105e8b85a79e61e4b5970c9fc5b754c9bfd3430a88bd787aaf6b1f48215",
+        "candidate_sha256": "7c5076d636015b4bff03c51ed98ef9bf2dcd123b9fc433da2534dda554e5f2ae",
+        "kind": "modified"
+      },
+      "transpiler/intrinsic_result_declaration.go": {
+        "base_sha256": "c1e84f96ad36c26c05227abbe0aa81e85469a4c6a6e78e2ffed41d21434b5097",
+        "candidate_sha256": "1b040aa38da673750eab8f38aa2d38b2d9feab423259b6ca3050b7d02b5dd4eb",
+        "kind": "modified"
+      },
+      "transpiler/intrinsics_streams.go": {
+        "base_sha256": "48b0b808d84eb992abef9f89e7b768da739d8ee884784fd2cc9a020a85d31224",
+        "candidate_sha256": "e849982033dcb885aeec9a0a8efbda8e96db11b57f287b195090abac7049d5d0",
+        "kind": "modified"
+      },
+      "transpiler/intrinsics_streams_numeric.go": {
+        "base_sha256": "8d1013214f09de95f03f225276faff9ac515e67bb48db71d2c3e91f41f8d33c2",
+        "candidate_sha256": "2e366f208aa3ff64f03b76aa10681bd01d1e6aacf09be313ab44eab95b5dfdb4",
+        "kind": "modified"
+      },
+      "transpiler/java_type_origin.go": {
+        "base_sha256": null,
+        "candidate_sha256": "2e6eea8b2a27faccaba1f59f782a97c5794400999aa1e1fe7872be1d5b9e01e3",
+        "kind": "added"
+      },
+      "transpiler/receiver_declaration_provenance_test.go": {
+        "base_sha256": null,
+        "candidate_sha256": "a4af6f0fd848cbb2088e86950b768bf7c90116fe373dbb95568f1179dbc9abbc",
+        "kind": "added"
+      },
+      "transpiler/receiver_join_provenance_test.go": {
+        "base_sha256": null,
+        "candidate_sha256": "ac1102f787122bc61d823dea77b5e0ef65b82c59b206e66bbffdeaa3975721f2",
+        "kind": "added"
+      },
+      "transpiler/receiver_related_nominal_lub_test.go": {
+        "base_sha256": null,
+        "candidate_sha256": "1ba49060e4ddb493ceeb54d1eea143f6213100dfc18c66ad0b0438839eddd6df",
+        "kind": "added"
+      },
+      "transpiler/stream_declaration_dispatch_test.go": {
+        "base_sha256": null,
+        "candidate_sha256": "e4822e7ffaa107956f85e119b953cee2f1ec431d5befc6c5a29817cc223edcaa",
+        "kind": "added"
+      },
+      "transpiler/stream_declaration_source_result_test.go": {
+        "base_sha256": null,
+        "candidate_sha256": "cbd800e21e33b35982ea9938a9a0742c45dbdfcaec8e50b1da0c551e282aaa48",
+        "kind": "added"
+      },
+      "transpiler/switch_result_type.go": {
+        "base_sha256": "4ceca8935795b06fbc55a2ad4d6e9023eb973f154978d6d138eeadd43aac4c3c",
+        "candidate_sha256": "edbbbeb5b119d2f9675963d11f7557a855483b24a4a5459d3a1d91112d2e5fc3",
+        "kind": "modified"
+      }
+    },
+    "private_source_manifest_sha256": "c4a91634b48e9b21c56d8b7616a60d6ca92e73da2bb87051c3adf25e90019d9d",
+    "verified_receipts": [
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/launch-baseline-runtime10/command.json",
+        "sha256": "1ae462ecad16028480e79b48c735e23c54434e75c3a74ee53bde4e3423846960"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/baseline-runtime10/selected-tests/command.json",
+        "sha256": "e879a5ea60ce45425cba02756e3a4437de0ab2065985f0f4b939117455f2ef86"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/baseline-runtime10/supervision/command.json",
+        "sha256": "20f70fbc42d70c6aba2bde9919885ddc55e15cfb82a9175d3d62bacf916af6d8"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/baseline-runtime10/test-binary-build/command.json",
+        "sha256": "86e0ccdb86ebd5cd8d11b81afdeabb68b15268acc7c14bf26317832d08ebda03"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/launch-bridge53/command.json",
+        "sha256": "b2ca6493e4c88c1ca7b05182ddbd574ce42e780d8af2308604ee9ce75727569b"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/bridge53/selected-tests/command.json",
+        "sha256": "859751daa1bd630322c09b7f8004af659e9e00c5a8d5b8ba4ec37c6da001dd54"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/bridge53/supervision/command.json",
+        "sha256": "8f5d85da22ef6738528affc4fbcfc4e51ab53440e958731122dc5ceb96cf85c0"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/bridge53/test-binary-build/command.json",
+        "sha256": "528ce4b22e53d3cf40c06d76ceba2c0ab01f6269a65a311ef95650d3b12b994b"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/launch-candidate-runtime10/command.json",
+        "sha256": "30e5a52ed481e8522829d538659579d7775142c466dd825ed6d1efef302a0f60"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/candidate-runtime10/selected-tests/command.json",
+        "sha256": "87f62301bb826fd5c7f07d56f5deb6c26448b99a7acdb8625b9565aeecffeca1"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/candidate-runtime10/supervision/command.json",
+        "sha256": "f9cad450afc6a0d6506850e6811b35de535379e2a66e30eccee06f60b2d4c55d"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/candidate-runtime10/test-binary-build/command.json",
+        "sha256": "6e4eb8eb62cba5226f571bb40e99bef21a322f12e00eecfbc6243475a3af1566"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/launch-neighbors2/command.json",
+        "sha256": "52a70c3532e65ec33b94d825013d6cf5b8abd9c757a4cba02636ae9aa7fe86a7"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/neighbors2/selected-tests/command.json",
+        "sha256": "9e9e9c1cb07719d8bb5c6bbbfbfb72494783e9567b0fb906e9bb5db711e11894"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/neighbors2/supervision/command.json",
+        "sha256": "1152256c69c8e8dcd6f65a35d7be6d52d1f073a0bcfbfe12251247dea7376e8a"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/neighbors2/test-binary-build/command.json",
+        "sha256": "ae99ba402b057328cfa1a8d08f627130bc53e22772e946ac98d37cc43a349e6e"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/launch-units83/command.json",
+        "sha256": "82b8968cb71365a1dff889e773a0466f8d2365243abbb98bd6e20c47f5ae40db"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/units83/selected-tests/command.json",
+        "sha256": "376de3986b39da8e0c9c3d6e450cc8adcbd4b857260286862f6ec4e58f16383f"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/units83/supervision/command.json",
+        "sha256": "3fca64842a4b56c8a178aa6e3210cc8996b6e3536472c2f45136796dd38d1ec8"
+      },
+      {
+        "path": "/private/tmp/java2go-stream-stagecwd-v2-sol-b5xly99s/observations/units83/test-binary-build/command.json",
+        "sha256": "fa20f75c5d210a2c6dc355534f8aaa76f6ce9dce83076630c16d2da85559feb5"
+      }
+    ],
+    "exact_stage_counts": {
+      "units83": 83,
+      "neighbors2": 2,
+      "bridge53": 53,
+      "baseline-runtime10": 10,
+      "candidate-runtime10": 10
+    },
+    "coordinator_raw_verification": "Independent raw JSON RUN/PASS inventory and twenty terminal supervisor/raw channels verified before publication; exact eleven protected baseline and candidate hashes checked.",
+    "change": "Retain declaration and binder origins through fields, selected method results and joins; preserve Stream intrinsic outer-owner identity and source method dispatch.",
+    "TDD": "Original causal83=80PASS3FAIL after earlier80=49PASS31FAIL; general declaration-origin/LUB fix. Current formatted source83+2+Bridge53race and comparative runtime10 allPASS.",
+    "historical_two_applications": {
+      "claim": "Historical finite fulltwoapp parity preserved explicitly; no new changed-manifest execution claim",
+      "evidence_hashes": {
+        "/private/tmp/java2go-stream83-current-e586-time-sol-4c6m855z/ACTUAL_CURRENT_GREEN83_FULLFIXTURES.json": "8e2ea39ba858d97fdac471fd9d53d2158b863d2004e56571b7cf13cf1023020d",
+        "/private/tmp/java2go-stream83-current-e586-time-sol-4c6m855z/focus-verified.json": "cbf9a79eb9caa73133e5698f2599a59f3a079f96dc86368f7214e754ca7ec3ca",
+        "/private/tmp/java2go-stream83-current-e586-time-sol-4c6m855z/original-verified.json": "33d813ac2d14c470043fb503c2fbca82cfab8c6ada13d634011510e35e82bb94"
+      },
+      "reason": "All production, fixture, runner, oracle and relevant source logic byte-identical; sole edit removes extra final blank line in a test"
+    },
+    "preexisting_compiler_failures": {
+      "baseline_counts": {
+        "fail": 4,
+        "pass": 26,
+        "run": 30,
+        "skip": 0
+      },
+      "candidate_counts": {
+        "fail": 4,
+        "pass": 26,
+        "run": 30,
+        "skip": 0
+      },
+      "failures": [
+        "TestCampaignRuntimeUTF16NaturalOrdering",
+        "TestCampaignRuntimeUTF16Observations",
+        "TestNumericStreams_Conversions",
+        "TestNumericStreams_StringCharsIsAStream"
+      ],
+      "no_green_waiver": true,
+      "path": "/private/tmp/java2go-stream-core19-privatecache-sol-pjugy6qu/compiler-pair-repaired.json",
+      "sha256": "f538260cc0e43134c52a7ff8179712cafe5a5d03c1a12a9f084f67b5d939512b"
+    },
+    "infrastructure_history": "Original interrupted nonterminal runtime receipt, ps-denied NO_LAUNCH and wrong-cwd INVALID_OBSERVATION are preserved; fresh current package-cwd gates pass.",
+    "full_CI_and_round": "UNACCEPTED; checkpoint18 remains latest accepted full round. No new Gson/Netty/performance claims; prior failures/skips unwaived.",
+    "next": "Atomic formatted matching-public composition compile; Map/Future CI after current integration gates; UTF16 chars historical repair and volatile generated-family failures remain active."
   }
 }

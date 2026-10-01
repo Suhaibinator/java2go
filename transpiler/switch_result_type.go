@@ -10,12 +10,13 @@ import (
 // type. This deliberately leaves numeric promotion, mixed reference bounds and
 // block-local yield inference to their own rules; it never guesses one arm's
 // type for a heterogeneous switch.
-func inferUniformSwitchResultJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+func inferUniformSwitchResultJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*inferredJavaTypeOrigin) (string, bool) {
 	body := node.ChildByFieldName("body")
 	if body == nil {
 		return "", false
 	}
 	result := ""
+	var resultOrigins []inferredJavaTypeOrigin
 	for _, rule := range nodeutil.NamedChildrenOf(body) {
 		if rule.Type() == "line_comment" || rule.Type() == "block_comment" {
 			continue
@@ -28,7 +29,16 @@ func inferUniformSwitchResultJavaType(node *sitter.Node, ctx Ctx, source []byte)
 			case "switch_label", "line_comment", "block_comment", "throw_statement":
 				continue
 			case "expression_statement":
-				typ, known := inferExprJavaType(arm.NamedChild(0), ctx, source)
+				var typ string
+				var known bool
+				if len(origins) > 0 && origins[0] != nil {
+					var origin inferredJavaTypeOrigin
+					typ, known = inferExprJavaType(arm.NamedChild(0), ctx, source, &origin)
+					origin.javaType = typ
+					resultOrigins = append(resultOrigins, origin)
+				} else {
+					typ, known = inferExprJavaType(arm.NamedChild(0), ctx, source)
+				}
 				if !known || (result != "" && !javaInferenceSameType(result, typ, ctx)) {
 					return "", false
 				}
@@ -37,6 +47,9 @@ func inferUniformSwitchResultJavaType(node *sitter.Node, ctx Ctx, source []byte)
 				return "", false
 			}
 		}
+	}
+	if result != "" {
+		recordJoinedJavaTypeOrigin(origins, result, resultOrigins, ctx)
 	}
 	return result, result != ""
 }

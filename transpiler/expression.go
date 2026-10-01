@@ -2185,7 +2185,7 @@ func expectedTypeTargetsExpression(ctx Ctx, node *sitter.Node) bool {
 	return target.Type() == node.Type() && target.StartByte() == node.StartByte() && target.EndByte() == node.EndByte()
 }
 
-func inferTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+func inferTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*inferredJavaTypeOrigin) (string, bool) {
 	expected := strings.TrimSpace(ctx.expectedType)
 	if isVarKeywordType(expected) || !expectedTypeTargetsExpression(ctx, node) {
 		expected = ""
@@ -2200,11 +2200,20 @@ func inferTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []byte) (stri
 	inferenceCtx := patternConditionInferenceContext(conditionNode, source, ctx)
 	inferenceCtx.expectedType = ""
 	inferenceCtx.expectedTypeRoot = nil
-	standaloneType, standaloneKnown := inferStandaloneTernaryResultJavaType(node, inferenceCtx, source)
+	var standaloneOrigin inferredJavaTypeOrigin
+	var standaloneType string
+	var standaloneKnown bool
+	if len(origins) > 0 && origins[0] != nil {
+		standaloneType, standaloneKnown = inferStandaloneTernaryResultJavaType(node, inferenceCtx, source, &standaloneOrigin)
+		setInferredJavaTypeOrigin(origins, standaloneOrigin)
+	} else {
+		standaloneType, standaloneKnown = inferStandaloneTernaryResultJavaType(node, inferenceCtx, source)
+	}
 	if classifyTernaryExpression(node, inferenceCtx, source) != ternaryReferenceExpression {
 		return standaloneType, standaloneKnown
 	}
 	if expected != "" && (!standaloneKnown || ternaryCanTargetJavaType(node, standaloneType, expected, inferenceCtx, source)) {
+		recordJoinedJavaTypeOrigin(origins, expected, []inferredJavaTypeOrigin{standaloneOrigin}, inferenceCtx)
 		return expected, true
 	}
 	if standaloneType == ternaryNullJavaType {
@@ -2213,7 +2222,7 @@ func inferTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []byte) (stri
 	return standaloneType, standaloneKnown
 }
 
-func inferStandaloneTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+func inferStandaloneTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*inferredJavaTypeOrigin) (javaType string, known bool) {
 
 	_, consequence, alternative := ternaryExpressionParts(node)
 	if consequence == nil || alternative == nil {
@@ -2223,8 +2232,23 @@ func inferStandaloneTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []b
 	rightNode := unwrapParenthesizedExpressionNode(alternative)
 	leftNull := leftNode != nil && leftNode.Type() == "null_literal"
 	rightNull := rightNode != nil && rightNode.Type() == "null_literal"
-	leftType, leftKnown := inferExprJavaType(consequence, ctx, source)
-	rightType, rightKnown := inferExprJavaType(alternative, ctx, source)
+	var leftType, rightType string
+	var leftKnown, rightKnown bool
+	var selectedReferenceOrigin inferredJavaTypeOrigin
+	if len(origins) > 0 && origins[0] != nil {
+		var leftOrigin, rightOrigin inferredJavaTypeOrigin
+		leftType, leftKnown = inferExprJavaType(consequence, ctx, source, &leftOrigin)
+		rightType, rightKnown = inferExprJavaType(alternative, ctx, source, &rightOrigin)
+		leftOrigin.javaType, rightOrigin.javaType = leftType, rightType
+		defer func() {
+			if known {
+				recordJoinedJavaTypeOrigin(origins, javaType, []inferredJavaTypeOrigin{leftOrigin, rightOrigin}, ctx, selectedReferenceOrigin)
+			}
+		}()
+	} else {
+		leftType, leftKnown = inferExprJavaType(consequence, ctx, source)
+		rightType, rightKnown = inferExprJavaType(alternative, ctx, source)
+	}
 
 	switch {
 	case leftNull && rightNull:
@@ -2251,6 +2275,9 @@ func inferStandaloneTernaryResultJavaType(node *sitter.Node, ctx Ctx, source []b
 	}
 	if numericType, ok := ternaryNumericResultJavaType(consequence, leftType, alternative, rightType, source, ctx); ok {
 		return numericType, true
+	}
+	if len(origins) > 0 && origins[0] != nil {
+		return ternaryCommonReferenceJavaType(leftType, rightType, ctx, &selectedReferenceOrigin)
 	}
 	return ternaryCommonReferenceJavaType(leftType, rightType, ctx)
 }
@@ -2563,7 +2590,7 @@ func javaIntConstantExpression(node *sitter.Node, source []byte) (int64, bool) {
 	return int64(int32(uint32(value))), true
 }
 
-func ternaryCommonReferenceJavaType(leftType, rightType string, ctx Ctx) (string, bool) {
+func ternaryCommonReferenceJavaType(leftType, rightType string, ctx Ctx, origins ...*inferredJavaTypeOrigin) (string, bool) {
 	leftComponent, leftArray := javaArrayComponentType(leftType)
 	rightComponent, rightArray := javaArrayComponentType(rightType)
 	if leftArray || rightArray {
@@ -2578,7 +2605,7 @@ func ternaryCommonReferenceJavaType(leftType, rightType string, ctx Ctx) (string
 			}
 			return "Object", true
 		}
-		componentType, known := ternaryCommonReferenceJavaType(leftComponent, rightComponent, ctx)
+		componentType, known := ternaryCommonReferenceJavaType(leftComponent, rightComponent, ctx, origins...)
 		if !known {
 			return "Object", true
 		}
@@ -2591,15 +2618,19 @@ func ternaryCommonReferenceJavaType(leftType, rightType string, ctx Ctx) (string
 		return "Object", true
 	}
 	if _, assignable := javaReferenceTypeDistance(leftScope, rightScope, ctx); assignable {
+		setInferredJavaTypeOrigin(origins, inferredJavaTypeOrigin{nominalScope: rightScope, javaType: rightType})
 		return rightType, true
 	}
 	if _, assignable := javaReferenceTypeDistance(rightScope, leftScope, ctx); assignable {
+		setInferredJavaTypeOrigin(origins, inferredJavaTypeOrigin{nominalScope: leftScope, javaType: leftType})
 		return leftType, true
 	}
 
 	for candidate := leftScope; candidate != nil; candidate = ternarySuperclassScope(candidate, ctx) {
 		if _, assignable := javaReferenceTypeDistance(rightScope, candidate, ctx); assignable {
-			return ternaryClassJavaType(candidate, ctx), true
+			javaType := ternaryClassJavaType(candidate, ctx)
+			setInferredJavaTypeOrigin(origins, inferredJavaTypeOrigin{nominalScope: candidate, javaType: javaType})
+			return javaType, true
 		}
 	}
 	return "Object", true
@@ -9649,7 +9680,7 @@ func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) as
 	return expr
 }
 
-func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
+func inferIdentifierJavaType(name string, ctx Ctx, origins ...*inferredJavaTypeOrigin) (string, bool) {
 	if rewritten, ok := ctx.rawGenericParameterTypes[name]; ok && strings.TrimSpace(rewritten) != "" {
 		return rewritten, true
 	}
@@ -9662,31 +9693,35 @@ func inferIdentifierJavaType(name string, ctx Ctx) (string, bool) {
 					break
 				}
 			}
+			recordDefinitionTypeOrigin(origins, param, nil, ctx, nil, javaType)
 			return javaType, true
 		}
 		if local := ctx.localScope.FindVariable(name); local != nil && local.OriginalType != "" {
-			return definitionJavaType(local), true
+			javaType := definitionJavaType(local)
+			recordDefinitionTypeOrigin(origins, local, nil, ctx, nil, javaType)
+			return javaType, true
 		}
 	}
 	if ctx.currentClass != nil {
 		if field := findFieldResolutionInHierarchy(ctx.currentClass, name, ctx); field != nil && field.def != nil && field.def.OriginalType != "" {
-			return instantiatedFieldJavaType(
-				ctx.currentClass,
-				ctx.currentClass.GoTypeParameterNames(),
-				field,
-				ctx,
-			), true
+			javaType := instantiatedFieldJavaType(ctx.currentClass, ctx.currentClass.GoTypeParameterNames(), field, ctx)
+			recordCurrentClassFieldTypeOrigin(origins, ctx.currentClass, field, ctx, javaType)
+			return javaType, true
 		}
 		if field := resolveUnqualifiedStaticField(name, ctx); field != nil && field.def.OriginalType != "" {
-			return qualifyJavaTypeInDeclaringContext(definitionJavaType(field.def), field.owner), true
+			javaType := qualifyJavaTypeInDeclaringContext(definitionJavaType(field.def), field.owner)
+			recordDefinitionTypeOrigin(origins, field.def, field.owner, ctx, nil, javaType)
+			return javaType, true
 		}
-		if javaType, found := inferEnclosingFieldJavaType(name, ctx); found {
+		if javaType, found := inferEnclosingFieldJavaType(name, ctx, origins...); found {
 			return javaType, true
 		}
 	}
 	if imported := resolveStaticImportedField(name, ctx); imported.problem == "" {
 		if imported.source != nil {
-			return qualifyJavaTypeInDeclaringContext(definitionJavaType(imported.source.def), imported.source.owner), true
+			javaType := qualifyJavaTypeInDeclaringContext(definitionJavaType(imported.source.def), imported.source.owner)
+			recordDefinitionTypeOrigin(origins, imported.source.def, imported.source.owner, ctx, nil, javaType)
+			return javaType, true
 		}
 		if result := staticFieldIntrinsicResultTypes[imported.intrinsic]; result != "" {
 			return result, true
@@ -9729,7 +9764,7 @@ func javaTypeOmitsGenericArguments(javaType string, ctx Ctx) bool {
 	return scope != nil && len(scope.TypeParameters) > 0
 }
 
-func inferEnclosingFieldJavaType(name string, ctx Ctx) (string, bool) {
+func inferEnclosingFieldJavaType(name string, ctx Ctx, origins ...*inferredJavaTypeOrigin) (string, bool) {
 	if ctx.currentClass == nil || !ctx.currentClass.IsInner || (ctx.localScope != nil && ctx.localScope.IsStatic) {
 		return "", false
 	}
@@ -9747,7 +9782,9 @@ func inferEnclosingFieldJavaType(name string, ctx Ctx) (string, bool) {
 		if resolution == nil || resolution.def == nil || resolution.def.IsStatic {
 			continue
 		}
-		return instantiatedFieldJavaType(enclosing, enclosing.GoTypeParameterNames(), resolution, ctx), true
+		javaType := instantiatedFieldJavaType(enclosing, enclosing.GoTypeParameterNames(), resolution, ctx)
+		recordCurrentClassFieldTypeOrigin(origins, enclosing, resolution, ctx, javaType)
+		return javaType, true
 	}
 	return "", false
 }
@@ -9980,7 +10017,7 @@ func findEnclosingStaticMethod(name string, arguments *sitter.Node, ctx Ctx, sou
 // user-defined method invocation, resolving the method from the receiver's class
 // (for X.m()) or the current class (for an unqualified m()). Returns false when
 // the method is unknown, has a void/empty return type, or is a builtin.
-func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte, origins ...*inferredJavaTypeOrigin) (string, bool) {
 	nameNode := node.ChildByFieldName("name")
 	if nameNode == nil {
 		return "", false
@@ -10020,6 +10057,7 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 		var selectedTarget *invocationTargetInfo
 		resolution, selectedTarget = findBestMethodForInvocationTarget(invocationTarget, methodName, argListNode, allowInstance, allowStatic, ctx, source)
 		if selectedTarget != nil {
+			invocationTarget = selectedTarget
 			scope = selectedTarget.classScope
 		}
 	} else {
@@ -10098,7 +10136,9 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte) (strin
 			}
 		}
 	}
-	return qualifyJavaTypeInDeclaringContext(rt, resolution.owner), true
+	rt = qualifyJavaTypeInDeclaringContext(rt, resolution.owner)
+	recordMethodTypeOrigin(origins, resolution, invocationTarget, node, ctx, source, rt)
+	return rt, true
 }
 
 func classLiteralJavaType(node *sitter.Node, source []byte) (string, bool) {
@@ -10210,7 +10250,7 @@ func inferLambdaResultJavaType(lambda *sitter.Node, paramJavaTypes []string, ctx
 	return inferExprJavaType(body, lambdaCtx, source)
 }
 
-func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*inferredJavaTypeOrigin) (string, bool) {
 	switch node.Type() {
 	case "null_literal":
 		return "null", true
@@ -10220,7 +10260,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		}
 		return "", false
 	case "identifier":
-		return inferIdentifierJavaType(node.Content(source), ctx)
+		return inferIdentifierJavaType(node.Content(source), ctx, origins...)
 	case "update_expression":
 		// Prefix and postfix update expressions retain the operand's Java type,
 		// including wrapper types. Consumers then apply boxing or unboxing at
@@ -10234,7 +10274,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		// including compound assignments whose operation is promoted and then
 		// implicitly narrowed back to the target type.
 		if node.ChildCount() > 0 {
-			return inferExprJavaType(node.Child(0), ctx, source)
+			return inferExprJavaType(node.Child(0), ctx, source, origins...)
 		}
 		return "", false
 	case "this":
@@ -10242,6 +10282,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			return "", false
 		}
 		base := ctx.currentClass.Class.OriginalName
+		recordNominalClassTypeOrigin(origins, ctx.currentClass)
 		if len(ctx.currentClass.TypeParameters) == 0 {
 			return base, true
 		}
@@ -10254,6 +10295,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		if objectCreationClassBody(node) != nil {
 			if key, ok := anonymousClassSourceKey(node); ok {
 				if info := ctx.anonymousClasses[key]; info != nil && info.structName != "" {
+					recordNominalClassTypeOrigin(origins, info.scope)
 					if info.scope != nil && len(info.scope.TypeParameters) > 0 {
 						return info.structName + "<" + strings.Join(info.scope.GoTypeParameterNames(), ", ") + ">", true
 					}
@@ -10265,13 +10307,17 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		if typeNode == nil {
 			return "", false
 		}
-		return typeNode.Content(source), true
+		javaType := typeNode.Content(source)
+		recordSyntaxJavaTypeOrigin(origins, javaType, ctx)
+		return javaType, true
 	case "cast_expression":
 		// A cast's static type is its target type, e.g. `(char)(c+1)` is char.
 		// This lets println wrap a char-casted value in string(...) so it prints
 		// the character rather than its code point.
 		if target := node.NamedChild(0); target != nil {
-			return target.Content(source), true
+			javaType := target.Content(source)
+			recordSyntaxJavaTypeOrigin(origins, javaType, ctx)
+			return javaType, true
 		}
 		return "", false
 	case "array_creation_expression":
@@ -10287,7 +10333,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		if arrayNode == nil {
 			return "", false
 		}
-		if arrayType, ok := inferExprJavaType(arrayNode, ctx, source); ok {
+		if arrayType, ok := inferExprJavaType(arrayNode, ctx, source, origins...); ok {
 			trimmed := strings.TrimSpace(arrayType)
 			if strings.HasSuffix(trimmed, "[]") {
 				return strings.TrimSpace(trimmed[:len(trimmed)-2]), true
@@ -10351,12 +10397,12 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		}
 	case "parenthesized_expression":
 		if inner := node.NamedChild(0); inner != nil {
-			return inferExprJavaType(inner, ctx, source)
+			return inferExprJavaType(inner, ctx, source, origins...)
 		}
 	case "ternary_expression":
-		return inferTernaryResultJavaType(node, ctx, source)
+		return inferTernaryResultJavaType(node, ctx, source, origins...)
 	case "switch_expression":
-		return inferUniformSwitchResultJavaType(node, ctx, source)
+		return inferUniformSwitchResultJavaType(node, ctx, source, origins...)
 	case "binary_expression":
 		// Java's `+` is String concatenation when either operand is a String, so
 		// the whole expression is a String (e.g. `var g = "a" + n;` makes g a
@@ -10399,6 +10445,11 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 			return "String", true
 		}
 		if resultType, ok := inferIntrinsicMethodResultType(node, ctx, source); ok {
+			return resultType, true
+		}
+		// Source declarations own their return types before any library-name
+		// fallback can interpret a caller's List, Optional, or Stream spelling.
+		if resultType, ok := inferUserMethodReturnType(node, ctx, source, origins...); ok {
 			return resultType, true
 		}
 		// Chained String intrinsics: if the inner call is itself a String method
@@ -10477,7 +10528,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 							}
 						case "stream":
 							if len(recvArgs) == 1 {
-								return "Stream<" + recvArgs[0] + ">", true
+								return declaredIntrinsicResultShell("Stream", recvArgs[0]), true
 							}
 						}
 					case "File":
@@ -10501,7 +10552,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 					// so a chained .filter/.map lambda is typed.
 					if (methodName == "stream" || methodName == "parallelStream") && len(recvArgs) == 1 &&
 						(containsString(listTypeNames, recvBase) || containsString(setTypeNames, recvBase) || recvBase == "Collection") {
-						return "Stream<" + recvArgs[0] + ">", true
+						return declaredIntrinsicResultShell("Stream", recvArgs[0]), true
 					}
 					// Stream intermediate ops that keep the element type preserve Stream<T>
 					// for further chaining; map changes the element type so reports bare Stream.
@@ -10521,7 +10572,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 						case "boxed":
 							// Boxing changes primitive values into nullable wrapper objects.
 							if element, primitive := primitiveStreamElementJavaTypes[recvBase]; primitive {
-								return "Stream<java.lang." + ternaryBoxedJavaType(element) + ">", true
+								return declaredIntrinsicResultShell("Stream", "java.lang."+ternaryBoxedJavaType(element)), true
 							}
 							return recvType, true
 						case "mapToObj":
@@ -10537,7 +10588,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 								if boxed := ternaryBoxedJavaType(r); boxed != "" {
 									r = "java.lang." + boxed
 								}
-								return "Stream<" + r + ">", true
+								return declaredIntrinsicResultShell("Stream", r), true
 							}
 							return "Stream", true
 						case "findFirst", "findAny", "min", "max":
@@ -10593,7 +10644,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 								if boxed := ternaryBoxedJavaType(r); boxed != "" {
 									r = "java.lang." + boxed
 								}
-								return "Stream<" + r + ">", true
+								return declaredIntrinsicResultShell("Stream", r), true
 							}
 							if len(recvArgs) == 1 {
 								return recvType, true
@@ -10603,11 +10654,6 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 					}
 				}
 			}
-		}
-		// Fall back to the declared return type of a user-defined method, so a
-		// chained call on its result (e.g. nums().stream()) can be typed.
-		if rt, ok := inferUserMethodReturnType(node, ctx, source); ok {
-			return rt, true
 		}
 	case "field_access":
 		if resultType, ok := inferIntrinsicFieldResultType(node, ctx, source); ok {
@@ -10645,31 +10691,27 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 
 		var owner *symbol.ClassScope
 		var ownerTypeArgs []string
+		var ownerTypeOrigins []inferredJavaTypeOrigin
 		switch obj.Type() {
 		case "this":
 			owner = ctx.currentClass
 			if owner != nil {
 				ownerTypeArgs = owner.GoTypeParameterNames()
+				ownerTypeOrigins = classParameterTypeOrigins(owner)
 			}
 		case "super":
-			owner = resolveSuperclassScope(ctx, ctx.currentClass)
+			owner = resolveSuperclassScopeInDeclaringContext(ctx, ctx.currentClass)
 			if ctx.currentClass != nil {
 				_, ownerTypeArgs = parseJavaTypeString(ctx.currentClass.Superclass)
+				ownerTypeOrigins = declaredJavaTypeOrigin(symbol.JavaType{Original: ctx.currentClass.Superclass, TypeParameterBindings: symbol.VisibleTypeParamBindings(ctx.currentClass.TypeParameters)}, classHeaderTypeCtx(ctx.currentClass, ctx)).arguments
 			}
 		default:
-			if ownerType, ok := inferExprJavaType(obj, ctx, source); ok {
-				base, typeArgs := parseJavaTypeString(ownerType)
-				owner = resolveClassScopeByQualifiedName(ctx, base)
-				ownerTypeArgs = typeArgs
-			}
-			if owner == nil {
-				// A receiver declared as a type variable exposes fields through its
-				// resolved source bound, just as field expression codegen does. Keep
-				// the bound's arguments for declaration-context field substitution.
-				if target := resolveInvocationTarget(obj, ctx, source); target != nil {
-					owner = target.classScope
-					ownerTypeArgs = append([]string(nil), target.classJavaTypeArgs...)
-				}
+			// Invocation lookup already retains the receiver declaration. Reuse
+			// that result instead of interpreting the inferred spelling again.
+			if target := resolveInvocationTarget(obj, ctx, source); target != nil {
+				owner = target.classScope
+				ownerTypeArgs = append([]string(nil), target.classJavaTypeArgs...)
+				ownerTypeOrigins = target.classTypeArgumentOrigins
 			}
 			if owner == nil && obj.Type() == "identifier" {
 				// Static field access through a class name.
@@ -10678,7 +10720,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte) (string, bool)
 		}
 
 		if field := findFieldResolutionInHierarchy(owner, fieldNode.Content(source), ctx); field != nil && field.def != nil && field.def.OriginalType != "" {
-			return instantiatedFieldJavaType(owner, ownerTypeArgs, field, ctx), true
+			javaType := instantiatedFieldJavaType(owner, ownerTypeArgs, field, ctx)
+			recordFieldTypeOrigin(origins, owner, ownerTypeOrigins, field, ctx, javaType)
+			return javaType, true
 		}
 	}
 	return "", false
@@ -10778,17 +10822,19 @@ func applyTypeArguments(fun ast.Expr, args []ast.Expr) ast.Expr {
 }
 
 type invocationTargetInfo struct {
-	classScope        *symbol.ClassScope
-	classTypeArgs     []ast.Expr
-	classJavaTypeArgs []string
-	boundViews        []invocationTargetBoundView
-	rawGenericView    bool
+	classScope               *symbol.ClassScope
+	classTypeArgs            []ast.Expr
+	classJavaTypeArgs        []string
+	classTypeArgumentOrigins []inferredJavaTypeOrigin
+	boundViews               []invocationTargetBoundView
+	rawGenericView           bool
 }
 
 type invocationTargetBoundView struct {
-	classScope        *symbol.ClassScope
-	classTypeArgs     []ast.Expr
-	classJavaTypeArgs []string
+	classScope               *symbol.ClassScope
+	classTypeArgs            []ast.Expr
+	classJavaTypeArgs        []string
+	classTypeArgumentOrigins []inferredJavaTypeOrigin
 }
 
 func invocationTargetScopes(target *invocationTargetInfo) []*symbol.ClassScope {
@@ -10817,6 +10863,7 @@ func invocationTargetForReceiverScope(target *invocationTargetInfo, receiverScop
 			selected.classScope = view.classScope
 			selected.classTypeArgs = append([]ast.Expr(nil), view.classTypeArgs...)
 			selected.classJavaTypeArgs = append([]string(nil), view.classJavaTypeArgs...)
+			selected.classTypeArgumentOrigins = append([]inferredJavaTypeOrigin(nil), view.classTypeArgumentOrigins...)
 			return &selected
 		}
 	}
@@ -10882,6 +10929,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 
 	var className string
 	var classTypeArgs []string
+	var origin inferredJavaTypeOrigin
 	rawGenericView := false
 	switch objectNode.Type() {
 	case "this":
@@ -10890,6 +10938,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		}
 		className = ctx.currentClass.Class.OriginalName
 		classTypeArgs = ctx.currentClass.GoTypeParameterNames()
+		origin = inferredJavaTypeOrigin{nominalScope: ctx.currentClass, arguments: classParameterTypeOrigins(ctx.currentClass)}
 	case "super":
 		if ctx.currentClass == nil {
 			return nil
@@ -10900,12 +10949,13 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		}
 		rawGenericView = javaTypeOmitsGenericArguments(superType, ctx)
 		className, classTypeArgs = parseJavaTypeString(superType)
+		origin = declaredJavaTypeOrigin(symbol.JavaType{Original: superType, TypeParameterBindings: symbol.VisibleTypeParamBindings(ctx.currentClass.TypeParameters)}, classHeaderTypeCtx(ctx.currentClass, ctx))
 	case "identifier":
 		originalType, hasOriginalType := identifierJavaTypeBeforeRepresentationRewrite(objectNode.Content(source), ctx)
 		if hasOriginalType {
 			rawGenericView = javaTypeOmitsGenericArguments(originalType, ctx)
 		}
-		javaType, ok := inferIdentifierJavaType(objectNode.Content(source), ctx)
+		javaType, ok := inferIdentifierJavaType(objectNode.Content(source), ctx, &origin)
 		if !ok {
 			return nil
 		}
@@ -10914,7 +10964,7 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		}
 		className, classTypeArgs = parseJavaTypeString(javaType)
 	default:
-		javaType, ok := inferExprJavaType(objectNode, ctx, source)
+		javaType, ok := inferExprJavaType(objectNode, ctx, source, &origin)
 		if !ok {
 			return nil
 		}
@@ -10922,16 +10972,36 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 		className, classTypeArgs = parseJavaTypeString(javaType)
 	}
 
-	classScope := resolveClassScopeByQualifiedName(ctx, className)
+	if _, rank := javaArrayTypeParts(className); rank > 0 || origin.unresolved {
+		return nil
+	}
+	// Inferred type-variable names identify declarations even when a source
+	// class has the same spelling. Select their bound views before nominal lookup.
+	var classScope *symbol.ClassScope
+	switch objectNode.Type() {
+	case "this":
+		classScope = ctx.currentClass
+	case "super":
+		classScope = resolveSuperclassScopeInDeclaringContext(ctx, ctx.currentClass)
+	default:
+		if origin.nominalScope != nil {
+			classScope = origin.nominalScope
+		} else if origin.parameter == nil {
+			if _, bound := resolveReferenceTypeParameter(symbol.JavaType{Original: className}, ctx); !bound {
+				classScope = resolveClassScopeByQualifiedName(ctx, className)
+			}
+		}
+	}
 	var boundTypes []string
+	var boundOrigins []inferredJavaTypeOrigin
 	if classScope == nil {
 		// A value whose declared type is a type parameter gets its callable method
 		// set from every Java upper bound. This lets `T extends Primary & Secondary`
 		// resolve members declared only by Secondary as well as transitive bounds.
-		boundTypes = resolvableTypeParameterBounds(className, ctx)
+		boundTypes = resolvableTypeParameterDeclarationBounds(className, origin.parameter, ctx, &boundOrigins)
 		if len(boundTypes) > 0 {
 			className, classTypeArgs = parseJavaTypeString(boundTypes[0])
-			classScope = resolveClassScopeByQualifiedName(ctx, className)
+			classScope = boundOrigins[0].nominalScope
 		}
 	}
 	if classScope == nil {
@@ -10941,16 +11011,18 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 	classTypeArgs = normalizeClassTypeArguments(classScope, classTypeArgs, ctx.currentClass, nil)
 
 	target := &invocationTargetInfo{
-		classScope:        classScope,
-		classTypeArgs:     classTypeArgExprs,
-		classJavaTypeArgs: append([]string(nil), classTypeArgs...),
-		rawGenericView:    rawGenericView,
+		classScope:               classScope,
+		classTypeArgs:            classTypeArgExprs,
+		classJavaTypeArgs:        append([]string(nil), classTypeArgs...),
+		classTypeArgumentOrigins: origin.arguments,
+		rawGenericView:           rawGenericView,
 	}
 	if len(boundTypes) > 0 {
+		target.classTypeArgumentOrigins = boundOrigins[0].arguments
 		seen := map[*symbol.ClassScope]struct{}{}
-		for _, bound := range boundTypes {
-			base, arguments := parseJavaTypeString(bound)
-			scope := resolveClassScopeByQualifiedName(ctx, base)
+		for index, bound := range boundTypes {
+			_, arguments := parseJavaTypeString(bound)
+			scope := boundOrigins[index].nominalScope
 			if scope == nil {
 				continue
 			}
@@ -10963,9 +11035,10 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 				args = append(args, javaTypeStringToGoTypeExpr(argument, scopeTypeParams, ctx))
 			}
 			target.boundViews = append(target.boundViews, invocationTargetBoundView{
-				classScope:        scope,
-				classTypeArgs:     args,
-				classJavaTypeArgs: append([]string(nil), arguments...),
+				classScope:               scope,
+				classTypeArgs:            args,
+				classJavaTypeArgs:        append([]string(nil), arguments...),
+				classTypeArgumentOrigins: boundOrigins[index].arguments,
 			})
 		}
 	}
@@ -10977,17 +11050,25 @@ func resolveInvocationTarget(objectNode *sitter.Node, ctx Ctx, source []byte) *i
 // parameters shadow synthetic/raw and class type parameters, matching Java's
 // scope rules. The traversal is cycle-safe and preserves declaration order.
 func resolvableTypeParameterBounds(name string, ctx Ctx) []string {
+	return resolvableTypeParameterDeclarationBounds(name, nil, ctx)
+}
+
+func resolvableTypeParameterDeclarationBounds(name string, declaration *symbol.TypeParamDeclaration, ctx Ctx, origins ...*[]inferredJavaTypeOrigin) []string {
 	visible := visibleTypeParameterDeclarations(ctx)
 
 	bySourceName := make(map[string]symbol.TypeParam, len(visible))
 	byEmittedName := make(map[string]symbol.TypeParam, len(visible))
 	byDeclaration := make(map[*symbol.TypeParamDeclaration]symbol.TypeParam, len(visible))
+	declaringContexts := map[*symbol.TypeParamDeclaration]Ctx{}
+	for _, binding := range referenceTypeParameterBindings(ctx) {
+		if binding.parameter.Declaration != nil {
+			byDeclaration[binding.parameter.Declaration] = binding.parameter
+			declaringContexts[binding.parameter.Declaration] = binding.context
+		}
+	}
 	for _, parameter := range visible {
 		bySourceName[parameter.Name] = parameter
 		byEmittedName[parameter.EmittedName()] = parameter
-		if parameter.Declaration != nil {
-			byDeclaration[parameter.Declaration] = parameter
-		}
 	}
 	visitingDeclarations := make(map[*symbol.TypeParamDeclaration]bool, len(visible))
 	visitingLegacy := make(map[string]bool, len(visible))
@@ -11006,15 +11087,38 @@ func resolvableTypeParameterBounds(name string, ctx Ctx) []string {
 			visitingLegacy[parameter.EmittedName()] = true
 			defer delete(visitingLegacy, parameter.EmittedName())
 		}
+		declaring := ctx
+		if captured, known := declaringContexts[parameter.Declaration]; known {
+			declaring = captured
+		}
 		var result []string
 		for _, bound := range parameter.Bounds {
 			original := strings.TrimSpace(bound.Original)
 			base, arguments := parseJavaTypeString(original)
-			if resolveClassScopeByQualifiedName(ctx, base) != nil {
-				emittedBound := substituteTypeParameterDeclarations(original, bound.TypeParameterBindings)
+			// A captured bound edge denotes its type-variable declaration, not a
+			// same-spelled source class in the receiver's lexical context.
+			if len(arguments) == 0 {
+				if declaration := bound.TypeParameterBindings[base]; declaration != nil {
+					if dependency, found := byDeclaration[declaration]; found {
+						result = append(result, resolve(dependency)...)
+					}
+					continue
+				}
+				if dependency, found := bySourceName[base]; bound.TypeParameterBindings == nil && found {
+					result = append(result, resolve(dependency)...)
+					continue
+				}
+			}
+			if resolveClassScopeByQualifiedName(declaring, base) != nil {
+				emittedBound := qualifyDeclaredReferenceType(bound, declaring)
 				if _, duplicate := seenBounds[emittedBound]; !duplicate {
 					seenBounds[emittedBound] = struct{}{}
 					result = append(result, emittedBound)
+					if len(origins) > 0 && origins[0] != nil {
+						origin := declaredJavaTypeOrigin(bound, declaring)
+						origin.javaType = emittedBound
+						*origins[0] = append(*origins[0], origin)
+					}
 				}
 				continue
 			}
@@ -11026,12 +11130,18 @@ func resolvableTypeParameterBounds(name string, ctx Ctx) []string {
 						continue
 					}
 				}
-				if dependency, found := bySourceName[dependencyName]; found {
+				if dependency, found := bySourceName[dependencyName]; bound.TypeParameterBindings == nil && found {
 					result = append(result, resolve(dependency)...)
 				}
 			}
 		}
 		return result
+	}
+	if declaration != nil {
+		if parameter, found := byDeclaration[declaration]; found {
+			return resolve(parameter)
+		}
+		return nil
 	}
 	trimmedName := strings.TrimSpace(name)
 	// Persisted Definition provenance rewrites references to emitted names. Give
