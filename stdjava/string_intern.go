@@ -2,6 +2,7 @@ package stdjava
 
 import (
 	"runtime"
+	"slices"
 	"sync"
 	"weak"
 )
@@ -14,8 +15,9 @@ type stringInternIndex struct {
 }
 
 type stringInternPool struct {
-	index *stringInternIndex
-	hash  func(*JavaString) uint64
+	index       *stringInternIndex
+	hash        func(*JavaString) uint64
+	defaultHash bool
 	// Protected by index.mu; only explicitly resolved literals receive roots.
 	literals map[uint64][]*JavaString
 }
@@ -27,21 +29,27 @@ type stringInternCleanup struct {
 }
 
 func newStringInternPool(hash func(*JavaString) uint64) *stringInternPool {
-	if hash == nil {
+	defaultHash := hash == nil
+	if defaultHash {
 		hash = javaStringInternHash
 	}
 	return &stringInternPool{
-		index:    &stringInternIndex{buckets: make(map[uint64][]weak.Pointer[JavaString])},
-		hash:     hash,
-		literals: make(map[uint64][]*JavaString),
+		index:       &stringInternIndex{buckets: make(map[uint64][]weak.Pointer[JavaString])},
+		hash:        hash,
+		defaultHash: defaultHash,
+		literals:    make(map[uint64][]*JavaString),
 	}
 }
 
 // Hashing chooses a bucket only. Equality always compares every UTF16 unit.
 func javaStringInternHash(value *JavaString) uint64 {
+	return javaStringInternHashUnits(value.units)
+}
+
+func javaStringInternHashUnits(units []uint16) uint64 {
 	const prime = uint64(1099511628211)
 	hash := uint64(14695981039346656037)
-	for _, unit := range value.units {
+	for _, unit := range units {
 		hash = (hash ^ uint64(unit&255)) * prime
 		hash = (hash ^ uint64(unit>>8)) * prime
 	}
@@ -61,6 +69,16 @@ func (pool *stringInternPool) intern(value *JavaString) *JavaString {
 // Caller holds index.mu. Strong references from Value stay live through full
 // content comparison and returning the selected representative.
 func (pool *stringInternPool) internLocked(bucket uint64, value *JavaString) *JavaString {
+	result, live := pool.findInternedLocked(bucket, value.units)
+	if result != nil {
+		return result
+	}
+	return pool.addInternedLocked(bucket, value, live)
+}
+
+// Caller holds index.mu. Compare complete immutable UTF16 content and retain
+// live weak handles while removing stale handles from spare backing capacity.
+func (pool *stringInternPool) findInternedLocked(bucket uint64, units []uint16) (*JavaString, []weak.Pointer[JavaString]) {
 	entries := pool.index.buckets[bucket]
 	live := entries[:0]
 	var result *JavaString
@@ -70,16 +88,16 @@ func (pool *stringInternPool) internLocked(bucket uint64, value *JavaString) *Ja
 			continue
 		}
 		live = append(live, entry)
-		if result == nil && existing.Equals(value) {
+		if result == nil && slices.Equal(existing.units, units) {
 			result = existing
 		}
 	}
-	// Remove stale weak handles in spare backing capacity as well as the slice.
 	clear(entries[len(live):])
-	if result != nil {
-		pool.index.buckets[bucket] = live
-		return result
-	}
+	pool.index.buckets[bucket] = live
+	return result, live
+}
+
+func (pool *stringInternPool) addInternedLocked(bucket uint64, value *JavaString, live []weak.Pointer[JavaString]) *JavaString {
 	identity := weak.Make(value)
 	pool.index.buckets[bucket] = append(live, identity)
 	runtime.AddCleanup(value, cleanupStringInternEntry, stringInternCleanup{pool.index, bucket, identity})
@@ -88,10 +106,27 @@ func (pool *stringInternPool) internLocked(bucket uint64, value *JavaString) *Ja
 }
 
 func (pool *stringInternPool) literal(units []uint16) *JavaString {
-	candidate := NewJavaStringUTF16(units)
-	bucket := pool.hash(candidate)
-	pool.index.mu.Lock()
-	result := pool.internLocked(bucket, candidate)
+	var candidate, result *JavaString
+	var bucket uint64
+	if pool.defaultHash {
+		// The default hash consumes units directly. An existing representative
+		// needs neither a temporary wrapper nor a defensive payload copy.
+		bucket = javaStringInternHashUnits(units)
+		pool.index.mu.Lock()
+		var live []weak.Pointer[JavaString]
+		result, live = pool.findInternedLocked(bucket, units)
+		if result == nil {
+			candidate = NewJavaStringUTF16(units)
+			result = pool.addInternedLocked(bucket, candidate, live)
+		}
+	} else {
+		// Custom hash callbacks retain the original fresh, isolated candidate
+		// and callback timing, including collisions and candidate mutation.
+		candidate = NewJavaStringUTF16(units)
+		bucket = pool.hash(candidate)
+		pool.index.mu.Lock()
+		result = pool.internLocked(bucket, candidate)
+	}
 	rooted := false
 	for _, literal := range pool.literals[bucket] {
 		if literal == result {

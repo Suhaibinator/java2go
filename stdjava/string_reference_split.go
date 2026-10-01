@@ -73,6 +73,9 @@ func JavaStringSplitArray(text, regex *JavaString, limits ...int32) *ReferenceAr
 	if len(regex.units) > 65536 {
 		splitRegexUnsupported("pattern resource limit")
 	}
+	if delimiter, literal := stringSplitLiteralDelimiter(regex); literal {
+		return stringSplitLiteralArray(text, delimiter, limit)
+	}
 	parser := splitRegexParser{pattern: regex}
 	node := parser.expression()
 	if parser.pos < len(regex.units) {

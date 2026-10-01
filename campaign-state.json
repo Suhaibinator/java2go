@@ -10583,5 +10583,182 @@
     },
     "limitations": "Scoped milestone only, full strict timeout is a failure. OriginalCommons27, genuineGson118, fullNetty and accumulated full application/compiler CI remain open; checkpoint18 remains latest accepted full round. Manual Netty source graph is not authenticated Maven closure acceptance. No Java-faster claim.",
     "resume": "Sol-only current measured native Netty profile, fresh guarded performance matching, originalCommons27/reflection integration, genuineGson118 container carrier and failclosed Maven requested-membership repairs. Commit AND push verified milestones."
+  },
+  "sol_progress98": {
+    "status": "ACCEPTED_SCOPED_RUNTIME_PERFORMANCE10_FULL_ROUND_UNACCEPTED",
+    "parent": "74f110f4c6d3da285a3721aabc52608198bebc5f",
+    "source_manifest": {
+      "bytes": 392938,
+      "path": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source-manifest.json",
+      "sha256": "965917ca355f15d3e125af344f114598fe04ff8a155dc7f002d8dbd8cb160375"
+    },
+    "changes10": {
+      "stdjava/object_execution_metadata_cost_test.go": {
+        "before": null,
+        "after": "5111f8b3a0ae830fb06ad7a2b968370b58368af5219a14fb04258388862dbcb5",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/object_execution_metadata_cost_test.go"
+      },
+      "stdjava/object_methods.go": {
+        "before": "c4ad258aed01e2d8d76b711a242ca36985b6486b7e0cf6f8f370d33a3c612188",
+        "after": "c7d9eb69b8d0a5b7f2c448cb8a68ae4e2f2293e943606a4308e0c1f291226675",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/object_methods.go"
+      },
+      "stdjava/string_intern.go": {
+        "before": "44ae13f10e4b23d50c262ce9d6158ab6960afd91087bc9fb695aff7d53e84314",
+        "after": "4dfb997fe8534a8cf0211d1d28508473ec0e920873270d2ca5a0ea9f6231a45c",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/string_intern.go"
+      },
+      "stdjava/string_literal_intern_cost94_test.go": {
+        "before": null,
+        "after": "dcbb7801b521c21fa0a792b2a76ea7534694ffaaec77d8a1e440e4154cbc14f8",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/string_literal_intern_cost94_test.go"
+      },
+      "stdjava/string_reference_split.go": {
+        "before": "7c68574aaa6fa0de2169a07f991c67faf92076acfa53ed942f46c331c781ded6",
+        "after": "8aaaaa84b8569b50d686070ec5e003b56e58c6012019d57644dd71fc25d8af06",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/string_reference_split.go"
+      },
+      "stdjava/string_reference_split_literal.go": {
+        "before": null,
+        "after": "85c5f87bce457d5f469c960900a3e153de93afad4920aa8ff09e493ea6047396",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/string_reference_split_literal.go"
+      },
+      "stdjava/string_split_literal_cost93_test.go": {
+        "before": null,
+        "after": "7c2ee719739276701c4c2f13f2248f4553ee11ad560883866cf54c9cac767e4f",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/string_split_literal_cost93_test.go"
+      },
+      "stdjava/testdata/string_split_literal_cost93/SplitContract.java": {
+        "before": null,
+        "after": "93cccab9e80f96351803483dbe7a29352963ce4e5adf5cac09dde603b05794f9",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/testdata/string_split_literal_cost93/SplitContract.java"
+      },
+      "stdjava/testdata/string_split_literal_cost93/contract.stdout": {
+        "before": null,
+        "after": "4b8fafa93ca799b48cbad1d489d22f3fdc1041e6f5f92afc58f3d2afc760ea68",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/stdjava/testdata/string_split_literal_cost93/contract.stdout"
+      },
+      "transpiler/testdata/object_metadata_cost/StatefulMapMetadata.java": {
+        "before": null,
+        "after": "e7a9d91fbc7f935da55815eccfdbc684bae5b3918fcf18f5e949f7dc7b3d9624",
+        "source": "/private/tmp/java2go-perf-public97-matching-v3/candidate/source/transpiler/testdata/object_metadata_cost/StatefulMapMetadata.java"
+      }
+    },
+    "coordinator_audit": {
+      "path": "/private/tmp/java2go-root-performance98/coordinator-component-audit.json",
+      "sha256": "06422f2c54e7c2664826507ee8719c93dffcc8b6cdd01201ed08ecd0335579bb"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-root-performance98/coordinator-independent-source-review.json",
+      "sha256": "81becd9d912432031da91b574b2dbf93639b90139671d204d53a940a5dc419ec"
+    },
+    "execution_certificate": {
+      "path": "/private/tmp/java2go-perf-public97-matching-v3/EXECUTION-CERTIFICATE.json",
+      "sha256": "5e2455f7b728fef147d5318d0373f39671f25b14c2a9cff9bdbaee7f5b29fc6d"
+    },
+    "validation": {
+      "canonical_receipts": 88,
+      "baseline_stages": 24,
+      "candidate_stages": 49,
+      "candidate_native_PASS": 811,
+      "native_CI_named_PASS": 1724,
+      "old_native_CI_retained": 1479,
+      "new_native_CI": 245,
+      "ownership_actual": 160,
+      "ownership_distinct": 130,
+      "ownership_JVM": 11,
+      "metadata_actual": 40,
+      "metadata_distinct": 10,
+      "intern_regular_race_stress_PASS": 308,
+      "intern_stress_runs": 20,
+      "lint_issues": 0,
+      "FAIL": 0,
+      "SKIP": 0
+    },
+    "behavior": "Cache immutable unbound Go method metadata while binding fresh receivers, arguments and logical execution on every call. Specialize Java21 literal UTF16 String.split without changing regex fallback. Look up default literal intern candidates before allocation while preserving custom callback timing, defensive copies, weak dynamic identities and strong literal roots.",
+    "allocation_before": {
+      "allocated_bytes": 296788288,
+      "gc_cycles": 134,
+      "mallocs": 7965064,
+      "note": "Original application main and printing remain intact. Diagnostic CPU/allocation profile only; no shared-host Java/Go speed claim.",
+      "profile_mem_rate": 524288,
+      "repeats": 5000,
+      "warmups": 3
+    },
+    "allocation_after": {
+      "allocated_bytes": 221628984,
+      "gc_cycles": 94,
+      "mallocs": 5025068,
+      "note": "Original application main and printing remain intact. Diagnostic CPU/allocation profile only; no shared-host Java/Go speed claim.",
+      "profile_mem_rate": 524288,
+      "repeats": 5000,
+      "warmups": 3
+    },
+    "incremental_savings": {
+      "allocated_bytes": 0.2532421495015329,
+      "mallocs": 0.36911140952539745,
+      "comparison": "Literal-intern optimization against fresh matching baseline already containing metadata and split optimizations; not a Java/Go latency comparison."
+    },
+    "evidence_metadata": {
+      "execution_gate_clear": true,
+      "descriptive_readiness_metadata_clear": false,
+      "stale_descriptive_references": [
+        {
+          "actual": {
+            "bytes": 8629,
+            "path": "/private/tmp/java2go-perf-public97-matching-v3/COMPOSITION.json",
+            "sha256": "b1bc0e9ca71fc1273dea5fe7f439db5e748e41c43d3420220d322f90b9dac5a3"
+          },
+          "authoritative_launch_pin": "b1bc0e9ca71fc1273dea5fe7f439db5e748e41c43d3420220d322f90b9dac5a3",
+          "field": "composition",
+          "recorded_sha256": "ed4a058f70b545301370e9ed685098112dc693ea626035fcddd8d45e2248d981"
+        },
+        {
+          "actual": {
+            "bytes": 3872637,
+            "path": "/private/tmp/java2go-perf-public97-matching-v3/INPUT-NAMESPACE.json",
+            "sha256": "4c5545b955f6dcef6063c6fd36a74898ad7458ed84d24774ec3b95faf0b62cff"
+          },
+          "authoritative_launch_pin": "4c5545b955f6dcef6063c6fd36a74898ad7458ed84d24774ec3b95faf0b62cff",
+          "field": "input_namespace",
+          "recorded_sha256": "67449f81f63b4c173a82c558d000e9a1f6c46ab3af039b6680d3db90501bd786"
+        },
+        {
+          "actual": {
+            "bytes": 2494,
+            "path": "/private/tmp/java2go-perf-public97-matching-v3/NO-HOME-CONFIG-DIFF-PROOF.json",
+            "sha256": "016aee9db7f1e67ba370f572cad03cb13ccfc0930b81dca52787caf35bb9144a"
+          },
+          "authoritative_launch_pin": "016aee9db7f1e67ba370f572cad03cb13ccfc0930b81dca52787caf35bb9144a",
+          "field": "no_HOME_proof",
+          "recorded_sha256": "dd1648fd34fa44b41c01de911aa2c1b602bb84bee598cfc84bf89fd085c1a445"
+        },
+        {
+          "actual": {
+            "bytes": 45733,
+            "path": "/private/tmp/java2go-perf-public97-matching-v3/ownership/config.json",
+            "sha256": "fcce71883f1394346fe00ba58ab353d35974e8a73d8992f2b3f1bb1591913714"
+          },
+          "authoritative_launch_pin": "fcce71883f1394346fe00ba58ab353d35974e8a73d8992f2b3f1bb1591913714",
+          "field": "ownership_config",
+          "recorded_sha256": "18af8831d09f8404b057751405ae69c58ad1be2664c9b3ff40cd6ca2a3710dae"
+        },
+        {
+          "actual": {
+            "bytes": 2277,
+            "path": "/private/tmp/java2go-perf-public97-matching-v3/TOOL-CLOSURE.json",
+            "sha256": "6b25d65550a3c86d85b2524ffa9022ab7330f0c17e4e818a0d6f0bae013ad278"
+          },
+          "authoritative_launch_pin": "6b25d65550a3c86d85b2524ffa9022ab7330f0c17e4e818a0d6f0bae013ad278",
+          "field": "tool_closure",
+          "recorded_sha256": "7c1d66442f1904bc2c5c3f5125315cba9e757609631ea5120051df842ec5b04d"
+        }
+      ],
+      "authoritative_launch_pins_verified_exact": true,
+      "frozen_readiness_not_modified": true,
+      "v1_unrun_v2_infrastructure_failure_excluded": true
+    },
+    "limitations": "Scoped runtime milestone. OriginalCommons27, genuineGson118, fullNetty strict translation, authenticMaven lifecycle and accumulated full application/compiler CI remain open. Checkpoint18 remains latest accepted full round. Metadata generated equality remains open. No faster-than-Java, latency, full-Netty or universal-Java claim.",
+    "resume": "Continue Sol-only Commons receiver/static-field inference TDD, genuineGson Collection return bridges and full118 acceptance, reflection original61/current751, real header-shadow JDK oracles, native Map protocol interoperability and failclosed authentic Maven realm/graph ingestion. Commit AND push verified milestones."
   }
 }
