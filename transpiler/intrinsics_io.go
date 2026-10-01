@@ -635,4 +635,5 @@ func registerByteBufferIntrinsics() {
 		return selectorCall(recv, "GetInto", args)
 	})
 	registerInstanceIntrinsicResultType("ByteBuffer", "get", "ByteBuffer")
+	registerNIOHeapIntrinsics()
 }

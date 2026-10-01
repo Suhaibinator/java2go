@@ -7929,5 +7929,145 @@
     "limitations": "Direct opaque noncanonical nonnil function userCAS conservativefalse; nativeStringCAS rejection; absent nest/module/loader metadata remains unsupported. Compiler factories, generated volatile/SAM applications, Netty and Java-faster performance remain unaccepted.",
     "full_CI_and_round": "UNACCEPTED; checkpoint18 remains latest accepted full round. Original failures/skips unwaived.",
     "next": "Matching-current Map/Future and NIO compositions; Stream chars GREEN; volatile generated-family repair; functional SAM generated application parity; source-translated dependencies."
+  },
+  "sol_progress83": {
+    "status": "ACCEPTED_SCOPED_NIO_HEAP_COMPONENT_FULL_ROUND_UNACCEPTED",
+    "parent": "7e7071d8ca4e7c040f2b8f0dc78635fd3ae5e20d",
+    "publication_packet_sha256": "489688bfba1ecc6d0c74b014cd43d0e19ee774e90746e1aaf351a9e7fa14ef47",
+    "publication_paths": {
+      "stdjava/bytebuffer.go": {
+        "after_bytes": 6668,
+        "after_sha256": "3116b35faa26f4a1a02c3b0e4b22084118bae48170ddec1d85d6ed7cc29ec943",
+        "expected_before_exists": true,
+        "expected_before_sha256": "92d689253ebf57a09023abd930c4c4bfac50bd015d73d36dd267dc8c85f69d36",
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/stdjava/bytebuffer.go"
+      },
+      "stdjava/digest_io.go": {
+        "after_bytes": 9919,
+        "after_sha256": "6742ceb737accced534b74c2685a53349ccea59a51bf85043ada373c4d75a963",
+        "expected_before_exists": true,
+        "expected_before_sha256": "57891cac57da05e1dd3066e30db9043097aee765d523ed40cf95dc6532d43f4b",
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/stdjava/digest_io.go"
+      },
+      "stdjava/messagedigest.go": {
+        "after_bytes": 4117,
+        "after_sha256": "02a4a8b278aee800b7dd75741bcbdaa58479f81a14566432310e017641c003de",
+        "expected_before_exists": true,
+        "expected_before_sha256": "69c65b4b9fbc31f34fdfb9965020d72105eb5b0ee168e0c9bdfa0f90a501b3b1",
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/stdjava/messagedigest.go"
+      },
+      "stdjava/nio_heap_consumers_test.go": {
+        "after_bytes": 2830,
+        "after_sha256": "67deb7330b6a3d638eb0d2696b85e13233fa87f99af0630de3cc8867fbc483ce",
+        "expected_before_exists": false,
+        "expected_before_sha256": null,
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/stdjava/nio_heap_consumers_test.go"
+      },
+      "transpiler/campaign_nio_heap_contracts_test.go": {
+        "after_bytes": 1134,
+        "after_sha256": "0db4c493353491918ff740956b642fba867226caf328133101d0cc5e0772a494",
+        "expected_before_exists": false,
+        "expected_before_sha256": null,
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/transpiler/campaign_nio_heap_contracts_test.go"
+      },
+      "transpiler/intrinsics_io.go": {
+        "after_bytes": 25837,
+        "after_sha256": "f6f4baec8e24e455cca39e9dcc3c5a71cfa8814ba0e02a4e797f068994d0aef7",
+        "expected_before_exists": true,
+        "expected_before_sha256": "2803d773d772260f08ba5cde1a5d2a9d9b28ebe1b2ad061d944366354c5e83c2",
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/transpiler/intrinsics_io.go"
+      },
+      "transpiler/intrinsics_nio_heap.go": {
+        "after_bytes": 4643,
+        "after_sha256": "6b2f2080e1722d97769e77528604d2203062b50121f16ccdc09e124f19789a6e",
+        "expected_before_exists": false,
+        "expected_before_sha256": null,
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/transpiler/intrinsics_nio_heap.go"
+      },
+      "transpiler/testdata/nio_heap_contracts/HeapAliasFlow.java": {
+        "after_bytes": 1539,
+        "after_sha256": "baa838fc67aeea30cb6060810986cb5adae81810a061551d8a95bbb3128eed52",
+        "expected_before_exists": false,
+        "expected_before_sha256": null,
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/transpiler/testdata/nio_heap_contracts/HeapAliasFlow.java"
+      },
+      "transpiler/testdata/nio_heap_contracts/HeapFailureFlow.java": {
+        "after_bytes": 3465,
+        "after_sha256": "be227ee1ba0104469a513755a51bfc7f1da12e3b6998065624126ececb889207",
+        "expected_before_exists": false,
+        "expected_before_sha256": null,
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/transpiler/testdata/nio_heap_contracts/HeapFailureFlow.java"
+      },
+      "transpiler/testdata/nio_heap_contracts/HeapWindowFlow.java": {
+        "after_bytes": 2262,
+        "after_sha256": "0b6e7782627abf072ad93b676b4f04abbe3519b68620565a5a29a5ad37d7d920",
+        "expected_before_exists": false,
+        "expected_before_sha256": null,
+        "reviewed_source": "/private/tmp/java2go-sol-nio-current-atomic-heap-v5/candidate/transpiler/testdata/nio_heap_contracts/HeapWindowFlow.java"
+      }
+    },
+    "protected_compiled_inputs": 1699,
+    "coordinator_raw_counts": {
+      "baseline-allpackage-no-test-compile": {
+        "packages": 20,
+        "no_test_packages": 9,
+        "test_events": 0
+      },
+      "candidate-allpackage-no-test-compile": {
+        "packages": 20,
+        "no_test_packages": 9,
+        "test_events": 0
+      },
+      "current-heap-workflows3": {
+        "run": 4,
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "native-digest-channel-neighbors5": {
+        "run": 5,
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "canonical-message-digest-strict-neighbors3": {
+        "run": 3,
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "verified_supervisors": [
+      {
+        "path": "/private/tmp/java2go-sol-nio-current-atomic-heap-actual-v5/outer-supervision/command.json",
+        "sha256": "839d23e04e9e39338a5f0da42624733597811fb379b91ff0142debcf483ff29f"
+      },
+      {
+        "path": "/private/tmp/java2go-sol-nio-current-atomic-heap-actual-v5/inner/baseline-allpackage-no-test-compile/command.json",
+        "sha256": "95e12b6c7530a37a9d20ac7989509b2b03d3df2872038e0e640bd90d2b916328"
+      },
+      {
+        "path": "/private/tmp/java2go-sol-nio-current-atomic-heap-actual-v5/inner/candidate-allpackage-no-test-compile/command.json",
+        "sha256": "39d7099de9595b8be85b291cd054973ae80ca24095d5c08f6b5ceff81f46b1e6"
+      },
+      {
+        "path": "/private/tmp/java2go-sol-nio-current-atomic-heap-actual-v5/inner/current-heap-workflows3/command.json",
+        "sha256": "18a834f7d77f60d8c93376a3b2ae6d0e04aaae3b28652b1e706eb93250674264"
+      },
+      {
+        "path": "/private/tmp/java2go-sol-nio-current-atomic-heap-actual-v5/inner/native-digest-channel-neighbors5/command.json",
+        "sha256": "354b1247970c2c0d7eff83f7f17bf983ee49d92c84ba9c2facea0d9e407f4ef1"
+      },
+      {
+        "path": "/private/tmp/java2go-sol-nio-current-atomic-heap-actual-v5/inner/canonical-message-digest-strict-neighbors3/command.json",
+        "sha256": "e4b266dd56f48a9c18ff62c760b670adb34efdc3e71bd92aa12ab8c71dc6ac36"
+      }
+    ],
+    "TDD": "Original JDK3 heap observations and canonical String representation migration preserved; exact seven missing Buffer API diagnostics in frozen RED. Current source paired20package compile, same3heap workflows, five digest/channel native checks and three canonical MessageDigest strict JVM/Go neighbors pass.",
+    "change": "General mutable heap ByteBuffer backing offsets, independent view capacity/cursors/marks, wrap/slice/duplicate, byte/bulk transfer and exercised failure atomicity; MessageDigest/FileChannel consume only view windows. Canonical NIO overload lowering.",
+    "source_tool_stability": "Full baseline2773/candidate2775 and120352closed tool/module entries checked before/after; all six supervisors terminal with tracked processes empty.",
+    "limitations": "Direct/read-only buffers, byte order, multibyte/typed views, compact and absolute bulk operations remain unsupported. No full Netty, generated race suite, performance superiority or universal Java claim. Existing legacy String companion failures remain unwaived.",
+    "full_CI_and_round": "UNACCEPTED; checkpoint18 remains latest accepted full round. Matching Map/Future7 and CI42 in progress.",
+    "next": "Primitive ByteBuffer oracle/RED/repair gates; Stream current composed package compilation; strict Netty Maven and metadata-only raw source repairs; volatile and generic/SAM application behavior."
   }
 }

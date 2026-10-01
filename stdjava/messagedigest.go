@@ -104,7 +104,7 @@ func (d *MessageDigest) Update(input any, bounds ...int32) {
 		}
 	case *ByteBuffer:
 		ReferenceRequireNonNull(input)
-		d.Update(input.array, input.position, input.Remaining())
+		d.Update(input.array, input.offset+input.position, input.Remaining())
 		input.position = input.limit
 		return
 	default:

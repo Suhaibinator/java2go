@@ -299,7 +299,7 @@ func (c *FileChannel) Read(buffer *ByteBuffer) int32 {
 	bytes := make([]byte, buffer.Remaining())
 	count, err := c.state.file.Read(bytes)
 	for i := 0; i < count; i++ {
-		buffer.array.Elements[int(buffer.position)+i] = int8(bytes[i])
+		buffer.array.Elements[int(buffer.offset+buffer.position)+i] = int8(bytes[i])
 	}
 	buffer.position += int32(count)
 	if count > 0 {
@@ -318,12 +318,6 @@ func (c *FileChannel) IsOpen() bool {
 	c.state.mu.Lock()
 	defer c.state.mu.Unlock()
 	return !c.state.closed
-}
-func (b *ByteBuffer) Flip() *ByteBuffer { b.limit = b.position; b.position = 0; return b }
-func (b *ByteBuffer) Clear() *ByteBuffer {
-	b.position = 0
-	b.limit = int32(len(b.array.Elements))
-	return b
 }
 
 func init() {
