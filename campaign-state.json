@@ -6226,7 +6226,7 @@
     "updated_at": "2026-09-30T19:41:13.522656+00:00",
     "requested_by": "user",
     "agent_policy": "Sol only; gpt-6.1-sol/high; no Astra agents may be spawned or resumed.",
-    "app_goal_api_note": "Goal tool ACTIVE. Latest user requests twenty assigned GPT-6.1 Sol/high roles plus coordinator; historical displayed tool objective soft agent counts are superseded. API cannot edit objective; no false completion/replacement."
+    "app_goal_api_note": "Observed goal tool status blocked on 2026-10-01 despite explicit user resume. Available API cannot resume or edit its objective. Campaign work is actively resumed by human authorization; no false completion or pause is recorded."
   },
   "sol_progress70": {
     "public_code_revision": "614d6e054a7e7f2b410d5f10cabfbf6d03ddc6e1",
@@ -10760,5 +10760,53 @@
     },
     "limitations": "Scoped runtime milestone. OriginalCommons27, genuineGson118, fullNetty strict translation, authenticMaven lifecycle and accumulated full application/compiler CI remain open. Checkpoint18 remains latest accepted full round. Metadata generated equality remains open. No faster-than-Java, latency, full-Netty or universal-Java claim.",
     "resume": "Continue Sol-only Commons receiver/static-field inference TDD, genuineGson Collection return bridges and full118 acceptance, reflection original61/current751, real header-shadow JDK oracles, native Map protocol interoperability and failclosed authentic Maven realm/graph ingestion. Commit AND push verified milestones."
+  },
+  "sol_progress99": {
+    "status": "VERIFIED_PRIVATE_TDD_CHECKPOINT_IMPLEMENTATION_INTEGRATION_PENDING",
+    "publication_parent": "4a152116f7d558b807437d186394b0da34cb0b5c",
+    "implementation_changes_published": false,
+    "full_round_accepted": false,
+    "latest_accepted_full_round": 18,
+    "evidence": {
+      "collection269": {
+        "path": "/private/tmp/java2go-sol61-collection269-v3-terminal-review99/TERMINAL-AUDIT.json",
+        "sha256": "f41cca0494cc3da5b1acbd269514a020f5a11bd86f4db4c879fa99fb0238e8fd"
+      },
+      "gson111_minimal": {
+        "path": "/private/tmp/java2go-sol61-foundation-assembly99/TERMINAL.json",
+        "sha256": "41fa835e5d199cf689469e54e6257e92e2d604876099f768ecfb89ecc9fd7d29"
+      },
+      "commons_next_argument_gap": {
+        "path": "/private/tmp/java2go-sol61-performance-latency-v1/commons27-prep/object-equals-prereq-green-v4/execution/FIRST-DISCREPANCY-AUDIT.json",
+        "sha256": "8e1232122661faa4f5e825d5702cd076432416491f81f3a15cde881ef93d4e94"
+      },
+      "console_encoding_audit": {
+        "path": "/private/tmp/java2go-printstream99-oracle-v1/AUDIT.json",
+        "sha256": "8429f519f27aa37a88f4dcd5b4369f8da6c8822957cae20c636e08e2362c6643"
+      },
+      "reflection_findings": {
+        "path": "/private/tmp/java2go-sol61-integration99-independent-review-v1/SOURCE-RAW-REVIEW.json",
+        "sha256": "2272b95378d846eb96b9b97c8c721170e83b84117ff143fcfba051a2e8241145"
+      }
+    },
+    "verified_scopes": {
+      "collection": "All 16 original stages accepted on source3010, including unchanged 269-row JVM/Go/race parity; broader matching CI and publication remain pending.",
+      "gson": "Minimal current98 assembly passed exact 111 scoped keys and eight strict JDK/race parity controls; seven owned hunk sets need two descriptor kernels, not an 85-leaf historical overlay. Original7, genuine68 and full118 remain pending.",
+      "commons": "Object.equals repair passed seven added parents/19 keys and original equals11. Full233 stopped after181 passes at derived-bound argument widening; 51 stages/full27 remain unrun. Original equals11 build was plain Go; race evidence belongs to additive helpers.",
+      "reflection": "Original current98-derived candidate passed native1724/lint, ownership130, reflection61, foundation751 and focused56. Independent review then found protected virtual dispatch and inherited interface-static lookup defects; focused repairs and original static-interface fixture are green privately. Fresh composed gates and independent review are required.",
+      "netty": "Named header scope repair passed fresh25 native actions/24 distinct, six JVM oracles and bounded cost; original Netty/metadata/lint gates and full strict translation remain active. No full Netty parity.",
+      "map": "Nine stable original JVM oracles and focused native protocol repair evidence exist; unchanged application is blocked on canonical ClassCastException String-message ABI. Full application/CI acceptance remains open.",
+      "maven": "Actual Plexus singleton discovery and supported callback controls passed7/7 privately. Checked Mojo failures lack an after-failure callback. Occurrence identity controls are unrun; original authentic lifecycle FAILED300/source blockers remain open.",
+      "performance": "Original C-locale console mismatch is valid: JDK native US-ASCII versus existing explicitly UTF8 Go wrapper. Surrogate carry is correct. Additional declared UTF8 allocation campaign is separate; no allocation or latency claim from this round."
+    },
+    "resume": "Continue Sol-only owned TDD repairs, compose reviewed candidates against the latest public implementation, run matching accumulated gates, commit and push verified code milestones. Preserve original Commons27/Gson118/Netty challenges, native-console configuration gap and all interrupted/invalid attempts.",
+    "interruption": "Turn abort interrupted agents and focused56 V3 at47 stages; fresh V4 passed56/41/eight JVM parities without carrying interrupted outcomes. Original aborted artifacts remain preserved."
+  },
+  "active_resume_current99": {
+    "branch": "origin/codex/adversarial-campaign",
+    "source_parent": "4a152116f7d558b807437d186394b0da34cb0b5c",
+    "agent_policy": "GPT-6.1 Sol/high only; no Astra; explicit file ownership and independent review; coordinator sole public/Git writer",
+    "checkpoint_kind": "Journal only; tested private implementation not yet published",
+    "next": "Derived-bound argument conversion, complete composed reflection/static-interface gates, original Gson applications, Map+CCE composition, original Netty strict gate and configured console support."
   }
 }
