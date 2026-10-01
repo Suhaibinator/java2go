@@ -92,6 +92,20 @@ func (b *ByteBuffer) Clear() *ByteBuffer {
 	b.mark = -1
 	return b
 }
+
+// Compact moves this heap view's remaining bytes to its beginning. The copy
+// must preserve overlap and the shared backing array; only this view's cursor
+// and mark change, and its byte order remains unchanged.
+func (b *ByteBuffer) Compact() *ByteBuffer {
+	ReferenceRequireNonNull(b)
+	remaining := b.limit - b.position
+	start := b.offset + b.position
+	copy(b.array.Elements[b.offset:b.offset+remaining], b.array.Elements[start:start+remaining])
+	b.position = remaining
+	b.limit = b.capacity
+	b.mark = -1
+	return b
+}
 func (b *ByteBuffer) Slice(bounds ...int32) *ByteBuffer {
 	ReferenceRequireNonNull(b)
 	index, length := b.position, b.Remaining()

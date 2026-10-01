@@ -8716,5 +8716,131 @@
     "TDD": "Original allocation assertion causalRED measured1.000000. Fresh matchingcurrent86 normal191/race191 both pass exactly, zero skips/race output; write-only diagnostic0.000000. Test formatting preserves ordered nonsemicolon tokens, effective semicolons and142 full literal bytes.",
     "remaining_limits": "BLOCKED_MATCHING_VOLATILE_SAM_THREAD_NEST_COMPOSITION; no generated acceptance or speed claim; no throughput/Java-faster claim. First failed CAS on an unobserved epoch may allocate. Full Netty/Commons/Gson and accumulatedCI/round unaccepted; checkpoint18 remains latest full accepted round.",
     "continuation": "Continue strictfullNetty residual scan TDD, originalCommons27 acceptance and newsubList fourcallbacks, volatile183 thenfreshnormal/race/stress, Gsonphysical lowering, originalMaven source lifecycle, generatedperformance baseline and compact prerequisite."
+  },
+  "sol_progress89": {
+    "status": "ACCEPTED_SCOPED_HEAP_COMPACT_FULL_ROUND_UNACCEPTED",
+    "parent": "00c6e2e8c405490b3a48bf0a4cea5863cd33377b",
+    "publication_packet": {
+      "path": "/private/tmp/java2go-sol-compact-current88-gate-v1/PUBLICATION_PACKET.json",
+      "sha256": "a93bcf908c8caba24b1fa174ae28c7292ee7cee0d255daf36fb88c485cb2d2a4"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-sol-compact-independent-review-v1/final-review.json",
+      "sha256": "0eadae80a912c62ee0d5851bdaac492d2570e3341fa9ec469b10e25fdef537ab"
+    },
+    "owned5": {
+      "stdjava/bytebuffer.go": {
+        "path": "/private/tmp/java2go-sol-compact-current88-gate-v1/source/stdjava/bytebuffer.go",
+        "bytes": 7311,
+        "sha256": "738cccbac82207ae68786469472400421e9b5602cde7c4bdd7828adc671cfe9a"
+      },
+      "transpiler/intrinsics_io.go": {
+        "path": "/private/tmp/java2go-sol-compact-current88-gate-v1/source/transpiler/intrinsics_io.go",
+        "bytes": 25911,
+        "sha256": "26cc68dbfd95bb7d03f66eb89c81eb2c84059065ecbfb3e5016871135f5f6a27"
+      },
+      "stdjava/nio_compact_contract_test.go": {
+        "path": "/private/tmp/java2go-sol-compact-current88-gate-v1/source/stdjava/nio_compact_contract_test.go",
+        "bytes": 3073,
+        "sha256": "53114974e08ebfa654925d2f82b90d68c0a5e6e2f14804847d4eb5bc0bba2aaf"
+      },
+      "transpiler/nio_compact_lowering_test.go": {
+        "path": "/private/tmp/java2go-sol-compact-current88-gate-v1/source/transpiler/nio_compact_lowering_test.go",
+        "bytes": 507,
+        "sha256": "11fe5d7f390688fbd7c60df3c6e3ee57314aa9943acaeead95df7fd251a62344"
+      },
+      "transpiler/testdata/nio_compact_contracts/CompactFlow.java": {
+        "path": "/private/tmp/java2go-sol-compact-current88-gate-v1/source/transpiler/testdata/nio_compact_contracts/CompactFlow.java",
+        "bytes": 2339,
+        "sha256": "f5481aeff2c580fc9aee0f183c2a7b5ca8a76e6ec25168fa2b3541fc843ab7a0"
+      }
+    },
+    "coordinator_raw_stages": [
+      {
+        "stage": "candidate-compile20",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/candidate-compile20/command.json",
+        "sha256": "fb039fd30a411c5a57013346c5f2caeac4b468de3424bd61431c17fb1d1a2df4",
+        "actions": 0
+      },
+      {
+        "stage": "native9",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/native9/command.json",
+        "sha256": "5f1ca01775bf8040649c4156f49986c45f800be4bf582979a17de822cdd4c0c8",
+        "actions": 9
+      },
+      {
+        "stage": "codegen2",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/codegen2/command.json",
+        "sha256": "c4bb7f6030e6f4f6a0aa9efb5404809a677a91c74d2ab3fd7440308413515f2d",
+        "actions": 2
+      },
+      {
+        "stage": "primitive-original4",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/primitive-original4/command.json",
+        "sha256": "172b483532821dc992ab500628d38961db7080303d9d4bd30e0eda8e9703c762",
+        "actions": 4
+      },
+      {
+        "stage": "heap-original4",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/heap-original4/command.json",
+        "sha256": "8294c9fce20b363de2e910c6c828c14d6778ab30d010d46ab181978c663691fc",
+        "actions": 4
+      },
+      {
+        "stage": "heap-native-race6",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/heap-native-race6/command.json",
+        "sha256": "3986797708719b2e24a0bf960f8b30e47ea80ef2bf6c2102aab0cd1ebcdd03f9",
+        "actions": 6
+      },
+      {
+        "stage": "compact-javac",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/compact-javac/command.json",
+        "sha256": "78a38e4fe2cab9bc4e361e3e060f8def05b302ef56ba1f2d9a6192c3384dc2df",
+        "actions": 0
+      },
+      {
+        "stage": "compact-jvm",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/compact-jvm/command.json",
+        "sha256": "3b5538cfb7f882ee239ac4f4b7a0620525eb5df611ca41e2a6f56397ea987966",
+        "actions": 0
+      },
+      {
+        "stage": "compiler-build",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/compiler-build/command.json",
+        "sha256": "49632dc2759f1f1516fb1a0ea9ea182135fb3c59f28fb036c029bcd1ee44a9d0",
+        "actions": 0
+      },
+      {
+        "stage": "strict-transpile",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/strict-transpile/command.json",
+        "sha256": "dc01554f894f035ca21e28aa55dd665029f2142c46059ec6099b9f18f791596b",
+        "actions": 0
+      },
+      {
+        "stage": "generated-race-all-build",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/generated-race-all-build/command.json",
+        "sha256": "b9d4446542b3a6cb3eee54cda9c2cd94948f33702c6902ef7d6cd10c64d2006f",
+        "actions": 0
+      },
+      {
+        "stage": "generated-race-entry-build",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/generated-race-entry-build/command.json",
+        "sha256": "83b473e8f04210d1c48a00226d6ff37342d00c2b8f85be210a5b5b1b0be3c8ad",
+        "actions": 0
+      },
+      {
+        "stage": "generated-execute",
+        "receipt": "/private/tmp/java2go-sol-compact-current88-gate-v1/evidence-attempt1/generated-execute/command.json",
+        "sha256": "3873652884263327b2c3c96272b0752daae3aeae8a1375dcb6ea1ba1ea7ada81",
+        "actions": 0
+      }
+    ],
+    "selected_actions": 25,
+    "JDK_Go_stdout_bytes": 419,
+    "generated_manifest_sha256": "8ff3d6ee1c59197764cd502a48e9d4b1a027ec2734f0ee0749164492bb811691",
+    "change": "Heap ByteBuffer.compact copies the remaining aliased window, preserves receiver/backing array and byte order, resets position/limit and discards mark; fluent compiler lowering added.",
+    "TDD": "Frozen missing-surface native/generated build REDs retained. Fresh exact public88 composition passes compile20, native9, codegen2, original primitive4/heap4, native race6, fresh JDK compile/run, strict transpilation, all generated race builds and race executable parity. No generated edits.",
+    "remaining_limits": "Mutable heap buffers only; direct/read-only buffers and performance not claimed. Full Netty still times out at300 seconds; original Commons27/Gson and full accumulated CI remain unaccepted. Checkpoint18 latest full accepted round.",
+    "continuation": "Continue Sol-only residual Netty translation, Commons bounds/Comparator/subList, volatile/parser integration, Gson physical lowering, authentic Maven lifecycle and actual generated performance baseline."
   }
 }

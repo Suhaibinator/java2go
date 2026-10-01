@@ -614,6 +614,7 @@ func registerByteBufferIntrinsics() {
 	for _, method := range []struct{ java, goName, result string }{
 		{"remaining", "Remaining", "int"}, {"hasArray", "HasArray", "boolean"}, {"array", "Array", "byte[]"},
 		{"limit", "Limit", "int"},
+		{"compact", "Compact", "ByteBuffer"},
 	} {
 		registerInstanceIntrinsic("ByteBuffer", method.java, ioMethod(method.goName, 0))
 		registerInstanceIntrinsicResultType("ByteBuffer", method.java, method.result)
