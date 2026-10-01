@@ -7715,5 +7715,219 @@
     "infrastructure_history": "Original interrupted nonterminal runtime receipt, ps-denied NO_LAUNCH and wrong-cwd INVALID_OBSERVATION are preserved; fresh current package-cwd gates pass.",
     "full_CI_and_round": "UNACCEPTED; checkpoint18 remains latest accepted full round. No new Gson/Netty/performance claims; prior failures/skips unwaived.",
     "next": "Atomic formatted matching-public composition compile; Map/Future CI after current integration gates; UTF16 chars historical repair and volatile generated-family failures remain active."
+  },
+  "sol_progress82": {
+    "status": "ACCEPTED_SCOPED_ATOMIC_RUNTIME_COMPONENT_FULL_ROUND_UNACCEPTED",
+    "parent": "7971ca705fcf9e9b0a7e146590f1e35a707fbd6d",
+    "publication_packet_sha256": "dbec591b2dc12ecdc6c44c6920806403320c568b876e9f55c9ba055c17a17b57",
+    "publication_paths": [
+      {
+        "before_present": false,
+        "before_sha256": null,
+        "desired_after_sha256": "abb51bb742a103ae300423a756266bcfd09511a27857f99a4c54aa0a0ef3715e",
+        "path": "stdjava/atomic_field_updater.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/atomic_field_updater.go",
+        "source_path": "/private/tmp/java2go-atomic-runtime-composed-v9/candidate/stdjava/atomic_field_updater.go"
+      },
+      {
+        "before_present": false,
+        "before_sha256": null,
+        "desired_after_sha256": "73499da039ab4dc14468ffca7d08c2304ab55fce07674dd35608d4eeb0cf7208",
+        "path": "stdjava/atomic_field_updater_callback_review_test.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/atomic_field_updater_callback_review_test.go",
+        "source_path": "/private/tmp/java2go-atomic-runtime-composed-v9/candidate/stdjava/atomic_field_updater_callback_review_test.go"
+      },
+      {
+        "before_present": false,
+        "before_sha256": null,
+        "desired_after_sha256": "59bca818c3ed08107b58e8125c1ae944b7b55a45aa5224f1196fe7c436fcc64e",
+        "path": "stdjava/atomic_field_updater_exchange_review_test.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/atomic_field_updater_exchange_review_test.go",
+        "source_path": "/private/tmp/java2go-atomic-runtime-composed-v9/candidate/stdjava/atomic_field_updater_exchange_review_test.go"
+      },
+      {
+        "before_present": false,
+        "before_sha256": null,
+        "desired_after_sha256": "e4aeba60b7b9e6927427a656f0d1a513d78abee542c4e196d49c485fab80aa55",
+        "path": "stdjava/atomic_field_updater_opaque_object_review_test.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/atomic_field_updater_opaque_object_review_test.go",
+        "source_path": "/private/tmp/java2go-atomic-runtime-composed-v9/candidate/stdjava/atomic_field_updater_opaque_object_review_test.go"
+      },
+      {
+        "before_present": false,
+        "before_sha256": null,
+        "desired_after_sha256": "82b0ddf700bb288be268f767b5d08219c9be39f62b02f9447ee6b79c0a99f787",
+        "path": "stdjava/atomic_field_updater_test.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/atomic_field_updater_test.go",
+        "source_path": "/private/tmp/java2go-atomic-runtime-composed-v9/candidate/stdjava/atomic_field_updater_test.go"
+      },
+      {
+        "before_present": true,
+        "before_sha256": "73a70ff6ca7663f0c6c3ca71e42aaa1dfb63a2ab3c8bd27e01be88b7a866aa42",
+        "desired_after_sha256": "741333ecdd6ee035221ecb6418756193d814b1ee5dcb9141182d8e6b0f3c2d3e",
+        "path": "stdjava/reflection.go",
+        "public_path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/reflection.go",
+        "source_path": "/private/tmp/java2go-atomic-runtime-composed-v9/candidate/stdjava/reflection.go"
+      }
+    ],
+    "verified_supervisors": [
+      {
+        "path": "/private/tmp/java2go-atomic-v7-callback-causal-red/outer-supervision/command.json",
+        "sha256": "3108a9941069e544f93cd80dd5e459e878f2046a712c4d0797a933ded25fe881",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-v7-callback-causal-red/job/baseline-contract-red/command.json",
+        "sha256": "a23f3b8fc3ca8b2ce52885b8acd3e3883209cce3efd3f423ae3eea98ba0fa466",
+        "exit_code": 1
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-normal/outer-supervision/command.json",
+        "sha256": "96673c2dc38c28b6d7bebe46cbfa39b446b8b16566a84e485b192f0eee58da72",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-normal/job/baseline-stdjava-normal/command.json",
+        "sha256": "98d54b3af2cc47ef252c2b065f2362d178fd9e1014b433188886900a47606a4c",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-normal/job/candidate-stdjava-normal/command.json",
+        "sha256": "9a5ae07c0f7020e0ce87e88a653bfeb7f06aace51b6fd5f70fa4edd675f6fc3f",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-race/outer-supervision/command.json",
+        "sha256": "d564c00f307d2c0a9b9b2a09302702a00b6790bdbea0cf8bb1ae1ad866863863",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-race/job/baseline-stdjava-race/command.json",
+        "sha256": "79941706ea1dd52ca44e0cbbcbcc63d94eabac1923d8e8c1e3db24c0575371e0",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-race/job/candidate-stdjava-race/command.json",
+        "sha256": "404177fd3e6d75d076b2b7b991c98343bf033b02616ec2755d7ee8d6e0be1006",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-build/outer-supervision/command.json",
+        "sha256": "a93d607a905150872e493e325059657197f0af19b3695f2a40a2ad52055e7ef2",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-build/job/baseline-build-all/command.json",
+        "sha256": "91205e4a77211007801897e2b68cc69375eadd8f452f84b8c94a191f0e02200c",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-broad-v7-build/job/candidate-build-all/command.json",
+        "sha256": "18c70a7f637f3a7ab3bca7925031355e6d2213b0a519ef2288e58931ea9362b3",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-formatted-v8-normal/outer-supervision/command.json",
+        "sha256": "49882f885dfa53009651f6216aa15fc68f8c20e02eaa41a380674126c8d17f6f",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-formatted-v8-normal/job/candidate-focused-normal/command.json",
+        "sha256": "e73fc20284fb50a7e6d4f92105c82740aaa20e21315010996a421bcad79e0bf3",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-formatted-v8-race/outer-supervision/command.json",
+        "sha256": "d2be82aa14b7229e89dfaef767f12005d44678375c7ddf3ca916bec57163f2aa",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-formatted-v8-race/job/candidate-focused-race/command.json",
+        "sha256": "c5725ebc5056cab03ae0a06b1f9bd981dddad8f84e27561d8c173a2e1022bc98",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-composed-v9-compile/outer-supervision/command.json",
+        "sha256": "f8e73103f7e12f30c668480f19756f5f0ccbf73100c8a14a5763ed67b1c6e2fb",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-composed-v9-compile/job/baseline-compile-all-tests/command.json",
+        "sha256": "7998909a2b74c79ad518cfd45e0af7055b6c66c4bf9c611a643bc1add22cc6f6",
+        "exit_code": 0
+      },
+      {
+        "path": "/private/tmp/java2go-atomic-composed-v9-compile/job/candidate-compile-all-tests/command.json",
+        "sha256": "bd9d8b92fd553dac9a5818078cf601e24208cf2d74471eb85423b475d01074f0",
+        "exit_code": 0
+      }
+    ],
+    "coordinator_raw_counts": {
+      "baseline-contract-red": {
+        "run": 25,
+        "pass": 15,
+        "fail": 10,
+        "skip": 0
+      },
+      "baseline-stdjava-normal": {
+        "run": 1131,
+        "pass": 1131,
+        "fail": 0,
+        "skip": 0
+      },
+      "candidate-stdjava-normal": {
+        "run": 1156,
+        "pass": 1156,
+        "fail": 0,
+        "skip": 0
+      },
+      "baseline-stdjava-race": {
+        "run": 1131,
+        "pass": 1131,
+        "fail": 0,
+        "skip": 0
+      },
+      "candidate-stdjava-race": {
+        "run": 1156,
+        "pass": 1156,
+        "fail": 0,
+        "skip": 0
+      },
+      "candidate-focused-normal": {
+        "run": 25,
+        "pass": 25,
+        "fail": 0,
+        "skip": 0
+      },
+      "candidate-focused-race": {
+        "run": 25,
+        "pass": 25,
+        "fail": 0,
+        "skip": 0
+      },
+      "baseline-compile-all-tests": {
+        "run": 0,
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      },
+      "candidate-compile-all-tests": {
+        "run": 0,
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "TDD": "Callback stamp repair: causal25=15PASS10FAIL; formatted25normal/race allPASS. Full native comparative1131baseline/1156candidate normal/race preserve all old keys and outcomes, zero test skips. Current7971 paired20package compilation succeeds, with nine declared no-test-file package terminals and zero test events.",
+    "verification_scope": "Root may publish exact6 formatted native component files only. V7 full native normal/race and build keep pre-Stream scope; V8 focused25normal/race prove formatted candidate; native byte identity carries tests into current7971; V9 paired all20package no-test compile matches Stream current public source. Failed V7 classifier receipt remains rejected. No actual test skips, JVM/generated/Netty/performance acceptance; opaque nonnil function directuserCAS limitation remains.",
+    "preserved_failed_compile_classifier": {
+      "accepted": false,
+      "path": "/private/tmp/java2go-atomic-broad-v7-compile/result.json",
+      "scope": "V7rejected_compile_parser",
+      "sha256": "fadc6a4daa698b4e03199f5858a7e6ae2fd4a923bcf0a4a550c371c3440a5825"
+    },
+    "limitations": "Direct opaque noncanonical nonnil function userCAS conservativefalse; nativeStringCAS rejection; absent nest/module/loader metadata remains unsupported. Compiler factories, generated volatile/SAM applications, Netty and Java-faster performance remain unaccepted.",
+    "full_CI_and_round": "UNACCEPTED; checkpoint18 remains latest accepted full round. Original failures/skips unwaived.",
+    "next": "Matching-current Map/Future and NIO compositions; Stream chars GREEN; volatile generated-family repair; functional SAM generated application parity; source-translated dependencies."
   }
 }

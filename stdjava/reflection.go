@@ -49,6 +49,8 @@ type FieldDescriptor struct {
 	Get            func(*Execution, any) any
 	Set            func(*Execution, any, any)
 	StaticSet      func(*Execution, any)
+	// VolatileCell resolves the actual declaring-instance storage shared by all accesses.
+	VolatileCell func(*Execution, any) *VolatileFieldCell
 }
 type MethodDescriptor struct {
 	nameJavaString *JavaString
