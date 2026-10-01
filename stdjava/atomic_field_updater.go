@@ -18,6 +18,17 @@ type VolatileFieldCell struct {
 
 var volatileFieldOrder sync.Mutex
 
+// volatileFieldObserveLocked starts an observed interval only when necessary.
+// The caller holds volatileFieldOrder. Every accepted writer invalidates this
+// marker, including same-value and ABA writes. Observers retain their nonzero
+// marker until validation, so allocator address reuse cannot hide a write.
+func volatileFieldObserveLocked(cell *VolatileFieldCell) (any, *volatileFieldStamp) {
+	if cell.stamp == nil {
+		cell.stamp = &volatileFieldStamp{}
+	}
+	return cell.value, cell.stamp
+}
+
 func volatileFieldRead(cell *VolatileFieldCell) any {
 	if cell == nil {
 		panic(NewNullPointerException("volatile field cell is null"))
@@ -33,7 +44,7 @@ func volatileFieldWrite(cell *VolatileFieldCell, value any) {
 	}
 	volatileFieldOrder.Lock()
 	cell.value = value
-	cell.stamp = &volatileFieldStamp{}
+	cell.stamp = nil
 	volatileFieldOrder.Unlock()
 }
 
@@ -190,13 +201,13 @@ func (u *atomicFieldUpdater) cas(execution *Execution, receiver, expect, update 
 	cell := u.cell(execution, receiver)
 	for {
 		volatileFieldOrder.Lock()
-		previous, stamp := cell.value, cell.stamp
+		previous, stamp := volatileFieldObserveLocked(cell)
 		volatileFieldOrder.Unlock()
 		if !atomicUpdaterEqual(previous, expect, u.field.Type) {
 			return false
 		}
 		// Java identity providers are arbitrary generated methods. They run
-		// outside the lock; a non-zero-sized stamp detects intervening writes
+		// outside the lock; a nonzero observation marker detects intervening writes
 		// without a wrapping counter or retaining old values.
 		volatileFieldOrder.Lock()
 		if cell.stamp != stamp {
@@ -204,7 +215,7 @@ func (u *atomicFieldUpdater) cas(execution *Execution, receiver, expect, update 
 			continue
 		}
 		cell.value = update
-		cell.stamp = &volatileFieldStamp{}
+		cell.stamp = nil
 		volatileFieldOrder.Unlock()
 		return true
 	}
@@ -214,7 +225,7 @@ func (u *atomicFieldUpdater) swap(execution *Execution, receiver, update any) an
 	volatileFieldOrder.Lock()
 	previous := cell.value
 	cell.value = update
-	cell.stamp = &volatileFieldStamp{}
+	cell.stamp = nil
 	volatileFieldOrder.Unlock()
 	return previous
 }
@@ -297,7 +308,7 @@ func (u *AtomicReferenceFieldUpdater) GetAndSetExecution(e *Execution, receiver,
 	value := u.checkedValue(update)
 	for {
 		volatileFieldOrder.Lock()
-		previous, stamp := cell.value, cell.stamp
+		previous, stamp := volatileFieldObserveLocked(cell)
 		volatileFieldOrder.Unlock()
 		if _, native := previous.(string); native && !nilJavaReference(previous) {
 			panic(NewUnsupportedOperationException("reference updater requires canonical Java String identity"))
@@ -312,7 +323,7 @@ func (u *AtomicReferenceFieldUpdater) GetAndSetExecution(e *Execution, receiver,
 			continue
 		}
 		cell.value = value
-		cell.stamp = &volatileFieldStamp{}
+		cell.stamp = nil
 		volatileFieldOrder.Unlock()
 		return result
 	}
@@ -324,12 +335,12 @@ func (u *AtomicReferenceFieldUpdater) updateExecution(e *Execution, receiver any
 	}
 	for {
 		volatileFieldOrder.Lock()
-		previous, stamp := cell.value, cell.stamp
+		previous, stamp := volatileFieldObserveLocked(cell)
 		volatileFieldOrder.Unlock()
 		if _, native := previous.(string); native && !nilJavaReference(previous) {
 			panic(NewUnsupportedOperationException("reference updater requires canonical Java String identity"))
 		}
-		// Internal RMW uses the write stamp rather than external Java identity.
+		// Internal RMW uses the observation marker rather than external Java identity.
 		// View resolution, the callback and update validation can invoke user code;
 		// keep them outside the lock and retry if any of them changed this cell.
 		result := reflectionBox(previous, u.core.field.Type)
@@ -341,7 +352,7 @@ func (u *AtomicReferenceFieldUpdater) updateExecution(e *Execution, receiver any
 			continue
 		}
 		cell.value = value
-		cell.stamp = &volatileFieldStamp{}
+		cell.stamp = nil
 		volatileFieldOrder.Unlock()
 		if returnNew {
 			return next

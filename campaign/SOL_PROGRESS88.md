@@ -1,0 +1,7 @@
+# Sol progress88: atomic observation allocation
+
+Atomic field observation markers are now created on capture under the existing mutex and cleared by successful writers. The marker remains nonzero-sized and reachable while observers use it, preserving same-value/ABA retries and shared writer ordering. Provider resolution, callbacks and caller Execution retain their exercised contracts.
+
+The original allocation assertion failed at1.000000 allocations per repeated write. Fresh current86 native normal and race runs each pass exactly191 records with0.000000 allocations per write in that diagnostic, no skips or race reports, and clean durable supervision. Independent review checks both raw receipts, complete source/tool guards and the formatting-only test migration. Resolver87 subsequently changed compiler paths only; the coordinator verifies every stdjava source preimage is unchanged before applying these two native leaves.
+
+This evidence covers native allocation cost only. It does not establish throughput or superiority over Java; a first failed CAS on an unobserved epoch can allocate. Strict generated40 remains blocked on matching volatile, SAM, Thread and nest composition. Full Netty, Commons and Gson parity plus accumulatedCI/round acceptance remain open; checkpoint18 is still the latest accepted full round. Continue the Sol-only adversarial campaign and preserve all original challenges and failures.

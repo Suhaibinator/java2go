@@ -8654,5 +8654,67 @@
     },
     "limits": "Full Netty1212+8 strict translation still times out at first AbstractByteBuf, one empty file. New experimental generic-inventory fix is excluded. Full application/CI/round and Java-faster performance remain unaccepted. Checkpoint18 remains latest accepted full round.",
     "continuation": "Full unchanged Netty strict300 gate for pure inventory reuse, Commons original27 objects/comparator/bounds/subList composition, Gson consumed physical lowering, volatile parser recovery, original Maven acquisition/build, native atomic matching allocation gate."
+  },
+  "sol_progress88": {
+    "status": "ACCEPTED_SCOPED_NATIVE_ATOMIC_ALLOCATION_FULL_ROUND_UNACCEPTED",
+    "parent": "5770e371d0ebee6fe4de995b5e82761f60553634",
+    "tested_base_revision": "0fa9d321f94bc0a18c1f40978e56089bcb43ef1c",
+    "publication_packet": {
+      "path": "/private/tmp/java2go-atomic-lazy-current86-publication-ready-v1.json",
+      "sha256": "46e9caa25e06935edcc83e4716968f0d534dd1741e4716ba18195dcbf10d6c18"
+    },
+    "owned2": [
+      {
+        "relative": "stdjava/atomic_field_updater.go",
+        "source": "/private/tmp/java2go-sol-atomic-lazy-current86-compose-v1/candidate/stdjava/atomic_field_updater.go",
+        "public_target": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/atomic_field_updater.go",
+        "before_present": true,
+        "before_sha256": "abb51bb742a103ae300423a756266bcfd09511a27857f99a4c54aa0a0ef3715e",
+        "desired_after_sha256": "1ed932ce7798a41f7b7c02c371b4df963ab1e1cf6491d592fd205912afa3b965",
+        "actual_fresh_matching191_bytes": true,
+        "formatted": true
+      },
+      {
+        "relative": "stdjava/atomic_optimization_review_test.go",
+        "source": "/private/tmp/java2go-sol-atomic-lazy-current86-compose-v1/candidate/stdjava/atomic_optimization_review_test.go",
+        "public_target": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/stdjava/atomic_optimization_review_test.go",
+        "before_present": false,
+        "before_sha256": null,
+        "desired_after_sha256": "c344d71d7a04f4a8ed3429348db99d7bc610838c317094a43b63a587820e3f90",
+        "actual_fresh_matching191_bytes": true,
+        "formatted": true
+      }
+    ],
+    "matching_audit": {
+      "path": "/private/tmp/java2go-atomic-lazy-current86-go9-final-audit-v1.json",
+      "sha256": "37bcbc47395cf63f11962812101ac2bc07364abf834742c39a107ea15b548c7a"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-sol-atomic-lazy-current86-independent-review-v1/report.json",
+      "sha256": "bc0106e540da264cca3c8c88856db8d55ffd579f3210d8bdfdfe6a45b6e4ced3"
+    },
+    "coordinator_raw_actions": [
+      {
+        "mode": "normal",
+        "result_sha256": "ae22758bf02bb54e9702cef24ef3dce5aded19d922d6e665d5a68ca83a79627e",
+        "child_sha256": "2348457543a6397aeadcb5d7be694a4ca2c3bb7335b50f963b76d443eac053de",
+        "actions": 191,
+        "roots": 28,
+        "allocation": 0
+      },
+      {
+        "mode": "race",
+        "result_sha256": "76485ad6634079df4be609f9a185df67a7cfa509ed5f2e69ad8d80f4807d5be0",
+        "child_sha256": "29f86f99966555524381c428f6bf45671b5ed8adf19f1d29a0eba8450e313006",
+        "actions": 191,
+        "roots": 28,
+        "allocation": 0
+      }
+    ],
+    "unaffected_scope_proof": "Both191 stdjava-only native gates tested exactcurrent86. Subsequent resolver87 changes compiler paths only; all current tracked stdjava input paths remain byte-identical to current86, including absence of added tests, prior to applying these2 leaves. No generated/compiler/fullround result is carried.",
+    "change": "Allocate nonzero-sized reachable observation marker lazily under the existing mutex on capture; successful writes invalidate with nil. Same-value/ABA, providers outside lock, callerExecution, retries, lifetimes, and writer order retained.",
+    "TDD": "Original allocation assertion causalRED measured1.000000. Fresh matchingcurrent86 normal191/race191 both pass exactly, zero skips/race output; write-only diagnostic0.000000. Test formatting preserves ordered nonsemicolon tokens, effective semicolons and142 full literal bytes.",
+    "remaining_limits": "BLOCKED_MATCHING_VOLATILE_SAM_THREAD_NEST_COMPOSITION; no generated acceptance or speed claim; no throughput/Java-faster claim. First failed CAS on an unobserved epoch may allocate. Full Netty/Commons/Gson and accumulatedCI/round unaccepted; checkpoint18 remains latest full accepted round.",
+    "continuation": "Continue strictfullNetty residual scan TDD, originalCommons27 acceptance and newsubList fourcallbacks, volatile183 thenfreshnormal/race/stress, Gsonphysical lowering, originalMaven source lifecycle, generatedperformance baseline and compact prerequisite."
   }
 }
