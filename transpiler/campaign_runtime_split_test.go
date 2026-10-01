@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignRuntimeSplitLimits(t *testing.T) {
@@ -23,9 +24,9 @@ func TestCampaignRuntimeSplitLimits(t *testing.T) {
 	t.Logf("JDK split oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import ("testing"; "slices")
 func TestSplitOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), %#v) { t.Fatalf("JVM %%q != generated JavaString %%#v", %q, got) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }

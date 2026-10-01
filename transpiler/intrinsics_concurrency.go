@@ -325,6 +325,17 @@ func registerAtomicMethods(javaType string) {
 			}
 			return selectorCall(recv, goMethod, args)
 		})
+		// Retain the Java result type at primitive conversions, boxing and
+		// method-reference boundaries; the runtime selector alone cannot tell
+		// an Object conversion from an int/long/boolean overload.
+		resultType := map[string]string{"AtomicInteger": "int", "AtomicLong": "long", "AtomicBoolean": "boolean"}[javaType]
+		switch javaMethod {
+		case "set":
+			resultType = "void"
+		case "compareAndSet":
+			resultType = "boolean"
+		}
+		registerInstanceIntrinsicResultType(javaType, javaMethod, resultType)
 	}
 }
 

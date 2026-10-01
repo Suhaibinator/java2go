@@ -9372,5 +9372,241 @@
     },
     "limits": "Full CI, originalCommons27 and genuineGson118 remain unaccepted. Checkpoint18 latest accepted full round.",
     "continuation": "Sol-only parallel source-query project repetition, generic equality full application gates, Object/UTF16 performance, integer/Float/harness, collections, volatile/SAM, Gson physical lowering and typed Maven ingestion."
+  },
+  "sol_progress93": {
+    "status": "ACCEPTED_SCOPED_INTEGRATION_FULL_ROUND_UNACCEPTED",
+    "parent": "10f694671f7cb965d93d66ccf37629aeeb67ec88",
+    "source_manifest": {
+      "path": "/private/tmp/java2go-root-milestone93/source-manifest.json",
+      "sha256": "2a173c8711bce3fd9b313d2f1a581e891146bfc5a8443bd823808a99afc6101e",
+      "files": 2880
+    },
+    "changed23": {
+      "stdjava/object_methods.go": {
+        "before": "8ce299efb6141b37fd374d14b949193ae05fe32cf07ff2f57fb933b574fb000d",
+        "after": "c4ad258aed01e2d8d76b711a242ca36985b6486b7e0cf6f8f370d33a3c612188",
+        "source": "/private/tmp/java2go-sol-combined-runtime-publication92-v1/leaves/stdjava/object_methods.go"
+      },
+      "stdjava/object_execution_dispatch_tdd_test.go": {
+        "before": null,
+        "after": "2e9aa17fefdeccdff9b63f9b9f5a7f9cb655e40e7dadfa79a7e371a4a9f01db0",
+        "source": "/private/tmp/java2go-root-milestone93/formatted-object-dispatch-test.go",
+        "verified_unformatted_sha256": "75998801f687810fbb1cca830f38a5396456502b1f2adaf7f01012b0100b1d7c"
+      },
+      "stdjava/string_reference_adapters.go": {
+        "before": "8ae40b59128d3f7435667cf9bff141f9ae2243eef8a383c48f2a130cdc406463",
+        "after": "28ea46376b4f4d4f4aad4463a842fc274e738fc381c53c6d12815cf638098f36",
+        "source": "/private/tmp/java2go-sol-combined-runtime-publication92-v1/leaves/stdjava/string_reference_adapters.go"
+      },
+      "stdjava/string_reference.go": {
+        "before": "0d4dd2981d8f1d7b366b53a25036aa89b51479d4818812fc6cdb9b91ca90d6b2",
+        "after": "1bcfc2f32994918fd4857deedbbd1f3344c5cc5a1db73769e186eaa75308b8c3",
+        "source": "/private/tmp/java2go-sol-combined-runtime-publication92-v1/leaves/stdjava/string_reference.go"
+      },
+      "stdjava/typed_string_scalar_cost_test.go": {
+        "before": null,
+        "after": "97d7816cc9059808b53ee7304c8894a6340519ec16d4c6c1f75220f6f326466d",
+        "source": "/private/tmp/java2go-sol-combined-runtime-publication92-v1/leaves/stdjava/typed_string_scalar_cost_test.go"
+      },
+      "stdjava/map_reference_string.go": {
+        "before": null,
+        "after": "5087d6ccc71b55eafc4911ac609fa7fedf2cb85a5acd38891b0f96731c82dca5",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/stdjava/map_reference_string.go"
+      },
+      "stdjava/set_reference_string.go": {
+        "before": null,
+        "after": "fe99a0e1376997021293cdf03a3c5f5f34cdb37c0053f9ed16082d9ad82d71be",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/stdjava/set_reference_string.go"
+      },
+      "transpiler/intrinsics_concurrency.go": {
+        "before": "df304f9d2ba576fc952a01bb2bf37921bbaef5a935b97973615f9c37993b1a6e",
+        "after": "4af7fb226c4b5478a8ae92072afedbb519ed52376257f0c18de507f530e726e7",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/transpiler/intrinsics_concurrency.go"
+      },
+      "transpiler/campaign_runtime_map_reference_string_test.go": {
+        "before": null,
+        "after": "d531730c91127b657df1b3336d50d4a70ff5b6c684373fe9163882fa1374ba6e",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/transpiler/campaign_runtime_map_reference_string_test.go"
+      },
+      "transpiler/campaign_runtime_set_reference_string_test.go": {
+        "before": null,
+        "after": "cffba68e97a396392488b1d17da8dea4c13e54b6bb40e5d700b699d320e2c1f8",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/transpiler/campaign_runtime_set_reference_string_test.go"
+      },
+      "testfiles/applications/atomic_text_results/fixture.json": {
+        "before": null,
+        "after": "6ad854308bb3eaba954cfebba1ba0da6896e7c4543dbf8d4a375ad8b14f7851c",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/testfiles/applications/atomic_text_results/fixture.json"
+      },
+      "testfiles/applications/atomic_text_results/expected.stdout": {
+        "before": null,
+        "after": "18faf5d1669d7dd2c2ba18dc091af2b76bc391b595a7e7f767ddd95f671fbec3",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/testfiles/applications/atomic_text_results/expected.stdout"
+      },
+      "testfiles/applications/atomic_text_results/README.md": {
+        "before": null,
+        "after": "ced1631cb801992c6e38ef0f68c90f1d32d1d4952f70ade35dd9b5e79e244974",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/testfiles/applications/atomic_text_results/README.md"
+      },
+      "testfiles/applications/atomic_text_results/src/AtomicTextResults.java": {
+        "before": null,
+        "after": "1c5bd5f675580f5bf2dfe2e377b36f546223c50bdb2b73565e72c6e9af7cc564",
+        "source": "/private/tmp/java2go-sol-collection-publication92-final-4721uwyq/source/testfiles/applications/atomic_text_results/src/AtomicTextResults.java"
+      },
+      "transpiler/class_type_parameter_erasure.go": {
+        "before": "31d0ce43229652b00d96ba517f77f4739413be2df9e64905ec2bce55ba8b626b",
+        "after": "4d6e8dab5f9618c2115141f51f9531dffcdb8610e1cd516541439f4633d5dd6e",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-project-green-source/transpiler/class_type_parameter_erasure.go"
+      },
+      "transpiler/java2go.go": {
+        "before": "ed4de98e489474debdc9470f809791d2e6ddba8b44b749138d668953e14bd71f",
+        "after": "92aa5aa64c89b8e47ec6a171bd014e5682055ecaabe95f6c87cd7304381267e4",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-project-green-source/transpiler/java2go.go"
+      },
+      "transpiler/source_query_project_complexity_test.go": {
+        "before": null,
+        "after": "7f2183ad72d63c1282c216c1833e09ef2d567b2b04d626225998b443b53a613f",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-project-green-source/transpiler/source_query_project_complexity_test.go"
+      },
+      "transpiler/source_query_project_lifetime_test.go": {
+        "before": null,
+        "after": "4cfbc05146b771ff2d191f529a5960c1cac76460d481be45db007e1d53fde061",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-project-green-source/transpiler/source_query_project_lifetime_test.go"
+      },
+      "transpiler/tree_sitter.go": {
+        "before": "e9c2ab6dec86b798b4c183a6da3c92fb40b2745cab53a0990cc76dd16bd6c76f",
+        "after": "47185a1053590254d767ec9163320edcd383689bf2d2e2d78731934a6b0aa4b8",
+        "source": "/private/tmp/java2go-netty-resolution-sol-v1/source-query-project-green-source/transpiler/tree_sitter.go"
+      },
+      "transpiler/campaign_runtime_string_decode_test.go": {
+        "before": "5e758f925ee7184f15ef678a5bf62fc01cfa6d15d5f6ae34cdd85c351304b723",
+        "after": "6a3b76d616724dbd837d705ae0376ea502245063ad62a83cfad8dbb26a0cc02f",
+        "source": "/private/tmp/java2go-canonical-test-migration-public92-sol-rp5tygum/successor/transpiler/campaign_runtime_string_decode_test.go"
+      },
+      "transpiler/campaign_runtime_reflection_test.go": {
+        "before": "24eb673e4aaac6e831648c4604bc873e52c53b5f21249545fb5de248c75d8b37",
+        "after": "dcd7dacdd2511e1d54bc8707ab45fbf182f7569f94704927ee30a74607ffe271",
+        "source": "/private/tmp/java2go-canonical-test-migration-public92-sol-rp5tygum/successor/transpiler/campaign_runtime_reflection_test.go"
+      },
+      "transpiler/campaign_runtime_split_test.go": {
+        "before": "b6739d463016da4fa7eb70987e5549870d9d87acea4f133b413d7f380db3d435",
+        "after": "9d1a5e1e4908bd93d99e9a49b851f21884e36ec31a1f171b1fb81d98557763c0",
+        "source": "/private/tmp/java2go-canonical-test-migration-public92-sol-rp5tygum/successor/transpiler/campaign_runtime_split_test.go"
+      },
+      "transpiler/campaign_runtime_reader_decoder_test.go": {
+        "before": "549ad1b3054c52b47eeb36d85504e59727c0183fba0891c89f5145fea91899f6",
+        "after": "9a0832585f73b29479d9ffe3d484b04ddcc69a9cdb2a633056b3e818df3c85d9",
+        "source": "/private/tmp/java2go-canonical-test-migration-public92-sol-rp5tygum/successor/transpiler/campaign_runtime_reader_decoder_test.go"
+      }
+    },
+    "coordinator_raw_stages": [
+      {
+        "command": [
+          "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+          "test",
+          "-p=1",
+          "-json",
+          "-count=1",
+          "-parallel=1",
+          "-timeout=240s",
+          "-run=^(TestCallableSubclassInventory_WholeASTQueriesArePerRender|TestCallableSubclassInventory_CachedQueriesKeepSourceIdentityAndLifetime|TestCtxClone|TestCtxClonePreservesExecutionContext|TestGenericFamilySourceEvents_WholeASTTraversalIsPerDiscovery|TestGenericFamilyInventory_WholeGraphWorkIsPerDiscovery|TestGenericFamilyPlan.*|TestGenericFamilyCacheRenderLifetimeAndSyntheticIsolation|TestGenericFamilyBoundRepresentation.*|TestResolutionSelectorGuard_OrdinaryNamesAvoidHierarchyAnalysis|TestResolutionBatch_FilePartitionDoesNotMultiplyHierarchyWork|TestResolutionBatch_ConstructorHelperStaticFieldOrdering|TestCampaignInheritedInterfaceOverloads|TestCampaignInheritedOverloadPreservesDispatch|TestCampaignInheritedMemberLookupIdentity|TestResolveFile_.*|TestRawCompilationUnitPackageMetadataRetained|TestRawCompilationUnitNamesDoNotClassifyContent|TestRawCompilationUnitExplicitDiagnosticsBeforeWrites|TestResolvedSourceInventory_SelectorsKeepOverloadsAndGraphLifetime|TestResolvedSourceInventory_DemandsKeepLexicalBindersAndHeaderContexts|TestResolvedSourceInventory_AnonymousParametersKeepCommentAndKeywordRoles|TestSourceGenericViewDemandRecordHeader|TestSourceGenericViewDemandBinderPrefix|TestSourceGenericViewDemandContextBoundaries|TestRawUnboundReceiverViewAdversarial_StaticReferenceKeepsExplicitRawParameter|TestRawUnboundReceiverViewAdversarial_QualifiedNestedOwnersRemainDistinct|TestConstructorSubobjectAttachment_AnonymousSubclassOfLocalClass|TestCampaignAnonymousParameterKeywords|TestSourceQueryInventory_ProjectFilesDoNotMultiplyUnrelatedASTWork|TestSourceQueryInventory_ProjectContextsKeepLifetimeAndLexicalSemantics|TestCampaignRuntimeMapReferenceTextJVM|TestCampaignRuntimeSetReferenceTextJVM|TestCampaignRuntimeClassSimpleName|TestCampaignRuntimeStringBuilderChain|TestCampaignRuntimeSplitLimits|TestCampaignRuntimeStringMalformedDecoding|TestCampaignRuntimeReaderMalformedDecoding)$",
+          "./transpiler"
+        ],
+        "cwd": "/private/tmp/java2go-root-milestone93/source",
+        "stdout_sha256": "ac9ef0feb14b2f359ca1ae36b12dab3ca57c0c2c5ca4aa5f4b4ab776e83863dd",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 44.752176,
+        "cleanup_clean": true
+      },
+      {
+        "command": [
+          "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+          "test",
+          "-p=1",
+          "-json",
+          "-count=1",
+          "-parallel=1",
+          "-timeout=45s",
+          "-run=^(TestObjectExecutionDispatchAllocationBudget|TestObjectExecutionDispatchSemantics|TestObjectExecutionDispatchConcurrentCallers|TestTypedJavaStringScalarNullAndBounds|TestTypedJavaStringScalarUTF16CopiesAndConcurrency|TestJavaStringValueOf.*|TestRegisteredSourceJavaString.*|TestRegisteredSourceObject.*)$",
+          "./stdjava"
+        ],
+        "cwd": "/private/tmp/java2go-root-milestone93/source",
+        "stdout_sha256": "1d3d9ca3ce6e0dd91ef601d4a732a22ff10d76e136078678b0f7cf2fafb0c2d2",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 16.560027,
+        "cleanup_clean": true
+      },
+      {
+        "command": [
+          "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+          "test",
+          "-race",
+          "-p=1",
+          "-json",
+          "-count=1",
+          "-parallel=1",
+          "-timeout=45s",
+          "-run=^(TestObjectExecutionDispatchAllocationBudget|TestObjectExecutionDispatchSemantics|TestObjectExecutionDispatchConcurrentCallers|TestTypedJavaStringScalarNullAndBounds|TestTypedJavaStringScalarUTF16CopiesAndConcurrency|TestJavaStringValueOf.*|TestRegisteredSourceJavaString.*|TestRegisteredSourceObject.*)$",
+          "./stdjava"
+        ],
+        "cwd": "/private/tmp/java2go-root-milestone93/source",
+        "stdout_sha256": "eaa72b58d2de21dfbef3217d037f3df081a5c5cb5a6368914a3bf21f05d57c05",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 21.207134,
+        "cleanup_clean": true
+      },
+      {
+        "command": [
+          "/private/tmp/java2go-lint214-restore-8oanhliu/bin/golangci-lint",
+          "run",
+          "--no-config",
+          "--max-issues-per-linter=0",
+          "--max-same-issues=0",
+          "--timeout=180s",
+          "./campaign",
+          "./stdjava",
+          "./symbol",
+          "./transpiler"
+        ],
+        "cwd": "/private/tmp/java2go-root-milestone93/source",
+        "stdout_sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 24.486534,
+        "cleanup_clean": true
+      },
+      {
+        "command": [
+          "/private/tmp/java2go-root-milestone93/atomic-e2e.test",
+          "-test.v",
+          "-test.run=^TestApplicationParity$/^atomic_text_results$",
+          "-test.timeout=60s"
+        ],
+        "cwd": "/private/tmp/java2go-root-milestone93/source/e2e",
+        "stdout_sha256": "bf3a8c3caf87fbcd6ca6c95b6f0c394bd903bdd3246e3863c14b256c6953602c",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 7.003329,
+        "cleanup_clean": true
+      }
+    ],
+    "independent_reviews": {
+      "runtime5": {
+        "path": "/private/tmp/java2go-sol-combined-runtime92-independent-review.json",
+        "sha256": "f6e6ced79f15bfe3b6f5456d7cfa24a3a9c58cfadd69abd00a7fa4884279f54f"
+      },
+      "collections9": {
+        "path": "/private/tmp/java2go-collection92-independent-sol-9wsrb8i2/REVIEW.json",
+        "sha256": "1e4d72697e63744b936d62dfe92f0df08f50fc60675f3000f1e875ce82c322bd"
+      },
+      "project5": {
+        "path": "/private/tmp/java2go-netty-project-lifecycle-independent-terminal-review-v2.json",
+        "sha256": "ddf74a3dad3b4bc981261e6e187170cee99ba28eea987625bd9c1519d009cfe5"
+      }
+    },
+    "behavior": "Exact execution-aware Object dispatch and canonical UTF16 scalar fast paths; canonical Map/Set text and atomic result metadata; per-complete-project structural inventory lifecycle; five legacy text observers compare canonical UTF16 units.",
+    "validation": "Matching combined source: 96 compiler RUN/PASS, 30 runtime normal and 30 race RUN/PASS, atomic_text_results actual JDK21\u2192strict Go full package build and parity, pinned lint2.14 zero issues. Original invalid e2e runner working directory retained separately and corrected without source changes.",
+    "performance": "Scoped zero-allocation Object dispatch and scalar costs improve Go baseline; no Java-faster or exclusive paired timing claim. Project scan ratio8.65 RED\u21921.31 GREEN under frozen bound6.",
+    "limitations": "Checkpoint18 latest accepted full round. Netty1212+8 still 300.217664s timeout with8 complete outputs/empty9; no full translation/build/parity. Commons27, Gson118 and accumulated current CI remain unaccepted. Private four collection applications require SAM/Stream composition, not accepted as public93 parity. Legacy atomic intermediate generated guards and direct binary MAX2 are not claimed.",
+    "resume": "Sol-only parallel: declaration-aware generic overload/member returns, actual reflection metadata, PrintStream null ordering, collection live-node searches, current93 volatile/SAM matching union, Gson physical/target inference, typed dependency ingestion and Netty ownership lookup complexity.",
+    "formatting_only": "Coordinator gofmt of one new runtime test after all checks; frozen verified source retained. No production or assertion change."
   }
 }

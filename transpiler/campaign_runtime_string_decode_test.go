@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignRuntimeStringMalformedDecoding(t *testing.T) {
@@ -31,7 +32,7 @@ public class CampaignRuntimeStringMalformedDecoding {
 	t.Logf("JVM String decode oracle: %q", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestStringDecodeOracle(t *testing.T) {if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}
-`, want, want))
+import ("testing"; "slices")
+func TestStringDecodeOracle(t *testing.T) {if got:=Run();got==nil||!slices.Equal(got.UTF16Copy(),%#v){t.Fatalf("JVM %%q != Go JavaString %%#v",%q,got)}}
+`, utf16.Encode([]rune(want)), want))
 }

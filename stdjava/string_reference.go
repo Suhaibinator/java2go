@@ -38,12 +38,12 @@ func CopyJavaString(original *JavaString) *JavaString {
 func (*JavaString) JavaDynamicTypeID() TypeID { return StringTypeID }
 
 func (s *JavaString) Length() int32 {
-	ReferenceRequireNonNull(s)
+	RequireJavaString(s)
 	return int32(len(s.units))
 }
 
 func (s *JavaString) CharAt(index int32) rune {
-	ReferenceRequireNonNull(s)
+	RequireJavaString(s)
 	if index < 0 || int64(index) >= int64(len(s.units)) {
 		panic(NewStringIndexOutOfBoundsException(fmt.Sprintf("Index %d out of bounds for length %d", index, len(s.units))))
 	}

@@ -36,6 +36,13 @@ func ObjectEqualsExecution(execution *Execution, left, right any) bool {
 	if javaReferenceIsNull(right) {
 		right = nil
 	}
+	// The exact companion precedes every collision-renamed companion in the
+	// method set. Keep reflection for renamed methods and other signatures.
+	if equals, ok := left.(interface {
+		EqualsJava2goExecution(*Execution, any) bool
+	}); ok {
+		return equals.EqualsJava2goExecution(execution, right)
+	}
 	if result, ok := objectExecutionMethod(execution, left, "EqualsJava2goExecution", []any{right}); ok {
 		return result.Bool()
 	}
@@ -62,6 +69,11 @@ func StringEquals(left string, right any) bool {
 func ObjectHashCodeExecution(execution *Execution, value any) int32 {
 	ReferenceRequireNonNull(value)
 	value = collectionObjectView(value)
+	if hash, ok := value.(interface {
+		HashCodeJava2goExecution(*Execution) int32
+	}); ok {
+		return hash.HashCodeJava2goExecution(execution)
+	}
 	if result, ok := objectExecutionMethod(execution, value, "HashCodeJava2goExecution", nil); ok {
 		return int32(result.Int())
 	}

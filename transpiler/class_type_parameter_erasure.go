@@ -335,8 +335,9 @@ func directOwnerCallableMethodFamilyEligible(owner *symbol.ClassScope, method *s
 	return eligible
 }
 
-// This inventory belongs to one resolved file render. It stores source syntax
-// and selector names; target resolution, ancestry and admission remain fresh.
+// This inventory belongs to one resolved conversion batch. It stores source
+// syntax and selector names; target resolution, ancestry and admission remain
+// fresh for every file and query. Standalone renders own a one-file batch.
 type callableSubclassSourceInventory struct {
 	graph          *symbol.GlobalSymbols
 	ready          bool

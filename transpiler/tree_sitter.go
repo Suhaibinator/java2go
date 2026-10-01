@@ -45,7 +45,7 @@ type Ctx struct {
 	projectMode bool
 	// Immutable named-family analysis shared only within this resolved file render.
 	genericFamilies *genericFamilyAnalysis
-	// Structural superclass syntax shared only within a resolved file render.
+	// Structural source facts shared only within a resolved conversion batch.
 	callableSubclasses *callableSubclassSourceInventory
 	// Active member-type hierarchy lookups; extended immutably per lookup.
 	memberTypeLookupPath map[*symbol.ClassScope]bool

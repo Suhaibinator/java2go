@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignRuntimeClassSimpleName(t *testing.T) {
@@ -19,11 +20,11 @@ func TestCampaignRuntimeClassSimpleName(t *testing.T) {
 	t.Logf("JDK class-name oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import ("testing"; "slices")
 func TestClassNameOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), %#v) { t.Fatalf("JVM %%q != generated JavaString %%#v", %q, got) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }
 
 func TestCampaignRuntimeStringBuilderChain(t *testing.T) {
@@ -35,9 +36,9 @@ func TestCampaignRuntimeStringBuilderChain(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "CampaignRuntimeBuilderChain", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import ("testing"; "slices")
 func TestBuilderChainOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), %#v) { t.Fatalf("JVM %%q != generated JavaString %%#v", %q, got) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }

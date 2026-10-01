@@ -187,6 +187,9 @@ or to fix crashes with the symbol handling`,
 
 	log.Info("Converting files...")
 
+	// Resolution is complete. This conversion batch owns source syntax facts;
+	// per-file contexts still own their binders, target lookup and family audit.
+	sourceInventory := &callableSubclassSourceInventory{}
 	for _, file := range files {
 		if dryRun {
 			log.Infof("Not converting file \"%s\"", file.Name)
@@ -214,7 +217,7 @@ or to fix crashes with the symbol handling`,
 		}
 
 		// The converted AST, in Go's AST representation
-		initialContext := Ctx{projectMode: projectMode, genericFamilies: &genericFamilyAnalysis{}}
+		initialContext := Ctx{projectMode: projectMode, genericFamilies: &genericFamilyAnalysis{}, callableSubclasses: sourceInventory}
 		if symbolAware {
 			initialContext.currentFile = file.Symbols
 			initialContext.currentClass = file.Symbols.BaseClass
@@ -258,9 +261,11 @@ or to fix crashes with the symbol handling`,
 // strict mode an unsupported construct panics with a strictModeError, which this
 // function recovers into a returned error to restore fail-fast behavior.
 func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error) {
-	// A render starts after resolution and owns fresh source analysis. Copies
-	// of this context share structural facts only for this conversion.
-	ctx.callableSubclasses = &callableSubclassSourceInventory{}
+	// A supplied inventory belongs to the caller's resolved conversion batch.
+	// Standalone renders retain fresh structural facts for this one file.
+	if ctx.callableSubclasses == nil {
+		ctx.callableSubclasses = &callableSubclassSourceInventory{}
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			if strictErr, ok := r.(strictModeError); ok {

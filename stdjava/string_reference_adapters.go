@@ -3,7 +3,10 @@ package stdjava
 // RequireJavaString preserves the original nonnull String reference. Java
 // call-site evaluation and helpful-null diagnostics remain compiler concerns.
 func RequireJavaString(value *JavaString) *JavaString {
-	return ReferenceRequireNonNull(value)
+	if value == nil {
+		panic(NewNullPointerException("null reference"))
+	}
+	return value
 }
 
 // JavaStringSwitchKey is an opaque host key, not text or a Java String value.
