@@ -7042,5 +7042,96 @@
       "User untracked performance/runtime/bignumbers/equal_scale remains untouched",
       "No finite application corpus proves arbitrary Java or memory-model equivalence"
     ]
+  },
+  "sol_progress77": {
+    "status": "ACTIVE_SOL_ONLY_COMPONENT_CHECKPOINT_FULL_ROUND_UNACCEPTED",
+    "published_code_commit": "e586f3132dec38f54e99dec9a6fbe27dfa724679",
+    "origin_branch": "codex/adversarial-campaign",
+    "bridge": {
+      "published_paths": 2,
+      "fresh_test_parents": 40,
+      "fresh_test_children": 13,
+      "fresh_JVM_oracles": 4,
+      "clean_receipts": 9,
+      "original_53_keys_preserved": true
+    },
+    "private_sorted_putAll": {
+      "RED": "22 PASS / 4 FAIL",
+      "focused_GREEN": "28 PASS",
+      "fresh_serial_gates": [
+        79,
+        101,
+        42
+      ],
+      "all_PASS": true,
+      "clean_receipts": 15,
+      "current_public_compound_gate": "UNRUN"
+    },
+    "private_strict_method_guard": {
+      "semantic_RED": "12 PASS / 17 FAIL",
+      "normal_GREEN": 35,
+      "race_GREEN": 35,
+      "public_helper_fixture_closure": "PENDING",
+      "generic_List_family_proof": "OPEN"
+    },
+    "new_sol_dispatches": [
+      {
+        "agent": "sol_atomic_updater_runtime",
+        "scope": "Actual volatile field updater storage, access, type and CAS contracts"
+      },
+      {
+        "agent": "sol_volatile_lowering",
+        "scope": "Volatile read/write lowering and canonical storage shared with reflection and updaters"
+      },
+      {
+        "agent": "sol_functional_caller_execution",
+        "scope": "Callback caller execution and canonical object identity adversarial controls"
+      },
+      {
+        "agent": "sol_gson86_gate_audit",
+        "scope": "Independent frozen source and actual gate validation"
+      }
+    ],
+    "agent_model_policy": "GPT-6.1 Sol/high exclusively; no Astra. No extra spawning without coordinator assignment.",
+    "workload_policy": "Six bounded Go lanes at GOMAXPROCS=2; two JVM lanes. No new unbounded benchmark allocation.",
+    "service_limit": "Four new agents launched. A fifth launch and completed-agent Stream reactivations returned agent thread limit reached; rejected calls launched no work.",
+    "current_frontiers": {
+      "Gson86": "Coherent 2908-member source closure frozen, focused116 and original120 pending fresh bounded execution. Independent runner review found failure propagation, duplicate-terminal and consumed-pin gaps; wrapper successor must close all before grant. Original120/31 unchanged; full65 UNRUN.",
+      "Stream": "Original70 actual47PASS23FAIL retained. Finite70 source repair reviewed but GREEN UNRUN. Root admits additional ternary/switch declaration-origin controls; expandedRED required before join fix. Known join frontier blocks publication; service rejected reactivation.",
+      "Comparator112": "Stopped at baseline stage43 genuine custom callback carrier/lastKey Go compilation failure; earlier eight normal/race Main comparisons passed. Remaining paired stages and performance timing UNRUN. New focusedRED requires consumed-pin closure before execution.",
+      "Future32": "Current25c private source review accepted. Add two omitted retention race tests and rebase unowned current bridge paths before fresh gate. Current-public composition UNRUN.",
+      "Netty": "Actual implementation sources and queued multi-package JVM workflow reviewed; no Netty Go acceptance. Volatile fields and atomic field updaters are concrete prerequisites assigned for TDD."
+    },
+    "artifacts": {
+      "bridge_publication": {
+        "path": "/private/tmp/java2go-root-publication77-bridge-audit.json",
+        "sha256": "e99eaa15147e38c1b4d063c36828ab22df0f10bcf9b1da0fb552cf48051f46d7"
+      },
+      "bridge_independent": {
+        "path": "/private/tmp/sol-resume-bridge25c-green53-independent.json",
+        "sha256": "1a89c85856362ffc0d59c1ec0b9fe74e97e5e4a1fedf5b3b42e67018a9ebb4da"
+      },
+      "map_independent": {
+        "path": "/private/tmp/sol-resume-sorted-putall-serial83-independent.json",
+        "sha256": "0147f2c765a53c0aa0c2b85467b63d43061da867924d3d739072773ed59ebb47"
+      },
+      "guard_independent": {
+        "path": "/private/tmp/java2go-strict-admission-sol-review85-actual.json",
+        "sha256": "f5168802160314d2772bd8aea4afef94f1f018ca35434779f8e9721b3b4ff24f"
+      }
+    },
+    "next_actions": [
+      "Seal fully checked Gson86 runner successor; fresh focused116 Go6/JVM5, then only if GREEN original120 strict/all-package build",
+      "Run expanded Stream join RED then general structured-origin fix; retain original full application acceptance",
+      "Compose current-public Map/Future prerequisites with accepted private putAll repair and verify accumulated applications, race stress and CI shards",
+      "Prepare actual volatile/updater and callback-context RED regressions before general repairs; no source-name or library substitutes",
+      "Complete current comparator correctness before matched performance measurements; continue adversarial challenges after accepted rounds"
+    ],
+    "limits": [
+      "This is a verified component milestone; checkpoint18 remains latest accepted full round",
+      "No full Gson, Netty, current CI, Java speedup, or universal Java compatibility claim",
+      "Historical failures and extra skips remain visible; inherited evidence does not become a fresh run",
+      "User untracked performance/runtime/bignumbers/equal_scale remains untouched"
+    ]
   }
 }
