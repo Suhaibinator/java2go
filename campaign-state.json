@@ -7414,5 +7414,117 @@
       "status": "Independent reviewer found classifier accepts test terminal before RUN or package START. NEW minimal runner-v4 repair assigned; v3 preserved and all current seven initial gates and conditional42 CI shards UNRUN."
     },
     "acceptance_boundary": "Checkpoint18 remains latest accepted full round. No new Netty, full Gson, fullCI or Java-faster acceptance; original challenges, failures and skips remain unwaived."
+  },
+  "sol_progress80": {
+    "status": "ACTIVE_SOL_ONLY_PARALLEL_TDD_FULL_ROUND_UNACCEPTED",
+    "implementation_revision": "e586f3132dec38f54e99dec9a6fbe27dfa724679",
+    "checkpoint_parent": "4f07c7c4b4bc101bd89a943766b3942db1df85db",
+    "team": {
+      "model": "gpt-6.1-sol",
+      "reasoning": "high",
+      "fresh_agents": 19,
+      "policy": "No Astra or nested spawning; private explicit ownership; coordinator sole public/Git writer; bounded Go lanes1\u20136 and JVM4/5."
+    },
+    "new_Netty_prerequisite_owners": [
+      "sol_netty_references",
+      "sol_netty_classloader",
+      "sol_netty_monitor_wait",
+      "sol_nio_primitives",
+      "sol_netty_platform_access"
+    ],
+    "atomic": {
+      "V6": "Causal15=14P1F followed by normal15/race15PASS; publication held for further callback identity retry defect.",
+      "V7_RED25": {
+        "path": "/private/tmp/java2go-atomic-v7-callback-causal-red/result.json",
+        "sha256": "cb843e8014ec971becd72e1f658b7c0a2a9672ced838f914e2e8290bb2ab2e16"
+      },
+      "V7_RED_outcomes": "25RUN15PASS10FAIL0SKIP; eight bounded callback markers; accepted precise semantic failure, no timeout.",
+      "V7_normal25": {
+        "path": "/private/tmp/java2go-atomic-v7-callback-normal/result.json",
+        "sha256": "074c0909bf110b76b75e6bdc7f30ce9259018f0952075e031c66d501996908ce"
+      },
+      "V7_normal_outcomes": "25RUN25PASS0FAIL0SKIP, stable inputs and clean durable raw receipts.",
+      "race": "Granted and active at checkpoint; no acceptance yet.",
+      "broad_stdjava_and_allpackages": "Preparing matching current-source comparison; unrun; native prototype not compiler/Netty acceptance."
+    },
+    "functional": {
+      "JVM18": {
+        "path": "/private/tmp/java2go-functional-v5-jvm-observed-before-repair/result.json",
+        "sha256": "f4704f110464a4be79d9ff0c21eff3e5e206c79ba2b7786ec57193f1c6a5f36d"
+      },
+      "class_seal": {
+        "path": "/private/tmp/java2go-functional-v5-jvm-observed-seal.json",
+        "sha256": "5b1c404bdd418e5c063e672c5ce4fcaa7914e3d5a7b20d1f6fbdd000fe56435d"
+      },
+      "oracle": "One javac --release21 plus six no-argument mains repeated three times; all18 stdout/exit/stderr observations match frozen expectations; 13 classfiles major65. Selected pinned JDK21.0.6+8-LTS-188.",
+      "Go3": "Native causal RED3 granted and active; candidate/parent/generated modes unaccepted."
+    },
+    "anonymous_receiver": {
+      "JVM9": {
+        "path": "/private/tmp/java2go-sol-anonymous-jvm-oracle-v2/receipts/ACTUAL_NEW_ANONYMOUS_JVM_ORACLE.json",
+        "sha256": "039e5bc658832b995bd1f67201727509dcc72b52b4bbdfc26f07b07f8f688be7"
+      },
+      "GREEN62_failure": {
+        "path": "/private/tmp/java2go-sol-anonymous-v3-green62-failure-terminal.json",
+        "sha256": "1c550ea3f39f32129382a0c51f5a95fa8d92ada2f5de40fc6e2d638529c0e297"
+      },
+      "outcome": "Exact62=60PASS2FAIL, mutable_local_binding and its parent. No timeout, skips, unstable input or cleanup issue.",
+      "cause": "Offset-keyed deeper anonymous-class cache retains prior capture layout when the emitted local binding changes; wrong runtime value has not been independently established.",
+      "successor": {
+        "path": "/private/tmp/java2go-sol-volatile-anonymous-class-cache-v4/SOURCE_PROPOSAL.json",
+        "sha256": "dba233bb21f773c745977e0d520c88dad64fccb19d56f4709a9624479c7b1c27"
+      },
+      "status": "New two-file class cache lifetime repair source-only, matching green62/generated7race successor preparing; old failures/oracles preserved."
+    },
+    "Map_Future": {
+      "V6_stop": {
+        "path": "/var/folders/c1/bq3rcd9d3y54bw8n_fp4x0sr0000gn/T/java2go-mapfuture-v6-initial-stop-5_2or3fy/report.json",
+        "sha256": "8f3ea4809c0ed1d1075305415424a4e576bb15346daeb261f21e1b0c89b04ea6"
+      },
+      "classification": "Native79 built but five ActualJDK68 parents made15 ENOENT accesses because precompiled tests ran from module root. All nine oracle files exist in pinned stdjava/testdata. Infrastructure failure, not Map semantic acceptance.",
+      "V7": {
+        "path": "/var/folders/c1/bq3rcd9d3y54bw8n_fp4x0sr0000gn/T/java2go-mapfuture-v7-infrastructure-j9hb1pq8/handoff.json",
+        "sha256": "38e67da7ce02913b688afee0ec34be8d3208bc7741ca8aafc1f9bbf50366712a"
+      },
+      "fix": "General validated package cwd for selected-tests; module-root build unchanged. All58 synthetic assertions across46 configs pass; source2824/fixtures/classifier/bounds/env unchanged.",
+      "initial7": "Granted fresh infrastructure successor; active. Conditional42 CI separately ungranted."
+    },
+    "Stream": {
+      "formatted_successor": {
+        "path": "/private/tmp/java2go-stream-format-successor-sol-dfubjxtm/preflight-seal.json",
+        "sha256": "f387e62c25d4da697d1dc75f1c464b9c9f93a8b38d033c9f582975a8e85d1f1f"
+      },
+      "scope": "Six production files/five tests; one extra trailing newline removed. Original83+2/two full applications and fresh Bridge53race historical evidence retained explicitly.",
+      "compiler_comparison": "Actual baseline26PASS4FAIL/candidate26PASS4FAIL with identical historical UTF16/numeric failures; unwaived.",
+      "runtime": "Old baseline-runtime10 inner passed but interrupted outer nonterminal, candidate unrun; no comparative acceptance. Fresh83+2+Bridge53+runtime10pair granted.",
+      "infrastructure": "Fresh units83 outer denied ps preflight in default sandbox: root_pid null/not_launched true, no Go/JVM. Receipt preserved. Root authorized fresh escalated outer reissue with identical operands/config/source.",
+      "four_red_repair": {
+        "path": "/private/tmp/java2go-stream-four-repair-formatted-sol-v6ii03n0/readiness.json",
+        "sha256": "255457f8cdd5cb876d0b43c240f90263843092248aeb046a0b4ff6a3585a539f"
+      },
+      "ABI_migration": "Original Java/oracle code unchanged; canonical JavaString representation drivers/assertions updated privately and actual missing chars helper added; causal focused gates still unrun.",
+      "lifetime": "Separate source-only lazy/consumed/close redesign with explicit flatMap cleanup; current eager stream lifecycle not claimed correct."
+    },
+    "Gson": {
+      "List47_callable16_review": {
+        "path": "/private/tmp/java2go-list47-callable16-independent-review-eke0r_dx/review.json",
+        "sha256": "35127895de6df37ba818ee8a14d27b8eddeab926889bdd50aac57a37cd0c6b2a"
+      },
+      "sol90": {
+        "path": "/private/tmp/java2go-callable-joint-source-sol90-2davl328/READINESS.json",
+        "sha256": "a848b5a26d64bbc64317710a0fd0a1e2e37541b45a932d0e28c4f674fc88c563"
+      },
+      "status": "Three callable completeness guards repaired in source; independent followup found scanner undefined ctx compile blocker. New successor assigned. Original47/16 and six controls unrun. Joint family/value admission remains disabled, original120/full65 retries ungranted."
+    },
+    "fresh_challenges": {
+      "Netty": {
+        "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/readiness.json",
+        "sha256": "210f8f3d0f1a6feeae8e75869517cb5aafb66b39432acde10369e7b73adaee30"
+      },
+      "business": "Private17Javafiles/7packages with10 verbatim Commons implementation sources frozen in /private/tmp/java2go-sol-business-challenge-rsho1ht0. Seeds17/41/97 three repeats and observations declared; no JVM or expected transcript yet.",
+      "status": "Unpromoted; no challenge replacement; at most three promoted waiting repairs."
+    },
+    "performance": "Comparator explicit erased companion/general factory order/singleton identity hook private. Actual JVM/race/alloc gates unrun; no speedup claim. Prior Go-slower/inconclusive pilot remains visible.",
+    "acceptance": "Checkpoint18 remains latest accepted full round; no current fullCI/full Gson/Netty acceptance. All prior failures/skips remain visible. User untracked equal_scale files untouched."
   }
 }
