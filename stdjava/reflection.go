@@ -59,6 +59,15 @@ type MethodDescriptor struct {
 	nameJavaString *JavaString
 	Name, GoName   string
 	Return         TypeID
+	ParameterTypes []TypeID
+	// InvocationParameterTypes describe the existing Go body selected for a
+	// Java bridge. The reflected signature remains the erased Java descriptor.
+	InvocationParameterTypes []TypeID
+	Modifiers                int32
+	HasModifiers             bool
+	Bridge                   bool
+	Synthetic                bool
+	StaticFunction           any
 }
 
 var reflectionRegistry sync.Map
@@ -92,6 +101,8 @@ func RegisterClassDescriptor(descriptor ClassDescriptor) {
 	}
 	for index := range descriptor.Methods {
 		descriptor.Methods[index].nameJavaString = reflectionIdentifierJavaString(descriptor.Methods[index].Name)
+		descriptor.Methods[index].ParameterTypes = append([]TypeID(nil), descriptor.Methods[index].ParameterTypes...)
+		descriptor.Methods[index].InvocationParameterTypes = append([]TypeID(nil), descriptor.Methods[index].InvocationParameterTypes...)
 	}
 	reflectionRegistry.Store(descriptor.Type, descriptor)
 }
@@ -258,6 +269,7 @@ func reflectionReceiver(receiver any, owner *Class) reflect.Value {
 type Method struct {
 	owner      *Class
 	descriptor MethodDescriptor
+	accessible atomic.Bool
 }
 
 func (class *Class) GetMethod(name string, parameters ...*Class) *Method {
@@ -265,14 +277,8 @@ func (class *Class) GetMethod(name string, parameters ...*Class) *Method {
 	if nilJavaReference(name) {
 		panic(NewNullPointerException("method name is null"))
 	}
-	if len(parameters) == 0 {
-		for current := class; current != nil; current = current.GetSuperclass() {
-			for _, method := range classDescriptor(current.TypeID()).Methods {
-				if method.Name == name {
-					return &Method{current, method}
-				}
-			}
-		}
+	if method := class.reflectionFindMethod(name, parameters, false); method != nil {
+		return method
 	}
 	panic(reflectionException("NoSuchMethodException", name))
 }
@@ -281,41 +287,6 @@ func (method *Method) GetName() string {
 		panic(NewNullPointerException("method is null"))
 	}
 	return method.descriptor.Name
-}
-func (method *Method) Invoke(execution *Execution, receiver any, arguments ...any) any {
-	if method == nil {
-		panic(NewNullPointerException("method is null"))
-	}
-	if len(arguments) != 0 {
-		panic(NewIllegalArgumentException("wrong number of method arguments"))
-	}
-	// Validate against the declaring class, then select the most-derived
-	// override. The generated execution body itself is statically bound.
-	targetReceiver := reflectionReceiver(receiver, method.owner)
-	selected := method.descriptor
-	if actual, ok := ObjectDynamicType(receiver); ok {
-		for current := ClassLiteral(actual); current != nil; current = current.GetSuperclass() {
-			found := false
-			for _, candidate := range classDescriptor(current.TypeID()).Methods {
-				if candidate.Name == method.descriptor.Name {
-					selected = candidate
-					targetReceiver = reflectionReceiver(receiver, current)
-					found = true
-					break
-				}
-			}
-			if found {
-				break
-			}
-		}
-	}
-	target := targetReceiver.MethodByName(selected.GoName)
-	defer reflectionInvocationPanic()
-	values := target.Call([]reflect.Value{reflect.ValueOf(execution)})
-	if len(values) == 0 {
-		return nil
-	}
-	return reflectionBox(values[0].Interface(), method.descriptor.Return)
 }
 func reflectionInvocationPanic() {
 	if caught := recover(); caught != nil {

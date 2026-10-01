@@ -69,6 +69,64 @@ func collectTypeNodes(node *sitter.Node) []*sitter.Node {
 // ParseDecls represents any type that returns a list of top-level declarations,
 // this is any class, interface, or enum declaration
 func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
+	declarations := parseDecls(node, source, ctx)
+	switch node.Type() {
+	case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
+		if declaration := sourceClassLiteralTypeIDDecl(ctx.currentClass, ctx); declaration != nil {
+			declarations = append(declarations, declaration)
+		}
+	}
+	return declarations
+}
+
+// Every named source class definition emits this package dependency marker.
+// Local definitions use their registered hoisted identity, and a constant does
+// not initialize the Java class or allocate an instance.
+func sourceClassLiteralTypeIDDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
+	if scope == nil || scope.Class == nil {
+		return nil
+	}
+	return &ast.GenDecl{Tok: token.CONST, Specs: []ast.Spec{&ast.ValueSpec{
+		Names:  []*ast.Ident{{Name: sourceClassLiteralTypeIDName(scope, ctx)}},
+		Type:   stdjavaQualifiedExpr("TypeID", ctx),
+		Values: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(sourceClassRuntimeTypeID(scope, ctx))}},
+	}}}
+}
+
+func sourceClassLiteralTypeIDName(scope *symbol.ClassScope, ctx Ctx) string {
+	id := sourceClassRuntimeTypeID(scope, ctx)
+	// Hex encodes the complete identity injectively. Its length delimiter and
+	// separated retries prevent a retry for one helper from naming another.
+	base := fmt.Sprintf("Java2goClassLiteralTypeID%d_%x", len(id), id)
+	for suffix := 0; ; suffix++ {
+		candidate := base
+		if suffix > 0 {
+			candidate += "_" + strconv.Itoa(suffix)
+		}
+		if generatedIdentifierExists(candidate, scope) {
+			continue
+		}
+		occupied := false
+		for _, pkg := range symbol.GlobalScope.Packages {
+			for _, file := range pkg.Files {
+				// Reserve lexical bindings as well as package declarations so an
+				// unqualified same-package reference cannot be shadowed by Java.
+				if strings.Contains(string(file.Source), candidate) {
+					occupied = true
+					break
+				}
+			}
+			if occupied {
+				break
+			}
+		}
+		if !occupied {
+			return candidate
+		}
+	}
+}
+
+func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
 	case "annotation_type_declaration":
 		return sourceAnnotationDecls(ctx.currentClass, ctx)
@@ -308,6 +366,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
 		declarations = append(declarations, generateCharacterIOBridgeDecls(ctx)...)
 		declarations = append(declarations, generateFunctionSAMBridgeDecls(ctx)...)
+		declarations = append(declarations, generateSourceObjectEqualsBridgeDecls(ctx)...)
 		declarations = append(declarations, generateIterationBridgeDecls(ctx)...)
 		declarations = append(declarations, generateMapEntryBridgeDecls(ctx)...)
 		declarations = append(declarations, generateAbstractCollectionDefaultDecls(ctx)...)
@@ -430,6 +489,10 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if body := node.ChildByFieldName("body"); body != nil {
 			for _, c := range nodeutil.NamedChildrenOf(body) {
 				if c.Type() == "method_declaration" {
+					method := interfaceDeclaredMethod(ctx.currentClass, c)
+					if method == nil || method.IsStatic || method.IsPrivate {
+						continue
+					}
 					parsedMethod := ParseNode(c, source, ctx).(*ast.Field)
 					// If the method was ignored with an annotation, it will return a blank
 					// field, so ignore that
@@ -442,7 +505,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 		if ctx.currentClass != nil {
 			for _, method := range ctx.currentClass.Methods {
-				if method.DeclarationNode == nil && !method.IsStatic && !method.Constructor {
+				if method.DeclarationNode == nil && !method.IsStatic && !method.IsPrivate && !method.Constructor {
 					declared := false
 					for _, field := range methods.List {
 						for _, name := range field.Names {
@@ -470,6 +533,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if companion := generateExecutionCompanionInterface(ctx.currentClass, ctx); companion != nil {
 			declarations = append(declarations, companion)
 		}
+		declarations = append(declarations, generateInterfaceStaticMethodDecls(node, source, ctx)...)
 		declarations = append(declarations, generateInterfaceDefaultMethodDecls(node, source, ctx)...)
 		declarations = append(declarations, genFunctionalInterfaceAdapterDecls(interfaceName, methods, classTypeParams, ctx.currentClass, ctx)...)
 		// Member types of an interface are real implicitly static declarations.
@@ -1181,6 +1245,33 @@ func buildInterfaceAbstractExecutionBridge(
 	)
 }
 
+// Match the declaration tree rather than its spelling or source offsets: an
+// inherited overload can carry an unrelated node with the same byte range.
+func interfaceDeclaredMethod(scope *symbol.ClassScope, node *sitter.Node) *symbol.Definition {
+	if scope == nil || node == nil {
+		return nil
+	}
+	for _, method := range scope.Methods {
+		if method != nil && method.DeclarationNode != nil && method.DeclarationNode.Equal(node) {
+			return method
+		}
+	}
+	return nil
+}
+
+// Static interface methods belong to the declaring type and must be emitted
+// even when the interface has no instance default-method carrier.
+func generateInterfaceStaticMethodDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
+	var declarations []ast.Decl
+	for _, child := range nodeutil.NamedChildrenOf(node.ChildByFieldName("body")) {
+		method := interfaceDeclaredMethod(ctx.currentClass, child)
+		if method != nil && method.IsStatic && method.HasBody {
+			declarations = append(declarations, ParseDecl(child, source, ctx)...)
+		}
+	}
+	return declarations
+}
+
 // generateInterfaceDefaultMethodDecls materializes Java interface default
 // methods in a small carrier struct. Implementing classes embed an initialized
 // carrier, while its embedded interface value points back at the concrete Java
@@ -1251,7 +1342,8 @@ func generateInterfaceDefaultMethodDecls(node *sitter.Node, source []byte, ctx C
 		directMethods[interfaceMethodSignature(method)] = struct{}{}
 	}
 	for _, child := range nodeutil.NamedChildrenOf(body) {
-		if child.Type() != "method_declaration" || child.ChildByFieldName("body") == nil {
+		method := interfaceDeclaredMethod(scope, child)
+		if method == nil || method.IsStatic || !method.HasBody {
 			continue
 		}
 		methodCtx := ctx.Clone()
@@ -3145,7 +3237,7 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 
 	var samDef *symbol.Definition
 	for _, method := range scope.Methods {
-		if method == nil || method.IsStatic || method.Constructor {
+		if method == nil || method.IsStatic || method.IsPrivate || method.HasBody || method.Constructor {
 			continue
 		}
 		if samDef != nil {
@@ -3198,6 +3290,11 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 		},
 	}
 
+	var defaultCarrierType ast.Expr
+	if interfaceHasDefaultMethods(scope, ctx) {
+		defaultCarrierType = instantiateGenericType(interfaceDefaultCarrierName(scope), typeArgs)
+		structFields.List = append(structFields.List, &ast.Field{Type: &ast.StarExpr{X: defaultCarrierType}})
+	}
 	adapterStruct := genStructWithTypeParamsInContext(adapterName, structFields, typeParams, ctx)
 
 	adapterTypeExpr := instantiateGenericType(adapterName, typeArgs)
@@ -3337,6 +3434,33 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 			}},
 		}},
 	}}}}
+	// Defaults must call back into this adapter's SAM with the same receiver
+	// identity. Install the existing carrier after allocating the adapter.
+	if defaultCarrierType != nil {
+		reserved := map[string]struct{}{"fn": {}}
+		for _, name := range typeParamNames {
+			reserved[name] = struct{}{}
+		}
+		adapterName := synchronizedUniqueLocalName("adapter", reserved)
+		initializeDefaults := func(body *ast.BlockStmt) {
+			adapter := ast.NewIdent(adapterName)
+			value := body.List[0].(*ast.ReturnStmt).Results[0]
+			body.List = []ast.Stmt{
+				&ast.AssignStmt{Lhs: []ast.Expr{adapter}, Tok: token.DEFINE, Rhs: []ast.Expr{value}},
+				&ast.AssignStmt{
+					Lhs: []ast.Expr{&ast.SelectorExpr{X: adapter, Sel: ast.NewIdent(interfaceDefaultCarrierName(scope))}},
+					Tok: token.ASSIGN,
+					Rhs: []ast.Expr{&ast.CallExpr{
+						Fun:  instantiateGenericType(defaultConstructorName(interfaceDefaultCarrierName(scope)), typeArgs),
+						Args: []ast.Expr{adapter},
+					}},
+				},
+				&ast.ReturnStmt{Results: []ast.Expr{adapter}},
+			}
+		}
+		initializeDefaults(constructorBody)
+		initializeDefaults(executionConstructorBody)
+	}
 	executionConstructor := genFuncDeclWithTypeParamsInContext(
 		constructorName+executionMethodSuffix,
 		typeParams,

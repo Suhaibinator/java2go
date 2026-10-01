@@ -15,7 +15,7 @@ import (
 
 // A dynamically supplied binary name can select any source class in the
 // compilation. Enable descriptors for the complete source set in that case.
-var reflectionUsePattern = regexp.MustCompile(`\b(newUpdater|getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getDeclaredField|getDeclaredFields|getDeclaredConstructor|getGenericSuperclass|getGenericType|getTypeParameters|getAnnotation|getMethod|isEnum|isEnumConstant|isAnnotationPresent|getSuperclass|isAssignableFrom|isInstance)\b`)
+var reflectionUsePattern = regexp.MustCompile(`\b(newUpdater|getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getDeclaredField|getDeclaredFields|getDeclaredConstructor|getGenericSuperclass|getGenericType|getTypeParameters|getAnnotation|getMethod|getDeclaredMethod|getDeclaredMethods|isEnum|isEnumConstant|isAnnotationPresent|getSuperclass|isAssignableFrom|isInstance)\b`)
 
 func sourceUsesReflection() bool {
 	seen := map[*symbol.FileScope]bool{}
@@ -126,18 +126,8 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 	if !scope.IsEnum {
 		fields.Elts = append(fields.Elts, sourceReflectionFields(scope, ctx)...)
 	}
-	if len(scope.TypeParameters) == 0 && !scope.IsInterface && !scope.IsEnum {
-		for _, method := range scope.Methods {
-			if method.Constructor || method.IsStatic || method.RequiresHelper || len(method.Parameters) != 0 || !reflectionPublic(method, scope) {
-				continue
-			}
-			id, _ := javaTypeDescriptorExpr(method.OriginalType, ctx)
-			if id == nil {
-				id = javaTypeIDLiteral("void", ctx)
-			}
-			methods.Elts = append(methods.Elts, &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Name", metadataString(method.OriginalName)), metadataKey("GoName", metadataGoName(executionImplementationName(method, scope, ctx))), metadataKey("Return", id)}})
-		}
-	}
+	methods.Elts = append(methods.Elts, sourceReflectionMethods(scope, ctx)...)
+
 	descriptor.Elts = append(descriptor.Elts, metadataKey("Fields", fields), metadataKey("Methods", methods))
 	annotations := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("TypeID", ctx)}}
 	for _, annotation := range declarationAnnotations(scope) {
@@ -227,7 +217,7 @@ func reflectionVarargsIntrinsic(receiver, name string) nodeIntrinsicGenerator {
 		args := intrinsicArgs(object, name, source, ctx)
 		nodes := nodeutil.SemanticNamedChildrenOf(invocation.ChildByFieldName("arguments"))
 		fixed := 0
-		if name == "getMethod" || name == "invoke" {
+		if name == "getMethod" || name == "getDeclaredMethod" || name == "invoke" {
 			fixed = 1
 		}
 		spread := false
@@ -255,7 +245,7 @@ func reflectionVarargsIntrinsic(receiver, name string) nodeIntrinsicGenerator {
 			args = append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)
 		}
 		selector := strings.ToUpper(name[:1]) + name[1:]
-		if receiver == "Class" && name == "getMethod" {
+		if receiver == "Class" && (name == "getMethod" || name == "getDeclaredMethod") {
 			selector += "JavaString"
 		}
 		call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: recv, Sel: ast.NewIdent(selector)}, Args: args}

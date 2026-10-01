@@ -534,17 +534,31 @@ func directDeclaredOverrides(
 		}
 		parametersMatch := true
 		for index := range candidate.Parameters {
-			if !overrideBridgeJavaTypesIdentical(mappedParameters[index], owner, definitionParameterJavaSignatureType(candidate, index), owner, ctx) {
+			mappedOwner := overrideBridgeMappedTypeOwner(ancestorOwner, owner, ancestorMethod.Parameters[index])
+			if !overrideBridgeJavaTypesIdentical(mappedParameters[index], mappedOwner, definitionParameterJavaSignatureType(candidate, index), owner, ctx) {
 				parametersMatch = false
 				break
 			}
 		}
-		if !parametersMatch || !overrideBridgeResultCompatible(candidate.OriginalType, owner, mappedResult, owner, ctx) {
+		mappedResultOwner := overrideBridgeMappedTypeOwner(ancestorOwner, owner, ancestorMethod)
+		if !parametersMatch || !overrideBridgeResultCompatible(candidate.OriginalType, owner, mappedResult, mappedResultOwner, ctx) {
 			continue
 		}
 		matches = append(matches, candidate)
 	}
 	return matches
+}
+
+// Declaration-owned signature types keep the ancestor's lexical imports and
+// member types. A substituted class binder instead denotes a type in the
+// receiver's instantiation, so its existing receiver context must be retained.
+func overrideBridgeMappedTypeOwner(ancestor, receiver *symbol.ClassScope, definition *symbol.Definition) *symbol.ClassScope {
+	for _, parameter := range ancestor.TypeParameters {
+		if definitionReferencesTypeParameterDeclaration(definition, parameter.Declaration) {
+			return receiver
+		}
+	}
+	return ancestor
 }
 
 func directOwnerOverrideBridgeVisibility(
@@ -948,7 +962,7 @@ func directOwnerSpecializedOverrideBridgeForMethod(
 		}
 	}
 	if selected.family == nil {
-		return specializedInterfaceCovariantBridge(owner, method, ctx)
+		return specializedAncestorCovariantBridge(owner, method, ctx)
 	}
 	return selected, selected.family != nil
 }
@@ -971,10 +985,10 @@ func directOwnerOverrideBridgeFamilyUsesErasedHiddenOnly(
 	method *symbol.Definition,
 	ctx Ctx,
 ) bool {
-	if _, ok := specializedInterfaceCovariantBridge(owner, method, ctx); ok {
-		// The public wrapper implements the interface's wider result type.
-		// This class's dispatch descriptor must use the exact hidden body;
-		// requiring its narrower result on the public selector is impossible.
+	if _, ok := directOwnerSpecializedOverrideBridgeForMethod(owner, method, ctx); ok {
+		// The public Go wrapper may implement a wider inherited descriptor.
+		// Java virtual dispatch requires the checked exact hidden body instead
+		// of combining that wrapper with an incompatible narrow public result.
 		return true
 	}
 	_, ok := planDirectOwnerCallableOverrideBridgeFamily(owner, method, ctx)
@@ -1023,7 +1037,7 @@ func buildDirectOwnerOverrideBridgeMethodDecls(
 			// Ordinary Java covariant methods also implement inherited interfaces.
 			// Expose the ancestor descriptor publicly; source calls retain the
 			// exact hidden result type selected above.
-			if (len(selection.family.owner.TypeParameters) == 0 || selection.family.owner.IsInterface) && len(declarations) > 0 {
+			if (len(methodDirectOwnerTypeParameterDeclarations(selection.family.owner, selection.family.method)) == 0 || selection.family.owner.IsInterface) && len(declarations) > 0 {
 				wrapper := declarations[0].(*ast.FuncDecl)
 				wrapper.Type.Results = cloneFieldList(bridge.(*ast.FuncDecl).Type.Results)
 				if ret, ok := wrapper.Body.List[0].(*ast.ReturnStmt); ok && len(ret.Results) == 1 {
@@ -1157,9 +1171,26 @@ func buildDirectOwnerSpecializedOverrideBridgeDecl(
 		arguments[index] = argument
 	}
 
+	var callReceiver ast.Expr = &ast.Ident{Name: receiverName}
+	if classNeedsVirtualDispatch(selection.bridge.owner, bridgeCtx) {
+		// An erased interface view can retain this superclass subobject.
+		// Its bridge must still invoke the most-derived exact implementation.
+		// Before constructors install dispatch, the receiver itself supplies
+		// that same checked hidden descriptor; no untyped receiver is admitted.
+		dynamicName := synchronizedUniqueLocalName("__java2goBridgeReceiver", usedNames)
+		body = append(body, &ast.AssignStmt{
+			Lhs: []ast.Expr{ast.NewIdent(dynamicName)}, Tok: token.DEFINE,
+			Rhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(classDispatchFieldName(selection.bridge.owner))}},
+		}, &ast.IfStmt{
+			Cond: &ast.BinaryExpr{X: ast.NewIdent(dynamicName), Op: token.EQL, Y: ast.NewIdent("nil")},
+			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{ast.NewIdent(dynamicName)}, Tok: token.ASSIGN, Rhs: []ast.Expr{ast.NewIdent(receiverName)}}}},
+		})
+		callReceiver = ast.NewIdent(dynamicName)
+	}
+
 	call := &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
-			X:   &ast.Ident{Name: receiverName},
+			X:   callReceiver,
 			Sel: &ast.Ident{Name: directOwnerOverrideBridgeExactExecutionName(selection.bridge)},
 		},
 		Args: append([]ast.Expr{&ast.Ident{Name: executionName}}, arguments...),

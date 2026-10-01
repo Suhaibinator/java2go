@@ -70,14 +70,8 @@ func (field *Field) GetNameJavaString() *JavaString {
 func (class *Class) GetMethodJavaString(name *JavaString, parameters ...*Class) *Method {
 	class.TypeID()
 	key := JavaStringSwitchKey(name)
-	if len(parameters) == 0 {
-		for current := class; current != nil; current = current.GetSuperclass() {
-			for _, method := range classDescriptor(current.TypeID()).Methods {
-				if JavaStringSwitchKey(method.nameJavaString) == key {
-					return &Method{current, method}
-				}
-			}
-		}
+	if method := class.reflectionFindMethodJavaStringKey(key, parameters, false); method != nil {
+		return method
 	}
 	panic(reflectionJavaStringException("NoSuchMethodException", name))
 }

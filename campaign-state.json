@@ -10808,5 +10808,77 @@
     "agent_policy": "GPT-6.1 Sol/high only; no Astra; explicit file ownership and independent review; coordinator sole public/Git writer",
     "checkpoint_kind": "Journal only; tested private implementation not yet published",
     "next": "Derived-bound argument conversion, complete composed reflection/static-interface gates, original Gson applications, Map+CCE composition, original Netty strict gate and configured console support."
+  },
+  "sol_progress100": {
+    "status": "SCOPED_REFLECTION_CLASS_LITERAL_INTERFACE_IMPLEMENTATION_VERIFIED",
+    "publication_parent": "7531654de49c97db932df207936e9d64aaac6b88",
+    "implementation_changes_published": true,
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source": {
+      "path": "/private/tmp/java2go-method-integrated99-source-v1-fejf3l0u/source",
+      "manifest_sha256": "72873b51fba0360dc817eac9954b47ec506dacd0fca047ecf33c553dde8c8616",
+      "members": 3076,
+      "modified_existing": 9,
+      "absent_added": 101
+    },
+    "root_source_review": {
+      "path": "/private/tmp/java2go-root-reflection100-source-audit.json",
+      "sha256": "910c3f49acebfd5188f0c4f1dec8eb4c076714aa94fc7cea93d61da1d453f970"
+    },
+    "root_raw_review": {
+      "path": "/private/tmp/java2go-root-reflection100-terminal-review.json",
+      "sha256": "5d075d032d28d402b48fe0611d078047274bdc08a05da55354f9129420ea4edc",
+      "canonical_green_commands": 221,
+      "raw_streams_rehashed": 442
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-sol61-composed-reflection99-independent-review-v1/SOURCE-RAW-REVIEW.json",
+      "sha256": "c194edf1f98835c06d22383897d474c008a3d557721f89e5b21002581d799cea"
+    },
+    "gate_index": {
+      "path": "/private/tmp/java2go-method-integrated99-gates-v1-kdzoz_ut/REFLECTION100-RAW-SOURCE-GATE-INDEX.json",
+      "sha256": "f52bda9d66923f2931345944cd8bb97115ab02dc858fee25bf72699aebc4c826"
+    },
+    "passing_scopes": {
+      "native_named_race_tests": 1735,
+      "default_uncapped_lint_issues": 0,
+      "ownership_actions": 160,
+      "ownership_distinct": 130,
+      "reflection_commands": 61,
+      "foundation_commands": 60,
+      "foundation_named_actions": 751,
+      "focused_commands": 56,
+      "additive_commands": 31,
+      "additive_JVM_parities": 4
+    },
+    "known_original_failures": {
+      "report": "/private/tmp/java2go-method-integrated99-gates-v1-kdzoz_ut/new-controls-v6/actual-known3-v3/report.json",
+      "report_sha256": "b4344a3e2f76234662d34a9a5eb266add483cd36846e460fd3f63e2135522bae",
+      "audit": "/private/tmp/java2go-method-integrated99-gates-v1-kdzoz_ut/known3-v3/TERMINAL_AUDIT.json",
+      "audit_sha256": "733f5fdc2256e74a54dfd3255880f5b809db36f65c4f6930c81a79571ebf3d52",
+      "RUN": 3,
+      "FAIL": 3,
+      "PASS": 0,
+      "SKIP": 0,
+      "diagnostics_and_generated_Go_byteexact_baseline": true,
+      "waived": false
+    },
+    "invalid_attempts_preserved": true,
+    "remaining": {
+      "Commons27": "Anonymous package-origin and generic/overload repair; original full app remains active.",
+      "Gson118": "Anonymous lifecycle/capture, Map/List family storage and remaining JDK/concurrent services; original full app remains active.",
+      "Netty": "Named-header/import-cache/BYTES prerequisites reviewed privately; full strict300 still timed out on prior implementation, full app parity open.",
+      "NativeMap": "Late empty TreeMap.putAll callback discrepancy held for new JVM-derived TDD; no Map repair published.",
+      "console": "216 Linux JDK runs and per-stream repair private; native-provider portability open.",
+      "broaderCI": "Collection-specific existing failures matched baseline; full CI remains unaccepted."
+    }
+  },
+  "active_resume_current100": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; up to20 persistent subagents plus coordinator; no Astra",
+    "checkpoint_kind": "Tested scoped reflection/class-literal/interface code milestone; full round18 remains latest acceptance",
+    "next": "Repair empty TreeMap callback behavior, anonymous/null/capture and pattern emitted-name identity; compose reviewed imports/BYTES and rerun originalNetty strict; preserve originalCommons27/Gson118 challenge gates; commit AND push passing milestones."
   }
 }

@@ -134,7 +134,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "class_literal":
 		javaType, ok := classLiteralJavaType(node, source)
 		if ok {
-			if descriptor, described := javaTypeDescriptorExpr(javaType, ctx); described {
+			if descriptor, described := classLiteralTypeDescriptorExpr(javaType, ctx); described {
 				return stdjavaCall(ctx, "ClassLiteral", descriptor)
 			}
 		}
@@ -4057,7 +4057,7 @@ func executionCompanionDispatchInvocation(
 		},
 		Args: stagedArgs,
 	}, expandVarargsArray)
-	body = append(body, invocationClosureCallStatement(publicCall, results))
+	body = append(body, invocationClosureCallStatement(projectInterfaceCovariantPublicResult(publicCall, resolution, ctx), results))
 	return &ast.CallExpr{Fun: &ast.FuncLit{
 		Type: &ast.FuncType{Results: results},
 		Body: &ast.BlockStmt{List: body},
@@ -5794,7 +5794,7 @@ func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Def
 
 	candidates := []*symbol.Definition{}
 	for _, def := range scope.Methods {
-		if def == nil || def.IsStatic || def.Constructor {
+		if def == nil || def.IsStatic || def.IsPrivate || def.HasBody || def.Constructor {
 			continue
 		}
 		candidates = append(candidates, def)
@@ -6712,6 +6712,9 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	ctx.addHoistedDecl(genStructWithTypeParamsInContext(structName, fields, syntheticScope.TypeParameters, installerCtx))
 	if alias := superclassEmbeddingAliasDecl(syntheticScope, installerCtx); alias != nil {
 		ctx.addHoistedDecl(alias)
+	}
+	for _, declaration := range generateSourceObjectEqualsBridgeDecls(installerCtx) {
+		ctx.addHoistedDecl(declaration)
 	}
 	for _, declaration := range append(generateIterationBridgeDecls(installerCtx), generateMapEntryBridgeDecls(installerCtx)...) {
 		ctx.addHoistedDecl(declaration)
@@ -8351,6 +8354,11 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		ctx.addHoistedDecl(alias)
 	}
 	ctx.addHoistedDecl(genStructWithTypeParamsInContext(structName, fields, syntheticScope.TypeParameters, ctx))
+	// Local classes bypass ParseDecls while hoisting. Emit the same marker only
+	// after this definition has entered the local runtime identity registry.
+	if declaration := sourceClassLiteralTypeIDDecl(syntheticScope, fieldTypeCtx); declaration != nil {
+		ctx.addHoistedDecl(declaration)
+	}
 
 	var directInterfaceScopes []*symbol.ClassScope
 	for _, implemented := range syntheticScope.ImplementedInterfaces {
@@ -8401,6 +8409,9 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	}
 	if dispatch := generateClassDispatchInterface(localCtx); dispatch != nil {
 		ctx.addHoistedDecl(dispatch)
+	}
+	for _, declaration := range generateSourceObjectEqualsBridgeDecls(localCtx) {
+		ctx.addHoistedDecl(declaration)
 	}
 	for _, declaration := range append(generateIterationBridgeDecls(localCtx), generateMapEntryBridgeDecls(localCtx)...) {
 		ctx.addHoistedDecl(declaration)
@@ -8625,7 +8636,7 @@ func executionAwareMethodReferenceForwarder(
 			Args: javaArgs,
 		}
 		markVariadicForwardCall(publicCall, resolution.def)
-		publicResult := projectDirectOwnerErasedMethodReferenceResult(publicCall, resolution, target, ctx)
+		publicResult := projectDirectOwnerErasedMethodReferenceResult(projectInterfaceCovariantPublicResult(publicCall, resolution, ctx), resolution, target, ctx)
 		publicResult = genericMethodReferenceResult(publicResult, resolution, target, unbound, ctx)
 		body = append(body, invocationClosureCallStatement(publicResult, functionType.Results))
 	} else {
@@ -10177,6 +10188,24 @@ func inferUserMethodReturnType(node *sitter.Node, ctx Ctx, source []byte, origin
 	rt = qualifyJavaTypeInDeclaringContext(rt, resolution.owner)
 	recordMethodTypeOrigin(origins, resolution, invocationTarget, node, ctx, source, rt)
 	return rt, true
+}
+
+// A source class literal must retain a reference to its declaring Go package:
+// that package registers its Java type and reflection metadata. A constant
+// reference supplies the dependency without performing Java class initialization.
+func classLiteralTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
+	javaType = strings.TrimSpace(javaType)
+	if strings.HasSuffix(javaType, "[]") {
+		component, ok := classLiteralTypeDescriptorExpr(strings.TrimSpace(strings.TrimSuffix(javaType, "[]")), ctx)
+		if !ok {
+			return nil, false
+		}
+		return stdjavaCall(ctx, "ArrayTypeID", component), true
+	}
+	if scope := resolveClassScopeByQualifiedName(ctx, javaType); scope != nil && scope.Class != nil {
+		return qualifiedNameExpr(sourceClassLiteralTypeIDName(scope, ctx), resolveJavaPackageForType(ctx, javaType, scope), ctx), true
+	}
+	return javaTypeDescriptorExpr(javaType, ctx)
 }
 
 func classLiteralJavaType(node *sitter.Node, source []byte) (string, bool) {

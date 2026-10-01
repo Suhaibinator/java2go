@@ -103,7 +103,8 @@ func sourceReflectionFieldAccessors(scope *symbol.ClassScope, ctx Ctx) []ast.Dec
 	if !sourceUsesReflection() || scope == nil || scope.IsInterface {
 		return nil
 	}
-	var out []ast.Decl
+	// Method accessors share this declaration-emission hook with field accessors.
+	out := sourceReflectionPrivateMethodAccessors(scope, ctx)
 	for _, field := range scope.Fields {
 		if !sourceReflectionDeclaredField(scope, field) || field.IsStatic {
 			continue

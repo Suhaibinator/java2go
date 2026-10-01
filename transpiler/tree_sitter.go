@@ -647,6 +647,9 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 
 		eraseGenericMethodSignature(def, parameters, results, ctx)
+		if results != nil && len(results.List) == 1 {
+			results.List[0].Type = interfaceCovariantPublicResultType(ctx.currentClass, def, results.List[0].Type, ctx)
+		}
 		return &ast.Field{
 			Doc:   &ast.CommentGroup{List: comments},
 			Names: []*ast.Ident{&ast.Ident{Name: def.Name}},
