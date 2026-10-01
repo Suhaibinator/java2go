@@ -78,6 +78,13 @@ func splitJavaMemberType(typeStr string) (string, []string, bool) {
 
 // ParseExpr parses an expression type
 func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	if receiver, prepared := preparedAnonymousFieldReceiverExpr(node, source, ctx); prepared {
+		return receiver
+	}
+	ctx = prepareAnonymousFieldReceiver(node, source, ctx)
+	if lowered, ok := lowerVolatileFieldRead(node, source, ctx); ok {
+		return lowered
+	}
 	switch node.Type() {
 	case "ERROR":
 		log.WithFields(log.Fields{
@@ -99,6 +106,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			return &ast.BadExpr{}
 		}
 		increment := operatorNode.Type() == "++"
+		if lowered, ok := lowerVolatileFieldUpdate(node, operandNode, post, increment, source, ctx); ok {
+			return lowered
+		}
 		if lowered, ok := lowerBoxedUpdateExpression(node, operandNode, post, increment, source, ctx); ok {
 			return lowered
 		}
@@ -179,7 +189,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		lambdaCtx.expectedType = lambdaReturnType
 		expectedBase, _ := parseJavaTypeString(ctx.expectedType)
 		expectedScope := resolveClassScopeByQualifiedName(ctx, expectedBase)
-		executionAwareSAM := samMethod != nil && (expectedScope != nil && expectedScope.IsInterface || isExternalCallableType(ctx.expectedType, ctx) || isExternalSupplierType(ctx.expectedType, ctx) || isExternalFunctionType(ctx.expectedType, ctx) || isExternalIterableType(ctx.expectedType, ctx))
+		executionAwareSAM := samMethod != nil && (expectedScope != nil && expectedScope.IsInterface || isExternalCallableType(ctx.expectedType, ctx) || isExternalSupplierType(ctx.expectedType, ctx) || isExternalFunctionType(ctx.expectedType, ctx) || nativeFunctionalFamily(ctx.expectedType, ctx) != "" || isExternalIterableType(ctx.expectedType, ctx))
 		executionAwareRunnable := samMethod == nil && expectedScope == nil && stripJavaQualifier(expectedBase) == "Runnable"
 
 		var lambdaParameters *ast.FieldList
@@ -1516,7 +1526,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			// A source exception can arrive through a declaring-base subobject;
 			// comparing Go interface payloads would lose its Java identity.
 			erasedReference = erasedReference || isBuiltinCharSequence(leftJavaType, ctx) || isBuiltinCharSequence(rightJavaType, ctx) ||
-				isExternalFunctionType(leftJavaType, ctx) || isExternalFunctionType(rightJavaType, ctx) ||
+				nativeFunctionalFamily(leftJavaType, ctx) != "" || nativeFunctionalFamily(rightJavaType, ctx) != "" ||
 				(resolveClassScopeByQualifiedName(ctx, leftBase) == nil && isBuiltinExceptionType(leftBase)) ||
 				(resolveClassScopeByQualifiedName(ctx, rightBase) == nil && isBuiltinExceptionType(rightBase))
 			if (leftWrapper || rightWrapper || erasedReference || sourceHierarchyReference) && !leftPrimitive && !rightPrimitive {
@@ -1718,6 +1728,12 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			}
 		}
 
+		// Native SAM values use nominal source views; a structural assertion here
+		// would reject overloaded source implementations before ObjectView can
+		// resolve the declared interface while preserving shared ObjectInfo.
+		if projected := nativeFunctionalObjectProjection(valueExpr, targetJavaType, ctx); projected != nil {
+			return projected
+		}
 		return nullableReferenceAssertion(valueExpr, targetType, targetJavaType, ctx)
 	case "field_access":
 		// X.Sel
@@ -2707,10 +2723,10 @@ func signedIntegerConstant(value int64) ast.Expr {
 // array/index and loads the old component before the RHS is evaluated; the
 // inner call computes, checks, stores, and returns the narrowed Java result.
 func lowerReferenceArrayCompoundAssignment(node *sitter.Node, lhsJavaType, operator string, source []byte, ctx Ctx) (ast.Expr, bool) {
-	if node == nil || node.ChildCount() < 3 || operator == "=" {
+	lhsNode, _, rhsNode, valid := assignmentExpressionNodes(node, source)
+	if !valid || operator == "=" {
 		return nil, false
 	}
-	lhsNode, rhsNode := node.ChildByFieldName("left"), node.ChildByFieldName("right")
 	if lhsNode == nil || lhsNode.Type() != "array_access" || rhsNode == nil {
 		return nil, false
 	}
@@ -2870,15 +2886,12 @@ func lowerBoxedUpdateExpression(node, operandNode *sitter.Node, post, increment 
 // the RHS. Together these paths preserve single evaluation of complex targets
 // and cases such as x += (x = 5), whose result uses x's pre-RHS value.
 func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
-	if node == nil || node.ChildCount() < 3 {
+	lhsNode, opNode, rhsNode, valid := assignmentExpressionNodes(node, source)
+	if !valid {
 		return &ast.BadExpr{}
 	}
-
-	lhsNode := node.ChildByFieldName("left")
-	opNode := node.ChildByFieldName("operator")
-	rhsNode := node.ChildByFieldName("right")
-	if lhsNode == nil || opNode == nil || rhsNode == nil {
-		return &ast.BadExpr{}
+	if lowered, ok := lowerVolatileFieldAssignment(node, source, ctx); ok {
+		return lowered
 	}
 	if lowered, ok := lowerStaticFieldAssignment(node, source, ctx); ok {
 		return lowered
@@ -5511,6 +5524,9 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 		return dependentTypeParameterWideningExpr(argExpr, actualType, expectedType, ctx)
 	}
 
+	if projected := nativeFunctionalObjectProjection(argExpr, expectedType, ctx); projected != nil {
+		return projected
+	}
 	if ctx.currentFile == nil {
 		return argExpr
 	}
@@ -5750,6 +5766,12 @@ func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Def
 		}
 		if stripJavaQualifier(baseType) == "Iterable" && !isExternalIterableType(expectedType, ctx) {
 			return nil, nil
+		}
+		switch stripJavaQualifier(baseType) {
+		case "BiFunction", "Consumer", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator":
+			if nativeFunctionalFamily(expectedType, ctx) == "" {
+				return nil, nil
+			}
 		}
 		if stripJavaQualifier(baseType) == "Function" && !isExternalFunctionType(expectedType, ctx) {
 			return nil, nil
@@ -6143,14 +6165,16 @@ func anonymousClassDeclaredFields(classBody *sitter.Node, source []byte, ctx Ctx
 			}
 			fieldName := fieldNameNode.Content(source)
 			generatedName := sanitizeGoIdent(fieldName)
-			defs = append(defs, &symbol.Definition{
-				OriginalName: fieldName,
-				Name:         generatedName,
-				OriginalType: typeNode.Content(source),
-			})
+			fieldDefinition := &symbol.Definition{
+				OriginalName:    fieldName,
+				Name:            generatedName,
+				OriginalType:    typeNode.Content(source),
+				DeclarationNode: member,
+			}
+			defs = append(defs, fieldDefinition)
 			astFields = append(astFields, &ast.Field{
 				Names: []*ast.Ident{{Name: generatedName}},
-				Type:  javaTypeStringToGoTypeExpr(typeNode.Content(source), inScopeTypeParameters(ctx), ctx),
+				Type:  volatileFieldBackingType(fieldDefinition, javaTypeStringToGoTypeExpr(typeNode.Content(source), inScopeTypeParameters(ctx), ctx), ctx),
 			})
 		}
 	}
@@ -6543,7 +6567,8 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	}
 	key, hasKey := anonymousClassSourceKey(node)
 	if hasKey {
-		if info := ctx.anonymousClasses[key]; info != nil && info.scope != nil {
+		if info := ctx.anonymousClasses[key]; info != nil && info.scope != nil &&
+			info.emissionStampValid && info.emissionStamp == anonymousReceiverStamp(source, ctx) {
 			baseType, _ := parseJavaTypeString(objectType.Content(source))
 			return anonymousClassConstructionExpr(
 				node,
@@ -6822,7 +6847,14 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 	}
 
-	return anonymousClassConstructionExpr(node, objectType, info, superScope, source, ctx)
+	expression := anonymousClassConstructionExpr(node, objectType, info, superScope, source, ctx)
+	// The class layout captures source-local names and physical types. Keep the
+	// offset index for exact-type lookup, but reuse a hoisted declaration only
+	// within the lexical and emission context that supplied those captures.
+	// Stamp after rendering because body lowering may advance local bindings.
+	info.emissionStamp = anonymousReceiverStamp(source, ctx)
+	info.emissionStampValid = true
+	return expression
 }
 
 // anonymousClassConstructionExpr performs the anonymous instance lifecycle in
@@ -8071,14 +8103,7 @@ func buildLocalClassFieldInitializerMethod(
 			valueCtx.expectedTypeRoot = valueNode
 			value := ParseExpr(valueNode, source, valueCtx)
 			value = coerceArgumentToExpectedType(value, valueNode, field.OriginalType, valueCtx, source)
-			statements = append(statements, &ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.SelectorExpr{
-					X:   &ast.Ident{Name: receiverName},
-					Sel: &ast.Ident{Name: field.Name},
-				}},
-				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{value},
-			})
+			statements = append(statements, volatileFieldStoreStmt(field, &ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(field.Name)}, value, initializerCtx))
 		}
 	}
 	if len(statements) == 0 {
@@ -8261,11 +8286,12 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		if definition == nil || index >= len(declaredAstFields) || declaredAstFields[index] == nil {
 			continue
 		}
-		declaredAstFields[index].Type = javaTypeStringToGoTypeExpr(
+		ordinaryType := javaTypeStringToGoTypeExpr(
 			definitionJavaType(definition),
 			syntheticScope.GoTypeParameterNames(),
 			fieldTypeCtx,
 		)
+		declaredAstFields[index].Type = volatileFieldBackingType(definition, ordinaryType, fieldTypeCtx)
 	}
 
 	// Mirror ordinary class layout: an immediate user superclass is embedded so
@@ -8662,6 +8688,12 @@ func wrapLambdaWithFunctionalInterfaceAdapter(lambdaExpr ast.Expr, expectedType 
 	}
 
 	baseType, typeArgs := parseJavaTypeString(expectedType)
+	if adapted := additionalNativeFunctionalAdapter(lambdaExpr, expectedType, executionAware, ctx); adapted != nil {
+		return adapted
+	}
+	if adapted := atomicUpdaterOperatorAdapter(lambdaExpr, expectedType, executionAware, ctx); adapted != nil {
+		return adapted
+	}
 	if isExternalIterableType(expectedType, ctx) {
 		if !executionAware {
 			lambdaExpr = iterationPlainFactoryCallback(lambdaExpr, ctx)
@@ -10279,8 +10311,8 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 		// Every Java assignment expression has the type of its left-hand side,
 		// including compound assignments whose operation is promoted and then
 		// implicitly narrowed back to the target type.
-		if node.ChildCount() > 0 {
-			return inferExprJavaType(node.ChildByFieldName("left"), ctx, source, origins...)
+		if left, _, _, valid := assignmentExpressionNodes(node, source); valid {
+			return inferExprJavaType(left, ctx, source, origins...)
 		}
 		return "", false
 	case "this":

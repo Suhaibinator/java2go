@@ -441,6 +441,18 @@ func ObjectView[T any](value any, requested TypeID) T {
 	if (!ok || !JavaTypeAssignable(actual, requested)) && !nativeJavaInterfaceAssignable(value, requested) {
 		panic(NewClassCastException(fmt.Sprintf("Java value %s is not assignable to %s", actual, requested)))
 	}
+	// A Java SAM's direct Go shape may expose a public source wrapper whose
+	// execution companion has a collision-safe name. The declaration's explicit
+	// native view binds the exact implementation and preserves allocation identity.
+	if isNativeFunctionalTypeID(requested) {
+		if carrier, ok := value.(JavaObjectInfoCarrier); ok {
+			if info := carrier.JavaObjectInfo(); info != nil {
+				if view, ok := info.resolveView(requested).(T); ok {
+					return view
+				}
+			}
+		}
+	}
 	if direct, ok := value.(T); ok {
 		return direct
 	}

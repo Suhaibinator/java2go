@@ -1,0 +1,5 @@
+literal:0
+factory:0
+new:1
+value:4
+same:7:1

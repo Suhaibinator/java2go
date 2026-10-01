@@ -100,7 +100,7 @@ func sourceReflectionJavaDeclarationScope(scope *symbol.ClassScope) *symbol.Clas
 }
 
 func sourceReflectionFieldAccessors(scope *symbol.ClassScope, ctx Ctx) []ast.Decl {
-	if !sourceUsesReflection() || scope == nil || scope.IsInterface || scope.IsEnum {
+	if !sourceUsesReflection() || scope == nil || scope.IsInterface {
 		return nil
 	}
 	var out []ast.Decl
@@ -112,6 +112,11 @@ func sourceReflectionFieldAccessors(scope *symbol.ClassScope, ctx Ctx) []ast.Dec
 		receiver := ast.NewIdent("receiver")
 		getter := &ast.FuncDecl{Name: ast.NewIdent(sourceReflectionFieldAccessorName(scope, field, false)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{receiver}, Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx)}}}, Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: storage}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(symbol.GoIdentifier(field.Name))}}}}}}
 		setter := &ast.FuncDecl{Name: ast.NewIdent(sourceReflectionFieldAccessorName(scope, field, true)), Recv: getter.Recv, Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("value")}, Type: storage}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(symbol.GoIdentifier(field.Name))}}, Tok: token.ASSIGN, Rhs: []ast.Expr{ast.NewIdent("value")}}}}}
+		if volatileFieldDefinition(field) {
+			backing := &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(symbol.GoIdentifier(field.Name))}
+			getter.Body.List = []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{volatileFieldLoad(backing, storage, classScopeCtx(scope, ctx), field, scope)}}}
+			setter.Body.List = []ast.Stmt{volatileFieldStoreStmt(field, backing, ast.NewIdent("value"), classScopeCtx(scope, ctx))}
+		}
 		out = append(out, getter, setter)
 	}
 	return out
@@ -149,9 +154,12 @@ func sourceReflectionUnsupportedType(ctx Ctx) ast.Expr {
 // Fields remain in the parser's source/declarator order; inherited fields belong
 // to their own ClassDescriptor and are not flattened into this class.
 func sourceReflectionFields(scope *symbol.ClassScope, ctx Ctx) []ast.Expr {
+	return sourceReflectionFieldsForFields(scope, scope.Fields, ctx)
+}
+func sourceReflectionFieldsForFields(scope *symbol.ClassScope, fields []*symbol.Definition, ctx Ctx) []ast.Expr {
 	declaring := classScopeCtx(sourceReflectionJavaDeclarationScope(scope), ctx)
 	var out []ast.Expr
-	for _, field := range scope.Fields {
+	for _, field := range fields {
 		if !sourceReflectionDeclaredField(scope, field) {
 			continue
 		}
@@ -167,18 +175,25 @@ func sourceReflectionFields(scope *symbol.ClassScope, ctx Ctx) []ast.Expr {
 			generic = sourceReflectionUnsupportedType(ctx)
 		}
 		values = append(values, metadataKey("GenericType", &ast.UnaryExpr{Op: token.AND, X: generic}))
+		if volatileFieldDefinition(field) {
+			values = append(values, metadataKey("VolatileCell", volatileFieldDescriptorCallback(scope, field, ctx)))
+		}
 		if field.IsStatic {
-			value := ast.NewIdent(symbol.GoIdentifier(field.Name))
+			backing := ast.NewIdent(symbol.GoIdentifier(field.Name))
+			value := ast.Expr(backing)
+			if volatileFieldDefinition(field) {
+				value = volatileFieldLoad(backing, sourceReflectionFieldStorageType(scope, field, ctx), classScopeCtx(scope, ctx), field, scope)
+			}
 			values = append(values, metadataKey("StaticGet", &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{value}}}}}))
 			if !field.IsFinal {
 				storage := sourceReflectionFieldStorageType(scope, field, ctx)
 
 				convert := &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent("converted")}, Type: storage}}}}
 				assign := &ast.AssignStmt{Lhs: []ast.Expr{ast.NewIdent("converted")}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.TypeAssertExpr{X: ast.NewIdent("value"), Type: storage}}}
-				callback := &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("value")}, Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{convert, &ast.IfStmt{Cond: &ast.BinaryExpr{X: ast.NewIdent("value"), Op: token.NEQ, Y: ast.NewIdent("nil")}, Body: &ast.BlockStmt{List: []ast.Stmt{assign}}}, &ast.AssignStmt{Lhs: []ast.Expr{value}, Tok: token.ASSIGN, Rhs: []ast.Expr{ast.NewIdent("converted")}}}}}
+				callback := &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("value")}, Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{convert, &ast.IfStmt{Cond: &ast.BinaryExpr{X: ast.NewIdent("value"), Op: token.NEQ, Y: ast.NewIdent("nil")}, Body: &ast.BlockStmt{List: []ast.Stmt{assign}}}, volatileFieldStoreStmt(field, backing, ast.NewIdent("converted"), classScopeCtx(scope, ctx))}}}
 				values = append(values, metadataKey("StaticSet", callback))
 			}
-		} else if !scope.IsInterface && !scope.IsEnum {
+		} else if !scope.IsInterface {
 			values = append(values, metadataKey("Get", sourceReflectionGeneratedFieldCallback(scope, field, ctx, false)), metadataKey("Set", sourceReflectionGeneratedFieldCallback(scope, field, ctx, true)))
 		}
 		out = append(out, &ast.CompositeLit{Elts: values})
@@ -227,6 +242,7 @@ func sourceReflectionConstructorDescriptors(scope *symbol.ClassScope, ctx Ctx) a
 }
 
 func extendSourceReflectionMetadata(descriptor *ast.CompositeLit, scope *symbol.ClassScope, ctx Ctx) {
+	descriptor.Elts = append(descriptor.Elts, metadataKey("NestHost", sourceReflectionNestHostTypeID(scope, ctx)))
 	descriptor.Elts = append(descriptor.Elts, metadataKey("Modifiers", reflectionInteger(sourceReflectionModifiers(scope.Class, scope))), metadataKey("HasModifiers", ast.NewIdent("true")), metadataKey("Constructors", sourceReflectionConstructorDescriptors(scope, ctx)))
 	// Anonymous classes declare no Java type variables, even when their Go ABI
 	// carries captured enclosing binders. Preserve the original scope for all

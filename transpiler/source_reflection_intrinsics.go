@@ -38,4 +38,11 @@ func init() {
 		return selectorCall(recv, "SetExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...))
 	})
 	registerInstanceIntrinsicResultType("Field", "set", "void")
+	for name, result := range map[string]string{"getLong": "long", "setLong": "void"} {
+		goName := map[string]string{"getLong": "GetLongExecution", "setLong": "SetLongExecution"}[name]
+		registerInstanceIntrinsic("Field", name, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			return selectorCall(recv, goName, append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...))
+		})
+		registerInstanceIntrinsicResultType("Field", name, result)
+	}
 }

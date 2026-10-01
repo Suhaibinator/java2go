@@ -41,6 +41,11 @@ func identFromNode(node *sitter.Node, source []byte) *ast.Ident {
 
 // A Ctx is all the context that is needed to parse a single source file
 type Ctx struct {
+	preparedAnonymousReceiverRoot  *sitter.Node
+	preparedAnonymousReceiverExpr  ast.Expr
+	preparedAnonymousReceiverStamp anonymousReceiverEmissionStamp
+	// Exact field root being requested as backing storage, rather than a volatile read.
+	volatileStorageRoot *sitter.Node
 	// Project entrypoints retain their Java signature and receive argv from a launcher.
 	projectMode bool
 	// Immutable named-family analysis shared only within this resolved file render.
@@ -219,6 +224,8 @@ type anonymousClassKey struct {
 }
 
 type anonymousClassInfo struct {
+	emissionStamp              anonymousReceiverEmissionStamp
+	emissionStampValid         bool
 	structName                 string
 	scope                      *symbol.ClassScope
 	declaredFields             []*symbol.Definition
@@ -407,6 +414,9 @@ func transferTargetInsideBoundary(transfer *tryControlTransfer, boundary *sitter
 // pointing at the same things as the previous Ctx
 func (c Ctx) Clone() Ctx {
 	return Ctx{
+		preparedAnonymousReceiverRoot:       c.preparedAnonymousReceiverRoot,
+		preparedAnonymousReceiverExpr:       c.preparedAnonymousReceiverExpr,
+		preparedAnonymousReceiverStamp:      c.preparedAnonymousReceiverStamp,
 		projectMode:                         c.projectMode,
 		genericFamilies:                     c.genericFamilies,
 		callableSubclasses:                  c.callableSubclasses,

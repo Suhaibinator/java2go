@@ -107,6 +107,9 @@ func atomicUpdaterAccess(owner *Class, field *Field, caller TypeID) TypeID {
 	samePackage := atomicUpdaterPackage(id) == atomicUpdaterPackage(caller)
 	allowedClass := caller == id || samePackage || owner.GetModifiers()&1 != 0
 	allowedMember := mods&1 != 0 || caller == id
+	if mods&2 != 0 && samePackage && declaredJavaNestMates(caller, id) {
+		allowedMember = true
+	}
 	if mods&2 == 0 && samePackage {
 		allowedMember = true
 	}

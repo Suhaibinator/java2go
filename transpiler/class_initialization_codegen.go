@@ -163,11 +163,7 @@ func orderedStaticInitializationStatements(body *sitter.Node, source []byte, ctx
 				valueCtx.expectedTypeRoot = valueNode
 				value := ParseExpr(valueNode, source, valueCtx)
 				value = coerceArgumentToExpectedType(value, valueNode, fieldDefinition.OriginalType, valueCtx, source)
-				statements = append(statements, &ast.AssignStmt{
-					Lhs: []ast.Expr{&ast.Ident{Name: fieldDefinition.Name}},
-					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{value},
-				})
+				statements = append(statements, volatileFieldStoreStmt(fieldDefinition, &ast.Ident{Name: fieldDefinition.Name}, value, ctx))
 			}
 		case "static_initializer":
 			staticCtx := ctx.Clone()

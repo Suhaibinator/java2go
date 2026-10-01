@@ -179,12 +179,10 @@ func replayedMethodReturnStmt(ctx Ctx, hasValue bool, valueName string) *ast.Ret
 // assignments deliberately do not use this path: Java checks and saves their
 // old array component before evaluating the right-hand side.
 func lowerSimpleArrayAssignmentCall(node *sitter.Node, source []byte, ctx Ctx) (ast.Expr, bool) {
-	if node == nil || node.Type() != "assignment_expression" || node.ChildCount() < 3 {
+	lhsNode, operatorNode, rhsNode, valid := assignmentExpressionNodes(node, source)
+	if !valid {
 		return nil, false
 	}
-	lhsNode := node.ChildByFieldName("left")
-	operatorNode := node.ChildByFieldName("operator")
-	rhsNode := node.ChildByFieldName("right")
 	if lhsNode == nil || lhsNode.Type() != "array_access" || operatorNode == nil || operatorNode.Content(source) != "=" || rhsNode == nil {
 		return nil, false
 	}
@@ -348,13 +346,10 @@ func enhancedForReferenceElementView(
 // staged fallback so their address, old value, and RHS keep Java evaluation
 // order.
 func lowerSimpleLocalNumericCompoundAssignmentStmt(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt, bool) {
-	if node == nil || node.Type() != "assignment_expression" || node.ChildCount() < 3 || ctx.localScope == nil {
+	lhsNode, opNode, rhsNode, valid := assignmentExpressionNodes(node, source)
+	if !valid || ctx.localScope == nil {
 		return nil, false
 	}
-
-	lhsNode := node.ChildByFieldName("left")
-	opNode := node.ChildByFieldName("operator")
-	rhsNode := node.ChildByFieldName("right")
 	if lhsNode == nil || lhsNode.Type() != "identifier" || opNode == nil || rhsNode == nil {
 		return nil, false
 	}
@@ -478,6 +473,7 @@ func isSideEffectFreeCompoundAssignmentRHS(node *sitter.Node) bool {
 }
 
 func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
+	ctx = prepareAnonymousFieldReceiver(node, source, ctx)
 	switch node.Type() {
 	case "assert_statement":
 		return parseAssertionStatement(node, source, ctx)
@@ -515,10 +511,17 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		}
 		return declaration
 	case "assignment_expression":
+		lhsNode, opNode, rhsNode, valid := assignmentExpressionNodes(node, source)
+		if !valid {
+			return &ast.BadStmt{}
+		}
+		if lowered, ok := lowerVolatileFieldAssignment(node, source, ctx); ok {
+			return &ast.ExprStmt{X: lowered}
+		}
 		if lowered, ok := lowerStaticFieldAssignment(node, source, ctx); ok {
 			return &ast.ExprStmt{X: lowered}
 		}
-		operator := node.ChildByFieldName("operator").Content(source)
+		operator := opNode.Content(source)
 		// Compound assignment in Java is not just Go's corresponding assignment
 		// token: String += converts arbitrary operands, arithmetic narrows back to
 		// the target type, and the target is evaluated exactly once. Reuse the
@@ -534,8 +537,6 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 			return &ast.ExprStmt{X: call}
 		}
 
-		lhsNode := node.ChildByFieldName("left")
-		rhsNode := node.ChildByFieldName("right")
 		assignVar := ParseExpr(lhsNode, source, ctx)
 		rhsCtx := ctx.Clone()
 		if lhsJavaType, ok := inferExprJavaType(lhsNode, ctx, source); ok {
@@ -556,6 +557,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		operandNode, operatorNode, _ := javaUpdateExpressionParts(node)
 		if operandNode == nil || operatorNode == nil {
 			return &ast.BadStmt{}
+		}
+		if _, ok := resolveVolatileFieldAccess(operandNode, source, ctx); ok {
+			return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
 		}
 		if _, ok := resolveStaticFieldAccess(operandNode, source, ctx); ok {
 			return &ast.ExprStmt{X: ParseExpr(node, source, ctx)}
@@ -1247,7 +1251,7 @@ func javaIdentifierIsRead(node *sitter.Node, source []byte) bool {
 			return false
 		}
 	case "assignment_expression":
-		if sameNode(parent.ChildByFieldName("left")) && parent.ChildByFieldName("operator") != nil && parent.ChildByFieldName("operator").Content(source) == "=" {
+		if left, operator, _, valid := assignmentExpressionNodes(parent, source); valid && sameNode(left) && operator.Content(source) == "=" {
 			return false
 		}
 	case "field_access":

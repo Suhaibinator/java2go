@@ -55,7 +55,7 @@ func sourceFunctionContract(scope *symbol.ClassScope, ctx Ctx) []string {
 func generateFunctionSAMBridgeDecls(ctx Ctx) []ast.Decl {
 	scope := ctx.currentClass
 	contract := sourceFunctionContract(scope, ctx)
-	if len(contract) != 2 || scope.IsInterface {
+	if len(contract) != 2 || scope.IsInterface || len(sourceNativeFunctionalContracts(scope, ctx)) > 1 {
 		return nil
 	}
 	var method *symbol.Definition

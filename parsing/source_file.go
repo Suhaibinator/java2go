@@ -32,6 +32,15 @@ func (file *SourceFile) ParseAST() error {
 		return err
 	}
 
+	if parserSource, repairs := parenthesizedAssignmentParserSource(tree.RootNode(), file.Source); len(repairs) != 0 {
+		repaired, repairError := parser.ParseCtx(context.Background(), nil, parserSource)
+		if repairError != nil {
+			return repairError
+		}
+		if parenthesizedAssignmentsRecovered(repaired.RootNode(), file.Source, repairs) {
+			tree = repaired
+		}
+	}
 	file.Ast = tree.RootNode()
 	return nil
 }

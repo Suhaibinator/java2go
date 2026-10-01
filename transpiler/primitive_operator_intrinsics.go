@@ -20,13 +20,18 @@ func init() {
 		registerIntrinsicOwner(owner, true)
 		builtinFunctionalInterfaces[spec.name] = spec.signature
 		intrinsicFunctionalMethodNames[spec.name] = spec.method
+		registerInstanceIntrinsicResultType(spec.name, spec.method, spec.signature.resultType)
+		// Preserve the published primitive signature/result metadata; only its
+		// legacy function invocation loses to a declared native object contract.
+		if _, native := nativeFunctionalContract(spec.name, nil); native {
+			continue
+		}
 		registerInstanceIntrinsic(spec.name, spec.method, func(receiver ast.Expr, arguments []ast.Expr, ctx Ctx) ast.Expr {
 			if len(arguments) != len(spec.signature.parameterTypes) {
 				return nil
 			}
 			return &ast.CallExpr{Fun: receiver, Args: arguments}
 		})
-		registerInstanceIntrinsicResultType(spec.name, spec.method, spec.signature.resultType)
 	}
 }
 
@@ -44,6 +49,11 @@ func primitiveOperatorSAMSignature(javaType string, ctx Ctx) (builtinFunctionalI
 }
 
 func primitiveOperatorTypeExpr(javaType string, ctx Ctx) ast.Expr {
+	// Keep nominal object views and consuming Execution at a native SAM
+	// boundary; only families without a native model use the func fallback.
+	if nativeFunctionalFamily(javaType, ctx) != "" {
+		return nil
+	}
 	spec, known := primitiveOperatorSAMSignature(javaType, ctx)
 	if !known {
 		return nil

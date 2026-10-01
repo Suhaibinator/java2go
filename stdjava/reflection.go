@@ -11,9 +11,12 @@ import (
 // the transpiler. Callbacks retain Java initialization and execution semantics.
 // Descriptors are registered without constructing or initializing Java classes.
 type ClassDescriptor struct {
-	SimpleName          string
-	HasSimpleName       bool
-	Type                TypeID
+	SimpleName    string
+	HasSimpleName bool
+	Type          TypeID
+	// NestHost is the outermost parsed declaration, independent of binary spelling.
+	// Empty metadata preserves the legacy single-class nest.
+	NestHost            TypeID
 	Interface           bool
 	Enum                bool
 	InheritedAnnotation bool

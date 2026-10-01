@@ -14,6 +14,9 @@ import (
 // Keep their parameter types available before parsing arguments: changing only
 // a Go lambda's signature afterwards cannot insert boxing into its body.
 func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, staticClass, method string, ctx Ctx, source []byte) []string {
+	if expected := functionalDefaultExpected(invocation, ctx, source); expected != nil {
+		return expected
+	}
 	count := invocationArgumentCount(invocation)
 	result := make([]string, count)
 	set := func(types ...string) []string {
@@ -25,6 +28,9 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 		return t
 	}
 	if class := staticClass; class != "" {
+		if expected := atomicFieldUpdaterExpectedArguments(class, method, count, nil, ctx, source); expected != nil {
+			return expected
+		}
 		if derive := staticIntrinsicExpectedArguments[intrinsicKey{class, method}]; derive != nil {
 			return derive(invocation, ctx, source)
 		}
@@ -128,6 +134,9 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 	class, ok := intrinsicReceiverTypeName(object, ctx, source)
 	if !ok {
 		return result
+	}
+	if expected := atomicFieldUpdaterExpectedArguments(class, method, count, object, ctx, source); expected != nil {
+		return expected
 	}
 	if class == "Path" && method == "resolve" {
 		return pathResolveReferenceExpected(invocation, ctx, source)
@@ -753,7 +762,7 @@ func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, sta
 		if !callback {
 			if _, shaped := lookupLambdaShape(receiver, method); shaped {
 				actual, _ := inferExprJavaType(arg, ctx, source)
-				if isExternalFunctionType(actual, ctx) {
+				if nativeFunctionalFamily(actual, ctx) != "" {
 					callback, callbackType = true, actual
 				}
 			}
@@ -767,8 +776,21 @@ func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, sta
 				}
 			}
 		}
-		if callback && isExternalFunctionType(callbackType, ctx) {
-			parsed = functionCallbackExpr(parsed, callbackType, ctx)
+		if callback {
+			if isExternalFunctionType(callbackType, ctx) {
+				parsed = functionCallbackExpr(parsed, callbackType, ctx)
+			}
+			if family := nativeFunctionalFamily(callbackType, ctx); family == "BiFunction" || family == "Consumer" {
+				_, arguments := parseJavaTypeString(callbackType)
+				contract, ok := nativeFunctionalContract(family, arguments)
+				if ok {
+					types := []ast.Expr{}
+					for _, argument := range contract.arguments {
+						types = append(types, javaTypeStringToGoTypeExpr(argument, inScopeTypeParameters(ctx), ctx))
+					}
+					parsed = stdjavaGenericCall(ctx, family+"CallbackExecution", types, []ast.Expr{intrinsicExecutionExpr(ctx), parsed})
+				}
+			}
 		}
 		args = append(args, parsed)
 	}

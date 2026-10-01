@@ -16,6 +16,14 @@ func dateTimeRuntimeTypeID(javaType string, ctx Ctx) (string, bool) {
 	return owner, ok && owner == pkg+"."+name
 }
 func dateTimeRuntimeTypeExpr(base string, ctx Ctx) (ast.Expr, bool) {
+	// A registered simple name can also select a foreign declaration. Only
+	// this family owns the decision to map or strictly refuse its Java owner.
+	owner, registered := canonicalIntrinsicOwner(base, ctx)
+	familyName := stripJavaQualifier(owner)
+	pkg, dateTimeFamily := dateTimePackages[familyName]
+	if !registered || ((!dateTimeFamily || owner != pkg+"."+familyName) && sqlDateRuntimeNames[owner] == "" && owner != "java.util.Locale.Category") {
+		return nil, false
+	}
 	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered && !intrinsicOwnerSupported(owner) {
 		reportUnsupported("JDK owner "+owner, nil, nil, ctx)
 		return nil, false

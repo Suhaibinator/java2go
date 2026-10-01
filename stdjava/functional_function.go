@@ -4,7 +4,10 @@ package stdjava
 // preserving the object keeps aliases, null and caller execution observable.
 type Function[T, R any] interface{ Apply(T) R }
 
-type FunctionFuncAdapter[T, R any] struct{ apply func(*Execution, T) R }
+type FunctionFuncAdapter[T, R any] struct {
+	*ObjectInfo
+	apply func(*Execution, T) R
+}
 
 func NewFunctionFuncAdapter[T, R any](apply func(*Execution, T) R) *FunctionFuncAdapter[T, R] {
 	return &FunctionFuncAdapter[T, R]{apply: apply}
@@ -19,7 +22,12 @@ func (f *FunctionFuncAdapter[T, R]) ApplyJava2goExecution(execution *Execution, 
 	ReferenceRequireNonNull(f)
 	return f.apply(execution, value)
 }
-func (*FunctionFuncAdapter[T, R]) JavaDynamicTypeID() TypeID { return "java.util.function.Function" }
+func (f *FunctionFuncAdapter[T, R]) JavaDynamicTypeID() TypeID {
+	if f.ObjectInfo != nil {
+		return f.DynamicType()
+	}
+	return "java.util.function.Function"
+}
 
 func CallFunctionExecution[T, R any](execution *Execution, function Function[T, R], value T) R {
 	ReferenceRequireNonNull(function)
@@ -38,3 +46,7 @@ func FunctionCallbackExecution[T, R any](execution *Execution, function Function
 	return func(value T) R { return CallFunctionExecution(execution, function, value) }
 }
 func init() { RegisterJavaType("java.util.function.Function", ObjectTypeID) }
+
+func NewFunctionSourceView[T, R any](info *ObjectInfo, apply func(*Execution, T) R) *FunctionFuncAdapter[T, R] {
+	return &FunctionFuncAdapter[T, R]{ObjectInfo: info, apply: apply}
+}

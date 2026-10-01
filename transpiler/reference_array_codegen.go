@@ -687,7 +687,7 @@ func sourceHierarchyUsesMostDerived(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil || scope.IsInterface || scope.IsEnum {
 		return false
 	}
-	return resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx)
+	return resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx) || len(sourceNativeFunctionalContracts(scope, ctx)) != 0
 }
 
 func classNeedsReferenceObjectInfo(scope *symbol.ClassScope, ctx Ctx) bool {
@@ -904,6 +904,9 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 			appendCase(javaClassBinaryName(interfaceScope), receiverExpr)
 		}
 	}
+	for _, contract := range sourceNativeFunctionalContracts(scope, ctx) {
+		appendCase("java.util.function."+contract.family, sourceNativeFunctionalViewExpr(scope, contract, receiverExpr, ctx))
+	}
 	cases = append(cases, &ast.CaseClause{Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}}})
 	viewMethod := &ast.FuncDecl{
 		Name: &ast.Ident{Name: generatedObjectViewMethod},
@@ -978,6 +981,9 @@ func syntheticReferenceRegistrationDecl(
 	}
 	if scope := syntheticSourceTextScope(structName, ctx); scope != nil {
 		for _, accessor := range sourceReflectionFieldAccessors(scope, classScopeCtx(scope, ctx)) {
+			ctx.addHoistedDecl(accessor)
+		}
+		for _, accessor := range volatileFieldAccessorDecls(scope, classScopeCtx(scope, ctx)) {
 			ctx.addHoistedDecl(accessor)
 		}
 		if metadata := sourceClassMetadataForTypeIDStmt(scope, dynamicID, classScopeCtx(scope, ctx)); metadata != nil {

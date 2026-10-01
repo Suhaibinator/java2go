@@ -9877,5 +9877,620 @@
     },
     "limitations": "Full Netty1212+8, originalCommons27, genuineGson118 and accumulated fullCI remain unaccepted. Checkpoint18 latest fully accepted round. Foundation100 passes earlier scoped96/native1479/600 but needed lint/default-test corrections; matching latest union required. No pending foundation/runtime/performance repair included here.",
     "resume": "Continue Sol-only campaign on exact new parent. Hunk-compose foundation100 preserving this syntax inventory; fresh96/600/80/46/default25/nativeCI/lint plusNetty121. Integrate independently reviewed collections/components and original269, repair inherited reflection/localclass markers and Object.equals aliases, complete bounds inference, genuineGson core, dependencygraph completeness. Commit AND push verified milestones."
+  },
+  "sol_progress96": {
+    "status": "ACCEPTED_SCOPED_FOUNDATION100_FULL_ROUND_UNACCEPTED",
+    "parent": "e160e6b5cd6fae2511c1509d2a6871aa100f74e7",
+    "source_manifest": {
+      "path": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source-manifest.json",
+      "sha256": "cd664e6980d55be0e4766ab7c963e80087e3c120dd9cf845645d5055a93f74d2",
+      "files": 2962
+    },
+    "production_verification_source": {
+      "path": "/private/tmp/java2go-sol-foundation95-netty-default-v7/source-manifest.json",
+      "sha256": "85fe07feb07723d19421ea186024f887a3e0fd6d3c67454e4c2d43e7debc646b",
+      "files": 2962
+    },
+    "formatting_only_successor": {
+      "terminal": "/private/tmp/java2go-root-foundation96-gofmt-v8/root-formatting-audit.json",
+      "sha256": "069892c61c25a29008fad6e87077a20e072fdd2ae0afac2f223abdc5770abeda",
+      "files5": [
+        {
+          "deterministic_gofmt": true,
+          "gofmt_idempotent": true,
+          "new_sha256": "6beb185b29f9bcef9b38629f18ffa89dbd8fc142541057578466fe0b68ece38d",
+          "old_sha256": "6428e0f7671d6352cfdfbf75f001815587cc224278dc9a5795f501a2bf590bfd",
+          "path": "parsing/parenthesized_assignment_contract_test.go"
+        },
+        {
+          "deterministic_gofmt": true,
+          "gofmt_idempotent": true,
+          "new_sha256": "1fc71a0f520df93e29b10b2bf1730fc1e663c3b8468ca5e8c4a794715fd35681",
+          "old_sha256": "1c444b1809b5d782acaed631cece990f0ebdaee96d567da5270a5707a7f78fc7",
+          "path": "transpiler/primitive_native_contract_precedence_tdd_test.go"
+        },
+        {
+          "deterministic_gofmt": true,
+          "gofmt_idempotent": true,
+          "new_sha256": "e8af1b43218db9eb14f0e7250ebca0f62004c0d9219620da4571f3d7e6c7c469",
+          "old_sha256": "a3db21867dc5836c48f61ed81e862a79db175245af37723b8d357ec92edcb89d",
+          "path": "transpiler/primitive_native_result_metadata_tdd_test.go"
+        },
+        {
+          "deterministic_gofmt": true,
+          "gofmt_idempotent": true,
+          "new_sha256": "4245b74803dc9d478c160467dd8e3e0d989a60fc3ab827d71417df026753f36e",
+          "old_sha256": "12886d6214b84d43e677e1dd9e1a45a8a19c98084d5880c808c5b161a8f96020",
+          "path": "transpiler/volatile_comment_assignment_review_test.go"
+        },
+        {
+          "deterministic_gofmt": true,
+          "gofmt_idempotent": true,
+          "new_sha256": "ceae98af502c3939540180930c88368d9fc1c3a6c9f6e48472285aeafef49bc6",
+          "old_sha256": "663ce8bdc7f909ba9e902cc2091c6ca7c30b652187889736b4e68d10fcb63577",
+          "path": "transpiler/volatile_metadata_demand_cost_tdd_test.go"
+        }
+      ],
+      "composition_sha256": "b7bfcca8e9162ffe68b1641d53313bfb8c4d6f470790fe3247bd5174f71c83ec",
+      "production_bytes_unchanged": true
+    },
+    "changes100": {
+      "parsing/parenthesized_assignment.go": {
+        "before": null,
+        "after": "d190e8d342ff595f6da24931a256127e66a68cee0b25ca6e594e2bf27b1c7494",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/parsing/parenthesized_assignment.go"
+      },
+      "parsing/parenthesized_assignment_contract_test.go": {
+        "before": null,
+        "after": "6beb185b29f9bcef9b38629f18ffa89dbd8fc142541057578466fe0b68ece38d",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/parsing/parenthesized_assignment_contract_test.go"
+      },
+      "parsing/source_file.go": {
+        "before": "76cdc053e6e17fa62c2e2a9a49661ce4426423d9715b1264f1892f71207f7941",
+        "after": "f2274602ee1081b823747d5e6461f7740c9d6247a39e76ac548a88b147e130b1",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/parsing/source_file.go"
+      },
+      "stdjava/atomic_field_updater.go": {
+        "before": "0ccd4dee85727ae4b4d6f7f1809a58fcb02d5d0a369f3a9e7ad5339178b026bf",
+        "after": "8c8067f622d418b22f91be0efdd53fc670ad216b9c95d301e00613aa9fdd76b8",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/atomic_field_updater.go"
+      },
+      "stdjava/atomic_field_updater_nest_host_test.go": {
+        "before": null,
+        "after": "5a035f727175b06fcd6689d61c8a2ea5f6757fdb3414f8be69c13897b21ea65d",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/atomic_field_updater_nest_host_test.go"
+      },
+      "stdjava/atomic_updater_factory_string.go": {
+        "before": null,
+        "after": "f154d6c75059c723b1807a88372d3489e9de800649740a6cd91bb32e494a72f6",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/atomic_updater_factory_string.go"
+      },
+      "stdjava/atomic_updater_functions.go": {
+        "before": null,
+        "after": "a0a7f6b863e2028e302ff61849c5fc56485d16738ec8e4508cbb06d76777cdb8",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/atomic_updater_functions.go"
+      },
+      "stdjava/concurrent.go": {
+        "before": "4588dbabde61bb40ee572f9d40f37282fe411451bf5f79d950657b289ee1b274",
+        "after": "129367f9294798bf811208bb17ace0b06e54a3ccb7fb9d7ad1a6ad491fe4b044",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/concurrent.go"
+      },
+      "stdjava/functional_function.go": {
+        "before": "649f6646c9e41f5111445f7c3b763888dee6242d64ecc2aa8d86274bf78b48a0",
+        "after": "33b85b7edf1b1e8b749f297455e929b05e9a24e3e579f6b710ab453dff2fd83e",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/functional_function.go"
+      },
+      "stdjava/functional_native_views.go": {
+        "before": null,
+        "after": "5330a8213529e80e08ade3e14bc7668cbb6a48da0ae8da9c9341f32ea884fe65",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/functional_native_views.go"
+      },
+      "stdjava/operator_native_contract_tdd_test.go": {
+        "before": null,
+        "after": "05d7132364d267f0b0d0f59fc60141b50fca8645d89f9237ca10909f25e5ff35",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/operator_native_contract_tdd_test.go"
+      },
+      "stdjava/reference_arrays.go": {
+        "before": "fb2dd58960626e2dc19fc5a7416961677c7fdd87a05a7cb4c4bad9799c4e56eb",
+        "after": "1a0c3db25ab286046bda875e080660648d9b8268827fa9eaf67f395edcb0129b",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/reference_arrays.go"
+      },
+      "stdjava/reflection.go": {
+        "before": "741333ecdd6ee035221ecb6418756193d814b1ee5dcb9141182d8e6b0f3c2d3e",
+        "after": "1ae249c5ce92d6c01c449860756c7add22e5f45f9643cce6ca58b01a21a56406",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/reflection.go"
+      },
+      "stdjava/reflection_fields_metadata.go": {
+        "before": "5fd755f74f3e153b5be368cb6405f53e4bb75a3db5303340f379b226bf995925",
+        "after": "18d0e727b1b3e1feae4c79e1515ac2f6c1b6be4fd95484eda058702bb562a5f7",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/reflection_fields_metadata.go"
+      },
+      "stdjava/reflection_long_access.go": {
+        "before": null,
+        "after": "554f30a56695ad0d082edc485d3b065ffd5a5b13e1d7226b5392f42c636d01d3",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/reflection_long_access.go"
+      },
+      "stdjava/reflection_long_access_tdd_test.go": {
+        "before": null,
+        "after": "18f3f1daf7650263c9449ea4a3fe1d2cd7c736c88a38eb2c51a186a0e9906443",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/reflection_long_access_tdd_test.go"
+      },
+      "stdjava/reflection_nest.go": {
+        "before": null,
+        "after": "e817993fdb21f3dde73f87535a0361ceb007549126fcd8ee5d2d23d82035290b",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/reflection_nest.go"
+      },
+      "stdjava/thread_canonical_type_tdd_test.go": {
+        "before": null,
+        "after": "7cf0a7ee64d06b1d95bce5c7d4b3ae5a6aab3f7045766b11effad8b858d7cca7",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/thread_canonical_type_tdd_test.go"
+      },
+      "stdjava/thread_yield.go": {
+        "before": null,
+        "after": "952737509379bef60cf38b8cfaf53ac9c3c4f227b7e7a9c036a8280cd1e31155",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/thread_yield.go"
+      },
+      "stdjava/thread_yield_test.go": {
+        "before": null,
+        "after": "88e3bfe4f46ed538a8b1851c4b681f9c049411f7f2d6a53bad8c8e0678ec0643",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/stdjava/thread_yield_test.go"
+      },
+      "transpiler/anonymous_field_receiver.go": {
+        "before": null,
+        "after": "bf0dae9278f6fef8b4685bb9ceb7eed89fce3e3402098d3e6368fba870174934",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/anonymous_field_receiver.go"
+      },
+      "transpiler/anonymous_receiver_context_tdd_test.go": {
+        "before": null,
+        "after": "28ea3f08bad7166177bf0c9dc9aac11c6e92d59658e2cdba04baa7e634f09adf",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/anonymous_receiver_context_tdd_test.go"
+      },
+      "transpiler/anonymous_volatile_field_tdd_test.go": {
+        "before": null,
+        "after": "d07703fd99fd00c14e0b041a5cb090ce8e07124f4ae521b4d9dd22f806f5c8bc",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/anonymous_volatile_field_tdd_test.go"
+      },
+      "transpiler/anonymous_volatile_generation_tdd_test.go": {
+        "before": null,
+        "after": "5ebdd0b08bef5edf3d58d75e1f4774dbe5ea789c422b118069642798d8dfcc7a",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/anonymous_volatile_generation_tdd_test.go"
+      },
+      "transpiler/assignment_nodes.go": {
+        "before": null,
+        "after": "0ed231890ea32715a9d80502dfbba342449162b17428f3814b441d29ba3d5df3",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/assignment_nodes.go"
+      },
+      "transpiler/atomic_updater_operator_lowering.go": {
+        "before": null,
+        "after": "5de3d7a5f7fa8badd9470f1509d45032e138a2ac580cffa50fc5802be9528ff1",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/atomic_updater_operator_lowering.go"
+      },
+      "transpiler/atomic_updater_representation_witness_generation_tdd_test.go": {
+        "before": null,
+        "after": "a0950955af7df5b4859d409e6fb21c8544ca8164828cb489d9ae8760494c20d6",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/atomic_updater_representation_witness_generation_tdd_test.go"
+      },
+      "transpiler/atomic_updater_witness_generation_tdd_test.go": {
+        "before": null,
+        "after": "02390762dc09b85a716ccc8275f6611f2f0b158640d7bab6cf48b94d1a2d20e7",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/atomic_updater_witness_generation_tdd_test.go"
+      },
+      "transpiler/boxed_type_hierarchy.go": {
+        "before": "5edffa017bfa667b004f08307abc38fa592dcdd4f72d77c1612f40f622211245",
+        "after": "848c2cfd09573946223f29cfbcad779766598a635c7841f2b9222f29992e8caa",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/boxed_type_hierarchy.go"
+      },
+      "transpiler/builtin_interface_inheritance.go": {
+        "before": "85b23f1023303d9faf8fae870b68b1837ad301b11f10187fa1bc3a257d5d3fc1",
+        "after": "ae6c9432441377392941ef9e769c2d8776fffcbc33da2c978cd7a11001362bf3",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/builtin_interface_inheritance.go"
+      },
+      "transpiler/campaign_volatile_nested_parentheses_test.go": {
+        "before": null,
+        "after": "c43b6e64210f619907e35e253cbfa9cb5e6e811cc3193c305963731920d380c2",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/campaign_volatile_nested_parentheses_test.go"
+      },
+      "transpiler/class_initialization_codegen.go": {
+        "before": "90c4a84a384d04c9fdca9fad2a72c23341ad2162a97ce92cdd250bf23c094443",
+        "after": "1643f57daa1a9dd2feff40107a4035c4ff5a107e45264de6a2f24a1dd72fbcc4",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/class_initialization_codegen.go"
+      },
+      "transpiler/declaration.go": {
+        "before": "376963fee3eaed089f933f070222c29630473d9af2d05a1ab1bf4959d463a415",
+        "after": "10e071acc7635975b1bd3634fc65dc1c00a4d276db6c5715a4e7a5645ff90500",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/declaration.go"
+      },
+      "transpiler/enum_reference_codegen.go": {
+        "before": "1cca5951d11d5140fbe70e0e71b53b42cf5870bcdafd4b8d2c816916e5a90acc",
+        "after": "99f1e09879c29b3c0bb521ab9824d5a28efc075c540da93eed0b97ed3e575b33",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/enum_reference_codegen.go"
+      },
+      "transpiler/expression.go": {
+        "before": "da481671a714e626052fe2e5852fcfd7af7f89657b3e16be8786acc6e137f512",
+        "after": "70f78889da85748887a0f63b64b754fd2877eae90bae7109da9f601874a7e154",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/expression.go"
+      },
+      "transpiler/function_sam_codegen.go": {
+        "before": "88434c21a3de2ca3a2311d76222a2bed78e7f03c320627e7a5a92b973f9d97de",
+        "after": "5613199158970670f165b948d1a223b433bbd0560b79faeee8c40e2c2659e2ab",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/function_sam_codegen.go"
+      },
+      "transpiler/functional_default_lowering.go": {
+        "before": null,
+        "after": "cb648ecff30c23c31dba43fe598d1864c1b7caa623f3086b82b5a7f312dbd517",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/functional_default_lowering.go"
+      },
+      "transpiler/functional_source_views.go": {
+        "before": null,
+        "after": "50e42752538adbc72fd607760ba4afd7709792a048c1c0344a2cad03127ec694",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/functional_source_views.go"
+      },
+      "transpiler/intrinsic_signatures.go": {
+        "before": "77dd3e686acae9eaa70317466bb46188862e8d4396f1e920eb04d074a211f59d",
+        "after": "8eead5bee856277f0df6b5273da116b7b09947dde8f4c2980a0b361ccdfefc71",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/intrinsic_signatures.go"
+      },
+      "transpiler/intrinsics_atomic_field_updater.go": {
+        "before": null,
+        "after": "e4b1829c04cb44466f2c92401bc6cf372aedf06ebda0f1488d102f7501277881",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/intrinsics_atomic_field_updater.go"
+      },
+      "transpiler/intrinsics_atomic_field_updater_tdd_test.go": {
+        "before": null,
+        "after": "dd7179fa933845866692c27721ea4f2f366fd2ab74b04a8314fa50c4c8f1fa02",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/intrinsics_atomic_field_updater_tdd_test.go"
+      },
+      "transpiler/intrinsics_concurrency.go": {
+        "before": "4af7fb226c4b5478a8ae92072afedbb519ed52376257f0c18de507f530e726e7",
+        "after": "4d96d30b1994d9ebd9a8316fc8c99762f1f8a3e43a78e042a6da33972029d283",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/intrinsics_concurrency.go"
+      },
+      "transpiler/intrinsics_datetime.go": {
+        "before": "4b4f0c91eafa3582e5d9e45df7df3d597b176efc199e1279ad6358362278a1f2",
+        "after": "6065910eacda55d04f4efecd7131ef06302ae24791cb007bb246663de8b2a47b",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/intrinsics_datetime.go"
+      },
+      "transpiler/intrinsics_function.go": {
+        "before": "158bc1a4003e4cbad8d4d1cee5c7bf25c602caa510bbebf61ba124a796c54987",
+        "after": "477613739c4aefb5bffebca07e7bced056fc784fd09e7ef3e7af2b7687d1821e",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/intrinsics_function.go"
+      },
+      "transpiler/intrinsics_thread_yield.go": {
+        "before": null,
+        "after": "2664f52a27ea326bc44ce636f5aa45f7964080ada7f9a07e38558d54f5902a69",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/intrinsics_thread_yield.go"
+      },
+      "transpiler/native_functional_nominal_transport_generation_tdd_test.go": {
+        "before": null,
+        "after": "a4a8775fa3e786a56199ebd5d1d91bfed8eb21b28f6234489de4682ac26a25b5",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/native_functional_nominal_transport_generation_tdd_test.go"
+      },
+      "transpiler/native_functional_nominal_transport_tdd_test.go": {
+        "before": null,
+        "after": "dc30b12a529d2c9aec8434c0f07dbc7a8efa4a0014d167fac58bd87cb9e9d06d",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/native_functional_nominal_transport_tdd_test.go"
+      },
+      "transpiler/operator_default_parent_inference_tdd_test.go": {
+        "before": null,
+        "after": "bca1f5a9a05d05d0c32637d92db30a57796d0da87c3a0ab2aa27ad8d2dfcb260",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/operator_default_parent_inference_tdd_test.go"
+      },
+      "transpiler/operator_functional_lowering_tdd_test.go": {
+        "before": null,
+        "after": "32dc64a3fc45914fbb28fb0c1ceb4ac60ac0799dbc3de5fd9ad00d52b1e6e965",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/operator_functional_lowering_tdd_test.go"
+      },
+      "transpiler/operator_functional_witness_generation_tdd_test.go": {
+        "before": null,
+        "after": "a9b3c3077add03e375b64f32c3c5c8f8d7ceb659af4d8c0f9091fd880154fd20",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/operator_functional_witness_generation_tdd_test.go"
+      },
+      "transpiler/primitive_native_contract_precedence_tdd_test.go": {
+        "before": null,
+        "after": "1fc71a0f520df93e29b10b2bf1730fc1e663c3b8468ca5e8c4a794715fd35681",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/primitive_native_contract_precedence_tdd_test.go"
+      },
+      "transpiler/primitive_native_result_metadata_tdd_test.go": {
+        "before": null,
+        "after": "e8af1b43218db9eb14f0e7250ebca0f62004c0d9219620da4571f3d7e6c7c469",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/primitive_native_result_metadata_tdd_test.go"
+      },
+      "transpiler/primitive_operator_intrinsics.go": {
+        "before": "b6a3ecf86cbd6ab3f5213122d781152879b3cc294cc3a5d6151fae43bf500546",
+        "after": "1240128753d56ac5fa9ea0e5ee7e2a19a9bc2b3ab8ba84d25fade401967c90ca",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/primitive_operator_intrinsics.go"
+      },
+      "transpiler/reference_array_codegen.go": {
+        "before": "81dcd25fc662c6e180d1385433146de8f6f6d647b368dcf2abf17e3bb40ee9be",
+        "after": "5f07f4cf3f0b94906e4c0ee97c8ab75e0fcd419f60f8b93e66a89bfc7c3add53",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/reference_array_codegen.go"
+      },
+      "transpiler/runtime_metadata.go": {
+        "before": "326e79f0ec21a223b6e1d5a1ad892cf839d05f25693557bfaf0bc8f50fe64c2e",
+        "after": "032841240eda55318fd0336e17f3c03bc3073ee28cd7be4c8a70e932e3ae1a71",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/runtime_metadata.go"
+      },
+      "transpiler/source_reflection_intrinsics.go": {
+        "before": "2fae6348a18b35eb21f1af06516b76e459048c53b6cbe24df9e2714dbffb2351",
+        "after": "6d4714fa205ca568bc6f177223d48a09dfe4c754ae74875d0e60d819c4addf4f",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/source_reflection_intrinsics.go"
+      },
+      "transpiler/source_reflection_metadata.go": {
+        "before": "cf1686a29281e891ab16e9d62de85a01a568a2e4789bea8736200215c545b055",
+        "after": "9b9eefaa917fc74f40578c4f7eb0b1bdcea0b85a1222461d4f2aaa1891346d7b",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/source_reflection_metadata.go"
+      },
+      "transpiler/source_reflection_nest.go": {
+        "before": null,
+        "after": "02e0acc7cd8d152692ef0acf2375760c8645b5508d75b77bcac802ef986171e7",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/source_reflection_nest.go"
+      },
+      "transpiler/source_reflection_nest_test.go": {
+        "before": null,
+        "after": "e6ec3a07d7ef559eba6213bfc5cba7b7a37ea78fefa3cb3d9cd7fee23db6fad6",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/source_reflection_nest_test.go"
+      },
+      "transpiler/statement.go": {
+        "before": "016d6241d065fcdb8d14a5b822e597326d92feef7d07d0654c60abba253d4dc2",
+        "after": "aad1ee091e279241ad7659cf167aa2eec53430a72e71ae4af588879bda73027b",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/statement.go"
+      },
+      "transpiler/static_field_codegen.go": {
+        "before": "e34832085000d344572ed04db5f5025a81a425717b973707c24478b45f629c17",
+        "after": "69b32698f9dc876f56bd6a7497a5bb34114b3b28a32d2a85d327fa7fb09ab265",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/static_field_codegen.go"
+      },
+      "transpiler/strict_datetime_family_routing_tdd_test.go": {
+        "before": null,
+        "after": "b0016c5172050daca07c726f2e32937ab2e963f2fafdf14f3adbb50f17fc7816",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/strict_datetime_family_routing_tdd_test.go"
+      },
+      "transpiler/testdata/anonymous_volatile_prerequisite/AnonymousVolatileFieldWitness.java": {
+        "before": null,
+        "after": "a7971e48e9736c2d77ace70e5b9c90beec4fc01f6f74c4b77ced41c8c19753b1",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/anonymous_volatile_prerequisite/AnonymousVolatileFieldWitness.java"
+      },
+      "transpiler/testdata/atomic_representation_prerequisite/AtomicUpdaterArgumentOrderProbe.expected.txt": {
+        "before": null,
+        "after": "0ab16c6db50569e5a0f5c4603aae0ccbceaf00b43fa1bb7a0052040655ca4ea4",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/atomic_representation_prerequisite/AtomicUpdaterArgumentOrderProbe.expected.txt"
+      },
+      "transpiler/testdata/atomic_representation_prerequisite/AtomicUpdaterArgumentOrderProbe.java": {
+        "before": null,
+        "after": "120a10801174f20620a5888870175e4ca048b86602e082b4deb692842f8c1e5d",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/atomic_representation_prerequisite/AtomicUpdaterArgumentOrderProbe.java"
+      },
+      "transpiler/testdata/atomic_representation_prerequisite/AtomicUpdaterColdFactoryProbe.expected.txt": {
+        "before": null,
+        "after": "592abb1029652797bca7933943020a5d293ca81137596e2c4500ed08698ec634",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/atomic_representation_prerequisite/AtomicUpdaterColdFactoryProbe.expected.txt"
+      },
+      "transpiler/testdata/atomic_representation_prerequisite/AtomicUpdaterColdFactoryProbe.java": {
+        "before": null,
+        "after": "d4ac92ff2cb390c0e088652ae2391160caf1be6745cb7a46d4b2ec978bb3d91f",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/atomic_representation_prerequisite/AtomicUpdaterColdFactoryProbe.java"
+      },
+      "transpiler/testdata/atomic_updater_prerequisite/AtomicGeneratedOrderingWitness.expected.txt": {
+        "before": null,
+        "after": "0eada4e3bee49548ba407cac89d6fd5a1b1355141daea86e1711b5769efba72c",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/atomic_updater_prerequisite/AtomicGeneratedOrderingWitness.expected.txt"
+      },
+      "transpiler/testdata/atomic_updater_prerequisite/AtomicGeneratedOrderingWitness.java": {
+        "before": null,
+        "after": "856de162078e8f34dd0697698d1d651f20e7dd793a388ec2964a0b6ea9fe3fbc",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/atomic_updater_prerequisite/AtomicGeneratedOrderingWitness.java"
+      },
+      "transpiler/testdata/atomic_updater_prerequisite/AtomicGeneratedWitness.expected.txt": {
+        "before": null,
+        "after": "961ef35fc95a365769e08a1c98fbb4b65ab1fafaafc10fc1ef4a6c69caa3191d",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/atomic_updater_prerequisite/AtomicGeneratedWitness.expected.txt"
+      },
+      "transpiler/testdata/atomic_updater_prerequisite/AtomicGeneratedWitness.java": {
+        "before": null,
+        "after": "a0e972b95cebdb2e6c3658769698ddf1eab1b80b5266c38d8e77a245e5d64007",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/atomic_updater_prerequisite/AtomicGeneratedWitness.java"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/DefaultParentInferenceProbe.expected.txt": {
+        "before": null,
+        "after": "b2be7e2ab2a4d5da401c2a128d2fe4db2a882f3cf02a6ca1ec9608fdaac14751",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/DefaultParentInferenceProbe.expected.txt"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/DefaultParentInferenceProbe.java": {
+        "before": null,
+        "after": "f24b2b3d9b93beefcd3d30b6834ec810fec0a2693cc83fca747f98aa12edf3c1",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/DefaultParentInferenceProbe.java"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/MultipleSamViewsProbe.expected.txt": {
+        "before": null,
+        "after": "4c5e2dc2a1c2b0d4fd6dc56893047d3050cb43c80beedf8c4121a88c5e0b6e2e",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/MultipleSamViewsProbe.expected.txt"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/MultipleSamViewsProbe.java": {
+        "before": null,
+        "after": "d8abe6c496d4ce4b4924bcd75db895c879dfa57be8ba0772023fdc14cb66d155",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/MultipleSamViewsProbe.java"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/NominalSamTransportProbe.expected.txt": {
+        "before": null,
+        "after": "fda3d864231f5ffa694e79435d49c64c346482a2d8266b144f33b642e70c9b28",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/NominalSamTransportProbe.expected.txt"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/NominalSamTransportProbe.java": {
+        "before": null,
+        "after": "1d5198d7031ae60c1f179afa0de149b4dacf42192bee625aa349fbcf95c51d00",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/NominalSamTransportProbe.java"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/OperatorAncestryProbe.expected.txt": {
+        "before": null,
+        "after": "67e80c3a9d397e9e2ec03ceed7ef1a286c77d2437221fc4abe0d0af4182414e1",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/OperatorAncestryProbe.expected.txt"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/OperatorAncestryProbe.java": {
+        "before": null,
+        "after": "249edf33de0cc7b9e60690a500b6227b537da9d956cbf028ef024d57dbe0df43",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/OperatorAncestryProbe.java"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/OperatorExecutionCollisionProbe.expected.txt": {
+        "before": null,
+        "after": "dfb9e1a7433778211615296de01b5633914c59e856ef0e71697d39e89b869dad",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/OperatorExecutionCollisionProbe.expected.txt"
+      },
+      "transpiler/testdata/operator_functional_prerequisite/OperatorExecutionCollisionProbe.java": {
+        "before": null,
+        "after": "486b570f708764c9a0332a4fcc8d9232fbf414d4f16916594e72b11ee30dee1c",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/operator_functional_prerequisite/OperatorExecutionCollisionProbe.java"
+      },
+      "transpiler/testdata/volatile_comment_assignment/VolatileCommentAssignmentProbe.java": {
+        "before": null,
+        "after": "329b418374398256696a79e80db13c3546ed46bd9f007b3737e0499a4af8d443",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_comment_assignment/VolatileCommentAssignmentProbe.java"
+      },
+      "transpiler/testdata/volatile_nested_parentheses/VolatileNestedParenthesesProbe.java": {
+        "before": null,
+        "after": "98b9b67cc406f7f38f50fa0b1198473b1ea9839d008eb2b5b1d1c94f0d5acfac",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_nested_parentheses/VolatileNestedParenthesesProbe.java"
+      },
+      "transpiler/testdata/volatile_prerequisite/VolatileAnonymousFamilyFixture.java": {
+        "before": null,
+        "after": "b37411b045be727de6b2f1aa1714cf7bae2b981562eb451dc4af58dcf9592ebd",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_prerequisite/VolatileAnonymousFamilyFixture.java"
+      },
+      "transpiler/testdata/volatile_prerequisite/VolatileEnumFamilyFixture.java": {
+        "before": null,
+        "after": "8883c5500f6a23152747116b2c9c25e5b6510e14e34b6e372f5adb18f5ed7447",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_prerequisite/VolatileEnumFamilyFixture.java"
+      },
+      "transpiler/testdata/volatile_prerequisite/VolatileGenericFamilyFixture.java": {
+        "before": null,
+        "after": "0bfce0f3222b6ea3656a48f6e6b2b9a9702d03ecf91648404c3c9d37c9f96078",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_prerequisite/VolatileGenericFamilyFixture.java"
+      },
+      "transpiler/testdata/volatile_prerequisite/VolatileLocalFamilyFixture.java": {
+        "before": null,
+        "after": "b54d8810bae5813cc722a2d4a230c6be9689363f3eb1d22ccca28422739a18d3",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_prerequisite/VolatileLocalFamilyFixture.java"
+      },
+      "transpiler/testdata/volatile_prerequisite/VolatileSemanticsWitness.expected.txt": {
+        "before": null,
+        "after": "af2b6e8128c2eb6bdb475521b6735d9efab97fdaad660b2da87903a719055d49",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_prerequisite/VolatileSemanticsWitness.expected.txt"
+      },
+      "transpiler/testdata/volatile_prerequisite/VolatileSemanticsWitness.java": {
+        "before": null,
+        "after": "9f1d84902b1ca7aa44bd841aa4bb1239e356b137f6e0d43770dc295b737dfb59",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_prerequisite/VolatileSemanticsWitness.java"
+      },
+      "transpiler/testdata/volatile_prerequisite/VolatileStaticInitializationWitness.expected.txt": {
+        "before": null,
+        "after": "a8c574e62d6a2ad949182411334121e64dad65c87aa32c8e2cd9477404a551d3",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_prerequisite/VolatileStaticInitializationWitness.expected.txt"
+      },
+      "transpiler/testdata/volatile_prerequisite/VolatileStaticInitializationWitness.java": {
+        "before": null,
+        "after": "f8534bf2aeb506eb7710a0b8c774431aebb7bcbf93a23439fd43ade1804ec8a2",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/testdata/volatile_prerequisite/VolatileStaticInitializationWitness.java"
+      },
+      "transpiler/tree_sitter.go": {
+        "before": "47185a1053590254d767ec9163320edcd383689bf2d2e2d78731934a6b0aa4b8",
+        "after": "8af1e20f0a533471a836a0e852c9729e6a413eeb139361c796ef68af11c04953",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/tree_sitter.go"
+      },
+      "transpiler/volatile_comment_assignment_behavior_test.go": {
+        "before": null,
+        "after": "117193df88dba522d2ccad65226508d192376ece22391030b64c6614e3953b4d",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/volatile_comment_assignment_behavior_test.go"
+      },
+      "transpiler/volatile_comment_assignment_review_test.go": {
+        "before": null,
+        "after": "4245b74803dc9d478c160467dd8e3e0d989a60fc3ab827d71417df026753f36e",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/volatile_comment_assignment_review_test.go"
+      },
+      "transpiler/volatile_field_lowering.go": {
+        "before": null,
+        "after": "24eff55b6f2bac75049155502bf92ca352a9909cde65e1ad67ed4a0de07f065c",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/volatile_field_lowering.go"
+      },
+      "transpiler/volatile_field_lowering_tdd_test.go": {
+        "before": null,
+        "after": "cc52bee6fc5ad8fb4eeed98353002dd5f7591308b429a4d3b7503f5cca0a3915",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/volatile_field_lowering_tdd_test.go"
+      },
+      "transpiler/volatile_generated_family_roots_tdd_test.go": {
+        "before": null,
+        "after": "50d881f46d722c3eff056291a92c1cb52fd97786efb0f3ed1782c80945fd0406",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/volatile_generated_family_roots_tdd_test.go"
+      },
+      "transpiler/volatile_metadata_demand_cost_tdd_test.go": {
+        "before": null,
+        "after": "ceae98af502c3939540180930c88368d9fc1c3a6c9f6e48472285aeafef49bc6",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/volatile_metadata_demand_cost_tdd_test.go"
+      },
+      "transpiler/volatile_nested_parentheses_emission_test.go": {
+        "before": null,
+        "after": "ead266b48e3ca09e2e4213ceaec358739eb2fd1f0622da8aac8f96f13b658dd4",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/volatile_nested_parentheses_emission_test.go"
+      },
+      "transpiler/volatile_witness_generation_tdd_test.go": {
+        "before": null,
+        "after": "687f0c560d55172c313a1f0b7bacc3b142a695e4c515106ba32ffc353cf1fffd",
+        "source": "/private/tmp/java2go-sol-foundation96-gofmt-v8/source/transpiler/volatile_witness_generation_tdd_test.go"
+      }
+    },
+    "composition": {
+      "path": "/private/tmp/java2go-sol-foundation95-netty-default-v7/COMPOSITION.json",
+      "sha256": "c550ad1fa646a094cd2122a574780d1c64544e183b79b9c57a28965944dd4616"
+    },
+    "guarded149": {
+      "path": "/private/tmp/java2go-sol-foundation95-netty-default-v7/guarded-hunks.json",
+      "sha256": "2ccd727bad20987c52bf7b9c5a63bb12640a2f892d59114dd4bace6341de7ce8"
+    },
+    "coordinator_audit": {
+      "path": "/private/tmp/java2go-root-foundation96/coordinator-scoped-audit.json",
+      "sha256": "a59223d71a7aa9cf4c23c15e852eb0cf82ffd15dc51911692c2053ab985476dc"
+    },
+    "independent_raw_review": {
+      "path": "/private/tmp/java2go-foundation96-independent-evidence-audit.json",
+      "sha256": "47f4c0b14602fdd5cf9b5ab1daa5705b153e1ce50fce0cc218fdb3a31df2de49"
+    },
+    "agent_same_source_packets": {
+      "/private/tmp/java2go-sol-volatile-sam-matching-v20-actual-terminal.json": "253b21e88ac3dc80b86b761e1b9b81c469c86121487a8fd38697d3f4deb37dfa",
+      "/private/tmp/java2go-sam9-foundation95-matching-v5-final80-audit.json": "b5c7ec4dde4f46b3c481fe2baa3d87a04275af61e5acba720bc07763b3041254",
+      "/private/tmp/java2go-foundation95-cost-routing-v2-actual-terminal.json": "a3ddef25ba9804cfe5967c268c59d49b9d8426b0ad35a8f986b1774a597de9e8",
+      "/private/tmp/java2go-default-ci-compatibility-v6-actual-terminal.json": "fd6d8b8c71e210ae702db77487589885c81f3a1bb24a9ce10e8ca660cdaeb3d0"
+    },
+    "validation": {
+      "coordinator_compiler_run_pass": 96,
+      "coordinator_Netty_run_pass": 121,
+      "Netty_JVM_oracles": 11,
+      "Netty_metadata": 10,
+      "native_CI": {
+        "stdjava": 1423,
+        "symbol": 32,
+        "campaign": 24
+      },
+      "lint_issues": 0,
+      "volatile_atomic_functional_normal_race20stress": 600,
+      "functional_and_operator_matching": 80,
+      "metadata_cost_and_strict_routing": 46,
+      "default_CI_compatibility": 25,
+      "agent_actual_total": 751,
+      "fresh_formatting_affected_checks": 33,
+      "fail": 0,
+      "skip": 0
+    },
+    "behavior": "General source volatile-field lowering and metadata, atomic updater argument/callback ordering and nominal witnesses, functional operator/default contracts with shared object identity and consuming Execution, anonymous receiver ownership, parenthesized assignment recovery, reflection long access and nest identity, Thread.yield and canonical Thread ancestry. Default tests obtain fresh artifact directories and real JDK21 oracles. Structural reflection scan fast path retains AST fallback for Unicode escapes and unavailable source.",
+    "toolchain_observation": "Matching80 records49 completed checks under the original stable closure and31 fresh successor checks after a sole verified Python ctypes/_layout compiled-cache addition. Same compiler/runtime source and unchanged fixtures; invalid drift receipts excluded. Remaining gates each retain their own stable declared tool closure. No blanket mutable-cache waiver.",
+    "limitations": "Scoped milestone only. OriginalCommons27, genuineGson118, fullNetty1212+8 strict/allGo/runtime and full accumulated transpiler/application CI remain unaccepted. Checkpoint18 remains latest accepted full round. No runtime metadata-cache/StringSplit/literal-intern, covariance/reflection-origin, generic bound/member-origin, collection or Maven-schema3 pending repairs included. No Java-faster claim.",
+    "resume": "Sol-only: independently review and hunk-compose Netty ownership facts, performance runtime, collection269, bound/member inference, reflection/covariance/equals and Gson complete interfaces onto this matching parent. Preserve failures/oracles. Run actual JDK strict all-package Go parity and current CI gates, commit AND push milestones."
+  },
+  "sol_progress95_observation_correction": {
+    "status": "DOCUMENTATION_CORRECTION_RAW_EVIDENCE_UNCHANGED",
+    "raw_report": {
+      "path": "/private/tmp/java2go-netty-resolution-sol-v1/synthetic-frontier-sol61/matching94/full-strict-attempt1/report.json",
+      "sha256": "49465aff3d9b8033ba8c5e83b8844bc42db0c7e720cd16dada24fad4c63f1988"
+    },
+    "complete_outputs": 9,
+    "empty_tenth": "AdvancedLeakAwareByteBuf.go",
+    "note": "Progress95 prose carried an earlier partial eight-complete/ninth-empty observation. Final retained report has nine complete Go files including AdaptivePoolingAllocator.go450385bytes and an empty tenth. Strict300 timeout remains failure, no parity."
   }
 }

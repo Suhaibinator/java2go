@@ -37,6 +37,12 @@ var concurrencyRuntimeTypes = map[string]bool{
 // the same name. Generic args are themselves lowered through
 // javaTypeStringToGoTypeExpr.
 func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+	if expression, ok := atomicFieldUpdaterRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := additionalNativeFunctionalRuntimeType(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
 	if expression, ok := functionRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
 		return expression, true
 	}
@@ -125,6 +131,7 @@ func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx 
 
 func init() {
 	registerAtomicIntrinsics()
+	registerAtomicFieldUpdaterIntrinsics()
 	registerCountDownLatchIntrinsics()
 	registerThreadIntrinsics()
 	registerExecutorIntrinsics()
@@ -369,6 +376,7 @@ func registerAtomicIntrinsics() {
 }
 
 func registerThreadIntrinsics() {
+	registerThreadYieldIntrinsics()
 	registerInstanceIntrinsicResultType("Thread", "isAlive", "boolean")
 	// new Thread(runnable) -> stdjava.NewThread(runnable). The Runnable argument
 	// is already a func() in generated code (lambda or method reference).

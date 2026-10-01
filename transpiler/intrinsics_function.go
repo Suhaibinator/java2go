@@ -64,14 +64,16 @@ func isFunctionCallbackExpr(value ast.Expr, ctx Ctx) bool {
 // nominal proof as statically typed uses. Source shadows and unrelated names
 // are excluded by the canonical owner resolver, never by method shape.
 func sourceFunctionInterfaceIDs(scope *symbol.ClassScope, ctx Ctx) []ast.Expr {
-	if scope == nil {
-		return nil
-	}
-	declaring := classHeaderTypeCtx(scope, ctx)
-	for _, parent := range append(append([]string(nil), scope.ImplementedInterfaces...), scope.Superclass) {
-		if isExternalFunctionType(parent, declaring) {
-			return []ast.Expr{javaTypeIDLiteral("java.util.function.Function", ctx)}
+	result := []ast.Expr{}
+	for _, contract := range sourceNativeFunctionalContracts(scope, ctx) {
+		// Do not claim a native edge whose physical source view cannot be emitted.
+		if scope.IsInterface {
+			result = append(result, javaTypeIDLiteral("java.util.function."+contract.family, ctx))
+			continue
+		}
+		if sourceNativeFunctionalViewExpr(scope, contract, ast.NewIdent("__java2goNominalViewProof"), ctx) != nil {
+			result = append(result, javaTypeIDLiteral("java.util.function."+contract.family, ctx))
 		}
 	}
-	return nil
+	return result
 }

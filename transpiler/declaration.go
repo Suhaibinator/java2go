@@ -204,15 +204,6 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						switch modifier.Type() {
 						case "static":
 							staticField = true
-						case "volatile":
-							// Go has no field-level volatile. The visibility/ordering
-							// guarantee is documented rather than enforced; callers
-							// needing atomicity should use the sync/atomic helpers or a
-							// mutex. Full atomic-field lowering would have to rewrite
-							// every read/write site and is out of scope for this task.
-							comments = append(comments, &ast.Comment{
-								Text: "// volatile: Java visibility/ordering not enforced in Go; guard with sync/atomic or a mutex if shared across goroutines",
-							})
 						case "marker_annotation", "annotation":
 							modContent := modifier.Content(source)
 							comments = append(comments, javaAnnotationComments(modContent)...)
@@ -245,10 +236,11 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 						ctx,
 					)
 					field.Type = directOwnerTypeParameterFieldStorageType(ctx.currentClass, fieldDef, field.Type, ctx)
+					field.Type = volatileFieldBackingType(fieldDef, field.Type, ctx)
 
 					if staticField {
 						spec := &ast.ValueSpec{Names: field.Names, Type: field.Type}
-						if isBuiltinJavaString(fieldDef.OriginalType, ctx) {
+						if isBuiltinJavaString(fieldDef.OriginalType, ctx) && !volatileFieldDefinition(fieldDef) {
 							// A Java String field starts as null, not Go's empty-string zero.
 							// Keep that state observable even when a later static initializer
 							// overwrites it.
@@ -280,16 +272,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 							valueCtx.expectedTypeRoot = fieldValueNode
 							value := ParseExpr(fieldValueNode, source, valueCtx)
 							value = coerceArgumentToExpectedType(value, fieldValueNode, fieldDef.OriginalType, valueCtx, source)
-							instanceFieldInitializers = append(instanceFieldInitializers, &ast.AssignStmt{
-								Lhs: []ast.Expr{
-									&ast.SelectorExpr{
-										X:   &ast.Ident{Name: ShortName(ctx.className)},
-										Sel: &ast.Ident{Name: fieldDef.Name},
-									},
-								},
-								Tok: token.ASSIGN,
-								Rhs: []ast.Expr{value},
-							})
+							instanceFieldInitializers = append(instanceFieldInitializers, volatileFieldStoreStmt(fieldDef, &ast.SelectorExpr{X: &ast.Ident{Name: ShortName(ctx.className)}, Sel: &ast.Ident{Name: fieldDef.Name}}, value, ctx))
 						}
 					}
 				}
@@ -320,6 +303,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 		declarations = append(declarations, genStructWithTypeParamsInContext(ctx.className, fields, ctx.currentClass.TypeParameters, ctx))
 		declarations = append(declarations, sourceReflectionFieldAccessors(ctx.currentClass, ctx)...)
+		declarations = append(declarations, volatileFieldAccessorDecls(ctx.currentClass, ctx)...)
 		declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
 		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
 		declarations = append(declarations, generateCharacterIOBridgeDecls(ctx)...)
@@ -545,6 +529,7 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			field := &ast.Field{}
 			field.Names = []*ast.Ident{{Name: fieldDef.Name}}
 			field.Type = javaTypeStringToGoTypeExpr(fieldDef.OriginalType, typeParams, ctx)
+			field.Type = volatileFieldBackingType(fieldDef, field.Type, ctx)
 
 			if fieldDef.IsStatic {
 				globalVariables.Specs = append(globalVariables.Specs, &ast.ValueSpec{Names: field.Names, Type: field.Type})
@@ -565,6 +550,8 @@ func ParseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 		declarations = append(declarations, sourceClassReferenceIdentityDecls(ctx.currentClass, ctx)...)
 		declarations = append(declarations, enumInstanceInitializerDecls(node.ChildByFieldName("body"), source, ctx)...)
+		declarations = append(declarations, sourceReflectionFieldAccessors(ctx.currentClass, ctx)...)
+		declarations = append(declarations, volatileFieldAccessorDecls(ctx.currentClass, ctx)...)
 
 		// Generate ordinal constants to preserve declaration order
 		{

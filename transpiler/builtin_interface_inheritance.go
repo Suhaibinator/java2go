@@ -13,6 +13,12 @@ func builtinInterfaceParentMethod(javaType string, ctx Ctx) *symbol.Definition {
 		return nil
 	}
 	name := stripJavaQualifier(base)
+	switch name {
+	case "Function", "BiFunction", "Consumer", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator":
+		if nativeFunctionalFamily(javaType, ctx) == "" {
+			return nil
+		}
+	}
 	methodName := intrinsicFunctionalMethodNames[name]
 	if name == "Callable" {
 		methodName = "call"

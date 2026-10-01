@@ -141,6 +141,12 @@ func (field *Field) GetExecution(execution *Execution, receiver any) any {
 }
 func (field *Field) Set(receiver, value any) { field.SetExecution(NewExecution(), receiver, value) }
 func (field *Field) SetExecution(execution *Execution, receiver, value any) {
+	field.setExecution(execution, receiver, value, reflectionFieldValue)
+}
+
+// Typed setters share receiver, access, final and initialization checks. Their
+// primitive-only conversion runs at the same point as the ordinary Set path.
+func (field *Field) setExecution(execution *Execution, receiver, value any, convert func(any, TypeID) any) {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
@@ -161,7 +167,7 @@ func (field *Field) SetExecution(execution *Execution, receiver, value any) {
 		if field.descriptor.StaticSet == nil {
 			panic(reflectionException("IllegalAccessException", "static field is not writable"))
 		}
-		converted := reflectionFieldValue(value, field.descriptor.Type)
+		converted := convert(value, field.descriptor.Type)
 		field.descriptor.StaticSet(execution, converted)
 		return
 	}
@@ -171,7 +177,7 @@ func (field *Field) SetExecution(execution *Execution, receiver, value any) {
 	if field.GetModifiers()&16 != 0 && !field.accessible.Load() {
 		panic(reflectionException("IllegalAccessException", "final field"))
 	}
-	converted := reflectionFieldValue(value, field.descriptor.Type)
+	converted := convert(value, field.descriptor.Type)
 	if field.descriptor.Set != nil {
 		field.descriptor.Set(execution, target.Interface(), converted)
 		return

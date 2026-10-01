@@ -227,7 +227,7 @@ func (c *ConcurrentHashMap[K, V]) KeySet() []K {
 // is generated as Run()) satisfy it, so they can be handed to a Thread directly.
 const (
 	RunnableTypeID TypeID = "Runnable"
-	ThreadTypeID   TypeID = "Thread"
+	ThreadTypeID   TypeID = "java.lang.Thread"
 )
 
 type Runnable interface {
@@ -410,9 +410,8 @@ func newNamedThread(name string) *Thread {
 }
 
 // JavaDynamicTypeID lets the reified reference-array runtime recognize the
-// compact stdjava-backed representation as a java.lang.Thread. Built-in types
-// currently retain the same simple descriptor spelling emitted for unresolved
-// JDK classes by the transpiler.
+// compact stdjava-backed representation using its canonical java.lang.Thread
+// descriptor, matching compiler-generated casts and reference-array components.
 func (*Thread) JavaDynamicTypeID() TypeID {
 	return ThreadTypeID
 }

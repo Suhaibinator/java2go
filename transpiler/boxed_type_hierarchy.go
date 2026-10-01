@@ -20,7 +20,7 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	if isBuiltinEnum(javaType, ctx) {
 		return true
 	}
-	if isExternalFunctionType(javaType, ctx) {
+	if nativeFunctionalFamily(javaType, ctx) != "" {
 		return true
 	}
 	if isBuiltinReflectType(javaType, ctx) {
@@ -73,6 +73,9 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 // Only invocation applicability may infer the candidate method's own binders.
 // Ordinary assignability and override checks keep invariant arguments.
 func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
+	if nativeFunctionalAssignable(actual, expected, ctx) {
+		return true
+	}
 	if enumReferenceAssignable(actual, expected, ctx) {
 		return true
 	}

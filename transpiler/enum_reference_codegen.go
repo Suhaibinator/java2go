@@ -148,7 +148,7 @@ func enumInstanceInitializerDecls(body *sitter.Node, source []byte, ctx Ctx) []a
 				valueCtx.expectedType = field.OriginalType
 				valueCtx.expectedTypeRoot = value
 				expr := coerceArgumentToExpectedType(ParseExpr(value, source, valueCtx), value, field.OriginalType, valueCtx, source)
-				initializers = append(initializers, &ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent(ShortName(ctx.className)), Sel: ast.NewIdent(field.Name)}}, Tok: token.ASSIGN, Rhs: []ast.Expr{expr}})
+				initializers = append(initializers, volatileFieldStoreStmt(field, &ast.SelectorExpr{X: ast.NewIdent(ShortName(ctx.className)), Sel: ast.NewIdent(field.Name)}, expr, ctx))
 			}
 		}
 	}
@@ -166,6 +166,10 @@ func enumReflectionFieldDescriptors(scope *symbol.ClassScope, ctx Ctx) []ast.Exp
 		fields = append(fields, &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Name", metadataString(constant.Name)), metadataKey("GoName", metadataGoName(constant.EmittedName())), metadataKey("Type", javaTypeIDLiteral(javaClassBinaryName(scope), ctx)), metadataKey("Final", ast.NewIdent("true")), metadataKey("EnumConstant", ast.NewIdent("true")), metadataKey("StaticGet", getter(ast.NewIdent(constant.EmittedName())))}})
 	}
 	for _, field := range scope.Fields {
+		if volatileFieldDefinition(field) {
+			fields = append(fields, sourceReflectionFieldsForFields(scope, []*symbol.Definition{field}, ctx)...)
+			continue
+		}
 		id, ok := javaTypeDescriptorExpr(field.OriginalType, ctx)
 		if !ok {
 			continue

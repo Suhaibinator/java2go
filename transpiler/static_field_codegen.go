@@ -235,12 +235,10 @@ func typedLocalDeclaration(name string, typeExpr, value ast.Expr) ast.Stmt {
 // and getstatic. A simple write initializes only after its RHS has completed;
 // a compound write initializes and captures the old value before its RHS.
 func lowerStaticFieldAssignment(node *sitter.Node, source []byte, ctx Ctx) (ast.Expr, bool) {
-	if node == nil || node.Type() != "assignment_expression" || node.ChildCount() < 3 {
+	lhsNode, opNode, rhsNode, valid := assignmentExpressionNodes(node, source)
+	if !valid {
 		return nil, false
 	}
-	lhsNode := node.ChildByFieldName("left")
-	opNode := node.ChildByFieldName("operator")
-	rhsNode := node.ChildByFieldName("right")
 	access, ok := resolveStaticFieldAccess(lhsNode, source, ctx)
 	if !ok || opNode == nil || rhsNode == nil {
 		return nil, false

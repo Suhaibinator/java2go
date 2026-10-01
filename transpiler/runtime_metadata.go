@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"bytes"
 	"go/ast"
 	"go/token"
 	"regexp"
@@ -14,12 +15,18 @@ import (
 
 // A dynamically supplied binary name can select any source class in the
 // compilation. Enable descriptors for the complete source set in that case.
-var reflectionUsePattern = regexp.MustCompile(`\b(getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getDeclaredField|getDeclaredFields|getDeclaredConstructor|getGenericSuperclass|getGenericType|getTypeParameters|getAnnotation|getMethod|isEnum|isEnumConstant|isAnnotationPresent|getSuperclass|isAssignableFrom|isInstance)\b`)
+var reflectionUsePattern = regexp.MustCompile(`\b(newUpdater|getClass|getSimpleName|super\s*\.\s*toString|forName|getConstructor|getField|getDeclaredField|getDeclaredFields|getDeclaredConstructor|getGenericSuperclass|getGenericType|getTypeParameters|getAnnotation|getMethod|isEnum|isEnumConstant|isAnnotationPresent|getSuperclass|isAssignableFrom|isInstance)\b`)
 
 func sourceUsesReflection() bool {
 	seen := map[*symbol.FileScope]bool{}
 	for _, scope := range allSourceClassScopes() {
 		file := findFileScopeForClassScope(scope)
+		// Exclude only source that cannot contain a volatile modifier. Escaped
+		// keywords, comments, strings, and file-less declarations retain the
+		// exact AST check, including local and anonymous class fields.
+		if scope.Class != nil && (file == nil || len(file.Source) == 0 || bytes.Contains(file.Source, []byte("volatile")) || bytes.Contains(file.Source, []byte("\\u"))) && sourceNodeDeclaresVolatileField(scope.Class.DeclarationNode) {
+			return true
+		}
 		if file == nil || seen[file] {
 			continue
 		}
