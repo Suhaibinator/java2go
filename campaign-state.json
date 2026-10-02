@@ -10962,5 +10962,37 @@
     "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
     "checkpoint_kind": "Tested UUID/Class implementation milestone; full round18 remains latest acceptance",
     "next": "Continue all three frozen active dependency applications, preserve genuine REDs, independently verify matching repairs, and commit AND push each milestone."
+  },
+  "sol_progress103": {
+    "status": "CI_CLASS_INITIALIZATION_STRING_OBSERVATIONS_VERIFIED",
+    "publication_parent": "65ed9734d346393f331442c8546ea29f9dec0b25",
+    "implementation_changes_published": false,
+    "test_scaffold_changes_published": true,
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "scope": "Two generated test scaffolds observe canonical JavaString UTF16 content after checking null; all Java sources, expected results and assertions remain unchanged.",
+    "verification": {
+      "original_class_initialization_tests_passed": 18,
+      "failures": 0,
+      "skips": 0,
+      "race_enabled_native_test_build": true,
+      "clean_process_cleanup": true
+    },
+    "root_review": {
+      "path": "/private/tmp/java2go-root-classinit103-review.json",
+      "sha256": "f0b3445a4575d49d12c04c53907bb1148edc9329bb9a201c4229e0bc337cea9a"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-ci-classinit-observation103-peer-review/ACTUAL-GREEN18-REVIEW.json",
+      "sha256": "20460728c56f594b88aae84b3e51a1c52fd20fb7a0dd281a44259b534e06fe1e"
+    },
+    "remaining": "File/Thread String boundaries, Collector callbacks, Contains/IntSummaryStatistics, generic reflection metadata and larger application/compiler failures remain active; none waived."
+  },
+  "active_resume_current103": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
+    "checkpoint_kind": "Verified trivial CI test-scaffold fix; latest full campaign acceptance remains round18",
+    "next": "Finish independently tested small CI runtime repairs, commit AND push verified slices, then continue the three frozen dependency applications."
   }
 }
