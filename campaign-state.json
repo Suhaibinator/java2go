@@ -11026,5 +11026,43 @@
     "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
     "checkpoint_kind": "Verified portable JDK test-helper CI milestone; latest full campaign acceptance remains round18",
     "next": "Publish independently verified trivial CI slices, retain remaining genuine failures, and continue the three frozen dependency applications."
+  },
+  "sol_progress105": {
+    "status": "CI_METHOD_VARARGS_SCOPED_REPAIR_VERIFIED",
+    "publication_parent": "6c85929ad105252ae419a91902b3d0e659953bd1",
+    "implementation_changes_published": true,
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "scope": "Canonical Method.isVarArgs reads the existing method declaration modifier bit; compiler registration supplies its boolean result. Existing declaration/descriptor schema and bridge flag handling are unchanged.",
+    "verification": {
+      "race_enabled_native_builds": 2,
+      "stages_passed": 4,
+      "native_flags_and_null_control_passed": true,
+      "minimal_JDK_oracle_rows": 5,
+      "strict_transpilation_all_generated_packages_and_entry_race_build": true,
+      "exact_Go_JVM_observations": true,
+      "failures": 0,
+      "skips": 0,
+      "clean_process_cleanup": true
+    },
+    "source_manifest_sha256": "299ad0276f5ea7b7c9f53f7092d71c25c891dcd96ae90cbbda6bc4852016ab73",
+    "source_basis": "b375825640dfa0d1f4458118d5798295b0d157f5",
+    "transport": "Four disjoint reviewed leaves applied onto104;104 portable test helper and ledger preserved. No full joined CI acceptance claimed.",
+    "root_review": {
+      "path": "/private/tmp/java2go-root-getter105-review.json",
+      "sha256": "ac46298969a0f0623354dfbee501b6bfb24e0d1fb9b5530bde84ece2a249bc8c"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-ci102-boundary-independent-review-collection100/ACTUAL-GETTER-PUBLIC103-GREEN4-AUDIT.json",
+      "sha256": "77f6f09cc5175861224912070f2bb1e52dcf8ee5d24668e7ca822b9c01bbcb14"
+    },
+    "remaining": "Original broader metadata/getParameterTypes probe, generic compiler failures and dependency application gates remain open. No original39 or fullCI acceptance."
+  },
+  "active_resume_current105": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
+    "checkpoint_kind": "Verified scoped Method varargs repair; latest full campaign acceptance remains round18",
+    "next": "Finish independent trivial CI scaffold/runtime gates, preserve failures, commit AND push verified slices, then continue frozen dependency applications."
   }
 }

@@ -167,7 +167,7 @@ func init() {
 	for receiver, methods := range map[string]map[string]string{
 		"Class":       {"getName": "java.lang.String", "getSimpleName": "java.lang.String", "getSuperclass": "Class", "isAssignableFrom": "boolean", "isInstance": "boolean", "isAnnotationPresent": "boolean", "getConstructor": "Constructor", "getField": "Field", "getDeclaredField": "Field", "isEnum": "boolean", "getMethod": "Method"},
 		"Field":       {"get": "Object", "set": "void", "getName": "java.lang.String", "isEnumConstant": "boolean"},
-		"Method":      {"invoke": "Object", "getName": "java.lang.String"},
+		"Method":      {"invoke": "Object", "getName": "java.lang.String", "isVarArgs": "boolean"},
 		"Constructor": {"newInstance": "Object"},
 	} {
 		for name, result := range methods {
