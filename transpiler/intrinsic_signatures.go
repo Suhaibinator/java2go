@@ -141,7 +141,7 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 	if class == "Path" && method == "resolve" {
 		return pathResolveReferenceExpected(invocation, ctx, source)
 	}
-	if class == "Path" && method == "equals" {
+	if (class == "Path" || class == "Class") && method == "equals" {
 		return set("java.lang.Object")
 	}
 	if class == "String" && method == "replace" && count == 2 {

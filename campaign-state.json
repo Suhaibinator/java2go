@@ -10923,5 +10923,44 @@
     "agent_policy": "GPT-6.1 Sol/high only; up to20 persistent subagents plus coordinator; no Astra",
     "checkpoint_kind": "Tested Map/strict code milestone; full round18 remains latest acceptance",
     "next": "Continue current frozen Commons27, Gson118 and Netty repairs; retain all private REDs and matching gates; commit AND push verified milestones."
+  },
+  "sol_progress102": {
+    "status": "SCOPED_UUID_AND_CLASS_OBJECT_CONTRACTS_VERIFIED",
+    "publication_parent": "b3b88f79fc8dcddcc4901d8f9f9795da15246fa9",
+    "implementation_changes_published": true,
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source": {
+      "manifest_sha256": "9e458dd044c879a4f963d0f72de1d14808759915e9cdf04e1f6e769539c903c4",
+      "members": 3109,
+      "modified_existing": 2,
+      "absent_added": 15
+    },
+    "root_final_review": {
+      "path": "/private/tmp/java2go-root-uuid-class102-final-review.json",
+      "sha256": "793919010f064b14d33af9362e70a132533a3ec86238bfc4d5084bd54918e59a"
+    },
+    "verification": {
+      "UUID_affected_commands": 42,
+      "Class_Object_affected_commands": 19,
+      "native_named_race_atomiccoverage": 1795,
+      "repository_build_and_vet": true,
+      "default_uncapped_lint_issues": 0
+    },
+    "scope": "Canonical UUID construction, parsing, deterministic name hashing, bits, equality, signed comparison, hashing and strings; Class identity hash/equality under caller execution. Unsupported UUID APIs remain strict diagnostics.",
+    "known_original_failures_unwaived": true,
+    "remaining": {
+      "Commons27": "Comparator references/defaults, legal source subtype bounds and generic reflection callable metadata remain active.",
+      "Gson118": "Generic callable storage proofs, Map/Collection foundation transport, concurrent-map algorithm frontiers and remaining JDK services remain active.",
+      "Netty": "Original strict build timed out at 300 seconds. Canonical Object super.finalize and source-syntax query scaling are separate active TDD repairs; no full Netty acceptance.",
+      "performance": "Fresh matched public101 JVM/Go benchmark found interface dispatch mismatch before allocation probes. General correctness repair precedes all cost claims."
+    }
+  },
+  "active_resume_current102": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
+    "checkpoint_kind": "Tested UUID/Class implementation milestone; full round18 remains latest acceptance",
+    "next": "Continue all three frozen active dependency applications, preserve genuine REDs, independently verify matching repairs, and commit AND push each milestone."
   }
 }

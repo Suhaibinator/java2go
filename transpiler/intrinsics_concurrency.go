@@ -49,6 +49,9 @@ func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx 
 	if expression, ok := bigMathRuntimeTypeExpr(javaType, ctx); ok {
 		return expression, true
 	}
+	if expression, ok := uuidRuntimeTypeExpr(javaType, typeParams, ctx); ok {
+		return expression, true
+	}
 	if expression, ok := javaTimeRuntimeTypeExpr(javaType, ctx); ok {
 		return expression, true
 	}
