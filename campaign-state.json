@@ -10880,5 +10880,48 @@
     "agent_policy": "GPT-6.1 Sol/high only; up to20 persistent subagents plus coordinator; no Astra",
     "checkpoint_kind": "Tested scoped reflection/class-literal/interface code milestone; full round18 remains latest acceptance",
     "next": "Repair empty TreeMap callback behavior, anonymous/null/capture and pattern emitted-name identity; compose reviewed imports/BYTES and rerun originalNetty strict; preserve originalCommons27/Gson118 challenge gates; commit AND push passing milestones."
+  },
+  "sol_progress101": {
+    "status": "SCOPED_MAP_PROTOCOL_AND_STRICT_DIAGNOSTICS_VERIFIED",
+    "publication_parent": "bdf428014aef7500d10af5aba8d25bfe11d9103d",
+    "implementation_changes_published": true,
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source": {
+      "manifest_sha256": "ec70274ad278f7d46481924ae57c74ea83f7ea0b9c32020a7ed024e300eda53b",
+      "members": 3093,
+      "modified_existing": 7,
+      "absent_added": 16
+    },
+    "root_final_review": {
+      "path": "/private/tmp/java2go-root-map-strict101-final-review.json",
+      "sha256": "3df7331a546acb8df8e809b31f01e7795fd30cc754ffd937c11ff4cb5614f065"
+    },
+    "verification": {
+      "Map_focused_named_plain_and_race": 46,
+      "original_Map_application_commands": 33,
+      "native_named_race_atomiccoverage": 1781,
+      "repository_build_and_vet": true,
+      "default_uncapped_lint_issues": 0,
+      "strict_named_controls": 19,
+      "strict_rejections": 4,
+      "supported_and_permissive_matching_public100_controls": 8
+    },
+    "original_output_shape_mismatch_preserved": "Old2990 generated-Go baseline lacked public100 class-literal constant; actual untouched-public100 comparison resolves ABI baseline, no JVM oracle or assertion weakened.",
+    "known_original_failures_unwaived": true,
+    "remaining": {
+      "Commons27": "Source Comparator references, legal source-class subtype bounds and generic method metadata; original application remains active.",
+      "Gson118": "Generic callable physical storage, Map/List family proof, ConcurrentMap and remaining JDK services; original application remains active.",
+      "Netty": "Header/import-cache/BYTES candidate lint repair passes privately; retry original strict closure and all-package/JVM parity remain gates.",
+      "reflection_supplement": "Real Commons workflow demonstrates primitive reflection varargs boxing discrepancy; repair and generic StaticFunction prerequisite active.",
+      "performance": "Dedicated Sol workers measure allocation costs; faster-than-Java claims await matched measurements."
+    }
+  },
+  "active_resume_current101": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; up to20 persistent subagents plus coordinator; no Astra",
+    "checkpoint_kind": "Tested Map/strict code milestone; full round18 remains latest acceptance",
+    "next": "Continue current frozen Commons27, Gson118 and Netty repairs; retain all private REDs and matching gates; commit AND push verified milestones."
   }
 }

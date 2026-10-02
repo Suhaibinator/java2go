@@ -14,8 +14,8 @@ public class CampaignMapPutAll{
 	want := campaignRuntimeJavaOracle(t, "CampaignMapPutAll", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestPutAll(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import ("testing";j "github.com/NickyBoy89/java2go/stdjava")
+func TestPutAll(t *testing.T){value:=Run();encoded:=j.JavaStringGetBytes(value,j.UTF_8).Elements;bytes:=make([]byte,len(encoded));for i,b:=range encoded{bytes[i]=byte(b)};if got:=string(bytes);got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
 }
 
 func TestCampaignMapPutAllMutationJVMParity(t *testing.T) {
@@ -34,6 +34,6 @@ public class CampaignMapMutation{
 	want := campaignRuntimeJavaOracle(t, "CampaignMapMutation", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestPutAllMutation(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import ("testing";j "github.com/NickyBoy89/java2go/stdjava")
+func TestPutAllMutation(t *testing.T){value:=Run();encoded:=j.JavaStringGetBytes(value,j.UTF_8).Elements;bytes:=make([]byte,len(encoded));for i,b:=range encoded{bytes[i]=byte(b)};if got:=string(bytes);got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
 }

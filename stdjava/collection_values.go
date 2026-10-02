@@ -100,9 +100,15 @@ func (m *Map[K, V]) javaMapLookup(key any, execution *Execution) (any, bool) {
 	}
 	return nil, false
 }
-func (m *Map[K, V]) Equals(other any) bool { return m.EqualsJava2goExecution(nil, other) }
-func (m *Map[K, V]) EqualsJava2goExecution(execution *Execution, other any) (equal bool) {
-	defer collectionEqualityFailure(&equal)
+func (m *Map[K, V]) Equals(other any) bool {
+	// Legacy host calls acquire an execution only when dispatching to source
+	// callbacks. Explicit Java executions are always forwarded unchanged.
+	if _, native := other.(javaMapValue); !native && ObjectInstanceOf(other, MapTypeID) {
+		return m.EqualsJava2goExecution(NewExecution(), other)
+	}
+	return m.EqualsJava2goExecution(nil, other)
+}
+func (m *Map[K, V]) EqualsJava2goExecution(execution *Execution, other any) bool {
 	ReferenceRequireNonNull(m)
 	if JavaReferenceEqual(m, other) {
 		return true
@@ -111,16 +117,26 @@ func (m *Map[K, V]) EqualsJava2goExecution(execution *Execution, other any) (equ
 		return false
 	}
 	right, ok := other.(javaMapValue)
-	if !ok || m.Size() != right.Size() {
-		return false
-	}
-	for _, record := range m.entries {
-		value, present := right.javaMapLookup(record.key, execution)
-		if !present || !ObjectsEqual(record.value, value, execution) {
+	if !ok {
+		if !ObjectInstanceOf(other, MapTypeID) {
 			return false
 		}
+		return AbstractMapEqualsExecution(execution, m, other)
 	}
-	return true
+	// AbstractMap.equals does not catch failures from either size operation.
+	if m.Size() != right.Size() {
+		return false
+	}
+	return func() (equal bool) {
+		defer collectionEqualityFailure(&equal)
+		for _, record := range m.entries {
+			value, present := right.javaMapLookup(record.key, execution)
+			if !present || !ObjectsEqual(record.value, value, execution) {
+				return false
+			}
+		}
+		return true
+	}()
 }
 func (m *Map[K, V]) HashCode() int32 { return m.HashCodeJava2goExecution(nil) }
 func (m *Map[K, V]) HashCodeJava2goExecution(execution *Execution) int32 {

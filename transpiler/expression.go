@@ -2888,6 +2888,7 @@ func lowerBoxedUpdateExpression(node, operandNode *sitter.Node, post, increment 
 func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	lhsNode, opNode, rhsNode, valid := assignmentExpressionNodes(node, source)
 	if !valid {
+		reportUnsupported("expression", node, source, ctx)
 		return &ast.BadExpr{}
 	}
 	if lowered, ok := lowerVolatileFieldAssignment(node, source, ctx); ok {
@@ -2900,6 +2901,7 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	lhsJavaType, lhsTypeKnown := inferExprJavaType(lhsNode, ctx, source)
 	if !lhsTypeKnown || strings.TrimSpace(lhsJavaType) == "" {
 		log.WithField("assignment", node.Content(source)).Warn("Could not infer assignment target type")
+		reportUnsupported("expression", node, source, ctx)
 		return &ast.BadExpr{}
 	}
 
@@ -2967,6 +2969,7 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 			"assignment": node.Content(source),
 			"operator":   operator,
 		}).Warn("Unsupported assignment expression operator")
+		reportUnsupported("expression", node, source, ctx)
 		return &ast.BadExpr{}
 	}
 

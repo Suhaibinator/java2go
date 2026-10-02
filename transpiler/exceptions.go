@@ -110,7 +110,7 @@ func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, a
 // value as a cause. Resolve the actual JDK owner before matching a simple name.
 func canonicalMessagePrerequisiteConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
 	name := stripJavaQualifier(className)
-	if name != "IndexOutOfBoundsException" && name != "NumberFormatException" && name != "ParseException" && name != "ArithmeticException" {
+	if name != "IndexOutOfBoundsException" && name != "NumberFormatException" && name != "ParseException" && name != "ArithmeticException" && name != "ClassCastException" {
 		return nil
 	}
 	if _, builtin := builtinExceptionStorageTypeName(className, ctx); !builtin {

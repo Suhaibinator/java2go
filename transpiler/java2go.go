@@ -284,6 +284,7 @@ func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error
 		return packageMetadataGoFile(file, unit, ctx), nil
 	}
 	node = ParseNode(file.Ast, file.Source, ctx).(ast.Node)
+	validateGeneratedExpressions(node, ctx)
 	return node, nil
 }
 

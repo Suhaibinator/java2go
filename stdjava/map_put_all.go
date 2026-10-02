@@ -26,7 +26,24 @@ func (m *Map[K, V]) PutAll(source any, execution ...*Execution) {
 	ReferenceRequireNonNull(source)
 	input, ok := source.(mapPutAllSource)
 	if !ok {
-		panic(NewClassCastException("Map.putAll source lacks map entry iteration"))
+		// Source maps must prove nominal membership as well as the erased role.
+		// Consume their live entries in order and commit each write immediately.
+		input := MapReferenceView(source)
+		exec := optionalComparisonExecution(execution)
+		if len(execution) == 0 {
+			exec = NewExecution()
+		}
+		if MapSizeExecution(exec, input) == 0 && !m.sorted {
+			return
+		}
+		cursor := abstractMapIterator(exec, input)
+		for IteratorHasNextExecution(exec, cursor) {
+			entry := abstractMapNextEntry(exec, cursor)
+			key := MapEntryGetKeyExecution(exec, entry)
+			value := MapEntryGetValueExecution(exec, entry)
+			m.putObject(key, value, false, exec)
+		}
+		return
 	}
 	size := input.Size()
 	if size == 0 {
