@@ -10994,5 +10994,37 @@
     "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
     "checkpoint_kind": "Verified trivial CI test-scaffold fix; latest full campaign acceptance remains round18",
     "next": "Finish independently tested small CI runtime repairs, commit AND push verified slices, then continue the three frozen dependency applications."
+  },
+  "sol_progress104": {
+    "status": "CI_PORTABLE_JDK_TEST_HELPER_VERIFIED",
+    "publication_parent": "b375825640dfa0d1f4458118d5798295b0d157f5",
+    "implementation_changes_published": false,
+    "test_scaffold_changes_published": true,
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "scope": "Existing campaign String oracle selects installed java/javac through JAVA_HOME/PATH instead of a hardcoded macOS path; missing tools fail explicitly. Java sources, drivers, arguments, expected observations and assertions are unchanged.",
+    "verification": {
+      "race_enabled_native_build": true,
+      "original_tests_passed": 2,
+      "failures": 0,
+      "skips": 0,
+      "clean_process_cleanup": true
+    },
+    "root_review": {
+      "path": "/private/tmp/java2go-root-portable104-actual-review.json",
+      "sha256": "716c2e62c589d282ed439cd017fe2b32e99b4c00ac74ebe98d8579cf70d66dc2"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-ci-campaign-java-tool103-peer-review/ACTUAL-TWO-ROOTS-REVIEW.json",
+      "sha256": "b3bdea37d1bcebfbebbbe73bfb1d75bb26c39c0aa6dd49a9b71655984c8671dc"
+    },
+    "remaining": "Other canonical String scaffold repairs, Contains/IntSummaryStatistics, File/Thread/Collector boundaries, reflection and larger compiler/dependency failures remain active and unwaived."
+  },
+  "active_resume_current104": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
+    "checkpoint_kind": "Verified portable JDK test-helper CI milestone; latest full campaign acceptance remains round18",
+    "next": "Publish independently verified trivial CI slices, retain remaining genuine failures, and continue the three frozen dependency applications."
   }
 }

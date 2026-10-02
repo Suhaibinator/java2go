@@ -12,7 +12,14 @@ import (
 // programs receive actual process arguments and the oracle pins stdout UTF-8.
 func campaignStringHostOracle(t *testing.T, class, javaSource, goDriver string, arguments ...string) {
 	t.Helper()
-	java, javac := "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java", "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac"
+	java, err := campaignCompilerJavaTool("java")
+	if err != nil {
+		t.Fatal(err)
+	}
+	javac, err := campaignCompilerJavaTool("javac")
+	if err != nil {
+		t.Fatal(err)
+	}
 	temporary := t.TempDir()
 	javaPath := filepath.Join(temporary, class+".java")
 	if err := os.WriteFile(javaPath, []byte(javaSource), 0600); err != nil {
