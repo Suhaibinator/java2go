@@ -11064,5 +11064,40 @@
     "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
     "checkpoint_kind": "Verified scoped Method varargs repair; latest full campaign acceptance remains round18",
     "next": "Finish independent trivial CI scaffold/runtime gates, preserve failures, commit AND push verified slices, then continue frozen dependency applications."
+  },
+  "sol_progress106": {
+    "status": "CI_CANONICAL_STRING_TEST_SCAFFOLDS_VERIFIED",
+    "publication_parent": "1c6274f818af6c94038fb8d90fa14f4cd939d9e1",
+    "implementation_changes_published": false,
+    "test_scaffold_changes_published": true,
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "scope": "Four original generated test scaffolds observe canonical JavaString UTF16 content after explicit null checks. Two enhanced-for generated-shape checks use the canonical JavaString type; Java sources, expected observations and all semantic assertions are preserved.",
+    "verification": {
+      "original_roots": 7,
+      "plain_passed": 7,
+      "race_passed": 7,
+      "failures": 0,
+      "skips": 0,
+      "clean_process_cleanup": true
+    },
+    "source_basis": "b375825640dfa0d1f4458118d5798295b0d157f5",
+    "root_review": {
+      "path": "/private/tmp/java2go-root-scaffold106-actual-review.json",
+      "sha256": "48c4b500b1c6ddc5788f9c4dcf167bf470d759ee03d793fe0c1c2d65b68bf5fa"
+    },
+    "independent_review": {
+      "path": "/private/tmp/java2go-ci103-string-scaffold-independent-v1/ACTUAL-FOUR-STAGE-REVIEW.json",
+      "sha256": "85c8e15f3ec754d204152d9fa579d79bb4e52700950c882cb36e0f2acdd58ee8"
+    },
+    "transport": "Four disjoint test leaves onto105;105 implementation and104 portablehelper preserved. No full joined CI acceptance claimed.",
+    "remaining": "Contains/IntSummaryStatistics, File/Thread/Collector boundaries and larger compiler/dependency failures remain active; none waived."
+  },
+  "active_resume_current106": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
+    "checkpoint_kind": "Verified trivial CI canonical String test-scaffold milestone; latest full round18",
+    "next": "Finish focused trivial CI repairs, preserve remaining failures, and continue frozen dependency application gates."
   }
 }

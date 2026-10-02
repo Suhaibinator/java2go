@@ -391,10 +391,15 @@ public class RuntimeTryWithResourcesProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "unicode/utf16"
+)
 
 func TestTryWithResourcesCloseOrderBehavior(t *testing.T) {
-	got := Run()
+	reference := Run()
+	if reference == nil { t.Fatal("Run() returned null") }
+	got := string(utf16.Decode(reference.UTF16Copy()))
 	if got != "XBA" {
 		t.Fatalf("Run() = %q, want %q", got, "XBA")
 	}
