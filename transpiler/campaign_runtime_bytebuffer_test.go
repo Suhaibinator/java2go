@@ -35,9 +35,19 @@ public class CampaignRuntimeByteBuffer {
 	t.Logf("JDK buffer oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestByteBufferOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
-}
-`, want, want))
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = %q
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("JVM %%q != Go UTF16 %%v", want, units)
+    }
+}`, want))
 }
