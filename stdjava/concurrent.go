@@ -382,6 +382,7 @@ type Thread struct {
 	interrupted     bool
 	interruptSignal chan struct{}
 	name            string
+	nameText        *JavaString
 	run             Runnable
 	done            chan struct{}
 	started         atomic.Bool
@@ -405,8 +406,13 @@ func ThreadCurrentThread(execution *Execution) *Thread {
 
 func (t *Thread) GetName() string { return t.name }
 
+func (t *Thread) GetNameReference() *JavaString {
+	ReferenceRequireNonNull(t)
+	return t.nameText
+}
+
 func newNamedThread(name string) *Thread {
-	return &Thread{name: name, done: make(chan struct{})}
+	return &Thread{name: name, nameText: JavaStringFromHostUTF8(name), done: make(chan struct{})}
 }
 
 // JavaDynamicTypeID lets the reified reference-array runtime recognize the
@@ -429,6 +435,9 @@ func init() {
 // (an anonymous Runnable class). Other values produce a Thread that does
 // nothing when started.
 func NewThread(runnable any) *Thread {
+	if name, ok := runnable.(*JavaString); ok {
+		return NewThreadNamedReference(nil, name)
+	}
 	if name, ok := runnable.(string); ok {
 		return NewThreadNamed(nil, name)
 	}
@@ -441,6 +450,17 @@ func NewThread(runnable any) *Thread {
 func NewThreadNamed(runnable any, name string) *Thread {
 	StringRequireNonNull(name)
 	thread := newNamedThread(name)
+	thread.run = asRunnable(runnable)
+	return thread
+}
+
+func NewThreadNamedReference(runnable any, name *JavaString) *Thread {
+	ReferenceRequireNonNull(name)
+	thread := &Thread{
+		name:     string(unsignedBytes(JavaStringGetBytes(name, UTF_8).Elements)),
+		nameText: name,
+		done:     make(chan struct{}),
+	}
 	thread.run = asRunnable(runnable)
 	return thread
 }

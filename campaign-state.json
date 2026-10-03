@@ -11826,5 +11826,85 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "IO/File/NIO applications and all20 original intrinsic parents independently green",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress119": {
+    "status": "CANONICAL_THREAD_NAMES_AND_TWO_ORIGINAL_CONCURRENT_APPLICATIONS_VERIFIED",
+    "implementation_changes_published": true,
+    "verification": {
+      "native_counts": {
+        "119-runtime-thread-race": 28,
+        "119-thread-contracts-race": 7
+      },
+      "original_campaign_reports": {
+        "119-round01-concurrent": {
+          "report_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-round01-concurrent-artifacts/20261003T060003Z-456477121/report.json",
+          "report_sha256": "e09713b8c74ec40c7089baff9c400df0561b392f2c377297326a7cd355c6fd12",
+          "parity": 9,
+          "additional_stress": 20,
+          "all_generated_packages_and_main_race": true,
+          "implementation_sha256": "389169d2d64234da11d494efe4973fdf3b9af9450b7cdf52f18a31da358c30b3",
+          "selected_dependency_source_mode": "frozen selected whole-class source closure"
+        },
+        "119-round02-concurrent": {
+          "report_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-round02-concurrent-artifacts/20261003T060215Z-972491062/report.json",
+          "report_sha256": "3aaabf925813575c6f05ce9fa6f47546d97436d49e593ae04ea513c849c6b769",
+          "parity": 9,
+          "additional_stress": 20,
+          "all_generated_packages_and_main_race": true,
+          "implementation_sha256": "389169d2d64234da11d494efe4973fdf3b9af9450b7cdf52f18a31da358c30b3",
+          "selected_dependency_source_mode": "frozen selected whole-class source closure"
+        }
+      },
+      "original_java_observations_dependencies_unchanged": true,
+      "verifier_infrastructure_correction": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-verifier-correction.json"
+    },
+    "scope": "Thread canonical name references preserve exercised identity, raw UTF16, supplied constructor reference, null rejection and caller/worker execution. Legacy host name APIs preserved.",
+    "independent_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/sql-thread-header-evaluation-audit.json",
+    "remaining": "setName and broader Thread lifecycle/constructors remain open; fullCI and dependency ladder round unaccepted.",
+    "publication_parent": "2c71932319f9235e894c31644aaf29aaf80b6897",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-source-manifest.json",
+      "sha256": "8459b2973e531c8229ddbcffc6f71cf4e1b5c543062cc0294a531b75c06f8224",
+      "members": 3198
+    },
+    "root_records": {
+      "evidence/119-build-stdjava/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-build-stdjava/result.json",
+        "sha256": "48bff7918f2b2f3a95947d9f1c52afec6bdc5c27c6fe628149a9963c882d3b7b"
+      },
+      "evidence/119-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-build-transpiler/result.json",
+        "sha256": "c4f5a69e105803cdd8365d48113b158e2c0be8ac28cd5e17b9cc51f4e10f3c7c"
+      },
+      "evidence/119-build-campaign/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-build-campaign/result.json",
+        "sha256": "f702d4f7bbfe42a561c92e0ff0ab6a2b781c88e0d6bb6241eae943327997af51"
+      },
+      "evidence/119-runtime-thread-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-runtime-thread-race/result.json",
+        "sha256": "8440e72f6e6a2a98ce2f4331102454eebec235343d14b943da713a3406b6909f"
+      },
+      "evidence/119-thread-contracts-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-thread-contracts-race/result.json",
+        "sha256": "a6a1deb4bb262012befa0b67236714fe11fa86e30c08d19d90b3f72523ed01e7"
+      },
+      "evidence/119-round01-concurrent/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-round01-concurrent/result.json",
+        "sha256": "7372ca6afa3feeb34fdb063c4f0d594fba95cd915a270ee9a6724e0a40e1b702"
+      },
+      "evidence/119-round02-concurrent/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/119-round02-concurrent/result.json",
+        "sha256": "ae87ac660a2a367d9a19ca960147770a479451ab19f0269a6ef49362621283f4"
+      }
+    }
+  },
+  "active_resume_current119": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Both original concurrent dependency applications pass9seed observations+20extra stress runs each",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

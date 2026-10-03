@@ -1,7 +1,6 @@
 package transpiler
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -36,12 +35,7 @@ public class CampaignRuntimeThreadLocal {
   return firstValue + ":" + secondValue + ":" + main.equals(LOCAL.get()) + ":" + INITIALIZATIONS.get() + ":" + defaultNull;
  }
 }`
-	want := campaignRuntimeJavaOracle(t, "CampaignRuntimeThreadLocal", source)
-	t.Logf("JVM ThreadLocal oracle: %s", want)
-	generated := renderGoFileFromJava(t, source)
-	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestThreadLocalOracle(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+	verifyCanonicalStringStreamOracle(t, "CampaignRuntimeThreadLocal", source)
 }
 
 func TestCampaignRuntimeThreadLocalNamedSupplier(t *testing.T) {
@@ -70,9 +64,5 @@ public class CampaignRuntimeThreadLocalNamedSupplier {
   String value=checked.get();pool.shutdown();pool.awaitTermination(10,TimeUnit.SECONDS);return value;
  }
 }`
-	want := campaignRuntimeJavaOracle(t, "CampaignRuntimeThreadLocalNamedSupplier", source)
-	generated := renderGoFileFromJava(t, source)
-	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestNamedSupplierOracle(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+	verifyCanonicalStringStreamOracle(t, "CampaignRuntimeThreadLocalNamedSupplier", source)
 }

@@ -388,7 +388,7 @@ func registerThreadIntrinsics() {
 			return stdjavaCall(ctx, "NewThread", &ast.Ident{Name: "nil"})
 		}
 		if len(args) == 2 {
-			return stdjavaCall(ctx, "NewThreadNamed", args...)
+			return stdjavaCall(ctx, "NewThreadNamedReference", args...)
 		}
 		if len(args) != 1 {
 			return nil
@@ -407,7 +407,7 @@ func registerThreadIntrinsics() {
 		if len(args) != 0 {
 			return nil
 		}
-		return selectorCall(recv, "GetName", nil)
+		return selectorCall(recv, "GetNameReference", nil)
 	})
 	registerInstanceIntrinsicResultType("Thread", "getName", "String")
 	registerInstanceIntrinsic("Thread", "run", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {

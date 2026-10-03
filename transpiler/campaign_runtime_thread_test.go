@@ -1,7 +1,6 @@
 package transpiler
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -35,13 +34,5 @@ public class CampaignRuntimeCurrentThread {
             + ":" + named.getName() + ":" + namedTask.getName() + ":" + caller.isAlive();
     }
 }`
-	want := campaignRuntimeJavaOracle(t, "CampaignRuntimeCurrentThread", source)
-	t.Logf("JDK thread oracle: %s", want)
-	generated := renderGoFileFromJava(t, source)
-	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestCurrentThreadOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
-}
-`, want, want))
+	verifyCanonicalStringStreamOracle(t, "CampaignRuntimeCurrentThread", source)
 }
