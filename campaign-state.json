@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Continue Sol TDD on retained compiler gate270, certified closed source-bound families and Comparable bridge; independently verify byte-array range copying and Stream node prerequisites. Commit and push verified milestones; full CI and round acceptance remain pending.",
+  "next_action": "Continue Sol TDD on retained compiler gate270, certified closed source-bound families and Comparable bridge; repair the frozen typed-null utility-call challenge and verify Stream node prerequisites. Commit and push verified milestones; full CI and round acceptance remain pending.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -798,7 +798,7 @@
     "branch": "codex/adversarial-campaign",
     "remote": "origin",
     "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints.",
-    "last_pushed_revision": "7ad486b4186e1ccc2a082c186218d91b58bde34b",
+    "last_pushed_revision": "6334c4f6c278f17b9a00fc0c5b3ee6051b84fb07",
     "last_pushed_branch": "origin/codex/adversarial-campaign"
   },
   "regression_status": {
@@ -23317,5 +23317,117 @@
     "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
     "checkpoint_kind": "Java explicit-comparator TimSort runtime repair",
     "next": "Continue Sol TDD on retained compiler gate270, certified closed source-bound families and Comparable bridge; independently verify byte-array range copying and Stream node prerequisites. Commit and push verified milestones; full CI and round acceptance remain pending."
+  },
+  "sol_progress140": {
+    "CI": {
+      "checkpoint139": {
+        "FAIL": 8,
+        "PASS": 7,
+        "failure_jobs": [
+          "Test",
+          "Compiler regressions (2)",
+          "Compiler regressions (1)",
+          "Compiler regressions (3)",
+          "Adversarial dependency applications",
+          "Compiler regressions (4)",
+          "Compiler regressions (5)",
+          "Compiler regressions (0)"
+        ],
+        "head": "6334c4f6c278f17b9a00fc0c5b3ee6051b84fb07",
+        "jobs": 15,
+        "no_new_regression_claim": false,
+        "passing_jobs": [
+          "Lint",
+          "Build",
+          "E2E (non-parity)",
+          "Application parity",
+          "Vulnerability Check",
+          "Unit tests",
+          "Fuzz corpus replay"
+        ],
+        "snapshot": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/139-ci-later-status.json",
+        "snapshot_sha256": "2e8cb0324a76fd3199fb8ead7741610aeeb96ebfd318757229c04903ad569dfc"
+      },
+      "checkpoint140": "unknown until root publishes and exact-head checks arrive"
+    },
+    "checkpoint": 140,
+    "corpus47_scope": "separate source-only proposal; excluded from140",
+    "evidence": {
+      "independent_audit": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/checkpoint140-publication-prep/INDEPENDENT140-AUDIT.json",
+      "independent_audit_sha256": "ce9385955d46ed0e2a66dbb8a0bf6f57d2c468397399eff5365ace36743bfcad",
+      "peer_review": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_boundaries_resume/arrays-byte-copy-range138-final-audit/RESULT.json",
+      "peer_review_sha256": "ef3f2b57fb28a8cd855d424dae3b51b95bca337a3de6c9c3f6e9b55d69558892",
+      "root77_raw": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/checkpoint140-publication-prep/ROOT77-RAW-AUDIT.json",
+      "root77_raw_sha256": "ce955db297d26caf64559b2e2b038ce97cce1ff75a346f65ec38afb6e6f60ca8",
+      "root_terminal": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/140-bytecopy-range-public139-replay/ROOT_TERMINAL.json",
+      "root_terminal_sha256": "5af1b65c75ebcd7cb4bffa5a0dbeaf0b2150fb10aa6097348844e037f90e3d9d",
+      "root_whole_raw_byte_parity_sha256": "c94863c449887d31b30810165ec9943a76fe2a82447089db059c9f340cfade12"
+    },
+    "fresh_acceptance": {
+      "all_generated_packages_and_entries_race": true,
+      "all_package_race_compile_only": true,
+      "four_strict_whole_projects": true,
+      "fresh_persistent_Go_output_checks": 36,
+      "fresh_persistent_JVM_outputs": 36,
+      "full_pinned_lint": true,
+      "inherited_adjacent_RED": 1,
+      "matching_race_binary_buildinfos": 7,
+      "persistent_whole_parents": 4,
+      "positive": 76,
+      "raw_receipts": 77,
+      "registry_selection_cases": 21,
+      "runtime_parents": 633,
+      "runtime_skips": 0,
+      "standalone_whole_Go_outputs": 36
+    },
+    "full_CI_accepted": false,
+    "full_round_accepted": false,
+    "goal_status": "ACTIVE",
+    "held": [
+      "TestBuiltinReferenceArraysPreserveObjectThrowableAndGenericNullSemantics unchanged firstJava2goExecution[string] shape assertion; freshly RED and peer baseline-identical canonical JavaString output.",
+      "Other copyOfRange overloads, System.arraycopy API, full Arrays, whole Netty1212+8 and dependency ladders not accepted.",
+      "Combined private compiler frontier and fullCI/fullround remain held."
+    ],
+    "inherited": {
+      "TimSort_full_programs_and_JVM_trace_dataset": "prior139 attribution; full runtime633 includes TimSort10, no fresh TimSort sixJava replay in140",
+      "repeats": 3,
+      "seeds": [
+        17,
+        41,
+        97
+      ],
+      "standalone_JVM_oracles": 36
+    },
+    "latest_accepted_round": 18,
+    "parent_revision": "6334c4f6c278f17b9a00fc0c5b3ee6051b84fb07",
+    "scope": "Canonical java.util.Arrays.copyOfRange(byte[],int,int) only; written/imported owner/type/conversion agreement; signed int length and JDK exception order; fresh byte backing/null/evaluation preservation.",
+    "source_identity": {
+      "actual_published_manifest": "root must freeze after commit; not forecast",
+      "allowed_root_publication_paths": [
+        "stdjava/arrays_byte_copy_range.go",
+        "stdjava/arrays_byte_copy_range_test.go",
+        "transpiler/arrays_byte_copy_range_campaign_test.go",
+        "transpiler/intrinsics_arrays_copy_range.go",
+        "campaign-state.json",
+        "campaign/SOL_PROGRESS140.md"
+      ],
+      "candidate_map_sha256": "9a8ec756d5cd60d388fb996525a5dd2f0c02d050b7181a0ddb1a3995505af9ea",
+      "candidate_members": 3406,
+      "owned_new_leaves": {
+        "stdjava/arrays_byte_copy_range.go": "8c9737b586de63f8457d41893c6297e0fd89ff154a6d1031e0942373479e2db6",
+        "stdjava/arrays_byte_copy_range_test.go": "f98339599a6441e9bd671d3ad47698cca723d859e4c800b5a9442d288941d355",
+        "transpiler/arrays_byte_copy_range_campaign_test.go": "3f7dac506e861dc2177594dd0ed5d4091b525e14d0fb82721e3aa8d632abef52",
+        "transpiler/intrinsics_arrays_copy_range.go": "f9a694ad7f6bcb33b55e124f5e750f3ab10f072dda7acf67ca4266754ca4a834"
+      },
+      "public_parent_map_sha256": "6384b85576c6fce26c131d7ac49bfcaa0667a4af6eeee154dc7c45bfe89ac38a",
+      "public_parent_members": 3402
+    },
+    "type": "scoped-production-byte-array-copy-range"
+  },
+  "active_resume_current140": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "checkpoint_kind": "Canonical byte-array Arrays.copyOfRange overload",
+    "next": "Continue Sol TDD on retained compiler gate270, certified closed source-bound families and Comparable bridge; repair the frozen typed-null utility-call challenge and verify Stream node prerequisites. Commit and push verified milestones; full CI and round acceptance remain pending."
   }
 }
