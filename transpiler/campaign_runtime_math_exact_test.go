@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignRuntimeMathAddExact(t *testing.T) {
@@ -27,9 +28,18 @@ func TestCampaignRuntimeMathAddExact(t *testing.T) {
 	t.Logf("JDK addExact oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import (
+    "slices"
+    "testing"
+)
 func TestMathExactOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    if units := got.UTF16Copy(); !slices.Equal(units, %#v) {
+        t.Fatalf("JVM %%q != generated Go UTF16 %%v", %q, units)
+    }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }

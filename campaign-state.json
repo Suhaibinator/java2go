@@ -16851,5 +16851,1248 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "scoped-canonical-assertion-references-green-original-dependencies-red",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress131": {
+    "scope": "Two canonical generated-test driver repairs preserving full JavaString UTF16 results and unchanged original Java/JDK oracles",
+    "verification": {
+      "fresh131": {
+        "root_receipts": 4,
+        "peer_receipts": 9,
+        "positive_receipts": 12,
+        "retained_original_RED_receipts": 1,
+        "root_focused_parents": [
+          "TestCampaignRuntimeMathAddExact",
+          "TestStreamsBoxedReferenceAndPrimitiveCallbacks",
+          "TestCollectorsBoxedDownstreamResults",
+          "TestStreamsSyntheticWrapperTypesIgnoreSourceShadow",
+          "TestStreamsBoxedMethodReferencesAndNullUnboxing"
+        ],
+        "root_focused_PASS": 5,
+        "peer_focused_PASS": 5,
+        "registry_names": 1508,
+        "skips": 0,
+        "lint_issues": 0,
+        "root_nested_calls": 25,
+        "root_nested_race_payloads": 9,
+        "peer_nested_calls": {
+          "green": 25,
+          "red": 6
+        },
+        "captured_baseline_filesets": 6,
+        "captured_candidate_filesets": 18,
+        "generated_core_pairs_identical": true
+      },
+      "inherited130": {
+        "compiler_gates": 63,
+        "compiler_selected": 312,
+        "compiler_distinct": 303,
+        "runtime_race_parents": 619,
+        "symbol_race_parents": 17,
+        "skips": 0,
+        "lint_issues": 0,
+        "exported_files": 307,
+        "generated_module_pairs": 48,
+        "native_nested_go_calls": 499,
+        "native_nested_race_payloads": 363,
+        "native_positive_records": 67,
+        "joining_positive_records": 9,
+        "gson_tool_positive_records": 2,
+        "all_positive_records": 78,
+        "negative_original_gson_outer_records": 1
+      },
+      "all_positive_receipts_including_inherited130": 90,
+      "negative_receipts_including_inherited_Gson130_and_fresh_original2": 2,
+      "inherited_not_rerun": true
+    },
+    "compatibility": [
+      "Both patched drivers call Run exactly once, reject null, compare every UTF16 code unit against original frozen expected output",
+      "Math addExact original Java and onceRunSourceOracle JDK21 expected result remain unchanged",
+      "Shadow synthetic wrappers retain original Integer source shadow and2:4:2 oracle; fresh fullJDK21 control reproduces it",
+      "Production/compiler runtime implementation458 and all other3382 public130 members remain byte exact",
+      "Two repaired tests now assert canonical JavaString values correctly; no generated implementation edits or expected-value weakening"
+    ],
+    "evidence": [
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130-composed-source-before.json",
+        "sha256": "4681033145391defdab22674ca64a70cfaf93f440a919a3ed3a5ad059c19e090"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130-composed-leaves.json",
+        "sha256": "253953eb950596b328e024ac920ef693e5c76a2391f06f397c7f8a895b02f917"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130-public129-preimages.json",
+        "sha256": "64faac6c11f405d4150b5de13b754570e7f1d56174388b80b2c861094a9e5d38"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130v2-registered-plan.json",
+        "sha256": "d412c8aa3b1bec8822d4551ce75cb46aa5a39b5581ee0dbbff65c10338cd328c"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130v2-registration-missing.json",
+        "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130v2-verification-status.json",
+        "sha256": "a50d1df5ee2574ed1981f0701d8dca1ef7e5c446a1da355165432b804e35c325"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130v2-binary-sha256.json",
+        "sha256": "991525d3a4b6f564e97fccba19f355148f732b4ec9dad5d051ef5c3d293d73fc"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/verify130-v2.py",
+        "sha256": "831ba317d8203ed09fb6899736f563c252a139b53ba80f746a01b96424139050"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130-initial-registration-infrastructure-failure.json",
+        "sha256": "83452b97385a463d1e4dfd27dc0a3c996e0e9f92ecdc89a520ab2c7cf1792b2e"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/verify130-initial-infra.py",
+        "sha256": "32329848c5c61ca9382a8c055fba3ae49d2897f938dccb67f64184a6a15c2184"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130-registered-plan.json",
+        "sha256": "1907b29c5885c5932d5c2256b1c56c2eb22ec787f4a3ffe4eb2e43d11423579e"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130-registration-missing.json",
+        "sha256": "54a9362175e042a6b292568be1135e7a302a6bef287daa67b27c58387a9a3c8b"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130-gson-assets-staging.json",
+        "sha256": "0e1c4380f59449807a8b1eaa2ad700add90d551c545fc124ff77ba7c8da1b1c8"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/130-gson-command-plan.json",
+        "sha256": "9d542ae3e10a1110a1a166062e3c15414ecdcaf0997ecdbe808074b622ec541d"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/129-ci-initial-snapshot.json",
+        "sha256": "378d7935da93269db8f55924281e0d078605abdb6073ef83868937dabcc5c096"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-gson-replay/original-campaign-race/result.json",
+        "sha256": "ed9cf32025efb5157ded574c0463ed4c3e9871354f4a4931f7831d936f133482"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/PARITY.json",
+        "sha256": "7758c121e6b07546e8fb251827d35f780e84d3a0283fae07b29a8c1d1e421012"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final130-gate-audit/FINAL130-GATES.json",
+        "sha256": "5c9299889985a48fcd0f33bad2aafb5132fdc1e770411a0df37268e45a2abf8e"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final130-gson-audit/FINAL130-GSON.json",
+        "sha256": "25853272117766049a4a233a35e56fdfe42a3418726f01be9e1b66c938a7dc39"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final130-joining-audit/FINAL130-JOINING.json",
+        "sha256": "cca7a5d9bda2123bf9e2b466351551b95f31c56fd3cfc0907859c52ba6c74474"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final130-gate-audit/index.json",
+        "sha256": "caeceb3b6364e9b1af2a84a791fff138417e635bbc590b1ba40de6de2cc82134"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final130-gson-audit/index.json",
+        "sha256": "7dd89eb0a47e9b56ce51ec4dfeb86b93c642bbc56993d23a66554e4221a84bd6"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final130-joining-audit/index.json",
+        "sha256": "734d0553bbbbcc172c3008692b8bdfcb7666b6027b139f64d5bee99d8c633c7d"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/source130-assertion-peer-audit/SOURCE130-ASSERTION-PEER-AUDIT.json",
+        "sha256": "f11dd5644230f999de4eaeba81c3e1981ef4ab26ced5f144e09c40d0198fefed"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/source130-assertion-peer-audit/index.json",
+        "sha256": "2387d1716b7572bd0e7d35cd8100e3ded818911e54a1d579cea0b2ba3d3fa6cb"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-gson-replay/artifacts/20261003T125903Z-4196752739/report.json",
+        "sha256": "d8ab47715a6be4d72f54faf6211fca069619e718dca687548cc4b1494d798c46"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final131-shard-audit/FINAL131-SHARD.json",
+        "sha256": "03f01e1a2952c8c3ee290da433449a216c815ab934c76431ca1932cc4a84cfec"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final131-shard-audit/index.json",
+        "sha256": "9c0932292b007f53cdf020c0991a6b316020dad899f110d1331f181a881e0757"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/public130-carryforward131-audit/PUBLIC130-CARRYFORWARD131.json",
+        "sha256": "0d5be1986866c784c7986ba91a1ca2a7fce73547896e98323beac95361d2f37b"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/public130-carryforward131-audit/index.json",
+        "sha256": "09735ceae520d5cab3e40ea9f7fef263e8b7e8f1daf41334dad2b2b543cfd16f"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public130-two-drivers-for131-v1/delivery-v1.json",
+        "sha256": "22abcc108be4caf0fc64c95ac20d76b1d7bf9389b331a151d619c8f91fb95fd2"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public130-two-drivers-for131-v1/generated-core-pairs-and-shim-v1.json",
+        "sha256": "0562cf34d14f241e4d4d9c569faa20fafc0bc688aa7375beef67ada0b1ce8cf7"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public130-two-drivers-for131-v1/canonical-driver-repairs.patch",
+        "sha256": "5b364c46d3e523f1ebb13585477ba481eca6b1471d1bed612053aed9c2118ca6"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public130-two-drivers-for131-v1/public130-actual-tracked-source-manifest-v1.json",
+        "sha256": "6151c1a4070fabb60e5951783abae2e6bca41a6127bbb29506e10db952258adc"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public130-two-drivers-for131-v1/candidate-source-manifest-v1.json",
+        "sha256": "2edd54284f3c4abb3af7b2f92b637bf7253047d1dd8d0f8c306d4be1ea571b90"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public130-two-drivers-for131-v1/source-freeze-and-registered-plan-v1.json",
+        "sha256": "15c86e29ec84f7970a248cfa1e5da946802a8a58e6886ab91bf65a3b4185cbb9"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/131-composed-source-before.json",
+        "sha256": "2edd54284f3c4abb3af7b2f92b637bf7253047d1dd8d0f8c306d4be1ea571b90"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/131-composition-records.json",
+        "sha256": "1496d0101cdc6284a665db445c68b1171998e59161382d05faa254424410ff81"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/131-root-verification.json",
+        "sha256": "cbed79c405755b9dfc76b9cb28a722c95a2e618e6e538410bdc9a4f93d7be02c"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/131-publication-prep/130-ci-complete-snapshot.json",
+        "sha256": "ee8e80d60bf21bff6dbc0580243dda112e0a3bf501b914b4cd4f0abef41e0509"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public130-two-drivers-for131-v1/red-original2/result.json",
+        "sha256": "195456d926c18639115c44cdfe599aff2318dd6648974597834d286f89c9672b"
+      }
+    ],
+    "original_gson": {
+      "report": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-gson-replay/artifacts/20261003T125903Z-4196752739/report.json",
+        "sha256": "d8ab47715a6be4d72f54faf6211fca069619e718dca687548cc4b1494d798c46"
+      },
+      "implementation": {
+        "revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
+        "sha256": "964b5a2ab85895771b6b7be4d0f2f3e337576c9b75e094333768e9ef9c1aae7e",
+        "files": {
+          "api.go": "c12d3cfc5d7f22e759e69e0d6e1d93707371999845396f0b0fc097017af67b83",
+          "astutil/type_parsing.go": "26cc2cfde6c4c2d780e527d163f24bd8f36eca74d1a2d82191f1cd1c1575f08c",
+          "campaign/assertions.go": "aca1fa87ab07a04d2f5f3e534ae18f387c0639e49170b5cd4518ff5c13ede756",
+          "campaign/dependencies.lock.json": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+          "campaign/execute.go": "e087810ed31c55ac034ee4f9fc711ecffec925ce131cdeeafd1d335eb1d93023",
+          "campaign/freeze.go": "e4773ab381629a79c245b1a68b9f39d5b3adfe9cca302977e3a3044364d06533",
+          "campaign/manifest.go": "f3b024e8ade4346958338efa71fb67987f32f39ea9b092d5a660ef6f9b891f37",
+          "campaign/maven.lock.json": "41f1abe23389dc163edf9cea84aee613dfdd38aaa39a0250138983d9d20bdced",
+          "campaign/runner.go": "05c59feb55e404ec533753c27cf3eb6887000eadc59acbe1721b9acd706bb80d",
+          "campaign/toolchain.go": "02d7126fc2f52ec30d33e2c3a78c3c075a602042a13a8bf9ab406bc0df895028",
+          "cmd/java2go/main.go": "2881a0caca55be52fd2c0d3a63b713003e27a1f2888dbf980dbec7c2e6c4f824",
+          "cmd/javacampaign/main.go": "ac654b05326bba42dd30600e00548eddcb925ed7a01a744bff5c2a1888d5a8d2",
+          "go.mod": "d80a00e554dbebcba06b540a910975f0750f27b73dd5f87f05050d4e81e04aad",
+          "go.sum": "65a368bbd8fbd23cf318520bf703b89cba5ee7aed431fee48b179d93ee8fc698",
+          "nodeutil/assertions.go": "13f3e1dd98f80ba4f1db65c962af0d7977a00b1c4f24d2a49016d8af9a1be657",
+          "nodeutil/node_helpers.go": "813c9f211636c4fff173fd8938ca5c7a7c7f92bb760f52589a90e6656fe2880e",
+          "nodeutil/semantic_children.go": "b1c9a1bd95462657bf001e3e86bac03828244b5d3e77a9016892dc13fbc8eb6c",
+          "parsing/parenthesized_assignment.go": "d190e8d342ff595f6da24931a256127e66a68cee0b25ca6e594e2bf27b1c7494",
+          "parsing/parsing_tools.go": "94b9f8a2e07ee550b5e5b982c2557a3c7d7489d3382a326ba5b5f7078dad8eaf",
+          "parsing/source_file.go": "f2274602ee1081b823747d5e6461f7740c9d6247a39e76ac548a88b147e130b1",
+          "parsing/unicode_escapes.go": "f240a562d356a0ff8704f66cb4cf3de1fc91855a1e87da96c1756104dbc5b9c0",
+          "project/maven.go": "248b41153951f039246385eed46a656aede63398a23c1155bb8c1ef9bcba7a35",
+          "project/maven_compiler_plugin.go": "71d81f2349473c1acbccbd985f239a9455978084aa31422fbd842a4dcbd656d9",
+          "stdjava/abstract_collection_defaults.go": "8dae4174b5cc7e2c21764f87b5c11d03abee1dce5485edd8af58b122f5db0bf0",
+          "stdjava/abstract_map_defaults.go": "b45aeebbf0e70769b0465575de00faa98dcb4dab823c9d03aeb7cd3016950bef",
+          "stdjava/abstract_map_views.go": "54a51a048ade1386e66dd74891b35c7285a1ed83390dede588e5f32e8dea7bf2",
+          "stdjava/appendable.go": "975de79829e760fba6d1b614b1b9cc5beeef55026ccfe2f3341ea01a5f8134c3",
+          "stdjava/arithmetic_exception_reference.go": "c42e7d8bd185bed4c36bfb995a85e533090b00e1aea1cee934ee0440a4aa19a9",
+          "stdjava/arrays.go": "6bdee9d773bbc9aa82fdecffca2556990c2f2bc9b2c5bd47e573fa3e765a54be",
+          "stdjava/arrays_byte_string_reference.go": "3a441085efcc437d15c1595b5efc8b308337403683dfc48b3e01bcd1965cc82e",
+          "stdjava/arrays_equals.go": "cfc8c760457607da353fcabbc0bf55065c61004bbd50741a0594cb95c51fe966",
+          "stdjava/arrays_string_reference.go": "f64dcaa43516fef50a535606c9e28c15ab04b0258783fe66792fdfe641c3eefe",
+          "stdjava/assertion_error.go": "3e248c8e792f63a25e337893abff213c72446093c0110778eaef56bd10d3f96f",
+          "stdjava/assertion_error_reference.go": "eefe672e6c6d9ecfceda71a9403cad92f4c87489440adb7ac0210711ef1093a3",
+          "stdjava/assertions.go": "9d348238f0bbf68de96bc8aafed78beac7dd7ea831e87d539f8e5fb310d276bb",
+          "stdjava/atomic_arrays.go": "11142d2f0f6635b3e20507417c75a0318fc58298455e2ca638617372e9a59602",
+          "stdjava/atomic_field_updater.go": "8c8067f622d418b22f91be0efdd53fc670ad216b9c95d301e00613aa9fdd76b8",
+          "stdjava/atomic_updater_factory_string.go": "f154d6c75059c723b1807a88372d3489e9de800649740a6cd91bb32e494a72f6",
+          "stdjava/atomic_updater_functions.go": "a0a7f6b863e2028e302ff61849c5fc56485d16738ec8e4508cbb06d76777cdb8",
+          "stdjava/bigdecimal.go": "45117b6af36cf076562300cd14c3b1553fccab04141aeb3159a3e6f5824b19df",
+          "stdjava/biginteger.go": "035212ddf9b66b51a0ce1e25f91742af9bc9777a0c49629f73778f18228c6dbf",
+          "stdjava/bignumber_conversion.go": "e46e904d96c16108c6706d24f0dfce2e0a31f7af35b0715feb6d33ba3dea9bf2",
+          "stdjava/bignumber_parse.go": "37897d661038f44a2dab964fef71e303f8df095872def454538deb35c831012f",
+          "stdjava/bitset.go": "eefe248406bef7bc9a0feb42fd0a44b4648786f97e12629912184dbe53e77fa1",
+          "stdjava/boxed.go": "a4d1d32fc5ed2dad69aa4bbb064c959253888e845348cbcf217588a2adc34f18",
+          "stdjava/boxed_factories.go": "4cb45a445e40827c979364d2e13956283eef863657678f3860120e49c021af98",
+          "stdjava/bytebuffer.go": "738cccbac82207ae68786469472400421e9b5602cde7c4bdd7828adc671cfe9a",
+          "stdjava/bytebuffer_primitives.go": "b61fca9a12c7477f3b3c802605dcde60e724a478448ab22084fcf1b911628efb",
+          "stdjava/calendar.go": "b5c8b61200306b5f2fbc75661d04c9c8f8f57f0f9dcb193473e247f14fadb178",
+          "stdjava/character_digit.go": "d1f9702c973a9c7539914a9fc3851344ac07fb360ad53c67523cdc665af82f91",
+          "stdjava/character_io.go": "046413d47814e6370fb4e47dd1a792bc8f08cb14af5a13593bbb7d1e8c514223",
+          "stdjava/charsequence.go": "a8ac7e528248e970527cec1c54c91dfff685d2dc85b166d26c312859cd649b66",
+          "stdjava/charset.go": "24c456f6231210d7dc390bba32c0d6dee69eafb6b8f34566f8f5bad03b46b27a",
+          "stdjava/charset_encoding_reference.go": "257b221109f62d67e74b2459799786a40c6d510320c5e4080c375636eb00990e",
+          "stdjava/charset_reference.go": "8789f36dab95576b0cbf6d942fdeb9d21ac1f5334335a48dee9b8594bad902b6",
+          "stdjava/class.go": "59aed6f6286d4413471f688862ca0fee42c783a26b6bdebbecc012014061e5cd",
+          "stdjava/class_cast_exception_reference.go": "a4384fa4d3f75db44888e6f6da6b182332d02f812ef019eefaf266a69bbd6d58",
+          "stdjava/class_component_type.go": "affc09d113647ed5faa3f1d746a563a1c90e8859f6a17d66c1fdcf5733fb7b25",
+          "stdjava/class_initialization.go": "0d0a4c3c0f7b43fcab8eb33fbcbf884db6a0138e32e3df0b5593f47fc089fe43",
+          "stdjava/class_name_reference.go": "f5dc0f90035de0c7e26d1f10587672d6f17d4cbd10e5c1b0b03f057c2db71a36",
+          "stdjava/class_resources.go": "72d2f81a36ddc39b39d5e0712b4ae731eae307f8d15b024877d723332fbfabe9",
+          "stdjava/collection_erased.go": "d143e0b93b64b0a427cdd1356ccca471e624e81ddca02531e94aac967635b29a",
+          "stdjava/collection_iterators.go": "9db49b30ecdbaf43b6b7def4d5fdb0b0be6e6a40b1cbb88c0bcef457e53329eb",
+          "stdjava/collection_nominal.go": "02e374fca23d89f77c6869b20d69cbc4f21c50d8b0bf278e795821e7c6371e12",
+          "stdjava/collection_values.go": "5ead5dd3f4628cb8b6a17f195a01cffea2afa9660257361ac1ad4b9095745dbb",
+          "stdjava/collections_common.go": "b94a93521a82fbf8b902bd233429d285f50cc094cc64607a34eb1bda4f84352b",
+          "stdjava/collectors.go": "c4ba88f1830cc34e07394f18faa53adb4df12b64225118518f471617d1f8a073",
+          "stdjava/common.go": "1d647ec7c4b34028f126161c207dc5bf3fa602baaa4ca0120e4facab1608cb84",
+          "stdjava/comparator.go": "54b28a716aa2343a54dd4382675a912d26dd55a6bd399a64330def48bcd35248",
+          "stdjava/concurrent.go": "038d25b323e1d8f54a77068f023533ce3cf17469718d194332e120b3a1682f95",
+          "stdjava/convert.go": "6dc65970b718b2f04de774bdaee8bcabd63c32837149c8d88361fbfd9361b529",
+          "stdjava/countdown_latch.go": "594f4bf19512ffd7cb7b8b3b057acd81e4fa6d6709727badbb8574360bdcfbd6",
+          "stdjava/currency.go": "6b236c0075350b924c8337704227ede0aae11cf758d05a2e1343d7dad60a785c",
+          "stdjava/currency_data.go": "401e111513aae77a455f311dad854997d95d00d0f7d5f0ed6bb4111df0a3dd3b",
+          "stdjava/date.go": "3f172ac04af2f41e6bb449aded1f78c3ef141db92945e1528f8cd4a4c7f7f0a8",
+          "stdjava/date_format.go": "57e5482a71af81ee0643f9f1619848d7ed0d00e87ab730851bb2a7a25d12b870",
+          "stdjava/date_format_locale_data.go": "0a917405ec95e89b06e8e038c0b9bf887bdc7e15e5d98d781a449312dc53fb52",
+          "stdjava/date_format_pattern.go": "d8e779ff434766e0b2cc8f2ea1b9d3ade3409cdfc7cc31563cf895e3d65fe286",
+          "stdjava/date_format_reference.go": "bd17026411bebc9778054c16c967faa195ff9b73e342c931f033cdc80707346a",
+          "stdjava/date_format_zone_data.go": "0483e941a8b687b07efb1ac77b892337c6be245a4f08cbeacc0c0d43880fa957",
+          "stdjava/digest_io.go": "6742ceb737accced534b74c2685a53349ccea59a51bf85043ada373c4d75a963",
+          "stdjava/enum_clone.go": "492825bab50d2c32351fd4db3c49145cf0a634d0bbfef19adf809025773004ff",
+          "stdjava/enum_reference.go": "751037260adae276f74cf51443c02a081a90e3bcb3ae41a1c16dcff152fe1928",
+          "stdjava/evaluation.go": "1894c68b96008e89adcb62bea6ebc4e240f21c5544306fd266d0a31ae08c4f22",
+          "stdjava/exception_constructors_execution.go": "79dd79948e1f07c99ab3a011dc472871ddbf24964ec380008829d47850bb08c6",
+          "stdjava/exceptions.go": "eef21f857c3bdfba17fc5e93e44a4e5304ad765d3aa751b5a48201366e968a9f",
+          "stdjava/execution.go": "425a6cd3a92261e640fb557176629d9912eecd8da422335dcb386f34af5d018e",
+          "stdjava/files_write_string.go": "49d9f6477e1a22623ed0dc79a0cfaf5960b2cf0f0f82fbd62734a5ec5c7b5c64",
+          "stdjava/filter_input_stream.go": "2744cb1028009fb66309a3e191ac10a69266f3e2ac817ace4495892abbcaecad",
+          "stdjava/formatter_exceptions.go": "adc99cce081ff41e28e0e63bc4ff0d0613fbc395b44059d347850e2046eba4e0",
+          "stdjava/functional_function.go": "33b85b7edf1b1e8b749f297455e929b05e9a24e3e579f6b710ab453dff2fd83e",
+          "stdjava/functional_native_views.go": "5330a8213529e80e08ade3e14bc7668cbb6a48da0ae8da9c9341f32ea884fe65",
+          "stdjava/futures.go": "1f8126fba17d08c6703bff9f7f0a719f4b2d304f6de0760b4ad2581b086a7bca",
+          "stdjava/illegal_argument_exception_reference_constructors.go": "0a7a48320083a40a62f6f557b9afadc6b5deda8b8b43a4fcc3a96ff5106105de",
+          "stdjava/input_stream_decoder.go": "435c47c1e4e27f26323ed4834a7b4a92651316219be95b1caee7722bfed20c53",
+          "stdjava/integer_hex.go": "afd47c85be9179d9663bc62dc3585095923a36f06be723cfda574915b5e6f78f",
+          "stdjava/integer_hex_reference.go": "12d66f2bb58c62a53001e746de5b604851503557cd3d96b80a0f136f9cfe2309",
+          "stdjava/integer_parse_reference.go": "6601d6cedd9ab1d14e0c057603ba14e1742aca00b3a3c9637ac3545d187a826e",
+          "stdjava/internal/normalization15/normalize.go": "129978cfd380f315d84867fff424ecb9d7d622d46561636b3229a51cf320879e",
+          "stdjava/internal/normalization15/properties.go": "2cd40a4490057b381994fd7efbebc465a91bd5a2b9bab4274839126407cff829",
+          "stdjava/internal/normalization15/tables15.go": "373141ee09ec53eb9c5e106bba881c72c6aaf1952501500a3fa860fe090e795b",
+          "stdjava/internal/normalization15/trie.go": "baed7acae21335b57000a6217e3e70bb4c1d341c8b280b2d91a32abff47f6cd8",
+          "stdjava/io.go": "d62430e523238dcb9b070ad12b5ff78fcd7f96be09cc5e061bcb47c5140232af",
+          "stdjava/ioexception_reference.go": "a799114778ffbdd5fbf38f5057cee1d8d0fbacd9c80d614348379c72709a7f73",
+          "stdjava/iterable.go": "a7c72f4aaf237012d6b2f08983b732b8b59476e4e6bf6fb42f5525e90447bc97",
+          "stdjava/java_iterable_factory.go": "f718e13ae2915ef60d2198e229a81299d433d4ade259351468e7fce3deba6f52",
+          "stdjava/java_iteration.go": "7d46c31cdacd3cbd6c86d2cc7ca10cfbddcdada828c5533576e3f3b2b98a47f4",
+          "stdjava/java_iterator_remove.go": "35d426ca1f01c17261f55acee2151cd581976d2826826cf738ada8be1918ae86",
+          "stdjava/java_map.go": "b76594d51eaaa8647084ea66ee2f44b4d1bf915297f701f71882428502d7e3fc",
+          "stdjava/java_map_entry.go": "632070121ddd34ec9df4b82836a4ce11c47e92433f029be9aac549682231f75d",
+          "stdjava/java_time_calendar_values.go": "7bc967c165cbcdf3454588eef66c50c8d0a63728d109d71e52c44d9c8c5640be",
+          "stdjava/java_time_duration_instant.go": "ba38b4c61d571e93118ed0ec3f5f45e2e0c24e0669c743961c443fdc9023bbaf",
+          "stdjava/java_time_exceptions.go": "a02044e2bb389715e22d7b2b5fa0d84cd652dd01f1ef4373cbe05311035c8683",
+          "stdjava/java_time_nominal.go": "284bf37ea4da5e09fda1e18289e22edca532ac83c8d138d004b1347528d95d67",
+          "stdjava/java_time_text.go": "e86058e274d5a3719e0127f8a9c2bca8d6f2be3c9cf11257e872d2f64061599a",
+          "stdjava/java_time_zone.go": "a41087e05ca4011ab1082a002218c3941e22e70c398e15c4c7748fbaa6dad7e8",
+          "stdjava/list.go": "b4edfd584176e8f71adbe64a810d1a1a625ee97544191dd2ce214d90ac164708",
+          "stdjava/list_constructors.go": "8379653fde8b7754b4cba5a6553d08a6ef4b06386ef3f8aa815ab17327b3c989",
+          "stdjava/list_reference_string.go": "8dcf4203540b21cceb17810b8dcd2a930bb76d346acd7c31a3d4e619df823928",
+          "stdjava/list_sublist.go": "52f20a18f7d21a21c41fa3b4a2dfc936d6f7af58d73d372cbdfeff0aff5af4a5",
+          "stdjava/locale.go": "d72c4c7e99dbf20c706a7cc3c8590454ed33bf6db0959e472e7b545fa05d1f29",
+          "stdjava/locale_default.go": "490657f7a8bdc47c416ed4493b0d9459d7f5a337719ebf00591d03735b99efc3",
+          "stdjava/long_reference.go": "afa158e6a630ec3d6176a7b447eebb1eaf740a593419d591224e197f092c1d57",
+          "stdjava/map.go": "98b943dec90b19dcfdeaa54236a1c3c3b78330e2f17055996acffb81ba40ca4c",
+          "stdjava/map_constructors.go": "4545e5d8bad2141303e6c94b1d9707e5257193ca91c11ccddea6f727b2d7868e",
+          "stdjava/map_entry_views.go": "6a183045159497c7da7369fe2297271ca7e284a5b9abd0c5445fab00c0da4864",
+          "stdjava/map_erased_protocol.go": "76faa144ca55a246e1cf909559cece91d6d8685190a3efb5983ed9e059580572",
+          "stdjava/map_iteration_views.go": "7d3d7d770437592a43cc28b78fa1010561a65f1aa63f86389a48cbf5f9d88d41",
+          "stdjava/map_live_entry.go": "29e953d90cc50be34192507b975925cfd628e4469c7ea786ec78a5c9a44873f2",
+          "stdjava/map_put_all.go": "cd922b8ba2c3af03f2b57ffc4b523b49916e381b29197d0544f0dd287ae1462d",
+          "stdjava/map_reference_string.go": "5087d6ccc71b55eafc4911ac609fa7fedf2cb85a5acd38891b0f96731c82dca5",
+          "stdjava/math.go": "63eb40a96281c29207a244995e97d4be83d69bdba5a190a4558900c08994b7c8",
+          "stdjava/math_exact.go": "e3d974783eff98f8bf627d0c69dc390c366e8d482614e7a7bda295a5598653f2",
+          "stdjava/math_to_int_exact.go": "8940f333e1d3dea13552920ae38f5afc05a8b508c635921348038280377d505b",
+          "stdjava/message_digest_reference.go": "e61b11d45748454e4e783b0900b7fb1bdb22f49a706b12a0a055fd41a10161e5",
+          "stdjava/messagedigest.go": "02a4a8b278aee800b7dd75741bcbdaa58479f81a14566432310e017641c003de",
+          "stdjava/monitor_observation.go": "48801bf6d71a7609606bab645fbbd0b0b506e85db35f28bf401f1f756e44f2ae",
+          "stdjava/nio.go": "921365ce396963db1fa47d56fb74c578fe4133d70e3a44ff7583abaa18a34597",
+          "stdjava/normalizer.go": "665156271a5cd9e5efb2bad29700fef561f572ab4eb44e1c4a9f4f36480b1952",
+          "stdjava/normalizer_reference.go": "31b668f756215bec64e7e60effd0b79802209c256b99c2f15719c2c2df8383fc",
+          "stdjava/null_pointer_exception_reference_constructors.go": "cabd518fb65836267781fc4ca338cc104d275302cae730ee51b2b3b1209e50b9",
+          "stdjava/number.go": "504e18aab3cf79e99029245dbbfc858f6326eeac892b3c6bac6c534362b416e2",
+          "stdjava/object_clone.go": "3f1caccdba72d3a826b68720a7c6cdf141b5d95ae4a7f6899abe7fbc5df3e3d2",
+          "stdjava/object_finalize.go": "af68325c176724348a0cdcbcc230503898fad63130d887d2ec333423c1be2592",
+          "stdjava/object_methods.go": "b5326b882764f0076aa70a1ec0da9093fb3043563f84e0b587f1034cbcfada87",
+          "stdjava/object_string.go": "c522f81f3ba984a0fe9ab4dd0eeabfb7b44fd1cdcdec2e42a5227fba03a0d1ec",
+          "stdjava/objects.go": "c1cf752a2ee3baa3f2b67f7c43fe27e360bd2eef758b332ac4facffb25134852",
+          "stdjava/objects_hash.go": "4ef34db1ca89cab788b5ad41e8aa732387dcb2803ba06afeb6e22046bba755bd",
+          "stdjava/objects_reference.go": "abf1bedf46fd485b226078cdb744ccbb84a987b7ee362a8bf81b3e87418cca37",
+          "stdjava/optional.go": "ba8ce255b34ea2946aad2a7d2951c79d81940e05c7fb204c345afd2d06f3663c",
+          "stdjava/output_stream_ranges.go": "8e7c95982d19cf8dc79a1dd00c65c052b47ad487136eaa4bb643597ed0548298",
+          "stdjava/parse_exception.go": "78dd1f2bfe2ff99f9b11dd44516e3c5bc7a1108aa894baaf1426bd123dbad303",
+          "stdjava/parse_position.go": "b01e3e41c366a07b58c1e46da30000acbddd619d2afaabd74ff499ff1d765ccd",
+          "stdjava/path_reference.go": "73b6b7b94c0da4966f2cf413c2e6822cf912b6959a6a17ccffb4bf6a46aa9562",
+          "stdjava/random.go": "6e8c7a4a8b4ca73beb2db35559f485f03bb3151ac6ff498551a61ed0279f808b",
+          "stdjava/reader_reference.go": "af91679ceee1ff55fa8366dba9c8c37a99a73c4f73d2159862f41c91f94160f9",
+          "stdjava/reference_arrays.go": "6607ec6ec8dea07a1d26fe79c9c23f931dcf2f77b1271548b6737390d23427b5",
+          "stdjava/reference_identity.go": "f20b119bd3de3e25972fead82e702475315bbbbe0c307d6d52d1964253177280",
+          "stdjava/reflect_type_metadata.go": "ea676acbcc02462348f3e653c8348b43550b061d071004cd3de0fc3a81a2321e",
+          "stdjava/reflect_type_string_reference.go": "5149946764f42a4ca52915505704c9ea4ccc40e9baca5b331b1807dfb44707c6",
+          "stdjava/reflect_types.go": "c40559712ad2b4be105b2d816f8543f1512d858fec7a368176a56e9a46718f07",
+          "stdjava/reflection.go": "667723629c374a8bba427f9f16fcbb8ec0ab1ad05de792d25b259d0067e2e080",
+          "stdjava/reflection_annotations_metadata.go": "d20605a93ff4ef068b2ff585426e1293e39b38b69196d479cedea2d3f1ecc015",
+          "stdjava/reflection_constructors_metadata.go": "da1bb3f6fa8db5d2d620b995dca49482977524c6f9773457510388d3f89f6108",
+          "stdjava/reflection_fields_metadata.go": "18d0e727b1b3e1feae4c79e1515ac2f6c1b6be4fd95484eda058702bb562a5f7",
+          "stdjava/reflection_long_access.go": "554f30a56695ad0d082edc485d3b065ffd5a5b13e1d7226b5392f42c636d01d3",
+          "stdjava/reflection_metadata.go": "7e7ee98c7ccf860d6f0ffaf70765c2469dcc3adaf3ade2ff9a74c293219a4223",
+          "stdjava/reflection_methods_metadata.go": "d4d202127ddf306cae08f75223e6decc3c87026b1e00438f7b1446e62f3fda4e",
+          "stdjava/reflection_nest.go": "e817993fdb21f3dde73f87535a0361ceb007549126fcd8ee5d2d23d82035290b",
+          "stdjava/reflection_string_reference.go": "c16fc5486af0209d255d89e8247b4fc35c0d821d624b56219bde4ea1d35bcb89",
+          "stdjava/reflection_varargs.go": "c6ffadb36fd1421f0c4fbc0edd9502f69ca681734afab0723b95c97eb5989ece",
+          "stdjava/resource_reference.go": "fbcfce8c51060cb8f21c6ad4577b1d9109222f401d5ca4fea4189cb855c2bb93",
+          "stdjava/scalar_text_reference.go": "99c8d94e11cbeb756904149dc638e986774d494e423243f1164ec8bdf7ab55e3",
+          "stdjava/set.go": "a1fe7db5e7125fec62c358ea7838f8f1b4c95835733e11283c3df1127162c34f",
+          "stdjava/set_reference_string.go": "fe99a0e1376997021293cdf03a3c5f5f34cdb37c0053f9ed16082d9ad82d71be",
+          "stdjava/shuffle.go": "b4be887bcde7d9bcc901404bc11224e6041ff94e837c9c0a539ba5a095aae5f2",
+          "stdjava/simple_date_format.go": "5ae87708f61c7a884cee52e7f786fa4e723e60282e48e4705107e32297aba2d1",
+          "stdjava/source_text.go": "1b89651f403017eceedbec63d9c7b987c7af53c098829adb204b044bbb7521cc",
+          "stdjava/source_text_reference.go": "8a8b6396527bcf48c8741493ea3a3a2e336f890c0b0690d2f6d004cd24031fbc",
+          "stdjava/sql_datetime.go": "7fbaffc8ddf3a6a27b2cce61e596ded57ea8d6f4d758dcc1c1c9ed33a7bd99fb",
+          "stdjava/sql_datetime_reference.go": "304da2cedcd3675b78ebdfd13216a944e205d8e58059d56d91376d8f9207d4cb",
+          "stdjava/sql_datetime_text.go": "9e0d84565c9e845123205fde3ff5eb5e91975b44c9dd14ce3c01d55421d15402",
+          "stdjava/stream.go": "5fb09ee92be5aac33fb8c2308c3b9e0dc303611d73aded72c0531a71c8c6abff",
+          "stdjava/stream_java_string.go": "3858d9e8c0b07650d433e3ed22665c2ab2a5260b1b10021af54506a8c04f53f9",
+          "stdjava/stream_numeric.go": "3cefc2458871af07a1b5680c791acde851daad1e9a0226967703b852f468567a",
+          "stdjava/string_bounds.go": "00e2854e3aa18f044531107e0de367a3b159995798af6112ee4717ddd07f8832",
+          "stdjava/string_case_data15.go": "1e67dcd5aede6c486e9d2903ee5bb41c5b636d94297d80396393f4ac897fa4b6",
+          "stdjava/string_case_reference.go": "92bd828eab39277943caeb820f08d424087c1ac08718e28ed0df213bba37d470",
+          "stdjava/string_contains_reference.go": "9513ce9b054824184b6e05ffe0851453f8ce3f928049cfffa7f15cdcc852ac49",
+          "stdjava/string_conversion.go": "562e1fc392fee6473fadf80a88dcceec3e10ef5f70adf240fec29ec952ab39d9",
+          "stdjava/string_intern.go": "4dfb997fe8534a8cf0211d1d28508473ec0e920873270d2ca5a0ea9f6231a45c",
+          "stdjava/string_join.go": "4b54277c7b72fdf525063fd1c370965435d6fe4063588deb0d3f80af2e9d29e9",
+          "stdjava/string_reference.go": "1bcfc2f32994918fd4857deedbbd1f3344c5cc5a1db73769e186eaa75308b8c3",
+          "stdjava/string_reference_adapters.go": "28ea46376b4f4d4f4aad4463a842fc274e738fc381c53c6d12815cf638098f36",
+          "stdjava/string_reference_builder.go": "41fda11a12104476350af83411a7e9e237b5d7a17b2bca5999322080d9374d4c",
+          "stdjava/string_reference_chars.go": "d85a67224da25117f0f7640ba1c4a8de53ce2d19a2628985280e7c15b8271870",
+          "stdjava/string_reference_charset.go": "a670f3334003e600e1ba5605cb22f6ce53368e22715e4f928f762bbbd80058bd",
+          "stdjava/string_reference_containers.go": "0fbd9d31f2cdd74f0d30bfa8f84cb807dc6fb057802d4ec0004e434d348bb66b",
+          "stdjava/string_reference_conversion.go": "cc17954fd55d4180fca2cbb418d97212fa42920f99146e64fd7ad009ea6ef591",
+          "stdjava/string_reference_format.go": "4eb0af8d5808ab20b479e3aaea312dbdafdb643f2c1acc82fc1391879c1164cc",
+          "stdjava/string_reference_host.go": "b5f1043188cd6ac939888ed67f456252fbe81a648d0db6007c7eb37d24661c49",
+          "stdjava/string_reference_native.go": "0548613cd0ec6bf6894ddec84f046c1fd51030c8f121c4c0a933529c3f0f65bd",
+          "stdjava/string_reference_operations.go": "237963f321d5e0ef0847ab2d5754c688dbe84851fe3ca356afb3196fc7691b63",
+          "stdjava/string_reference_prefix.go": "3b1400ea3685c0011ba26f4b29cfac4973746952cb663c52f6fbf68694287fda",
+          "stdjava/string_reference_primitives.go": "29b683e19b7e7a39340c687d44992aa650a1b658899965b40dd3f61e48793d79",
+          "stdjava/string_reference_search.go": "cebe48364cb185b9c449d21524c46cd4ad7ee2635f4cc47926d85d81cffb3be6",
+          "stdjava/string_reference_split.go": "8aaaaa84b8569b50d686070ec5e003b56e58c6012019d57644dd71fc25d8af06",
+          "stdjava/string_reference_split_literal.go": "85c5f87bce457d5f469c960900a3e153de93afad4920aa8ff09e493ea6047396",
+          "stdjava/string_reference_whitespace.go": "68c61193512160f7bb3771df06cc102012493bef3bbb70efd3251d142068632f",
+          "stdjava/string_replace_reference.go": "aef1662105e8c8c6d41437ac84a9a9a70570417e1d21b13f6c5ebd3a3701eb00",
+          "stdjava/string_search.go": "474ef49ed4ae32f9807c3e95653f67abe61b28d4d80d3737b6019264e9b57e1d",
+          "stdjava/stringbuilder.go": "61fb310c8cbc6bb2979a060c81497f0504927874e4a0a18f2f57147c83fbe2bf",
+          "stdjava/stringbuilder_set_length.go": "d3dd15be471d98a14b9ec572ec23cbc6e595be05c47c490651c41ef852e88f4f",
+          "stdjava/strings.go": "44f2301adb31b3dd38f58eb05b08ca6071c9ccb45c6775e987ee3bcfa1926f18",
+          "stdjava/system_identity.go": "e9ba4f9ab578c62c40a13a6829a6a51c8bf3e347d52a750d7eab251c44f08f93",
+          "stdjava/system_time.go": "1d0a8dc62e431ac23d0308e22257a1922af1c149c895d2e04338f367190e8ed3",
+          "stdjava/thread_interruption.go": "94a941948ae2ae6fc1e3630a978519c1ac75cd6c455f8844164f78955f28d746",
+          "stdjava/thread_yield.go": "952737509379bef60cf38b8cfaf53ac9c3c4f227b7e7a9c036a8280cd1e31155",
+          "stdjava/threadlocal.go": "295b365be616839df235f7670e63234e562207d910a7b423f455847309fd081c",
+          "stdjava/throwable_descriptor_lookup.go": "7d5cf62100726c1f5862dda4c1db041291d6ca388f3b01594332d85294a1086f",
+          "stdjava/throwable_message.go": "86b79b5bd66eacebcaf68b6cdb7d9e62fee75a2c0697f1351e83cc4310c3ee8c",
+          "stdjava/throwable_message_prerequisites.go": "58be2e88643fc7554a24d733147c89fb2f74e9045399c4567abffb30f40fe659",
+          "stdjava/throwable_object.go": "a7c8c137772d16fa18fd43c2b141bbdaff43143c07b24ae8fd2f410f237a3010",
+          "stdjava/throwable_object_reference_constructors.go": "ce7e906cdfbaf9f00a9986dd7c6a8ed45ac3ccf93f9319af10d2807f339225ac",
+          "stdjava/throwable_reference.go": "4eff55ea77682eca2caeedf681c820c74ddaf0d261238372de8ebccbcf3c6e8d",
+          "stdjava/throwable_reference_constructors.go": "219e5a064093db7945111e8465377c24ad6af4feae86203b0220c123e195196d",
+          "stdjava/throwable_reference_diagnostic.go": "72a4ed44d898316c6c5ee68532c641325d1ec935dd7cda8bbb858c9468684698",
+          "stdjava/throwable_text.go": "1dcd322163f5dae4f33e8ddc7a3a912877e977d610d59dc4dca53902ac264afc",
+          "stdjava/throwable_type_names.go": "033ef13c4ff0aad06eb4318f5cf0851a5c70d0f12d25e5561cf59250f9af082e",
+          "stdjava/timezone.go": "b884b44ecb1f35079b74b668ac01e52da84b2212ffc36d71f867b17884743da1",
+          "stdjava/uuid.go": "3265e985ee1b95b1290d947a9763d8448465a2d0643296c68c07269396333b3e",
+          "symbol/affine_array_accessor.go": "d636e09a7bb7a972721c924e9bf67d31c2d0f6b74f6e13b8537a6791650d2a3a",
+          "symbol/class_scope.go": "de5df86661759e64a4fc3915739a61f2057f5460d985d0498c2580827cc997fb",
+          "symbol/constant_expression.go": "a38aa73d78089d90abaf8c9da6bac9a447b752c2d4e5cd4a34dca15c1a382b21",
+          "symbol/definition.go": "d2b87bbb6af252e82b95b997c366a61cfa1bea585c86da8365ff3f41e96b86eb",
+          "symbol/file_scope.go": "8ff2a510d278a0d8fad30a46d4ba1ea37101d8c19e1f8c8a8409bfbe9ecfc55d",
+          "symbol/find.go": "f99e0ba790978ed602c6c356067873984b9167bbf7edb516647cd074b32c67bf",
+          "symbol/globals.go": "ddd7448c96381db0bdfbaf2c3bcd517f396cbeb9cdc9334097fa1f7770320ef2",
+          "symbol/go_identifier.go": "5f138695fea748f4c9ca8d095836d8944e042a5bcb5df000d1ad2ab539b971a2",
+          "symbol/package_scope.go": "4a0151a81185b7a553487f8aa0dd20beee9f997f6cf3548cbb8d34dd9d11a5cb",
+          "symbol/parsing.go": "8a32707463861159b68a45868779eba918b6565b97a87255039581e6be50bfc7",
+          "symbol/parsing_helpers.go": "eec4d3d8ed8cea5f6bfeb86d38e6963ff8b3ab6fd5f2c5dd1a9ab7bc53998e20",
+          "symbol/symbols.go": "583abd3cf9bd3b2e2e276f996934b383196c9ec753c8125a0579964703b4040d",
+          "symbol/type_params.go": "ba6666edce746dec733ee4a02451188a5a44c947a9b92a98e0c0e34af31b816d",
+          "transpiler/abstract_collection_defaults.go": "d88822217ce7e8e86eef3556c90b4051fe6bc52c0491baf7c90d2778ab820f2b",
+          "transpiler/abstract_map_defaults.go": "2c2ab83b307806d77d683858eeeb6d7fd4897f2a90d428ea4202f86700bfdf82",
+          "transpiler/abstract_reference_views.go": "a58682a572db82b799d2b02170e65ba09ca5285458012f78be1a5f79e03fcf66",
+          "transpiler/affine_array_loop.go": "b82619e13689430d0d7c7880b4e2c8ceab63b2ebc87d8d1ce8d0c398f6c95fc9",
+          "transpiler/affine_array_row_loop.go": "69a0aad284588d1a9a70bcb75a74c3e0b8cec7585659025224ba6478f9bbbfed",
+          "transpiler/affine_array_view.go": "b02f5681c5ecd8c712bc26e53748dcfbcb3fcb8c35ac4f9c44c2c537c2bd18bc",
+          "transpiler/allocation_identity_codegen.go": "d677c4cc5ed89486129990d1bb95f970ebec2144ada15e5b428b093cfaa5c6f5",
+          "transpiler/annotation_comments.go": "3bf17f5f53036f735e0cd2b7864051ce8d876d8c3747fb3ea5eab543393750f8",
+          "transpiler/anonymous_field_receiver.go": "bf0dae9278f6fef8b4685bb9ceb7eed89fce3e3402098d3e6368fba870174934",
+          "transpiler/anonymous_parameter_names.go": "ab8ae0802504904318e112888ce85291a0c1eb96856774e33b75b3f39c9aee74",
+          "transpiler/arrays_as_list.go": "783c6650844b608db77aed033408f1b84f953cc6c220ede1d4c9cd8cd086ada3",
+          "transpiler/assertion_statement.go": "58af18d51bbd0821cedacf37e3c3ccc61f602015ecca815286484e9a1b12dde4",
+          "transpiler/assignment_nodes.go": "0ed231890ea32715a9d80502dfbba342449162b17428f3814b441d29ba3d5df3",
+          "transpiler/atomic_updater_operator_lowering.go": "5de3d7a5f7fa8badd9470f1509d45032e138a2ac580cffa50fc5802be9528ff1",
+          "transpiler/boxed_conversions.go": "6753ac962557eb2dc50d8f1a5cf364be536487f8eb1415503f5b1d10b975fe7e",
+          "transpiler/boxed_string_intrinsics.go": "750139ddb611f0228a079fa2b84e6fed9f4763eb0d71b7960700fa9aaed590e3",
+          "transpiler/boxed_type_hierarchy.go": "b7a14d83a9e7daff1be9e2b76eac571121c31afd672a9df889e75447352c1a18",
+          "transpiler/builtin_interface_inheritance.go": "ae6c9432441377392941ef9e769c2d8776fffcbc33da2c978cd7a11001362bf3",
+          "transpiler/canonical_generic_layout.go": "e09cd52fe718376a1e74e13245c4b8b37c09b2757412fe2e58f5bec6696d6306",
+          "transpiler/canonical_number_reference_cast.go": "1efb196902e295593090ce88ef070e46204f367216b7352cd7101d862b5368a0",
+          "transpiler/character_io_lowering.go": "923de52f2fbf964cfffd18c23407c7015a287c77d415aa86e99759d571a08b9d",
+          "transpiler/character_io_nominal.go": "f27196939f3c6269ec3a12604430f576bfafad4650c865954bc23d549599ab29",
+          "transpiler/charsequence_nominal.go": "0235505d028a0a8e16067c3004d90160a7d2a5b6052ebb9fd4a28ef0a74531ce",
+          "transpiler/class_component_type_intrinsic.go": "93614143591bfbaa7eec31367cabe8db9a7178dd8346253eac7e72c053f6fc0b",
+          "transpiler/class_initialization_codegen.go": "1643f57daa1a9dd2feff40107a4035c4ff5a107e45264de6a2f24a1dd72fbcc4",
+          "transpiler/class_name_reference_intrinsic.go": "123808a769b873536cca37f39456f01fc9d01c621a556279aaacc69590e83c84",
+          "transpiler/class_object_intrinsics.go": "2be99d535b0b7a8491ff14448b0f9b6b8586e824b93c87926e5fa1609213a0f6",
+          "transpiler/class_type_arguments.go": "63517f1a928348a36710546c61c4475bc84213591e917c86735278e747e426cf",
+          "transpiler/class_type_parameter_erasure.go": "25ecc7ba5977c1341e71ea3253e327370b78b6ba0637ee0a2dab58707806b091",
+          "transpiler/class_type_parameter_field_projection.go": "1a9a2c442c6c521e322a07d65e1669092e361387cbbf93a889921c93e2fb0f7b",
+          "transpiler/class_type_parameter_override_bridge.go": "4d428fe34117a5b51da700bec85754aa6c69050cbf7161c1f5d309a0a0339e62",
+          "transpiler/class_type_parameter_result_projection.go": "bfe15bd1a7e8e98596d535d2c08f17ea23200bb724fdfec91e031f561ede6d67",
+          "transpiler/collection_erased.go": "0f0d20e0bec832fe7f3fc67ea7c81f860ae60b4b4eb5c2a3d63c3e578e5aaa4d",
+          "transpiler/compilation_unit.go": "e7e9fe421ae60a1fcc5534a9b2dd4d6b23bb8a18f60b2aebb5277fc28dc08b87",
+          "transpiler/compile_time_constants.go": "22b89572dca903cc42196b585f2ca40afc77ab3287f80a0185a3a306f33dba87",
+          "transpiler/constructor_reference_intrinsic.go": "e9330f8fd3a154570cb8b11ba894c646dedd71ad2db477a79be1623ad26020c2",
+          "transpiler/declaration.go": "6b2c0edfbef56f1c2c5ae9d4835b55c3df43203625e6cdd3d6999e02e2b1a691",
+          "transpiler/dependent_type_parameter_witness.go": "3f0f715275355ccf638b48f2dabadc2baaef352ab6dc963b8d1798c85cb60512",
+          "transpiler/diagnostics.go": "db618dee57a4f7e21f9f2bd7c65cc78ab6888ceb784e45883488908761a42355",
+          "transpiler/enum_reference.go": "93ca85c32ccad193c79474620a48d13ae191404a85329296f288056e49260e8a",
+          "transpiler/enum_reference_codegen.go": "99f1e09879c29b3c0bb521ab9824d5a28efc075c540da93eed0b97ed3e575b33",
+          "transpiler/enum_text_invocation.go": "0a9df2d1c9d1e3876ef00c05790c0e55a17e0b4d32afebfe5fcc628e6dbf649e",
+          "transpiler/enum_values_array_codegen.go": "6cd352884e895bb861af03de5e19a5976ef45c89d2aed18002931bed92c68c58",
+          "transpiler/erased_set_defaults.go": "44cc41fcece606a70f144cefcc49b356d2c85f7aa8e8ba07eff723d432466fac",
+          "transpiler/exception_storage.go": "1e6a400ef3777791f476438402fb813b070d2067262fe28bff97a3398b7225fc",
+          "transpiler/exceptions.go": "09c6a22a872fe04fa25833d17e027f29f5fa93ccb8ed861134d38dd6e7a2bba5",
+          "transpiler/execution_context.go": "8eee49ff4dd29d91c316b39bb240114ec71ba0d5d35144bf388f12eda8a3b779",
+          "transpiler/expression.go": "f59ef86ecdc64eef7c092e548d18fd1d44bbefc300e684da47e3a76add1493d3",
+          "transpiler/expression_roles.go": "a16050004d36dff0dc01068e80299fdbc5a37732ce94da74741bb68c23567760",
+          "transpiler/filter_input_stream_lowering.go": "74753efcb29cacdf4a97c27099f9715d6b052e3b306d2586eb9c16715b79cad0",
+          "transpiler/for_initializer.go": "0d9720c2fad4b0ceccee9817c47cba58685a5a9b527b9423cbad952413872d90",
+          "transpiler/function_sam_codegen.go": "ee719a8fc1c6d81db0dfe574827022ba233035799e306d80efbfe5351988bfad",
+          "transpiler/functional_default_lowering.go": "cb648ecff30c23c31dba43fe598d1864c1b7caa623f3086b82b5a7f312dbd517",
+          "transpiler/functional_source_views.go": "54dcbeb85d3c402c823cf572e443158698474beb5008afc494a0db45c29e5caf",
+          "transpiler/generate.go": "f25422f432a63134bb106eaab6989208473c9aa93657e19c1f76408bb7272cb4",
+          "transpiler/generic_class_representation.go": "26ac305166233bd5ff68f8a63e4aa3702394107120c3937df8c554a35e843d4b",
+          "transpiler/generic_family_codegen.go": "fd7b9bf1c29494ce7d025f6ed0d8c7d890eb5d329f226aea083953e506d5788f",
+          "transpiler/generic_family_plan.go": "e8dd1a0a41a17a3fbae2f222bc4a275723de0b3533987a6fb296e1a5b2d20d31",
+          "transpiler/generic_family_representation.go": "463aef009e290d2086d1613351d44b897d7706f28619c10942ef9507a903f176",
+          "transpiler/generic_family_sam.go": "c656f5fc520501f1e6b70261659353a3120672521b0d92d76f32ce409b8ef7cf",
+          "transpiler/generic_invocation_result.go": "f2983720a39aec1ca5e92023bdb19637795adb3cb842e9e8d1e7a44e51e1d64b",
+          "transpiler/generic_main_process_entry.go": "c07eb27306b78159850b8e246745b35dd8877d0908fc26863073cf7edd41199e",
+          "transpiler/generic_method_dispatch.go": "4eefab9b8a8b2fdd26a62494df7b3672037ed7c51fbffe20eec1dabce36c1d9a",
+          "transpiler/generic_method_helper_names.go": "08e057de917d4d5c1aa4e1ce2b347aabaa20b3896d268752ae344d83a9e0107a",
+          "transpiler/generic_method_reference_result.go": "8a209617213b6a8ad56f16af854e0430f22a294a1a9634c57f320d273e2c57e5",
+          "transpiler/go_identifier_hygiene.go": "1b0b6969a42b5a488af35610d163b3bd918e6f2e36a31f74f365cfe364482dff",
+          "transpiler/implicit_builtin_methods.go": "d64e6991e35ce7d5015a1cd4a039ceb7f463337879b4ff9865231b895f4c8476",
+          "transpiler/implicit_object_metadata.go": "3eef5496ea7a2a8f630d2044ecc21ef4901cf22ba622719d8d380f5dc2815e86",
+          "transpiler/import_source_inventory.go": "53fc8bfcb8b9c005cb9fa5421f42f9617327eb1584818a94fca5e61086442dbb",
+          "transpiler/imports.go": "b6271db857c9eb2511496d2f966bfee72e4bbc49e4a559b421fc928d81d767df",
+          "transpiler/inherited_class_overload_names.go": "668cba9fc30ea6db08b544c64a601f6ac049c9bca3fa5824465c8fa92f5a43f2",
+          "transpiler/inherited_object_text.go": "9931135c09c1ebd0169939bc62582f75eb1e0db837bd48239052f7196add866c",
+          "transpiler/integral_cast.go": "d2a6722acc36231e729c2891b17504332a8422fd2d9d976a90fb793a5026c38b",
+          "transpiler/integral_unary_literal.go": "fe95e59f8694ee7678ad5d375806d005e3081ef57c8c4003b5f3b76feffa5803",
+          "transpiler/interface_covariant_bridge.go": "80b8874b89acfff836c6141c239ba699dd9dd1ed5f9d46bfcf804892aa65c52a",
+          "transpiler/interface_covariant_projection.go": "adb360a26caa39c6ae67196c01d1417aea0437680cc0505dfbe470731aa9da20",
+          "transpiler/interface_overload_names.go": "d0cb8d5f14c4ba5ba8b2133f9153de82ee0476551a366925f33f1fdc64ab0e01",
+          "transpiler/interface_static_fields.go": "67d54540edf5d91a29fbbc52bdd3af256923579ab70456d67592915542424a9f",
+          "transpiler/intrinsic_invocation_evaluation.go": "5d3f9275cc1ab29c9979840d9a1fdf96ed199e12f80c11dfaab1fd82552aa676",
+          "transpiler/intrinsic_owner.go": "cec8df348393048f53cb7995bebfd94fda284db0ff6dad39fba639e2bc4f13c5",
+          "transpiler/intrinsic_result_declaration.go": "d3d27e4f6a1ff8e74cf6ca24730bf2de98c8fff0d1b9dd3f39ee4af3c708d282",
+          "transpiler/intrinsic_signatures.go": "252c245f5f11dc00408fd52acca1a707e7c224479a6001f775c515db73ac8cad",
+          "transpiler/intrinsic_string_conversion.go": "c396af834cda87416298a20c9de46bf429081007ab9b3d50c99d35e60f9b9e20",
+          "transpiler/intrinsics.go": "3bdab00308ac8480f6d33881b00e9e45446e6868b7e09a5d6cca80ffbf7089fd",
+          "transpiler/intrinsics_assertion_error.go": "41916033e19ef1e2e641b51baddd83e5b88d2a5bedaa1b1977d986896486c5ea",
+          "transpiler/intrinsics_atomic_arrays.go": "4cacc4d338076cf4524e7014284ceaf9999683a9a367d811c30547a5465150aa",
+          "transpiler/intrinsics_atomic_field_updater.go": "e4b1829c04cb44466f2c92401bc6cf372aedf06ebda0f1488d102f7501277881",
+          "transpiler/intrinsics_bigmath.go": "14f7fad4d82c45c55b8fe1e67b7e8d77ad20148ade22fea69ef4d10f1608e74a",
+          "transpiler/intrinsics_bitset.go": "16ae54ff81af6cf63e60f52dea447087e6bc7c34b4a5126719a98c068d06fccb",
+          "transpiler/intrinsics_character_extra.go": "9fa4fa854c4dff369a94a6b5daa155276c3a429540a85fcc767c1dc4a6f164a2",
+          "transpiler/intrinsics_character_io.go": "0efef6bf6a81206422e82fb7ae81de68edb9c0cd9a8ca0174efaeb60f2dd3ce2",
+          "transpiler/intrinsics_collections.go": "f374973b89d43729b4d0355db0ef42d1d5af2e4c668f04dca92636cd00642188",
+          "transpiler/intrinsics_collectors.go": "1498e12def9e74fd5ab4cb51cd44727cd5a7d0b119ba2717e86d25a03d7dc4f5",
+          "transpiler/intrinsics_comparator.go": "909c96ff032e740938ace5ce39dbe0d5d0a08f1b7d051aba466375ab0c25397c",
+          "transpiler/intrinsics_concurrency.go": "24725bd5bc81196ef9ae77d217c4e12e125bc3016eed90dc4491be733d8f4ec2",
+          "transpiler/intrinsics_currency.go": "eff739cc9da46c4f44ee536b9f6496c47da92fe174afc4cd45ec9a37241fb8f6",
+          "transpiler/intrinsics_date_format.go": "b2054330a97474ca91414a8d73e943c7b1164843367d70463a88eb787aafae9c",
+          "transpiler/intrinsics_datetime.go": "6065910eacda55d04f4efecd7131ef06302ae24791cb007bb246663de8b2a47b",
+          "transpiler/intrinsics_digest_io.go": "3c4e53a89b953a3e05f0cd9b075b66619f5cbafefb9fd22efef72c321e6e5896",
+          "transpiler/intrinsics_enum.go": "493633357f350fe2d94ef27e6c465e855f5fc69b0d157470e4ed6f321e938bcd",
+          "transpiler/intrinsics_function.go": "477613739c4aefb5bffebca07e7bced056fc784fd09e7ef3e7af2b7687d1821e",
+          "transpiler/intrinsics_futures.go": "42ebcdf932e5b2a73a5a4ef623cb677f809661e804422e07a4aad2fde93dae73",
+          "transpiler/intrinsics_io.go": "a41e2c4ddfab9758d2fe6c27c75077638b5dc2b82dc50e28cb3783d77d5d365b",
+          "transpiler/intrinsics_java_time14.go": "e6df88a20f38155070e79d738d7d952b27cb15973a47a98f00f2129d56550741",
+          "transpiler/intrinsics_math_to_int_exact.go": "0e70e2a15e297f2ae47c3d30193c7db00e258e7c8c9e046238eb5396ce42ce63",
+          "transpiler/intrinsics_nio_heap.go": "9a12e17f197030d44f912eeee6ad37f1935071042684b333d76af82a56bad0db",
+          "transpiler/intrinsics_nio_primitives.go": "7e97b6de4537d615667d31dfffdaa17ff8ad6aac52d6105917e03de5296f7b40",
+          "transpiler/intrinsics_normalizer.go": "5c2b27fa8f4da21eea4485eaddc3ad910b3e61e29dea5bd3e89990a87babdcac",
+          "transpiler/intrinsics_objects.go": "ca67ed56aff940d5879da3738c972ddd1dd66505bb794bfa8bb027c111264a87",
+          "transpiler/intrinsics_objects_hash.go": "e76ee57b2710504169e5d7b9ff0845846e512cead70f01df5ef6d8f73e7873e7",
+          "transpiler/intrinsics_random.go": "c06f7886f3e78a81946c3484f7e0656b3593c4df4c78df3c6e0aaa141e62ec25",
+          "transpiler/intrinsics_reflect_types.go": "05a13b8adbe32899034c0dd71205b504108e6500d49d3205352409cd815c1c7a",
+          "transpiler/intrinsics_security.go": "a4e2e8a890f00f6ae9ee5008be8a35572c2352de9cca83ab15dfa945c7320b48",
+          "transpiler/intrinsics_sql_datetime.go": "389632894ec0aec73377719eebe3b3c873df9db79dbc202b9e76dc91365d8f01",
+          "transpiler/intrinsics_stdlib.go": "f9911dc7a7c4f4b17a5c763de3e0ddde8ab453fe11aafc38352c6ae5e4d364f1",
+          "transpiler/intrinsics_streams.go": "e849982033dcb885aeec9a0a8efbda8e96db11b57f287b195090abac7049d5d0",
+          "transpiler/intrinsics_streams_numeric.go": "e8cb715b01960b49770dd8a5148802a1885a7be574ac4b3bb311a1b49391bc57",
+          "transpiler/intrinsics_string_hash.go": "5c1cc072f981e7f5ba374d926525036b63ddbca70b140f2128d386abfa01c5a0",
+          "transpiler/intrinsics_system_identity.go": "09e35a9f3fed2d574a903aae6dab013d20d275407ae1df46b7c38eb32ab77e8a",
+          "transpiler/intrinsics_system_time.go": "06797266c5a79a8cf84bc5936443ee516fde82265471d333c63bb8b703d9c9bf",
+          "transpiler/intrinsics_thread_yield.go": "2664f52a27ea326bc44ce636f5aa45f7964080ada7f9a07e38558d54f5902a69",
+          "transpiler/intrinsics_threadlocal.go": "74f876a283af5bd46015425483d7f505697e4545a4b2c67ca8bfac5ceb3697c1",
+          "transpiler/intrinsics_uuid.go": "6eb69cdc25a43d87aefeb90fc8d15eaa077058ddf312c80a33a0739834e813ab",
+          "transpiler/invocation_primitive_capture.go": "13001a966442c5e70de7191114c13012be78929900c052750dddecf4d3ab3088",
+          "transpiler/iteration_nominal.go": "68d64a79242cf3ccb8981370182b45f38f76e91121f68ee13a4b9626dd0a9e7a",
+          "transpiler/iteration_source_bridge.go": "15574241187412ea6b049e1ee775911a80361b755b78dd9be97a8abefc7fc5a2",
+          "transpiler/java2go.go": "c332136f7dc309e7cd9204c80a85c3e8991d74784f7c6c42548c01aa2cd1bad2",
+          "transpiler/java_type_origin.go": "2e6eea8b2a27faccaba1f59f782a97c5794400999aa1e1fe7872be1d5b9e01e3",
+          "transpiler/labeled_statement.go": "133db3e865ed298734f33af2d1476ae0a15adf513f435b0b84be76bef492b691",
+          "transpiler/leaf_object_erasure.go": "ccb36c7ddf746682a4059293515f9ec8d20bb2908f547287ef778d15c073d2f7",
+          "transpiler/legacy_main_arguments.go": "8735e566d219a06a57df46522dbd57f55c0afd2bb96e3e71b844cdd2f85fb7b7",
+          "transpiler/lexical_member_types.go": "d3b3c00b20579b2ff4dc0d58cad734f9f3e8617b12c5cc7e23c6fac4619bfbdc",
+          "transpiler/lexical_type_parameter.go": "fcc7c60b43c4b143be3ea995150526a315eeedbea1a3bce5c02ef5dbe238ccdb",
+          "transpiler/list_sublist.go": "4d8e77f2c6e4b89eeb8bcbcfeac8f2f99448a1a9217d9e9bade151ccdc337c0a",
+          "transpiler/local_class_visibility.go": "0941df11a6444b3adb77842a61ebde5571b86190d03ec48837a79a229fa91849",
+          "transpiler/local_declarations.go": "3c85dd5ad61d5a482733603c933525c53460e8871e9067d05c399367953dbc99",
+          "transpiler/local_identifier_demand.go": "66843bf8d69399e96afe9c71fc60a0f486f8631cedb6f8a201cc4d4ec624d64c",
+          "transpiler/local_identifier_hygiene.go": "e9e9804af0b00313af4e1d6566329eed5f918b5a3f8d9cc2b2264a58e4f5ae87",
+          "transpiler/map_entry_applicability.go": "1d8e1e1ee5121fd6ec76987fb3ed639df55e1408bb151696bfd8b5a83c77d336",
+          "transpiler/map_entry_bridge.go": "49c5d87ecdbb9e76f5339ef3dcb6a7e0cda4d98cb4cb14af823dc26f2baaeae2",
+          "transpiler/map_put_reference.go": "c5d7d855a924b2b66f6f1cf4e097c08a611d9f4d68233488d4f0aefdc590dd76",
+          "transpiler/maven_bindings.go": "4d61cb0dbd8ba5e3b9e9dc20c436a9b46e3dcd222e232aef11f9391a9e6e25bc",
+          "transpiler/maven_embedded_fields.go": "9c27a49e5eca1dbc88c2713ff2000ee6ae1e92102ad7730eae64d6d68b5ad7d3",
+          "transpiler/maven_package_lowering.go": "087853e8f39db876bbf7f145f14c661049238f5c4a079cc928e456e82555b104",
+          "transpiler/maven_project.go": "bf6694e43ccf6ee485ec42f56595fd38630e05a4f9e68702d42ea78e225b4ffb",
+          "transpiler/maven_resources.go": "bdfbd3c159a7779dcd50e62009be0c8b238312d5cf0d11ff5c4af7707adef94b",
+          "transpiler/method_invocation_bounds.go": "4db1b42b7bec73888940f6f86ba369eb0a0da98dc6a6480784be75cac27763b5",
+          "transpiler/method_reference_boxing.go": "b6ce116f65610dcc667dd14b08c5b6e11b51a812bc3840a24beda16a45a843b8",
+          "transpiler/method_reference_overloads.go": "2ff666ee87cee3f6d7797c391adf9110f0de1616976daea19d55748987c52606",
+          "transpiler/monitor_identity_codegen.go": "46493afd15c93c8388da7b8d08652488459406c56597b4aee8e6a4591b61bd9e",
+          "transpiler/native_map_erased.go": "39d4206e19bd5da7f7a89467471519f63774ee9d504d6ef14d1a1f49c14b59ac",
+          "transpiler/nullable_reference_cast.go": "85bde388e7cf10d1330209e92c0f82714f3f37d3760dfabee4d8265dd8d87d84",
+          "transpiler/object_clone_codegen.go": "f9dcfc111c7db85f2da1b0c2544c5cea637d65150dfd4a7961092f977252e4e8",
+          "transpiler/object_super_finalize.go": "557871a1998fcaa73437be3b5ee8a3c79c43d766b142f4fd111e76f2b7bf890c",
+          "transpiler/octal_literal.go": "88e8b13deebc2069731ea7c6819a9525920a711c298897fabd63cfc194340076",
+          "transpiler/ordinary_import_types.go": "4161b585b1718577ce8ca0609ed082d875b88088b4edd27e4c6f9db89dfd7581",
+          "transpiler/package_static_binding_names.go": "dcd6b6a6c6d898650f1a1df977467530db6c527d562f54d1b866c8d398596da5",
+          "transpiler/pattern_expression_scope.go": "4ec7c8f53b6baac9d4b04d6f1760b6491e841c689f2f6df3ff65cf67fca90a00",
+          "transpiler/primitive_consumer_intrinsics.go": "ee3e83f4fd48880c5c8c138c801738b02904ff8f9bf265c3cbef33b69674ef7b",
+          "transpiler/primitive_operator_intrinsics.go": "1240128753d56ac5fa9ea0e5ee7e2a19a9bc2b3ab8ba84d25fade401967c90ca",
+          "transpiler/qualified_static_receiver.go": "af0a89d498a68487bba7a60e8c960a729f3fd6dcfb09036db7f2e47e37a6bb65",
+          "transpiler/raw_unbound_receiver_view.go": "1b5cdac9485fc9a62069b5c2ef950d9bd64cfad5c42a37acc636342f7004163c",
+          "transpiler/receiver_lexical_binding.go": "4a5fe21f08f000287dc75e6d5048b368c3e080a811f056d72dabd06231fa8a9c",
+          "transpiler/reference_array_codegen.go": "7a84fdc31c2661fee1981ffbc2e59c79ab8d6f0269359fa7cd49aa7bb27eb5b5",
+          "transpiler/reference_type_parameter_bindings.go": "bb242f84cfb3026717f5251d5c551727d5e8d0ceffa8165fbb371c1a20541e6f",
+          "transpiler/reflect_type_nominal.go": "c3a919c39869e29fc602b539a5c44f0602c976fc0729cb00ea5a2bfb9979745e",
+          "transpiler/reflection_typed_results.go": "5fff75a29afb597718c092459ab6ac5bb18b1f429aa1616e27f20c2738a11676",
+          "transpiler/reflective_generic_type_codegen.go": "d3f44ff81d66b7a3cd4a45137aeb4259227cd61da723ce11e9b5337246ba850e",
+          "transpiler/resolution_file_index.go": "f263befc8eea12948dc14eae2471153ac49c1ac537fea650bf1b71d08b5a9a42",
+          "transpiler/resolve.go": "968b969dd70295adb2785b8c8c07e5bdfed3c1b7f3825ab49dcc1c4bd26c95f8",
+          "transpiler/resolved_source_node_inventory.go": "a35b2b1c75e926cdd6170dd8d54fb2937e3f4f908a3cce97b5beda82956ab5dd",
+          "transpiler/runtime_metadata.go": "7e8e7a71c042cab26d11022340a4378d9e0b94180eefa31d865c654067833933",
+          "transpiler/source_annotation_values.go": "0644988bc1f3dda8b805c730bf6c33e87448aaaf8546306a560c0568664586da",
+          "transpiler/source_catch_view.go": "00a244eafb306306006baa7d4c609ae626dbb79f8186e78f068117e248ea1d34",
+          "transpiler/source_class_argument_representation.go": "97a396107ba29850b64f3d46cdf890718444f0e1fd3899bbb80c89ed7bf53856",
+          "transpiler/source_generic_view_demand.go": "e8d5afb57124e606c3781eb436e27204b2dd44436ccd976f85b6551e9c4d76b0",
+          "transpiler/source_object_equals_bridge.go": "d54e3761466cd16faf6e9af7e9d006ddddc564f6a6076268797aa6d9ede8c08d",
+          "transpiler/source_reflection_inherited_bridge_metadata.go": "a0639dc45a55a26ccb13a11814a9eb7233f64f8185ded3022c96a11a68ceab3c",
+          "transpiler/source_reflection_intrinsics.go": "6d4714fa205ca568bc6f177223d48a09dfe4c754ae74875d0e60d819c4addf4f",
+          "transpiler/source_reflection_metadata.go": "86c38cbe75c3676b0f036c3bdfab06e5e06689a4a881fdf7dfe22f67dc0fc08a",
+          "transpiler/source_reflection_method_accessors.go": "22f52dec1a8f566adcadb75db2210eb34e637baba330877c3ff7114511d1cdd3",
+          "transpiler/source_reflection_method_intrinsics.go": "0cd07a9415b7e9219b8045fd428bd04b1e95617f3d6007f3469bd16ef3b60175",
+          "transpiler/source_reflection_method_metadata.go": "9222046b7cda19b324ec43bce3a70c79b40e0a8c970c43617f81d0f6bfcfb0eb",
+          "transpiler/source_reflection_nest.go": "02e0acc7cd8d152692ef0acf2375760c8645b5508d75b77bcac802ef986171e7",
+          "transpiler/source_runtime_ancestry.go": "f75e3f930e2781b7bec777bbc9dea7531437ea4f4a83271c5b7c6f95badfd700",
+          "transpiler/source_subobject_declaration_types.go": "fc845602c1ebc891dff9be55ced2b686191a0c0a241a9e3ba8271b001f2c3c50",
+          "transpiler/source_text_codegen.go": "eff40ce7b1fab05c98d51d46fdbe6393459d59999ce2c8b7452713eb54f2a1f4",
+          "transpiler/statement.go": "aad1ee091e279241ad7659cf167aa2eec53430a72e71ae4af588879bda73027b",
+          "transpiler/static_field_codegen.go": "69b32698f9dc876f56bd6a7497a5bb34114b3b28a32d2a85d327fa7fb09ab265",
+          "transpiler/static_field_storage.go": "36ab9f71b5d2493f6415b18d0ff41d0e0da4ccd37265f80c8268d8e2fa6a5b25",
+          "transpiler/static_import_fields.go": "ac00d25f6bf2a6bf2639df98bffd117fc1a7d0ce83dd69c29fe6adc240700f67",
+          "transpiler/static_import_resolution.go": "fca9f46b4b45b4859301df648972bca6a5e950e873563bcde60ea23de808f6e1",
+          "transpiler/static_import_types.go": "d701ba2485dc7db79dabe73bca892c8cfa96258130806de6357472e88719b9f6",
+          "transpiler/static_method_type_names.go": "5f7ded0da980cbc938fd67876d3f4b523ecd2bc815e45f35b138ef1b50e66ddd",
+          "transpiler/string_abi_constructor.go": "65003d6e066817d5992ee1ed1461afd045e6beebdc85cd799de4295cdb2aa616",
+          "transpiler/string_abi_lowering.go": "6438282af57306ee2b69aab6283433dc3bc68c96ac9bacbb507fd03494445f1f",
+          "transpiler/string_format_lowering.go": "7f8239d495a544b944d5c637bee93d3d593c050ce17ac172af3bbe5555fe9a79",
+          "transpiler/string_join_lowering.go": "5911c32e838fb3b316be336a628f64587d0c3aec10989bc699476348692416de",
+          "transpiler/stringbuilder_constructor.go": "2fc9ad23a65ff4dd8673c567d83f94c8ea93f1caa73ca209a0a16e34e9c43c6c",
+          "transpiler/stringbuilder_set_length_intrinsic.go": "f3fab89eac077f55b90ff9e6e7346ad423102bea2942ddd3ea60869a59da7ea6",
+          "transpiler/superclass_embedding.go": "e13c33f14a3bc08702206e5953ea3ac384b8c71fde9523547eeff27d8df83893",
+          "transpiler/switch_result_type.go": "edbbbeb5b119d2f9675963d11f7557a855483b24a4a5459d3a1d91112d2e5fc3",
+          "transpiler/synchronized_statement.go": "a9d29e9aa049957321e9e41b50c6a2f47e0d29f10d7e8a695ccaa455a553d735",
+          "transpiler/synthetic_superclass_source_frontier.go": "b47963492da8e9f543c6d19c163194908200f26af489382d80d92c4796a7bae2",
+          "transpiler/testdata/date_iso_stateful/project/dependencies.lock.json": "a9a5da8f4a4526d6d160486d92da8b058f2658cac6013b2cffb60ae03e4face1",
+          "transpiler/throwable_catch_descriptor.go": "b066dc9852dc7cd10bed740ed949eb9ba6a7a8c8c909b9d18db2a9ee851ed564",
+          "transpiler/throwable_message_codegen.go": "7cfc4fa0d3abdf36ae97560217d70a2f163252a6a6287d672e5a39cd8b9db39a",
+          "transpiler/throwable_reference_ancestry.go": "a287ff330faa11be35d6b2ac58e81067cdb24ac64a097fa630452ebcc8a75037",
+          "transpiler/throwable_text_invocation.go": "d58eb03fe4d9131a1e9981a642368dd5f20f4eefa9db0e634fd56ee1ab4a6779",
+          "transpiler/tree_sitter.go": "192bc80c0040e5d96e23cc617f3aad341f0055b59e2c472b59a0a981c25b590c",
+          "transpiler/typecheck.go": "e3278917f87cee325446f14574cfaf17bbdcb0b69acfc3da72bf3eba7c17ce7a",
+          "transpiler/unqualified_static_field_binding.go": "44c88712bcec1dde83dee4b447da453eb77acc3b2503471a826cb9dca1547dca",
+          "transpiler/varargs_codegen.go": "c6ba1841f79004c4c8183ffac5aecad953563f7b18d2c2c6c64bf9cd8df5784a",
+          "transpiler/volatile_field_lowering.go": "f0192afc08af0bc3f99f5dd076dc50de9c2181869ff7046e75356710f45f7019"
+        }
+      },
+      "strict_transpile_duration_ms": 32589,
+      "failure": {
+        "stage": "go-build-all",
+        "detail": "exit=1 error=\n\n# campaign.generated/round02-data-gson/java2go_scc_636f6d2f676f6f676c652f67736f6e\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_Gson.go:15:71: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JsonAdapterAnnotationTypeAdapterFactory.go:24:86: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_TypeAdapterFactory.go:8:118: undefined: T\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3486:48: J636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_URL (package-level variable) is not a type\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3582:48: J636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_URI (package-level variable) is not a type\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3714:48: undefined: InetAddress\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_LinkedTreeMap.go:1716:2: undefined: Comparator\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_NonNullElementWrapperList.go:6:3: undefined: AbstractList\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_NonNullElementWrapperList.go:7:2: undefined: RandomAccess\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_ReflectionAccessFilterHelper.go:154:80: undefined: AccessibleObject\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_ReflectionAccessFilterHelper.go:154:80: too many errors\n"
+      },
+      "full_application_accepted": false,
+      "binary_and_source_closure_JVM_observations": 18,
+      "oracles_equal129": true,
+      "compiler_tools_race": false,
+      "generated_allpackage_race": true,
+      "entry_build_executed": false,
+      "Go_application_observations": 0,
+      "attribution": "Inherited exact source130 replay, not rerun131; source implementation/fixture/dependency inputs remain byte identical"
+    },
+    "original_joining": {
+      "report": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/PARITY.json",
+        "sha256": "7758c121e6b07546e8fb251827d35f780e84d3a0283fae07b29a8c1d1e421012"
+      },
+      "original_java_sha256": "6468e1b97c4da4d0262c4ae9f50b6f0fe136685473d38107a3219d9dc5092bbc",
+      "outputs": {
+        "JDK-full-1": {
+          "bytes": 926115,
+          "sha256": "21d863d4fa2efec34b7e623e91fe6330c11216e4372a67218102457fdcfb354f"
+        },
+        "JDK-full-2": {
+          "bytes": 926115,
+          "sha256": "21d863d4fa2efec34b7e623e91fe6330c11216e4372a67218102457fdcfb354f"
+        },
+        "JDK-full-3": {
+          "bytes": 926115,
+          "sha256": "21d863d4fa2efec34b7e623e91fe6330c11216e4372a67218102457fdcfb354f"
+        },
+        "generated-full-workload-race": {
+          "bytes": 926115,
+          "sha256": "21d863d4fa2efec34b7e623e91fe6330c11216e4372a67218102457fdcfb354f"
+        }
+      },
+      "JDK_executions": 3,
+      "Go_executions": 1,
+      "allpackage_and_entry_race": true,
+      "generated_core_unedited": true,
+      "generated_core_sha256": "a0078d471eab241af2bb4987841f20afb972a074b89630a491c08e7282945870",
+      "performance_claim": false,
+      "attribution": "Inherited exact source130 full-workload parity, not rerun131; original Java/runtime implementation inputs remain byte identical"
+    },
+    "carry_forward_source_proof": {
+      "public130_tracked_manifest": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public130-two-drivers-for131-v1/public130-actual-tracked-source-manifest-v1.json",
+        "sha256": "6151c1a4070fabb60e5951783abae2e6bca41a6127bbb29506e10db952258adc",
+        "members": 3384
+      },
+      "root131_compiled_source": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/131-composed-source-before.json",
+        "sha256": "2edd54284f3c4abb3af7b2f92b637bf7253047d1dd8d0f8c306d4be1ea571b90",
+        "members": 3384
+      },
+      "implementation_members": 458,
+      "implementation_sha256": "964b5a2ab85895771b6b7be4d0f2f3e337576c9b75e094333768e9ef9c1aae7e",
+      "unchanged_members": 3382,
+      "changed_members": 2,
+      "carried130_modified_parent_overlap": [
+        "TestCollectorsBoxedDownstreamResults",
+        "TestStreamsBoxedMethodReferencesAndNullUnboxing",
+        "TestStreamsBoxedReferenceAndPrimitiveCallbacks"
+      ],
+      "fresh_overlap_validation": "All three overlapping old parents are rerun in root/shard focused5; two formerly failing original drivers are additionally covered"
+    },
+    "fresh_lint_cache_warnings": {
+      "peer": {
+        "bytes": 68969,
+        "cache_persistence_warning_lines": 224,
+        "stderr_sha256": "b7ebc702167e669f8c57582e59cb40516a71d020e1b21ddea7d26acbd63938de"
+      },
+      "root": {
+        "bytes": 68969,
+        "stderr_sha256": "a226dea46e2972ef42f1b2bce6c463f249f9a27b62cb04955298812631c3eda5"
+      }
+    },
+    "pending_CI_baseline": {
+      "revision": "8db20106cc44ab3315ab0a9bb2a8ff1e37e716be",
+      "checkpoint": 130,
+      "checks": {
+        "Test": "failure",
+        "Compiler regressions (4)": "failure",
+        "Compiler regressions (5)": "failure",
+        "Compiler regressions (0)": "failure",
+        "Compiler regressions (1)": "failure",
+        "Compiler regressions (3)": "failure",
+        "E2E (non-parity)": "success",
+        "Vulnerability Check": "success",
+        "Fuzz corpus replay": "success",
+        "Lint": "success",
+        "Unit tests": "success",
+        "Compiler regressions (2)": "failure",
+        "Application parity": "success",
+        "Adversarial dependency applications": "failure",
+        "Build": "success"
+      },
+      "all6_compiler_failed": true,
+      "dependency_failed": true,
+      "aggregate_failed": true,
+      "CI131_claim": false,
+      "snapshot": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/131-publication-prep/130-ci-complete-snapshot.json",
+        "sha256": "ee8e80d60bf21bff6dbc0580243dda112e0a3bf501b914b4cd4f0abef41e0509"
+      },
+      "API": "Code Review pull_requests_checks PR28; discovery and exact-head followup; no selected account supplied/no CLI fallback"
+    },
+    "initial130_infrastructure_and_errcheck_attribution": {
+      "initial_registration_failure": {
+        "stage": "native registration before tests",
+        "cause": "naive declaration regex also selected generated test function text inside Java/Go raw fixture strings",
+        "source_unchanged": true,
+        "old_script": ".campaign/resume-20261002/root/verify130-initial-infra.py",
+        "old_plan": ".campaign/resume-20261002/root/130-registered-plan.json",
+        "missing": {
+          "130-new-campaign_assertions_test": [
+            "TestAssertions"
+          ],
+          "130-new-campaign_filter_input_stream_test": [
+            "TestEmptyRead",
+            "TestFilterInput",
+            "TestFilterOverloads"
+          ],
+          "130-new-campaign_math_multiply_exact_test": [
+            "TestMultiply"
+          ],
+          "130-new-campaign_output_stream_byte_test": [
+            "TestNarrow"
+          ],
+          "130-new-campaign_runtime_assertion_error_test": [
+            "TestAssertionError"
+          ],
+          "130-new-campaign_super_object_test": [
+            "TestText"
+          ],
+          "130-new-campaign_assertion_statement_reference_test": [
+            "TestAssertionReference"
+          ]
+        },
+        "correction": "lexically exclude Go string/comment contents, keep every actual declared Test parent, reject missing/zero native registration; rebuild fresh separate binary/receipt namespace",
+        "not_application_failure": true
+      },
+      "errcheck_correction": {
+        "original_red": "Three unchecked return values in added stdjava test callbacks; retained original lint RED receipt",
+        "patch_sha256": "570f1d6603236deb9080d3357814bc9a4ad6dc646d6103a239ffe92f8d97f0e9",
+        "changed_leaf": "stdjava/assertion_failure_reference_test.go",
+        "behavior_change": false,
+        "sealed_peer_receipts": 46,
+        "physical_peer_receipts": 47,
+        "extra_physical_receipt": "Successful final-freeze metadata receipt",
+        "prior_compiler_attribution": "Original fd115 joined source; NOT rebuilt for corrected50c peer snapshot",
+        "root130_matching_compiler": "Fresh corrected-source 130v2 race compiler, Gson nonrace compiler and Joining nonrace compiler verified independently"
+      },
+      "attribution": "Historical130 evidence retained exactly; no new131 infrastructure failure claimed"
+    },
+    "pending": [
+      "Campaign remains active; fullCI/fullroundfalse, latest acceptedfullround18",
+      "All six compiler shards/dependency/aggregate CI130 failures remain open; no CI131 claim",
+      "Original Gson130 complete dependency replay remains RED/allpackage and has no Go application execution; inherited without acceptance",
+      "OldStringConversionUsesEnumName shape remains pre-existing failing boundary; untouched/unaccepted"
+    ],
+    "provenance_limits": [
+      "Fresh root and shard compiler binaries match exact131 source bytes; full static raceGo1.27.1 buildinfo/compiledregistry preserved",
+      "Source130 gate/runtime/Gson/Joining evidence is inherited only, not labeled fresh131. Exact implementation, source fixture and original Java byte proof justifies carry-forward",
+      "Peer capture wrapper records generated bytes immediately before invoking Go; durable captures are pinned but deleted temp paths are not reinspected",
+      "Root focused generated export hooks were not configured; peer pre-invocation captures establish original generated-core identity",
+      "Pinned lint returns0issues/exit0, with retained cache-persistence permission warnings and no retries/source diagnostics",
+      "Prior profile-label erratum, empty performance regressions and JVM-faster ranges remain130/129 historical evidence; no new timing inference"
+    ],
+    "publication_parent": "8db20106cc44ab3315ab0a9bb2a8ff1e37e716be",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/131-source-manifest.json",
+      "sha256": "2edd54284f3c4abb3af7b2f92b637bf7253047d1dd8d0f8c306d4be1ea571b90",
+      "members": 3384
+    },
+    "root_records": {
+      "evidence/130v2-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-build-transpiler/result.json",
+        "sha256": "7079530bc78639bd96be03c0e620dace37ac2e7ab25323095a983022951f9c95"
+      },
+      "evidence/130v2-native-registration/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-native-registration/result.json",
+        "sha256": "9730cff20d81219280255dd311b17e35f70fb538e2fc43ab17e1757fdfcf0a49"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-generic-frozen-v3-focused/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-generic-frozen-v3-focused/result.json",
+        "sha256": "69e23ff24e5dc57f377415a29a5a9fa17e6952558d01795684aab733a4d13c49"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-generic-frozen-v3-originals/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-generic-frozen-v3-originals/result.json",
+        "sha256": "8a9e9668c1f7ffde108eab398af143e7119849dd0d166ce35c3765892e8afd34"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-generic-frozen-v3-abi/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-generic-frozen-v3-abi/result.json",
+        "sha256": "cab0dd28419e65d1de63e803b23c5b7ce4fcdf82c404bd2af4b7056bb477a2e2"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-atomic-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-atomic-and-adjacent-race/result.json",
+        "sha256": "9549bb47235d16e1cd97be3133e8eeb32b4b75c2ea854cdbf1eeb17bee366219"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-trivial3-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-trivial3-race/result.json",
+        "sha256": "9628ffa835880e4655eaa27de91993365a29643e366ffcbf268a497574bb6e04"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-trivial3-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-trivial3-adjacent-race/result.json",
+        "sha256": "ca3a4a55083d579e670c80ed220f496acc0478428b654fabbd5a438a1b1254d8"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-full-program-enum-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-full-program-enum-race/result.json",
+        "sha256": "14838842f22b17ceeb76b0546b978d474b55d48ae0478417225ba9eb0cf12086"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-comparator4-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-comparator4-and-adjacent-race/result.json",
+        "sha256": "9aff410b56b8b52ea4357798d0030b2159f75ba941581e82682389bc3d7b497d"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-constructor-delegation4-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-constructor-delegation4-race/result.json",
+        "sha256": "e274fcbf93944ad75dcb5b825ad5f3361634be9d32fe610e23e527fd6f15fe79"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-clone-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-clone-adjacent-race/result.json",
+        "sha256": "0d3334dea4902915f510b69134a6420978f7b5ac370dee9d352859ee6d76c055"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-final-generic-CI-frontiers-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-final-generic-CI-frontiers-race/result.json",
+        "sha256": "12708814fbda9911bacb7b4f0124278f150e0f0d36646342d2561a10aec7cd8f"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-final-boxed-state-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-final-boxed-state-and-adjacent-race/result.json",
+        "sha256": "fb533ecff677249b055d71e20d86c3da55d7e3a4dab9fc2f9d7da35614c43704"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-final-clone-declaration-new-controls-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-final-clone-declaration-new-controls-race/result.json",
+        "sha256": "6323c49467159eb2b92e5caa4657d1ec8f09205695387f51d25e7fc9e003f542"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-final-clone-ABI-metadata-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-carried-final-clone-ABI-metadata-adjacent-race/result.json",
+        "sha256": "9b79b8092fa0c3f4a5ac531ddaf5eada93d5cf135905eb3cdee1a104585fb8ab"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestClassComponentTypeCanonicalDescriptorJDK21/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestClassComponentTypeCanonicalDescriptorJDK21/result.json",
+        "sha256": "f445e2493684605bf0dc4e4059308501fd6ddd53f7b0c2be03191eb885a038ff"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestClassComponentTypeSourceAndBinderOwnerJDK21/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestClassComponentTypeSourceAndBinderOwnerJDK21/result.json",
+        "sha256": "beb0446f795d5a63d0151a8e6558592cffd848a07660662dc6ecf41786a9b44c"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestCampaignImportSourceGuards/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestCampaignImportSourceGuards/result.json",
+        "sha256": "63580e2d8c05aa34c454efe024ca0a95507279e3ce3ad87e442628dea5584479"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestCampaignOrdinaryImportRepeatedSourceQueries/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestCampaignOrdinaryImportRepeatedSourceQueries/result.json",
+        "sha256": "ee8ed64470445e908c7d970cd4ddc42d9f65e687afef23de91cbac0c482c2e9e"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestCampaignImportSourceLifetime/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestCampaignImportSourceLifetime/result.json",
+        "sha256": "8d9ebea5ec2f2472eeec72ff67d5d682228a094a2637a6215bfa9aa9c48fffac"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestCampaignImportSyntaxStrictJVM/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestCampaignImportSyntaxStrictJVM/result.json",
+        "sha256": "acef0fd79a0eb71d19c98307bdd3a959eb36d917b7b9c0a70bde308edc5dd584"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringCanonicalResultsTDD/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringCanonicalResultsTDD/result.json",
+        "sha256": "0b8e318b619d46418320759254a7774bbf896584b646bbcfc8072d1178433b9b"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringPrimitiveAndInstanceJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringPrimitiveAndInstanceJDK21Parity/result.json",
+        "sha256": "73e8b351a5dc3d7058bd05acc2bb6525ac16e443327c9b7e322298b4e0aa9bc3"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringEvaluationExecutionValidReferencesJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringEvaluationExecutionValidReferencesJDK21Parity/result.json",
+        "sha256": "816a97cc96510408ddc52ff21e15c38de2fc4692656bb23a4e8b56fdfa31010a"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringSourceAndForeignOwnersJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringSourceAndForeignOwnersJDK21Parity/result.json",
+        "sha256": "e9aadc7e9d687673383011ea1a5c5997b52ba8083c0731175ee58a0d8317bf39"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringOwnerGuardsTDD/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringOwnerGuardsTDD/result.json",
+        "sha256": "889e6d30ae6a483584326791b2ad272d171ef8286f6dbdce2b4b3bc8301ebe2d"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringReferencesAllWrappersJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestBoxedToStringReferencesAllWrappersJDK21Parity/result.json",
+        "sha256": "30a5b773685c12e0d61582d24733873b65f4940201bf275523077375f0bf847d"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestEnumFloatingOriginalPrintJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestEnumFloatingOriginalPrintJDK21Parity/result.json",
+        "sha256": "8e832cc502d2eb4f0b276a048fb8e34033002cbe59bfb839ff12a253bdbef78c"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestComplexVoidLambdaOriginalJVMParity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestComplexVoidLambdaOriginalJVMParity/result.json",
+        "sha256": "5b84783b1419a70b9533a2008cd8e2ccf1d2121565949863de64b19069502dae"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestSourceNominalIdentifierHygieneStrictJVM/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestSourceNominalIdentifierHygieneStrictJVM/result.json",
+        "sha256": "de26f723535630728fe06ddd488f1d12ae280d5f3f2c5cd03d20167608e97385"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestSourceNominalDependencyAliasStrictJVM/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestSourceNominalDependencyAliasStrictJVM/result.json",
+        "sha256": "681a7b6a5cf3e56684ba625835ed33f155cbcec68ebc22be6d83de6ab0a94c87"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestConstructorAllocationBuiltinDemand/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestConstructorAllocationBuiltinDemand/result.json",
+        "sha256": "d67a20b130b07955564cda0f4b3bed9c38907d56ce7534bd725161ce21bef0b3"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestSourceNominalHygienePreservesDeclarationMetadata/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-new-TestSourceNominalHygienePreservesDeclarationMetadata/result.json",
+        "sha256": "0bec7bb9e4958b88405809c651c76fcbf5861268a877b1c7c99c51ed4c9a3706"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-green-owned8/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-green-owned8/result.json",
+        "sha256": "91213fe41aa4a33d7709fa19e0c15d779123a97e3565d137c213e473a6c2fb3f"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-green-cleanup-adjacent2/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-green-cleanup-adjacent2/result.json",
+        "sha256": "39c3722b48c57bd867a3b0881d0128260da9739128f2c72e711643f67b4f372f"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-green-digest-strict-adjacent3/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-green-digest-strict-adjacent3/result.json",
+        "sha256": "802ee9a573d58c56ba1b35be6c6aa4f3d33b1034410905f180e22137006fc2c0"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-carried-125-enum-lambda-CI-parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-carried-125-enum-lambda-CI-parity/result.json",
+        "sha256": "2776a44a8d3eaeb6f54b0e988dccea3c7a409b9142787b0c7be4fd10819dfb69"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-canonical-drivers-originals-adjacent19/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-canonical-drivers-originals-adjacent19/result.json",
+        "sha256": "4cfc5e4d85158baf1e7b1d80e80a242e58a0e99fe2cc3d4585c20ce3bddc9d4a"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-enum-helpers-parent/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-enum-helpers-parent/result.json",
+        "sha256": "b9a4d6c9c906cb81b005a44607cfb91be265f13912c9ed911cfd6072ca4ee0d6"
+      },
+      "evidence/130v2-carried-129-carried-128-carried-126-currency-ordinary-source-jvm9/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-carried-126-currency-ordinary-source-jvm9/result.json",
+        "sha256": "d46fa311ae5110007d641c1e80f8ddb68dab122f0ffb42ece37ef4bbb81a19f5"
+      },
+      "evidence/130v2-carried-129-carried-128-ci-127-native-00/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-ci-127-native-00/result.json",
+        "sha256": "742c2fa10c6def83abe4b1963eb475560549b77be7ab063af9dc6a3f74aa10fc"
+      },
+      "evidence/130v2-carried-129-carried-128-ci-127-native-01/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-ci-127-native-01/result.json",
+        "sha256": "80d9ff4ba414a83326f3788163e79e4ff99356694ae7b77226fa91cf661ab7cb"
+      },
+      "evidence/130v2-carried-129-carried-128-ci-127-native-02/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-ci-127-native-02/result.json",
+        "sha256": "0aa25f03baaabedeb8c1c09f9f3b01bf5565af81f815f9fddba262bcd3788326"
+      },
+      "evidence/130v2-carried-129-carried-128-ci-127-native-03/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-ci-127-native-03/result.json",
+        "sha256": "2fdbc83dff100bd9d0e82699d4198ada44cc2c699c89bd0884e0662081033e2d"
+      },
+      "evidence/130v2-carried-129-carried-128-ci-127-native-04/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-ci-127-native-04/result.json",
+        "sha256": "bb857f671606954a5864f031a7ec81b06cf257de3038990da9aa2d9b6963878e"
+      },
+      "evidence/130v2-carried-129-carried-128-ci-127-native-05/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-ci-127-native-05/result.json",
+        "sha256": "3116cd7efb83c4395e7f0f5eb80f780680cdf04028e737004081cd5bc5d41182"
+      },
+      "evidence/130v2-carried-129-carried-128-ci-127-native-06/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-ci-127-native-06/result.json",
+        "sha256": "6dd72f672dd01099787761a4c536b84c6da16f6a968ccb99fc976ef516c8386e"
+      },
+      "evidence/130v2-carried-129-carried-128-ci-127-native-07/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-ci-127-native-07/result.json",
+        "sha256": "82b36af28ae952ec3db0fd0a36e127416a628b5ee95e825ab612082ecda8983f"
+      },
+      "evidence/130v2-carried-129-carried-128-original-enum-state/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-original-enum-state/result.json",
+        "sha256": "570bdf41509e8604ee05ef3771c0db1fddf05b11a82f0a3a3bd38f4d8bdeba63"
+      },
+      "evidence/130v2-carried-129-carried-128-eight-enum-applications/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-eight-enum-applications/result.json",
+        "sha256": "e899416680e6093e2187cc4f96eec8905d24f20ebef3bf06e0ee569f73546635"
+      },
+      "evidence/130v2-carried-129-carried-128-final-source-text-array/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-final-source-text-array/result.json",
+        "sha256": "8cf043121678ac5a9bf713c4ca81c15d966a014e1be85e0d8f9b44c2f51c1bf4"
+      },
+      "evidence/130v2-carried-129-carried-128-final-class-init/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-final-class-init/result.json",
+        "sha256": "a35c2bad78a4d648f53195a145fd1ca95c78c4cf209b5be79666111b6c07b7ac"
+      },
+      "evidence/130v2-carried-129-carried-128-final-enum-adjacent/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-carried-128-final-enum-adjacent/result.json",
+        "sha256": "3611791656b325c2942d6750f4e90a86cbb6b786cf4381ecaf49a2f2e4110bdf"
+      },
+      "evidence/130v2-carried-129-new-campaign_assignability_strict_jvm_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-new-campaign_assignability_strict_jvm_test/result.json",
+        "sha256": "686187c8fdd18ede9bb1cfd3f4009122d6121bac3a7fea59689150dff543b953"
+      },
+      "evidence/130v2-carried-129-new-campaign_chars_strict_jvm_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-new-campaign_chars_strict_jvm_test/result.json",
+        "sha256": "c8057a0918f3a856353b04337fd8754eb4cb9a576795af43d608959ad79b1bf6"
+      },
+      "evidence/130v2-carried-129-new-campaign_joining_owned_utf16_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-carried-129-new-campaign_joining_owned_utf16_test/result.json",
+        "sha256": "c985516c419561fed6fcf784f05362fa01cf45834cf7ceb2485648668f1d4966"
+      },
+      "evidence/130v2-new-campaign_assertions_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-new-campaign_assertions_test/result.json",
+        "sha256": "0954a6616e896d1791b7b6f4c5fbbac0090ac89ba0003f72a6b09f2b92f5bd00"
+      },
+      "evidence/130v2-new-campaign_filter_input_stream_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-new-campaign_filter_input_stream_test/result.json",
+        "sha256": "31dd750c53efa5f330c4387722bdb74a340ab5eadc726d454bff57bc61e92484"
+      },
+      "evidence/130v2-new-campaign_math_multiply_exact_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-new-campaign_math_multiply_exact_test/result.json",
+        "sha256": "fee06ece8030600af36d6b3018ff7c3fe8cf5bbbda04701b762572f224465f19"
+      },
+      "evidence/130v2-new-campaign_output_stream_byte_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-new-campaign_output_stream_byte_test/result.json",
+        "sha256": "81895b2c407869ac5ac36e0ff637e8c1b20d362522149ac6430c9a5509ca6f18"
+      },
+      "evidence/130v2-new-campaign_runtime_assertion_error_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-new-campaign_runtime_assertion_error_test/result.json",
+        "sha256": "da812e7e21f33a01bed1ebbaa51713178219dd19dabd53b6541aaefeaea4399c"
+      },
+      "evidence/130v2-new-campaign_super_object_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-new-campaign_super_object_test/result.json",
+        "sha256": "c7908abc54699e5c48badd2acec1da394a0ac8aecf07a7c68bca9d9c88f99224"
+      },
+      "evidence/130v2-new-assertion_statement_reference_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-new-assertion_statement_reference_test/result.json",
+        "sha256": "b15195f5f024adec38d12edef1e037a24dac86be3c19b602ba42bfa00415dd67"
+      },
+      "evidence/130v2-new-campaign_assertion_statement_reference_test/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-new-campaign_assertion_statement_reference_test/result.json",
+        "sha256": "8dbf698234046e1b0336187ac9ca9aad887db30f93a1688c296517e100ef9fa3"
+      },
+      "evidence/130v2-runtime-full-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-runtime-full-race/result.json",
+        "sha256": "dfd4df14b41a6dadad97f721b043d3ce679d4e9079f5116589113d99c5d3b00e"
+      },
+      "evidence/130v2-lint/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130v2-lint/result.json",
+        "sha256": "954a6ab0c2185463102efb432595c186eec5dbf9897c4d32b9d924f11a5230b8"
+      },
+      "evidence/130-original-joining-replay/javac-full-workload/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/javac-full-workload/result.json",
+        "sha256": "a6f736f3a6433329f62c3d2f29a9da64d3e3742d8da3e8666257671f40b4ee7a"
+      },
+      "evidence/130-original-joining-replay/JDK-full-1/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/JDK-full-1/result.json",
+        "sha256": "0e5f3dbe9377c3975b309401ab0e7ea4cf55acfb9bbc0c071bc1eab69d5d040b"
+      },
+      "evidence/130-original-joining-replay/JDK-full-2/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/JDK-full-2/result.json",
+        "sha256": "d3cb39436da688dcb1af219e173e280a244c851d141e92e5ccd150382e6e3c55"
+      },
+      "evidence/130-original-joining-replay/JDK-full-3/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/JDK-full-3/result.json",
+        "sha256": "e2a773a15bfa4099f49a946a00743380cab8d901c505d484f542dd05ea18def6"
+      },
+      "evidence/130-original-joining-replay/compiler-nonrace-build/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/compiler-nonrace-build/result.json",
+        "sha256": "0f5d92aaaf5cefbe63aae51db5b2235491ea494feab8e7c3aea56fa78b66befd"
+      },
+      "evidence/130-original-joining-replay/strict-full-workload/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/strict-full-workload/result.json",
+        "sha256": "f10222138f2c5e322cca39db15a2549d7091668d1d6082ee89b3f39c1ce686a8"
+      },
+      "evidence/130-original-joining-replay/generated-all-packages-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/generated-all-packages-race/result.json",
+        "sha256": "89a1902eb78b86b52ed866035a54ed2f254f6f17728c2d46d6378ae2cd6df712"
+      },
+      "evidence/130-original-joining-replay/generated-entry-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/generated-entry-race/result.json",
+        "sha256": "385d37d35a8cfc749d2764e558faaf1e09f4731ac8a88ae5eade43677e8e865a"
+      },
+      "evidence/130-original-joining-replay/generated-full-workload-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-original-joining-replay/generated-full-workload-race/result.json",
+        "sha256": "5983cd072301b00c01122beccb6dc49ac56a62afc8dd58a2ec4a577c0c30ab8c"
+      },
+      "evidence/130-gson-replay/build-campaign-nonrace/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-gson-replay/build-campaign-nonrace/result.json",
+        "sha256": "27bc3daaa3f00b6b0bacb8bc9ac566ecd8861659ed68cdd57e9142de7b1a6fbb"
+      },
+      "evidence/130-gson-replay/build-transpiler-nonrace/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/130-gson-replay/build-transpiler-nonrace/result.json",
+        "sha256": "158e09b4f12982ed44fb47ca568e0d3e76639fbc37be7e15cd7771281acd4def"
+      },
+      "evidence/131-root-build/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/131-root-build/result.json",
+        "sha256": "a51a2a2f0db2ed9b5c0a242dca288afdd2b2b304a775c478a35f3bf6e4cf1cb5"
+      },
+      "evidence/131-root-registration/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/131-root-registration/result.json",
+        "sha256": "c3438555c13c1e9d305ef9b8cb1a5a69da5a1be2eb5ca8c81d3691cb97fb0656"
+      },
+      "evidence/131-root-focused5/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/131-root-focused5/result.json",
+        "sha256": "91af0e7c3fc73325025e009194c109ef412f1932db4fcb2c3d3ce7ec81e2ba2b"
+      },
+      "evidence/131-root-lint/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/131-root-lint/result.json",
+        "sha256": "d0e8114efae676ebb89bb66c3910d28d9a92a17be108354a0eff27288840bf4c"
+      },
+      "../sol_ci_shard_resume/public130-two-drivers-for131-v1/red-build/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/../sol_ci_shard_resume/public130-two-drivers-for131-v1/red-build/result.json",
+        "sha256": "a7d051363044e06ef3f8e31e89356b1fb7cb7b6ebc0e3eebac68e771b769ae4f"
+      },
+      "../sol_ci_shard_resume/public130-two-drivers-for131-v1/red-registration/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/../sol_ci_shard_resume/public130-two-drivers-for131-v1/red-registration/result.json",
+        "sha256": "45b8b4658e90a1b40d460c8e95787b9f019a3098ee00745796871764396794bb"
+      },
+      "../sol_ci_shard_resume/public130-two-drivers-for131-v1/green-build/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/../sol_ci_shard_resume/public130-two-drivers-for131-v1/green-build/result.json",
+        "sha256": "f688b895b1d460fae9da8437135e1671ae9a798867d0598f6ad2c13eeadb9f68"
+      },
+      "../sol_ci_shard_resume/public130-two-drivers-for131-v1/green-registration/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/../sol_ci_shard_resume/public130-two-drivers-for131-v1/green-registration/result.json",
+        "sha256": "ecb8191de04e0ea4d24edeb7c07581a9f4841e79b07cb7ca5c101f37345c7afc"
+      },
+      "../sol_ci_shard_resume/public130-two-drivers-for131-v1/green-original5/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/../sol_ci_shard_resume/public130-two-drivers-for131-v1/green-original5/result.json",
+        "sha256": "0681b135ccc820c856e83b82d1f9f76a8386cf8a26bf1fe83e93794f8b8dd0a1"
+      },
+      "../sol_ci_shard_resume/public130-two-drivers-for131-v1/jdk-shadow-original-v1/compile/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/../sol_ci_shard_resume/public130-two-drivers-for131-v1/jdk-shadow-original-v1/compile/result.json",
+        "sha256": "c9ac577c59404a72fe4f9e62f7004c82a86bc8e1a24eee29618f6b66e1a9b297"
+      },
+      "../sol_ci_shard_resume/public130-two-drivers-for131-v1/jdk-shadow-original-v1/execute/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/../sol_ci_shard_resume/public130-two-drivers-for131-v1/jdk-shadow-original-v1/execute/result.json",
+        "sha256": "2d3e65cb54efaed59a719f54f9a896270ddc7d38109f05897533508fad522e79"
+      },
+      "../sol_ci_shard_resume/public130-two-drivers-for131-v1/candidate-full-lint/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/../sol_ci_shard_resume/public130-two-drivers-for131-v1/candidate-full-lint/result.json",
+        "sha256": "9bcba6b6b5f0ab6347d0a6298098c906adbdc1d7c3d5c74bcf7dae986caa3f6f"
+      }
+    }
+  },
+  "active_resume_current131": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "scoped-canonical-test-driver-transport-green-original-dependencies-red",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }
