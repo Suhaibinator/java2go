@@ -116,8 +116,8 @@ public class Application {
 	flat := normalizeSpaces(out)
 	for _, want := range []string{
 		`enginepkg "parity/alias/engine"`,
-		"enginepkg.NewWorkflowEngineJava2goExecution[string](__java2goExecution)",
-		"enginepkg.NewTaskActionFuncAdapterJava2goExecution[string]",
+		"enginepkg.NewWorkflowEngineJava2goExecution[*stdjava.JavaString](__java2goExecution)",
+		"enginepkg.NewTaskActionFuncAdapterJava2goExecution[*stdjava.JavaString]",
 	} {
 		if !strings.Contains(flat, normalizeSpaces(want)) {
 			t.Fatalf("expected collision-safe package qualification %q, got:\n%s", want, out)

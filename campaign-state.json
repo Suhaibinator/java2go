@@ -11479,5 +11479,59 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Eleven polymorphism and overload observations now execute canonical String results; next generic/reflection integration",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress114": {
+    "status": "CANONICAL_SYNTAX_NULLABLE_LAMBDA_OBSERVATIONS_VERIFIED",
+    "implementation_changes_published": false,
+    "scope": "Six existing regression test leaves observe canonical String and execution callback shapes while preserving Java programs, expected outputs, inference, alias and initialization-order controls.",
+    "verification": {
+      "root_race_gate_counts": {
+        "114-modern-nullable-race": 12,
+        "114-nested-race": 25,
+        "114-lambda-static-workflow-race": 12
+      },
+      "root_race_tests": 49,
+      "nested_generated_race": true,
+      "preserved_Java_source_assignments": 47,
+      "migrated_original_failed_parents": 17
+    },
+    "independent_reviews": [
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/syntax-assertions-audit.json",
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/lambda-shapes-audit.json"
+    ],
+    "remaining": "Other hosted compiler, application and dependency failures remain active; production code unchanged.",
+    "publication_parent": "b662db087defb04f51649b6d256a81d84e7fb1cf",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/114-source-manifest.json",
+      "sha256": "a09a39e04e21d651e7952f6cf6eb6f8c4749b2a1243c389538f51d49d991941b",
+      "members": 3136
+    },
+    "root_records": {
+      "evidence/114-build-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/114-build-race/result.json",
+        "sha256": "bd6420afb224e18bc1155be0d9178ab637dba0fbf3284081a24a6c52b5beb369"
+      },
+      "evidence/114-modern-nullable-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/114-modern-nullable-race/result.json",
+        "sha256": "cca3627fd01855addd199a06d17fa7e9acce10fed672b63767876f02130f53eb"
+      },
+      "evidence/114-nested-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/114-nested-race/result.json",
+        "sha256": "9b2aeda5c1a18b1bb55e441956e32fb1f3bba15763b04448571eeb512f1cb6f9"
+      },
+      "evidence/114-lambda-static-workflow-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/114-lambda-static-workflow-race/result.json",
+        "sha256": "0c1bc13c9783222c124a6417a8a924739049318d475c0bdfc70b8fbf05db75ed"
+      }
+    }
+  },
+  "active_resume_current114": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Syntax, nullable String, lambda and initialization observations migrated; next generic/reflection repair",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }
