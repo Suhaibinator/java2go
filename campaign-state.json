@@ -11276,5 +11276,63 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Verified exhaustive CI partition; full round18 remains latest acceptance",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress110": {
+    "status": "STRING_CONTAINS_CANONICAL_EXECUTION_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "String.contains(CharSequence) compares canonical UTF16 after one virtual toString invocation in caller execution.",
+    "verification": {
+      "runtime_top_level_tests": 2,
+      "runtime_null_subtests": 3,
+      "compiler_shape_tests": 1,
+      "strict_JDK21_generated_race_parity_tests": 2,
+      "original_e2e_applications": [
+        "strings/Strings",
+        "object_strings/ObjectStrings"
+      ],
+      "original_generated_e2e_race": false
+    },
+    "remaining": "Other hosted compiler, dependency and application failures remain active; no full round or CI acceptance.",
+    "publication_parent": "464b3847a83e192c1c7825d9223654597485cf80",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/110-source-manifest.json",
+      "sha256": "4b4da1064046b20431a5d737c43c0a02a2574850fe1b58dd02691859f9e4c325",
+      "members": 3127
+    },
+    "root_records": {
+      "evidence/110-build-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/110-build-race/result.json",
+        "sha256": "66dca7d738c835e522c9a22068ad0b798e7ceb8a095cc57576ad6d266838c51f"
+      },
+      "evidence/110-native-contains-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/110-native-contains-race/result.json",
+        "sha256": "3211356c95b5d9dbc0d47e910d9f06cdafea68234ba408c4d5562342eae5b2a5"
+      },
+      "evidence/110-contains-shape-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/110-contains-shape-race/result.json",
+        "sha256": "f5795d7d66c5c35aeb3a4ea94af3e3908e39ec00d0f318b7b5ae3398945eeafc"
+      },
+      "evidence/110-contains-contract-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/110-contains-contract-race/result.json",
+        "sha256": "b34525dfe22a13c3f38b4a405f5034c812d1051757025cc607e696502b3df516"
+      },
+      "evidence/110-contains-shadows-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/110-contains-shadows-race/result.json",
+        "sha256": "2b05a319b35cd9dd1a742b45fb4df70aea42800c7363a0b8c3726eee7f205c9d"
+      },
+      "evidence/110-original-strings/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/110-original-strings/result.json",
+        "sha256": "22aed5136f50d56612794e45ff3708b7d7143d4241028cd6b2785833beedf3d1"
+      }
+    }
+  },
+  "active_resume_current110": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "String.contains scoped parity verified; next integral statistics and dependency repairs",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

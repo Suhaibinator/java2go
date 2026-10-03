@@ -70,7 +70,6 @@ func registerStringIntrinsics() {
 		{"isBlank", "JavaStringIsBlank", "boolean", 0, 0},
 		{"indexOf", "JavaStringIndexOf", "int", 1, 3},
 		{"lastIndexOf", "JavaStringLastIndexOf", "int", 1, 2},
-		{"contains", "JavaStringContains", "boolean", 1, 1},
 		{"startsWith", "JavaStringStartsWith", "boolean", 1, 2},
 		{"endsWith", "JavaStringEndsWith", "boolean", 1, 1},
 		{"equalsIgnoreCase", "JavaStringEqualsIgnoreCase", "boolean", 1, 1},
@@ -90,6 +89,13 @@ func registerStringIntrinsics() {
 		})
 		registerInstanceIntrinsicResultType("String", spec.java, spec.result)
 	}
+	registerInstanceIntrinsic("String", "contains", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if !expectArgs(args, 1) {
+			return nil
+		}
+		return stdjavaCall(ctx, "JavaStringContainsExecution", intrinsicExecutionExpr(ctx), recv, args[0])
+	})
+	registerInstanceIntrinsicResultType("String", "contains", "boolean")
 	registerInstanceIntrinsic("String", "replace", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 2 {
 			return nil
