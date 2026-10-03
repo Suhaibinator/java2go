@@ -1,6 +1,9 @@
 package stdjava
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 // FilesWriteStringExecution accepts the Charset and OpenOption overloads while
 // retaining the caller's execution for a source-defined CharSequence.toString.
@@ -18,20 +21,37 @@ func FilesWriteStringExecution(execution *Execution, path, content any, argument
 			arguments = arguments[1:]
 		}
 	}
-	text := StringValueOfExecution(execution, content)
-	StringRequireNonNull(text)
-	if charset == US_ASCII || charset == ISO_8859_1 {
-		maximum := rune(127)
-		if charset == ISO_8859_1 {
-			maximum = 255
-		}
-		for _, r := range text {
-			if r > maximum {
-				panic(newThrowableBase("UnmappableCharacterException", "Input length = 1"))
+	text := JavaStringValueOfExecution(execution, content)
+	ReferenceRequireNonNull(text)
+	for index := 0; index < len(text.units); index++ {
+		unit := text.units[index]
+		width := 1
+		malformed := false
+		if unit >= 0xd800 && unit <= 0xdbff {
+			if index+1 < len(text.units) && text.units[index+1] >= 0xdc00 && text.units[index+1] <= 0xdfff {
+				width = 2
+			} else {
+				malformed = true
 			}
+		} else if unit >= 0xdc00 && unit <= 0xdfff {
+			malformed = true
 		}
+		if malformed {
+			name := "MalformedInputException"
+			if charset == UTF_8 || charset == ISO_8859_1 {
+				name = "UnmappableCharacterException"
+			}
+			panic(newThrowableBase(name, "Input length = 1"))
+		}
+		if charset == US_ASCII && unit > 127 {
+			panic(newThrowableBase("UnmappableCharacterException", fmt.Sprintf("Input length = %d", width)))
+		}
+		if charset == ISO_8859_1 && unit > 255 {
+			panic(newThrowableBase("UnmappableCharacterException", "Input length = 1"))
+		}
+		index += width - 1
 	}
-	data := unsignedBytes(StringGetBytes(text, charset).Elements)
+	data := unsignedBytes(JavaStringGetBytes(text, charset).Elements)
 	flags := os.O_WRONLY
 	options := []StandardOpenOption{}
 	var flatten func(any)

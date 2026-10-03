@@ -36,6 +36,7 @@ var builtinThrowableDescriptors = map[string]struct {
 	"NoSuchFieldException":            {id: "java.lang.NoSuchFieldException", parent: "ReflectiveOperationException"},
 	"IllegalAccessException":          {id: "java.lang.IllegalAccessException", parent: "ReflectiveOperationException"},
 	"IOException":                     {id: "java.io.IOException", parent: "Exception"},
+	"FileNotFoundException":           {id: "java.io.FileNotFoundException", parent: "IOException"},
 	"UnsupportedEncodingException":    {id: "java.io.UnsupportedEncodingException", parent: "IOException"},
 	"NoSuchElementException":          {id: "java.util.NoSuchElementException", parent: "RuntimeException"},
 	"ConcurrentModificationException": {id: "java.util.ConcurrentModificationException", parent: "RuntimeException"},
@@ -50,6 +51,7 @@ var builtinThrowableDescriptors = map[string]struct {
 	"IllegalCharsetNameException":     {id: "java.nio.charset.IllegalCharsetNameException", parent: "IllegalArgumentException"},
 	"UnsupportedCharsetException":     {id: "java.nio.charset.UnsupportedCharsetException", parent: "IllegalArgumentException"},
 	"CharacterCodingException":        {id: "java.nio.charset.CharacterCodingException", parent: "IOException"},
+	"MalformedInputException":         {id: "java.nio.charset.MalformedInputException", parent: "CharacterCodingException"},
 	"UnmappableCharacterException":    {id: "java.nio.charset.UnmappableCharacterException", parent: "CharacterCodingException"},
 	"InvocationTargetException":       {id: "java.lang.reflect.InvocationTargetException", parent: "ReflectiveOperationException"},
 }

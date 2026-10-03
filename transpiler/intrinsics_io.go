@@ -47,12 +47,13 @@ func init() {
 }
 
 func registerIOStatics() {
+	registerIntrinsicOwner("java.io.File", true)
 	// File.createTempFile(prefix, suffix) -> stdjava.CreateTempFile(prefix, suffix).
 	registerStaticIntrinsic("File", "createTempFile", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 2 {
 			return nil
 		}
-		return stdjavaCall(ctx, "CreateTempFile", args[0], args[1])
+		return stdjavaCall(ctx, "CreateTempFileReference", args[0], args[1])
 	})
 	registerStaticIntrinsicResultType("File", "createTempFile", "File")
 }
@@ -62,7 +63,7 @@ func registerIOConstructors() {
 		if len(args) != 1 {
 			return nil
 		}
-		return stdjavaCall(ctx, "NewJavaFile", args[0])
+		return stdjavaCall(ctx, "NewJavaFileReference", args[0])
 	})
 
 	// PrintWriter takes a path, a File, or a nested writer. The stdjava
@@ -205,11 +206,13 @@ func registerIOConstructors() {
 }
 
 func registerIOInstanceMethods() {
+	registerIntrinsicOwner("java.io.StringWriter", true)
+	registerIntrinsicOwner("java.io.ByteArrayOutputStream", true)
 	// java.io.File
 	registerInstanceIntrinsic("File", "exists", ioMethod("Exists", 0))
-	registerInstanceIntrinsic("File", "getName", ioMethod("GetName", 0))
-	registerInstanceIntrinsic("File", "getPath", ioMethod("GetPath", 0))
-	registerInstanceIntrinsic("File", "getAbsolutePath", ioMethod("GetAbsolutePath", 0))
+	registerInstanceIntrinsic("File", "getName", ioMethod("GetNameReference", 0))
+	registerInstanceIntrinsic("File", "getPath", ioMethod("GetPathReference", 0))
+	registerInstanceIntrinsic("File", "getAbsolutePath", ioMethod("GetAbsolutePathReference", 0))
 	registerInstanceIntrinsic("File", "isDirectory", ioMethod("IsDirectory", 0))
 	registerInstanceIntrinsic("File", "isFile", ioMethod("IsFile", 0))
 	registerInstanceIntrinsic("File", "length", ioMethod("Length", 0))
@@ -217,8 +220,15 @@ func registerIOInstanceMethods() {
 	registerInstanceIntrinsic("File", "mkdir", ioMethod("Mkdir", 0))
 	registerInstanceIntrinsic("File", "mkdirs", ioMethod("Mkdirs", 0))
 	registerInstanceIntrinsic("File", "createNewFile", ioMethod("CreateNewFile", 0))
-	registerInstanceIntrinsic("File", "toPath", ioMethod("ToPath", 0))
+	registerInstanceIntrinsic("File", "toPath", ioMethod("ToPathReference", 0))
 	registerInstanceIntrinsicResultType("File", "toPath", "Path")
+	for _, method := range []string{"getName", "getPath", "getAbsolutePath"} {
+		registerInstanceIntrinsicResultType("File", method, "String")
+	}
+	for _, method := range []string{"delete", "exists", "isDirectory", "isFile", "mkdir", "mkdirs", "createNewFile"} {
+		registerInstanceIntrinsicResultType("File", method, "boolean")
+	}
+	registerInstanceIntrinsicResultType("File", "length", "long")
 
 	// PrintWriter / FileWriter / PrintStream share the print/println shim.
 	for _, t := range []string{"PrintWriter", "FileWriter", "PrintStream"} {
@@ -241,7 +251,7 @@ func registerIOInstanceMethods() {
 		registerInstanceIntrinsic(t, "close", ioMethod("Close", 0))
 	}
 	registerInstanceIntrinsic("BufferedWriter", "newLine", ioMethod("NewLine", 0))
-	registerInstanceIntrinsic("StringWriter", "toString", ioMethod("String", 0))
+	registerInstanceIntrinsic("StringWriter", "toString", ioMethod("StringReference", 0))
 	registerInstanceIntrinsicResultType("StringWriter", "toString", "String")
 
 	// Byte streams
@@ -251,10 +261,11 @@ func registerIOInstanceMethods() {
 		registerInstanceIntrinsic(t, "close", ioMethod("Close", 0))
 	}
 	registerInstanceIntrinsic("ByteArrayOutputStream", "toByteArray", ioMethod("ToByteArray", 0))
-	registerInstanceIntrinsic("ByteArrayOutputStream", "toString", ioMethod("String", 0))
+	registerInstanceIntrinsic("ByteArrayOutputStream", "toString", ioMethod("StringReference", 0))
 	registerInstanceIntrinsic("ByteArrayOutputStream", "size", ioMethod("Size", 0))
 	registerInstanceIntrinsic("ByteArrayOutputStream", "reset", ioMethod("Reset", 0))
 	registerInstanceIntrinsicResultType("ByteArrayOutputStream", "toString", "String")
+	registerInstanceIntrinsicResultType("ByteArrayOutputStream", "size", "int")
 
 	for _, t := range []string{"FileInputStream", "ByteArrayInputStream"} {
 		registerInstanceIntrinsic(t, "read", ioMethod("ReadByteValue", 0))
@@ -312,19 +323,19 @@ var nioFilesMethods = []struct {
 	argc       int
 	resultType string
 }{
-	{"readAllLines", "FilesReadAllLines", 1, "List<String>"},
-	{"lines", "FilesLines", 1, "Stream<String>"},
-	{"readString", "FilesReadString", 1, "String"},
+	{"readAllLines", "FilesReadAllLinesReference", 1, "List<String>"},
+	{"lines", "FilesLinesReference", 1, "Stream<String>"},
+	{"readString", "FilesReadStringReference", 1, "String"},
 	{"writeString", "FilesWriteString", 2, "Path"},
 	{"write", "FilesWrite", 2, "Path"},
-	{"exists", "FilesExists", 1, ""},
+	{"exists", "FilesExists", 1, "boolean"},
 	{"createDirectories", "FilesCreateDirectories", 1, "Path"},
 	{"createFile", "FilesCreateFile", 1, "Path"},
 	{"delete", "FilesDelete", 1, ""},
-	{"deleteIfExists", "FilesDeleteIfExists", 1, ""},
+	{"deleteIfExists", "FilesDeleteIfExists", 1, "boolean"},
 	{"size", "FilesSize", 1, "long"},
-	{"isDirectory", "FilesIsDirectory", 1, ""},
-	{"isRegularFile", "FilesIsRegularFile", 1, ""},
+	{"isDirectory", "FilesIsDirectory", 1, "boolean"},
+	{"isRegularFile", "FilesIsRegularFile", 1, "boolean"},
 	{"copy", "FilesCopy", 2, "Path"},
 	{"move", "FilesMove", 2, "Path"},
 }
@@ -343,13 +354,14 @@ var nioPathMethods = []struct {
 	{"resolve", "Resolve", 1, "Path"},
 	{"toAbsolutePath", "ToAbsolutePath", 0, "Path"},
 	{"normalize", "Normalize", 0, "Path"},
-	{"getNameCount", "GetNameCount", 0, ""},
-	{"startsWith", "StartsWith", 1, ""},
-	{"endsWith", "EndsWith", 1, ""},
+	{"getNameCount", "GetNameCount", 0, "int"},
+	{"startsWith", "StartsWithReference", 1, "boolean"},
+	{"endsWith", "EndsWithReference", 1, "boolean"},
 	{"toFile", "ToFile", 0, "File"},
 }
 
 func registerNioIntrinsics() {
+	registerIntrinsicOwner("java.nio.file.Files", true)
 	registerIntrinsicOwner("java.nio.file.Paths", true)
 	registerIntrinsicOwner("java.nio.file.Path", true)
 	registerIntrinsicOwner("java.nio.file.InvalidPathException", true)

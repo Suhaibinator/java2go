@@ -1,7 +1,6 @@
 package transpiler
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -19,9 +18,5 @@ public class CampaignFilesWriteString{public static String run()throws Exception
  Files.writeString(path,"plain");String plain=Files.readString(path);Files.delete(path);
  return first.length+":"+first[3]+":"+second.length+":"+second[4]+":"+last+":"+plain;
 }}`
-	want := campaignRuntimeJavaOracle(t, "CampaignFilesWriteString", source)
-	generated := renderGoFileFromJava(t, source)
-	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestWriteString(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+	verifyCanonicalStringStreamOracle(t, "CampaignFilesWriteString", source)
 }

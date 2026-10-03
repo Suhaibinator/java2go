@@ -11727,5 +11727,104 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Original Netty sources and historical JVM oracle bytes preserved in tracked corpus",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress118": {
+    "status": "CANONICAL_FILE_NIO_WRITER_CONTRACTS_AND_ORIGINAL_INTRINSICS_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "Canonical File path/name identity; NIO text/line results and strict UTF8/UTF16 failures; caller execution for CharSequence writes; raw UTF16 StringWriter synchronized snapshots; PrintWriter canonical pathname construction with FileNotFoundException hierarchy. Two owned intrinsic harness leaves migrated without Java or expected observation changes.",
+    "verification": {
+      "root_counts": {
+        "118-runtime-io-race": {
+          "top": 30,
+          "sub": 16
+        },
+        "118-io-contracts-a-race": {
+          "top": 10,
+          "sub": 0
+        },
+        "118-io-contracts-b-race": {
+          "top": 9,
+          "sub": 0
+        },
+        "118-intrinsic-originals-race": {
+          "top": 20,
+          "sub": 40
+        },
+        "118-original-file-nio": {
+          "top": 1,
+          "sub": 2
+        },
+        "118-original-maven-invoice": {
+          "top": 1,
+          "sub": 0
+        }
+      },
+      "strict_JDK21_generated_all_package_and_entry_race_probes": 19,
+      "original_e2e_applications": [
+        "FileRoundTrip",
+        "NioFiles",
+        "MavenInvoice"
+      ],
+      "original_generated_e2e_race": false,
+      "original_java_and_expected_observations_unchanged": true
+    },
+    "independent_review_paths": [
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/io-path-joining-audit.json",
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/file-nio-audit.json"
+    ],
+    "remaining": "Eager Files.lines/resources, source Writer overrides, byte/character forwarding and other pathname constructors remain open. Ordinary OS open message text remains Go text. Full CI and accumulated round not accepted.",
+    "publication_parent": "90588ad5dbe0b99a2f2ca28defcc24df9f481c96",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-source-manifest.json",
+      "sha256": "f30acfd169b5a17cb4cc9b7bc9744d69db6e77da98f0c8d9eea4a04181cb1a7a",
+      "members": 3196
+    },
+    "root_records": {
+      "evidence/118-build-stdjava/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-build-stdjava/result.json",
+        "sha256": "8b613f916c03b0bf9ad36de3224e1a9db3ec22efac52e99097292f405b79aaa4"
+      },
+      "evidence/118-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-build-transpiler/result.json",
+        "sha256": "d215ea46e8139a364fcb44912e446aece0cd761617e3eecdee47843b2c7439cf"
+      },
+      "evidence/118-build-e2e/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-build-e2e/result.json",
+        "sha256": "896af5ace2c8f6a5d3af4943613485ccfe7b6650edd6eb5d0f7f0c98878a8785"
+      },
+      "evidence/118-runtime-io-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-runtime-io-race/result.json",
+        "sha256": "d1c435fc97c0b99ca3fb3bd1f6270b415c911c93396c720e7ee510a2fd03e126"
+      },
+      "evidence/118-io-contracts-a-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-io-contracts-a-race/result.json",
+        "sha256": "c8bd529e1f81f4930144b0c118636c91c7bf65221ca26e05befc9eac20e5ebcf"
+      },
+      "evidence/118-io-contracts-b-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-io-contracts-b-race/result.json",
+        "sha256": "32e4260f404cc349260ca4334a35987bbec119dd3c9d48856baa4e5c1886892c"
+      },
+      "evidence/118-intrinsic-originals-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-intrinsic-originals-race/result.json",
+        "sha256": "40c39f7097c6256630c44cb116cb3930d81a0247e8ffaccf280d1ae4dc83cb92"
+      },
+      "evidence/118-original-file-nio/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-original-file-nio/result.json",
+        "sha256": "b5732484d280cca77476713ef549f5ecf7e937783f809f89b0f1ebb218a5c893"
+      },
+      "evidence/118-original-maven-invoice/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/118-original-maven-invoice/result.json",
+        "sha256": "1cbf1f8cc7792ca31b2f50072132a5757058d3894e0428f58751451c0c880a30"
+      }
+    }
+  },
+  "active_resume_current118": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "IO/File/NIO applications and all20 original intrinsic parents independently green",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

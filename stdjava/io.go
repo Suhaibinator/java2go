@@ -62,14 +62,32 @@ func ioPathOf(arg any) string {
 // another, so a sink carries the flush and close behavior of whatever it wraps:
 // closing an outer writer closes the stream underneath it, as in Java.
 type ioSink struct {
-	w     io.Writer
-	flush func()
-	close func()
+	writeText func(*JavaString)
+	w         io.Writer
+	flush     func()
+	close     func()
+}
+
+// printJavaString keeps character destinations in UTF16. Byte destinations
+// decline this path and use their native encoder at the actual output boundary.
+func (sink ioSink) printJavaString(text *JavaString) bool {
+	if sink.writeText == nil {
+		return false
+	}
+	if text == nil {
+		text = JavaStringLiteralUTF16([]uint16{'n', 'u', 'l', 'l'})
+	}
+	sink.writeText(text)
+	return true
 }
 
 // newFileSink opens (creating, then truncating or appending) a file as a
 // buffered sink. It panics with IOException on failure.
 func newFileSink(path string, appendMode bool) ioSink {
+	return newFileSinkWithOpenFailure(path, appendMode, throwIOException)
+}
+
+func newFileSinkWithOpenFailure(path string, appendMode bool, openFailure func(error)) ioSink {
 	flags := os.O_WRONLY | os.O_CREATE
 	if appendMode {
 		flags |= os.O_APPEND
@@ -78,7 +96,7 @@ func newFileSink(path string, appendMode bool) ioSink {
 	}
 	file, err := os.OpenFile(path, flags, 0o666)
 	if err != nil {
-		throwIOException(err)
+		openFailure(err)
 	}
 	buf := bufio.NewWriter(file)
 	return ioSink{
@@ -99,6 +117,14 @@ func nestedSink(w io.Writer, flush, close func()) ioSink {
 // the destination names a file.
 func ioSinkOf(dest any, appendMode bool) ioSink {
 	switch v := dest.(type) {
+	case *JavaString:
+		file := NewJavaFileReference(v)
+		if strings.IndexByte(file.path, 0) >= 0 {
+			panic(newThrowableBase("FileNotFoundException", "Invalid file path"))
+		}
+		return newFileSinkWithOpenFailure(file.path, appendMode, func(err error) {
+			panic(newThrowableBase("FileNotFoundException", err.Error()))
+		})
 	case string:
 		return newFileSink(v, appendMode)
 	case *JavaFile:
@@ -110,13 +136,17 @@ func ioSinkOf(dest any, appendMode bool) ioSink {
 	case *ByteArrayOutputStream:
 		return nestedSink(v, v.Flush, v.Close)
 	case *StringWriter:
-		return nestedSink(v, v.Flush, v.Close)
+		sink := nestedSink(v, v.Flush, v.Close)
+		sink.writeText = v.WriteJavaString
+		return sink
 	case *OutputStreamWriter:
 		return nestedSink(v, v.Flush, v.Close)
 	case *BufferedWriter:
 		return nestedSink(v, v.Flush, v.Close)
 	case *PrintWriter:
-		return nestedSink(v, v.Flush, v.Close)
+		sink := nestedSink(v, v.Flush, v.Close)
+		sink.writeText = func(text *JavaString) { v.Print(text) }
+		return sink
 	case *PrintStream:
 		return nestedSink(v, v.Flush, v.Close)
 	case io.Writer:
@@ -126,6 +156,8 @@ func ioSinkOf(dest any, appendMode bool) ioSink {
 		panic("stdjava: unsupported writer destination type")
 	}
 }
+
+func init() { RegisterException("FileNotFoundException", "IOException") }
 
 // ioSource is the read end shared by the reader/stream shims, mirroring ioSink.
 type ioSource struct {
@@ -209,12 +241,90 @@ func signedByteArray(data []byte) *PrimitiveArray[int8] {
 
 // JavaFile models java.io.File: a path, not an open handle.
 type JavaFile struct {
-	path string
+	path     string
+	pathText *JavaString
 }
 
 // NewJavaFile returns a File for the given pathname, matching `new File(path)`.
 func NewJavaFile(path string) *JavaFile {
-	return &JavaFile{path: path}
+	return &JavaFile{path: path, pathText: JavaStringFromHostUTF8(path)}
+}
+
+// NewJavaFileReference retains the Java pathname before native filesystem encoding.
+// Unix File normalization removes duplicate and trailing separators; dot segments
+// and legal isolated UTF16 surrogate units remain part of the Java pathname.
+func NewJavaFileReference(path *JavaString) *JavaFile {
+	ReferenceRequireNonNull(path)
+	units := make([]uint16, 0, len(path.units))
+	for _, unit := range path.units {
+		if unit == '/' && len(units) != 0 && units[len(units)-1] == '/' {
+			continue
+		}
+		units = append(units, unit)
+	}
+	if len(units) > 1 && units[len(units)-1] == '/' {
+		units = units[:len(units)-1]
+	}
+	if len(units) != len(path.units) {
+		path = NewJavaStringUTF16(units)
+	}
+	native := string(unsignedBytes(JavaStringGetBytes(path, UTF_8).Elements))
+	return &JavaFile{path: native, pathText: path}
+}
+
+func CreateTempFileReference(prefix, suffix *JavaString) *JavaFile {
+	ReferenceRequireNonNull(prefix)
+	if len(prefix.units) < 3 {
+		panic(NewIllegalArgumentException("Prefix string \"" + string(unsignedBytes(JavaStringGetBytes(prefix, UTF_8).Elements)) + "\" too short: length must be at least 3"))
+	}
+	if suffix == nil {
+		suffix = JavaStringLiteralUTF16([]uint16{'.', 't', 'm', 'p'})
+	}
+	nativePrefix := string(unsignedBytes(JavaStringGetBytes(prefix, UTF_8).Elements))
+	nativeSuffix := string(unsignedBytes(JavaStringGetBytes(suffix, UTF_8).Elements))
+	return CreateTempFile(filepath.Base(nativePrefix), nativeSuffix)
+}
+
+func (f *JavaFile) GetPathReference() *JavaString {
+	ReferenceRequireNonNull(f)
+	if f.pathText != nil {
+		return f.pathText
+	}
+	return JavaStringFromHostUTF8(f.path)
+}
+
+func (f *JavaFile) GetNameReference() *JavaString {
+	path := f.GetPathReference()
+	start := 0
+	for index, unit := range path.units {
+		if unit == '/' {
+			start = index + 1
+		}
+	}
+	return JavaStringSubstringFrom(path, int32(start))
+}
+
+func (f *JavaFile) GetAbsolutePathReference() *JavaString {
+	path := f.GetPathReference()
+	if len(path.units) > 0 && path.units[0] == '/' {
+		return path
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		throwIOException(err)
+	}
+	units := JavaStringFromHostUTF8(cwd).UTF16Copy()
+	if len(path.units) != 0 {
+		if len(units) == 0 || units[len(units)-1] != '/' {
+			units = append(units, '/')
+		}
+		units = append(units, path.units...)
+	}
+	return NewJavaStringUTF16(units)
+}
+
+func (f *JavaFile) ToPathReference() *JavaPath {
+	return pathReferenceFromInput(f.GetPathReference())
 }
 
 // CreateTempFile creates a new empty file in the default temp directory with the
@@ -227,7 +337,7 @@ func CreateTempFile(prefix, suffix string) *JavaFile {
 	}
 	name := f.Name()
 	_ = f.Close()
-	return &JavaFile{path: name}
+	return NewJavaFile(name)
 }
 
 // Exists reports whether the file or directory exists, matching File.exists.
@@ -341,12 +451,19 @@ func NewPrintWriterAppend(dest any, appendMode bool) *PrintWriter {
 
 // Print writes the textual form of value, matching PrintWriter.print.
 func (w *PrintWriter) Print(value any) {
+	if text, ok := value.(*JavaString); ok && w.sink.printJavaString(text) {
+		return
+	}
 	_, _ = io.WriteString(w.sink.w, javaString(value))
 }
 
 // Println writes the textual form of value followed by a newline, matching
 // PrintWriter.println. With no argument, writes just a newline.
 func (w *PrintWriter) Println(value any) {
+	if text, ok := value.(*JavaString); ok && w.sink.printJavaString(text) {
+		_, _ = io.WriteString(w.sink.w, "\n")
+		return
+	}
 	_, _ = io.WriteString(w.sink.w, javaString(value)+"\n")
 }
 
@@ -456,7 +573,9 @@ func (w *OutputStreamWriter) Close() {
 // StringWriter models java.io.StringWriter: a writer that accumulates into an
 // in-memory string.
 type StringWriter struct {
+	mu      sync.Mutex
 	builder strings.Builder
+	units   []uint16
 }
 
 // NewStringWriter returns an empty StringWriter, matching `new StringWriter()`.
@@ -466,16 +585,45 @@ func NewStringWriter() *StringWriter {
 
 // WriteString appends the textual form of value, matching StringWriter.write.
 func (w *StringWriter) WriteString(value any) {
-	w.builder.WriteString(javaString(value))
+	if text, ok := value.(*JavaString); ok {
+		w.WriteJavaString(text)
+		return
+	}
+	text := javaString(value)
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.units = append(w.units, JavaStringFromHostUTF8(text).units...)
+	w.builder.WriteString(text)
+}
+
+func (w *StringWriter) WriteJavaString(text *JavaString) {
+	ReferenceRequireNonNull(w)
+	ReferenceRequireNonNull(text)
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.units = append(w.units, text.units...)
+	w.builder.WriteString(string(unsignedBytes(JavaStringGetBytes(text, UTF_8).Elements)))
+}
+
+func (w *StringWriter) StringReference() *JavaString {
+	ReferenceRequireNonNull(w)
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return NewJavaStringUTF16(w.units)
 }
 
 // Write makes a StringWriter usable as another writer's destination.
 func (w *StringWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.units = append(w.units, JavaStringFromHostUTF8(string(p)).units...)
 	return w.builder.Write(p)
 }
 
 // String returns everything written so far, matching StringWriter.toString.
 func (w *StringWriter) String() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	return w.builder.String()
 }
 
@@ -699,6 +847,11 @@ func (s *ByteArrayOutputStream) ToByteArray() *PrimitiveArray[int8] {
 // ByteArrayOutputStream.toString.
 func (s *ByteArrayOutputStream) String() string {
 	return s.buf.String()
+}
+
+func (s *ByteArrayOutputStream) StringReference() *JavaString {
+	ReferenceRequireNonNull(s)
+	return JavaStringFromBytes(s.ToByteArray(), UTF_8)
 }
 
 // Size returns the number of bytes written, matching
@@ -1050,6 +1203,11 @@ func (s *Scanner) Close() {}
 // cases (strings, booleans, numbers, and fmt.Stringer collections).
 func javaString(value any) string {
 	switch v := value.(type) {
+	case *JavaString:
+		if v == nil {
+			return "null"
+		}
+		return string(unsignedBytes(JavaStringGetBytes(v, UTF_8).Elements))
 	case string:
 		return v
 	case rune:
