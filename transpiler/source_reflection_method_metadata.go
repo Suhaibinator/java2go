@@ -95,10 +95,60 @@ func sourceReflectionMethodDescriptor(scope *symbol.ClassScope, method *symbol.D
 		values = append(values, metadataKey("InvocationParameterTypes", sourceReflectionTypeIDs(invocationParameters, ctx)))
 	}
 	if method.IsStatic && !method.RequiresHelper && len(scope.TypeParameters) == 0 {
-		values = append(values, metadataKey("StaticFunction", ast.NewIdent(executionImplementationName(method, scope, ctx))))
+		values = append(values, metadataKey("StaticFunction", sourceReflectionStaticFunction(scope, method, ctx)))
 	}
 	return &ast.CompositeLit{Elts: values}
 }
+
+// Reflection invokes the erased Java signature. Generic Go functions must be
+// specialized at that declaration-bound erasure; projection witnesses remain
+// hidden behind a closure so Method.invoke still sees only execution and the
+// source parameters, including fixed-arity Java varargs arrays.
+func sourceReflectionStaticFunction(scope *symbol.ClassScope, method *symbol.Definition, ctx Ctx) ast.Expr {
+	fun := ast.Expr(ast.NewIdent(executionImplementationName(method, scope, ctx)))
+	if len(method.TypeParameters) == 0 {
+		return fun
+	}
+	declaring := classScopeCtx(scope, ctx).Clone()
+	declaring.localScope = method
+	declaring.syntheticTypeParameters = nil
+	javaTypes := genericMainErasedJavaTypes(method, declaring)
+	goTypes := make([]ast.Expr, len(javaTypes))
+	replacements := make(map[string]string, len(javaTypes)*2)
+	for index, parameter := range method.TypeParameters {
+		goTypes[index] = javaTypeStringToGoTypeExpr(javaTypes[index], nil, declaring)
+		replacements[parameter.Name] = javaTypes[index]
+		replacements[parameter.EmittedName()] = javaTypes[index]
+	}
+	fun = applyTypeArguments(fun, goTypes)
+	witnesses := dependentTypeWitnessArgumentsForJavaTypes(method, javaTypes, declaring)
+	if len(witnesses) != len(concreteDependentTypeWitnessEdges(method, declaring)) {
+		panic("unresolved erased reflection method projection")
+	}
+	if len(witnesses) == 0 {
+		return fun
+	}
+	execution := ast.NewIdent("__java2goReflectExecution")
+	parameters := &ast.FieldList{List: []*ast.Field{executionParameterField(execution.Name, declaring)}}
+	arguments := append([]ast.Expr{execution}, witnesses...)
+	for index, parameter := range method.Parameters {
+		name := ast.NewIdent("__java2goReflectArgument" + strconv.Itoa(index))
+		javaType := substituteJavaTypeParameters(parameter.OriginalType, replacements)
+		parameters.List = append(parameters.List, &ast.Field{Names: []*ast.Ident{name}, Type: executionParameterTypeExpr(method, index, javaType, nil, declaring)})
+		arguments = append(arguments, name)
+	}
+	call := &ast.CallExpr{Fun: fun, Args: arguments}
+	markVariadicForwardCall(call, method)
+	var results *ast.FieldList
+	var statement ast.Stmt = &ast.ExprStmt{X: call}
+	if !javaMethodResultIsVoid(method) {
+		javaType := substituteJavaTypeParameters(method.OriginalType, replacements)
+		results = &ast.FieldList{List: []*ast.Field{{Type: javaTypeStringToGoTypeExpr(javaType, nil, declaring)}}}
+		statement = &ast.ReturnStmt{Results: []ast.Expr{call}}
+	}
+	return &ast.FuncLit{Type: &ast.FuncType{Params: parameters, Results: results}, Body: &ast.BlockStmt{List: []ast.Stmt{statement}}}
+}
+
 func sourceReflectionMethods(scope *symbol.ClassScope, ctx Ctx) []ast.Expr {
 	var out []ast.Expr
 	var ancestors []*symbol.ClassScope

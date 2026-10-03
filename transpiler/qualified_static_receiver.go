@@ -13,46 +13,8 @@ func qualifiedSourceClassReceiver(ctx Ctx, source []byte, node *sitter.Node) *sy
 	if name == "" || root == "" || !strings.Contains(name, ".") {
 		return nil
 	}
-	if ctx.localScope != nil && ctx.localScope.ParameterByName(root) != nil {
+	if simpleReceiverHasLexicalValueBinding(ctx, source, node, root) {
 		return nil
-	}
-	// Fields declared by enclosing lexical classes share the value namespace
-	// with fields of the current class. Inspect that declaration chain directly:
-	// whole-method local inference also sees declarations after this expression.
-	seen := map[*symbol.ClassScope]struct{}{}
-	for scope := ctx.currentClass; scope != nil; scope = scope.Enclosing {
-		if _, duplicate := seen[scope]; duplicate {
-			return nil
-		}
-		seen[scope] = struct{}{}
-		if findFieldResolutionInHierarchy(scope, root, ctx) != nil {
-			return nil
-		}
-	}
-	// Local symbols are collected for a whole Java method. Inspect lexical
-	// scopes here so a later declaration cannot hide an earlier package name.
-	for child, parent := node, node.Parent(); parent != nil; child, parent = parent, parent.Parent() {
-		switch parent.Type() {
-		case "block", "constructor_body":
-			for _, sibling := range nodeutil.NamedChildrenOf(parent) {
-				if sibling.StartByte() >= child.StartByte() {
-					break
-				}
-				if localDeclarationNames(sibling, root, source) {
-					return nil
-				}
-			}
-		case "for_statement":
-			if localDeclarationNames(parent.ChildByFieldName("init"), root, source) {
-				return nil
-			}
-		case "enhanced_for_statement":
-			body := parent.ChildByFieldName("body")
-			variable := parent.ChildByFieldName("name")
-			if body != nil && variable != nil && node.StartByte() >= body.StartByte() && variable.Content(source) == root {
-				return nil
-			}
-		}
 	}
 	return resolveClassScopeByQualifiedName(ctx, name)
 }

@@ -11533,5 +11533,93 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Syntax, nullable String, lambda and initialization observations migrated; next generic/reflection repair",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress115": {
+    "status": "DECLARATION_OWNED_GENERICS_REFLECTION_CONSTRUCTORS_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "Preserve declaration ownership through dependent generic conversion/LUB, erased static reflection and constructor callbacks, typed generic nulls, and lexical class/value qualifier resolution.",
+    "verification": {
+      "root_top_level_counts": {
+        "115-generic-method-race": 4,
+        "115-constructors-race": 6,
+        "115-generic-null-race": 3,
+        "115-lexical-race": 4,
+        "115-generic-reflection-adjacent-race": 8,
+        "115-canonical-search-race2": 1,
+        "115-canonical-replace-race": 1,
+        "115-dispatch-canaccess-race": 3,
+        "115-original-dependent-generics": 1
+      },
+      "root_compiler_race_tests": 30,
+      "strict_JDK21_generated_race_cases": true,
+      "original_dependent_generic_application_passed": true,
+      "original_generated_e2e_race": false,
+      "full_frozen_reflection_and_generic_noarg_probes_retained": true,
+      "zero_selected_search_attempt_excluded": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-selector-correction.json"
+    },
+    "independent_reviews": [
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/final-generic-shard-audit.json",
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/array-lexical-audit.json",
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/constructor-null-chars-audit.json",
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/null-final-evidence-supplement.json"
+    ],
+    "remaining": "Full CI and dependency corpus remain open. Constructor metadata remains scoped to supported nongeneric class shapes. Class.newInstance, flow pattern/switch lexical scopes, and broader reflective surfaces remain unsupported frontiers.",
+    "publication_parent": "a0531b45f31b7e5a048bd9ee1b298da135eb4ff3",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-source-manifest.json",
+      "sha256": "204043f1faae6dd1e1ff52d7ed82beed23be6fa21d44393976947b50ec87738b",
+      "members": 3147
+    },
+    "root_records": {
+      "evidence/115-build-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-build-race/result.json",
+        "sha256": "41485d197e41020adf27675a2bc5e6b599a8bb996ca529051b06a5e476b87dd3"
+      },
+      "evidence/115-generic-method-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-generic-method-race/result.json",
+        "sha256": "1474b8fa5fea4eb950483d5899034b62c8131ea40dffaeb4151efd4837edfbce"
+      },
+      "evidence/115-constructors-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-constructors-race/result.json",
+        "sha256": "ffa40f2db3e3dcdac3b2abe72218efdd6194e81496b0ad4a870798f592cb3816"
+      },
+      "evidence/115-generic-null-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-generic-null-race/result.json",
+        "sha256": "3a1c03a8ee03383a6f84c9dae84d2eff4098adfc807c1283d8937922fa5311d2"
+      },
+      "evidence/115-lexical-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-lexical-race/result.json",
+        "sha256": "0f9f96f02b0591d944dbb79cc9d5e9bab5c66816ec973ef2d652c83d4639f755"
+      },
+      "evidence/115-generic-reflection-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-generic-reflection-adjacent-race/result.json",
+        "sha256": "73317abff294cad4204c505b093fac7d47b2a19472db1512456e9120a99c02be"
+      },
+      "evidence/115-canonical-search-race2/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-canonical-search-race2/result.json",
+        "sha256": "f6b86240acc4a245ad5ae1540ec2f848aa63fb630908b1dc6439234ebf3f52f6"
+      },
+      "evidence/115-canonical-replace-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-canonical-replace-race/result.json",
+        "sha256": "20cd04dc2802a7b87d83c6fb1e9ce954964950249a456aa4192332962e43d894"
+      },
+      "evidence/115-dispatch-canaccess-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-dispatch-canaccess-race/result.json",
+        "sha256": "c49f777feeaa140f69baa08ff3963877a418334f9f1a713c292a8826eb8294bf"
+      },
+      "evidence/115-original-dependent-generics/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/115-original-dependent-generics/result.json",
+        "sha256": "e0b1d69b0cf0fc0b15e24f8a52fad98a647a76476850cc07004ace40463da7b9"
+      }
+    }
+  },
+  "active_resume_current115": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Frozen full generic/reflection probes and original dependent generic app pass; next arrays, IO and remaining CI repairs",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

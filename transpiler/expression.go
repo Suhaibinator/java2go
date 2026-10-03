@@ -1932,6 +1932,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "type_identifier": // Resolve lexical/source types before builtin String.
 		return javaTypeStringToGoTypeExpr(node.Content(source), inScopeTypeParameters(ctx), ctx)
 	case "null_literal":
+		if expectedTypeTargetsExpression(ctx, node) {
+			if value, ok := typedJavaTypeParameterNull(node, ctx.expectedType, ctx); ok {
+				return value
+			}
+		}
 		if isBuiltinJavaString(ctx.expectedType, ctx) && expectedTypeTargetsExpression(ctx, node) {
 			return javaStringNullExpr(ctx)
 		}
@@ -2051,6 +2056,9 @@ func ternaryExpressionParts(node *sitter.Node) (condition, consequence, alternat
 }
 
 func parseTernaryBranch(node *sitter.Node, resultJavaType string, source []byte, ctx Ctx) ast.Expr {
+	if value, ok := typedJavaTypeParameterNull(node, resultJavaType, ctx); ok {
+		return value
+	}
 	if unwrapped := unwrapParenthesizedExpressionNode(node); unwrapped != nil && unwrapped.Type() == "null_literal" {
 		if isBuiltinJavaString(resultJavaType, ctx) {
 			return javaStringNullExpr(ctx)
@@ -3824,7 +3832,11 @@ func resolveClassScopeByIdentifier(ctx Ctx, source []byte, objectNode *sitter.No
 	if objectNode.Type() != "identifier" {
 		return qualifiedSourceClassReceiver(ctx, source, objectNode)
 	}
-	return resolveClassScopeByQualifiedName(ctx, objectNode.Content(source))
+	name := objectNode.Content(source)
+	if simpleReceiverHasLexicalValueBinding(ctx, source, objectNode, name) {
+		return nil
+	}
+	return resolveClassScopeByQualifiedName(ctx, name)
 }
 
 func resolveSuperclassScope(ctx Ctx, scope *symbol.ClassScope) *symbol.ClassScope {
@@ -5492,10 +5504,25 @@ func classInheritsFrom(child *symbol.ClassScope, expected *symbol.ClassScope, ct
 	return false
 }
 
+// typedJavaTypeParameterNull lowers a literal null at an owned target boundary.
+// Java type variables always denote references, but their Go constraints need
+// not prove that nil is assignable. Resolve the Java declaration before using
+// the physical target's zero; an emitted Go binder name alone is not proof.
+func typedJavaTypeParameterNull(node *sitter.Node, javaType string, ctx Ctx) (ast.Expr, bool) {
+	node = unwrapParenthesizedExpressionNode(node)
+	if node == nil || node.Type() != "null_literal" || visibleTypeParameterDeclarationForJavaType(javaType, ctx) == nil {
+		return nil, false
+	}
+	return zeroValueForType(javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx)), true
+}
+
 func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expectedType string, ctx Ctx, source []byte) ast.Expr {
 	expectedType = strings.TrimSpace(expectedType)
 	if expectedType == "" || argNode == nil {
 		return argExpr
+	}
+	if value, ok := typedJavaTypeParameterNull(argNode, expectedType, ctx); ok {
+		return value
 	}
 	projectionCtx := ctx.Clone()
 	projectionCtx.expectedType = expectedType
@@ -5506,7 +5533,10 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	argExpr = projectDirectOwnerErasedExpressionForExpected(argExpr, argNode, projectionCtx, source)
 	projectedToExpected := argExpr != beforeProjection
 
-	actualType, actualKnown := inferExprJavaType(argNode, ctx, source)
+	// ParseExpr emitted this argument in its consuming target context. A
+	// nested generic invocation may therefore return B although its untargeted
+	// inference would return T; conversion must describe that same emitted value.
+	actualType, actualKnown := inferExprJavaType(argNode, projectionCtx, source)
 	if actualKnown {
 		if converted, ok := convertJavaValue(argExpr, actualType, expectedType, ctx); ok {
 			return converted
@@ -11601,10 +11631,14 @@ func javaInferencePairLeastUpperBound(left, right string, ctx Ctx) string {
 
 	// Preserve an existing wider candidate. Besides ordinary class inheritance,
 	// this handles Object and covariant arrays without rebuilding their spelling.
-	if javaInferenceTypeAssignable(left, right, ctx) {
+	// Caller-owned type variables retain their declaration-bound subtype
+	// relations here. Resolving T extends B only as nominal class names loses B
+	// at a nested generic invocation and can make an otherwise valid overload
+	// inapplicable before its hidden projection witnesses are supplied.
+	if invocationActualSatisfiesBound(left, right, ctx, make(map[typeParameterIdentityKey]bool)) {
 		return right
 	}
-	if javaInferenceTypeAssignable(right, left, ctx) {
+	if invocationActualSatisfiesBound(right, left, ctx, make(map[typeParameterIdentityKey]bool)) {
 		return left
 	}
 

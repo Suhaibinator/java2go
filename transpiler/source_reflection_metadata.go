@@ -201,44 +201,113 @@ func sourceReflectionFieldsForFields(scope *symbol.ClassScope, fields []*symbol.
 	}
 	return out
 }
+
+// Runtime validation converts each argument to the erased Java parameter before
+// entering this callback. Project references at that descriptor, preserving null
+// and generated superclass/interface views instead of asserting their Go shape.
+func sourceReflectionConstructorCallback(scope *symbol.ClassScope, method *symbol.Definition, name string, parameters []ast.Expr, ctx Ctx) ast.Expr {
+	declaring := classScopeCtx(scope, ctx).Clone()
+	declaring.localScope = method
+	declaring.syntheticTypeParameters = nil
+	fun := ast.Expr(ast.NewIdent(executionConstructorImplementationName(name, scope)))
+	arguments := []ast.Expr{ast.NewIdent("execution")}
+	replacements := map[string]string{}
+	if method != nil && len(method.TypeParameters) != 0 {
+		javaTypes := genericMainErasedJavaTypes(method, declaring)
+		goTypes := make([]ast.Expr, len(javaTypes))
+		for index, parameter := range method.TypeParameters {
+			goTypes[index] = javaTypeStringToGoTypeExpr(javaTypes[index], nil, declaring)
+			replacements[parameter.Name] = javaTypes[index]
+			replacements[parameter.EmittedName()] = javaTypes[index]
+		}
+		fun = applyTypeArguments(fun, goTypes)
+		witnesses := dependentTypeWitnessArgumentsForJavaTypes(method, javaTypes, declaring)
+		if len(witnesses) != len(concreteDependentTypeWitnessEdges(method, declaring)) {
+			panic("unresolved erased reflection constructor projection")
+		}
+		arguments = append(arguments, witnesses...)
+	}
+	if method != nil {
+		for index := range method.Parameters {
+			javaType := substituteJavaTypeParameters(definitionParameterJavaSignatureType(method, index), replacements)
+			physical := abstractClassToInterface(javaTypeStringToGoTypeExpr(javaType, nil, declaring), javaType, declaring)
+			value := ast.Expr(&ast.IndexExpr{X: ast.NewIdent("arguments"), Index: reflectionInteger(int32(index))})
+			if _, primitive := javaPrimitiveType(javaType); primitive {
+				value = &ast.TypeAssertExpr{X: value, Type: physical}
+			} else {
+				value = stdjavaGenericCall(declaring, "ObjectView", []ast.Expr{physical}, []ast.Expr{value, parameters[index]})
+			}
+			arguments = append(arguments, value)
+		}
+	}
+	call := &ast.CallExpr{Fun: fun, Args: arguments}
+	markVariadicForwardCall(call, method)
+	return &ast.FuncLit{
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{List: []*ast.Field{
+				executionParameterField("execution", ctx),
+				{Names: []*ast.Ident{ast.NewIdent("arguments")}, Type: &ast.ArrayType{Elt: ast.NewIdent("any")}},
+			}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}},
+	}
+}
+
 func sourceReflectionConstructorDescriptors(scope *symbol.ClassScope, ctx Ctx) ast.Expr {
 	out := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("ConstructorDescriptor", ctx)}}
-	// Extra enclosing/captured/generic ABI arguments cannot be invented by a
-	// no-argument reflective constructor. Those shapes await descriptor planning.
+	// Enclosing/captured/class-generic ABI arguments need their own descriptor
+	// planning. Ordinary constructor parameters use their declared erased types.
 	if scope.IsInterface || scope.IsEnum || scope.IsInner || len(scope.TypeParameters) != 0 || sourceReflectionAnonymousClass(scope) {
 		return out
 	}
-	var noarg *symbol.Definition
+	declared := false
 	for _, method := range scope.Methods {
-		if method.Constructor && len(method.Parameters) == 0 {
-			noarg = method
-			break
+		// Synthetic constructors have a separate ABI (for example, a record's
+		// canonical constructor). This path describes source declarations only.
+		if method == nil || !method.Constructor || method.DeclarationNode == nil {
+			continue
+		}
+		declared = true
+		declaring := classScopeCtx(scope, ctx).Clone()
+		declaring.localScope = method
+		parameters := make([]ast.Expr, len(method.Parameters))
+		for index, parameter := range method.Parameters {
+			value, ok := javaTypeDescriptorExpr(qualifyDeclaredReferenceType(symbol.JavaType{Original: definitionParameterJavaSignatureType(method, index), TypeParameterBindings: parameter.TypeParameterBindings}, declaring), declaring)
+			if !ok {
+				panic("unresolved reflection constructor parameter descriptor")
+			}
+			parameters[index] = value
+		}
+		modifiers := sourceReflectionModifiers(method, scope)
+		if len(method.Parameters) > 0 && executionParameterIsVariadic(method, len(method.Parameters)-1) {
+			modifiers |= 128
+		}
+		entry := &ast.CompositeLit{Elts: []ast.Expr{
+			metadataKey("Parameters", sourceReflectionTypeIDs(parameters, ctx)),
+			metadataKey("Modifiers", reflectionInteger(modifiers)),
+		}}
+		if !scope.IsAbstract {
+			entry.Elts = append(entry.Elts, metadataKey("Construct", sourceReflectionConstructorCallback(scope, method, method.Name, parameters, ctx)))
+		}
+		out.Elts = append(out.Elts, entry)
+	}
+	if !declared {
+		if name := noArgConstructorName(scope); name != "" {
+			modifiers := sourceReflectionModifiers(scope.Class, scope) & 7
+			for _, method := range scope.Methods {
+				if method != nil && method.Constructor && len(method.Parameters) == 0 {
+					modifiers = sourceReflectionModifiers(method, scope)
+					break
+				}
+			}
+			entry := &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Modifiers", reflectionInteger(modifiers))}}
+			if !scope.IsAbstract {
+				entry.Elts = append(entry.Elts, metadataKey("Construct", sourceReflectionConstructorCallback(scope, nil, name, nil, ctx)))
+			}
+			out.Elts = append(out.Elts, entry)
 		}
 	}
-	name := noArgConstructorName(scope)
-	if name == "" {
-		return out
-	}
-	modifiers := sourceReflectionModifiers(scope.Class, scope) & 7
-	if noarg != nil {
-		modifiers = sourceReflectionModifiers(noarg, scope)
-	}
-	entry := &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Modifiers", reflectionInteger(modifiers))}}
-	if !scope.IsAbstract {
-		call := &ast.CallExpr{Fun: ast.NewIdent(executionConstructorImplementationName(name, scope)), Args: []ast.Expr{ast.NewIdent("execution")}}
-		callback := &ast.FuncLit{
-			Type: &ast.FuncType{
-				Params: &ast.FieldList{List: []*ast.Field{
-					executionParameterField("execution", ctx),
-					{Names: []*ast.Ident{ast.NewIdent("arguments")}, Type: &ast.ArrayType{Elt: ast.NewIdent("any")}},
-				}},
-				Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}},
-			},
-			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}},
-		}
-		entry.Elts = append(entry.Elts, metadataKey("Construct", callback))
-	}
-	out.Elts = append(out.Elts, entry)
 	return out
 }
 

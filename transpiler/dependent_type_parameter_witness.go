@@ -387,11 +387,22 @@ func dependentTypeWitnessInvocationArguments(
 	ctx Ctx,
 	source []byte,
 ) []ast.Expr {
+	// A method without the hidden ABI needs no invocation inference here.
+	// Preserve this early return before evaluating its generic argument types.
+	if !methodUsesConcreteDependentTypeWitnesses(def, ctx) {
+		return nil
+	}
+	return dependentTypeWitnessArgumentsForJavaTypes(def, methodInvocationTypeArgumentJavaTypes(def, invocationNode, ctx, source), ctx)
+}
+
+// Both source invocations and erased reflection entries instantiate the same
+// witness ABI. Keep the projection plan tied to the method declarations while
+// taking the already-selected Java argument types from the boundary producer.
+func dependentTypeWitnessArgumentsForJavaTypes(def *symbol.Definition, javaTypes []string, ctx Ctx) []ast.Expr {
 	edges := concreteDependentTypeWitnessEdges(def, ctx)
 	if len(edges) == 0 {
 		return nil
 	}
-	javaTypes := methodInvocationTypeArgumentJavaTypes(def, invocationNode, ctx, source)
 	if len(javaTypes) != len(def.TypeParameters) {
 		return nil
 	}

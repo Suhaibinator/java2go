@@ -105,16 +105,25 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 	// this public no-argument reflection surface.
 	if !scope.IsInterface && !scope.IsAbstract && !scope.IsEnum && !scope.IsInner && len(scope.TypeParameters) == 0 && !sourceReflectionAnonymousClass(scope) {
 		constructor := noArgConstructorName(scope)
+		var definition *symbol.Definition
 		public := reflectionPublic(scope.Class, scope)
 		for _, method := range scope.Methods {
 			if method.Constructor && len(method.Parameters) == 0 {
+				definition = method
 				public = reflectionPublic(method, scope)
 			}
 		}
 		if constructor != "" && public {
+			call := &ast.CallExpr{Fun: ast.NewIdent(executionConstructorImplementationName(constructor, scope)), Args: []ast.Expr{execution}}
+			if definition != nil && len(definition.TypeParameters) > 0 {
+				// A noarg source constructor can still have generic ABI arguments.
+				// Reuse the declared-constructor erasure/witness callback and keep
+				// this legacy unary metadata boundary on the caller's execution.
+				call = &ast.CallExpr{Fun: sourceReflectionConstructorCallback(scope, definition, constructor, nil, ctx), Args: []ast.Expr{execution, ast.NewIdent("nil")}}
+			}
 			descriptor.Elts = append(descriptor.Elts, metadataKey("Construct", &ast.FuncLit{
 				Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}},
-				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: ast.NewIdent(executionConstructorImplementationName(constructor, scope)), Args: []ast.Expr{execution}}}}}},
+				Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}},
 			}))
 		}
 	}
@@ -214,11 +223,30 @@ func reflectionVarargsIntrinsic(receiver, name string) nodeIntrinsicGenerator {
 		if object == nil {
 			return nil
 		}
-		args := intrinsicArgs(object, name, source, ctx)
 		nodes := nodeutil.SemanticNamedChildrenOf(invocation.ChildByFieldName("arguments"))
 		fixed := 0
 		if name == "getMethod" || name == "getDeclaredMethod" || name == "invoke" {
 			fixed = 1
+		}
+		var args []ast.Expr
+		if receiver == "Method" || receiver == "Constructor" {
+			// Expanded reflection arguments have the canonical Object formal, so
+			// primitive expressions must be boxed before Method/Constructor runtime
+			// conversion. An explicit varargs array retains its array boundary.
+			expected := make([]string, len(nodes))
+			for index := range expected {
+				expected[index] = "java.lang.Object"
+			}
+			if len(nodes) == fixed+1 {
+				last := nodes[fixed]
+				javaType, _ := inferExprJavaType(last, ctx, source)
+				if last.Type() == "null_literal" || strings.HasSuffix(strings.TrimSpace(javaType), "[]") {
+					expected[fixed] = "java.lang.Object[]"
+				}
+			}
+			args = parseArgumentListWithExpectedTypes(invocation.ChildByFieldName("arguments"), source, ctx, expected)
+		} else {
+			args = intrinsicArgs(object, name, source, ctx)
 		}
 		spread := false
 		if len(nodes) == fixed+1 {
