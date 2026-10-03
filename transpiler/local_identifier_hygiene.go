@@ -28,7 +28,7 @@ func hygienizeLocalScope(ctx Ctx) {
 	hygienizeLocalScopeWithReserved(ctx, localIdentifierReservedGlobals())
 }
 
-func hygienizeLocalScopeWithReserved(ctx Ctx, reserved map[string]bool) {
+func hygienizeLocalScopeWithReserved(ctx Ctx, reserved localIdentifierReservations) {
 	if ctx.localScope == nil {
 		return
 	}
@@ -41,8 +41,14 @@ func hygienizeLocalScopeWithReserved(ctx Ctx, reserved map[string]bool) {
 
 // Build the whole-program reservation set once for a resolution pass; checking
 // every method local must not repeatedly walk the entire dependency graph.
-func localIdentifierReservedGlobals() map[string]bool {
+type localIdentifierReservations struct {
+	globals      map[string]bool
+	nominalTypes map[string]bool
+}
+
+func localIdentifierReservedGlobals() localIdentifierReservations {
 	reserved := map[string]bool{}
+	nominalTypes := map[string]bool{}
 	for _, name := range types.Universe.Names() {
 		reserved[name] = true
 	}
@@ -56,10 +62,10 @@ func localIdentifierReservedGlobals() map[string]bool {
 	}
 	for _, scope := range allSourceClassScopes() {
 		if scope.Class != nil {
-			reserved[scope.Class.Name] = true
-			reserved[scope.Class.Name+"I"] = true
+			nominalTypes[scope.Class.Name] = true
+			nominalTypes[scope.Class.Name+"I"] = true
+			nominalTypes[classDispatchTypeName(scope)] = true
 			reserved["New"+scope.Class.Name] = true
-			reserved[classDispatchTypeName(scope)] = true
 		}
 		for _, method := range scope.Methods {
 			if method == nil {
@@ -74,11 +80,17 @@ func localIdentifierReservedGlobals() map[string]bool {
 			}
 		}
 	}
-	return reserved
+	return localIdentifierReservations{globals: reserved, nominalTypes: nominalTypes}
 }
 
-func localIdentifierIsReserved(name string, ctx Ctx, reserved map[string]bool) bool {
-	if reserved[name] && localIdentifierRequiredByBody(name, ctx) {
+func localIdentifierIsReserved(name string, ctx Ctx, reserved localIdentifierReservations) bool {
+	// Constructor allocation, superclass arguments and generic projections can
+	// introduce nominal types without spelling them in Java's body. Protect their
+	// allocated Go names before any producer emits a body or a parameter binding.
+	if reserved.nominalTypes[name] {
+		return true
+	}
+	if reserved.globals[name] && localIdentifierRequiredByBody(name, ctx) {
 		return true
 	}
 	for _, alias := range ctx.importAliases {
@@ -98,7 +110,7 @@ func hygienicLocalIdentifier(name, original string, ctx Ctx) string {
 	return hygienicLocalIdentifierWithReserved(name, original, ctx, localIdentifierReservedGlobals())
 }
 
-func hygienicLocalIdentifierWithReserved(name, original string, ctx Ctx, reserved map[string]bool) string {
+func hygienicLocalIdentifierWithReserved(name, original string, ctx Ctx, reserved localIdentifierReservations) string {
 	name = sanitizeGoIdent(name)
 	if !localIdentifierIsReserved(name, ctx, reserved) {
 		return name

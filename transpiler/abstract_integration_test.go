@@ -85,7 +85,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "*BaseThing) Id() string") {
+	if !strings.Contains(flat, "*BaseThing) Id() *stdjava.JavaString") {
 		t.Fatalf("expected BaseThing.Id abstract stub in output, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*BaseThing) Compute(a float64, b float64) float64") {
@@ -94,31 +94,31 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if strings.Count(flat, "abstract method") < 2 {
 		t.Fatalf("expected abstract stubs to include panic messages for BaseThing methods, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "*BaseThing) Describe() string") {
+	if !strings.Contains(flat, "*BaseThing) Describe() *stdjava.JavaString") {
 		t.Fatalf("expected BaseThing.Describe concrete method in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "fmt.Sprintf(\"%v%v%v\", stdjava.StringValueOf(bg.Java2goBaseThingSelf.IdJava2goExecution(__java2goExecution)), \":\", bg.Value0)") {
+	if !strings.Contains(flat, "return stdjava.ConcatJavaStrings(stdjava.JavaStringTextOperandExecution(__java2goExecution, stdjava.ConcatJavaStrings(stdjava.JavaStringTextOperandExecution(__java2goExecution, bg.Java2goBaseThingSelf.IdJava2goExecution(__java2goExecution)), stdjava.JavaStringTextOperandExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{58})))), stdjava.JavaStringValueOfInt(int32(bg.Value0)))") {
 		t.Fatalf("expected BaseThing.Describe to use Id() and value field, got:\n%s", out)
 	}
 
-	if !strings.Contains(flat, "*MidThing) Id() string") {
+	if !strings.Contains(flat, "*MidThing) Id() *stdjava.JavaString") {
 		t.Fatalf("expected MidThing.Id abstract stub in output, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*MidThing) Combine(first float64, second float64, third float64) float64") {
 		t.Fatalf("expected MidThing.Combine abstract stub in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func (mg *MidThing) Label() string") {
+	if !strings.Contains(flat, "func (mg *MidThing) Label() *stdjava.JavaString") {
 		t.Fatalf("expected MidThing.label concrete method to be emitted, got:\n%s", out)
 	}
 
-	if !strings.Contains(flat, "*LeafThing) Describe() string") {
+	if !strings.Contains(flat, "*LeafThing) Describe() *stdjava.JavaString") {
 		t.Fatalf("expected LeafThing.Describe override in output, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "__java2goInvocationReceiver := lg.MidThing") ||
 		!strings.Contains(flat, "return __java2goExecutionReceiver.DescribeJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected LeafThing.Describe to call super.describe(), got:\n%s", out)
 	}
-	if strings.Contains(flat, "*LeafThing) Id() string") {
+	if strings.Contains(flat, "*LeafThing) Id() *stdjava.JavaString") {
 		t.Fatalf("expected LeafThing to rely on inherited stubs for Id, got:\n%s", out)
 	}
 	if strings.Contains(flat, "*LeafThing) Compute(a float64, b float64) float64") {
@@ -128,10 +128,10 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 		t.Fatalf("expected LeafThing to rely on inherited stubs for Combine, got:\n%s", out)
 	}
 
-	if !strings.Contains(flat, "*ConcreteThing) Id() string") {
+	if !strings.Contains(flat, "*ConcreteThing) Id() *stdjava.JavaString") {
 		t.Fatalf("expected ConcreteThing.Id concrete override in output, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return \"concrete-\" + cg.Name") && !strings.Contains(flat, "return fmt.Sprint(\"concrete-\", cg.Name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", cg.Name)") && !strings.Contains(flat, "fmt.Sprintf(\"%v%v\", \"concrete-\", stdjava.StringValueOf(cg.Name))") {
+	if !strings.Contains(flat, "return stdjava.ConcatJavaStrings(stdjava.JavaStringTextOperandExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{99, 111, 110, 99, 114, 101, 116, 101, 45})), stdjava.JavaStringTextOperandExecution(__java2goExecution, cg.Name))") {
 		t.Fatalf("expected ConcreteThing.Id to return the name field, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*ConcreteThing) Compute(a float64, b float64) float64") {
@@ -146,14 +146,14 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "return stdjava.EvaluationValue[float64](total) + cg.ComputeJava2goExecution(__java2goExecution, stdjava.EvaluationValue[float64](total), float64(cg.Java2goBaseThingSelf.ValueJava2goExecution(__java2goExecution)))") {
 		t.Fatalf("expected ConcreteThing.Combine to call compute/value, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "\"override-\"") {
+	if !strings.Contains(flat, "stdjava.JavaStringLiteralUTF16([]uint16{111, 118, 101, 114, 114, 105, 100, 101, 45})") {
 		t.Fatalf("expected ConcreteThing.Label to include override marker, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "__java2goInvocationReceiver := cg.LeafThing") ||
 		!strings.Contains(flat, "return __java2goExecutionReceiver.LabelJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected ConcreteThing.Label to call super.label(), got:\n%s", out)
 	}
-	if !strings.Contains(flat, "*AltConcreteThing) Id() string") {
+	if !strings.Contains(flat, "*AltConcreteThing) Id() *stdjava.JavaString") {
 		t.Fatalf("expected AltConcreteThing.Id concrete override in output, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "*AltConcreteThing) Combine(first float64, second float64, third float64) float64") {
@@ -165,7 +165,7 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "bg.Value0 = value") {
 		t.Fatalf("expected BaseThing constructor to initialize value field, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func NewMidThing(value int32, name string) *MidThing") {
+	if !strings.Contains(flat, "func NewMidThing(value int32, name *stdjava.JavaString) *MidThing") {
 		t.Fatalf("expected MidThing constructor to be emitted, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "mg.BaseThing = NewBaseThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value)") {
@@ -174,19 +174,19 @@ func TestAbstractIntegration_ComplexHierarchyAndStubs(t *testing.T) {
 	if !strings.Contains(flat, "mg.Name = name") {
 		t.Fatalf("expected MidThing constructor to initialize name field, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func NewLeafThing(value int32, name string) *LeafThing") {
+	if !strings.Contains(flat, "func NewLeafThing(value int32, name *stdjava.JavaString) *LeafThing") {
 		t.Fatalf("expected LeafThing constructor to be emitted, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "lg.MidThing = NewMidThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value, name)") {
 		t.Fatalf("expected LeafThing constructor to call MidThing constructor, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func NewConcreteThing(value int32, name string) *ConcreteThing") {
+	if !strings.Contains(flat, "func NewConcreteThing(value int32, name *stdjava.JavaString) *ConcreteThing") {
 		t.Fatalf("expected ConcreteThing constructor to be emitted, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "cg.LeafThing = NewLeafThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value, name)") {
 		t.Fatalf("expected ConcreteThing constructor to call LeafThing constructor, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func NewAltConcreteThing(value int32, name string) *AltConcreteThing") {
+	if !strings.Contains(flat, "func NewAltConcreteThing(value int32, name *stdjava.JavaString) *AltConcreteThing") {
 		t.Fatalf("expected AltConcreteThing constructor to be emitted, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "ag.MidThing = NewMidThingJava2goWithSelfJava2goExecution(__java2goExecution, __java2goMostDerived, value, name)") {
@@ -213,6 +213,18 @@ func TestAbstractIntegrationProtectedHierarchyJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "AbstractHierarchyOracle", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestHierarchy(t *testing.T) {if got:=Run();got!=%q{t.Fatalf("got %%q want %%q",got,%q)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
+func TestHierarchy(t *testing.T) {
+ const want = %q
+ got := Run()
+ if got == nil { t.Fatal("Run() returned null") }
+ units := got.UTF16Copy()
+ if !slices.Equal(units, utf16.Encode([]rune(want))) {
+  t.Fatalf("got %%q want %%q", string(utf16.Decode(units)), want)
+ }
+}`, want))
 }

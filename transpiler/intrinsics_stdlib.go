@@ -484,7 +484,7 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "DoubleToString", args[0])
+		return stdjavaCall(ctx, "JavaStringValueOfDouble", args[0])
 	})
 
 	// Float
@@ -492,7 +492,7 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "FloatToString", args[0])
+		return stdjavaCall(ctx, "JavaStringValueOfFloat", args[0])
 	})
 
 	// Boolean
@@ -512,7 +512,7 @@ func registerBoxedTypeIntrinsics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return pkgCall(ctx, "fmt", "Sprint", args[0])
+		return stdjavaCall(ctx, "JavaStringValueOfBoolean", args[0])
 	})
 
 	// Character (static predicates and conversions operate on a rune)
@@ -607,11 +607,14 @@ func registerBoxedObjectIntrinsics() {
 			count                int
 		}{
 			{"equals", "Equals", "boolean", 1}, {"hashCode", "HashCode", "int", 0},
-			{"compareTo", "CompareTo", "int", 1}, {"toString", "String", "String", 0},
+			{"compareTo", "CompareTo", "int", 1}, {"toString", "String", "java.lang.String", 0},
 		} {
 			registerInstanceIntrinsic(spec.wrapper, method.java, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 				if len(args) != method.count {
 					return nil
+				}
+				if method.java == "toString" {
+					return stdjavaCall(ctx, "JavaStringValueOfExecution", intrinsicExecutionExpr(ctx), stdjavaCall(ctx, "ReferenceRequireNonNull", recv))
 				}
 				return methodCall(recv, method.goName, args...)
 			})
@@ -639,13 +642,13 @@ func registerBoxedObjectIntrinsics() {
 			return methodCall(stdjavaCall(ctx, "Box"+spec.wrapper, args[0]), "HashCode")
 		})
 		registerStaticIntrinsicResultType(spec.wrapper, "hashCode", "int")
-		registerStaticIntrinsicResultType(spec.wrapper, "toString", "String")
+		registerStaticIntrinsicResultType(spec.wrapper, "toString", "java.lang.String")
 		if spec.wrapper == "Byte" || spec.wrapper == "Short" || spec.wrapper == "Character" {
 			registerStaticIntrinsic(spec.wrapper, "toString", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 				if len(args) != 1 {
 					return nil
 				}
-				return methodCall(stdjavaCall(ctx, "Box"+spec.wrapper, args[0]), "String")
+				return canonicalStringValueOf(spec.primitive, args[0], false, ctx)
 			})
 		}
 		if spec.wrapper != "Float" && spec.wrapper != "Double" {

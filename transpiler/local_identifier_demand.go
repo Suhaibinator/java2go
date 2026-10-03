@@ -19,6 +19,9 @@ func localIdentifierRequiredByBody(name string, ctx Ctx) bool {
 	if body == nil || ctx.currentFile == nil {
 		return false
 	}
+	if name == "new" && ctx.localScope != nil && ctx.localScope.Constructor && constructorBodyAllocatesReceiver(body) {
+		return true
+	}
 	source := ctx.currentFile.Source
 	if name == "nil" && ctx.localScope != nil && !ctx.localScope.IsStatic {
 		return true
@@ -89,6 +92,26 @@ func localIdentifierRequiredByBody(name string, ctx Ctx) bool {
 		return false
 	}
 	return walk(body)
+}
+
+// A source constructor allocates its receiver unless it delegates to this(...).
+// This generated allocation is absent from Java's body syntax. Inspect only the
+// invocation role here; resolving or lowering it would mutate emission state.
+func constructorBodyAllocatesReceiver(body *sitter.Node) bool {
+	first := nodeutil.SemanticNamedChild(body, 0)
+	if first == nil || first.Type() != "explicit_constructor_invocation" {
+		return true
+	}
+	constructor := first.ChildByFieldName("constructor")
+	if constructor != nil {
+		return constructor.Type() != "this"
+	}
+	for _, child := range nodeutil.SemanticNamedChildrenOf(first) {
+		if child.Type() == "this" {
+			return false
+		}
+	}
+	return true
 }
 
 func localTypeRequiresIdentifier(javaType, name string, ctx Ctx) bool {

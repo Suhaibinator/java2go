@@ -115,13 +115,13 @@ public class FloatingText {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if strings.Count(flat, "stdjava.StringValueOf(d)") < 3 {
+	if strings.Count(flat, "stdjava.JavaStringValueOfDouble(d)") < 3 {
 		t.Fatalf("expected println, concatenation, and String.valueOf to use Java double formatting, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.StringValueOf(f)") {
+	if !strings.Contains(flat, "stdjava.JavaStringValueOfFloat(f)") {
 		t.Fatalf("expected println(float) to use Java float formatting, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.DoubleToString(d)") {
+	if strings.Count(flat, "stdjava.JavaStringValueOfDouble(d)") < 4 || !strings.Contains(flat, "stdjava.JavaStringTextOperandExecution(__java2goExecution, stdjava.JavaStringValueOfDouble(d))") {
 		t.Fatalf("expected Double.toString to use Java double formatting, got:\n%s", out)
 	}
 }

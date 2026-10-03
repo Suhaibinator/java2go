@@ -414,7 +414,7 @@ public class E {
 	if strings.Contains(out, ".ordinal()") {
 		t.Errorf("enum method call should resolve to `.Ordinal()`, got lowercased:\n%s", out)
 	}
-	if !strings.Contains(normalizeSpaces(out), "func() *Eday { EdayJava2goEnsureInitialized(__java2goExecution) return WED }().Ordinal()") {
-		t.Errorf("expected initialized WED access followed by `.Ordinal()`, got:\n%s", out)
+	if !strings.Contains(normalizeSpaces(out), "stdjava.EnumOrdinal(func() *Eday { EdayJava2goEnsureInitialized(__java2goExecution) return WED }())") {
+		t.Errorf("expected initialized WED access passed to canonical EnumOrdinal, got:\n%s", out)
 	}
 }

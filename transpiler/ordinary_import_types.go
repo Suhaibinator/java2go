@@ -5,10 +5,22 @@ import (
 	"github.com/NickyBoy89/java2go/symbol"
 )
 
-// On-demand imports belong to the compilation unit, not the class temporarily
-// selected while resolving a hierarchy. They remain uncached because lexical
-// declarations and explicit imports may choose a different type in each context.
+// On-demand import text belongs to the compilation unit. Only that text is
+// cached; each caller still resolves declarations and accessibility afresh.
 func ordinaryTypeOnDemandImports(ctx Ctx) []string {
+	inventory, facts, ok := importSourceFacts(ctx)
+	if !ok {
+		return ordinaryTypeOnDemandImportsFromFile(ctx)
+	}
+	if !facts.ordinaryReady {
+		facts.ordinary = ordinaryTypeOnDemandImportsFromFile(ctx)
+		facts.ordinaryReady = true
+		storeImportSourceFacts(inventory, ctx.currentFile, facts)
+	}
+	return append([]string(nil), facts.ordinary...)
+}
+
+func ordinaryTypeOnDemandImportsFromFile(ctx Ctx) []string {
 	if ctx.currentFile == nil || ctx.currentFile.BaseClass == nil || ctx.currentFile.BaseClass.Class == nil {
 		return nil
 	}

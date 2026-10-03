@@ -35,9 +35,20 @@ func TestCampaignMessageDigestJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "DigestWorkflow", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestDigest(t *testing.T) { if got:=Run();got!=%q {t.Fatalf("got %%q want %%q",got,%q)} }
- `, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
+func TestDigest(t *testing.T) {
+ const want = %q
+ got := Run()
+ if got == nil { t.Fatal("Run() returned null") }
+ units := got.UTF16Copy()
+ if !slices.Equal(units, utf16.Encode([]rune(want))) {
+  t.Fatalf("got %%q want %%q", string(utf16.Decode(units)), want)
+ }
+}`, want))
 }
 
 func TestCampaignMessageDigestFailedUpdateJVMParity(t *testing.T) {
@@ -59,6 +70,18 @@ func TestCampaignMessageDigestFailedUpdateJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "DigestFailures", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestDigestFailures(t *testing.T){if got:=Run();got!=%q{t.Fatalf("got %%q want %%q",got,%q)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
+func TestDigestFailures(t *testing.T) {
+ const want = %q
+ got := Run()
+ if got == nil { t.Fatal("Run() returned null") }
+ units := got.UTF16Copy()
+ if !slices.Equal(units, utf16.Encode([]rune(want))) {
+  t.Fatalf("got %%q want %%q", string(utf16.Decode(units)), want)
+ }
+}`, want))
 }

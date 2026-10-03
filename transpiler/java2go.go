@@ -271,6 +271,10 @@ func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error
 	previousIndex := activeResolutionFiles
 	activeResolutionFiles = sourceOwnershipIndex(ctx)
 	defer func() { activeResolutionFiles = previousIndex }()
+	// Fresh contexts may share syntax tuples during this serial conversion only.
+	previousImports := activeImportSourceInventory
+	activeImportSourceInventory = resolvedSourceInventory(ctx)
+	defer func() { activeImportSourceInventory = previousImports }()
 	defer func() {
 		if r := recover(); r != nil {
 			if strictErr, ok := r.(strictModeError); ok {

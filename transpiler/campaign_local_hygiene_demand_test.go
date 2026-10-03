@@ -23,12 +23,26 @@ func TestCampaignLocalHygieneResourceCleanupJVMParity(t *testing.T) {
  }`
 	want := campaignRuntimeJavaOracle(t, "ResourceNames", source)
 	out := renderGoFileFromJava(t, source)
-	if !strings.Contains(out, "stringJava2goLocal") {
-		t.Fatal("resource probe did not require a renamed binding")
+	// Canonical Java String uses *stdjava.JavaString, so this body no longer
+	// needs Go's predeclared string type beside the resource binding.
+	if !strings.Contains(out, "string := ") {
+		t.Fatal("canonical resource binding was not retained")
 	}
 	runGoTestInTempModule(t, out, fmt.Sprintf(`package main
-import "testing"
-func TestResourceNames(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
+func TestResourceNames(t *testing.T) {
+ const want = %q
+ got := Run()
+ if got == nil { t.Fatal("Run() returned null") }
+ units := got.UTF16Copy()
+ if !slices.Equal(units, utf16.Encode([]rune(want))) {
+  t.Fatalf("JVM %%q != Go %%q", want, string(utf16.Decode(units)))
+ }
+}`, want))
 }
 
 func TestCampaignLocalHygieneImplicitTypeDemandJVMParity(t *testing.T) {
@@ -43,8 +57,20 @@ func TestCampaignLocalHygieneImplicitTypeDemandJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "ImplicitNames", source)
 	out := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, out, fmt.Sprintf(`package main
-import "testing"
-func TestImplicitNames(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
+func TestImplicitNames(t *testing.T) {
+ const want = %q
+ got := Run()
+ if got == nil { t.Fatal("Run() returned null") }
+ units := got.UTF16Copy()
+ if !slices.Equal(units, utf16.Encode([]rune(want))) {
+  t.Fatalf("JVM %%q != Go %%q", want, string(utf16.Decode(units)))
+ }
+}`, want))
 }
 
 func TestLocalHygieneBodyContextIsolation(t *testing.T) {
