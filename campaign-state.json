@@ -11441,5 +11441,43 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Primitive array overload scoped parity passes; continue compiler ABI and generic repair",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress113": {
+    "status": "CANONICAL_POLYMORPHISM_OBSERVATIONS_VERIFIED",
+    "implementation_changes_published": false,
+    "scope": "Migrate eleven existing polymorphism and method-selector Go observation harnesses to canonical JavaString; original Java and observations unchanged.",
+    "verification": {
+      "migrated_observations": 11,
+      "adjacent_controls": 4,
+      "root_race_and_nested_generated_race": true,
+      "preserved_Java_blocks": 22
+    },
+    "independent_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/polymorphism-assertions-audit.json",
+    "remaining": "Other hosted failures remain active; this changes observation harnesses only.",
+    "publication_parent": "3465abcccf2fffefe6737bb83b4c8166eeeb02b8",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/113-source-manifest.json",
+      "sha256": "d67935efd81254ac8300c6d915c9c5065a5e5296bb367fc0d62d5dca3a473823",
+      "members": 3135
+    },
+    "root_records": {
+      "evidence/113-build-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/113-build-race/result.json",
+        "sha256": "159aef924e2f26be791968223a73a314d14dbd978625b6c1ffcb3593eabf4b7a"
+      },
+      "evidence/113-polymorphism-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/113-polymorphism-race/result.json",
+        "sha256": "c6a7b19b5d1c0980ab722b36fa7ebd1f3a687de23810408cf928edf81e1d0f94"
+      }
+    }
+  },
+  "active_resume_current113": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Eleven polymorphism and overload observations now execute canonical String results; next generic/reflection integration",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

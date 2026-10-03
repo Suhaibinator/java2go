@@ -138,13 +138,21 @@ public class ReferenceSpecificityProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestReferenceSpecificity(t *testing.T) {
-    const want = "mid,mid"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
-    }
+	const want = "mid,mid"
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, want)
+	}
 }
 `)
 }
