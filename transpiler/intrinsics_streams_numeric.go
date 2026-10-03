@@ -172,11 +172,15 @@ func registerNumericStreamTerminals() {
 		"getAverage": "GetAverage",
 	} {
 		for _, statsType := range summaryStatisticsTypeNames {
+			accessor := goName
+			if method == "getSum" && statsType != "DoubleSummaryStatistics" {
+				accessor = "GetSumLong"
+			}
 			registerInstanceIntrinsic(statsType, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 				if !expectArgs(args, 0) {
 					return nil
 				}
-				return methodCall(recv, goName)
+				return methodCall(recv, accessor)
 			})
 		}
 	}

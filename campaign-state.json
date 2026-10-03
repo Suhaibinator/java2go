@@ -11334,5 +11334,58 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "String.contains scoped parity verified; next integral statistics and dependency repairs",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress111": {
+    "status": "INTEGRAL_STREAM_STATISTICS_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "Integral summary statistics use Java long accumulation; integral stream averages sum in long before converting to double. Native GetSum element-width API retained; translated integral getSum calls GetSumLong.",
+    "verification": {
+      "runtime_tests": 9,
+      "compiler_shape_tests": 1,
+      "strict_JDK21_generated_race_parity_tests": 1,
+      "original_e2e_applications": [
+        "streams_numeric/NumericStreams"
+      ],
+      "original_generated_e2e_race": false
+    },
+    "independent_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/slice-audit.md",
+    "remaining": "No full stream laziness, dependency corpus or full CI acceptance; other hosted failures remain active.",
+    "publication_parent": "c08d0581da790c27638ceca13f7a56444f8ccaed",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/111-source-manifest.json",
+      "sha256": "c7ecdde9a923e8ba23be5b425c265b5dadcbd813cd79db0c802d9bf4dd495ef5",
+      "members": 3131
+    },
+    "root_records": {
+      "evidence/111-build-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/111-build-race/result.json",
+        "sha256": "af91fc0bcc195274ad597ce0bde43be6e341ebd89677457b39c3d5b3875a21c0"
+      },
+      "evidence/111-runtime-statistics-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/111-runtime-statistics-race/result.json",
+        "sha256": "a6796123293f6e95fdc4f09a0dc48fdcabed4a6c9c8a1faf98b008b1845f8776"
+      },
+      "evidence/111-runtime-sum-average-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/111-runtime-sum-average-race/result.json",
+        "sha256": "a41134fa3c878231b36f9b9e6b1fe48183b77fd7104ec9993933a3d0c51f89aa"
+      },
+      "evidence/111-compiler-statistics-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/111-compiler-statistics-race/result.json",
+        "sha256": "c23156aef6dde8cce14cb0fb4680be9712b3942b03426a18dd4bc4522c34ae33"
+      },
+      "evidence/111-original-numeric-streams/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/111-original-numeric-streams/result.json",
+        "sha256": "800dccb15e63939bb00f02420ed32969a3a53cf16cdb1bb88f9fbb70a7a861ee"
+      }
+    }
+  },
+  "active_resume_current111": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Integral statistics and original numeric-stream application pass; next primitive stream array overloads",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }
