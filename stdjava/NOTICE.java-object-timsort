@@ -1,0 +1,7 @@
+java_object_tim_sort.go is a Go translation of OpenJDK java.util.TimSort by Josh Bloch, derived from the public jdk21u jdk-21.0.6+7 source at commit 7069f193f1f8c61869fc68a36c17f3a9a7b7b2a0.
+Translated OpenJDK TimSort to Go on 2026-10-03.
+Upstream: https://github.com/openjdk/jdk21u/blob/7069f193f1f8c61869fc68a36c17f3a9a7b7b2a0/src/java.base/share/classes/java/util/TimSort.java
+Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+Copyright 2009 Google Inc. All Rights Reserved.
+Licensed under GNU GPL version 2 with the Classpath exception; see LICENSE.java-object-timsort. The upstream file header is preserved in the translated source.
+This translation uses fresh internal workspace, Go overlap-safe copy, explicit value comparator operands, and checked equivalent integer arithmetic. No public Java sorting overload or admission rule is added.

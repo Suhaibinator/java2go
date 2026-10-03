@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Continue Sol TDD on the retained combined compiler gate failure, Comparable bridge and anonymous interface lowering, and complete TimSort parity/stress verification. Commit and push verified milestones; full CI and round acceptance remain pending.",
+  "next_action": "Continue Sol TDD on retained compiler gate270, certified closed source-bound families and Comparable bridge; independently verify byte-array range copying and Stream node prerequisites. Commit and push verified milestones; full CI and round acceptance remain pending.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -798,7 +798,7 @@
     "branch": "codex/adversarial-campaign",
     "remote": "origin",
     "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints.",
-    "last_pushed_revision": "b4deec14ff531788d2d0563f61f12db40f4a4d94",
+    "last_pushed_revision": "7ad486b4186e1ccc2a082c186218d91b58bde34b",
     "last_pushed_branch": "origin/codex/adversarial-campaign"
   },
   "regression_status": {
@@ -23147,5 +23147,175 @@
     "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
     "checkpoint_kind": "four test-driver transport compatibility fixes",
     "next": "Continue Sol TDD on the retained combined compiler gate failure, Comparable bridge and anonymous interface lowering, and complete TimSort parity/stress verification. Commit and push verified milestones; full CI and round acceptance remain pending."
+  },
+  "sol_progress139": {
+    "CI138": {
+      "head": "7ad486b4186e1ccc2a082c186218d91b58bde34b",
+      "same_totals_are_not_no_new_regression_proof": true,
+      "snapshot": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/138-ci-terminal.json",
+        "sha256": "da36078b2a5a91292e3c716421da7312036c8cab8461d9340013161b91165710"
+      },
+      "statuses": {
+        "Adversarial dependency applications": "failure",
+        "Application parity": "success",
+        "Build": "success",
+        "Compiler regressions (0)": "failure",
+        "Compiler regressions (1)": "failure",
+        "Compiler regressions (2)": "failure",
+        "Compiler regressions (3)": "failure",
+        "Compiler regressions (4)": "failure",
+        "Compiler regressions (5)": "failure",
+        "E2E (non-parity)": "success",
+        "Fuzz corpus replay": "success",
+        "Lint": "success",
+        "Test": "failure",
+        "Unit tests": "success",
+        "Vulnerability Check": "success"
+      }
+    },
+    "CI139": "Unknown",
+    "JVM_inheritance": {
+      "native_JDK_dataset_rows": 426,
+      "native_trace_dataset": "New public data leaf exact actualJDK-derived frozen wholeoutput dataset",
+      "original_Java_pom_wholewants_unchanged": true,
+      "proof": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public138-timsort-runtime-successor-v1/JDK21-original-six-31x3-reuse-proof-v2.json",
+        "sha256": "59f7d3ea25cd83561d57ecfe27a2037b14872b01333cd80e8f8367117ad91c66"
+      },
+      "reused_JVM_observations": 93,
+      "reused_compile_receipts": 6,
+      "reused_original_receipts_total": 99
+    },
+    "allowed_root_publication_paths": [
+      "stdjava/LICENSE.java-object-timsort",
+      "stdjava/NOTICE.java-object-timsort",
+      "stdjava/campaign_java_object_tim_sort_internal_test.go",
+      "stdjava/campaign_java_object_tim_sort_test.go",
+      "stdjava/campaign_sort_array_null_test.go",
+      "stdjava/comparator.go",
+      "stdjava/java_object_tim_sort.go",
+      "stdjava/testdata/campaign-timsort/original-traces.json",
+      "campaign-state.json",
+      "campaign/SOL_PROGRESS139.md"
+    ],
+    "existing_public_native_assertions_modified": 0,
+    "full_CI_accepted": false,
+    "full_round_accepted": false,
+    "goal_status": "ACTIVE",
+    "held_combined": {
+      "failure": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/136-class-map-test-evolution-continuation/failure.json",
+        "sha256": "9b734ac9179789038f6527ad8220920b0d1beae17a7782b411950875c71c55af"
+      },
+      "full559_accepted": false,
+      "next_REALRED": "TestInstanceGenericMethodHelper_InfersNestedGenericTypeArgs stale compiler shape; original unit lacks List import/Foo declaration, no valid oracle claim",
+      "old_Map095_096_negative_and_adjudication_evidence_retained": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/136-map-continuation-approval.json",
+        "sha256": "8bcf8ed9d47b08d2a0889a7ae18bb0d8a882a4e285fd7ce4953ab2d1881bb05c"
+      },
+      "union_focused_parent_PASS_before270": 269
+    },
+    "latest_accepted_full_round": 18,
+    "license_notice": "Full Oracle+Google copyright header, GPLv2+Classpath LICENSE and dated2026-10-03 NOTICE retained",
+    "new_public_native_test_leaves": 3,
+    "owned_leaves": {
+      "stdjava/LICENSE.java-object-timsort": {
+        "postimage_sha256": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+        "preimage_sha256": null
+      },
+      "stdjava/NOTICE.java-object-timsort": {
+        "postimage_sha256": "7f48ef963e927e3404e91ad3695e8ca8d53da3e61447e96d1844c3b3e93a61b0",
+        "preimage_sha256": null
+      },
+      "stdjava/campaign_java_object_tim_sort_internal_test.go": {
+        "postimage_sha256": "221c4eee4c8a9e58932f9815e4318f808b96327d9ac01b4e31ee692efb9b42fc",
+        "preimage_sha256": null
+      },
+      "stdjava/campaign_java_object_tim_sort_test.go": {
+        "postimage_sha256": "d2ab098895ff65d9aefa9cbb53ef528cd625b39926a147a2a8f4aea78ef953f8",
+        "preimage_sha256": null
+      },
+      "stdjava/campaign_sort_array_null_test.go": {
+        "postimage_sha256": "1037da1ff436334055e1bf0eec45e7dd926980f8786c1c327ae8bc86a7cfa67d",
+        "preimage_sha256": null
+      },
+      "stdjava/comparator.go": {
+        "postimage_sha256": "4543f1b0c2ae5778dfc79c352cf6b3103c51785d586433429d24410fac96231e",
+        "preimage_sha256": "54b28a716aa2343a54dd4382675a912d26dd55a6bd399a64330def48bcd35248"
+      },
+      "stdjava/java_object_tim_sort.go": {
+        "postimage_sha256": "402db3cef8a0f78cb0ef8893b611ea9f87efd7e7c767cb709d9f2f247940e4b4",
+        "preimage_sha256": null
+      },
+      "stdjava/testdata/campaign-timsort/original-traces.json": {
+        "postimage_sha256": "01a191c72927cb2e59af5384550f596f9d8fde7d67674e65e23f6a2e0869631f",
+        "preimage_sha256": null
+      }
+    },
+    "payloads_by_proposal_author": 0,
+    "peer_negative_and_ancestry_evidence": "Original source3612 RED trace/parity; standalone original5nativeRED and initial4lintRED retained. Two ancestor native order assertions were expressly corrected against JVM; all three test leaves are new to public138. No private ancestor20stress relabeled public.",
+    "peer_raw_catalogue": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/public138-timsort-runtime-successor-v1/lint-successor-v1/all-raw-runner-receipts-and-generated-core-v1.json",
+      "sha256": "550c1ab8af788d29f4508b92fa0f9e183f35a744316d2d44f1d8f1193e64dd78"
+    },
+    "peer_source_audit": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_remaining_shapes117/public138-timsort-standalone-audit/REPORT.json",
+      "sha256": "299cb97691ae8dbf0e8215a591e68b3b1916e0802248572727dcf98952e0e876"
+    },
+    "production_behavior": "Preserves Java comparator operand/callback order, null reference recovery, alias/descriptor identity and completed partial backing writes when callback throws; general pinned OpenJDK21 algorithm, no application/oracle substitution",
+    "public_Git_mutations_by_proposal_author": 0,
+    "publication_parent": "7ad486b4186e1ccc2a082c186218d91b58bde34b",
+    "root_fresh": {
+      "adjacent_children": 49,
+      "adjacent_parents": 48,
+      "all_packages_compile_only": true,
+      "audit": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/checkpoint139-publication-prep/INDEPENDENT139-AUDIT.json",
+        "sha256": "93a028db47a0d3c9b790df5dfaab4b66247f4b9018c33e0fee13fd7fb4c74a96"
+      },
+      "focused_children": 440,
+      "focused_parents": 10,
+      "fresh20stress": false,
+      "fresh_JVM_observations": 0,
+      "full_pinned_lint_issues": 0,
+      "matching_go1_27_1_race_binaries": 8,
+      "native_runtime_parents": 631,
+      "race_allgenerated_and_entry": true,
+      "raw_runner_records": 59,
+      "runtime_children": 1650,
+      "strict_full_original_projects": 6,
+      "terminal": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/139-standalone-timsort-independent-replay/ROOT_TERMINAL.json",
+        "sha256": "7504fb8202228c0ef235ff55693bc04b23ce5ec1c574f0758a1465fb6ba458cf"
+      },
+      "whole_output_executions": 31
+    },
+    "scope": "Serial explicit-comparator reference-array SortArrayWith nullable adapter and OpenJDK21 TimSort",
+    "source": {
+      "compiler_parser_symbol_project_cmd_inputs_unchanged": true,
+      "manifest": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/139-standalone-timsort-independent-replay/candidate/source-manifest.json",
+        "sha256": "d55722683f18d09c2793ebcc0326ad0e5107625cdd03f6ff2b2329edb032c30b"
+      },
+      "members": 3401,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/139-standalone-timsort-independent-replay/candidate/source",
+      "postpublication_manifest": "Root freezes actual map after ledger/newnote; no forecast hash"
+    },
+    "unclaimed": [
+      "concurrent independent sorting",
+      "dedicated minGallop/allbranch coverage",
+      "OOM fidelity",
+      "natural/range/parallel/legacy-toggle sorting",
+      "performance improvement",
+      "fresh root JVM execution",
+      "fresh public20stress"
+    ]
+  },
+  "active_resume_current139": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "checkpoint_kind": "Java explicit-comparator TimSort runtime repair",
+    "next": "Continue Sol TDD on retained compiler gate270, certified closed source-bound families and Comparable bridge; independently verify byte-array range copying and Stream node prerequisites. Commit and push verified milestones; full CI and round acceptance remain pending."
   }
 }

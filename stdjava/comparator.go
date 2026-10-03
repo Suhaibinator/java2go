@@ -197,13 +197,26 @@ func SortArrayWith[T any](array any, c Comparator[T], execution ...*Execution) {
 		SortSliceStableNatural(values.elements, execution...)
 		return
 	}
-	sort.SliceStable(values.elements, func(i, j int) bool {
-		left, leftOK := values.elements[i].(T)
-		right, rightOK := values.elements[j].(T)
+	sortJavaObjectArray(values.elements, func(leftRaw, rightRaw any) int32 {
+		left, leftOK := leftRaw.(T)
+		right, rightOK := rightRaw.(T)
+		if (!leftOK && leftRaw == nil) || (!rightOK && rightRaw == nil) {
+			// Checked reference-array stores erase Java null to an untyped nil.
+			// Only a nullable reference view may recover it for the comparator.
+			kind := reflect.TypeOf((*T)(nil)).Elem().Kind()
+			if kind == reflect.Pointer || kind == reflect.Interface {
+				if !leftOK && leftRaw == nil {
+					left, leftOK = ObjectView[T](nil, values.componentType), true
+				}
+				if !rightOK && rightRaw == nil {
+					right, rightOK = ObjectView[T](nil, values.componentType), true
+				}
+			}
+		}
 		if !leftOK || !rightOK {
 			panic(NewClassCastException("Arrays.sort comparator does not accept the array's element type"))
 		}
-		return c(left, right) < 0
+		return c(left, right)
 	})
 }
 
