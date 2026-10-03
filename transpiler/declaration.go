@@ -663,17 +663,7 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				},
 			})
 
-			// Generate Values() function: func EnumNameValues() []*EnumName { return _enumNameValues }
-			declarations = append(declarations, &ast.FuncDecl{
-				Name: &ast.Ident{Name: ctx.className + "Values"},
-				Type: &ast.FuncType{
-					Params: &ast.FieldList{},
-					Results: &ast.FieldList{
-						List: []*ast.Field{{Type: &ast.ArrayType{Elt: &ast.StarExpr{X: &ast.Ident{Name: ctx.className}}}}},
-					},
-				},
-				Body: &ast.BlockStmt{List: []ast.Stmt{classInitializationEnsureStmt(ctx.currentClass, ast.NewIdent(executionNameForClass(ctx.currentClass)), ctx), &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: valuesVarName}}}}},
-			})
+			declarations = append(declarations, enumValuesArrayDeclarations(valuesVarName, ctx)...)
 
 			// Generate valueOf(String) method
 			valueOfCases := []ast.Stmt{}

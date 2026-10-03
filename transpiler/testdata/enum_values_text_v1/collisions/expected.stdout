@@ -1,0 +1,2 @@
+messages=Cannot invoke "[Lenumfrontier.CollisionsControl$Method;.clone()" because "enumfrontier.CollisionsControl$Method.$VALUES$" is null;Cannot invoke "[Lenumfrontier.CollisionsControl$Constant;.clone()" because "enumfrontier.CollisionsControl$Constant.$VALUES$" is null;Cannot invoke "[Lenumfrontier.CollisionsControl$Member;.clone()" because "enumfrontier.CollisionsControl$Member.$VALUES$" is null;Cannot invoke "[Lenumfrontier.CollisionsControl$Repeated;.clone()" because "enumfrontier.CollisionsControl$Repeated.$VALUES$$$" is null;
+cleanup=1:1:1:1

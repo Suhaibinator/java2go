@@ -178,6 +178,10 @@ func staticImportMethodAccessible(def *symbol.Definition, owner *symbol.ClassSco
 	if def.IsPrivate {
 		return false
 	}
+	// values is an implicit public member of this exact enum declaration.
+	if def != nil && def == enumSyntheticValuesDefinition(owner) {
+		return true
+	}
 	if findJavaPackageForClassScope(owner) == findJavaPackageForClassScope(ctx.currentClass) {
 		return true
 	}

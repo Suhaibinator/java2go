@@ -319,6 +319,14 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 		baseType := "*" + scope.Class.Name
 		scope.Methods = append(scope.Methods,
 			&Definition{
+				Name:           HandleExportStatus(true, scope.Class.Name+"Values"),
+				OriginalName:   "values",
+				OriginalType:   scope.Class.OriginalName + "[]",
+				Type:           "[]" + baseType,
+				IsStatic:       true,
+				RuntimeDefault: true,
+			},
+			&Definition{
 				Name:         HandleExportStatus(true, "name"),
 				OriginalName: "name",
 				OriginalType: "java.lang.String",

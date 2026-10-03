@@ -471,6 +471,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "method_invocation":
 		// Methods with a selector are called as X.Sel(Args)
 		// Otherwise, they are called as Fun(Args)
+		if lowered := enumSyntheticValuesInvocation(node, ctx, source); lowered != nil {
+			return lowered
+		}
 		if node.ChildByFieldName("object") != nil {
 			objectNode := node.ChildByFieldName("object")
 			methodName := node.ChildByFieldName("name").Content(source)
@@ -490,6 +493,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				return lowered
 			}
 
+			if lowered := enumInheritedTextInvocation(objectNode, methodName, ctx, source); lowered != nil {
+				return lowered
+			}
 			if lowered := inheritedObjectTextInvocation(objectNode, methodName, ctx, source); lowered != nil {
 				return lowered
 			}
@@ -594,7 +600,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 			// Check if this is an enum values() call
 			// Transform EnumName.values() to EnumNameValues()
-			if objectNode.Type() == "identifier" && (methodName == "values" || methodName == "valueOf") {
+			if objectNode.Type() == "identifier" && methodName == "valueOf" {
 				if enumScope := resolveClassScopeByIdentifier(ctx, source, objectNode); enumScope != nil && enumScope.IsEnum && enumSyntheticStaticCall(enumScope, methodName, argListNode, ctx, source) {
 					enumPkg := resolveJavaPackageForType(ctx, objectNode.Content(source), enumScope)
 					name := "Values"
@@ -810,6 +816,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 					runtimeName = "JavaThrowableLocalizedMessageExecution"
 				}
 				return stdjavaCall(ctx, runtimeName, intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+			}
+			if implicitEnumInheritedTextSelected(node, selected, ctx, source) {
+				return stdjavaCall(ctx, "JavaStringValueOfExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
 			}
 			if implicitInheritedObjectTextSelected(node, selected, ctx, source) {
 				return stdjavaCall(ctx, "JavaStringValueOfExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
@@ -10553,6 +10562,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 		if javaType, ok := arrayCloneResultType(node, ctx, source); ok {
 			return javaType, true
 		}
+		if enumInheritedTextResult(node, ctx, source) {
+			return "java.lang.String", true
+		}
 
 		if name := node.ChildByFieldName("name"); name != nil && builtinThrowableTextSelected(node.ChildByFieldName("object"), name.Content(source), ctx, source) {
 			return "String", true
@@ -10788,8 +10800,8 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 
 		// A qualified enum constant access (Day.WED) has the enum's type, so that
 		// chained calls like Day.WED.ordinal() resolve to the enum's methods.
-		if obj != nil && obj.Type() == "identifier" {
-			if scope := resolveClassScopeByIdentifier(ctx, source, obj); scope != nil && scope.IsEnum {
+		if obj != nil && fieldNode != nil && obj.Type() == "identifier" {
+			if scope := resolveClassScopeByIdentifier(ctx, source, obj); scope != nil && scope.IsEnum && enumConstantNamed(scope, fieldNode.Content(source)) {
 				return obj.Content(source), true
 			}
 		}
