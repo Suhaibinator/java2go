@@ -73,6 +73,9 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 // Only invocation applicability may infer the candidate method's own binders.
 // Ordinary assignability and override checks keep invariant arguments.
 func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
+	if currencyReferenceAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
 	if nativeFunctionalAssignable(actual, expected, ctx) {
 		return true
 	}

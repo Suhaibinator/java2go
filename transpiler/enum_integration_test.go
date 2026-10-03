@@ -17,10 +17,10 @@ public enum State {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "func StateValueOf(name string) *State") {
+	if !strings.Contains(flat, "func StateValueOf(name *stdjava.JavaString) *State") {
 		t.Fatalf("expected generated valueOf helper, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "State) Name() string") {
+	if !strings.Contains(flat, "State) Name() *stdjava.JavaString") {
 		t.Fatalf("expected name() accessor to be generated, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "State) String() string") {

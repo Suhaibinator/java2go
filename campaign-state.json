@@ -13271,5 +13271,374 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "scoped-green-with-original-dependency-gates-red",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress126": {
+    "scope": "Ordinary Currency String JDK service and canonical driver assertions; scoped checkpoint only",
+    "compatibility": [
+      "Canonical Currency String factory/code/toString/Object/Serializable identity with pinned JDK21 currency data177 and real cache/cutover contracts",
+      "All17576 uppercase triple inputs agree with currentJDK; Unicode/null/validation/publication/overload guards retained",
+      "Two original canonical JavaString drivers evaluate Run once and compare full UTF16; visibility/dispatch/originalJava preserved",
+      "EnumHelpers source assertions follow JavaString signatures; full enum values/text behavior is still a separately active repair"
+    ],
+    "verification": {
+      "compiler_selected": 218,
+      "compiler_distinct": 217,
+      "compiler_gates": 39,
+      "compiler_skips": 0,
+      "runtime_race_parents": 605,
+      "runtime_skips": 0,
+      "lint_issues": 0,
+      "exported_files": 211,
+      "generated_module_pairs": 32,
+      "original_gson_JVM_observations_equal125": 18
+    },
+    "evidence": [
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-public125-preimages.json",
+        "sha256": "0d790c3ebe21887ed2fd26c62d586d92aafd76c79ecd3ebeeb5adc97bb2ed269"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-composed-source-before.json",
+        "sha256": "bd4b72bd6c897a5ad6010297e4a4233f994c890568d6c9776649448305e896ea"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-composed-leaves.json",
+        "sha256": "1f8bb3f9cb05ba48a8f859a1c3ac8fb2078e5914f8122f6b781e9fad584fdc83"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-composition-records.json",
+        "sha256": "96daf82cb224e83d82ee75b91a0a46fbb37feb4d24602cc2453584d8a6f8cbe8"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-registered-plan.json",
+        "sha256": "04c12258c479e11ec4697df159338ee3840c7688e26ed841a6371c93ad5f90c9"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-verification-status.json",
+        "sha256": "9c5e42d574a3c10ac2bf580361ca62a1f12db20b0c2dfc6dcaa47d3db94c61cb"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-binary-sha256.json",
+        "sha256": "2d2f073bea16e0b50b6f0772286501af14eb14eb16f03ffc853ceb4a6fe7604f"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-source-whitespace-check.json",
+        "sha256": "89c7223018db9df731092faa586bf0d013eed38a741a3bfd200eca30e81885b8"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-source-whitespace-analysis.json",
+        "sha256": "af6f6f4c3daa0c5e7ce6b7766071f70e9a2a45f7452d0a95971fca9dcb1bf1ab"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-gson-assets-staging.json",
+        "sha256": "8257b436da7699cf09ee7b7e75c51348447a93e1baebb3957f187580fc643cb2"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-gson-command-plan.json",
+        "sha256": "f529edc0c1c82a7f81ecb9a8d570d908aa8882399bdc11f528ec75bce5924fad"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/126-assets-initial-infrastructure-failure.json",
+        "sha256": "8f1c978e1c27285854888d439a8639408ddeb0df6bc2a3c1cf45f48798d8d153"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-gson-analysis.json",
+        "sha256": "4d5a8a6a4b63befd879a6dcdbb328d667ca7ba84f80acc0f34d4c487b7b003d9"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-gson-replay/original-campaign-race/result.json",
+        "sha256": "9cddad34551e12577c77c602be94ab14ee773c1a0c159c895e848a25a771a963"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/125-ci-followup2-snapshot.json",
+        "sha256": "2a863c1af07555f98419c63b6b26a5c74affab161828c41e7dafccdc8f1e4bf0"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/126-canonical-drivers-enumhelpers-source-v1-audit.json",
+        "sha256": "643129d63abfec94b40f5ac044b4f91ce8b1d76734e9f62bb08a6db99cb1e1b8"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/126-currency-service38-pending14-source-v1-audit.json",
+        "sha256": "07f04da62b983fb97dfc4184b29dd861f6628e8cc80c1cff0d89db48cee40bb8"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/composition126-source-audit/AUDIT126.json",
+        "sha256": "044b986d3328ecec4c56f87e8867419745ecab58ece32d37b6917634b7487223"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final126-gate-audit/FINAL126-GATES.json",
+        "sha256": "4e7d212046da7d3a99d5d2d85a0888966374e2f4c90121a91172f0ba4e979506"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final126-gson-audit/FINAL126-GSON.json",
+        "sha256": "bed3b6dd7fe723424ed265f532b0718e8397c6b99538679ff91265c17ac5e7d2"
+      }
+    ],
+    "original_gson": {
+      "report": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-gson-replay/artifacts/20261003T100432Z-2884170962/report.json",
+        "sha256": "c6104f62043dfa277f497082a4a9f4e464a0bf20349b6c37258c95087ba55b9c"
+      },
+      "source_members": 123,
+      "nine_main_JVM_observations_equal125": true,
+      "implementation_before_after_unchanged": true,
+      "implementation_revision_reported": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
+      "implementation_sha256": "627cbbf6cf4394382920cb7a186952d8239315e055f905a6bee5b03d20795110",
+      "implementation_members": 456,
+      "stages": {
+        "dependency-source-compile": {
+          "exit_code": 0,
+          "timed_out": false,
+          "duration_ms": 839
+        },
+        "go-build-all": {
+          "exit_code": 1,
+          "timed_out": false,
+          "duration_ms": 596
+        },
+        "java-oracle-compile": {
+          "exit_code": 0,
+          "timed_out": false,
+          "duration_ms": 364
+        },
+        "java-toolchain": {
+          "exit_code": 0,
+          "timed_out": false,
+          "duration_ms": 25
+        },
+        "maven-build": {
+          "exit_code": 0,
+          "timed_out": false,
+          "duration_ms": 1387
+        },
+        "transpile": {
+          "exit_code": 0,
+          "timed_out": false,
+          "duration_ms": 37980
+        }
+      },
+      "failure": {
+        "stage": "go-build-all",
+        "detail": "exit=1 error=\n\n# campaign.generated/round02-data-gson/java2go_scc_636f6d2f676f6f676c652f67736f6e\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_Gson.go:15:71: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JsonAdapterAnnotationTypeAdapterFactory.go:24:86: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_TypeAdapterFactory.go:8:118: undefined: T\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3486:48: J636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_URL (package-level variable) is not a type\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3582:48: J636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_URI (package-level variable) is not a type\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3714:48: undefined: InetAddress\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_LinkedTreeMap.go:1716:2: undefined: Comparator\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_NonNullElementWrapperList.go:6:3: undefined: AbstractList\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_NonNullElementWrapperList.go:7:2: undefined: RandomAccess\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_ReflectionAccessFilterHelper.go:154:80: undefined: AccessibleObject\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_ReflectionAccessFilterHelper.go:154:80: too many errors\n"
+      },
+      "full_application_accepted": false,
+      "compiler_tools_race_instrumented": false,
+      "generated_race_enabled": true,
+      "no_JVM_performance_claim": true,
+      "independent_main_plus_source_closure_JVM_observations_equal125": 18
+    },
+    "provenance_limits": [
+      "Ambient report revisionc1f1ae45 is distinct from public12554ffb5; exact3346testedsource and456implementation hashes identify this candidate",
+      "Some legacy helpers explicitly pass-mod=mod; nested flags are individually retained, no universalreadonly claim",
+      "CanonicalClass and oldtwo-driver helpers lack exporthooks; source/binary/rawreceipt only, no deletedgeneratedtempdir claim;normalizer configuredbutunused",
+      "Maven98 is lock subset of269localstorefiles; initialassertion mistookpins fortotalfiles, corrected isolatedexactcopy retains allassets and verifies98pins; no Java/Go payload before correction",
+      "Currency methodreferences/Locale/numeric/display/enumeration/serialization APIs remain unsupported and separately frozen, no fullservice/application claim"
+    ],
+    "pending": [
+      "FullCommons/Gson/Netty gates remain active; latest acceptedfullround18",
+      "Gson build remains ConcurrentMap/genericinterfaceT/URL/URI/InetAddress/Comparator/AbstractList/RandomAccess and nowvisibleAccessibleObject; no Go execution",
+      "Genericv2 nominaldefaultpackage returnalias diagnostic remainsRED; physical18b4 fullmatrix/BoundOwner/Child pending",
+      "CapturedMap fullprogramstillCollections.emptySet; staticreturnABI/anonymousSet.removeAll remainpending",
+      "CI125 sixcompilershards anddependency jobFAIL; unit/lint/build/fuzz/E2E/applicationparitySUCCESS; no fullCI acceptance",
+      "Preparednine stringdrivers/two namingguards require freshRED/GREEN androotintegration",
+      "Frozen chars/joiningperformance showsGo improvements butJVMstillfaster; subsequentassignability optimizationseparate"
+    ],
+    "publication_parent": "54ffb5acf2aa79663920d8cadb534749072a05d5",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-source-manifest.json",
+      "sha256": "bd4b72bd6c897a5ad6010297e4a4233f994c890568d6c9776649448305e896ea",
+      "members": 3346
+    },
+    "root_records": {
+      "evidence/126-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-build-transpiler/result.json",
+        "sha256": "a545cff229fa3172de835911c1ae948143aaacb547d5508b0bd4dbb0da4b2cbe"
+      },
+      "evidence/126-native-registration/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-native-registration/result.json",
+        "sha256": "268b68a1a5234aa6f084a4494a0f452f4675edccb8532a45d4a5f0564d4d0338"
+      },
+      "evidence/126-carried-125-carried-generic-frozen-v3-focused/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-generic-frozen-v3-focused/result.json",
+        "sha256": "a0445ddeb59134c5e2ad9ebd8020ecd4d1812779e938631fa5b6265a2ffdfb05"
+      },
+      "evidence/126-carried-125-carried-generic-frozen-v3-originals/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-generic-frozen-v3-originals/result.json",
+        "sha256": "5eb8ae5e0223bb4b02ce91bb1356f338c5654e17758ded4a7b3d98814785ca5a"
+      },
+      "evidence/126-carried-125-carried-generic-frozen-v3-abi/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-generic-frozen-v3-abi/result.json",
+        "sha256": "b1e165af30cbba55f10a4df1baad99882276899ab2f08e54c0cd4e64352d851d"
+      },
+      "evidence/126-carried-125-carried-atomic-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-atomic-and-adjacent-race/result.json",
+        "sha256": "d88bfd3392c3d3859cf82a6c7990b6e84f8e2f5c6ed31f191b75b4b48b01097f"
+      },
+      "evidence/126-carried-125-carried-trivial3-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-trivial3-race/result.json",
+        "sha256": "ebc8fa6d555b1612c08a877f913dcdda6f7eaf23e1e1ca19132ff475dfbfb0f7"
+      },
+      "evidence/126-carried-125-carried-trivial3-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-trivial3-adjacent-race/result.json",
+        "sha256": "7a1a3ef6ec46a0f9365811dbf6d4b086a6eaf1b851824885d381779d3e81c90d"
+      },
+      "evidence/126-carried-125-carried-full-program-enum-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-full-program-enum-race/result.json",
+        "sha256": "f62a95fe5f56bc582ec3873b844a4a0e74f93ae2ef3c72c549db64a45a850405"
+      },
+      "evidence/126-carried-125-carried-comparator4-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-comparator4-and-adjacent-race/result.json",
+        "sha256": "f08d6cd7aa18e8ce5f3f9c44b6b128f44dee89d6a7a92833e1e6f136b967194c"
+      },
+      "evidence/126-carried-125-carried-constructor-delegation4-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-constructor-delegation4-race/result.json",
+        "sha256": "5f1e4a3e3266417b8367461588b7f81ed98703d9d59e99e0c3f7ae4bffd3453e"
+      },
+      "evidence/126-carried-125-carried-clone-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-clone-adjacent-race/result.json",
+        "sha256": "f7d1641131b182ae7a988bac176966970c0a06c98819ebdf93935dc6c5d057f9"
+      },
+      "evidence/126-carried-125-carried-final-generic-CI-frontiers-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-final-generic-CI-frontiers-race/result.json",
+        "sha256": "76766c5c6b94538a5877f4c9b2b8403ad57f796ad1fba21d71b2723682aa4139"
+      },
+      "evidence/126-carried-125-carried-final-boxed-state-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-final-boxed-state-and-adjacent-race/result.json",
+        "sha256": "698b9fc8048d9bc0e97279cbb03a0d8398e374509f08be52a6fc2755f0a25277"
+      },
+      "evidence/126-carried-125-carried-final-clone-declaration-new-controls-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-final-clone-declaration-new-controls-race/result.json",
+        "sha256": "e8e2a7f49503b967e15e7a98d3b4c2e635fe9a462908f35a4dce998a4c5b8009"
+      },
+      "evidence/126-carried-125-carried-final-clone-ABI-metadata-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-carried-final-clone-ABI-metadata-adjacent-race/result.json",
+        "sha256": "4007a1fd2633b71dafaee717d097b965e2dbd03195db33c74bc6e9017b584220"
+      },
+      "evidence/126-carried-125-new-TestClassComponentTypeCanonicalDescriptorJDK21/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestClassComponentTypeCanonicalDescriptorJDK21/result.json",
+        "sha256": "b57c2230243fc18f7a84dbc86412a0082fc4ee2f1afcaf483a1ca1f70e93857a"
+      },
+      "evidence/126-carried-125-new-TestClassComponentTypeSourceAndBinderOwnerJDK21/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestClassComponentTypeSourceAndBinderOwnerJDK21/result.json",
+        "sha256": "066db0b040c4dcfb3ff103f83a9e832a1a33630d08377935c6315c75306ae397"
+      },
+      "evidence/126-carried-125-new-TestCampaignImportSourceGuards/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestCampaignImportSourceGuards/result.json",
+        "sha256": "7412c73accabd30462a5dcac68bb37dadffc52ddc52dddeb845eefab87b5b2e3"
+      },
+      "evidence/126-carried-125-new-TestCampaignOrdinaryImportRepeatedSourceQueries/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestCampaignOrdinaryImportRepeatedSourceQueries/result.json",
+        "sha256": "4b5bb5594e2c095f3827cfcc69a39a85ae8e19325ef3d34058fb434eb136b471"
+      },
+      "evidence/126-carried-125-new-TestCampaignImportSourceLifetime/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestCampaignImportSourceLifetime/result.json",
+        "sha256": "94253a19a1fb1d6d3820a1a734359fba28df008a4d3552627003988a372897c5"
+      },
+      "evidence/126-carried-125-new-TestCampaignImportSyntaxStrictJVM/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestCampaignImportSyntaxStrictJVM/result.json",
+        "sha256": "771d4fba27022f9a70457a279708b25d05e7034823a43e844f96ef9225ee8406"
+      },
+      "evidence/126-carried-125-new-TestBoxedToStringCanonicalResultsTDD/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestBoxedToStringCanonicalResultsTDD/result.json",
+        "sha256": "98c3942d582180ed28bd60250404bf6773f0080c9af2440216670fef108e34e9"
+      },
+      "evidence/126-carried-125-new-TestBoxedToStringPrimitiveAndInstanceJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestBoxedToStringPrimitiveAndInstanceJDK21Parity/result.json",
+        "sha256": "f6d0755b97b391889e29b38f15d499c7a4e27f5793b879cbacd1425d32d30fb0"
+      },
+      "evidence/126-carried-125-new-TestBoxedToStringEvaluationExecutionValidReferencesJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestBoxedToStringEvaluationExecutionValidReferencesJDK21Parity/result.json",
+        "sha256": "a0726a43ff2356856d975ee034eb9fd35b094dcfaafd67312a9242df22e667bc"
+      },
+      "evidence/126-carried-125-new-TestBoxedToStringSourceAndForeignOwnersJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestBoxedToStringSourceAndForeignOwnersJDK21Parity/result.json",
+        "sha256": "e89d7bde59b069323c2c7455c04d569ac417eb5dff83522349005024b9654303"
+      },
+      "evidence/126-carried-125-new-TestBoxedToStringOwnerGuardsTDD/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestBoxedToStringOwnerGuardsTDD/result.json",
+        "sha256": "2bb43093394f1fc8204791e38343774cb7c7fee6b459b328f590aab5917022c6"
+      },
+      "evidence/126-carried-125-new-TestBoxedToStringReferencesAllWrappersJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestBoxedToStringReferencesAllWrappersJDK21Parity/result.json",
+        "sha256": "c927704c009423755139ff186d8c159035243bd288570ed9a0a581fca2dd7b87"
+      },
+      "evidence/126-carried-125-new-TestEnumFloatingOriginalPrintJDK21Parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestEnumFloatingOriginalPrintJDK21Parity/result.json",
+        "sha256": "2916bdd229cc38f04785f81ab803ac9b1f848a4d93e6aea50790ba6e00ec223c"
+      },
+      "evidence/126-carried-125-new-TestComplexVoidLambdaOriginalJVMParity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestComplexVoidLambdaOriginalJVMParity/result.json",
+        "sha256": "96109e1f0c4f7ebc2f8337767f94cc1df466662c0fee9f52cc4dfd3df915e2fe"
+      },
+      "evidence/126-carried-125-new-TestSourceNominalIdentifierHygieneStrictJVM/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestSourceNominalIdentifierHygieneStrictJVM/result.json",
+        "sha256": "c07561d28de27136888a58375ee5258e6d5dbb1495e88dcc4e80850a7c0c536a"
+      },
+      "evidence/126-carried-125-new-TestSourceNominalDependencyAliasStrictJVM/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestSourceNominalDependencyAliasStrictJVM/result.json",
+        "sha256": "b08f497194039d08aedf9903fca0dcd9021270d40a86eaa31d48a9075274ed1d"
+      },
+      "evidence/126-carried-125-new-TestConstructorAllocationBuiltinDemand/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestConstructorAllocationBuiltinDemand/result.json",
+        "sha256": "92ac30f21158fa309652d7bbed31564bc692689372e31e41fc95d3f506cac855"
+      },
+      "evidence/126-carried-125-new-TestSourceNominalHygienePreservesDeclarationMetadata/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-new-TestSourceNominalHygienePreservesDeclarationMetadata/result.json",
+        "sha256": "bb5622625e8ce4c6f872071d1a821561dbf593c3ea362b16b47030ef3658565e"
+      },
+      "evidence/126-carried-125-green-owned8/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-green-owned8/result.json",
+        "sha256": "d16d08047b6ff8db1e66bf018cf4fb9258559c50f510448bb2ea155b32dad21e"
+      },
+      "evidence/126-carried-125-green-cleanup-adjacent2/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-green-cleanup-adjacent2/result.json",
+        "sha256": "483f8930a7b8246eb83969c0271f8f8dcf2ddc0f71bb86f631a53d7b31464aae"
+      },
+      "evidence/126-carried-125-green-digest-strict-adjacent3/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-green-digest-strict-adjacent3/result.json",
+        "sha256": "81c90273d6e7bdd81613670814a6d00561664dc98b1bd221a9b73bd15aa61855"
+      },
+      "evidence/126-carried-125-enum-lambda-CI-parity/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-carried-125-enum-lambda-CI-parity/result.json",
+        "sha256": "e90d811539d77b70b255ffecdd42ff8c6eb631a455b018536a24089c4aec372b"
+      },
+      "evidence/126-canonical-drivers-originals-adjacent19/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-canonical-drivers-originals-adjacent19/result.json",
+        "sha256": "e33f2bdeaee353405d02d140777559d750c1f8a18edb31ebcd4db1f83873f9b2"
+      },
+      "evidence/126-enum-helpers-parent/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-enum-helpers-parent/result.json",
+        "sha256": "796265e6420796c77d57848be4963e4eec661f90042f5c0b49f799c0f8915f30"
+      },
+      "evidence/126-currency-ordinary-source-jvm9/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-currency-ordinary-source-jvm9/result.json",
+        "sha256": "9bad9f897ac7722ea720b160b5a7880cc44c7a2f63ac830578410682dc44aec5"
+      },
+      "evidence/126-runtime-full-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-runtime-full-race/result.json",
+        "sha256": "7f5f638cf0d9524a16a2ece68a8da0a7d648ecb5e49646b96277c518971481f3"
+      },
+      "evidence/126-lint/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-lint/result.json",
+        "sha256": "a39a2ec05ff52327310fc49352e5ca6b069e337ad697001e98040a6377647025"
+      },
+      "evidence/126-gson-replay/build-campaign-nonrace/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-gson-replay/build-campaign-nonrace/result.json",
+        "sha256": "2d695cacaa798874d9ca421aabdf4a66eb9380ae1509185779ff7a53b38261c6"
+      },
+      "evidence/126-gson-replay/build-transpiler-nonrace/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-gson-replay/build-transpiler-nonrace/result.json",
+        "sha256": "f56f2f4d26cb5114f3078fdd19cf298fa7f0120df11a81db4687388490828e12"
+      }
+    }
+  },
+  "active_resume_current126": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "scoped-green-original-dependency-gates-red",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }
