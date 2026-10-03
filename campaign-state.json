@@ -11204,5 +11204,77 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Verified scoped collector ABI repair; full round18 remains latest acceptance",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress109": {
+    "status": "CI_EXHAUSTIVE_COMPILER_SHARDING_VERIFIED",
+    "implementation_changes_published": false,
+    "workflow_changes_published": true,
+    "scope": "Split compiler regressions into six dynamically enumerated SHA256 shards, preserving race, coverage, parent descendants, future tests, existing deadlines and aggregate requirements.",
+    "verification": {
+      "python_checks": 7,
+      "current_compiler_parents": 1359,
+      "current_counts": [
+        226,
+        240,
+        183,
+        239,
+        230,
+        241
+      ],
+      "actual_Go_RE2_selectors": 6,
+      "each_parent_exactly_once": true,
+      "compiler_or_JVM_test_payloads_executed": false
+    },
+    "independent_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/final-generic-shard-audit.json",
+    "remaining": "Actual six hosted shard executions and timings unverified; existing compiler/runtime/application/dependency failures remain unwaived.",
+    "publication_parent": "845c24c64fff26a034b119a41bb2fb3ee94147bb",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-source-manifest.json",
+      "sha256": "e6dc3494c66ab819018e88adc155050a6491eb2cc58d46e97a3fd64ef6692006",
+      "members": 3122
+    },
+    "root_records": {
+      "evidence/109-python-tests/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-python-tests/result.json",
+        "sha256": "18b6b8faaf712596612b2a346ccde2348eb37d374d27a41a2a9f9140b71ab902"
+      },
+      "evidence/109-current-list/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-current-list/result.json",
+        "sha256": "8bcd575c30dffe6ca42c8cbd86e251bf37772007102e8c84adf35c8db6ae8967"
+      },
+      "evidence/109-selector-0/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-selector-0/result.json",
+        "sha256": "62e4002ef6ec99b99a0c10de30b66647ad7f5af7f1d8e87097f1a61a35438cf3"
+      },
+      "evidence/109-selector-1/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-selector-1/result.json",
+        "sha256": "c33fe2029d1ccb5248b26369805cc69591672a77c0cbe08028f9b4768e425e76"
+      },
+      "evidence/109-selector-2/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-selector-2/result.json",
+        "sha256": "5f7804dd6ae80cd3f9363057ec409955636c928f3e38d8bb809239678d0449c3"
+      },
+      "evidence/109-selector-3/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-selector-3/result.json",
+        "sha256": "dcf15f60d66e5d1cf8d841a8405a7500699a993ae1c6b41eb284b5692a5f4c59"
+      },
+      "evidence/109-selector-4/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-selector-4/result.json",
+        "sha256": "3644feea5d36acbac3bff7c795baf209d54ad157af2676c56f7467c99768e649"
+      },
+      "evidence/109-selector-5/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/109-selector-5/result.json",
+        "sha256": "13319b2793a8e9e6abe88358e1875da495083d6d4d1c56c6ea71e121aa708005"
+      }
+    }
+  },
+  "active_resume_current109": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Verified exhaustive CI partition; full round18 remains latest acceptance",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

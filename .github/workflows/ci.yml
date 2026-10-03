@@ -48,17 +48,51 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
 
       # Compiler campaign regressions compare behavior against a real JDK.
+      - name: Verify compiler partition helper
+        run: python3 -m unittest discover -s scripts/ci -p '*_test.py'
+
       - name: Run unit tests
         run: >
           go test -v -race -timeout 20m
           -coverprofile=coverage-unit.out
-          ./parsing/... ./astutil/... ./stdjava/... ./symbol/... ./project/... ./transpiler/... ./campaign/... ./cmd/javacampaign/...
+          ./parsing/... ./astutil/... ./stdjava/... ./symbol/... ./project/... ./campaign/... ./cmd/javacampaign/...
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: coverage-unit
           path: coverage-unit.out
+
+  compiler:
+    name: Compiler regressions (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      # Hash Go's actual Test/Fuzz/Example inventory. Each parent belongs to
+      # exactly one shard, including newly added tests and all its subtests.
+      # Keep the same race, coverage, and package timeout as the unit job.
+      - name: Run compiler regressions
+        run: >
+          python3 scripts/ci/transpiler_shard.py
+          --index ${{ matrix.shard }} --count 6
+          --coverprofile coverage-transpiler-${{ matrix.shard }}.out
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-transpiler-${{ matrix.shard }}
+          path: coverage-transpiler-${{ matrix.shard }}.out
 
   e2e-other:
     name: E2E (non-parity)
@@ -156,17 +190,19 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: [unit, e2e-other, e2e-parity, fuzz, campaign]
+    needs: [unit, compiler, e2e-other, e2e-parity, fuzz, campaign]
     if: always()
     steps:
       - name: Check shard results
         run: |
           echo "unit:       ${{ needs.unit.result }}"
+          echo "compiler:   ${{ needs.compiler.result }}"
           echo "e2e-other:  ${{ needs.e2e-other.result }}"
           echo "e2e-parity: ${{ needs.e2e-parity.result }}"
           echo "fuzz:       ${{ needs.fuzz.result }}"
           echo "campaign:   ${{ needs.campaign.result }}"
           [ "${{ needs.unit.result }}" = "success" ] \
+            && [ "${{ needs.compiler.result }}" = "success" ] \
             && [ "${{ needs.e2e-other.result }}" = "success" ] \
             && [ "${{ needs.e2e-parity.result }}" = "success" ] \
             && [ "${{ needs.fuzz.result }}" = "success" ] \
