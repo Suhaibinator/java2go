@@ -11387,5 +11387,59 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Integral statistics and original numeric-stream application pass; next primitive stream array overloads",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress112": {
+    "status": "PRIMITIVE_STREAM_ARRAY_OVERLOADS_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "Select IntStream, LongStream and DoubleStream.of single family-array or null overload; retain ordinary scalar and expanded arguments.",
+    "verification": {
+      "compiler_focused_and_adjacent_tests": 10,
+      "strict_JDK21_generated_race_parity_tests": 2,
+      "original_e2e_applications": [
+        "streams_numeric/NumericStreams"
+      ],
+      "original_generated_e2e_race": false,
+      "old_scalar_of_handler_unchanged": true,
+      "existing_Java_sources_unchanged": true
+    },
+    "independent_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/array-lexical-audit.json",
+    "remaining": "Array-backed streams still copy eagerly; Java laziness/mutation interactions are unaccepted. Other hosted failures and full corpus gates remain active.",
+    "publication_parent": "2ab778f25456b05875024ac3c4ea9da63b403f0c",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/112-source-manifest.json",
+      "sha256": "19612759419ef9ad584814d5ab47be866ba129db36e9d9d654e9668fa81a4923",
+      "members": 3134
+    },
+    "root_records": {
+      "evidence/112-build-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/112-build-race/result.json",
+        "sha256": "fce50e41edbd2729a105474e2ed77808e3a40ad5cf7b8452ba2d5c284b891e7c"
+      },
+      "evidence/112-array-shapes-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/112-array-shapes-race/result.json",
+        "sha256": "75512950577104e82d527f2c0ca690af425fa1809b8214296ae68be0d4d8950f"
+      },
+      "evidence/112-array-contract-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/112-array-contract-race/result.json",
+        "sha256": "9d358da09fc0b03c98c7eda229ab40345c0651ea2889fffae5c0ba4d36e57a50"
+      },
+      "evidence/112-array-shadows-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/112-array-shadows-race/result.json",
+        "sha256": "f71995e815f722b3bc456daf4dd2dc25069a29371e18cc31fa2e885b4c9ae9ae"
+      },
+      "evidence/112-original-numeric-streams/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/112-original-numeric-streams/result.json",
+        "sha256": "773ec12ee6c9e62690e5a56deec612c17f72a78a3d4a5f35c2f0792239f228b7"
+      }
+    }
+  },
+  "active_resume_current112": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Primitive array overload scoped parity passes; continue compiler ABI and generic repair",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

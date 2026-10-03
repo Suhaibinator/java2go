@@ -38,6 +38,10 @@ func registerNumericStreamSources() {
 
 	// IntStream.of(...) and friends share Stream.of's runtime constructor.
 	for _, streamType := range []string{"IntStream", "LongStream", "DoubleStream"} {
+		// Register the syntax-aware array overload before the ordinary factory:
+		// node registration installs a fallback which the scalar factory replaces.
+		registerStaticNodeIntrinsic(streamType, "of", primitiveStreamOfArray(streamType))
+		registerStaticIntrinsicExpectedArguments(streamType, "of", primitiveStreamOfExpected(streamType))
 		// The element type is spelled explicitly: IntStream.of(3, 1, 2) passes
 		// untyped constants, which Go would otherwise infer as a host-sized int
 		// rather than Java's 32-bit int.
@@ -202,6 +206,48 @@ func registerNumericStreamTerminals() {
 		registerInstanceIntrinsicResultType(statsType, "getSum", sumType)
 		registerInstanceIntrinsicResultType(statsType, "getMin", elementType)
 		registerInstanceIntrinsicResultType(statsType, "getMax", elementType)
+	}
+}
+
+// primitiveStreamOfArrayElement recognizes the fixed-arity primitive array
+// overload. A null argument selects that reference overload as Java does.
+func primitiveStreamOfArrayElement(invocation *sitter.Node, streamType string, ctx Ctx, source []byte) (string, bool) {
+	if invocationArgumentCount(invocation) != 1 {
+		return "", false
+	}
+	element, known := primitiveStreamElementJavaTypes[streamType]
+	if !known {
+		return "", false
+	}
+	inference := ctx.Clone()
+	inference.expectedType = ""
+	inference.expectedTypeRoot = nil
+	actual, known := inferExprJavaType(invocationArgumentNode(invocation, 0), inference, source)
+	return element, known && (actual == element+"[]" || actual == "null" || actual == ternaryNullJavaType)
+}
+
+func primitiveStreamOfExpected(streamType string) intrinsicExpectedArguments {
+	return func(invocation *sitter.Node, ctx Ctx, source []byte) []string {
+		if element, array := primitiveStreamOfArrayElement(invocation, streamType, ctx, source); array {
+			return []string{element + "[]"}
+		}
+		expected := make([]string, invocationArgumentCount(invocation))
+		for index := range expected {
+			expected[index] = primitiveStreamElementJavaTypes[streamType]
+		}
+		return expected
+	}
+}
+
+func primitiveStreamOfArray(streamType string) staticIntrinsicNodeGenerator {
+	return func(invocation *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
+		element, array := primitiveStreamOfArrayElement(invocation, streamType, ctx, source)
+		if !array || !expectArgs(args, 1) {
+			return nil
+		}
+		// Node adapters run before the ordinary factory's type-argument deriver.
+		types := []ast.Expr{javaTypeStringToGoTypeExpr(element, inScopeTypeParameters(ctx), ctx)}
+		return stdjavaGenericCall(ctx, "StreamOfArray", types, args)
 	}
 }
 

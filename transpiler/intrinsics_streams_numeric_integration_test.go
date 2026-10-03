@@ -26,7 +26,7 @@ public class SourceProgram {
 	// host-sized Go int.
 	assertContains(t, out, "stdjava.NewStream[int32](3, 1, 2)")
 	assertContains(t, out, "stdjava.StreamConcat(")
-	assertContains(t, out, "stdjava.StreamEmpty[string]()")
+	assertContains(t, out, "stdjava.StreamEmpty[*stdjava.JavaString]()")
 }
 
 func TestNumericStreams_ArraysStreamPassesTheComponentType(t *testing.T) {
@@ -45,7 +45,7 @@ public class ArraysStreamProgram {
 	// A reference array erases its elements to any at runtime, so the component
 	// type has to be passed explicitly.
 	assertContains(t, out, "stdjava.StreamOfArray[int32](numbers)")
-	assertContains(t, out, "stdjava.StreamOfArray[string](names)")
+	assertContains(t, out, "stdjava.StreamOfArray[*stdjava.JavaString](names)")
 }
 
 func TestNumericStreams_Conversions(t *testing.T) {
