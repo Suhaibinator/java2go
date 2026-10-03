@@ -54,8 +54,21 @@ public class CampaignStaticShadow {
 	want := campaignRuntimeJavaOracle(t, "CampaignStaticShadow", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestShadow(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
+func TestShadow(t *testing.T) {
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = %q
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("JVM %%q != Go UTF16 %%v", want, units)
+    }
+}`, want))
 }
 
 // Keep the complete callback/mutation counterexample that exposed field capture,
@@ -68,8 +81,21 @@ func TestCampaignStaticFieldShadowOriginalMutationJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "CampaignMapMutation", string(source))
 	generated := renderGoFileFromJava(t, string(source))
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestMutation(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
+func TestMutation(t *testing.T) {
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = %q
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("JVM %%q != Go UTF16 %%v", want, units)
+    }
+}`, want))
 }
 
 func TestCampaignStaticFieldShadowPackagesJVMParity(t *testing.T) {

@@ -29,6 +29,19 @@ public class CampaignByteArraySubclass{
 	want := campaignRuntimeJavaOracle(t, "CampaignByteArraySubclass", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestByteSubclass(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
+func TestByteSubclass(t *testing.T) {
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = %q
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("JVM %%q != Go UTF16 %%v", want, units)
+    }
+}`, want))
 }

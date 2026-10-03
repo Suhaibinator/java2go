@@ -48,9 +48,19 @@ public class CampaignArraysEquals {
 	want := campaignRuntimeJavaOracle(t, "CampaignArraysEquals", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestArraysEquals(t *testing.T) {
- if got := Run(); got != %q { t.Fatalf("JVM %%q != Go %%q", %q, got) }
-}
-`, want, want))
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = %q
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("JVM %%q != Go UTF16 %%v", want, units)
+    }
+}`, want))
 }
