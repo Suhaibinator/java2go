@@ -179,6 +179,8 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		}
 		// The merge function resolves duplicate keys: (V, V) -> V.
 		merge := parseCollectorLambda(collector, 2, []string{valueType, valueType}, valueType, ctx, source)
+		mergeValueType := javaTypeStringToGoTypeExpr(valueType, inScopeTypeParameters(ctx), ctx)
+		merge = stdjavaGenericCall(ctx, "BiFunctionCallbackExecution", []ast.Expr{mergeValueType, mergeValueType, mergeValueType}, []ast.Expr{intrinsicExecutionExpr(ctx), merge})
 		return stdjavaCall(ctx, "StreamToMapMerging", streamExpr, key, value, merge, intrinsicExecutionExpr(ctx)),
 			"Map<" + keyType + "," + valueType + ">"
 

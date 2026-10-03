@@ -11150,5 +11150,59 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Verified test-only CI milestone; latest full campaign acceptance remains round18",
     "next": "Continue original CI and dependency repairs with fresh bounded evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress108": {
+    "status": "CI_COLLECTOR_MERGE_EXECUTION_BRIDGE_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "Canonical toMap merge callback bridge preserves typed value arguments and caller Execution; existing ToMap and three-argument reduce shape assertions migrated without changing Java or dropping checks.",
+    "verification": {
+      "root_collector_race_tests": 9,
+      "original_JVM_Go_fixture_pairs": 2,
+      "native_race": true,
+      "focused_generated_test_race": true,
+      "original_e2e_generated_race": false,
+      "failures": 0,
+      "skips": 0,
+      "timeouts": 0
+    },
+    "independent_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/root-108-shape-audit.json",
+    "remaining": "Full CI and dependency applications remain unaccepted; other runtime/compiler/dependency repairs stay active.",
+    "publication_parent": "a9a25f66ea3b2186c7e10305824c4b9b13d8f3f1",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/108-source-manifest.json",
+      "sha256": "34ae2b87940da6e1c15b89d3d92095c26ca395e8ede2eee66592359aeb61aa7c",
+      "members": 3119
+    },
+    "root_records": {
+      "evidence/108-build-race2/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/108-build-race2/result.json",
+        "sha256": "d936d936fe8a0f2b39c417f1a97650e03912ce4b5e9576291ffe0e07b31627de"
+      },
+      "evidence/108-all-collectors-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/108-all-collectors-race/result.json",
+        "sha256": "485d5968c83e1b155e80bef017bf15c21789a6a712aefb49d23bb6853600da16"
+      },
+      "evidence/108-e2e-build-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/108-e2e-build-race/result.json",
+        "sha256": "5eb984de6989687361c2e5977e964612954c4bf12a70e5b083bfd9f0420e60aa"
+      },
+      "evidence/108-original-collectors/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/108-original-collectors/result.json",
+        "sha256": "47f8d8cc9f93bbc60fec739c74256b29d36f025d522a7d22c3fe6d10c8104146"
+      },
+      "evidence/108-original-collection-contracts/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/108-original-collection-contracts/result.json",
+        "sha256": "b2f1c33225ed26b84c0104d28d86f6f181e39670fb647c60a144f085855f84c0"
+      }
+    }
+  },
+  "active_resume_current108": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Verified scoped collector ABI repair; full round18 remains latest acceptance",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

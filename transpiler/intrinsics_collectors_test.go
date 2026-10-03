@@ -82,8 +82,9 @@ public class ToMapProgram {
 `)
 	assertContains(t, out, "stdjava.StreamToMap(")
 	assertContains(t, out, "stdjava.StreamToMapMerging(")
-	// The merge function takes two values, not two elements.
-	assertContains(t, out, "func(a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
+	// The merge callback preserves the caller Execution and the value signature.
+	assertContains(t, out, "stdjava.BiFunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer, *stdjava.Integer](__java2goExecution,")
+	assertContains(t, out, "func(__java2goExecution *stdjava.Execution, a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
 }
 
 func TestCollectors_GroupingByAndPartitioningBy(t *testing.T) {
@@ -167,7 +168,7 @@ public class ThreeArgReduceProgram {
 }
 `)
 	assertContains(t, out, "stdjava.StreamReduceCombining(")
-	// The accumulator takes (U, T); the combiner takes (U, U).
-	assertContains(t, out, "func(acc *stdjava.JavaString, x *stdjava.Integer) *stdjava.JavaString")
-	assertContains(t, out, "func(a *stdjava.JavaString, b *stdjava.JavaString) *stdjava.JavaString")
+	// The accumulator takes (U, T); the combiner takes (U, U). Both retain Execution.
+	assertContains(t, out, "func(__java2goExecution *stdjava.Execution, acc *stdjava.JavaString, x *stdjava.Integer) *stdjava.JavaString")
+	assertContains(t, out, "func(__java2goExecution *stdjava.Execution, a *stdjava.JavaString, b *stdjava.JavaString) *stdjava.JavaString")
 }
