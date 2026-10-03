@@ -9,5 +9,5 @@ func JavaStringCharsStream(text *JavaString) Stream[int32] {
 	for index, unit := range text.units {
 		units[index] = int32(unit)
 	}
-	return StreamOfSlice(units)
+	return Stream[int32]{elements: units}
 }

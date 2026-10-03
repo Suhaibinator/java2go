@@ -102,14 +102,71 @@ func JavaStringStreamJoining(stream Stream[*JavaString], separator, prefix, suff
 	RequireJavaString(separator)
 	RequireJavaString(prefix)
 	RequireJavaString(suffix)
-	builder := NewStringBuilderJavaString(prefix)
+	// Size concrete immutable strings without re-running stream callbacks.
+	// Decline unsafe arithmetic and retain the original append path below.
+	limit := int(^uint(0)>>1) / 2
+	if limit > 2147483647 {
+		limit = 2147483647
+	}
+	total, planned := checkedJoiningUTF16Length(0, len(prefix.units), 1, limit)
+	if planned {
+		total, planned = checkedJoiningUTF16Length(total, len(suffix.units), 1, limit)
+	}
+	gaps := len(stream.elements)
+	if gaps > 0 {
+		gaps--
+	}
+	if planned {
+		total, planned = checkedJoiningUTF16Length(total, len(separator.units), gaps, limit)
+	}
+	if planned {
+		for _, element := range stream.elements {
+			length := 4 // The original append loop emits "null" for nil elements.
+			if element != nil {
+				length = len(element.units)
+			}
+			total, planned = checkedJoiningUTF16Length(total, length, 1, limit)
+			if !planned {
+				break
+			}
+		}
+	}
+	var units []uint16
+	if planned {
+		if total > 0 {
+			units = make([]uint16, 0, total)
+		}
+		units = append(units, prefix.units...)
+	} else {
+		units = append([]uint16(nil), prefix.units...)
+	}
 	for index, element := range stream.elements {
 		if index > 0 {
-			builder.AppendJavaString(separator)
+			units = append(units, separator.units...)
 		}
-		builder.AppendJavaString(element)
+		if element == nil {
+			units = append(units, 'n', 'u', 'l', 'l')
+		} else {
+			units = append(units, element.units...)
+		}
 	}
-	return builder.AppendJavaString(suffix).ToJavaString()
+	units = append(units, suffix.units...)
+	return &JavaString{units: units}
+}
+
+// checkedJoiningUTF16Length admits total + length*count only when every
+// nonnegative quantity and the resulting UTF-16 size fit the supplied limit.
+func checkedJoiningUTF16Length(total, length, count, limit int) (int, bool) {
+	if total < 0 || length < 0 || count < 0 || limit < 0 || total > limit {
+		return 0, false
+	}
+	if length == 0 || count == 0 {
+		return total, true
+	}
+	if count > (limit-total)/length {
+		return 0, false
+	}
+	return total + length*count, true
 }
 
 // JavaStringRegionMatches compares UTF16 ranges, decoding only valid pairs for

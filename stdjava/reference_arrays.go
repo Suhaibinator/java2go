@@ -249,6 +249,15 @@ func JavaTypeAssignable(actual, expected TypeID) bool {
 		if !ok {
 			continue
 		}
+		// A direct edge proves reachability without growing the queue for siblings.
+		if info.super == expected {
+			return true
+		}
+		for _, implemented := range info.interfaces {
+			if implemented == expected {
+				return true
+			}
+		}
 		if info.super != "" {
 			queue = append(queue, info.super)
 		}
