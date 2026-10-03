@@ -11099,5 +11099,56 @@
     "agent_policy": "GPT-6.1 Sol/high only; twenty persistent subagents plus coordinator; no Astra",
     "checkpoint_kind": "Verified trivial CI canonical String test-scaffold milestone; latest full round18",
     "next": "Finish focused trivial CI repairs, preserve remaining failures, and continue frozen dependency application gates."
+  },
+  "sol_progress107": {
+    "status": "CI_CLASS_STRING_AND_RAW_DIAMOND_ASSERTIONS_VERIFIED",
+    "publication_parent": "673dca8bb9a6f76d2bc1bab6d41170a92d6de71f",
+    "implementation_changes_published": false,
+    "test_scaffold_changes_published": true,
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "scope": "Two original tests observe canonical String results and constructor literals; source Java and original expected observations unchanged, positive inferred diamond type check added.",
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/107-source-manifest.json",
+      "sha256": "58fd10f6d05b205943b7581e28a989f41b6b5bcf2c6bce2983426964427a8f3b",
+      "members": 3117
+    },
+    "verification": {
+      "fresh_baseline_failures": 2,
+      "peer_original_green": 2,
+      "peer_adjacent_plain_top_level_passes": 11,
+      "peer_adjacent_plain_subtests": 3,
+      "peer_adjacent_race_top_level_passes": 11,
+      "peer_adjacent_race_subtests": 3,
+      "root_adjacent_race_top_level_passes": 11,
+      "root_adjacent_race_subtests": 3,
+      "nested_generated_tests_race_enabled": true,
+      "root_records": {
+        "107-build-race": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/107-build-race/result.json",
+          "sha256": "c03d457b7d45d043b7b08474d31e458b9a602cb9c87ace000c7e6b04903d05e8"
+        },
+        "107-race": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/107-race/result.json",
+          "sha256": "55e29a6d9a584d2eff44d64fa1c6812fbd7eeb56d0ca5c9e5d099e0da60e9c31"
+        }
+      },
+      "failures": 0,
+      "skips": 0,
+      "clean_process_cleanup": true
+    },
+    "independent_source_review": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/class-migration-audit.json",
+      "sha256": "b619319de515042fc791cab77feb34271c28cd3c0b7abbb78959bcfaee30d8f8"
+    },
+    "evidence_retention": "Fresh evidence is durable under ignored .campaign/resume-20261002. Earlier /private/tmp evidence was cleared; historical acceptance records were not reverified or carried into these results.",
+    "remaining": "Contains/statistics, File/NIO/Thread/collector and array boundaries, generic compiler and real dependency application failures remain active."
+  },
+  "active_resume_current107": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Verified test-only CI milestone; latest full campaign acceptance remains round18",
+    "next": "Continue original CI and dependency repairs with fresh bounded evidence; commit and push verified scoped milestones."
   }
 }
