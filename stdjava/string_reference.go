@@ -68,8 +68,14 @@ func (s *JavaString) HashCode() int32 {
 		return int32(uint32(cached))
 	}
 	var hash uint32
-	for _, unit := range s.units {
-		hash = 31*hash + uint32(unit)
+	index := 0
+	for len(s.units)-index >= 4 {
+		units := s.units[index : index+4]
+		hash = 923521*hash + 29791*uint32(units[0]) + 961*uint32(units[1]) + 31*uint32(units[2]) + uint32(units[3])
+		index += 4
+	}
+	for ; index < len(s.units); index++ {
+		hash = 31*hash + uint32(s.units[index])
 	}
 	// Racing calculations are deterministic and publish the same result.
 	s.cachedHash.Store(uint64(1)<<32 | uint64(hash))
