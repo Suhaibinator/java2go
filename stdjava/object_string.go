@@ -2,7 +2,6 @@ package stdjava
 
 import (
 	"strconv"
-	"unicode/utf16"
 )
 
 // ObjectDefaultStringExecution is Object.toString's implementation. It bypasses
@@ -20,5 +19,10 @@ func ObjectDefaultStringExecution(execution *Execution, value any) string {
 // result. The nominal class name and virtual hashCode share the caller's logical
 // execution; this path does not invoke host formatting or a native text method.
 func ObjectDefaultJavaStringExecution(execution *Execution, value any) *JavaString {
-	return NewJavaStringUTF16(utf16.Encode([]rune(ObjectDefaultStringExecution(execution, value))))
+	ReferenceRequireNonNull(value)
+	value = collectionObjectView(value)
+	units := append([]uint16(nil), ClassJavaName(ObjectGetClass(value)).units...)
+	units = append(units, '@')
+	units = append(units, JavaIntegerToHexString(ObjectHashCodeExecution(execution, value)).units...)
+	return &JavaString{units: units}
 }

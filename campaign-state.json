@@ -11621,5 +11621,76 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Frozen full generic/reflection probes and original dependent generic app pass; next arrays, IO and remaining CI repairs",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress116": {
+    "status": "ARRAY_CANONICAL_STRINGS_AND_SYSTEM_IDENTITY_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "Canonical primitive/reference/deep array text, Object array class descriptors and virtual hash formatting; System identityHashCode avoids virtual hash dispatch and boxes primitive arguments.",
+    "verification": {
+      "root_top_level_counts": {
+        "116-runtime-arrays-identity-race": 4,
+        "116-compiler-arrays-race": 2,
+        "116-compiler-system-race": 2,
+        "116-comparator-boundary-race": 1,
+        "116-original-comparators": 1,
+        "116-original-legacy-arrays": 1
+      },
+      "strict_JDK21_generated_race_tests": 4,
+      "original_e2e_applications": [
+        "Comparators",
+        "FloatOrdering",
+        "MultiDimensionalArrays",
+        "NameCollisions"
+      ],
+      "original_generated_e2e_race": false,
+      "original_Java_and_observations_unchanged": true
+    },
+    "independent_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/array-lexical-audit.json",
+    "remaining": "Other hosted compiler, application and dependency failures remain active; no full Java/Netty or round acceptance.",
+    "publication_parent": "efc0ed2336f8edae3fb5f2f38f52b5ded72f3686",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/116-source-manifest.json",
+      "sha256": "53e32ccef751ecc23ea1c14e0b85fe9e37b2ae2c899b2ad99484eba4e33dfc56",
+      "members": 3157
+    },
+    "root_records": {
+      "evidence/116-build-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/116-build-race/result.json",
+        "sha256": "6578649bd95dc072cb434df1d6e044e58f01a9053eea6e8457436259638e6b72"
+      },
+      "evidence/116-runtime-arrays-identity-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/116-runtime-arrays-identity-race/result.json",
+        "sha256": "cc5a7b5509a22ebd9193cd93bff218e9cd9cf2faa1821bd502de15e8f14d92ed"
+      },
+      "evidence/116-compiler-arrays-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/116-compiler-arrays-race/result.json",
+        "sha256": "c03035c2fee1fd514f9a3d21e94cf53cf687e7dbf3e2631016faf6e3a3cdfd1f"
+      },
+      "evidence/116-compiler-system-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/116-compiler-system-race/result.json",
+        "sha256": "42b9fd2c0d6b64677c4de61ea7dc9dc1caae9d33abc0728367880e91306f25ce"
+      },
+      "evidence/116-comparator-boundary-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/116-comparator-boundary-race/result.json",
+        "sha256": "e0e783bb74fa1d8320140a77c48416ec38d7dbfbe422bb8167ec56e6d4592a90"
+      },
+      "evidence/116-original-comparators/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/116-original-comparators/result.json",
+        "sha256": "b4e2a3447f77fe380b16affb304053f59a52380d7625500738469bd022f137e5"
+      },
+      "evidence/116-original-legacy-arrays/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/116-original-legacy-arrays/result.json",
+        "sha256": "4ae19934786cb7209190bf0b58c49e1ae408a57be538bf931d3a0fd9626a696d"
+      }
+    }
+  },
+  "active_resume_current116": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Four original comparator/array applications and canonical identity probes pass; next restored Netty inputs and IO fixes",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

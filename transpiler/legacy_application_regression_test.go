@@ -17,17 +17,19 @@ public class DeepArrayProgram {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.ArrayDeepToString(values)") {
+	if !strings.Contains(out, "stdjava.JavaArrayDeepToStringExecution(__java2goExecution, values)") {
 		t.Fatalf("expected Arrays.deepToString to use the stdjava runtime helper, got:\n%s", out)
 	}
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import ("testing"; "unicode/utf16")
 
 func TestDeepArrayRendering(t *testing.T) {
     const want = "[[0, 0, 0], [0, 0, 0]]"
-    if got := Run(); got != want {
+    reference := Run()
+    if reference == nil { t.Fatal("Run() returned null") }
+    if got := string(utf16.Decode(reference.UTF16Copy())); got != want {
         t.Fatalf("Run() = %q, want %q", got, want)
     }
 }

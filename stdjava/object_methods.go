@@ -88,20 +88,7 @@ func ObjectHashCodeExecution(execution *Execution, value any) int32 {
 		}
 		return hash
 	}
-	if carrier, ok := value.(JavaObjectInfoCarrier); ok {
-		if info := carrier.JavaObjectInfo(); info != nil {
-			pointer := uint64(reflect.ValueOf(info).Pointer())
-			return int32(pointer ^ (pointer >> 32))
-		}
-	}
-	reflected := reflect.ValueOf(value)
-	switch reflected.Kind() {
-	case reflect.Pointer, reflect.UnsafePointer, reflect.Map, reflect.Chan, reflect.Slice, reflect.Func:
-		pointer := uint64(reflected.Pointer())
-		return int32(pointer ^ (pointer >> 32))
-	default:
-		panic(NewClassCastException("value has no Java object identity"))
-	}
+	return objectIdentityHashCode(value)
 }
 
 type objectExecutionMethodKey struct {

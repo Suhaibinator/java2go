@@ -638,26 +638,16 @@ func registerCollectionsStatics() {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		if len(ctx.intrinsicTypeArgs) == 1 {
-			if element, ok := ctx.intrinsicTypeArgs[0].(*ast.Ident); ok && element.Name == "int8" {
-				return stdjavaCall(ctx, "JavaByteArrayToString", args[0])
-			}
-		}
-		return stdjavaCall(ctx, "ArrayToString", args[0])
+		return stdjavaCall(ctx, "JavaArrayToStringExecution", intrinsicExecutionExpr(ctx), args[0])
 	})
-	registerStaticIntrinsicTypeArgs("Arrays", "toString", arrayComponentTypeArgs)
-	registerStaticIntrinsicDerivedResultType("Arrays", "toString", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
-		if component, known := arrayComponentJavaType(invocation, ctx, source); known && component == "byte" {
-			return "java.lang.String", true
-		}
-		return "", false
-	})
+	registerStaticIntrinsicResultType("Arrays", "toString", "java.lang.String")
 	registerStaticIntrinsic("Arrays", "deepToString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 1) {
 			return nil
 		}
-		return stdjavaCall(ctx, "ArrayDeepToString", args[0])
+		return stdjavaCall(ctx, "JavaArrayDeepToStringExecution", intrinsicExecutionExpr(ctx), args[0])
 	})
+	registerStaticIntrinsicResultType("Arrays", "deepToString", "java.lang.String")
 }
 
 // Collection equals/hashCode are inherited Object methods, with structural
