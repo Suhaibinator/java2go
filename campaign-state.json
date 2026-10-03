@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Continue the twenty-role Sol-only campaign: independently integrate accepted private generic/namespace/Thread/Future/runtime candidates, repair actual original120 Gson and full43 blockers, complete current accumulated CI and unwaived regressions, and compose separately accepted scoped performance successors. Checkpoint18 remains the latest accepted full round.",
+  "next_action": "Verify the frozen Animal repair in the full combined 445-parent gate, runtime, symbol and lint checks; continue original dependency and CI repairs. Commit and push verified milestones.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -798,7 +798,7 @@
     "branch": "codex/adversarial-campaign",
     "remote": "origin",
     "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints.",
-    "last_pushed_revision": "16507523224fb82408859cb3d6ce8c9ffca5b106",
+    "last_pushed_revision": "da641f5c5827306fa499766529340856d0911fe5",
     "last_pushed_branch": "origin/codex/adversarial-campaign"
   },
   "regression_status": {
@@ -6226,7 +6226,10 @@
     "updated_at": "2026-09-30T19:41:13.522656+00:00",
     "requested_by": "user",
     "agent_policy": "Sol only; gpt-6.1-sol/high; no Astra agents may be spawned or resumed.",
-    "app_goal_api_note": "Observed goal tool status blocked on 2026-10-01 despite explicit user resume. Available API cannot resume or edit its objective. Campaign work is actively resumed by human authorization; no false completion or pause is recorded."
+    "app_goal_api_note": "Parent goal API returned active during this explicit user resume on 2026-10-03; historical status notes are preserved separately. No pause or completion requested.",
+    "app_goal_api_history": [
+      "Observed goal tool status blocked on 2026-10-01 despite explicit user resume. Available API cannot resume or edit its objective. Campaign work is actively resumed by human authorization; no false completion or pause is recorded."
+    ]
   },
   "sol_progress70": {
     "public_code_revision": "614d6e054a7e7f2b410d5f10cabfbf6d03ddc6e1",
@@ -22570,5 +22573,285 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "scoped-bytebuffer-mapcompute-drivers-green-original-JDK-generated-race-CI-dependencies-red",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress136": {
+    "checkpoint_kind": "evidence-only-baseline-profiles-CI135-red-Class-Map-ABI-Reader-Animal-held",
+    "evidence": {
+      "CI135": {
+        "audit": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/compiler135-complete-triage-da641f5c-v1.json",
+          "sha256": "f6a49fc816a8dbb49cd0c48dcf135efa5c227696556aecd520ddce9209feda52"
+        },
+        "compiler_diagnostic_log_coverage_complete": false,
+        "complete15_status_snapshot": true,
+        "head": "da641f5c5827306fa499766529340856d0911fe5",
+        "limits": [
+          "All six compiler logs are provider-truncated120000-character tails. Absence of a failure marker or diagnostic is not exhaustive parent coverage.",
+          "Annotations report generated locations as .github and do not name original parents; mapping explicitly source-inferred.",
+          "Annotation hasMore=false means no further reported page, not exhaustive diagnostics.",
+          "Dependency returned log is not provider-truncated, but Go stops diagnostics at too many errors.",
+          "All noncompiler job statuses including Unit/Lint/Application parity pass; compiler and dependency failures mean aggregate Test fails. No full CI or new semantic regression claim."
+        ],
+        "other7_PASS": true,
+        "published_ByteBuffer_MapCompute_diagnostics": "Absent only in retained corresponding shard evidence; truncatedtails do not establish exhaustive parent coverage",
+        "six_compiler_dependency_aggregate_FAIL": true,
+        "statuses": {
+          "Adversarial dependency applications": "failure",
+          "Application parity": "success",
+          "Build": "success",
+          "Compiler regressions (0)": "failure",
+          "Compiler regressions (1)": "failure",
+          "Compiler regressions (2)": "failure",
+          "Compiler regressions (3)": "failure",
+          "Compiler regressions (4)": "failure",
+          "Compiler regressions (5)": "failure",
+          "E2E (non-parity)": "success",
+          "Fuzz corpus replay": "success",
+          "Lint": "success",
+          "Test": "failure",
+          "Unit tests": "success",
+          "Vulnerability Check": "success"
+        }
+      },
+      "accepted_Codec_CPU_baseline": {
+        "Ensure_or_ToDigit_sampled_functions": 0,
+        "application_classes": 9,
+        "audit": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_netty_allocator_frontier/codec135_baseline_source_audit/AUDIT.json",
+          "sha256": "9e919952a630b06105603484b23753ae648a61ca093608c72721ee9c468a5fa9"
+        },
+        "baseline_only_no_optimization_or_JVM_speed_claim": true,
+        "catalogue": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/codec135-baseline/artifact-manifest.json",
+          "sha256": "32ace7b224ce1033dec6c2e405106976f5af3c84039a61da55f1a67caa00183b"
+        },
+        "catalogue_rehashed_members": 416,
+        "cumulative_ReportWriter_percent": 78.97,
+        "diagnostic_query_exit2_retained": true,
+        "flat_syscall_percent": 80.57,
+        "normal_race_whole_JVM_binary_source_Go_observations": 36,
+        "original_input_members": 36,
+        "original_selected_Codec_classes": 16,
+        "outputs_per_observation": 3,
+        "positive_receipts": 55,
+        "prelaunch_Path_serialization_INFRA_retained": true,
+        "profile_cpu_seconds": 5.61,
+        "receipts": 56,
+        "report": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_netty_allocator_frontier/codec135_baseline_source_audit/REPORT.md",
+          "sha256": "ee5d91bb2e12510f64facb0392743d44caae6466f1766c2ecc1c7ca98466bb44"
+        },
+        "scope_limits": [
+          "Sampled process CPU including original complete Main, file work and diagnostic harness; cumulative attribution overlaps, not wall time",
+          "JVM prepared shared output paths before Go; equal content is not equal filesystem starting state",
+          "No offline Maven lifecycle rerun, full-library admission, C2/ABBA timing or performance improvement"
+        ],
+        "source": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/codec135-baseline/source-manifest.json",
+          "sha256": "9ef096cb8be0a987244b5b5c4865ca9fcbf43cff440ec1cdddb45902cea27631"
+        }
+      },
+      "accepted_Codec_allocation_baseline": {
+        "CPU_original_strict_normal_race_JVM_parity_inherited_by_exact_bytes_not_rerun": true,
+        "allocation_frame_attribution": "STACK_BUDGET categories compareViaCompareToExecution versus reflect_Method_all; every reflect.Method byte has nearest stdjava producer compareViaCompareToExecution. The narrower26.07\u201326.09% subset does not equal full27.12\u201327.15% caller ancestry. Both are sampling-adjusted allocation byte estimates, not CPU/wall-time or disjoint shares",
+        "audit": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_netty_allocator_frontier/codec135_allocation_source_audit/AUDIT.json",
+          "sha256": "72b8c5df75f921b9b494a56553faaf6f2c739d1f0417c8dea0735c9d9e7ccbaf"
+        },
+        "catalogue": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/codec135-baseline-allocation/artifact-manifest.json",
+          "sha256": "0a0ff83c3accbb3965ef95c6a8917208db3ce14707fefa3c2184a813598f3fdf"
+        },
+        "catalogue_rehashed_members": 125,
+        "compareViaCompareToExecution_full_caller_ancestry_allocation_share_percent": [
+          27.117807,
+          27.152839
+        ],
+        "filesystem_states": [
+          "fresh independent roots",
+          "existing independent roots with original33-byte sentinel"
+        ],
+        "limits": [
+          "Go sampled estimate and MemStats baseline, not performance improvement",
+          "Matched structural filesystem states do not prove matched cache/runtime/JIT/GC/machine state",
+          "Profiles/counters include original app+I/O+runtime+diagnostic work; cumulative frame shares overlap"
+        ],
+        "raw_receipts": 19,
+        "reflect_Method_all_subset_allocation_share_percent": [
+          26.073635,
+          26.088163
+        ],
+        "removable_owned_UTF8_copy_allocation_share_percent": [
+          0.74154,
+          0.78018
+        ],
+        "report": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_netty_allocator_frontier/codec135_allocation_source_audit/REPORT.md",
+          "sha256": "84f1e164d66147d7c21a02e1fe0f766765e831ecc8b30490a96902c68b2bc21f"
+        },
+        "retained_export_files_audited_by_independent_allocator": 218160,
+        "source": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/codec135-baseline-allocation/source-post-manifest.json",
+          "sha256": "9ef096cb8be0a987244b5b5c4865ca9fcbf43cff440ec1cdddb45902cea27631"
+        },
+        "stack_budget": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/codec135-baseline-allocation/STACK_BUDGET.json",
+          "sha256": "972188b3a777b64ccf7429e52316588e656277cf47ff334f6815e82bf4466567"
+        },
+        "warmup_jobs_disjoint_from_measured": true,
+        "whole_Main_calls": 72720,
+        "whole_stages": 6
+      },
+      "root_Class3500_firstAnimalRED": {
+        "JDK3": false,
+        "JVM_observations": 2,
+        "NOTRUN_receipts": 205,
+        "audit": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/class136-closure-root-independent-audit/FINAL136-CLOSURE-FIRST-RED-AUDIT.json",
+          "sha256": "a46864c3e86094723dfb4ddec42864a6c5f1825bd36c80fa0055c1a35487a2ba"
+        },
+        "original_Throwable_now_PASS": true,
+        "original_full_Animal_RED": true,
+        "positive": 7,
+        "realRED": 1,
+        "receipts": 8,
+        "source_manifest": "70ea9afa55d461f436faaff45a479fe5a736ec78c1539634261522fae99fd06c",
+        "timeout_or_skip": false
+      },
+      "root_combined3598_firstAnimalRED": {
+        "Benchmark": 2,
+        "JDK3": false,
+        "actual_compiler_Test_registration": 1721,
+        "all439_parent_union_executed": false,
+        "audit": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/class136-combined-root-independent-audit/FINAL3598-FRONTIER-AUDIT.json",
+          "sha256": "03ed9d83330af42eb21f87e893863638770c126931ba10d79bde51428234a5c1"
+        },
+        "delivery": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_evaluation_assertions/combined-class136-map-abi-reader-successor-source-only/DELIVERY_INDEX.json",
+          "sha256": "df4adb7b1b4240dbc3d5ddd847286643f7fe24d1f7108cbbfa2a1b65ec8d1465"
+        },
+        "exact_duplicate_only_dedupe_successor_source_proof": true,
+        "failure": "Main.go179 Animal2 lacks Java2goAnimalSelf",
+        "fullruntime_symbol_lint_buildinfo_NOTRUN": true,
+        "generated_entry_build_or_execution": false,
+        "mandatory439_union_NOTRUN": true,
+        "mandatory_union": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_evaluation_assertions/combined-class136-map-abi-reader-successor-source-only/mandatory-source-test-inventory.json",
+          "sha256": "93950b71c378de0111d44eeef5261f6a3f281cac53fc5fcd4ddce706c207ed36"
+        },
+        "native_parents_executed": 1,
+        "native_parents_passed": 0,
+        "partial3583_duplicate_helper_buildRED_retained": true,
+        "positive": 2,
+        "realRED": 1,
+        "receipts": 3,
+        "source_manifest": "483fc26b057f4c10f572ebf7a85ae0a4877c41aa0f6b54b72d4e972bd596ad0c",
+        "strict_PASS_generated_allpackages_race_RED": true,
+        "whole_original_JVM_observations": 1
+      }
+    },
+    "full_CI_accepted": false,
+    "full_round_accepted": false,
+    "goal_status": "ACTIVE",
+    "goal_status_authority": "Root explicit instruction: goal now ACTIVE; child goal lookup null is not parent-goal authority",
+    "latest_accepted_full_round": 18,
+    "metadata_only": true,
+    "payloads_by_index_author": 0,
+    "pending": [
+      "Root matching Animal repair join and complete439 cumulative selected gates before implementation publication",
+      "FullClass/TypeToken/Gson/Reader original120:1 andheldABI/application/dependency frontiers remain unwaived",
+      "Metadata-cache new mandatory UTF16 program: root-reported valid JDK3 but strict String[]::new constructor-reference refusal held; other3 initial transport-module-path INFRA retained before new -module version. Correctness TDD then fresh originalCodec matching parity and predeclared paired measurements only if warranted",
+      "Current full coherentCI/fullround not accepted"
+    ],
+    "performance_disposition": {
+      "ClassInitialization_Ensure": {
+        "proposal": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/performance135-accepted-codec-classinit-proposal/PROPOSAL.md",
+          "sha256": "030548c490596d4f1fbb6c72e4a45b9841a46eab884fb5998ad14998edd2cb8f"
+        },
+        "status": "DEFERRED_NO_MATERIAL_SAMPLED_COST_PROOF_NO_CANDIDATE_ACCEPTANCE"
+      },
+      "comparable_positive_compiled_method_metadata_cache": {
+        "correctness_control_plan": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/codec135-comparable-method-metadata-proposal/CACHE_MODEL_AND_CONTROLS.json",
+          "sha256": "34965f73c31b00dbf547273a1d59f39f2edb6a09fd7a4d21d28b43ed5d7b46c5"
+        },
+        "proposal": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/codec135-comparable-method-metadata-proposal/PROPOSAL.md",
+          "sha256": "dfa0058cc81206c91cec0d2947dcb7bf823106135c6021924f568040c51950ad"
+        },
+        "scope": "Immutable exact Go type/method metadata only; Java dispatch/access/absence/binder/applicability decisions remain live",
+        "status": "CORRECTNESS_TDD_PENDING_NO_ROOT_ACCEPTANCE_NO_SPEED_CLAIM"
+      },
+      "owned_UTF8_copy": {
+        "proposal": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/codec135-utf8-allocation-source-proposal/PROPOSAL.md",
+          "sha256": "b9fd68a4a850dde241d8e555f9b2f4519780079da3d9eb01260b60f926a58647"
+        },
+        "status": "DEFERRED_SMALL_REMOVABLE_ALLOCATION_BUDGET_NO_SPEED_CLAIM"
+      }
+    },
+    "private_Animal_scoped_GREEN": {
+      "all439_not_GREEN": true,
+      "no_promoted_implementation": true,
+      "receipts": [
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/animal136-method-receiver-implementation/evidence/candidate-full-a/result.json",
+          "sha256": "b2e62c62d2db7b45eb8c23a65916d51e9766158b25173e9794c5416776041f3c"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/animal136-method-receiver-implementation/evidence/candidate-full-b/result.json",
+          "sha256": "b19790634a4edcc106d84cc79de45db2d38fe92e6488c5ed5558ad44f60b3b41"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/animal136-method-receiver-implementation/evidence/candidate-guards/result.json",
+          "sha256": "259b9e78ef32e4f1ba4ae311d0904ee61afd5ee7a41be97687ff785f19620e1d"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/animal136-method-receiver-implementation/evidence/candidate-sibling-apps/result.json",
+          "sha256": "369e33bf832f231fef035f03127662451226b188dfe9cbf9568f092bea609c6a"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/animal136-method-receiver-implementation/evidence/candidate-adjacent-native/result.json",
+          "sha256": "44b501a68ed25cbc4e8e076020efdd3855d84704b40dcd2d552dec1ed394c77c"
+        }
+      ],
+      "root_matching_combined_frontier_still_RED": true,
+      "status": "PRIVATE_SCOPED_OBSERVATIONS_ONLY_NOT_ROOT_ACCEPTED"
+    },
+    "public_mutations_by_index_author": 0,
+    "publication_parent": "da641f5c5827306fa499766529340856d0911fe5",
+    "retained_negative_provenance": [
+      "Original1363450 realconstructorRED and all26receipts unchanged",
+      "Class3500 realAnimalRED and all8receipts unchanged",
+      "Incomplete3583 duplicate-helperbuildRED source/raw retained; exactdedupe only in separate3598successor",
+      "3598 AnimalREDDK/strict/generatedrace actual retained; nooutputfilter/oracleembedding/generatededit",
+      "OriginalHash129profileerratum/empty,cached,nohash tradeoffs and JVMfaster provisional cases remain",
+      "All prior lintRED, Java-authoring/scaffold/context/serialization INFRA remain immutable with original attribution"
+    ],
+    "scope": "Metadata-only checkpoint136: accepted Codec baseline audits and truthful held combined integration frontier; no implementation acceptance",
+    "source_identity": {
+      "HEAD_and_origin_exact": "da641f5c5827306fa499766529340856d0911fe5",
+      "all_current_public135_tracked_bytes_exact": true,
+      "allowed_root_publication_paths": [
+        "campaign-state.json",
+        "campaign/SOL_PROGRESS136.md"
+      ],
+      "implementation_changes": 0,
+      "members": 3391,
+      "postpublication_manifest": "Root must freeze actual tracked map after metadata-only publication; current3391 hash includes currentledger, not prospective136ledger",
+      "public135_tracked_manifest": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/135-publication-actual-source-manifest.json",
+        "sha256": "9ef096cb8be0a987244b5b5c4865ca9fcbf43cff440ec1cdddb45902cea27631"
+      },
+      "tracked_worktree_clean": true
+    }
+  },
+  "active_resume_current136": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "evidence-only-baseline-profiles-CI135-red-Class-Map-ABI-Reader-Animal-held",
+    "next": "Verify the frozen Animal repair in the full combined 445-parent gate, runtime, symbol and lint checks; continue original dependency and CI repairs. Commit and push verified milestones."
   }
 }
