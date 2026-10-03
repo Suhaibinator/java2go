@@ -11692,5 +11692,40 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Four original comparator/array applications and canonical identity probes pass; next restored Netty inputs and IO fixes",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress117": {
+    "status": "FROZEN_ORIGINAL_NETTY_CHALLENGE_RESTORED",
+    "implementation_changes_published": false,
+    "original_challenge": "challenge.netty:interaction:1",
+    "verification": {
+      "status": "ROOT_VERIFIED_FROZEN_RESTORATION_HASHES_ONLY",
+      "index_sha256": "2a1ee6cbe6f1487c73bde9404be47815c6a9a681a8892ef17d0e764269fc15ee",
+      "files": 33,
+      "java": 8,
+      "oracle_observations": 9,
+      "bytes": 34938,
+      "new_execution": false,
+      "acceptance": false,
+      "historical_contract_selected_sources": 743,
+      "current_strict_requirement": 1220
+    },
+    "root_audit_sha256": "1ced84cf13037df31af918ec3ea43b2781e70dfb5f3009436781522d9623b084",
+    "remaining": "Fresh full1212+8 strict build and behavioral acceptance remain open. Historical743-source JVM observations do not establish eight-module closure acceptance.",
+    "publication_parent": "27559d9108f671381263beba4f6246478bdd7bf4",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/117-source-manifest.json",
+      "sha256": "bf56fdb2ab9054268e92d1f3c79f4be77240717ae1613cdbb03fc189ca58437a",
+      "members": 3191
+    },
+    "root_records": {}
+  },
+  "active_resume_current117": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Original Netty sources and historical JVM oracle bytes preserved in tracked corpus",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }
