@@ -1,0 +1,28 @@
+package stdjava
+import("testing";"fmt")
+func TestObservationRegistryDiagnostic(t *testing.T){
+ e:=NewExecution();before:=len(monitors)
+ for i:=0;i<32;i++{value:=NewPrimitiveArray[int8](128,PrimitiveByteTypeID);if ThreadHoldsLockExecution(e,value){t.Fatal("unheld")}}
+ fmt.Printf("registry_added_by_32_false_queries=%d\n",len(monitors)-before)
+ object:=NewObject();first:=ThreadHoldsLockExecution(e,object);added:=len(monitors)
+ for i:=0;i<32;i++{if ThreadHoldsLockExecution(e,object){t.Fatal("unheld repeat")}}
+ fmt.Printf("repeat_query_registry_growth=%d first=%v\n",len(monitors)-added,first)
+ allocations:=testing.AllocsPerRun(32,func(){if ThreadHoldsLockExecution(e,object){panic("owned")}})
+ fmt.Printf("repeat_query_allocations=%v\n",allocations)
+ fresh:=make([]any,33);for i:=range fresh{fresh[i]=NewObject()};next:=0
+ freshAllocations:=testing.AllocsPerRun(32,func(){if ThreadHoldsLockExecution(e,fresh[next]){panic("owned")};next++})
+ fmt.Printf("fresh_preallocated_object_query_allocations=%v\n",freshAllocations)
+ guard:=MonitorEnterExecution(e,object);if !ThreadHoldsLockExecution(e,object){t.Fatal("owner lost")};if ThreadHoldsLockExecution(NewExecution(),object){t.Fatal("other owner")};MonitorExitExecution(guard)
+}
+func TestObservationNoInsertCandidate(t *testing.T){
+ before:=len(monitors);if ThreadHoldsLockExecution(NewExecution(),NewObject()){t.Fatal("owned")};if len(monitors)!=before{t.Fatal("unheld observation inserted a record")}
+}
+type observationView struct{ info *ObjectInfo }
+func(v *observationView)JavaObjectInfo()*ObjectInfo{return v.info}
+func TestObservationIdentityDiagnostic(t *testing.T){
+ e:=NewExecution();info:=NewObjectInfo("Probe",nil);left,right:=&observationView{info},&observationView{info}
+ guard:=MonitorEnterExecution(e,left);fmt.Printf("canonical_reference_equal=%v alias_holds_lock=%v\n",JavaReferenceEqual(left,right),ThreadHoldsLockExecution(e,right));MonitorExitExecution(guard)
+ nilStringThrows:=false
+ func(){defer func(){if failure:=recover();failure!=nil{nilStringThrows=CaughtAs(failure,"NullPointerException")}}();ThreadHoldsLockExecution(e,NullString())}()
+ fmt.Printf("null_string_throws_npe=%v\n",nilStringThrows)
+}

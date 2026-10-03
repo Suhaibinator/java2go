@@ -20,11 +20,13 @@ func intLit(n int) ast.Expr {
 // each is generic (so its declared type takes type arguments).
 var concurrencyRuntimeTypes = map[string]bool{
 	"AtomicInteger":     false,
+	"CountDownLatch":    false,
 	"AtomicLong":        false,
 	"AtomicBoolean":     false,
 	"Thread":            false,
 	"ExecutorService":   false,
 	"Future":            true,
+	"ThreadLocal":       true,
 	"ConcurrentHashMap": true,
 }
 
@@ -34,36 +36,80 @@ var concurrencyRuntimeTypes = map[string]bool{
 // (nil, false) for any other name, and never fires for a user-defined class of
 // the same name. Generic args are themselves lowered through
 // javaTypeStringToGoTypeExpr.
-func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+	if expression, ok := atomicArrayRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := atomicFieldUpdaterRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := additionalNativeFunctionalRuntimeType(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := functionRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := bigMathRuntimeTypeExpr(javaType, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := currencyRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := uuidRuntimeTypeExpr(javaType, typeParams, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := javaTimeRuntimeTypeExpr(javaType, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := dateTimeRuntimeTypeExpr(javaType, ctx); ok {
+		return expression, true
+	}
+	baseName := stripJavaQualifier(javaType)
+	if owner, admitted := canonicalIntrinsicOwner(javaType, ctx); admitted && owner == "java.nio.ByteOrder" {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr("ByteOrder", ctx)}, true
+	}
+	if expression, ok := reflectRuntimeTypeExpr(javaType, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := digestIORuntimeTypeExpr(javaType, ctx); ok {
+		return expression, true
+	}
+	if (baseName == "StringBuilder" || baseName == "StringBuffer") && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr("StringBuilder", ctx)}, true
+	}
+	if (baseName == "Charset" || baseName == "ByteBuffer" || baseName == "MessageDigest" || baseName == "Locale" || baseName == "BitSet" || baseName == "Random") && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
+		return &ast.StarExpr{X: stdjavaQualifiedExpr(baseName, ctx)}, true
+	}
+
 	// java.lang.Object maps to the empty interface. It commonly appears as the
 	// type of a lock token; new Object() is handled by its constructor intrinsic.
-	if baseName == "Object" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if baseName == "Object" && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		return &ast.Ident{Name: "any"}, true
 	}
 
 	// java.lang.Runnable is an interface, so it maps to stdjava.Runnable without a
 	// pointer. A value typed Runnable (or a struct that embeds it) resolves here.
-	if baseName == "Runnable" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if baseName == "Runnable" && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		return stdjavaQualifiedExpr("Runnable", ctx), true
 	}
 
-	if baseName == "TimeUnit" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if baseName == "TimeUnit" && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		return &ast.StarExpr{X: stdjavaQualifiedExpr("TimeUnit", ctx)}, true
 	}
-	if baseName == "Callable" && resolveClassScopeByQualifiedName(ctx, baseName) == nil {
+	if (baseName == "Callable" || baseName == "Supplier") && resolveClassScopeByQualifiedName(ctx, javaType) == nil {
 		if len(typeArgs) == 0 {
 			typeArgs = []string{"Object"}
 		}
-		return applyTypeArguments(stdjavaQualifiedExpr("Callable", ctx), []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], typeParams, ctx)}), true
+		return applyTypeArguments(stdjavaQualifiedExpr(baseName, ctx), []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], typeParams, ctx)}), true
 	}
-	if baseName == "Future" && len(typeArgs) == 0 {
+	if (baseName == "Future" || baseName == "ThreadLocal") && len(typeArgs) == 0 {
 		typeArgs = []string{"Object"}
 	}
 	generic, ok := concurrencyRuntimeTypes[baseName]
 	if !ok {
 		return nil, false
 	}
-	if resolveClassScopeByQualifiedName(ctx, baseName) != nil {
+	if resolveClassScopeByQualifiedName(ctx, javaType) != nil {
 		return nil, false
 	}
 
@@ -94,6 +140,8 @@ func stdjavaRuntimeTypeExpr(baseName string, typeArgs, typeParams []string, ctx 
 
 func init() {
 	registerAtomicIntrinsics()
+	registerAtomicFieldUpdaterIntrinsics()
+	registerCountDownLatchIntrinsics()
 	registerThreadIntrinsics()
 	registerExecutorIntrinsics()
 	registerConcurrentMapIntrinsics()
@@ -293,6 +341,17 @@ func registerAtomicMethods(javaType string) {
 			}
 			return selectorCall(recv, goMethod, args)
 		})
+		// Retain the Java result type at primitive conversions, boxing and
+		// method-reference boundaries; the runtime selector alone cannot tell
+		// an Object conversion from an int/long/boolean overload.
+		resultType := map[string]string{"AtomicInteger": "int", "AtomicLong": "long", "AtomicBoolean": "boolean"}[javaType]
+		switch javaMethod {
+		case "set":
+			resultType = "void"
+		case "compareAndSet":
+			resultType = "boolean"
+		}
+		registerInstanceIntrinsicResultType(javaType, javaMethod, resultType)
 	}
 }
 
@@ -326,6 +385,7 @@ func registerAtomicIntrinsics() {
 }
 
 func registerThreadIntrinsics() {
+	registerThreadYieldIntrinsics()
 	registerInstanceIntrinsicResultType("Thread", "isAlive", "boolean")
 	// new Thread(runnable) -> stdjava.NewThread(runnable). The Runnable argument
 	// is already a func() in generated code (lambda or method reference).
@@ -333,10 +393,34 @@ func registerThreadIntrinsics() {
 		if len(args) == 0 {
 			return stdjavaCall(ctx, "NewThread", &ast.Ident{Name: "nil"})
 		}
+		if len(args) == 2 {
+			return stdjavaCall(ctx, "NewThreadNamedReference", args...)
+		}
 		if len(args) != 1 {
 			return nil
 		}
 		return stdjavaCall(ctx, "NewThread", args[0])
+	})
+
+	registerStaticIntrinsic("Thread", "currentThread", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "ThreadCurrentThread", intrinsicExecutionExpr(ctx))
+	})
+	registerStaticIntrinsicResultType("Thread", "currentThread", "Thread")
+	registerInstanceIntrinsic("Thread", "getName", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return selectorCall(recv, "GetNameReference", nil)
+	})
+	registerInstanceIntrinsicResultType("Thread", "getName", "String")
+	registerInstanceIntrinsic("Thread", "run", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaCall(ctx, "RunRunnableExecution", intrinsicExecutionExpr(ctx), recv)
 	})
 
 	// Thread.sleep(ms) -> stdjava.ThreadSleep(ms)
@@ -394,8 +478,9 @@ func registerExecutorIntrinsics() {
 	})
 
 	registerFutureIntrinsics()
+	registerInstanceIntrinsicResultType("ExecutorService", "shutdownNow", "List<Runnable>")
 	for javaMethod, goMethod := range map[string]string{
-		"execute": "Execute", "shutdown": "Shutdown", "awaitTermination": "AwaitTerminationTimed",
+		"execute": "Execute", "shutdown": "Shutdown", "shutdownNow": "ShutdownNow", "awaitTermination": "AwaitTerminationTimed",
 		"isShutdown": "IsShutdown", "isTerminated": "IsTerminated",
 	} {
 		goMethod := goMethod
@@ -435,4 +520,33 @@ func registerConcurrentMapIntrinsics() {
 			return selectorCall(recv, goMethod, args)
 		})
 	}
+}
+
+func registerCountDownLatchIntrinsics() {
+	registerConstructorIntrinsic("CountDownLatch", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) != 1 {
+			return nil
+		}
+		return stdjavaCall(ctx, "NewCountDownLatch", args[0])
+	})
+	for java, goName := range map[string]string{"countDown": "CountDown", "getCount": "GetCount"} {
+		goName := goName
+		registerInstanceIntrinsic("CountDownLatch", java, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return selectorCall(recv, goName, nil)
+		})
+	}
+	registerInstanceIntrinsicResultType("CountDownLatch", "getCount", "long")
+	registerInstanceIntrinsic("CountDownLatch", "await", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 0 {
+			return selectorCall(recv, "AwaitExecution", []ast.Expr{intrinsicExecutionExpr(ctx)})
+		}
+		if len(args) == 2 {
+			return selectorCall(recv, "AwaitTimedExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...))
+		}
+		return nil
+	})
+	registerInstanceIntrinsicResultType("CountDownLatch", "await", "boolean")
 }

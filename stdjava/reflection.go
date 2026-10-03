@@ -4,37 +4,106 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
-// ClassDescriptor describes the bounded public reflection surface emitted by
+// ClassDescriptor describes the bounded reflection surface emitted by
 // the transpiler. Callbacks retain Java initialization and execution semantics.
 // Descriptors are registered without constructing or initializing Java classes.
 type ClassDescriptor struct {
-	Type                TypeID
+	SimpleName    string
+	HasSimpleName bool
+	Type          TypeID
+	// NestHost is the outermost parsed declaration, independent of binary spelling.
+	// Empty metadata preserves the legacy single-class nest.
+	NestHost            TypeID
 	Interface           bool
+	Enum                bool
 	InheritedAnnotation bool
 	Initialize          func(*Execution)
 	Construct           func(*Execution) any
 	Fields              []FieldDescriptor
 	Methods             []MethodDescriptor
 	Annotations         []TypeID
+	Modifiers           int32
+	HasModifiers        bool
+	GenericSuperclass   *ReflectTypeDescriptor
+	TypeParameters      []TypeVariableDescriptor
+	genericVariables    []*metadataTypeVariable
+	Constructors        []ConstructorDescriptor
+	AnnotationValues    []AnnotationDescriptor
+	// Initialization is the shared coordinator used by direct active uses.
+	// A callback that enters an independently used coordinator must bind it
+	// here; without one, Initialize is a reflection-owned initialization body.
+	Initialization *ClassInitialization
 }
 type FieldDescriptor struct {
-	Name, GoName string
-	Type         TypeID
-	Final        bool
+	nameJavaString *JavaString
+	Name, GoName   string
+	Type           TypeID
+	Final          bool
+	NonPublic      bool
+	EnumConstant   bool
+	StaticGet      func(*Execution) any
+	Modifiers      int32
+	HasModifiers   bool
+	GenericType    *ReflectTypeDescriptor
+	Annotations    []AnnotationDescriptor
+	Get            func(*Execution, any) any
+	Set            func(*Execution, any, any)
+	StaticSet      func(*Execution, any)
+	// VolatileCell resolves the actual declaring-instance storage shared by all accesses.
+	VolatileCell func(*Execution, any) *VolatileFieldCell
 }
 type MethodDescriptor struct {
-	Name, GoName string
-	Return       TypeID
+	nameJavaString *JavaString
+	Name, GoName   string
+	Return         TypeID
+	ParameterTypes []TypeID
+	// InvocationParameterTypes describe the existing Go body selected for a
+	// Java bridge. The reflected signature remains the erased Java descriptor.
+	InvocationParameterTypes []TypeID
+	Modifiers                int32
+	HasModifiers             bool
+	Bridge                   bool
+	Synthetic                bool
+	StaticFunction           any
 }
 
 var reflectionRegistry sync.Map
 
 func RegisterClassDescriptor(descriptor ClassDescriptor) {
+	if initialize := descriptor.Initialize; initialize != nil {
+		state := descriptor.Initialization
+		if state == nil {
+			// Hand-authored descriptors supply an initialization callback. Give every
+			// reflected member and Class.forName one shared, reentrant coordinator.
+			state = NewClassInitialization(string(descriptor.Type))
+			descriptor.Initialization = state
+			descriptor.Initialize = func(execution *Execution) { state.Ensure(execution, initialize) }
+		} else {
+			// Generated callbacks already enter this coordinator. Do not wrap them
+			// in Ensure again: that would be mistaken for recursive initialization.
+			descriptor.Initialize = func(execution *Execution) {
+				requireExecution(execution)
+				if !state.isInitialized() {
+					initialize(execution)
+				}
+			}
+		}
+	}
+	descriptor = cloneReflectionMetadata(descriptor)
 	descriptor.Fields = append([]FieldDescriptor(nil), descriptor.Fields...)
 	descriptor.Methods = append([]MethodDescriptor(nil), descriptor.Methods...)
 	descriptor.Annotations = append([]TypeID(nil), descriptor.Annotations...)
+	for index := range descriptor.Fields {
+		descriptor.Fields[index].nameJavaString = reflectionIdentifierJavaString(descriptor.Fields[index].Name)
+	}
+	for index := range descriptor.Methods {
+		descriptor.Methods[index].nameJavaString = reflectionIdentifierJavaString(descriptor.Methods[index].Name)
+		descriptor.Methods[index].ParameterTypes = append([]TypeID(nil), descriptor.Methods[index].ParameterTypes...)
+		descriptor.Methods[index].InvocationParameterTypes = append([]TypeID(nil), descriptor.Methods[index].InvocationParameterTypes...)
+	}
 	reflectionRegistry.Store(descriptor.Type, descriptor)
 }
 func classDescriptor(id TypeID) ClassDescriptor {
@@ -62,6 +131,24 @@ func ClassForName(execution *Execution, name string) *Class {
 func (class *Class) GetName() string {
 	return strings.TrimPrefix(string(class.TypeID()), primitiveTypePrefix)
 }
+
+// GetSimpleName uses source metadata for nested/local/anonymous classes and
+// recursively derives array names from their component descriptors.
+func (class *Class) GetSimpleName() string {
+	id := class.TypeID()
+	if component, ok := arrayComponentTypeID(id); ok {
+		return ClassLiteral(component).GetSimpleName() + "[]"
+	}
+	if descriptor := classDescriptor(id); descriptor.HasSimpleName {
+		return descriptor.SimpleName
+	}
+	name := strings.TrimPrefix(string(id), primitiveTypePrefix)
+	if index := strings.LastIndexAny(name, ".$"); index >= 0 {
+		name = name[index+1:]
+	}
+	return name
+}
+
 func (class *Class) GetSuperclass() *Class {
 	id := class.TypeID()
 	if classDescriptor(id).Interface {
@@ -78,12 +165,21 @@ func (class *Class) GetSuperclass() *Class {
 func (class *Class) IsAssignableFrom(other *Class) bool {
 	return JavaTypeAssignable(other.TypeID(), class.TypeID())
 }
+func (class *Class) IsEnum() bool {
+	return classDescriptor(class.TypeID()).Enum
+}
 func (class *Class) IsAnnotationPresent(annotation *Class) bool {
 	class.TypeID()
 	id := annotation.TypeID()
 	inherited := classDescriptor(id).InheritedAnnotation
 	for current := class; current != nil; current = current.GetSuperclass() {
-		for _, candidate := range classDescriptor(current.TypeID()).Annotations {
+		descriptor := classDescriptor(current.TypeID())
+		for _, candidate := range descriptor.AnnotationValues {
+			if candidate.Type == id {
+				return true
+			}
+		}
+		for _, candidate := range descriptor.Annotations {
 			if candidate == id {
 				return true
 			}
@@ -96,34 +192,15 @@ func (class *Class) IsAnnotationPresent(annotation *Class) bool {
 }
 
 type Constructor struct {
-	owner     *Class
-	construct func(*Execution) any
-}
-
-func (class *Class) GetConstructor(parameters ...*Class) *Constructor {
-	construct := classDescriptor(class.TypeID()).Construct
-	if len(parameters) != 0 || construct == nil {
-		panic(reflectionException("NoSuchMethodException", class.GetName()+".<init>"))
-	}
-	return &Constructor{class, construct}
-}
-func (constructor *Constructor) NewInstance(execution *Execution, arguments ...any) (result any) {
-	if constructor == nil {
-		panic(NewNullPointerException("constructor is null"))
-	}
-	if len(arguments) != 0 {
-		panic(NewIllegalArgumentException("wrong number of constructor arguments"))
-	}
-	if initialize := classDescriptor(constructor.owner.TypeID()).Initialize; initialize != nil {
-		initialize(execution)
-	}
-	defer reflectionInvocationPanic()
-	return constructor.construct(execution)
+	owner      *Class
+	descriptor ConstructorDescriptor
+	accessible atomic.Bool
 }
 
 type Field struct {
 	owner      *Class
 	descriptor FieldDescriptor
+	accessible atomic.Bool
 }
 
 func (class *Class) GetField(name string) *Field {
@@ -133,12 +210,33 @@ func (class *Class) GetField(name string) *Field {
 	}
 	for current := class; current != nil; current = current.GetSuperclass() {
 		for _, field := range classDescriptor(current.TypeID()).Fields {
-			if field.Name == name {
-				return &Field{current, field}
+			if field.Name == name && reflectionFieldPublic(field) {
+				return &Field{owner: current, descriptor: field}
 			}
 		}
 	}
 	panic(reflectionException("NoSuchFieldException", name))
+}
+
+// GetDeclaredField includes non-public metadata but searches only this class.
+// Finding a descriptor does not grant access to read or write the field.
+func (class *Class) GetDeclaredField(name string) *Field {
+	class.TypeID()
+	if nilJavaReference(name) {
+		panic(NewNullPointerException("field name is null"))
+	}
+	for _, field := range classDescriptor(class.TypeID()).Fields {
+		if field.Name == name {
+			return &Field{owner: class, descriptor: field}
+		}
+	}
+	panic(reflectionException("NoSuchFieldException", name))
+}
+func (field *Field) IsEnumConstant() bool {
+	if field == nil {
+		panic(NewNullPointerException("field is null"))
+	}
+	return field.descriptor.EnumConstant
 }
 func (field *Field) GetName() string {
 	if field == nil {
@@ -163,59 +261,15 @@ func reflectionReceiver(receiver any, owner *Class) reflect.Value {
 	}
 	return reflect.ValueOf(receiver)
 }
-func (field *Field) Get(receiver any) any {
-	if field == nil {
-		panic(NewNullPointerException("field is null"))
-	}
-	value := reflectionReceiver(receiver, field.owner).Elem().FieldByName(field.descriptor.GoName)
-	if field.descriptor.Type == StringTypeID && nilJavaReference(value.Interface()) {
-		return nil
-	}
-	return reflectionBox(value.Interface(), field.descriptor.Type)
-}
-func (field *Field) Set(receiver, value any) {
-	if field == nil {
-		panic(NewNullPointerException("field is null"))
-	}
-	target := reflectionReceiver(receiver, field.owner).Elem().FieldByName(field.descriptor.GoName)
-	if field.descriptor.Final {
-		panic(reflectionException("IllegalAccessException", "final field"))
-	}
-	converted := reflectionUnbox(value, field.descriptor.Type)
-	if nilJavaReference(converted) {
-		if isPrimitiveTypeID(field.descriptor.Type) {
-			panic(NewIllegalArgumentException("null primitive field value"))
-		}
-		if target.Kind() == reflect.String {
-			target.SetString(NullString())
-			return
-		}
-		target.SetZero()
-		return
-	}
-	if !isPrimitiveTypeID(field.descriptor.Type) {
-		actual, known := ObjectDynamicType(converted)
-		if known && !JavaTypeAssignable(actual, field.descriptor.Type) {
-			panic(NewIllegalArgumentException("field value has wrong Java type"))
-		}
-		if carrier, ok := converted.(JavaObjectInfoCarrier); ok {
-			if info := carrier.JavaObjectInfo(); info != nil {
-				if view := info.resolveView(field.descriptor.Type); view != nil {
-					converted = view
-				}
-			}
-		}
-	}
-	source := reflect.ValueOf(converted)
-	if !source.Type().AssignableTo(target.Type()) {
-		panic(NewIllegalArgumentException("field value has wrong type"))
-	}
-	target.Set(source)
-}
+
+// requireInstanceReceiver preserves Field.checkAccess ordering: an instance
+// null fails before access permission, but receiver type checking remains in
+// the accessor. Static descriptors ignore the supplied receiver entirely.
 
 type Method struct {
 	owner      *Class
 	descriptor MethodDescriptor
+	accessible atomic.Bool
 }
 
 func (class *Class) GetMethod(name string, parameters ...*Class) *Method {
@@ -223,14 +277,8 @@ func (class *Class) GetMethod(name string, parameters ...*Class) *Method {
 	if nilJavaReference(name) {
 		panic(NewNullPointerException("method name is null"))
 	}
-	if len(parameters) == 0 {
-		for current := class; current != nil; current = current.GetSuperclass() {
-			for _, method := range classDescriptor(current.TypeID()).Methods {
-				if method.Name == name {
-					return &Method{current, method}
-				}
-			}
-		}
+	if method := class.reflectionFindMethod(name, parameters, false); method != nil {
+		return method
 	}
 	panic(reflectionException("NoSuchMethodException", name))
 }
@@ -240,45 +288,11 @@ func (method *Method) GetName() string {
 	}
 	return method.descriptor.Name
 }
-func (method *Method) Invoke(execution *Execution, receiver any, arguments ...any) any {
-	if method == nil {
-		panic(NewNullPointerException("method is null"))
-	}
-	if len(arguments) != 0 {
-		panic(NewIllegalArgumentException("wrong number of method arguments"))
-	}
-	// Validate against the declaring class, then select the most-derived
-	// override. The generated execution body itself is statically bound.
-	targetReceiver := reflectionReceiver(receiver, method.owner)
-	selected := method.descriptor
-	if actual, ok := ObjectDynamicType(receiver); ok {
-		for current := ClassLiteral(actual); current != nil; current = current.GetSuperclass() {
-			found := false
-			for _, candidate := range classDescriptor(current.TypeID()).Methods {
-				if candidate.Name == method.descriptor.Name {
-					selected = candidate
-					targetReceiver = reflectionReceiver(receiver, current)
-					found = true
-					break
-				}
-			}
-			if found {
-				break
-			}
-		}
-	}
-	target := targetReceiver.MethodByName(selected.GoName)
-	defer reflectionInvocationPanic()
-	values := target.Call([]reflect.Value{reflect.ValueOf(execution)})
-	if len(values) == 0 {
-		return nil
-	}
-	return reflectionBox(values[0].Interface(), method.descriptor.Return)
-}
 func reflectionInvocationPanic() {
 	if caught := recover(); caught != nil {
-		exception := reflectionException("InvocationTargetException", "reflective invocation failed")
+		exception := Exception{newJavaThrowableBase("InvocationTargetException", nil)}
 		exception.state.cause = caught
+		exception.state.causeInitialized = true
 		panic(exception)
 	}
 }
@@ -287,7 +301,7 @@ func reflectionException(name, message string) Exception {
 }
 func init() {
 	RegisterException("ReflectiveOperationException", "Exception")
-	for _, name := range []string{"ClassNotFoundException", "NoSuchMethodException", "NoSuchFieldException", "IllegalAccessException", "InvocationTargetException"} {
+	for _, name := range []string{"ClassNotFoundException", "NoSuchMethodException", "NoSuchFieldException", "IllegalAccessException", "InstantiationException", "InvocationTargetException"} {
 		RegisterException(name, "ReflectiveOperationException")
 	}
 }

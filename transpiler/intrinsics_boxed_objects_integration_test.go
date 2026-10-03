@@ -66,10 +66,10 @@ public class BoxedIntrinsicBoundaries {
 `)
 	runGeneratedWithStdjava(t, out, `
 package main
-import "testing"
+import ("testing"; "slices"; "unicode/utf16")
 func TestBoundaries(t *testing.T) {
     const want = "true:false:true:12:true:77:6.5:7.5:true:true:false:2:true:true:11:true:true:3:15:2"
-    if got := Run(); got != want { t.Fatalf("Run() = %q, want %q", got, want) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) { t.Fatalf("Run() = %v, want %q", got, want) }
 }
 `)
 }

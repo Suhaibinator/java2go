@@ -91,7 +91,7 @@ public class ClassStringRuntime {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "stdjava.StringValueOfExecution(__java2goExecution, locked)") {
+	if !strings.Contains(flat, "stdjava.JavaStringValueOfExecution(__java2goExecution, locked)") {
 		t.Fatalf("expected concrete generated class conversion to preserve the execution token, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "return ce.Java2goClassStringRuntimebaseSelf.ToStringJava2goExecution(__java2goExecution)") {
@@ -101,12 +101,20 @@ public class ClassStringRuntime {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestClassStringRuntime(t *testing.T) {
 	const want = "P3|P3|[P3, P4]|child|locked|anonymous|local|label-7"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %x, want %q", units, want)
     }
 }
 `)

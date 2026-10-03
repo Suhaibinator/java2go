@@ -95,12 +95,16 @@ public class CompoundAssignmentStatementProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestCompoundAssignmentStatementRuntime(t *testing.T) {
     const want = "-2147483648:-9223372036854775808:-32768:-128:0:1.75:3.75:-126:-32766:0:1:6"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %v, want %q", got, want)
     }
 }
 `)
@@ -175,12 +179,16 @@ public class CompoundAssignmentFallbackProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestCompoundAssignmentFallbackRuntime(t *testing.T) {
     const want = "6:5:13:1:2:value=7:6:3:9:9"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %v, want %q", got, want)
     }
 }
 

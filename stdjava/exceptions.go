@@ -47,6 +47,7 @@ var (
 		"Exception":                       "Throwable",
 		"RuntimeException":                "Exception",
 		"IOException":                     "Exception",
+		"UnsupportedEncodingException":    "IOException",
 		"IllegalArgumentException":        "RuntimeException",
 		"IllegalStateException":           "RuntimeException",
 		"IllegalMonitorStateException":    "RuntimeException",
@@ -54,6 +55,7 @@ var (
 		"NegativeArraySizeException":      "RuntimeException",
 		"IndexOutOfBoundsException":       "RuntimeException",
 		"ArrayIndexOutOfBoundsException":  "IndexOutOfBoundsException",
+		"StringIndexOutOfBoundsException": "IndexOutOfBoundsException",
 		"ArrayStoreException":             "RuntimeException",
 		"NumberFormatException":           "IllegalArgumentException",
 		"ArithmeticException":             "RuntimeException",
@@ -64,27 +66,14 @@ var (
 	}
 )
 
-func registerExceptionJavaType(child, parent string) {
-	if child == "" {
-		return
-	}
-	super := ObjectTypeID
-	if parent != "" {
-		super = TypeID(parent)
-	}
-	RegisterJavaType(TypeID(child), super)
-}
-
-func init() {
-	for child, parent := range exceptionHierarchy {
-		registerExceptionJavaType(child, parent)
-	}
-}
-
 // RegisterException records that the exception type child extends parent. It is
 // called from generated init() blocks so that user-defined exception classes
 // participate in catch-by-supertype dispatch. Re-registering a type with the
-// same parent is idempotent across init ordering.
+// same parent is idempotent across init ordering. This legacy catch registry
+// does not register Java reference descriptors: a simple parent name cannot
+// distinguish a source class from a builtin shadowed by that class. Builtins
+// register their canonical descriptors separately; generated source declarations
+// register their fully resolved superclass and interface edges.
 //
 // LIMITATION: the hierarchy is keyed by simple (unqualified) type name. Two
 // user-defined exception classes with the same simple name in different Java
@@ -102,7 +91,6 @@ func RegisterException(child, parent string) {
 	}
 	exceptionHierarchy[child] = parent
 	exceptionHierarchyMu.Unlock()
-	registerExceptionJavaType(child, parent)
 }
 
 // isSubtypeOf reports whether the exception type named child is the same as, or
@@ -375,7 +363,7 @@ func PrintStackTrace(recovered interface{}) {
 	}
 	name := throwableTypeName(recovered)
 	msg := GetMessage(recovered)
-	if msg == "" {
+	if msg == "" || StringIsNull(msg) {
 		fmt.Fprintln(os.Stderr, name)
 		return
 	}
@@ -393,24 +381,44 @@ type ThrowableBase struct {
 }
 
 type throwableState struct {
-	mu         sync.Mutex
-	suppressed []interface{}
-	cause      interface{}
+	mu               sync.Mutex
+	suppressed       []interface{}
+	cause            interface{}
+	causeInitialized bool
+	// The reference is initialized once and shared by all views/value copies.
+	messageOnce      sync.Once
+	javaMessage      *JavaString
+	canonicalMessage bool
 }
 
+// javaThrowable is a runtime-owned nominal marker. It is promoted through
+// genuine Throwable embeddings but cannot be implemented by unrelated source
+// Java methods or structural host error values from another Go package.
+func (ThrowableBase) javaThrowable() {}
+
 func (t ThrowableBase) ThrowableTypeName() string { return t.typeName }
-func (t ThrowableBase) Message() string           { return t.message }
+func (t ThrowableBase) Message() string {
+	if t.state != nil && t.state.canonicalMessage {
+		if t.state.javaMessage == nil {
+			return NullString()
+		}
+		// Native diagnostics are an output boundary; retained Java units stay intact.
+		return string(unsignedBytes(JavaStringGetBytes(t.state.javaMessage, UTF_8).Elements))
+	}
+	return t.message
+}
 
 // JavaDynamicTypeID lets every built-in Throwable value participate in the
 // descriptor-bearing reference-array ABI. The method is promoted through each
 // concrete exception and through generated subclasses that embed one.
-func (t ThrowableBase) JavaDynamicTypeID() TypeID { return TypeID(t.typeName) }
+func (t ThrowableBase) JavaDynamicTypeID() TypeID { return BuiltinThrowableTypeID(t.typeName) }
 
 func (t ThrowableBase) Error() string {
-	if t.message == "" {
+	message := t.Message()
+	if message == "" || StringIsNull(message) {
 		return t.typeName
 	}
-	return t.typeName + ": " + t.message
+	return t.typeName + ": " + message
 }
 
 func (t ThrowableBase) String() string { return t.Error() }
@@ -484,6 +492,7 @@ type ArithmeticException struct{ ThrowableBase }
 type ClassCastException struct{ ThrowableBase }
 type UnsupportedOperationException struct{ ThrowableBase }
 type IOException struct{ ThrowableBase }
+type UnsupportedEncodingException struct{ ThrowableBase }
 type NoSuchElementException struct{ ThrowableBase }
 type ConcurrentModificationException struct{ ThrowableBase }
 
@@ -494,8 +503,8 @@ func NewError(message string) Error {
 	return Error{newThrowableBase("Error", message)}
 }
 
-func NewAssertionError(message string) AssertionError {
-	return AssertionError{newThrowableBase("AssertionError", message)}
+func NewAssertionError(arguments ...any) AssertionError {
+	return NewAssertionErrorExecution(nil, arguments...)
 }
 
 func NewLinkageError(message string) LinkageError {
@@ -508,6 +517,7 @@ func NewLinkageError(message string) LinkageError {
 // initialization passes the throwable that escaped the initializer.
 func NewExceptionInInitializerError(value interface{}) ExceptionInInitializerError {
 	base := newThrowableBase("ExceptionInInitializerError", "")
+	base.state.causeInitialized = true
 	emptyNoArgMarker := false
 	if stringValue, ok := value.(string); ok {
 		emptyNoArgMarker = stringValue == ""
@@ -525,19 +535,73 @@ func NewNoClassDefFoundError(message string) NoClassDefFoundError {
 func NewNoClassDefFoundErrorWithCause(message string, cause interface{}) NoClassDefFoundError {
 	base := newThrowableBase("NoClassDefFoundError", message)
 	base.state.cause = cause
+	base.state.causeInitialized = true
 	return NoClassDefFoundError{base}
 }
 
-func NewException(message string) Exception {
-	return Exception{newThrowableBase("Exception", message)}
+// NewException implements Exception(), Exception(String), Exception(Throwable),
+// and Exception(String, Throwable). Cause storage retains the original reference.
+func NewException(arguments ...any) Exception {
+	return Exception{newExceptionConstructorBase("Exception", arguments...)}
 }
 
-func NewRuntimeException(message string) RuntimeException {
-	return RuntimeException{newThrowableBase("RuntimeException", message)}
+func newExceptionConstructorBase(name string, arguments ...any) ThrowableBase {
+	return newExceptionConstructorBaseExecution(nil, name, arguments...)
 }
 
-func NewIllegalArgumentException(message string) IllegalArgumentException {
-	return IllegalArgumentException{newThrowableBase("IllegalArgumentException", message)}
+func newExceptionConstructorBaseExecution(execution *Execution, name string, arguments ...any) ThrowableBase {
+	if execution == nil {
+		execution = NewExecution()
+	}
+	message := NullString()
+	var cause any
+	causeInitialized := false
+	switch len(arguments) {
+	case 0:
+	case 1:
+		if text, ok := arguments[0].(string); ok {
+			message = text
+		} else {
+			causeInitialized = true
+			if !javaReferenceIsNull(arguments[0]) {
+				cause = arguments[0]
+				message = exceptionCauseMessageExecution(execution, cause)
+			}
+		}
+	case 2:
+		causeInitialized = true
+		message = StringReferenceValue(arguments[0])
+		if !javaReferenceIsNull(arguments[1]) {
+			cause = arguments[1]
+		}
+	default:
+		panic(NewIllegalArgumentException("unsupported Exception constructor arity"))
+	}
+	base := newThrowableBase(name, message)
+	base.state.cause = cause
+	base.state.causeInitialized = causeInitialized
+	return base
+}
+
+// A cause-only Java constructor uses cause.toString(), including the qualified
+// name of built-in exceptions. Keep Go's legacy Error formatting separate.
+func exceptionCauseMessage(cause any) string {
+	return exceptionCauseMessageExecution(nil, cause)
+}
+
+func exceptionCauseMessageExecution(execution *Execution, cause any) string {
+	if execution == nil {
+		execution = NewExecution()
+	}
+	return StringValueOfExecution(execution, cause)
+}
+
+func NewRuntimeException(arguments ...any) RuntimeException {
+	return RuntimeException{newExceptionConstructorBase("RuntimeException", arguments...)}
+}
+
+func NewIllegalArgumentException(arguments ...any) IllegalArgumentException {
+	return IllegalArgumentException{newExceptionConstructorBase("IllegalArgumentException", arguments...)}
 }
 
 // NewIllegalArgumentExceptionWithCause mirrors the two-argument JDK
@@ -546,11 +610,12 @@ func NewIllegalArgumentException(message string) IllegalArgumentException {
 func NewIllegalArgumentExceptionWithCause(message string, cause interface{}) IllegalArgumentException {
 	base := newThrowableBase("IllegalArgumentException", message)
 	base.state.cause = cause
+	base.state.causeInitialized = true
 	return IllegalArgumentException{base}
 }
 
-func NewIllegalStateException(message string) IllegalStateException {
-	return IllegalStateException{newThrowableBase("IllegalStateException", message)}
+func NewIllegalStateException(arguments ...any) IllegalStateException {
+	return IllegalStateException{newExceptionConstructorBase("IllegalStateException", arguments...)}
 }
 
 func NewIllegalMonitorStateException(message string) IllegalMonitorStateException {
@@ -610,6 +675,7 @@ type ExecutionException struct{ ThrowableBase }
 func NewExecutionException(cause any) ExecutionException {
 	b := newThrowableBase("ExecutionException", errorMessage(cause))
 	b.state.cause = cause
+	b.state.causeInitialized = true
 	return ExecutionException{b}
 }
 
@@ -635,4 +701,78 @@ type IllegalThreadStateException struct{ ThrowableBase }
 
 func NewIllegalThreadStateException(message string) IllegalThreadStateException {
 	return IllegalThreadStateException{newThrowableBase("IllegalThreadStateException", message)}
+}
+
+func NewUnsupportedEncodingException(arguments ...any) UnsupportedEncodingException {
+	return UnsupportedEncodingException{newExceptionConstructorBase("UnsupportedEncodingException", arguments...)}
+}
+
+// throwableCauseState is promoted through generated exception subclasses while
+// keeping cause initialization separate from a cause explicitly set to null.
+func (t ThrowableBase) throwableCauseState() *throwableState { return t.state }
+
+func ThrowableInitCauseExecution(execution *Execution, primary, cause any) Throwable {
+	ReferenceRequireNonNull(primary)
+	primary = collectionObjectView(primary)
+	if override, ok := throwableInitCauseOverrides.Load(reflect.TypeOf(primary)); ok {
+		var typedCause Throwable
+		if !javaReferenceIsNull(cause) {
+			typedCause = cause.(Throwable)
+		}
+		result := override.(func(*Execution, any, Throwable) any)(execution, primary, typedCause)
+		if javaReferenceIsNull(result) {
+			return nil
+		}
+		return result.(Throwable)
+	}
+	return ThrowableInitCauseDefaultExecution(execution, primary, cause)
+}
+
+// An explicit super.initCause invokes Throwable's body without redispatching
+// the receiver's override; its result still denotes the original Java object.
+func ThrowableInitCauseDefaultExecution(execution *Execution, primary, cause any) Throwable {
+	ReferenceRequireNonNull(primary)
+	// Throwable's synchronized body holds the Java monitor even while error
+	// formatting invokes an overriding cause.toString. The state mutex is only
+	// held around state access, so reentrant Java calls remain possible.
+	guard := MonitorEnterExecution(execution, primary)
+	defer MonitorExitExecution(guard)
+	carrier, ok := primary.(interface{ throwableCauseState() *throwableState })
+	if !ok || carrier.throwableCauseState() == nil {
+		panic(NewIllegalArgumentException("throwable has no cause state"))
+	}
+	state := carrier.throwableCauseState()
+	state.mu.Lock()
+	if state.causeInitialized {
+		state.mu.Unlock()
+		referenceText := throwableHasCanonicalDiagnosticText(cause)
+		if state.canonicalMessage || referenceText {
+			panic(newJavaInitCauseRejection(execution, primary, cause, referenceText))
+		}
+		description := "a null"
+		if !javaReferenceIsNull(cause) {
+			description = StringValueOfExecution(execution, cause)
+		}
+		panic(NewIllegalStateException("Can't overwrite cause with "+description, primary))
+	}
+	if other, ok := cause.(interface{ throwableCauseState() *throwableState }); ok && other.throwableCauseState() == state {
+		state.mu.Unlock()
+		panic(NewIllegalArgumentExceptionWithCause("Self-causation not permitted", primary))
+	}
+	if javaReferenceIsNull(cause) {
+		cause = nil
+	}
+	state.cause = cause
+	state.causeInitialized = true
+	state.mu.Unlock()
+	return primary.(Throwable)
+}
+
+// Only compiler-resolved overrides of Throwable.initCause(Throwable) are
+// registered. Go's erased Throwable parameter alone cannot distinguish a
+// source overload initCause(Exception). Keys are types, never object instances.
+var throwableInitCauseOverrides sync.Map
+
+func RegisterThrowableInitCause(prototype any, invoke func(*Execution, any, Throwable) any) {
+	throwableInitCauseOverrides.Store(reflect.TypeOf(prototype), invoke)
 }

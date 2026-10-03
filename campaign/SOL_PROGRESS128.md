@@ -1,0 +1,15 @@
+# Sol campaign checkpoint 128
+
+Publication parent: `21db351892d1eca54fedb16d729b49778debd206`. The Sol-only campaign remains active. Latest accepted full round: 18. Full CI and full-round acceptance remain false.
+
+Enum values now return a fresh reified ReferenceArray for each call, copying the original constant singletons in declaration order. Synthetic values resolution follows the actual declaration and collision-safe allocated symbol, including implicitly public interface enums, nested packages, static imports and evaluated expression qualifiers. Existing backing storage, constructor/name/ordinal/valueOf behavior and class-initialization machinery are preserved. Recursive calls before backing storage initialization throw the matching JVM enhanced NPE with preserved cleanup.
+
+Inherited enum text uses the canonical Java String protocol in the original caller Execution. Source overrides retain virtual dispatch; enum-body and anonymous constant-body super calls retain their actual nonvirtual targets. No runtime text, Object admission, generic, Map, monitor, Thread or atomic code changes are included.
+
+The complete original State application and eight additive full applications pass actual JDK21/strict Go parity. Coverage includes fresh/mutable/reified arrays and aliases, descriptors/store failures, constant identity, cloning, initialization and failures, text overrides/null/default/super behavior, source/binder/namespace collisions, current thread/local context and held monitors. All original Java and complete JVM expectations remain unchanged.
+
+Coordinator verification: 295 selections / 286 distinct compiler parents across 52 bounded gates, 605 runtime and 17 symbol parents under race, zero failures/skips and zero lint issues. Independently audited receipts retain 307 generated/build files, 48 module pairs, and actual nested Go race/CPU limits. All previously published eleven CI leaves and protected enum/Floating assertions remain exact. The old StringConversionUsesEnumName shape assertion remains a pre-existing failure and is not claimed green.
+
+The unchanged full Gson application retains all123 source hashes and frozen inputs. All18 binary/source-closure JVM observations equal checkpoint126. Fresh strict transpilation passes; generated all-package race compilation fails with exactly the previous errors: ConcurrentMap, generic interface T, URL/URI, InetAddress, Comparator, AbstractList, RandomAccess and AccessibleObject. Entry build and Go execution are not reached. New service work is not substituted for dependency implementation.
+
+Evidence is pinned in campaign-state.json under the immutable3370 candidate and458 implementation hashes. Continue full-program constructor/generic receiver hygiene, canonical exception constructors/hierarchy, immutable emptySet, URI services and CI regressions. Joining optimizations are frozen separately with actual JVM comparison, empty-join regression and profile-label erratum; they await joined root verification. Preserve all full application failures and use only Sol agents.

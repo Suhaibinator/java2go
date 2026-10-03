@@ -139,6 +139,19 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 		case "package_declaration":
 			filePackage = node.NamedChild(0).Content(source)
 		case "import_declaration":
+			// The table binds individual imported names. On-demand imports do
+			// not import their owner as a type (Math.* does not import Math).
+			// Their declarations remain in the AST for on-demand resolution.
+			// Static members have separate type and value namespaces; resolve them
+			// from their retained declarations once their owner symbols are known.
+			wildcard, static := false, false
+			for index := 0; index < int(node.ChildCount()); index++ {
+				wildcard = wildcard || node.Child(index).Content(source) == "*"
+				static = static || node.Child(index).Type() == "static"
+			}
+			if wildcard || static {
+				continue
+			}
 			importedItem := node.NamedChild(0).ChildByFieldName("name").Content(source)
 			importPath := node.NamedChild(0).ChildByFieldName("scope").Content(source)
 
@@ -204,7 +217,7 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 	scope := &ClassScope{
 		Class: &Definition{
 			OriginalName:    className,
-			Name:            HandleExportStatus(public, className),
+			Name:            classIdentifier(public, className),
 			IsFinal:         isFinal,
 			DeclarationNode: root,
 		},
@@ -272,13 +285,18 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 
 			var args []*sitter.Node
 			if argsNode := node.ChildByFieldName("arguments"); argsNode != nil {
-				args = nodeutil.NamedChildrenOf(argsNode)
+				args = nodeutil.SemanticNamedChildrenOf(argsNode)
 			}
 
 			scope.EnumConstants = append(scope.EnumConstants, EnumConstant{
 				Name:      constName,
 				Arguments: args,
 				Body:      node.ChildByFieldName("body"),
+				Field: &Definition{
+					Name: ExportedGoBinding(constName), OriginalName: constName,
+					OriginalType: className, Type: className,
+					IsStatic: true, IsFinal: true, DeclarationNode: node,
+				},
 			})
 		case "enum_body_declarations":
 			// Parse the methods and constructors inside the enum
@@ -301,9 +319,17 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 		baseType := "*" + scope.Class.Name
 		scope.Methods = append(scope.Methods,
 			&Definition{
+				Name:           HandleExportStatus(true, scope.Class.Name+"Values"),
+				OriginalName:   "values",
+				OriginalType:   scope.Class.OriginalName + "[]",
+				Type:           "[]" + baseType,
+				IsStatic:       true,
+				RuntimeDefault: true,
+			},
+			&Definition{
 				Name:         HandleExportStatus(true, "name"),
 				OriginalName: "name",
-				OriginalType: "String",
+				OriginalType: "java.lang.String",
 				Type:         "string",
 			},
 			&Definition{
@@ -327,27 +353,45 @@ func parseClassScopeWithParentTypeParams(root *sitter.Node, source []byte, paren
 			&Definition{
 				Name:         scope.Class.Name + "ValueOf",
 				OriginalName: "valueOf",
+				OriginalType: scope.Class.OriginalName,
 				Type:         baseType,
 				IsStatic:     true,
 				Parameters: []*Definition{{
 					Name:         "name",
 					OriginalName: "name",
 					Type:         "string",
-					OriginalType: "String",
+					OriginalType: "java.lang.String",
 				}},
 			},
 		)
 	}
 
+	if root.Type() == "annotation_type_declaration" {
+		scope.Methods = append(scope.Methods, &Definition{Name: "AnnotationType", OriginalName: "annotationType", OriginalType: "java.lang.Class", Type: "*Class", Parameters: []*Definition{}})
+	}
 	discoverTrivialArrayAccessors(scope, source)
 
 	return scope
 }
 
+// ParseMethodDefinition parses an actual method declaration in its declaring
+// class's lexical type context, including parameter and local definitions. The
+// declaring scope is not modified; callers can lower a constant-specific body
+// without borrowing the enum-level method's locals or constructing a Java AST.
+func ParseMethodDefinition(node *sitter.Node, source []byte, declaring *ClassScope) *Definition {
+	if node == nil || node.Type() != "method_declaration" || declaring == nil {
+		return nil
+	}
+	scope := *declaring
+	scope.Methods = nil
+	parseClassMember(&scope, node, source)
+	return scope.Methods[0]
+}
+
 // parseClassMember parses a single class member (field, method, constructor, or nested class)
 func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 	switch node.Type() {
-	case "field_declaration":
+	case "field_declaration", "constant_declaration":
 		var public bool
 		var isStatic bool
 		var isFinal bool
@@ -355,7 +399,9 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		// Rename the type based on the public/static rules
 		if node.NamedChild(0).Type() == "modifiers" {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
-				if modifier.Type() == "public" {
+				// Protected members are reachable from subclasses in other Java packages.
+				// Export their Go ABI while preserving Java visibility in the declaration AST.
+				if modifier.Type() == "public" || modifier.Type() == "protected" {
 					public = true
 				}
 				if modifier.Type() == "static" {
@@ -403,7 +449,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 				DeclarationNode: node,
 			})
 		}
-	case "method_declaration", "abstract_method_declaration", "constructor_declaration":
+	case "method_declaration", "abstract_method_declaration", "constructor_declaration", "annotation_type_element_declaration":
 		var public bool
 		var isStatic bool
 		var isPrivate bool
@@ -415,7 +461,9 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		// Rename the type based on the public/static rules
 		if node.NamedChild(0).Type() == "modifiers" {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
-				if modifier.Type() == "public" {
+				// Protected members are reachable from subclasses in other Java packages.
+				// Export their Go ABI while preserving Java visibility in the declaration AST.
+				if modifier.Type() == "public" || modifier.Type() == "protected" {
 					public = true
 				}
 				if modifier.Type() == "static" {
@@ -452,7 +500,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 			DeclarationNode: node,
 		}
 
-		if node.Type() == "method_declaration" {
+		if node.Type() == "method_declaration" || node.Type() == "annotation_type_element_declaration" {
 			declaration.Type = nodeToStr(astutil.ParseTypeWithTypeParams(node.ChildByFieldName("type"), source, combinedTypeParamNames))
 			declaration.OriginalType = node.ChildByFieldName("type").Content(source)
 			declaration.DirectTypeParameter = DirectTypeParamForJavaType(declaration.OriginalType, combinedTypeParams)
@@ -471,20 +519,14 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 
 		// Parse the parameters
 
-		for _, parameter := range nodeutil.NamedChildrenOf(node.ChildByFieldName("parameters")) {
+		var annotationParameters []*sitter.Node
+		if parameters := node.ChildByFieldName("parameters"); parameters != nil {
+			annotationParameters = nodeutil.SemanticNamedChildrenOf(parameters)
+		}
+		for _, parameter := range annotationParameters {
 
-			var paramName string
-			var paramType *sitter.Node
-
-			// If this is a spread parameter, then it will be in the format:
-			// (type) (variable_declarator name: (name))
-			if parameter.Type() == "spread_parameter" {
-				paramName = parameter.NamedChild(1).ChildByFieldName("name").Content(source)
-				paramType = parameter.NamedChild(0)
-			} else {
-				paramName = parameter.ChildByFieldName("name").Content(source)
-				paramType = parameter.ChildByFieldName("type")
-			}
+			paramType, nameNode := nodeutil.JavaParameterNodes(parameter)
+			paramName := nameNode.Content(source)
 
 			declaration.Parameters = append(declaration.Parameters, &Definition{
 				Name:         paramName,
@@ -555,7 +597,7 @@ func injectRecordMembers(scope *ClassScope, root *sitter.Node, source []byte) {
 		goType   string
 	}
 	var components []component
-	for _, param := range nodeutil.NamedChildrenOf(paramsNode) {
+	for _, param := range nodeutil.SemanticNamedChildrenOf(paramsNode) {
 		if param.Type() != "formal_parameter" {
 			continue
 		}
@@ -736,21 +778,11 @@ func parseScope(root *sitter.Node, source []byte, typeParams []TypeParam) *Defin
 			typeStr := nodeToStr(astutil.ParseTypeWithTypeParams(typeNode, source, typeParamNames))
 			originalType := typeNode.Content(source)
 
-			if declarator.NamedChildCount() == 1 {
-				nameNode := declarator.NamedChild(0)
-				def.Children = append(def.Children, &Definition{
-					OriginalName:          nameNode.Content(source),
-					Name:                  nameNode.Content(source),
-					OriginalType:          originalType,
-					DirectTypeParameter:   DirectTypeParamForJavaType(originalType, typeParams),
-					TypeParameterBindings: typeParamBindings,
-					Type:                  typeStr,
-				})
-				continue
-			}
-
-			for ind := 0; ind < int(declarator.NamedChildCount())-1; ind += 2 {
-				nameNode := declarator.NamedChild(ind)
+			for _, declarator := range nodeutil.VariableDeclarators(node) {
+				nameNode := declarator.ChildByFieldName("name")
+				if nameNode == nil {
+					continue
+				}
 				def.Children = append(def.Children, &Definition{
 					OriginalName:          nameNode.Content(source),
 					Name:                  nameNode.Content(source),

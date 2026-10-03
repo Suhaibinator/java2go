@@ -1,0 +1,50 @@
+[
+  {
+    "name": "seed17-repeat1",
+    "args": [
+      "17"
+    ],
+    "stdout": "17:21:26:20:3:10:true:body\n",
+    "stderr": ""
+  },
+  {
+    "name": "seed17-repeat2",
+    "args": [
+      "17"
+    ],
+    "stdout": "17:21:26:20:3:10:true:body\n",
+    "stderr": ""
+  },
+  {
+    "name": "seed41-repeat1",
+    "args": [
+      "41"
+    ],
+    "stdout": "41:45:50:44:3:10:true:body\n",
+    "stderr": ""
+  },
+  {
+    "name": "seed41-repeat2",
+    "args": [
+      "41"
+    ],
+    "stdout": "41:45:50:44:3:10:true:body\n",
+    "stderr": ""
+  },
+  {
+    "name": "seed97-repeat1",
+    "args": [
+      "97"
+    ],
+    "stdout": "97:101:106:100:3:10:true:body\n",
+    "stderr": ""
+  },
+  {
+    "name": "seed97-repeat2",
+    "args": [
+      "97"
+    ],
+    "stdout": "97:101:106:100:3:10:true:body\n",
+    "stderr": ""
+  }
+]

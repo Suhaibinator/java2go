@@ -40,15 +40,32 @@ public class GenericTypedCastProgram {
         Box<First> original = new Box<>(new First(7));
         Object erased = original;
         Box<First> restored = (Box<First>) erased;
-        return "value=" + restored.value.number();
+        Object missing = null;
+        Box<First> absent = (Box<First>) missing;
+        Object wrong = "bad";
+        boolean rejected = false;
+        try { ((Box<First>) wrong).value.number(); }
+        catch (ClassCastException expected) { rejected = true; }
+        return "value=" + restored.value.number() + ":" + (original == restored) + ":" + (absent == null) + ":" + rejected;
     }
 }
 `
-	assertGeneratedLocalConstructorResult(t, source, "value=7")
+	want := campaignRuntimeJavaOracle(t, "GenericTypedCastProgram", source)
+	if want != "value=7:true:true:true" {
+		t.Fatalf("unexpected JVM cast semantics: %q", want)
+	}
+	assertGeneratedLocalConstructorResult(t, source, want)
 
 	generated := normalizeSpaces(renderGoFileFromJava(t, source))
-	if !strings.Contains(generated, "restored := any(erased).(") {
-		t.Fatalf("Object-to-parameterized cast lost its runtime check:\n%s", generated)
+	for _, required := range []string{
+		"restored := func(value any) *GenericTypedCastProgrambox[*GenericTypedCastProgramfirst] {",
+		"if stdjava.JavaReferenceEqual(value, nil) { return nil }",
+		"return value.(*GenericTypedCastProgrambox[*GenericTypedCastProgramfirst])",
+		"}(erased)",
+	} {
+		if !strings.Contains(generated, required) {
+			t.Fatalf("Object-to-parameterized cast lost nullable runtime check %q:\n%s", required, generated)
+		}
 	}
 }
 

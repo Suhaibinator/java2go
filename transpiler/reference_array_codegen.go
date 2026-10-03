@@ -16,9 +16,27 @@ const (
 	generatedObjectViewMethod  = "Java2goReferenceView"
 )
 
+// Source descriptor methods are emitted even for leaves without ObjectInfo.
+// Reserve exactly that selector independently of hierarchy carrier eligibility.
+func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx Ctx) bool {
+	if iterationProtocolReservedSelector(name) {
+		return true
+	}
+	if scope != nil && scope.IsEnum && name == "JavaEnumMetadata" {
+		return true
+	}
+	if scope != nil && !scope.IsInterface && (name == "JavaDynamicTypeID" || name == generatedObjectCloneMethod) {
+		return true
+	}
+	return referenceIdentityReservedSelector(name) && classNeedsReferenceIdentity(scope, ctx)
+}
+
 func referenceIdentityReservedSelector(name string) bool {
+	if iterationProtocolReservedSelector(name) {
+		return true
+	}
 	switch name {
-	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod:
+	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod, generatedObjectCloneMethod:
 		return true
 	default:
 		return false
@@ -105,17 +123,26 @@ func sourceReferenceTypeIDExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	if scope == nil || scope.Class == nil {
 		return nil, false
 	}
-	id := javaClassBinaryName(scope)
-	for _, local := range ctx.localClasses {
-		if local != nil && local.scope == scope && local.dynamicTypeID != "" {
-			id = local.dynamicTypeID
-			break
-		}
-	}
+	id := sourceClassRuntimeTypeID(scope, ctx)
 	if id == "" {
 		return nil, false
 	}
 	return javaTypeIDLiteral(id, ctx), true
+}
+
+// sourceClassRuntimeTypeID keeps local-class casts, hierarchy edges and view
+// providers on the same hoisted nominal identity. Named classes use their
+// ordinary binary name; the local registry owns synthesized runtime IDs.
+func sourceClassRuntimeTypeID(scope *symbol.ClassScope, ctx Ctx) string {
+	if scope == nil || scope.Class == nil {
+		return ""
+	}
+	for _, local := range ctx.localClasses {
+		if local != nil && local.scope == scope && local.dynamicTypeID != "" {
+			return local.dynamicTypeID
+		}
+	}
+	return javaClassBinaryName(scope)
 }
 
 func javaPrimitiveTypeIDExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
@@ -146,40 +173,53 @@ func javaPrimitiveTypeIDExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 // the caller's inferred instantiation in its static descriptor. Java instead
 // uses the first declared bound, or Object when T is unbounded.
 func javaTypeParameterErasure(javaType string, ctx Ctx) (string, bool) {
-	base, arguments := parseJavaTypeString(strings.TrimSpace(javaType))
-	name := stripJavaQualifier(base)
-	if name == "" || len(arguments) != 0 {
+	binding, found := resolveReferenceTypeParameter(symbol.JavaType{Original: strings.TrimSpace(javaType)}, ctx)
+	if !found {
 		return "", false
 	}
+	// Inferred declaration references carry emitted names, while bounds retain
+	// captured declaration pointers. Resolve each step in its declaration's
+	// context rather than interpreting a bound's source spelling in the caller.
+	seen := map[typeParameterIdentityKey]bool{}
+	for {
+		identity := identityKeyForTypeParameter(binding.parameter)
+		if seen[identity] {
+			// Legal Java bounds are acyclic. Keep incomplete symbols finite.
+			return "java.lang.Object", true
+		}
+		seen[identity] = true
+		if len(binding.parameter.Bounds) == 0 || strings.TrimSpace(binding.parameter.Bounds[0].Original) == "" {
+			return "java.lang.Object", true
+		}
+		bound := binding.parameter.Bounds[0]
+		if next, boundParameter := resolveReferenceTypeParameter(bound, binding.context); boundParameter {
+			binding = next
+			continue
+		}
+		return qualifyDeclaredReferenceType(bound, binding.context), true
+	}
+}
 
-	find := func(parameters []symbol.TypeParam) (string, bool) {
-		for _, parameter := range parameters {
-			if parameter.Name != name {
-				continue
+// javaSourceTypeDescriptorExpr is the source-syntax entry point. A bare name
+// in a cast denotes the nearest lexical Java binder, not an outer binder whose
+// emitted Go alias happens to have that spelling. Inferred declaration types
+// instead call javaTypeDescriptorExpr directly with their emitted identities.
+func javaSourceTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
+	component, rank := javaArrayTypeParts(javaType)
+	base, arguments := parseJavaTypeString(component)
+	if len(arguments) == 0 && !strings.Contains(base, ".") {
+		bindings := referenceTypeParameterBindings(ctx)
+		for index := len(bindings) - 1; index >= 0; index-- {
+			parameter := bindings[index].parameter
+			if parameter.Name == base {
+				return javaTypeDescriptorExpr(parameter.EmittedName()+strings.Repeat("[]", rank), ctx)
 			}
-			if len(parameter.Bounds) == 0 || strings.TrimSpace(parameter.Bounds[0].Original) == "" {
-				return "Object", true
-			}
-			return strings.TrimSpace(parameter.Bounds[0].Original), true
-		}
-		return "", false
-	}
-
-	// Method parameters shadow synthetic/raw parameters and class parameters.
-	if ctx.localScope != nil {
-		if erased, ok := find(ctx.localScope.TypeParameters); ok {
-			return erased, true
 		}
 	}
-	if erased, ok := find(ctx.syntheticTypeParameters); ok {
-		return erased, true
-	}
-	if ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
-		if erased, ok := find(ctx.currentClass.TypeParameters); ok {
-			return erased, true
-		}
-	}
-	return "", false
+	// Qualify source classes before entering the emitted-name path: a class
+	// may itself have the same spelling as another declaration's emitted alias.
+	nominal := qualifyDeclaredNominalReference(base, ctx)
+	return javaTypeDescriptorExpr(nominal+strings.Repeat("[]", rank), ctx)
 }
 
 // javaTypeDescriptorExpr returns the nominal runtime descriptor for a Java
@@ -209,9 +249,33 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 		return javaTypeDescriptorExpr(erased, ctx)
 	}
 	base, _ := parseJavaTypeString(javaType)
+	if canonicalMapEntryOwner(base, ctx) != "" {
+		return stdjavaQualifiedExpr("JavaMapEntryTypeID", ctx), true
+	}
 	baseName := stripJavaQualifier(base)
 	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
 		return source, true
+	}
+	if isBuiltinEnum(javaType, ctx) {
+		return stdjavaQualifiedExpr("EnumTypeID", ctx), true
+	}
+	if isExceptionJavaType(ctx, base) {
+		return stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(base)}), true
+	}
+	if owner, registered := canonicalIntrinsicOwner(base, ctx); registered {
+		if owner == "java.util.Locale.Category" {
+			return javaTypeIDLiteral("java.util.Locale$Category", ctx), true
+		}
+		return javaTypeIDLiteral(owner, ctx), true
+	}
+	if constant := characterIONominalConstant(javaType, ctx); constant != "" {
+		return stdjavaQualifiedExpr(constant, ctx), true
+	}
+	if protocol := builtinReflectProtocol(javaType, ctx); protocol != "" {
+		return stdjavaQualifiedExpr(reflectProtocolConstants[protocol], ctx), true
+	}
+	if base == "Class" || base == "java.lang.Class" {
+		return stdjavaQualifiedExpr("JavaClassTypeID", ctx), true
 	}
 	builtin := map[string]string{
 		"Object": "ObjectTypeID", "String": "StringTypeID",
@@ -292,61 +356,35 @@ func classHasSyntheticSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 			break
 		}
 	}
-	for _, owner := range allSourceClassScopes() {
-		if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil {
-			continue
-		}
-		file := findFileScopeForClassScope(owner)
-		if file == nil {
-			continue
-		}
-		ownerCtx := Ctx{currentFile: file, currentClass: owner}
+	ownership := sourceOwnershipIndex(ctx)
+	matches := func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
+		ownerCtx := Ctx{currentFile: file, currentClass: owner, sourceOwnership: ownership}
 		if activeLocalTarget {
 			// A method-local target exists only in the active lowering registry.
-			// Preserve that map solely while scanning the same source file; carrying
-			// it into another file could hijack an unrelated same-simple-name type.
+			// Preserve it solely for source events from that same source file.
 			if file != ctx.currentFile {
-				continue
+				return false
 			}
 			ownerCtx = ctx.Clone()
 			ownerCtx.currentFile = file
 		}
-		var visit func(*sitter.Node) bool
-		visit = func(node *sitter.Node) bool {
-			if node == nil {
-				return false
-			}
-			var supertype *sitter.Node
-			switch node.Type() {
-			case "object_creation_expression":
-				for _, child := range nodeutil.NamedChildrenOf(node) {
-					if child.Type() == "class_body" {
-						supertype = node.ChildByFieldName("type")
-						break
-					}
-				}
-			case "class_declaration":
-				if superclass := node.ChildByFieldName("superclass"); superclass != nil {
-					types := collectTypeNodes(superclass)
-					if len(types) > 0 {
-						supertype = types[0]
-					}
-				}
-			}
-			if supertype != nil {
-				base, _ := parseJavaTypeString(supertype.Content(file.Source))
-				if resolveClassScopeByQualifiedName(ownerCtx, base) == target {
-					return true
-				}
-			}
-			for _, child := range nodeutil.NamedChildrenOf(node) {
-				if visit(child) {
-					return true
-				}
-			}
+		base, _ := parseJavaTypeString(supertype.Content(file.Source))
+		return resolveClassScopeByQualifiedName(ownerCtx, base) == target
+	}
+	inventory := resolvedSourceInventory(ctx)
+	if inventory == nil {
+		// Fileless and standalone queries retain their original early exit.
+		return visitSyntheticSuperclassSources(matches, ctx)
+	}
+	if !inventory.syntheticReady {
+		visitSyntheticSuperclassSources(func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
+			inventory.syntheticEvents = append(inventory.syntheticEvents, callableSubclassSourceEvent{owner: owner, file: file, supertype: supertype})
 			return false
-		}
-		if visit(owner.Class.DeclarationNode) {
+		}, ctx)
+		inventory.syntheticReady = true
+	}
+	for _, event := range inventory.syntheticEvents {
+		if matches(event.owner, event.file, event.supertype) {
 			return true
 		}
 	}
@@ -387,8 +425,11 @@ func addReferenceArrayDefinitionSeeds(definition *symbol.Definition, owner *symb
 		return
 	}
 	addReferenceArrayTypeSeed(definition.OriginalType, owner, ctx, seeds, objectComponent)
-	for _, parameter := range definition.Parameters {
+	for index, parameter := range definition.Parameters {
 		addReferenceArrayDefinitionSeeds(parameter, owner, ctx, seeds, objectComponent)
+		if executionParameterIsVariadic(definition, index) {
+			addReferenceArrayTypeSeed(parameter.OriginalType+"[]", owner, ctx, seeds, objectComponent)
+		}
 	}
 	for _, child := range definition.Children {
 		addReferenceArrayDefinitionSeeds(child, owner, ctx, seeds, objectComponent)
@@ -479,6 +520,7 @@ func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 	relevant := map[*symbol.ClassScope]struct{}{}
 	objectErasure := false
 	for _, scope := range allScopes {
+		addMonitorIdentitySeeds(scope, ctx, relevant, &objectErasure)
 		for _, field := range scope.Fields {
 			fieldCtx := ctx.Clone()
 			fieldCtx.currentClass = scope
@@ -487,6 +529,17 @@ func referenceIdentityScopes(ctx Ctx) map[*symbol.ClassScope]struct{} {
 			addDirectOwnerTypeParameterIdentitySeed(field, scope, fieldCtx, relevant, &objectErasure)
 		}
 		for _, method := range scope.Methods {
+			// A Throwable override can return a declaring superclass view of
+			// its receiver through the runtime's erased callback. Preserve the
+			// allocation identity (and synchronized-body monitor) across views.
+			if isThrowableMessageOverride(method, scope, ctx) ||
+				isThrowableTextOverride(method, scope, "toString", ctx) ||
+				isThrowableTextOverride(method, scope, "getLocalizedMessage", ctx) {
+				relevant[scope] = struct{}{}
+			}
+			if isThrowableInitCauseOverride(method, scope, ctx) && isUserDefinedExceptionClass(ctx, scope) {
+				relevant[scope] = struct{}{}
+			}
 			// Concrete covariant returns expose superclass pointer views of the
 			// same allocation. Install identity metadata for their result
 			// hierarchy so == remains Java reference equality across views.
@@ -584,7 +637,19 @@ func classNeedsReferenceIdentity(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil {
 		return false
 	}
-	if sourceUsesReflection() {
+	// Any source hierarchy can reach Object text through an erased parameter,
+	// return, or concatenation. Keep its most-derived view available without
+	// requiring a syntactic reflection trigger. Leaf descriptors below do not
+	// require an ObjectInfo allocation.
+	if sourceHierarchyUsesMostDerived(scope, ctx) {
+		return true
+	}
+	// Throwable's inherited toString observes the most-derived class even when
+	// source code never calls getClass or overrides any Throwable method.
+	if sourceInheritsThrowable(scope, ctx) {
+		return true
+	}
+	if sourceUsesReflection() || sourceImplementsReflectType(scope, ctx) || sourceImplementsCharSequence(scope, ctx) || len(sourceCharacterIOProtocols(scope, ctx)) > 0 {
 		return true
 	}
 	_, ok := referenceIdentityScopes(ctx)[scope]
@@ -623,7 +688,7 @@ func sourceHierarchyUsesMostDerived(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil || scope.IsInterface || scope.IsEnum {
 		return false
 	}
-	return resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx)
+	return resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx) || len(sourceNativeFunctionalContracts(scope, ctx)) != 0
 }
 
 func classNeedsReferenceObjectInfo(scope *symbol.ClassScope, ctx Ctx) bool {
@@ -662,7 +727,7 @@ func constructorObjectInfoInitStmt(scope *symbol.ClassScope, receiverName string
 }
 
 func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
-	if scope == nil || scope.Class == nil || !classNeedsReferenceIdentity(scope, ctx) {
+	if scope == nil || scope.Class == nil {
 		return nil
 	}
 	id := javaClassBinaryName(scope)
@@ -670,8 +735,16 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		return nil
 	}
 	args := []ast.Expr{javaTypeIDLiteral(id, ctx)}
-	if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
+	if scope.IsEnum {
+		args = append(args, stdjavaQualifiedExpr("EnumTypeID", ctx))
+	} else if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(parent), ctx))
+	} else if isExceptionJavaType(classScopeCtx(scope, ctx), scope.Superclass) {
+		args = append(args, stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(scope.Superclass)}))
+	} else if constant := characterIONominalConstant(scope.Superclass, classScopeCtx(scope, ctx)); constant != "" {
+		args = append(args, stdjavaQualifiedExpr(constant, ctx))
+	} else if constant := abstractCollectionSuperclassConstant(scope.Superclass, classScopeCtx(scope, ctx)); constant != "" {
+		args = append(args, stdjavaQualifiedExpr(constant, ctx))
 	} else {
 		args = append(args, stdjavaQualifiedExpr("ObjectTypeID", ctx))
 	}
@@ -679,8 +752,39 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(implementedScope), ctx))
 	}
 
+	args = append(args, sourceIterationInterfaceIDs(scope, ctx)...)
+	args = append(args, sourceFunctionInterfaceIDs(scope, ctx)...)
+	if sourceDirectCloneable(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr("CloneableTypeID", ctx))
+	}
+	args = append(args, sourceMapEntryInterfaceIDs(scope, ctx)...)
+	args = append(args, sourceAbstractCollectionInterfaceIDs(scope, ctx)...)
+	if sourceDirectCharSequence(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr("CharSequenceTypeID", ctx))
+	}
+	for _, protocol := range sourceDirectReflectProtocols(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr(reflectProtocolConstants[protocol], ctx))
+	}
+	for _, protocol := range sourceCharacterIOProtocols(scope, ctx) {
+		if constant := characterIONominalConstants[protocol]; constant != "" {
+			args = append(args, stdjavaQualifiedExpr(constant, ctx))
+		}
+	}
+
 	name := collisionSafeExecutionIdentifier("__java2goReferenceTypeRegistration"+scope.Class.Name, scope)
-	statements := []ast.Stmt{&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)}}
+	// Source origin is independent of reflection detail and ObjectInfo storage.
+	// Leaf objects expose a dynamic descriptor without allocating an identity
+	// carrier; runtime text fallback still needs to distinguish them from Go values.
+	statements := []ast.Stmt{
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(id, ctx))},
+	}
+	if scope.IsEnum {
+		statements = append(statements, enumConstantRegistrationStmts(scope, ctx)...)
+	}
+	if text := sourceToStringRegistration(scope, id, ctx); text != nil {
+		statements = append(statements, text)
+	}
 	if metadata := sourceClassMetadataStmt(scope, ctx); metadata != nil {
 		statements = append(statements, metadata)
 	}
@@ -737,21 +841,18 @@ func sourceClassViewExpr(scope, requested *symbol.ClassScope, receiver ast.Expr,
 		if parent == nil || parent.Class == nil {
 			return nil
 		}
-		view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: parent.Class.Name}}
+		view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(current, ctx)}}
 		current = parent
 	}
 	return view
 }
 
 func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.Decl {
-	if scope == nil || scope.Class == nil || scope.IsInterface || !classNeedsReferenceIdentity(scope, ctx) {
+	if scope == nil || scope.Class == nil || scope.IsInterface {
 		return nil
 	}
 	if scope.IsEnum {
-		if declaration := fixedJavaDynamicTypeDecl(scope.Class.Name, javaClassBinaryName(scope), ctx); declaration != nil {
-			return []ast.Decl{declaration}
-		}
-		return nil
+		return enumReferenceIdentityDecls(scope, ctx)
 	}
 	receiverName := ShortName(scope.Class.Name)
 	receiverType := &ast.StarExpr{X: instantiateGenericType(scope.Class.Name, typeParamExprs(scope.GoTypeParameterNames()))}
@@ -806,6 +907,9 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 		for _, interfaceScope := range transitiveImplementedInterfaceScopes(current, ctx) {
 			appendCase(javaClassBinaryName(interfaceScope), receiverExpr)
 		}
+	}
+	for _, contract := range sourceNativeFunctionalContracts(scope, ctx) {
+		appendCase("java.util.function."+contract.family, sourceNativeFunctionalViewExpr(scope, contract, receiverExpr, ctx))
 	}
 	cases = append(cases, &ast.CaseClause{Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}}})
 	viewMethod := &ast.FuncDecl{
@@ -868,13 +972,44 @@ func syntheticReferenceRegistrationDecl(
 	}
 	args := []ast.Expr{javaTypeIDLiteral(dynamicID, ctx), superID}
 	args = append(args, interfaceIDs...)
+	args = append(args, sourceIterationInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
+	args = append(args, sourceFunctionInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
+	args = append(args, sourceMapEntryInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
+	if sourceDirectCloneable(syntheticSourceTextScope(structName, ctx), ctx) {
+		args = append(args, stdjavaQualifiedExpr("CloneableTypeID", ctx))
+	}
 	registrationName := "__java2goSyntheticTypeRegistration" + sanitizeGoIdent(structName)
+	statements := []ast.Stmt{
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
+		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(dynamicID, ctx))},
+	}
+	if text := sourceToStringRegistration(syntheticSourceTextScope(structName, ctx), dynamicID, ctx); text != nil {
+		statements = append(statements, text)
+	}
+	if scope := syntheticSourceTextScope(structName, ctx); scope != nil {
+		if scope.Class != nil && scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Type() == "object_creation_expression" {
+			if setter := generateClassSelfSetter(classScopeCtx(scope, ctx)); setter != nil {
+				ctx.addHoistedDecl(setter)
+			}
+		}
+		for _, copier := range generateObjectCloneDecls(classScopeCtx(scope, ctx)) {
+			ctx.addHoistedDecl(copier)
+		}
+		for _, accessor := range sourceReflectionFieldAccessors(scope, classScopeCtx(scope, ctx)) {
+			ctx.addHoistedDecl(accessor)
+		}
+		for _, accessor := range volatileFieldAccessorDecls(scope, classScopeCtx(scope, ctx)) {
+			ctx.addHoistedDecl(accessor)
+		}
+		if metadata := sourceClassMetadataForTypeIDStmt(scope, dynamicID, classScopeCtx(scope, ctx)); metadata != nil {
+			statements = append(statements, metadata)
+		}
+	}
+
+	statements = append(statements, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}})
 	initializer := &ast.CallExpr{Fun: &ast.FuncLit{
 		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.Ident{Name: "bool"}}}}},
-		Body: &ast.BlockStmt{List: []ast.Stmt{
-			&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
-			&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "true"}}},
-		}},
+		Body: &ast.BlockStmt{List: statements},
 	}}
 	return &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{
 		Names:  []*ast.Ident{{Name: registrationName}},
@@ -882,19 +1017,20 @@ func syntheticReferenceRegistrationDecl(
 	}}}
 }
 
-// syntheticHierarchicalReferenceIdentityDecls gives a hoisted local concrete
-// subclass its own nominal runtime identity while exposing each embedded source
-// superclass view. The hierarchy root owns ObjectInfo; the local child supplies
-// the most-derived descriptor and view provider captured by that root.
+// syntheticHierarchicalReferenceIdentityDecls gives a hoisted hierarchy member
+// its own nominal runtime identity and each embedded source superclass view.
+// A nil superScope represents a local hierarchy root, which owns ObjectInfo;
+// every member supplies the most-derived provider captured by that root.
 func syntheticHierarchicalReferenceIdentityDecls(
 	structName string,
 	dynamicID string,
+	scope *symbol.ClassScope,
 	superScope *symbol.ClassScope,
 	directInterfaces []*symbol.ClassScope,
 	typeParams []string,
 	ctx Ctx,
 ) []ast.Decl {
-	if structName == "" || dynamicID == "" || superScope == nil || superScope.Class == nil {
+	if structName == "" || dynamicID == "" || (superScope != nil && superScope.Class == nil) {
 		return nil
 	}
 
@@ -942,20 +1078,23 @@ func syntheticHierarchicalReferenceIdentityDecls(
 		}
 	}
 
-	view := ast.Expr(&ast.SelectorExpr{X: receiverExpr, Sel: &ast.Ident{Name: superScope.Class.Name}})
+	var view ast.Expr
+	if superScope != nil {
+		view = &ast.SelectorExpr{X: receiverExpr, Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(scope, ctx)}}
+	}
 	seenScopes := map[*symbol.ClassScope]struct{}{}
 	for current := superScope; current != nil && current.Class != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
 		if _, duplicate := seenScopes[current]; duplicate {
 			break
 		}
 		seenScopes[current] = struct{}{}
-		appendCase(javaClassBinaryName(current), view)
+		appendCase(sourceClassRuntimeTypeID(current, ctx), view)
 		for _, interfaceScope := range transitiveImplementedInterfaceScopes(current, ctx) {
 			appendCase(javaClassBinaryName(interfaceScope), receiverExpr)
 		}
 		parent := resolveSuperclassScopeInDeclaringContext(ctx, current)
 		if parent != nil && parent.Class != nil {
-			view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: parent.Class.Name}}
+			view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(current, ctx)}}
 		}
 	}
 	cases = append(cases, &ast.CaseClause{Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}}})
@@ -981,10 +1120,14 @@ func syntheticHierarchicalReferenceIdentityDecls(
 			interfaceIDs = append(interfaceIDs, javaTypeIDLiteral(javaClassBinaryName(interfaceScope), ctx))
 		}
 	}
+	var superID ast.Expr
+	if superScope != nil {
+		superID = javaTypeIDLiteral(sourceClassRuntimeTypeID(superScope, ctx), ctx)
+	}
 	registration := syntheticReferenceRegistrationDecl(
 		structName,
 		dynamicID,
-		javaTypeIDLiteral(javaClassBinaryName(superScope), ctx),
+		superID,
 		interfaceIDs,
 		ctx,
 	)

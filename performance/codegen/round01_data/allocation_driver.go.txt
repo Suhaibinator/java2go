@@ -1,0 +1,48 @@
+package main
+import (
+    "crypto/sha256"
+    "encoding/hex"
+    "encoding/json"
+    "os"
+    "path/filepath"
+    "runtime"
+    "sort"
+    "strings"
+    app "campaign.generated/round01-data/j_campaign/j_data/j_app"
+    _ "campaign.generated/round01-data/java2go_resources"
+    sj "github.com/NickyBoy89/java2go/stdjava"
+)
+type Site struct { Bytes int64 `json:"bytes"`; Objects int64 `json:"objects"`; Stack string `json:"stack"` }
+func snapshot() map[string]Site {
+    runtime.GC();runtime.GC()
+    n,_:=runtime.MemProfile(nil,true)
+    var records []runtime.MemProfileRecord
+    for {records=make([]runtime.MemProfileRecord,n+100);var ok bool;n,ok=runtime.MemProfile(records,true);if ok {records=records[:n];break}}
+    out:=map[string]Site{}
+    for _,r:=range records {
+        frames:=runtime.CallersFrames(r.Stack());var names []string; relevant:=false
+        for {f,more:=frames.Next();names=append(names,f.Function);if strings.Contains(f.Function,"campaign.generated/round01-data/")||strings.Contains(f.Function,"github.com/NickyBoy89/java2go/stdjava") {relevant=true};if !more{break}}
+        if !relevant {continue};key:=strings.Join(names,"\n");v:=out[key];v.Bytes+=r.AllocBytes;v.Objects+=r.AllocObjects;v.Stack=key;out[key]=v
+    }
+    return out
+}
+func files(dir string) map[string]string {
+    out:=map[string]string{}
+    for _,name:=range []string{"accounts.tsv","summary.txt","rejects.tsv"} {data,err:=os.ReadFile(filepath.Join(dir,name));if err!=nil{panic(err)};hash:=sha256.Sum256(data);out[name]=hex.EncodeToString(hash[:])}
+    return out
+}
+func main(){
+    if len(os.Args)!=4 {panic("seed output-dir stats-file")}
+    runtime.MemProfileRate=1
+    args:=sj.ReferenceArrayLiteral(sj.StringTypeID,os.Args[1],os.Args[2])
+    app.Java2goEntryMain(args)
+    warmFiles:=files(os.Args[2]);before:=snapshot()
+    var start,end runtime.MemStats;runtime.ReadMemStats(&start)
+    app.Java2goEntryMain(args)
+    runtime.ReadMemStats(&end)
+    after:=snapshot();measuredFiles:=files(os.Args[2]);var sites []Site
+    for key,now:=range after {old:=before[key];now.Bytes-=old.Bytes;now.Objects-=old.Objects;if now.Bytes>0||now.Objects>0 {sites=append(sites,now)}}
+    sort.Slice(sites,func(i,j int)bool{return sites[i].Bytes>sites[j].Bytes})
+    result:=map[string]any{"seed":os.Args[1],"total_allocated_bytes":end.TotalAlloc-start.TotalAlloc,"mallocs":end.Mallocs-start.Mallocs,"warm_files":warmFiles,"measured_files":measuredFiles,"allocation_sites":sites,"note":"Allocation diagnostic only; MemProfileRate=1 and forced GCs prohibit interpreting execution time as performance."}
+    data,err:=json.MarshalIndent(result,"","  ");if err!=nil{panic(err)};if err=os.WriteFile(os.Args[3],append(data,'\n'),0600);err!=nil{panic(err)}
+}

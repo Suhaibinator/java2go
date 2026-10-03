@@ -1,0 +1,7 @@
+# Milestone 118: canonical File, NIO and writer boundaries
+
+File and Path text now crosses Java boundaries as canonical UTF16 references, preserving exercised path/name identity and result boxing. NIO text and line reads report malformed encodings; CharSequence writes execute conversion once in the caller context. StringWriter stores raw UTF16 and synchronizes concurrent snapshots. PrintWriter accepts canonical pathname references with FileNotFoundException/IOException hierarchy and exact tested NUL diagnostic, preserving legacy native sink behavior.
+
+The coordinator rebuilt matching race binaries and passed 30 runtime controls, 19 strict JDK21/generated-all-package-and-entry race probes, and all20 original intrinsic parents plus40 table subtests. Unchanged FileRoundTrip, NioFiles and Maven invoice applications match JVM/Go exit/stdout/stderr; these original generated E2E executables are not race instrumented. Independent Sol source review passes. Original Java and expectations remain unchanged; two test harness files adapt to canonical references without dropping assertions.
+
+Broader reader/writer dispatch, eager Files.lines/resource behavior, mixed character/byte forwarding and OS error-message parity remain open. Hosted CI and full round acceptance remain unverified; full campaign acceptance stays round18. Evidence and source hashes are under ignored .campaign/resume-20261002.

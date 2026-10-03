@@ -6,6 +6,11 @@ type FileScope struct {
 	// Source retains the parsed Java bytes so later whole-program symbol passes
 	// can classify declarations that refer to members in another source file.
 	Source []byte
+	// OriginalSource/SourceOffsets are present only when grammar-equivalent
+	// Unicode escape canonicalization changed byte positions. Offsets map each
+	// parser-source byte (and EOF) back to the unchanged original input.
+	OriginalSource []byte
+	SourceOffsets  []uint32
 	// The global package that the file is located in
 	Package string
 	// Every external package that is imported into the file

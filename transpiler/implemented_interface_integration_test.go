@@ -29,7 +29,7 @@ public abstract class EventParser implements RecordParser<Event> {}
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["parity/generic/impl/EventParser.go"]
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "type EventParser struct { api.RecordParser[*model.Event] }") {
+	if !strings.Contains(flat, "type EventParser struct { api.RecordParser[*model.Event] _ *struct { } }") {
 		t.Fatalf("expected implemented interface and concrete type argument to retain package qualification, got:\n%s", out)
 	}
 	if !strings.Contains(flat, `api "parity/generic/api"`) || !strings.Contains(flat, `model "parity/generic/model"`) {
@@ -54,7 +54,7 @@ public abstract class EffortLimitRule<T> implements TaskRule<T> {}
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["parity/generic/impl/EffortLimitRule.go"]
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, "type EffortLimitRule[T any] struct { api.TaskRule[T] }") {
+	if !strings.Contains(flat, "type EffortLimitRule[T any] struct { api.TaskRule[T] _ *struct { } }") {
 		t.Fatalf("expected implemented interface to retain the implementing class type parameter, got:\n%s", out)
 	}
 	if strings.Contains(flat, "api.TaskRule[*T]") {

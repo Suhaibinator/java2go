@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/NickyBoy89/java2go/nodeutil"
 	"github.com/NickyBoy89/java2go/symbol"
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -374,26 +373,10 @@ func methodInvocationTypeArgumentJavaTypes(
 	if def == nil || len(def.TypeParameters) == 0 {
 		return nil
 	}
-	if invocationNode != nil {
-		if typeArguments := invocationNode.ChildByFieldName("type_arguments"); typeArguments != nil {
-			explicit := nodeutil.NamedChildrenOf(typeArguments)
-			if len(explicit) == len(def.TypeParameters) {
-				result := make([]string, len(explicit))
-				for index, argument := range explicit {
-					result[index] = strings.TrimSpace(argument.Content(source))
-				}
-				return result
-			}
-		}
-	}
-
-	bindings := genericArrayInvocationTypeBindings(def, invocationNode, ctx, source)
+	bindings := resolvedMethodInvocationTypeBindings(def, invocationNode, ctx, source)
 	result := make([]string, len(def.TypeParameters))
 	for index, parameter := range def.TypeParameters {
-		result[index] = strings.TrimSpace(bindings[parameter.Name])
-		if result[index] == "" {
-			result[index] = rawTypeParameterErasure(parameter, def.TypeParameters)
-		}
+		result[index] = bindings[parameter.Name]
 	}
 	return result
 }
@@ -404,11 +387,22 @@ func dependentTypeWitnessInvocationArguments(
 	ctx Ctx,
 	source []byte,
 ) []ast.Expr {
+	// A method without the hidden ABI needs no invocation inference here.
+	// Preserve this early return before evaluating its generic argument types.
+	if !methodUsesConcreteDependentTypeWitnesses(def, ctx) {
+		return nil
+	}
+	return dependentTypeWitnessArgumentsForJavaTypes(def, methodInvocationTypeArgumentJavaTypes(def, invocationNode, ctx, source), ctx)
+}
+
+// Both source invocations and erased reflection entries instantiate the same
+// witness ABI. Keep the projection plan tied to the method declarations while
+// taking the already-selected Java argument types from the boundary producer.
+func dependentTypeWitnessArgumentsForJavaTypes(def *symbol.Definition, javaTypes []string, ctx Ctx) []ast.Expr {
 	edges := concreteDependentTypeWitnessEdges(def, ctx)
 	if len(edges) == 0 {
 		return nil
 	}
-	javaTypes := methodInvocationTypeArgumentJavaTypes(def, invocationNode, ctx, source)
 	if len(javaTypes) != len(def.TypeParameters) {
 		return nil
 	}

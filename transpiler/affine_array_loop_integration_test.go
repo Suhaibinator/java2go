@@ -499,7 +499,7 @@ func TestLabeledBodyFallback(t *testing.T) {
 `)
 }
 
-func TestAffineArrayLoopFastPath_VersionedLoopReportsUnsupportedOnce(t *testing.T) {
+func TestAffineArrayLoopFastPath_VersionedLoopPreservesAssertions(t *testing.T) {
 	withCleanDiagnostics(t)
 	src := `
 final class DiagnosticGrid {
@@ -519,12 +519,12 @@ public class DiagnosticVersionLoopProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "Java2goAffineView") || strings.Count(out, "UNSUPPORTED") != 2 {
-		t.Fatalf("versioned loop should retain an unsupported placeholder in both branches:\n%s", out)
+	if !strings.Contains(out, "Java2goAffineView") || strings.Count(out, "stdjava.JavaAssertionsEnabled()") != 2 || strings.Count(out, "stdjava.NewAssertionFailure(") != 2 {
+		t.Fatalf("versioned loop should retain gated assertions in both branches:\n%s", out)
 	}
 	diagnostics := collectedDiagnostics()
-	if len(diagnostics) != 1 || diagnostics[0].Kind != "statement" || diagnostics[0].NodeType != "assert_statement" {
-		t.Fatalf("versioned unsupported construct diagnostics = %#v, want one assert statement", diagnostics)
+	if len(diagnostics) != 0 {
+		t.Fatalf("supported assertions produced diagnostics = %#v", diagnostics)
 	}
 }
 

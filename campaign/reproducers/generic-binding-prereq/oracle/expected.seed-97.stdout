@@ -1,0 +1,6 @@
+seed=97,routes=1,2,3,4,5,1
+retail=I/97/134/5/p[agent-97/primitive:101]b[agent-97/boxed:107]g[agent-97/wide:115]g[agent-97/widened:124]g[agent-97/forwarded:134]pX
+reserve=G/194/197/1/b[agent-97/reserve:197]
+bound=105,202
+rejection=true,touches=1,before=I/97/134/5/p[agent-97/primitive:101]b[agent-97/boxed:107]g[agent-97/wide:115]g[agent-97/widened:124]g[agent-97/forwarded:134]
+evaluations=opebewebebefbeep

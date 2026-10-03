@@ -1,0 +1,12 @@
+{
+  "jdk": "JDK21, javac --release21, UTF-8; historical native receipts select explicit JDK21 JAVA_HOME",
+  "stdout": "1:1",
+  "stdout_sha256": "d6b5915c46057bcb005f46f6433df65609dd3a7a57af75ac1a5a4a7c299ebffb",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "observed_by": "TestInnerCarrierRawFormalJDK21",
+  "verbose_stdout_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_boundaries_resume/evidence/hidden-slot-frontier/stdout",
+  "verbose_stdout_sha256": "5a6ba62c2cbe48eca62f89b0cbb552d9f35cce0451ee535b89c5bf7ef625ea00",
+  "oracle_line": 17,
+  "validation": "The strict helper validates actual JVM stdout against the unchanged expected bytes and requires empty JVM stderr before logging the oracle."
+}

@@ -101,13 +101,13 @@ public class Logger {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "func WriteAll(handler Handler[string])") {
+	if !strings.Contains(flat, "func WriteAll(handler Handler[*stdjava.JavaString])") {
 		t.Fatalf("expected interface method parameter type without pointer indirection, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "type HandlerFuncAdapter[T any] struct") {
 		t.Fatalf("expected functional adapter type for Handler<T>, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "WriteAllJava2goExecution(__java2goExecution, NewHandlerFuncAdapterJava2goExecution[string](func(__java2goExecution *stdjava.Execution, v string)") {
+	if !strings.Contains(flat, "WriteAllJava2goExecution(__java2goExecution, NewHandlerFuncAdapterJava2goExecution[*stdjava.JavaString](func(__java2goExecution *stdjava.Execution, v *stdjava.JavaString)") {
 		t.Fatalf("expected void lambda to be wrapped with typed adapter in main(), got:\n%s", out)
 	}
 }

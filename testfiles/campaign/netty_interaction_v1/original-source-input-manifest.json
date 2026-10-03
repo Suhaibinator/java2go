@@ -1,0 +1,86 @@
+{
+  "Java_files": 8,
+  "inputs": [
+    {
+      "bytes": 3,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/inputs/seed-17.txt",
+      "sha256": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5"
+    },
+    {
+      "bytes": 3,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/inputs/seed-41.txt",
+      "sha256": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1"
+    },
+    {
+      "bytes": 3,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/inputs/seed-97.txt",
+      "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+    }
+  ],
+  "packages": [
+    "app",
+    "audit",
+    "buffers",
+    "flow",
+    "model",
+    "wire"
+  ],
+  "project": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project",
+  "project_rows": [
+    {
+      "bytes": 601,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/pom.xml",
+      "relative": "pom.xml",
+      "sha256": "0cc29214f84d2564338ce0c00fac93ed610ff64737426f6363e67bd3b6f7d336"
+    },
+    {
+      "bytes": 547,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/src/main/java/app/Main.java",
+      "relative": "src/main/java/app/Main.java",
+      "sha256": "1d197b889be28628e987bc91c9615268250ea15b5dbf37bb7b9fc98112432d91"
+    },
+    {
+      "bytes": 589,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/src/main/java/audit/Trace.java",
+      "relative": "src/main/java/audit/Trace.java",
+      "sha256": "aa336b2aca604769e5aa581a36adfa4e109c860b2f5c942bbd4316470ec865b4"
+    },
+    {
+      "bytes": 1545,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/src/main/java/buffers/CompositeFlow.java",
+      "relative": "src/main/java/buffers/CompositeFlow.java",
+      "sha256": "b41b6a7cfb20550d85b19dfdbc17578db62719d895a495c10895f9d164d21582"
+    },
+    {
+      "bytes": 5641,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/src/main/java/flow/Interaction.java",
+      "relative": "src/main/java/flow/Interaction.java",
+      "sha256": "dc1579e8330aa46f872616831f895a4861cef93f78b854c87d28abbd383f75e6"
+    },
+    {
+      "bytes": 243,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/src/main/java/model/Packet.java",
+      "relative": "src/main/java/model/Packet.java",
+      "sha256": "0593bfb8f4e850362da1bb31129de10f7905c5dc20e2fcde252f01d044d2333d"
+    },
+    {
+      "bytes": 123,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/src/main/java/model/Problem.java",
+      "relative": "src/main/java/model/Problem.java",
+      "sha256": "143f8f9747359df47cb28810439e5544ed1de42c2a89801259023e2fd4a381b2"
+    },
+    {
+      "bytes": 989,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/src/main/java/wire/FrameDecoder.java",
+      "relative": "src/main/java/wire/FrameDecoder.java",
+      "sha256": "5fa4d34a8911fe896ba092fcefa146bcdec89bed75ca899aab499acc67c182d9"
+    },
+    {
+      "bytes": 1053,
+      "path": "/private/tmp/java2go-netty-interaction-challenge-sol-v1/project/src/main/java/wire/ReplyEncoder.java",
+      "relative": "src/main/java/wire/ReplyEncoder.java",
+      "sha256": "e7406359699e7e48f9637fdbe80645a3b7e7c9a04aa999503afe7dbf31ecb2db"
+    }
+  ],
+  "status": "FROZEN_UNRUN"
+}

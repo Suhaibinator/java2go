@@ -2,6 +2,7 @@ package transpiler
 
 import (
 	"fmt"
+	"go/ast"
 	"sync"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -15,7 +16,7 @@ type Diagnostic struct {
 	// Kind describes the conversion phase that failed, e.g. "expression",
 	// "statement", "declaration", or "node".
 	Kind string
-	// NodeType is the tree-sitter node type that could not be converted.
+	// NodeType is the Java syntax node or generated Go AST node that could not be converted.
 	NodeType string
 	// Message is a human-readable description of the problem.
 	Message string
@@ -101,7 +102,17 @@ func reportUnsupported(kind string, node *sitter.Node, source []byte, ctx Ctx) D
 		diag.NodeType = node.Type()
 		diag.Line = node.StartPoint().Row + 1
 		diag.Message = nodeSnippet(node, source)
+		if file := ctx.currentFile; file != nil && file.OriginalSource != nil && int(node.EndByte()) < len(file.SourceOffsets) {
+			start, end := file.SourceOffsets[node.StartByte()], file.SourceOffsets[node.EndByte()]
+			if start <= end && int(end) <= len(file.OriginalSource) {
+				diag.Message = diagnosticSnippet(string(file.OriginalSource[start:end]))
+			}
+		}
 	}
+	return recordUnsupportedDiagnostic(diag, ctx)
+}
+
+func recordUnsupportedDiagnostic(diag Diagnostic, ctx Ctx) Diagnostic {
 	if ctx.suppressUnsupportedDiagnostics {
 		return diag
 	}
@@ -118,13 +129,39 @@ func reportUnsupported(kind string, node *sitter.Node, source []byte, ctx Ctx) D
 	return diag
 }
 
+// validateGeneratedExpressions catches unsupported fallbacks that reached the
+// final Go AST without a source diagnostic. Permissive conversion keeps its
+// partial output, and discarded intermediate nodes are not inspected.
+func validateGeneratedExpressions(node ast.Node, ctx Ctx) {
+	diagnostics.mu.Lock()
+	strict := diagnostics.strict
+	diagnostics.mu.Unlock()
+	if !strict || ctx.suppressUnsupportedDiagnostics {
+		return
+	}
+	ast.Inspect(node, func(node ast.Node) bool {
+		if _, bad := node.(*ast.BadExpr); bad {
+			recordUnsupportedDiagnostic(Diagnostic{
+				Kind:      "expression",
+				NodeType:  "ast.BadExpr",
+				ClassName: ctx.className,
+				Message:   "generated Go AST contains an unsupported expression",
+			}, ctx)
+		}
+		return true
+	})
+}
+
 // nodeSnippet returns a short, single-line description of a node's source text,
 // suitable for inclusion in a diagnostic message or comment stub.
 func nodeSnippet(node *sitter.Node, source []byte) string {
 	if node == nil || source == nil {
 		return ""
 	}
-	content := node.Content(source)
+	return diagnosticSnippet(node.Content(source))
+}
+
+func diagnosticSnippet(content string) string {
 	// Collapse to a single line so it can live inside a `//` comment.
 	const maxLen = 80
 	trimmed := make([]rune, 0, len(content))

@@ -271,12 +271,22 @@ public class ExecutionPropagationProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestExecutionPropagation(t *testing.T) {
 	const want = "1:4:11:6:7:5:5:21:41:8:141:1141:true:5"
-	if got := Run(); got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	{
+		got := Run()
+		if got == nil {
+			t.Fatal("Run() returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+			t.Fatalf("Run() = UTF16 %x, want UTF16 %x", got.UTF16Copy(), utf16.Encode([]rune(want)))
+		}
 	}
 }
 `)

@@ -1,0 +1,6 @@
+../typed/stdjava/stringbuilder_typed.go:5:6: cannot inline (*StringBuilder).AppendString: function too complex: cost 86 exceeds budget 80
+../typed/stdjava/stringbuilder_typed.go:12:6: cannot inline (*StringBuilder).InsertString: function too complex: cost 171 exceeds budget 80
+../typed/stdjava/stringbuilder_typed.go:5:38: value does not escape
+../typed/stdjava/stringbuilder_typed.go:9:35: make([]rune, 0, len(s)) does not escape
+../typed/stdjava/stringbuilder_typed.go:12:52: value does not escape
+../typed/stdjava/stringbuilder_typed.go:17:25: make([]rune, 0, len(s)) does not escape

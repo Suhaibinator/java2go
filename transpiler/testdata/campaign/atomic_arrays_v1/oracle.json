@@ -1,0 +1,21 @@
+{
+  "oracle": "Original JDK21 execution of unmodified Java source, before runtime implementation",
+  "jdk_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "jdk_source_zip_sha256": "d887da897fc0065a2532500ee92320ce3bc633ccd6c4e637304045ce5d90de43",
+  "source_sha256": "d6898078946aee3357c6f58de183e75daafc4a1da5bb508a496c62aadd9c76f4",
+  "repeats": 3,
+  "stdout_sha256": "ea3fd7d13425a480ef7c5751caca4a43258feb69db52bcea7ef6f5a5df453d88",
+  "stderr": "",
+  "exit_code": 0,
+  "limits_seconds": {
+    "javac": 55,
+    "jvm_execution": 60,
+    "generated_build": 300,
+    "generated_execution": 60,
+    "native_test": 55
+  },
+  "resources": {
+    "GOMAXPROCS": 2,
+    "go_build_parallelism": 1
+  }
+}

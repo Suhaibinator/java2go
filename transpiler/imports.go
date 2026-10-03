@@ -346,6 +346,13 @@ func findJavaPackageForClassScope(scope *symbol.ClassScope) string {
 	if scope == nil {
 		return ""
 	}
+	// Declaration ownership is stable inside this resolved render. Unknown
+	// scopes retain the ordinary search, including late synthetic registration.
+	if activeResolutionFiles != nil && activeResolutionFiles.graph == symbol.GlobalScope {
+		if file := activeResolutionFiles.files[scope]; file != nil {
+			return file.Package
+		}
+	}
 	for pkgName, pkg := range symbol.GlobalScope.Packages {
 		if pkg == nil {
 			continue
@@ -364,9 +371,21 @@ func findJavaPackageForClassScope(scope *symbol.ClassScope) string {
 	return ""
 }
 
-func findFileScopeForClassScope(scope *symbol.ClassScope) *symbol.FileScope {
+func findFileScopeForClassScope(scope *symbol.ClassScope, contexts ...Ctx) *symbol.FileScope {
 	if scope == nil {
 		return nil
+	}
+	if activeResolutionFiles != nil && activeResolutionFiles.graph == symbol.GlobalScope {
+		if file := activeResolutionFiles.files[scope]; file != nil {
+			return file
+		}
+	}
+	if len(contexts) > 0 {
+		if ownership := sourceOwnershipIndex(contexts[0]); ownership != nil {
+			if file := ownership.files[scope]; file != nil {
+				return file
+			}
+		}
 	}
 	for _, pkg := range symbol.GlobalScope.Packages {
 		if pkg == nil {
@@ -387,6 +406,12 @@ func findFileScopeForClassScope(scope *symbol.ClassScope) *symbol.FileScope {
 }
 
 func resolveJavaPackageForType(ctx Ctx, javaTypeBase string, scope *symbol.ClassScope) string {
+	// A resolved member type belongs to its declaring source package. The
+	// import table retains its owner prefix (p.Outer for p.Outer.Inner) to
+	// resolve the Java name; that prefix is not necessarily a package.
+	if inferredPkg := findJavaPackageForClassScope(scope); inferredPkg != "" {
+		return inferredPkg
+	}
 	javaTypeBase = strings.TrimSpace(javaTypeBase)
 	if javaTypeBase == "" {
 		return ""
@@ -409,9 +434,67 @@ func resolveJavaPackageForType(ctx Ctx, javaTypeBase string, scope *symbol.Class
 		}
 	}
 
-	if inferredPkg := findJavaPackageForClassScope(scope); inferredPkg != "" {
-		return inferredPkg
-	}
-
 	return ""
+}
+
+// findQualifiedSourceClass walks the package and exact member owners rather
+// than treating every dot as a package separator or finding an unrelated
+// nested class with the same simple name elsewhere in the package.
+func findQualifiedSourceClass(name string) *symbol.ClassScope {
+	parts := strings.Split(strings.TrimSpace(name), ".")
+	for split := len(parts) - 1; split > 0; split-- {
+		pkg := symbol.GlobalScope.FindPackage(strings.Join(parts[:split], "."))
+		if pkg == nil {
+			continue
+		}
+		var owner *symbol.ClassScope
+		for _, file := range pkg.Files {
+			if file == nil {
+				continue
+			}
+			for _, top := range file.TopLevelClasses {
+				if top != nil && top.Class != nil && top.Class.OriginalName == parts[split] {
+					owner = top
+					break
+				}
+			}
+			if owner != nil {
+				break
+			}
+		}
+		if owner == nil {
+			continue
+		}
+		for _, member := range parts[split+1:] {
+			var found *symbol.ClassScope
+			for _, child := range owner.Subclasses {
+				if child != nil && child.Class != nil && child.Class.OriginalName == member {
+					found = child
+					break
+				}
+			}
+			if found == nil {
+				return nil
+			}
+			owner = found
+		}
+		return owner
+	}
+	return nil
+}
+
+// qualifiedSourceClassName retains every enclosing class. A class's package
+// alone is insufficient to qualify member-type fields and method signatures.
+func qualifiedSourceClassName(scope *symbol.ClassScope) string {
+	if scope == nil || scope.Class == nil {
+		return ""
+	}
+	parts := []string{scope.Class.OriginalName}
+	for owner := scope.Enclosing; owner != nil && owner.Class != nil; owner = owner.Enclosing {
+		parts = append([]string{owner.Class.OriginalName}, parts...)
+	}
+	if pkg := findJavaPackageForClassScope(scope); pkg != "" {
+		parts = append([]string{pkg}, parts...)
+	}
+	return strings.Join(parts, ".")
 }

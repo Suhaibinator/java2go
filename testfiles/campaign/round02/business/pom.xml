@@ -1,0 +1,18 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>campaign.business2</groupId>
+  <artifactId>shipment-settlement</artifactId>
+  <version>1.0.0</version>
+  <properties><maven.compiler.release>21</maven.compiler.release></properties>
+  <dependencies>
+    <dependency><groupId>org.apache.commons</groupId><artifactId>commons-lang3</artifactId><version>3.20.0</version></dependency>
+    <dependency><groupId>commons-codec</groupId><artifactId>commons-codec</artifactId><version>1.22.1</version></dependency>
+  </dependencies>
+  <build>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <plugins>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.16.0</version><configuration><release>21</release></configuration></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-resources-plugin</artifactId><version>3.5.0</version></plugin>
+    </plugins>
+  </build>
+</project>

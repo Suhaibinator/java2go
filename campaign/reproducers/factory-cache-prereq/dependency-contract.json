@@ -1,0 +1,8 @@
+{
+  "commons-lang3_version": "3.20.0",
+  "binary_sha256": "69e5c9fa35da7a51a5fd2099dfe56a2d8d32cf233e2f6d770e796146440263f4",
+  "source_only_closure": [
+    "org/apache/commons/lang3/mutable/Mutable.java",
+    "org/apache/commons/lang3/mutable/MutableInt.java"
+  ]
+}

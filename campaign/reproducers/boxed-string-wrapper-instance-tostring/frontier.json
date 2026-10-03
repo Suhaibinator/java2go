@@ -1,0 +1,13 @@
+{
+  "id": "wrapper-instance-tostring",
+  "status": "unaccepted",
+  "test": "TestBoxedStringFailuresExecutionStrictJDK21Parity",
+  "source_sha256": "9657fd40bc6d76b08894697a8f5887dd0e5891bdbff64a466ffe0b93625c4d54",
+  "go_test_sha256": "0aad347dafd91ddebfebffbd79363d8fc90f226711fd9cd98ecce9d1589ed2c5",
+  "oracle_stdout_sha256": "34eaf8cce166e8897553e704643dedf179c1918ed4966df09e9b19cf29edadf1",
+  "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_contains_resume/boxed-57a71de/evidence/green-failures-parity",
+  "proposed_repository_path": "campaign/reproducers/boxed-string-wrapper-instance-tostring",
+  "failure": "canonical wrapper instance toString returns native Go string into JavaString result",
+  "compiler_baseline": "57a71ded298937be5c38bc32e944a70cff6080dc",
+  "acceptance": "unaccepted; scoped parser parity does not accept this full probe"
+}

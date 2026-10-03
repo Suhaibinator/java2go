@@ -37,7 +37,7 @@ func methodReferenceJavaSignature(ctx Ctx) ([]string, string) {
 func methodReferenceUsesExecutionSAM(ctx Ctx) bool {
 	base, _ := parseJavaTypeString(ctx.expectedType)
 	scope := resolveClassScopeByQualifiedName(ctx, base)
-	return scope != nil && scope.IsInterface || isExternalRunnableType(ctx.expectedType, ctx) || isExternalCallableType(ctx.expectedType, ctx)
+	return scope != nil && scope.IsInterface || isExternalRunnableType(ctx.expectedType, ctx) || isExternalCallableType(ctx.expectedType, ctx) || isExternalSupplierType(ctx.expectedType, ctx) || isExternalFunctionType(ctx.expectedType, ctx) || isExternalIterableType(ctx.expectedType, ctx)
 }
 
 func methodReferenceResultConversion(value ast.Expr, actualType string, ctx Ctx) ast.Expr {
@@ -64,7 +64,7 @@ func methodReferenceConvertedArgument(value ast.Expr, actualType, expectedType s
 	expectedScope := resolveClassScopeByQualifiedName(ctx, expectedBase)
 	if actualScope != nil && expectedScope != nil && expectedScope.Class != nil &&
 		!expectedScope.IsInterface && !expectedScope.IsAbstract && classInheritsFrom(actualScope, expectedScope, ctx) {
-		return &ast.SelectorExpr{X: value, Sel: &ast.Ident{Name: expectedScope.Class.Name}}
+		return sourceClassViewExpr(actualScope, expectedScope, value, ctx)
 	}
 	return value
 }
@@ -162,8 +162,8 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		class = stripJavaQualifier(base)
 	}
 	primitive, wrapper := builtinJavaWrapperPrimitive(targetJavaType, ctx)
-	if constructor && !wrapper {
-		return nil, false
+	if constructor && !wrapper && !isBuiltinJavaString(targetJavaType, ctx) {
+		return nullaryBuiltinConstructorReference(node, class, targetJavaType, result, parameters, ctx, source)
 	}
 	staticGenerator := staticIntrinsics[intrinsicKey{class, method}]
 	instanceGenerator := instanceIntrinsics[intrinsicKey{class, method}]
@@ -205,9 +205,9 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		} else {
 			receiver = &ast.Ident{Name: "__java2goMethodReferenceReceiver"}
 		}
-		// String keeps a sentinel ABI; this checks both null representations.
+		// A bound String receiver retains its pointer and Java null behavior.
 		if class == "String" {
-			receiver = stdjavaCall(bodyCtx, "StringRequireNonNull", receiver)
+			receiver = stdjavaCall(bodyCtx, "RequireJavaString", receiver)
 		}
 	}
 
@@ -223,7 +223,9 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		if wrapper {
 			switch method {
 			case "new", "valueOf":
-				if len(expected) > 0 && !isJavaStringType(expected[0]) {
+				if len(expected) > 0 && isBuiltinJavaString(expected[0], ctx) {
+					expected[0] = "java.lang.String"
+				} else if len(expected) > 0 {
 					expected[0] = primitive
 					// Float(double) is its only narrowing constructor overload.
 					if constructor && class == "Float" && (argumentTypes[0] == "double" || argumentTypes[0] == "Double") {
@@ -235,7 +237,7 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 				}
 			case "parseByte", "parseShort", "parseInt", "parseLong", "parseFloat", "parseDouble", "parseBoolean":
 				if len(expected) > 0 {
-					expected[0] = "String"
+					expected[0] = "java.lang.String"
 				}
 				if len(expected) > 1 {
 					expected[1] = "int"
@@ -274,17 +276,18 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		arguments[i] = methodReferenceConvertedArgument(arguments[i], argumentTypes[i], expected[i], bodyCtx)
 	}
 	var call ast.Expr
-	if constructor {
+	if constructor && isBuiltinJavaString(targetJavaType, ctx) {
+		call = canonicalStringConstructorForTypes(arguments, argumentTypes, bodyCtx)
+	} else if constructor {
 		if len(arguments) != 1 {
 			return nil, false
 		}
 		value := arguments[0]
-		if isJavaStringType(expected[0]) {
-			parser := map[string]string{"Boolean": "ParseBoolean", "Byte": "ParseByte", "Short": "ParseShort", "Integer": "ParseInt", "Long": "ParseLong", "Float": "ParseFloat", "Double": "ParseDouble"}[class]
-			if parser == "" {
+		if isBuiltinJavaString(expected[0], bodyCtx) {
+			value = canonicalBoxedStringParse(targetJavaType, arguments, bodyCtx)
+			if value == nil {
 				return nil, false
 			}
-			value = stdjavaCall(bodyCtx, parser, value)
 		}
 		name := "New" + class
 		if class == "Float" && expected[0] == "double" {
@@ -292,7 +295,21 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		}
 		call = stdjavaCall(bodyCtx, name, value)
 	} else if static {
-		call = staticGenerator(nil, arguments, bodyCtx)
+		if wrapper && method == "valueOf" && len(expected) > 0 && isBuiltinJavaString(expected[0], bodyCtx) {
+			parsed := canonicalBoxedStringParse(targetJavaType, arguments, bodyCtx)
+			if parsed == nil {
+				return nil, false
+			}
+			call = stdjavaCall(bodyCtx, "Box"+class, parsed)
+		} else if class == "String" && method == "valueOf" && len(arguments) == 1 {
+			if argumentTypes[0] == "char[]" {
+				call = stdjavaCall(bodyCtx, "JavaStringFromChars", arguments[0])
+			} else {
+				call = canonicalStringValueOf(argumentTypes[0], arguments[0], false, bodyCtx)
+			}
+		} else {
+			call = staticGenerator(nil, arguments, bodyCtx)
+		}
 	} else {
 		call = instanceGenerator(receiver, arguments, bodyCtx)
 	}

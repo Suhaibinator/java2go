@@ -30,11 +30,8 @@ const (
 	LongTypeID         TypeID = "java.lang.Long"
 	FloatTypeID        TypeID = "java.lang.Float"
 	DoubleTypeID       TypeID = "java.lang.Double"
-	// ThrowableTypeID follows the descriptor spelling currently emitted for the
-	// built-in exception hierarchy. Generated source classes use qualified binary
-	// names; java.lang exception intrinsics intentionally retain their Java simple
-	// names so they also match ThrowableTypeName and catch dispatch.
-	ThrowableTypeID TypeID = "Throwable"
+	// Throwable uses its canonical Java identity, independently of catch names.
+	ThrowableTypeID TypeID = "java.lang.Throwable"
 )
 
 const (
@@ -136,6 +133,7 @@ func validReferenceComponentTypeID(id TypeID) bool {
 type registeredJavaType struct {
 	super      TypeID
 	interfaces []TypeID
+	source     bool
 }
 
 var javaTypeRegistry = struct {
@@ -183,7 +181,23 @@ func RegisterJavaType(id, super TypeID, interfaces ...TypeID) {
 	javaTypeRegistry.types[id] = registeredJavaType{
 		super:      super,
 		interfaces: append([]TypeID(nil), interfaces...),
+		source:     javaTypeRegistry.types[id].source,
 	}
+	javaTypeRegistry.Unlock()
+}
+
+// RegisterJavaSourceType marks a compiler-owned Java declaration. This is
+// separate from native runtime descriptors: a native fmt.Stringer still uses
+// its Go formatting contract, while source objects use Java method dispatch.
+// No object instances or callbacks are retained by this registration.
+func RegisterJavaSourceType(id TypeID) {
+	if id == "" {
+		panic(NewIllegalArgumentException("empty Java source type id"))
+	}
+	javaTypeRegistry.Lock()
+	descriptor := javaTypeRegistry.types[id]
+	descriptor.source = true
+	javaTypeRegistry.types[id] = descriptor
 	javaTypeRegistry.Unlock()
 }
 
@@ -234,6 +248,15 @@ func JavaTypeAssignable(actual, expected TypeID) bool {
 		info, ok := javaTypeRegistry.types[current]
 		if !ok {
 			continue
+		}
+		// A direct edge proves reachability without growing the queue for siblings.
+		if info.super == expected {
+			return true
+		}
+		for _, implemented := range info.interfaces {
+			if implemented == expected {
+				return true
+			}
 		}
 		if info.super != "" {
 			queue = append(queue, info.super)
@@ -402,13 +425,11 @@ func ObjectDynamicType(value any) (TypeID, bool) {
 func ObjectView[T any](value any, requested TypeID) T {
 	var zero T
 	if nilJavaReference(value) {
-		// Generated strings retain a concrete Go string ABI, so a statically
-		// String-typed null read needs the sentinel. The generic T[] path carries
-		// ObjectTypeID after erasure, so also inspect T itself. Do not use a plain
-		// type assertion here: string is assignable to T=any and would incorrectly
-		// turn an Object null into a non-nil interface.
+		// Legacy native-string callers need the sentinel. Canonical String
+		// pointers and erased any views use their ordinary nil zero value,
+		// regardless of the nominal descriptor requested by the consumer.
 		targetType := reflect.TypeOf((*T)(nil)).Elem()
-		if requested == StringTypeID || targetType.Kind() == reflect.String {
+		if targetType.Kind() == reflect.String {
 			if nullString, ok := any(NullString()).(T); ok {
 				return nullString
 			}
@@ -426,8 +447,20 @@ func ObjectView[T any](value any, requested TypeID) T {
 			return direct
 		}
 	}
-	if !ok || !JavaTypeAssignable(actual, requested) {
+	if (!ok || !JavaTypeAssignable(actual, requested)) && !nativeJavaInterfaceAssignable(value, requested) {
 		panic(NewClassCastException(fmt.Sprintf("Java value %s is not assignable to %s", actual, requested)))
+	}
+	// A Java SAM's direct Go shape may expose a public source wrapper whose
+	// execution companion has a collision-safe name. The declaration's explicit
+	// native view binds the exact implementation and preserves allocation identity.
+	if isNativeFunctionalTypeID(requested) {
+		if carrier, ok := value.(JavaObjectInfoCarrier); ok {
+			if info := carrier.JavaObjectInfo(); info != nil {
+				if view, ok := info.resolveView(requested).(T); ok {
+					return view
+				}
+			}
+		}
 	}
 	if direct, ok := value.(T); ok {
 		return direct
@@ -600,11 +633,6 @@ func NewReferenceArray[I javaArrayLength](length I, componentType TypeID) *Refer
 	array := &ReferenceArray{
 		componentType: componentType,
 		elements:      make([]any, int(length)),
-	}
-	if componentType == StringTypeID {
-		for index := range array.elements {
-			array.elements[index] = NullString()
-		}
 	}
 	return array
 }
@@ -798,7 +826,7 @@ func referenceArrayStoreAt(array *ReferenceArray, position int, value any) {
 		// Keep this exception exact: an opaque value must still be rejected by a
 		// covariant Child[] or interface[] target.
 		opaqueObjectStore := !ok && array.componentType == ObjectTypeID && !unboxedPrimitiveValue(value)
-		if !opaqueObjectStore && (!ok || !JavaTypeAssignable(actualType, array.componentType)) {
+		if !opaqueObjectStore && (!ok || !JavaTypeAssignable(actualType, array.componentType)) && !nativeJavaInterfaceAssignable(value, array.componentType) {
 			panic(NewArrayStoreException(fmt.Sprintf("cannot store %s in %s[]", actualType, array.componentType)))
 		}
 	}
@@ -808,9 +836,6 @@ func referenceArrayStoreAt(array *ReferenceArray, position int, value any) {
 		// []any storage. Otherwise an Object[] read would receive a non-nil Go
 		// interface containing a nil pointer and Java `value == null` could fail.
 		stored = nil
-		if array.componentType == StringTypeID {
-			stored = NullString()
-		}
 	}
 	array.elements[position] = stored
 }

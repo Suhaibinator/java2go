@@ -1,0 +1,1 @@
+package app; public class Main {public static void main(String[] args){Derived d=new Derived(); p.Outer.Base b=d; p.Outer.Base.Node n=d.new Node(); System.out.println(d.base()+":"+b.base()+":"+(d==b)+":"+n.read());}}

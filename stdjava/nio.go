@@ -1,9 +1,11 @@
 package stdjava
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 )
 
 // This file implements the java.nio.file surface that modern Java code reaches
@@ -221,7 +223,27 @@ func (p *JavaPath) EndsWith(other any) bool {
 
 // ToFile returns this path as a java.io.File, matching Path.toFile.
 func (p *JavaPath) ToFile() *JavaFile {
-	return &JavaFile{path: p.path}
+	return NewJavaFile(p.path)
+}
+
+// The Java String overloads validate through the Unix Path provider before
+// comparing components. Canonical Strings never pass through host formatting.
+func (p *JavaPath) StartsWithReference(other any) bool {
+	ReferenceRequireNonNull(p)
+	ReferenceRequireNonNull(other)
+	if text, ok := other.(*JavaString); ok {
+		other = PathsGetReference(text)
+	}
+	return p.StartsWith(other)
+}
+
+func (p *JavaPath) EndsWithReference(other any) bool {
+	ReferenceRequireNonNull(p)
+	ReferenceRequireNonNull(other)
+	if text, ok := other.(*JavaString); ok {
+		other = PathsGetReference(text)
+	}
+	return p.EndsWith(other)
 }
 
 // --- java.nio.file.Files ----------------------------------------------------
@@ -231,6 +253,44 @@ func (p *JavaPath) ToFile() *JavaFile {
 // does not produce an extra empty element, as in Java.
 func FilesReadAllLines(path any) *List[string] {
 	return NewListFrom(filesLineSlice(path)...)
+}
+
+func FilesReadAllLinesReference(path any) *List[*JavaString] {
+	return NewListFrom(filesLineReferences(path)...)
+}
+
+// Canonical line imports use the reporting CharsetDecoder policy, which groups
+// malformed input differently from Files.readString's optimized String decoder.
+func filesLineReferences(path any) []*JavaString {
+	ReferenceRequireNonNull(path)
+	data, err := os.ReadFile(ioPathOf(path))
+	if err != nil {
+		throwIOException(err)
+	}
+	for offset := 0; offset < len(data); {
+		point, size, _ := javaUTF8Unit(data[offset:], true)
+		if point == utf8.RuneError && !utf8.Valid(data[offset:offset+size]) {
+			panic(newThrowableBase("MalformedInputException", fmt.Sprintf("Input length = %d", size)))
+		}
+		offset += size
+	}
+	if len(data) == 0 {
+		return nil
+	}
+	normalized := strings.ReplaceAll(strings.ReplaceAll(string(data), "\r\n", "\n"), "\r", "\n")
+	lines := strings.Split(normalized, "\n")
+	if strings.HasSuffix(normalized, "\n") {
+		lines = lines[:len(lines)-1]
+	}
+	result := make([]*JavaString, len(lines))
+	for index, line := range lines {
+		result[index] = JavaStringFromHostUTF8(line)
+	}
+	return result
+}
+
+func FilesLinesReference(path any) Stream[*JavaString] {
+	return StreamOfSlice(filesLineReferences(path))
 }
 
 // filesLineSlice is the shared line-splitting backend of readAllLines and lines.
@@ -263,6 +323,43 @@ func FilesReadString(path any) string {
 	return string(data)
 }
 
+// FilesReadStringReference imports file bytes into the canonical Java String ABI.
+func FilesReadStringReference(path any) *JavaString {
+	ReferenceRequireNonNull(path)
+	data, err := os.ReadFile(ioPathOf(path))
+	if err != nil {
+		throwIOException(err)
+	}
+	if len(data) == 0 {
+		return JavaStringLiteralUTF16(nil)
+	}
+	for offset := 0; offset < len(data); {
+		point, size := utf8.DecodeRune(data[offset:])
+		if point == utf8.RuneError && size == 1 {
+			remaining := data[offset:]
+			malformedLength := 1
+			lead := remaining[0]
+			// Files.readString uses the JDK String decoder's strict path. Complete
+			// malformed units report their full width; truncated units follow its
+			// separate three-byte second-byte check rather than replacement grouping.
+			if lead >= 0xe0 && lead <= 0xef {
+				if len(remaining) >= 3 {
+					malformedLength = 3
+				} else if len(remaining) == 2 && (remaining[1]&0xc0 != 0x80 || lead == 0xe0 && remaining[1] < 0xa0) {
+					malformedLength = 2
+				}
+			} else if lead >= 0xf0 && lead <= 0xf7 && len(remaining) >= 4 {
+				malformedLength = 4
+			}
+			panic(newThrowableBase("MalformedInputException", fmt.Sprintf("Input length = %d", malformedLength)))
+		}
+		offset += size
+	}
+	return JavaStringFromHostUTF8(string(data))
+}
+
+func init() { RegisterException("MalformedInputException", "CharacterCodingException") }
+
 // FilesWriteString writes text to a file, creating or truncating it, matching
 // Files.writeString. It returns the path, as Java does.
 func FilesWriteString(path any, content string) *JavaPath {
@@ -281,6 +378,15 @@ func FilesWrite(path any, content any) *JavaPath {
 	target := ioPathOf(path)
 	var data []byte
 	switch v := content.(type) {
+	case *List[*JavaString]:
+		ReferenceRequireNonNull(v)
+		for _, line := range v.Slice() {
+			if line == nil {
+				line = JavaStringLiteralUTF16([]uint16{'n', 'u', 'l', 'l'})
+			}
+			data = append(data, unsignedBytes(JavaStringGetBytes(line, UTF_8).Elements)...)
+			data = append(data, '\n')
+		}
 	case *List[string]:
 		data = []byte(strings.Join(v.Slice(), "\n"))
 		if len(v.Slice()) > 0 {

@@ -128,6 +128,9 @@ func compileTimeConstantExpression(
 			compileTimeConstantExpression(node.NamedChild(2), source, ctx, visiting)
 	case "identifier":
 		name := node.Content(source)
+		if constant, bound := javaLocalConstantExpression(node, source, ctx, visiting); bound {
+			return constant
+		}
 		for scope := ctx.currentClass; scope != nil; scope = scope.Enclosing {
 			resolution := findFieldResolutionInHierarchy(scope, name, ctx)
 			if resolution == nil {

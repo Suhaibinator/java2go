@@ -1,0 +1,37 @@
+{
+  "Go_workloads": 0,
+  "JDK21_HOME": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "actual_JVM_capture": false,
+  "args": [],
+  "candidate_manifest_sha256": "5f9e4a0b84ac1c915bd824bd5982ae6f29ee557dc0b12ecc51a4f07db9ecf223",
+  "candidate_source": "/private/tmp/java2go-date-encoding-null-current0441-sol-512eg4zx/source",
+  "cases": 36,
+  "contracts": [
+    "actual SimpleDateFormat formatting",
+    "GregorianCalendar fields incl offset and fractional millisecond",
+    "strict parse formatted value with retained stale error index",
+    "TimeZone raw and total offset"
+  ],
+  "expected_output_authoring": false,
+  "instants": [
+    -1001,
+    -1,
+    0,
+    1,
+    999,
+    1000
+  ],
+  "java_source_sha256": "d63e9377c1ea517647f2957376ce24c1715e63bec0d65ca43ae3685a4b170c06",
+  "main_class": "SubsecondOffsetProbe",
+  "offsets": [
+    -1001,
+    -999,
+    -1,
+    1,
+    999,
+    1001
+  ],
+  "public_writes": 0,
+  "scope": "separate subsecond offset milestone; original whole-hour Date/Time/ISO fixtures unchanged",
+  "status": "SOURCE_ONLY_FROZEN_UNRUN"
+}

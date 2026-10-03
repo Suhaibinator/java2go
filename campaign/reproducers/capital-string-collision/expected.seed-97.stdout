@@ -1,0 +1,11 @@
+capital.value.direct=probe.model.CapitalText@8b;calls=1
+capital.method.after.direct=0;calls=0
+capital.value.erased=probe.model.CapitalText@8b;calls=2
+capital.concat.direct=[probe.model.CapitalText@8b];calls=3
+capital.concat.erased=[probe.model.CapitalText@8b];calls=4
+capital.explicit=capital:97:1;calls=1
+capital.hash.stable=4;calls=4
+real.value.direct=real:97:1;calls=1
+real.value.erased=real:97:2;calls=2
+real.concat.direct=[real:97:3];calls=3
+real.concat.erased=[real:97:4];calls=4

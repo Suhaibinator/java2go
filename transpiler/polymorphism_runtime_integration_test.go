@@ -34,11 +34,19 @@ public class DefaultDispatchProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestInterfaceDefaultDispatch(t *testing.T) {
-	if got := Run(); got != "[base]|[child]" {
-		t.Fatalf("Run() = %q, want %q", got, "[base]|[child]")
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune("[base]|[child]"))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, "[base]|[child]")
 	}
 }
 `)
@@ -70,12 +78,20 @@ public class VirtualDispatchProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestClassVirtualDispatch(t *testing.T) {
 	const want = "[base]|[child]|grand:[child]"
-	if got := Run(); got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, want)
 	}
 }
 `)
@@ -101,11 +117,19 @@ public class AnonymousDispatchProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestAnonymousAbstractDispatch(t *testing.T) {
-	if got := Run(); got != "anonymous|anonymous!" {
-		t.Fatalf("Run() = %q, want %q", got, "anonymous|anonymous!")
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune("anonymous|anonymous!"))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, "anonymous|anonymous!")
 	}
 }
 `)
@@ -137,11 +161,19 @@ public class ConstructorDispatchProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestConstructorVirtualDispatch(t *testing.T) {
-	if got := Run(); got != "leaf" {
-		t.Fatalf("Run() = %q, want %q", got, "leaf")
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune("leaf"))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, "leaf")
 	}
 }
 `)
@@ -171,11 +203,19 @@ public class InitializerDispatchProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestInstanceFieldInitializerDispatch(t *testing.T) {
-	if got := Run(); got != "0:41" {
-		t.Fatalf("Run() = %q, want %q", got, "0:41")
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune("0:41"))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, "0:41")
 	}
 }
 `)
@@ -200,11 +240,19 @@ public class InheritedDefaultProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestInheritedInterfaceDefault(t *testing.T) {
-	if got := Run(); got != "inherited" {
-		t.Fatalf("Run() = %q, want %q", got, "inherited")
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune("inherited"))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, "inherited")
 	}
 }
 `)
@@ -233,11 +281,19 @@ public class ConcreteDefaultProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestConcreteDefaultSelection(t *testing.T) {
-	if got := Run(); got != "concrete:3" {
-		t.Fatalf("Run() = %q", got)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune("concrete:3"))) {
+		t.Fatalf("Run() UTF16 = %x", units)
 	}
 }
 `)
@@ -263,11 +319,19 @@ public class PrivateDispatchProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestPrivateMethodBinding(t *testing.T) {
-	if got := Run(); got != "base" {
-		t.Fatalf("Run() = %q, want %q", got, "base")
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune("base"))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, "base")
 	}
 }
 `)
@@ -319,9 +383,21 @@ public class App {
 	}
 	testPath := filepath.Join(moduleRoot, "app", "dispatch_test.go")
 	if err := os.WriteFile(testPath, []byte(`package app
-import "testing"
+
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
+
 func TestCrossPackageDispatch(t *testing.T) {
-    if got := Run(); got != "[child]" { t.Fatalf("Run() = %q", got) }
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune("[child]"))) {
+		t.Fatalf("Run() UTF16 = %x", units)
+	}
 }
 `), 0o644); err != nil {
 		t.Fatalf("write generated runtime test: %v", err)
@@ -365,12 +441,20 @@ public class IdentityProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestBaseArrayIdentity(t *testing.T) {
 	const want = "true:child|false:base"
-	if got := Run(); got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() UTF16 = %x, want %q", units, want)
 	}
 }
 `)

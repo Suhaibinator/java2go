@@ -96,13 +96,22 @@ func SortWith[T any](l *List[T], c Comparator[T], execution ...*Execution) {
 	if l == nil {
 		panic(NewNullPointerException("Collections.sort on null"))
 	}
-	if c == nil {
-		SortSliceStableNatural(l.elements, execution...)
+	elements := l.Slice()
+	if l.viewRoot != nil {
+		elements = append([]T(nil), elements...)
+	}
+	SortSliceWith(elements, c, execution...)
+	if l.viewRoot != nil {
+		l.writeSortedView(optionalComparisonExecution(execution), len(elements), func(index int32) {
+			l.Set(index, elements[index])
+		})
 		return
 	}
-	sort.SliceStable(l.elements, func(i, j int) bool {
-		return c(l.elements[i], l.elements[j]) < 0
-	})
+	if l.array != nil || l.erasedStorage {
+		for i, element := range elements {
+			l.Set(int32(i), element)
+		}
+	}
 }
 
 // SortSliceWith sorts a slice with an explicit comparator, matching
@@ -138,11 +147,11 @@ func optionalComparisonExecution(executions []*Execution) *Execution {
 // Collections.max(coll, cmp). Java returns the first maximal element, so a later
 // element replaces the incumbent only when it compares strictly greater.
 func MaxWith[T any](l *List[T], c Comparator[T], execution ...*Execution) T {
-	if l == nil || len(l.elements) == 0 {
+	if l == nil || l.Size() == 0 {
 		panic(NewNoSuchElementException("Collections.max on an empty collection"))
 	}
-	best := l.elements[0]
-	for _, e := range l.elements[1:] {
+	best := l.Get(0)
+	for _, e := range l.Slice()[1:] {
 		if compareWithNatural(c, e, best, execution...) > 0 {
 			best = e
 		}
@@ -153,11 +162,11 @@ func MaxWith[T any](l *List[T], c Comparator[T], execution ...*Execution) T {
 // MinWith returns the smallest element under an explicit comparator, matching
 // Collections.min(coll, cmp). As with MaxWith, ties keep the earlier element.
 func MinWith[T any](l *List[T], c Comparator[T], execution ...*Execution) T {
-	if l == nil || len(l.elements) == 0 {
+	if l == nil || l.Size() == 0 {
 		panic(NewNoSuchElementException("Collections.min on an empty collection"))
 	}
-	best := l.elements[0]
-	for _, e := range l.elements[1:] {
+	best := l.Get(0)
+	for _, e := range l.Slice()[1:] {
 		if compareWithNatural(c, e, best, execution...) < 0 {
 			best = e
 		}
@@ -243,7 +252,7 @@ func javaCompareValuesExecution(execution *Execution, left, right any) int32 {
 	case string:
 		ReferenceRequireNonNull(right)
 		if right, ok := right.(string); ok {
-			return int32(cmp.Compare(left, right))
+			return StringCompareTo(left, right)
 		}
 	case int8:
 		if right, ok := right.(int8); ok {
@@ -310,7 +319,7 @@ func compareViaReflectOrdering(left, right any) (int32, bool) {
 	case reflect.Float32, reflect.Float64:
 		return javaDoubleCompare(leftValue.Float(), rightValue.Float()), true
 	case reflect.String:
-		return int32(cmp.Compare(leftValue.String(), rightValue.String())), true
+		return StringCompareTo(leftValue.String(), rightValue.String()), true
 	}
 	return 0, false
 }

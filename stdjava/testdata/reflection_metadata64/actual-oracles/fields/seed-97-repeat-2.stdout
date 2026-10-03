@@ -1,0 +1,13 @@
+field|visible|1|int|int|true
+field|hidden|2|java.lang.String|java.lang.String|true
+field|labels|4|java.util.List|java.util.List<java.lang.String>|true
+field|packageValue|0|int|int|true
+field|shared|9|int|int|true
+field|FIXED|25|int|int|true
+field|transientValue|129|int|int|true
+field|volatileValue|65|int|int|true
+inventory|8
+inherited|java.lang.NoSuchFieldException
+denied|java.lang.IllegalAccessException
+final|java.lang.IllegalAccessException
+state|99|changed-97|98|6|7|changed-97|99|6

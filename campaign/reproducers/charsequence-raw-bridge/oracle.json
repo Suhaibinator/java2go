@@ -1,0 +1,84 @@
+{
+  "compile_exit": 0,
+  "compile_release": "21",
+  "compile_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "compile_stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "input_hashes_match_prepared_before_and_after": true,
+  "jdk_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "kind": "supplemental-charsequence-raw-bridge-jvm-oracle",
+  "seeds": {
+    "17": {
+      "expected_stderr": "expected.seed-17.stderr",
+      "expected_stdout": "expected.seed-17.stdout",
+      "runs": [
+        {
+          "exit": 0,
+          "repeat": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "06417625d8c2956eb7840e0a02558295911c29bf7d5f151ed589119c0f8699af"
+        },
+        {
+          "exit": 0,
+          "repeat": 2,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "06417625d8c2956eb7840e0a02558295911c29bf7d5f151ed589119c0f8699af"
+        },
+        {
+          "exit": 0,
+          "repeat": 3,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "06417625d8c2956eb7840e0a02558295911c29bf7d5f151ed589119c0f8699af"
+        }
+      ]
+    },
+    "41": {
+      "expected_stderr": "expected.seed-41.stderr",
+      "expected_stdout": "expected.seed-41.stdout",
+      "runs": [
+        {
+          "exit": 0,
+          "repeat": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "7e18bced887892b25b33720794192d3c523d709a91c35e0fc7e9f4d446ac4fd6"
+        },
+        {
+          "exit": 0,
+          "repeat": 2,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "7e18bced887892b25b33720794192d3c523d709a91c35e0fc7e9f4d446ac4fd6"
+        },
+        {
+          "exit": 0,
+          "repeat": 3,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "7e18bced887892b25b33720794192d3c523d709a91c35e0fc7e9f4d446ac4fd6"
+        }
+      ]
+    },
+    "97": {
+      "expected_stderr": "expected.seed-97.stderr",
+      "expected_stdout": "expected.seed-97.stdout",
+      "runs": [
+        {
+          "exit": 0,
+          "repeat": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "90ef75e2c8ce9978240a5aff2f930dadb5e219cbd15acaa23f048b4bb23d0ff4"
+        },
+        {
+          "exit": 0,
+          "repeat": 2,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "90ef75e2c8ce9978240a5aff2f930dadb5e219cbd15acaa23f048b4bb23d0ff4"
+        },
+        {
+          "exit": 0,
+          "repeat": 3,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "90ef75e2c8ce9978240a5aff2f930dadb5e219cbd15acaa23f048b4bb23d0ff4"
+        }
+      ]
+    }
+  },
+  "source_manifest_sha256": "a0c541da3ec32d580999bb0b33eab243834ee6631d4dac1a7fa1fba7e6fa5111"
+}

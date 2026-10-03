@@ -41,8 +41,24 @@ func identFromNode(node *sitter.Node, source []byte) *ast.Ident {
 
 // A Ctx is all the context that is needed to parse a single source file
 type Ctx struct {
+	preparedAnonymousReceiverRoot  *sitter.Node
+	preparedAnonymousReceiverExpr  ast.Expr
+	preparedAnonymousReceiverStamp anonymousReceiverEmissionStamp
+	// Exact field root being requested as backing storage, rather than a volatile read.
+	volatileStorageRoot *sitter.Node
 	// Project entrypoints retain their Java signature and receive argv from a launcher.
 	projectMode bool
+	// Immutable named-family analysis shared only within this resolved file render.
+	genericFamilies *genericFamilyAnalysis
+	// Structural source facts shared only within a resolved conversion batch.
+	callableSubclasses *callableSubclassSourceInventory
+	// Declaration-to-file facts can cross fresh lookup contexts without caller semantics.
+	sourceOwnership *resolutionFileIndex
+	// Active member-type hierarchy lookups; extended immutably per lookup.
+	memberTypeLookupPath map[*symbol.ClassScope]bool
+	// Header lookup keeps the declaration and its binders, but excludes body-only members.
+	memberTypeHeaderOwner *symbol.ClassScope
+	localBindingBody      *sitter.Node
 	// Used to generate the names of all the methods, as well as the names
 	// of the constructors
 	className string
@@ -53,6 +69,9 @@ type Ctx struct {
 
 	// The symbols of the current
 	localScope *symbol.Definition
+
+	// Anonymous universal-method callbacks use their declaration-bound erased ABI.
+	erasedGenericMethodBody *symbol.Definition
 
 	// executionContextName is the hidden *stdjava.Execution parameter active
 	// while lowering one generated Java method, constructor, or callback. Calls
@@ -207,6 +226,8 @@ type anonymousClassKey struct {
 }
 
 type anonymousClassInfo struct {
+	emissionStamp              anonymousReceiverEmissionStamp
+	emissionStampValid         bool
 	structName                 string
 	scope                      *symbol.ClassScope
 	declaredFields             []*symbol.Definition
@@ -395,11 +416,21 @@ func transferTargetInsideBoundary(transfer *tryControlTransfer, boundary *sitter
 // pointing at the same things as the previous Ctx
 func (c Ctx) Clone() Ctx {
 	return Ctx{
+		preparedAnonymousReceiverRoot:       c.preparedAnonymousReceiverRoot,
+		preparedAnonymousReceiverExpr:       c.preparedAnonymousReceiverExpr,
+		preparedAnonymousReceiverStamp:      c.preparedAnonymousReceiverStamp,
 		projectMode:                         c.projectMode,
+		genericFamilies:                     c.genericFamilies,
+		callableSubclasses:                  c.callableSubclasses,
+		sourceOwnership:                     c.sourceOwnership,
+		memberTypeLookupPath:                c.memberTypeLookupPath,
+		memberTypeHeaderOwner:               c.memberTypeHeaderOwner,
+		localBindingBody:                    c.localBindingBody,
 		className:                           c.className,
 		currentFile:                         c.currentFile,
 		currentClass:                        c.currentClass,
 		localScope:                          c.localScope,
+		erasedGenericMethodBody:             c.erasedGenericMethodBody,
 		executionContextName:                c.executionContextName,
 		lastType:                            c.lastType,
 		expectedType:                        c.expectedType,
@@ -475,8 +506,11 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			switch c.Type() {
 			case "package_declaration":
 				pkg := c.NamedChild(0)
-				if pkg != nil && pkg.NamedChildCount() > 0 {
-					program.Name = &ast.Ident{Name: pkg.NamedChild(int(pkg.NamedChildCount() - 1)).Content(source)}
+				if pkg != nil {
+					if pkg.NamedChildCount() > 0 {
+						pkg = pkg.NamedChild(int(pkg.NamedChildCount() - 1))
+					}
+					program.Name = identFromNode(pkg, source)
 				}
 			case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
 				declCtx := ctx.Clone()
@@ -506,6 +540,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 				},
 			}, program.Decls...)
 		}
+		lowerGeneratedGoIdentifiers(program, ctx)
 		return program
 	case "field_declaration":
 		var public bool
@@ -547,7 +582,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			for _, modifier := range nodeutil.UnnamedChildrenOf(node.NamedChild(0)) {
 				switch modifier.Type() {
 				case "marker_annotation", "annotation":
-					comments = append(comments, &ast.Comment{Text: "//" + modifier.Content(source)})
+					comments = append(comments, javaAnnotationComments(modifier.Content(source))...)
 					if _, in := excludedAnnotations[modifier.Content(source)]; in {
 						// If this entire method is ignored, we return an empty field, which
 						// is handled by the logic that parses a class file
@@ -567,18 +602,14 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			}
 
 			// Size of parameters must match
-			if int(methodParameters.NamedChildCount()) != len(d.Parameters) {
+			if int(nodeutil.SemanticNamedChildCount(methodParameters)) != len(d.Parameters) {
 				return false
 			}
 
 			// Go through the types and check to see if they differ
-			for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
-				var paramType string
-				if param.Type() == "spread_parameter" {
-					paramType = param.NamedChild(0).Content(source)
-				} else {
-					paramType = param.ChildByFieldName("type").Content(source)
-				}
+			for index, param := range nodeutil.SemanticNamedChildrenOf(methodParameters) {
+				typeNode, _ := nodeutil.JavaParameterNodes(param)
+				paramType := typeNode.Content(source)
 				if paramType != d.Parameters[index].OriginalType {
 					return false
 				}
@@ -591,7 +622,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		ctx.localScope = def
 
 		parameters := &ast.FieldList{}
-		for index, param := range nodeutil.NamedChildrenOf(methodParameters) {
+		for index, param := range nodeutil.SemanticNamedChildrenOf(methodParameters) {
 			field := ParseNode(param, source, ctx).(*ast.Field)
 			if index < len(def.Parameters) && def.Parameters[index] != nil {
 				field.Type = rawUnboundReceiverParameterType(
@@ -616,6 +647,9 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 
 		eraseGenericMethodSignature(def, parameters, results, ctx)
+		if results != nil && len(results.List) == 1 {
+			results.List[0].Type = interfaceCovariantPublicResultType(ctx.currentClass, def, results.List[0].Type, ctx)
+		}
 		return &ast.Field{
 			Doc:   &ast.CommentGroup{List: comments},
 			Names: []*ast.Ident{&ast.Ident{Name: def.Name}},
@@ -639,14 +673,14 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		return &ast.CaseClause{}
 	case "argument_list":
 		args := []ast.Expr{}
-		for _, c := range nodeutil.NamedChildrenOf(node) {
+		for _, c := range nodeutil.SemanticNamedChildrenOf(node) {
 			args = append(args, ParseExpr(c, source, ctx))
 		}
 		return args
 
 	case "formal_parameters":
 		params := &ast.FieldList{}
-		for _, param := range nodeutil.NamedChildrenOf(node) {
+		for _, param := range nodeutil.SemanticNamedChildrenOf(node) {
 			params.List = append(params.List, ParseNode(param, source, ctx).(*ast.Field))
 		}
 		return params
@@ -655,7 +689,7 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			paramDef := ctx.localScope.ParameterByName(node.ChildByFieldName("name").Content(source))
 			if paramDef == nil {
 				paramDef = &symbol.Definition{
-					Name:         node.ChildByFieldName("name").Content(source),
+					Name:         localBindingName(node.ChildByFieldName("name").Content(source), ctx),
 					OriginalType: node.ChildByFieldName("type").Content(source),
 				}
 			}
@@ -677,16 +711,15 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 		}
 		fallbackType := node.ChildByFieldName("type").Content(source)
 		return &ast.Field{
-			Names: []*ast.Ident{identFromNode(node.ChildByFieldName("name"), source)},
+			Names: []*ast.Ident{localBindingIdent(node.ChildByFieldName("name"), source, ctx)},
 			Type:  abstractClassToInterface(javaTypeStringToGoTypeExpr(fallbackType, inScopeTypeParameters(ctx), ctx), fallbackType, ctx),
 		}
 	case "spread_parameter":
 		// Java varargs parameters are array references inside the callee.
-		spreadType := node.NamedChild(0)
-		spreadDeclarator := node.NamedChild(1)
+		spreadType, spreadName := nodeutil.JavaParameterNodes(node)
 
 		return &ast.Field{
-			Names: []*ast.Ident{identFromNode(spreadDeclarator.ChildByFieldName("name"), source)},
+			Names: []*ast.Ident{localBindingIdent(spreadName, source, ctx)},
 			Type:  javaTypeStringToGoTypeExpr(spreadType.Content(source)+"[]", inScopeTypeParameters(ctx), ctx),
 		}
 	case "inferred_parameters":
@@ -1091,16 +1124,21 @@ func buildCatchDispatchStmt(catches []*sitter.Node, recoveredName, didPanicName,
 			if len(catchTypes) > 0 {
 				originalType = catchTypes[0]
 			}
+			catchValue := ast.Expr(&ast.TypeAssertExpr{X: &ast.Ident{Name: recoveredName}, Type: stdjavaQualifiedExpr("Throwable", ctx)})
+			if sourceView, physicalType, source := sourceCatchVariableView(catchTypes, recoveredName, catchCtx); source {
+				catchValue = sourceView
+				catchType = physicalType
+			}
 			recordLocalVariableDefinition(catchCtx, catchName, originalType, catchType)
 			bodyStmts = append(bodyStmts, &ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.Ident{Name: catchName}},
+				Lhs: []ast.Expr{&ast.Ident{Name: localBindingName(catchName, catchCtx)}},
 				Tok: token.DEFINE,
-				Rhs: []ast.Expr{&ast.Ident{Name: recoveredName}},
+				Rhs: []ast.Expr{catchValue},
 			})
 			bodyStmts = append(bodyStmts, &ast.AssignStmt{
 				Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
 				Tok: token.ASSIGN,
-				Rhs: []ast.Expr{&ast.Ident{Name: catchName}},
+				Rhs: []ast.Expr{&ast.Ident{Name: localBindingName(catchName, catchCtx)}},
 			})
 		}
 
@@ -1159,7 +1197,13 @@ func parseCatchParameter(catchNode *sitter.Node, source []byte) (string, []strin
 	}
 
 	catchTypes := []string{}
-	typeNode := paramNode.NamedChild(0)
+	var typeNode *sitter.Node
+	for _, child := range nodeutil.NamedChildrenOf(paramNode) {
+		if child.Type() == "catch_type" {
+			typeNode = child
+			break
+		}
+	}
 	if typeNode != nil {
 		if typeNode.Type() == "catch_type" {
 			for _, child := range nodeutil.NamedChildrenOf(typeNode) {
@@ -1180,6 +1224,10 @@ func catchConditionExpr(catchTypes []string, recoveredName string, ctx Ctx) ast.
 
 	checks := []ast.Expr{}
 	for _, catchType := range catchTypes {
+		if descriptor, source := sourceCatchDescriptor(catchType, ctx); source {
+			checks = append(checks, stdjavaCall(ctx, "ObjectInstanceOf", ast.NewIdent(recoveredName), descriptor))
+			continue
+		}
 		if shouldTreatAsCatchAll(catchType, ctx) {
 			return &ast.Ident{Name: "true"}
 		}
@@ -1187,10 +1235,13 @@ func catchConditionExpr(catchTypes []string, recoveredName string, ctx Ctx) ast.
 		// Match by hierarchy through the stdjava runtime: a thrown
 		// IllegalArgumentException is caught by `catch (RuntimeException e)`.
 		// Multi-catch (catch (A | B e)) is handled by OR-ing each type's check.
-		base, _ := parseJavaTypeString(catchType)
-		typeName := stripJavaQualifier(base)
+		typeName, nominal, _ := throwableCatchDescriptor(catchType, ctx)
+		helper := "CaughtAs"
+		if nominal {
+			helper = "CaughtAsType"
+		}
 		checks = append(checks, &ast.CallExpr{
-			Fun: stdjavaQualifiedExpr("CaughtAs", ctx),
+			Fun: stdjavaQualifiedExpr(helper, ctx),
 			Args: []ast.Expr{
 				&ast.Ident{Name: recoveredName},
 				&ast.BasicLit{Kind: token.STRING, Value: `"` + typeName + `"`},
@@ -1214,36 +1265,8 @@ func catchConditionExpr(catchTypes []string, recoveredName string, ctx Ctx) ast.
 }
 
 func shouldTreatAsCatchAll(javaType string, ctx Ctx) bool {
-	base, _ := parseJavaTypeString(javaType)
-	base = stripJavaQualifier(base)
-
-	// Throwable and Object are the only true catch-alls: they match anything that
-	// escaped the try body. Everything else — including Exception and
-	// RuntimeException — is matched by hierarchy through stdjava.CaughtAs. This is
-	// sound because stdjava.NormalizePanic converts every raw Go panic into a
-	// typed exception (RuntimeException by default) at the recover boundary, so a
-	// thrown Error/Throwable is correctly NOT caught by catch (Exception e), while
-	// more specific clauses still win by appearing earlier in the dispatch chain.
-	switch base {
-	case "Throwable", "Object":
-		return true
-	}
-
-	// Built-in exception types are modelled by stdjava and matched by hierarchy.
-	if isBuiltinExceptionType(base) {
-		return false
-	}
-
-	if resolveClassScopeByQualifiedName(ctx, javaType) != nil {
-		return false
-	}
-	if resolveClassScopeByQualifiedName(ctx, base) != nil {
-		return false
-	}
-
-	// Unknown exception classes from external libraries are treated as catch-all,
-	// so generated code does not depend on unavailable type declarations.
-	return true
+	_, _, catchAll := throwableCatchDescriptor(javaType, ctx)
+	return catchAll
 }
 
 func cloneLocalScopeDefinition(local *symbol.Definition) *symbol.Definition {
@@ -1295,13 +1318,14 @@ func parseResourceDecls(resourcesNode *sitter.Node, source []byte, ctx Ctx) []re
 }
 
 func buildResourceCloseDeferStmt(resourceName string, resourceNode *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
+	resourceName = localBindingName(resourceName, ctx)
 	closeBody := []ast.Stmt{}
 	closeExecutionName := ""
 	if resourceNode != nil {
 		if typeNode := resourceNode.ChildByFieldName("type"); typeNode != nil {
 			if scope := resolveClassScopeByQualifiedName(ctx, typeNode.Content(source)); scope != nil {
 				if resolution := findInstanceMethodInHierarchy(scope, "close", 0, ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
-					closeExecutionName = executionImplementationName(resolution.def, resolution.owner)
+					closeExecutionName = executionImplementationName(resolution.def, resolution.owner, ctx)
 				}
 			}
 		}
@@ -1311,7 +1335,7 @@ func buildResourceCloseDeferStmt(resourceName string, resourceNode *sitter.Node,
 	// one globally collision-safe execution name, so probe that structural method
 	// before falling back to the public Close ABI.
 	if closeExecutionName == "" {
-		closeExecutionName = executionImplementationName(&symbol.Definition{Name: "Close"}, ctx.currentClass)
+		closeExecutionName = executionImplementationName(&symbol.Definition{Name: "Close"}, ctx.currentClass, ctx)
 	}
 	if execution := executionExpr(ctx); execution != nil && closeExecutionName != "" {
 		usedNames := map[string]struct{}{resourceName: {}}

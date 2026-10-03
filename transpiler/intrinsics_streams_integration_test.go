@@ -21,17 +21,17 @@ public class StreamProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.StreamOfSlice(xs.Slice())")
 	// predicate -> bool result, mapper -> element-type result.
-	assertContains(t, out, "Filter(func(n *stdjava.Integer) bool")
+	assertContains(t, out, "Filter(stdjava.FunctionCallbackExecution[*stdjava.Integer, bool](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.Integer, bool](func(__java2goExecution *stdjava.Execution, n *stdjava.Integer) bool")
 	assertContains(t, out, "stdjava.StreamMap(")
-	assertContains(t, out, "func(n *stdjava.Integer) *stdjava.Integer")
+	assertContains(t, out, "stdjava.FunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.Integer, *stdjava.Integer](func(__java2goExecution *stdjava.Execution, n *stdjava.Integer) *stdjava.Integer")
 	assertContains(t, out, ".ToList()")
 	assertContains(t, out, ".Count()")
-	assertContains(t, out, "AnyMatch(func(n *stdjava.Integer) bool")
+	assertContains(t, out, "AnyMatch(stdjava.FunctionCallbackExecution[*stdjava.Integer, bool](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.Integer, bool](func(__java2goExecution *stdjava.Execution, n *stdjava.Integer) bool")
 	// reduce: two element-typed params, element-typed result.
 	assertContains(t, out, "stdjava.StreamReduce(")
-	assertContains(t, out, "func(a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
+	assertContains(t, out, "stdjava.BiFunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer, *stdjava.Integer](__java2goExecution, stdjava.NewBiFunctionFuncAdapter[*stdjava.Integer, *stdjava.Integer, *stdjava.Integer](func(__java2goExecution *stdjava.Execution, a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
 	// forEach: void consumer, no result type.
-	assertContains(t, out, "ForEach(func(n *stdjava.Integer) {")
+	assertContains(t, out, "ForEach(stdjava.ConsumerCallbackExecution[*stdjava.Integer](__java2goExecution, stdjava.NewConsumerFuncAdapter[*stdjava.Integer](func(__java2goExecution *stdjava.Execution, n *stdjava.Integer) {")
 }
 
 func TestStreams_StreamOfStatic(t *testing.T) {
@@ -66,7 +66,7 @@ public class SortedProgram {
 
 func TestStreams_TypeChangingMap(t *testing.T) {
 	// map(Integer -> String) followed by forEach(String) must type both lambdas:
-	// the mapper returns string (string concat), and the consumer's param is string.
+	// the mapper returns a JavaString reference, as does the consumer's parameter type.
 	src := `
 import java.util.List;
 import java.util.ArrayList;
@@ -78,8 +78,8 @@ public class TypeMapProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	// mapper result type inferred as string from the concat body.
-	assertContains(t, out, "func(n *stdjava.Integer) string")
-	// the consumer after the type-changing map takes a string.
-	assertContains(t, out, "ForEach(func(s string) {")
+	// mapper result type inferred as a JavaString reference from the concat body.
+	assertContains(t, out, "stdjava.FunctionCallbackExecution[*stdjava.Integer, *stdjava.JavaString](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.Integer, *stdjava.JavaString](func(__java2goExecution *stdjava.Execution, n *stdjava.Integer) *stdjava.JavaString")
+	// the consumer after the type-changing map takes a JavaString reference.
+	assertContains(t, out, "ForEach(stdjava.ConsumerCallbackExecution[*stdjava.JavaString](__java2goExecution, stdjava.NewConsumerFuncAdapter[*stdjava.JavaString](func(__java2goExecution *stdjava.Execution, s *stdjava.JavaString) {")
 }

@@ -95,8 +95,8 @@ public class ReferenceArrayIterationProgram {
 	flat := normalizeSpaces(out)
 	for _, fragment := range []string{
 		`range stdjava.ReferenceArrayIterationElements(selected)`,
-		`value := stdjava.ObjectView[string]`,
-		`item := stdjava.ObjectView[string]`,
+		`value := stdjava.ObjectView[*stdjava.JavaString]`,
+		`item := stdjava.ObjectView[*stdjava.JavaString]`,
 		`object := stdjava.ObjectView[*ReferenceArrayIterationProgrambase]`,
 		`row := stdjava.ObjectView[*stdjava.PrimitiveArray[int32]]`,
 		`range stdjava.PrimitiveArrayIterationElements(row)`,
@@ -114,10 +114,15 @@ public class ReferenceArrayIterationProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "unicode/utf16"
+)
 
 func TestEnhancedForArrayRuntime(t *testing.T) {
-    if got := Run(); got != "azt:vw:19:1234:30:3" {
+    reference := Run()
+    if reference == nil { t.Fatal("Run() returned null") }
+    if got := string(utf16.Decode(reference.UTF16Copy())); got != "azt:vw:19:1234:30:3" {
         t.Fatalf("Run() = %q, want exact Java enhanced-for behavior", got)
     }
 }

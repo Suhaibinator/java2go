@@ -48,20 +48,105 @@ func ResolveFile(file parsing.SourceFile) {
 	if file.Symbols == nil {
 		return
 	}
-	// Complete ordinary member resolution for the entire file before allocating
-	// synthesized names. A Java source may contain multiple top-level classes and
-	// arbitrarily deep nested classes; helper naming must observe their final Go
-	// member names, not the pre-resolution spellings.
-	for _, top := range file.Symbols.TopLevelClasses {
-		resolveClassTree(top, file)
+	ResolveFiles([]parsing.SourceFile{file})
+}
+
+// ResolveFiles finishes ordinary declarations before performing whole-program
+// inheritance and synthesized-name analysis. Compilation-unit boundaries must
+// not cause those global passes to repeat for every source file.
+func ResolveFiles(files []parsing.SourceFile) {
+	if len(files) == 0 {
+		return
+	}
+	previousIndex := activeResolutionFiles
+	activeResolutionFiles = newResolutionFileIndex()
+	defer func() { activeResolutionFiles = previousIndex }()
+
+	prepareBuiltinInterfaceMethods()
+	prepareAbstractCollectionDefaults()
+	prepareAbstractMapDefaults()
+	preparedPackages := make(map[*symbol.PackageScope]bool)
+	for _, file := range files {
+		if file.Symbols == nil {
+			continue
+		}
+		pkg := symbol.GlobalScope.FindPackage(file.Symbols.Package)
+		if !preparedPackages[pkg] {
+			resolveTypeParameterNominalNames(file)
+			resolvePackageStaticFieldNames(pkg)
+			preparedPackages[pkg] = true
+		}
+	}
+	for _, file := range files {
+		if file.Symbols == nil {
+			continue
+		}
+		for _, top := range file.Symbols.TopLevelClasses {
+			resolveClassTree(top, file)
+		}
+	}
+	// Constructor and static-method overloads now have their final names. Refresh
+	// package bindings against those names before emitting helpers or references;
+	// the initial allocation could only reserve their unresolved spellings.
+	for pkg := range preparedPackages {
+		resolvePackageStaticFieldNames(pkg)
 	}
 	// Java keeps fields and methods in separate namespaces, while Go promotion
 	// gives an embedded superclass's members and the child type's direct members
-	// one selector namespace. Run this package-wide after each file; on the final
-	// file all ordinary names are resolved, and the pass is idempotent before
-	// then because it only renames an actual remaining collision.
+	// one selector namespace. Allocate inherited selectors after every ordinary
+	// member has its final name, then repair promotion collisions to a fixed point.
+	resolveInheritedInterfaceOverloadNames()
+	resolveInheritedClassOverloadNames()
 	resolvePromotedFieldMethodCollisions()
-	resolveAffineArrayViewHelperNames(file)
+	for _, file := range files {
+		if file.Symbols != nil {
+			resolveAffineArrayViewHelperNames(file)
+		}
+	}
+	resolveLocalIdentifierHygiene()
+	resolveGenericMethodHelperNames()
+}
+
+// Complete package symbols exist before conversion starts. Allocate binder
+// names here, rather than renaming them after a helper or receiver was emitted.
+func resolveTypeParameterNominalNames(file parsing.SourceFile) {
+	pkg := symbol.GlobalScope.FindPackage(file.Symbols.Package)
+	if pkg == nil {
+		return
+	}
+	nominal := make(map[string]struct{})
+	var scopes []*symbol.ClassScope
+	var collect func(*symbol.ClassScope)
+	collect = func(scope *symbol.ClassScope) {
+		if scope == nil {
+			return
+		}
+		scopes = append(scopes, scope)
+		if scope.Class != nil {
+			nominal[scope.Class.Name] = struct{}{}
+		}
+		for _, nested := range scope.Subclasses {
+			collect(nested)
+		}
+	}
+	for _, sourceFile := range pkg.Files {
+		if sourceFile == nil {
+			continue
+		}
+		for _, top := range sourceFile.TopLevelClasses {
+			collect(top)
+		}
+	}
+	var parameters []symbol.TypeParam
+	for _, scope := range scopes {
+		parameters = symbol.AppendTypeParamsByDeclaration(parameters, scope.TypeParameters)
+		for _, method := range scope.Methods {
+			if method != nil {
+				parameters = symbol.AppendTypeParamsByDeclaration(parameters, method.TypeParameters)
+			}
+		}
+	}
+	symbol.ReserveTypeParamNominalNames(parameters, nominal)
 }
 
 func resolveClassTree(class *symbol.ClassScope, file parsing.SourceFile) {
@@ -89,7 +174,7 @@ func packageHasOtherStaticFieldName(packageScope *symbol.PackageScope, current *
 				if class == nil || found {
 					return
 				}
-				for _, field := range class.Fields {
+				for _, field := range classFieldBindings(class) {
 					if field != nil && field != current && field.IsStatic && field.Name == name {
 						found = true
 						return
@@ -151,7 +236,7 @@ func classHasOtherFieldName(class *symbol.ClassScope, current *symbol.Definition
 	if class == nil {
 		return false
 	}
-	for _, field := range class.Fields {
+	for _, field := range classFieldBindings(class) {
 		if field != nil && field != current && field.Name == name {
 			return true
 		}
@@ -307,7 +392,7 @@ func resolvePromotedFieldMethodCollisionsInTree(class *symbol.ClassScope) bool {
 			}
 		}
 	}
-	for _, field := range class.Fields {
+	for _, field := range classFieldBindings(class) {
 		if field == nil || field.IsStatic {
 			continue
 		}
@@ -345,7 +430,7 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 	packageScope := symbol.GlobalScope.FindPackage(file.Symbols.Package)
 
 	// Resolve all the fields in that respective class
-	for _, field := range class.Fields {
+	for _, field := range classFieldBindings(class) {
 
 		// Since a private global variable is able to be accessed in the package, it must be renamed
 		// to avoid conflicts with other global variables
@@ -354,9 +439,10 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 
 		// Rename the field if its name conflits with any keyword
 		for i := 0; symbol.IsReserved(field.Name) ||
-			(!field.IsStatic && classNeedsReferenceIdentity(class, Ctx{}) && referenceIdentityReservedSelector(field.Name)) ||
+			(!field.IsStatic && sourceReferenceReservedSelector(class, field.Name, Ctx{})) ||
 			classHasOtherFieldName(class, field, field.Name) ||
 			(!field.IsStatic && classHasOtherInstanceMethodName(class, field, field.Name)) ||
+			(field.IsStatic && packageHasEmittedSourceTypeName(packageScope, field.Name)) ||
 			(field.IsStatic && packageHasOtherStaticFieldName(packageScope, field, field.Name)) ||
 			(field.IsStatic && packageHasOtherStaticMethodName(packageScope, field, field.Name)); i++ {
 			field.Rename(field.Name + strconv.Itoa(i))
@@ -395,8 +481,9 @@ func ResolveClass(class *symbol.ClassScope, file parsing.SourceFile) {
 		}
 
 		for i := 0; symbol.IsReserved(method.Name) ||
-			(!method.IsStatic && classNeedsReferenceIdentity(class, Ctx{}) && referenceIdentityReservedSelector(method.Name)) ||
+			(!method.IsStatic && sourceReferenceReservedSelector(class, method.Name, Ctx{})) ||
 			collidesWithGoFuncName(method) ||
+			(method.IsStatic && packageHasEmittedSourceTypeName(packageScope, method.Name)) ||
 			classHasOtherFieldName(class, method, method.Name) ||
 			(method.IsStatic && packageHasOtherStaticFieldName(packageScope, method, method.Name)) ||
 			(method.IsStatic && packageHasOtherStaticMethodName(packageScope, method, method.Name)) ||

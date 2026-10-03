@@ -8,20 +8,28 @@ type MapEntry[K, V any] struct {
 	Value V
 }
 
+func (entry MapEntry[K, V]) GetKey() K   { return entry.Key }
+func (entry MapEntry[K, V]) GetValue() V { return entry.Value }
+
 type mapRecord[K, V any] struct {
-	entry MapEntry[K, V]
+	key   any
+	value any
 }
 
 // Map uses Java hashCode/equals collision buckets. Keys may have any generated
 // Go representation; their Go comparability does not determine Java equality.
 // Iteration is deterministic insertion order for hash maps. Tree maps keep
 // entries ordered and determine key equivalence exclusively by comparison.
-// keySet/values/entrySet remain snapshots, rather than live Java views.
+// Legacy slice methods are internal snapshots; Java-facing views retain this map.
 type Map[K, V any] struct {
 	buckets    map[int32][]*mapRecord[K, V]
 	entries    []*mapRecord[K, V]
 	sorted     bool
 	comparator Comparator[K]
+	modCount   uint64
+	keyView    any
+	valueView  any
+	entryView  any
 }
 
 func NewMap[K, V any]() *Map[K, V] {
@@ -35,7 +43,7 @@ func NewTreeMapWith[K, V any](comparator Comparator[K]) *Map[K, V] {
 	return &Map[K, V]{sorted: true, comparator: comparator}
 }
 
-func (m *Map[K, V]) compare(key any, stored K, execution *Execution) int32 {
+func (m *Map[K, V]) compare(key any, stored any, execution *Execution) int32 {
 	if m.comparator == nil {
 		return javaCompareValuesExecution(execution, key, stored)
 	}
@@ -49,7 +57,7 @@ func (m *Map[K, V]) compare(key any, stored K, execution *Execution) int32 {
 			panic(NewClassCastException("incompatible sorted collection key"))
 		}
 	}
-	return m.comparator(typed, stored)
+	return m.comparator(typed, collectionElementView[K](stored))
 }
 
 func (m *Map[K, V]) find(key any, execution *Execution) (*mapRecord[K, V], int32, int) {
@@ -60,7 +68,7 @@ func (m *Map[K, V]) find(key any, execution *Execution) (*mapRecord[K, V], int32
 		low, high := 0, len(m.entries)
 		for low < high {
 			mid := low + (high-low)/2
-			comparison := m.compare(key, m.entries[mid].entry.Key, execution)
+			comparison := m.compare(key, m.entries[mid].key, execution)
 			if comparison == 0 {
 				return m.entries[mid], 0, mid
 			}
@@ -74,7 +82,7 @@ func (m *Map[K, V]) find(key any, execution *Execution) (*mapRecord[K, V], int32
 	}
 	hash := ObjectsHashCode(key, execution)
 	for _, record := range m.buckets[hash] {
-		if ObjectsEqual(key, record.entry.Key, execution) {
+		if ObjectsEqual(key, record.key, execution) {
 			return record, hash, 0
 		}
 	}
@@ -82,17 +90,36 @@ func (m *Map[K, V]) find(key any, execution *Execution) (*mapRecord[K, V], int32
 }
 
 func (m *Map[K, V]) Put(key K, value V, execution ...*Execution) V {
-	exec := optionalComparisonExecution(execution)
+	return collectionElementView[V](m.putObject(key, value, false, optionalComparisonExecution(execution)))
+}
+
+// PutIfAbsent replaces both a missing mapping and a mapping whose Java value
+// is null. Reuse the located record so key identity and iteration order remain
+// unchanged, and user-defined hashCode/equals run only once per lookup.
+func (m *Map[K, V]) PutIfAbsent(key K, value V, execution ...*Execution) V {
+	return collectionElementView[V](m.putObject(key, value, true, optionalComparisonExecution(execution)))
+}
+
+func (m *Map[K, V]) putObject(key any, value any, onlyAbsent bool, exec *Execution) any {
 	record, hash, index := m.find(key, exec)
 	if record != nil {
-		old := record.entry.Value
-		record.entry.Value = value
+		old := record.value
+		if !onlyAbsent || javaReferenceIsNull(old) {
+			record.value = value
+		}
 		return old
 	}
+	m.insert(key, value, hash, index, exec)
+	return nil
+}
+
+// insert reuses the successful lookup, avoiding a second call to user key
+// hashCode/equals or comparison methods after a mapping callback.
+func (m *Map[K, V]) insert(key any, value any, hash int32, index int, exec *Execution) {
 	if m.sorted && len(m.entries) == 0 {
 		m.compare(key, key, exec)
 	}
-	record = &mapRecord[K, V]{entry: MapEntry[K, V]{Key: key, Value: value}}
+	record := &mapRecord[K, V]{key: key, value: value}
 	if m.sorted {
 		m.entries = append(m.entries, nil)
 		copy(m.entries[index+1:], m.entries[index:])
@@ -104,7 +131,44 @@ func (m *Map[K, V]) Put(key K, value V, execution ...*Execution) V {
 		m.buckets[hash] = append(m.buckets[hash], record)
 		m.entries = append(m.entries, record)
 	}
-	return collectionZero[V]()
+	m.modCount++
+}
+
+// ComputeIfAbsent follows HashMap and TreeMap's callback contract, including
+// rejection of structural mutation while preserving the callback's own writes.
+func (m *Map[K, V]) ComputeIfAbsent(key K, mapping func(K) V, execution ...*Execution) V {
+	ReferenceRequireNonNull(m)
+	ReferenceRequireNonNull(mapping)
+	exec := optionalComparisonExecution(execution)
+	var record *mapRecord[K, V]
+	var hash int32
+	var index int
+	// TreeMap defers validating a key in an empty tree until a non-null value
+	// actually needs insertion. A null-producing callback can therefore use null.
+	if !m.sorted || len(m.entries) != 0 {
+		record, hash, index = m.find(key, exec)
+	}
+	if record != nil && !javaReferenceIsNull(record.value) {
+		return collectionElementView[V](record.value)
+	}
+	before := m.modCount
+	computed := mapping(key)
+	if m.modCount != before {
+		panic(NewConcurrentModificationException("mapping function modified map"))
+	}
+	if record != nil && m.sorted {
+		record.value = computed
+		return computed
+	}
+	if javaReferenceIsNull(computed) {
+		return computed
+	}
+	if record != nil {
+		record.value = computed
+		return computed
+	}
+	m.insert(key, computed, hash, index, exec)
+	return computed
 }
 
 func (m *Map[K, V]) Get(key any, execution ...*Execution) V {
@@ -112,7 +176,7 @@ func (m *Map[K, V]) Get(key any, execution ...*Execution) V {
 }
 func (m *Map[K, V]) GetOrDefault(key any, fallback V, execution ...*Execution) V {
 	if record, _, _ := m.find(key, optionalComparisonExecution(execution)); record != nil {
-		return record.entry.Value
+		return collectionElementView[V](record.value)
 	}
 	return fallback
 }
@@ -122,21 +186,43 @@ func (m *Map[K, V]) ContainsKey(key any, execution ...*Execution) bool {
 }
 func (m *Map[K, V]) ContainsValue(value any, execution ...*Execution) bool {
 	for _, record := range m.entries {
-		if ObjectsEqual(value, record.entry.Value, execution...) {
+		if ObjectsEqual(value, record.value, execution...) {
 			return true
 		}
 	}
 	return false
 }
 func (m *Map[K, V]) Remove(key any, execution ...*Execution) V {
-	record, hash, index := m.find(key, optionalComparisonExecution(execution))
+	return collectionElementView[V](m.RemoveObject(key, execution...))
+}
+func (m *Map[K, V]) RemoveObject(key any, execution ...*Execution) any {
+	record, _, _ := m.find(key, optionalComparisonExecution(execution))
 	if record == nil {
-		return collectionZero[V]()
+		return nil
+	}
+	m.removeRecord(record)
+	return record.value
+}
+
+// removeRecord removes the exact node without recomputing a mutable key's hash
+// or invoking user equality/comparison callbacks from iterator.remove().
+func (m *Map[K, V]) removeRecord(record *mapRecord[K, V]) {
+	index := -1
+	for i, candidate := range m.entries {
+		if candidate == record {
+			index = i
+			break
+		}
+	}
+	if index < 0 {
+		panic(NewConcurrentModificationException("detached map record"))
 	}
 	if !m.sorted {
-		bucket := m.buckets[hash]
-		for i, candidate := range bucket {
-			if candidate == record {
+		for hash, bucket := range m.buckets {
+			for i, candidate := range bucket {
+				if candidate != record {
+					continue
+				}
 				copy(bucket[i:], bucket[i+1:])
 				bucket[len(bucket)-1] = nil
 				if len(bucket) == 1 {
@@ -147,46 +233,40 @@ func (m *Map[K, V]) Remove(key any, execution ...*Execution) V {
 				break
 			}
 		}
-		for i, candidate := range m.entries {
-			if candidate == record {
-				index = i
-				break
-			}
-		}
 	}
 	copy(m.entries[index:], m.entries[index+1:])
 	m.entries[len(m.entries)-1] = nil
 	m.entries = m.entries[:len(m.entries)-1]
-	return record.entry.Value
+	m.modCount++
 }
 func (m *Map[K, V]) Size() int32   { return int32(len(m.entries)) }
 func (m *Map[K, V]) IsEmpty() bool { return len(m.entries) == 0 }
-func (m *Map[K, V]) Clear()        { m.buckets = nil; m.entries = nil }
+func (m *Map[K, V]) Clear()        { m.modCount++; m.buckets = nil; m.entries = nil }
 func (m *Map[K, V]) KeySet() []K {
 	out := make([]K, len(m.entries))
 	for i, record := range m.entries {
-		out[i] = record.entry.Key
+		out[i] = collectionElementView[K](record.key)
 	}
 	return out
 }
 func (m *Map[K, V]) Values() []V {
 	out := make([]V, len(m.entries))
 	for i, record := range m.entries {
-		out[i] = record.entry.Value
+		out[i] = collectionElementView[V](record.value)
 	}
 	return out
 }
 func (m *Map[K, V]) EntrySet() []MapEntry[K, V] {
 	out := make([]MapEntry[K, V], len(m.entries))
 	for i, record := range m.entries {
-		out[i] = record.entry
+		out[i] = MapEntry[K, V]{Key: collectionElementView[K](record.key), Value: collectionElementView[V](record.value)}
 	}
 	return out
 }
 func (m *Map[K, V]) String() string {
 	parts := make([]string, len(m.entries))
 	for i, record := range m.entries {
-		parts[i] = StringValueOf(record.entry.Key) + "=" + StringValueOf(record.entry.Value)
+		parts[i] = StringValueOf(record.key) + "=" + StringValueOf(record.value)
 	}
 	return "{" + strings.Join(parts, ", ") + "}"
 }

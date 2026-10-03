@@ -184,13 +184,18 @@ public class ReferenceArrayProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "unicode/utf16"
+)
 
 func TestReferenceArrayRuntimeParity(t *testing.T) {
     if got := Run(); got != 472 {
         t.Fatalf("Run() = %d, want 472", got)
     }
-    if got := TraceValue(); got != "bcbcairbebc" {
+    traceReference := TraceValue()
+    if traceReference == nil { t.Fatal("TraceValue() returned null") }
+    if got := string(utf16.Decode(traceReference.UTF16Copy())); got != "bcbcairbebc" {
         t.Fatalf("TraceValue() = %q, want exact Java evaluation/store trace", got)
     }
     if got := Numeric(); got != 5.0 {
@@ -199,10 +204,14 @@ func TestReferenceArrayRuntimeParity(t *testing.T) {
     if got := PrimitiveNested(); got != 373 {
         t.Fatalf("PrimitiveNested() = %d, want 373", got)
     }
-	if got := PrimitiveSimpleAssignmentOrder(); got != "rnrb" {
+	simpleReference := PrimitiveSimpleAssignmentOrder()
+    if simpleReference == nil { t.Fatal("PrimitiveSimpleAssignmentOrder() returned null") }
+    if got := string(utf16.Decode(simpleReference.UTF16Copy())); got != "rnrb" {
 		t.Fatalf("PrimitiveSimpleAssignmentOrder() = %q, want rnrb", got)
 	}
-	if got := PrimitiveCompoundAssignmentOrder(); got != "nb" {
+	compoundReference := PrimitiveCompoundAssignmentOrder()
+    if compoundReference == nil { t.Fatal("PrimitiveCompoundAssignmentOrder() returned null") }
+    if got := string(utf16.Decode(compoundReference.UTF16Copy())); got != "nb" {
 		t.Fatalf("PrimitiveCompoundAssignmentOrder() = %q, want nb", got)
 	}
 }

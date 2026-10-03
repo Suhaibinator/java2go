@@ -144,3 +144,30 @@ func StreamAveragingOf[T any, N JavaPrimitiveNumber](s Stream[T], value func(T) 
 	// IntStream.average, which reports an empty OptionalDouble.
 	return StreamAverage(StreamMap(s, value)).OrElse(0)
 }
+
+// StreamGroupingByDownstreamWith retains the supplied map's ordering and key
+// comparison semantics while applying the downstream collector to each group.
+func StreamGroupingByDownstreamWith[T, K, D any](s Stream[T], classifier func(T) K, factory any, downstream func(Stream[T]) D, execution ...*Execution) *Map[K, D] {
+	out := CallSupplierExecution[*Map[K, D]](optionalComparisonExecution(execution), factory)
+	ReferenceRequireNonNull(out)
+	grouped := NewMap[K, *List[T]]()
+	// Group using the result map's comparator: TreeMap groups keys for which
+	// compare returns zero, even when their equals methods disagree.
+	if out.sorted {
+		grouped = NewTreeMapWith[K, *List[T]](out.comparator)
+	}
+	for _, element := range s.elements {
+		key := classifier(element)
+		ReferenceRequireNonNull(key)
+		group := grouped.Get(key, execution...)
+		if group == nil {
+			group = NewList[T]()
+			grouped.Put(key, group, execution...)
+		}
+		group.Add(element)
+	}
+	for _, key := range grouped.KeySet() {
+		out.Put(key, downstream(StreamOfSlice(grouped.Get(key, execution...).Slice())), execution...)
+	}
+	return out
+}

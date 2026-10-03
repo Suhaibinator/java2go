@@ -1,0 +1,7 @@
+Currency data and reference generator originate from OpenJDK jdk21u tag jdk-21.0.6+7.
+CurrencyData.properties: Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+GenerateCurrencyData.java: Copyright (c) 2001, 2023, Oracle and/or its affiliates.
+Original file headers are retained; these files are GPL version 2 only with the Classpath exception. See accompanying LICENSE.
+The Python generator and generated currency_data.go retain that same license and exception notice for this derived data module.
+Pinned URLs and exact SHA-256 input hashes are recorded in source-provenance.json.
+No proprietary Oracle implementation or resource is redistributed.
