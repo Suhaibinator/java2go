@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignRuntimeReflectTypeProtocols(t *testing.T) {
@@ -59,6 +60,6 @@ public class CampaignRuntimeReflectTypeProtocols {
 	t.Logf("JVM protocol oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestProtocolsOracle(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import ("testing"; "slices")
+func TestProtocolsOracle(t *testing.T){if got:=Run();got==nil||!slices.Equal(got.UTF16Copy(),%#v){t.Fatalf("JVM %%q != Go JavaString %%#v",%q,got)}}`, utf16.Encode([]rune(want)), want))
 }

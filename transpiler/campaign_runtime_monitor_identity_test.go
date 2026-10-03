@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func campaignMonitorOracle(t *testing.T, className, source string) {
@@ -11,8 +12,8 @@ func campaignMonitorOracle(t *testing.T, className, source string) {
 	t.Logf("JVM monitor oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import("testing";"time")
-func TestMonitor(t *testing.T){done:=make(chan string,1);go func(){done<-Run()}();select{case got:=<-done:if got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)};case <-time.After(5*time.Second):t.Fatal("monitor execution did not complete")}}`, want, want))
+import("testing";"time";"slices";j "github.com/NickyBoy89/java2go/stdjava")
+func TestMonitor(t *testing.T){done:=make(chan *j.JavaString,1);go func(){done<-Run()}();select{case got:=<-done:if got==nil||!slices.Equal(got.UTF16Copy(),%#v){t.Fatalf("JVM %%q != Go JavaString %%#v",%q,got)};case <-time.After(5*time.Second):t.Fatal("monitor execution did not complete")}}`, utf16.Encode([]rune(want)), want))
 }
 
 func TestCampaignRuntimeMonitorEdges(t *testing.T) {

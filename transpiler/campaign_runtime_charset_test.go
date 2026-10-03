@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignRuntimeCharsets(t *testing.T) {
@@ -27,11 +28,11 @@ public class CampaignRuntimeCharsets {
 	t.Logf("JDK charset oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import ("testing"; "slices")
 func TestCharsetsOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), %#v) { t.Fatalf("JVM %%q != generated JavaString %%#v", %q, got) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }
 
 func TestCampaignRuntimeCharsetNames(t *testing.T) {
@@ -50,9 +51,9 @@ func TestCampaignRuntimeCharsetNames(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "CampaignRuntimeCharsetNames", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import ("testing"; "slices")
 func TestCharsetNamesOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), %#v) { t.Fatalf("JVM %%q != generated JavaString %%#v", %q, got) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }

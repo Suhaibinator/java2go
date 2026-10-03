@@ -99,7 +99,7 @@ public class ReduceProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "func(a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
+	assertContains(t, out, "stdjava.BiFunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer, *stdjava.Integer](__java2goExecution, stdjava.NewBiFunctionFuncAdapter[*stdjava.Integer, *stdjava.Integer, *stdjava.Integer](func(__java2goExecution *stdjava.Execution, a *stdjava.Integer, b *stdjava.Integer) *stdjava.Integer")
 }
 
 func TestLambdaParameterNames(t *testing.T) {

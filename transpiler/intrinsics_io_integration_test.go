@@ -23,12 +23,12 @@ public class IOProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.NewPrintWriter(path)")
-	assertContains(t, out, "w.Println(\"x\")")
-	assertContains(t, out, "w.Print(\"y\")")
+	assertContains(t, out, "w.Println(stdjava.JavaStringLiteralUTF16([]uint16{120}))")
+	assertContains(t, out, "w.Print(stdjava.JavaStringLiteralUTF16([]uint16{121}))")
 	assertContains(t, out, "w.Close()")
-	assertContains(t, out, "stdjava.NewJavaFile(path)")
+	assertContains(t, out, "stdjava.NewJavaFileReference(path)")
 	assertContains(t, out, "f.Exists()")
-	assertContains(t, out, "f.GetName()")
+	assertContains(t, out, "f.GetNameReference()")
 }
 
 func TestIO_BufferedReaderUnwrapsFileReader(t *testing.T) {
@@ -45,8 +45,8 @@ public class ReaderProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	// The nested new FileReader(path) is unwrapped to its path.
-	assertContains(t, out, "stdjava.NewBufferedReader(path)")
-	assertContains(t, out, "r.ReadLine()")
+	assertContains(t, out, "stdjava.NewBufferedReaderReference(path)")
+	assertContains(t, out, "r.ReadLineReference()")
 	assertContains(t, out, "r.Close()")
 }
 
@@ -69,7 +69,12 @@ public class ScannerProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.NewScannerStdin()")
-	assertContains(t, out, "stdjava.NewScannerFile(path)")
+	// Keep the canonical File constructor so path validation and normalization
+	// happen before the Scanner encodes its native path.
+	assertContains(t, out, "stdjava.NewScannerFile(stdjava.NewJavaFileReference(path))")
+	if strings.Count(out, "stdjava.NewJavaFileReference(path)") != 1 {
+		t.Fatalf("Scanner's File argument must be constructed exactly once:\n%s", out)
+	}
 	assertContains(t, out, "sc.NextInt()")
 	assertContains(t, out, "sc.Next()")
 }
@@ -94,7 +99,7 @@ public class WriterProgram {
 	assertContains(t, out, "stdjava.NewPrintWriterAppend(path, true)")
 	// The nested new FileWriter(path) is unwrapped to its path.
 	assertContains(t, out, "stdjava.NewBufferedWriter(path)")
-	assertContains(t, out, "buffered.WriteString(\"y\")")
+	assertContains(t, out, "buffered.WriteString(stdjava.JavaStringLiteralUTF16([]uint16{121}))")
 	assertContains(t, out, "buffered.NewLine()")
 }
 
@@ -122,14 +127,14 @@ public class MemoryProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.NewStringWriter()")
 	assertContains(t, out, "stdjava.NewPrintWriter(memory)")
-	assertContains(t, out, "writer.Println(\"line\")")
+	assertContains(t, out, "writer.Println(stdjava.JavaStringLiteralUTF16([]uint16{108, 105, 110, 101}))")
 	assertContains(t, out, "stdjava.NewByteArrayOutputStream()")
 	assertContains(t, out, "stdjava.NewPrintStream(bytes)")
-	assertContains(t, out, "stream.Print(\"x\")")
+	assertContains(t, out, "stream.Print(stdjava.JavaStringLiteralUTF16([]uint16{120}))")
 	assertContains(t, out, "stream.Close()")
 	assertContains(t, out, "bytes.Size()")
-	assertContains(t, out, "memory.String()")
-	assertContains(t, out, "bytes.String()")
+	assertContains(t, out, "memory.StringReference()")
+	assertContains(t, out, "bytes.StringReference()")
 }
 
 func TestIO_ByteStreamsAndConsoleReader(t *testing.T) {
@@ -153,13 +158,17 @@ public class StreamProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	// The nested new File(path) is unwrapped to its path.
-	assertContains(t, out, "stdjava.NewFileOutputStreamAppend(path, true)")
+	// Keep the canonical File constructor so path validation and normalization
+	// happen before the output stream encodes its native path.
+	assertContains(t, out, "stdjava.NewFileOutputStreamAppend(stdjava.NewJavaFileReference(path), true)")
+	if strings.Count(out, "stdjava.NewJavaFileReference(path)") != 1 {
+		t.Fatalf("output stream's File argument must be constructed exactly once:\n%s", out)
+	}
 	assertContains(t, out, "out.WriteBytes(")
 	assertContains(t, out, "stdjava.NewFileInputStream(path)")
 	assertContains(t, out, "in.ReadByteValue()")
-	assertContains(t, out, "stdjava.NewBufferedReader(stdjava.NewInputStreamReaderStdin())")
-	assertContains(t, out, "console.ReadLine()")
+	assertContains(t, out, "stdjava.NewBufferedReaderReference(stdjava.NewInputStreamReaderStdin())")
+	assertContains(t, out, "console.ReadLineReference()")
 }
 
 func TestIO_BufferedReaderLinesIsAStream(t *testing.T) {
@@ -198,16 +207,16 @@ public class PathProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.PathsGet(\"alpha\", \"beta\")")
-	assertContains(t, out, "stdjava.PathsGet(\"gamma\")")
-	assertContains(t, out, "p.GetFileName().ToString()")
+	assertContains(t, out, "stdjava.PathsGetReference(stdjava.JavaStringLiteralUTF16([]uint16{97, 108, 112, 104, 97}), stdjava.JavaStringLiteralUTF16([]uint16{98, 101, 116, 97}))")
+	assertContains(t, out, "stdjava.PathsGetReference(stdjava.JavaStringLiteralUTF16([]uint16{103, 97, 109, 109, 97}))")
+	assertContains(t, out, "stdjava.PathToStringReference(p.GetFileName())")
 	assertContains(t, out, "p.GetParent()")
-	assertContains(t, out, "parent.Resolve(\"delta\")")
+	assertContains(t, out, "stdjava.PathResolveStringReference(parent, stdjava.JavaStringLiteralUTF16([]uint16{100, 101, 108, 116, 97}))")
 	assertContains(t, out, "p.GetNameCount()")
-	assertContains(t, out, "p.StartsWith(\"alpha\")")
-	assertContains(t, out, "p.EndsWith(\"beta\")")
-	assertContains(t, out, "p.Normalize().ToString()")
-	assertContains(t, out, "p.ToAbsolutePath().ToString()")
+	assertContains(t, out, "p.StartsWithReference(stdjava.JavaStringLiteralUTF16([]uint16{97, 108, 112, 104, 97}))")
+	assertContains(t, out, "p.EndsWithReference(stdjava.JavaStringLiteralUTF16([]uint16{98, 101, 116, 97}))")
+	assertContains(t, out, "stdjava.PathToStringReference(p.Normalize())")
+	assertContains(t, out, "stdjava.PathToStringReference(p.ToAbsolutePath())")
 }
 
 func TestNio_FilesStatics(t *testing.T) {
@@ -239,10 +248,10 @@ public class FilesProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	for _, want := range []string{
-		"stdjava.FilesWriteStringExecution(__java2goExecution, p, \"text\")",
-		"stdjava.FilesReadString(p)",
-		"stdjava.FilesReadAllLines(p)",
-		"stdjava.FilesLines(p).Count()",
+		"stdjava.FilesWriteStringExecution(__java2goExecution, p, stdjava.JavaStringLiteralUTF16([]uint16{116, 101, 120, 116}))",
+		"stdjava.FilesReadStringReference(p)",
+		"stdjava.FilesReadAllLinesReference(p)",
+		"stdjava.FilesLinesReference(p).Count()",
 		"stdjava.FilesExists(p)",
 		"stdjava.FilesIsDirectory(p)",
 		"stdjava.FilesIsRegularFile(p)",
@@ -257,7 +266,7 @@ public class FilesProgram {
 		assertContains(t, out, want)
 	}
 	// readString/readAllLines carry their Java result types, so chained calls resolve.
-	assertContains(t, out, "stdjava.StringLength(")
+	assertContains(t, out, "stdjava.RequireJavaString(content).Length()")
 	assertContains(t, out, "lines.Size()")
 }
 
@@ -277,9 +286,9 @@ public class InteropProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.FilesExists(stdjava.PathsGet(path))")
-	assertContains(t, out, "file.ToPath()")
-	assertContains(t, out, "viaFile.GetFileName().ToString()")
+	assertContains(t, out, "stdjava.FilesExists(stdjava.PathsGetReference(path))")
+	assertContains(t, out, "file.ToPathReference()")
+	assertContains(t, out, "stdjava.PathToStringReference(viaFile.GetFileName())")
 	assertContains(t, out, "stdjava.FilesSize(viaFile)")
 }
 
@@ -300,7 +309,7 @@ public class OptionsProgram {
 	out := renderGoFileFromJava(t, src)
 	// Charset and CopyOption overloads are not modeled; they must not silently
 	// lower to the option-dropping shims.
-	if strings.Contains(out, "stdjava.FilesCopy(") || strings.Contains(out, "stdjava.FilesReadString(") {
+	if strings.Contains(out, "stdjava.FilesCopy(") || strings.Contains(out, "stdjava.FilesReadString(") || strings.Contains(out, "stdjava.FilesReadStringReference(") {
 		t.Fatalf("an unmodeled Files overload was lowered anyway:\n%s", out)
 	}
 }

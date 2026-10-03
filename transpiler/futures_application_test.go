@@ -1,9 +1,11 @@
 package transpiler
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestFuturesApplications(t *testing.T) {
@@ -21,7 +23,10 @@ func TestFuturesApplications(t *testing.T) {
 				t.Fatal(err)
 			}
 			out := renderGoFileFromJava(t, strings.SplitN(string(src), "\n", 2)[1])
-			runGeneratedWithStdjava(t, out, "package main\nimport \"testing\"\nfunc TestApplication(t *testing.T) { if got := Run(); got != "+"`"+app.want+"`"+" { t.Fatalf(\"got %q\", got) } }\n")
+			runGeneratedWithStdjava(t, out, fmt.Sprintf(`package main
+import ("testing"; "slices")
+func TestApplication(t *testing.T) { if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), %#v) { t.Fatalf("want %%q, got JavaString %%#v", %q, got) } }
+`, utf16.Encode([]rune(app.want)), app.want))
 		})
 	}
 }

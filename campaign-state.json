@@ -11906,5 +11906,109 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Both original concurrent dependency applications pass9seed observations+20extra stress runs each",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress120": {
+    "status": "CANONICAL_SQL_STRING_BOUNDARIES_AND_ORIGINAL_CI_SCAFFOLDS_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "SQL Date/Time/Timestamp canonical String parsing and formatting preserve exercised UTF16, Unicode numeric input, null/error ordering and existing native API compatibility. Original Java and expected observations retained in canonical runtime assertion/scaffold migrations.",
+    "verification": {
+      "selected_parents": {
+        "120-scaffold-visible-race": 6,
+        "120-scaffold-adjacent-monitor-cause-race": 11,
+        "120-scaffold-adjacent-values-race": 5,
+        "120-sql-originals-a-race": 8,
+        "120-sql-originals-b-race": 5,
+        "120-sql-boundaries-race": 2,
+        "120-evaluation-originals-race": 9,
+        "120-remaining-shapes-race": 23,
+        "120-native-sql-race": 2
+      },
+      "total_selected_parents": 71,
+      "matching_race_binaries": true,
+      "strict_generated_race_for_executed_java_controls": true,
+      "native_timeout_seconds": 55,
+      "supervisor_seconds": 65,
+      "original_java_and_expected_observations_preserved": true,
+      "patch_application_infrastructure_correction": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-apply-infra-correction.json"
+    },
+    "remaining": "All six hosted compiler shards and dependency application gate failed at parent119. Full accepted round remains18. Gson clone prerequisite, generic/capture/dollar binding and runtime lifetime fixes remain active.",
+    "parent_ci": {
+      "revision": "57a71ded298937be5c38bc32e944a70cff6080dc",
+      "passes": [
+        "Build",
+        "Unit tests",
+        "Lint",
+        "Fuzz corpus replay",
+        "Vulnerability Check",
+        "E2E (non-parity)",
+        "Application parity"
+      ],
+      "failures": [
+        "Compiler regressions (0..5)",
+        "Adversarial dependency applications"
+      ],
+      "full_CI_accepted": false
+    },
+    "publication_parent": "57a71ded298937be5c38bc32e944a70cff6080dc",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-source-manifest.json",
+      "sha256": "4eccf4a66068d5784d5c7ecf81c1f96438d025d13a9fb8830b847f68a6489ae2",
+      "members": 3202
+    },
+    "root_records": {
+      "evidence/120-build-stdjava/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-build-stdjava/result.json",
+        "sha256": "312aaa2dc271c7309bed1fc2e3d8a268d449274c3532f2306f96d57828cdb5a9"
+      },
+      "evidence/120-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-build-transpiler/result.json",
+        "sha256": "c7a14bc988585ee47e56a6b4f07e94c339ef924ea67f931d0525aa53d0ee59b3"
+      },
+      "evidence/120-scaffold-visible-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-scaffold-visible-race/result.json",
+        "sha256": "fe38403ea25297100ae8574d00a0eb8751f778392acf295cfc74cb181f10819c"
+      },
+      "evidence/120-scaffold-adjacent-monitor-cause-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-scaffold-adjacent-monitor-cause-race/result.json",
+        "sha256": "1d9d6d41413578e7d3b8c1432b13c427e62f58d76cb4bc3e93d9de3a5f6667b4"
+      },
+      "evidence/120-scaffold-adjacent-values-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-scaffold-adjacent-values-race/result.json",
+        "sha256": "bc02c2cecf3f1eeb4aed83707fbc1d480e07325acf11dd29f8a9e1592ecc0005"
+      },
+      "evidence/120-sql-originals-a-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-sql-originals-a-race/result.json",
+        "sha256": "a2ac082efa4d3ca42cc612745f49cc46a4db5ad5e0e9b062c5ac5a161fd2d34f"
+      },
+      "evidence/120-sql-originals-b-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-sql-originals-b-race/result.json",
+        "sha256": "1cc34571f28e7b8b920e5d2a464ca909ba6751b64d434dcd4fea66753b1a3b9e"
+      },
+      "evidence/120-sql-boundaries-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-sql-boundaries-race/result.json",
+        "sha256": "142c2fb5bbd01c751a7c6d20416213353ff9cb3001f98cdce66e97bb224de5bf"
+      },
+      "evidence/120-evaluation-originals-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-evaluation-originals-race/result.json",
+        "sha256": "419c4935472de28074a788bd05391b1d429ed7bd89a1f7d7cd677a8585afcec0"
+      },
+      "evidence/120-remaining-shapes-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-remaining-shapes-race/result.json",
+        "sha256": "1f55c18a2a35f5ed95669230b9bfaab4c8544088574a568f4f9ae630d12a5fc9"
+      },
+      "evidence/120-native-sql-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/120-native-sql-race/result.json",
+        "sha256": "86f82e21b5a33f63089aaf2ff52ca378d18362fc8d492375903cdbfcf72443f6"
+      }
+    }
+  },
+  "active_resume_current120": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "71 selected original and boundary regression parents independently passed; no fullCI/round acceptance",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

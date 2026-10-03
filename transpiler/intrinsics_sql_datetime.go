@@ -26,11 +26,16 @@ func init() {
 			if len(args) != 1 {
 				return nil
 			}
-			return stdjavaCall(ctx, runtimeName+"ValueOf", args...)
+			return stdjavaCall(ctx, runtimeName+"ValueOfJavaString", args...)
 		})
 		registerStaticIntrinsicResultType(owner, "valueOf", owner)
-		registerInstanceIntrinsic(owner, "toString", ioMethod("String", 0))
-		registerInstanceIntrinsicResultType(owner, "toString", "String")
+		registerInstanceIntrinsic(owner, "toString", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(args) != 0 {
+				return nil
+			}
+			return methodCall(recv, "StringJava2goExecution", intrinsicExecutionExpr(ctx))
+		})
+		registerInstanceIntrinsicResultType(owner, "toString", "java.lang.String")
 		for _, method := range []struct {
 			java, goName, result string
 			arity                int
@@ -84,7 +89,7 @@ func datetimeExpectedArgumentTypes(owner, method string, count int) ([]string, b
 	}
 	sql := sqlDateRuntimeNames[owner] != ""
 	if sql && method == "valueOf" && count == 1 {
-		return []string{"String"}, true
+		return []string{"java.lang.String"}, true
 	}
 	if (sql || owner == "Date") && count == 1 {
 		switch method {
