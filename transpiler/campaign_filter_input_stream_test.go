@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignFilterInputStreamJVMParity(t *testing.T) {
@@ -26,8 +27,17 @@ public class CampaignFilterInputStream {
 	want := campaignRuntimeJavaOracle(t, "CampaignFilterInputStream", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestFilterInput(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+    "slices"
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestFilterInput(t *testing.T) {
+    var got *j.JavaString = Run()
+    if got == nil { t.Fatal("Run returned null") }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, %#v) { t.Fatalf("JVM %%q != Go UTF16 %%#v", %q, units) }
+}`, utf16.Encode([]rune(want)), want))
 }
 
 func TestCampaignFilterInputStreamOverloadsJVMParity(t *testing.T) {
@@ -53,8 +63,17 @@ public class CampaignFilterOverloads{
 	want := campaignRuntimeJavaOracle(t, "CampaignFilterOverloads", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestFilterOverloads(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+    "slices"
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestFilterOverloads(t *testing.T) {
+    var got *j.JavaString = Run()
+    if got == nil { t.Fatal("Run returned null") }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, %#v) { t.Fatalf("JVM %%q != Go UTF16 %%#v", %q, units) }
+}`, utf16.Encode([]rune(want)), want))
 }
 
 func TestCampaignFilterInputStreamEmptyReadOverrideJVMParity(t *testing.T) {
@@ -67,6 +86,15 @@ public class CampaignFilterEmpty{public static String run()throws Exception{Inpu
 	want := campaignRuntimeJavaOracle(t, "CampaignFilterEmpty", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestEmptyRead(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import (
+    "slices"
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestEmptyRead(t *testing.T) {
+    var got *j.JavaString = Run()
+    if got == nil { t.Fatal("Run returned null") }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, %#v) { t.Fatalf("JVM %%q != Go UTF16 %%#v", %q, units) }
+}`, utf16.Encode([]rune(want)), want))
 }

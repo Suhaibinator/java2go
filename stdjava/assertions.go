@@ -22,5 +22,5 @@ func JavaAssertionsEnabled() bool { return javaAssertionsEnabled }
 // A no-detail assertion has a null message. The Object overload converts its
 // detail lazily in generated code and retains a Throwable as its cause.
 func NewAssertionFailure(execution *Execution, detail ...any) AssertionError {
-	return NewAssertionErrorExecution(execution, detail...)
+	return NewJavaAssertionErrorExecution(execution, detail...)
 }

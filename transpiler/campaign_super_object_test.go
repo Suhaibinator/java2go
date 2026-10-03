@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignSuperObjectToStringJVMParity(t *testing.T) {
@@ -17,6 +18,15 @@ func TestCampaignSuperObjectToStringJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "ObjectText", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestText(t *testing.T) {if got:=Run();got!=%q {t.Fatalf("got %%q want %%q",got,%q)}}`, want, want))
+import (
+    "slices"
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestText(t *testing.T) {
+    var got *j.JavaString = Run()
+    if got == nil { t.Fatal("Run returned null") }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, %#v) { t.Fatalf("JVM %%q != Go UTF16 %%#v", %q, units) }
+}`, utf16.Encode([]rune(want)), want))
 }

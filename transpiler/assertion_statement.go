@@ -24,7 +24,9 @@ func parseAssertionStatement(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt
 	if len(expressions) == 2 {
 		detail := ParseExpr(expressions[1], source, ctx)
 		if isCharTypedExprNode(expressions[1], ctx, source) {
-			detail = &ast.CallExpr{Fun: ast.NewIdent("string"), Args: []ast.Expr{detail}}
+			detail = stdjavaCall(ctx, "JavaStringValueOfChar", detail)
+		} else if actual, known := inferExprJavaType(expressions[1], ctx, source); known && (actual == "byte" || actual == "short") {
+			detail = coerceArgumentToExpectedType(detail, expressions[1], "int", ctx, source)
 		}
 		arguments = append(arguments, detail)
 	}

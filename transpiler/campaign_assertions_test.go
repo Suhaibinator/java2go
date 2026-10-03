@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+	"unicode/utf16"
 )
 
 func TestCampaignAssertionsJVMParity(t *testing.T) {
@@ -60,8 +61,17 @@ public class CampaignAssertions{
 			t.Logf("JVM assertions enabled=%v: %s", enabled, want)
 			generated := renderGoFileFromJava(t, source)
 			runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestAssertions(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, string(want), string(want)))
+import (
+    "slices"
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestAssertions(t *testing.T) {
+    var got *j.JavaString = Run()
+    if got == nil { t.Fatal("Run returned null") }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, %#v) { t.Fatalf("JVM %%q != Go UTF16 %%#v", %q, units) }
+}`, utf16.Encode([]rune(string(want))), string(want)))
 		})
 	}
 }
