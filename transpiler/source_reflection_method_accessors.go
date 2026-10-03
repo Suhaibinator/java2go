@@ -46,7 +46,7 @@ func sourceReflectionPrivateMethodAccessors(scope *symbol.ClassScope, ctx Ctx) [
 			parameters.List = append(parameters.List, &ast.Field{Names: []*ast.Ident{name}, Type: typ})
 			arguments = append(arguments, name)
 		}
-		call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(symbol.GoIdentifier(executionImplementationName(method, scope, declaring)))}, Args: arguments}
+		call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(executionImplementationName(method, scope, declaring))}, Args: arguments}
 		var results *ast.FieldList
 		var body ast.Stmt = &ast.ExprStmt{X: call}
 		if !javaMethodResultIsVoid(method) {
@@ -55,7 +55,7 @@ func sourceReflectionPrivateMethodAccessors(scope *symbol.ClassScope, ctx Ctx) [
 			results = &ast.FieldList{List: []*ast.Field{{Type: typ}}}
 			body = &ast.ReturnStmt{Results: []ast.Expr{call}}
 		}
-		out = append(out, &ast.FuncDecl{Name: ast.NewIdent(symbol.GoIdentifier(sourceReflectionMethodExecutionName(scope, method, declaring))), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{receiver}, Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, declaring)}}}, Type: &ast.FuncType{Params: parameters, Results: results}, Body: &ast.BlockStmt{List: []ast.Stmt{body}}})
+		out = append(out, &ast.FuncDecl{Name: ast.NewIdent(sourceReflectionMethodExecutionName(scope, method, declaring)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{receiver}, Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, declaring)}}}, Type: &ast.FuncType{Params: parameters, Results: results}, Body: &ast.BlockStmt{List: []ast.Stmt{body}}})
 	}
 	return out
 }

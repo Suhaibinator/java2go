@@ -82,22 +82,41 @@ public class ExProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, `stdjava.NewIllegalArgumentExceptionExecution(__java2goExecution, "negative input")`) {
-		t.Fatalf("expected thrown exception constructor to forward the invoking execution, got:\n%s", out)
+	if !strings.Contains(out, `stdjava.NewJavaIllegalArgumentExceptionMessage(stdjava.JavaStringLiteralUTF16([]uint16{110, 101, 103, 97, 116, 105, 118, 101, 32, 105, 110, 112, 117, 116}))`) {
+		t.Fatalf("expected thrown exception constructor to retain the canonical String message, got:\n%s", out)
+	}
+	if !strings.Contains(out, `stdjava.JavaThrowableMessageExecution(__java2goExecution, e)`) {
+		t.Fatalf("expected caught exception message access to forward the invoking execution, got:\n%s", out)
 	}
 	requireNominalThrowableCatchGuard(t, out, "java.lang.RuntimeException")
 
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestRun(t *testing.T) {
-	if got := Run(-1); got != "caught:negative input" {
-		t.Fatalf("catch-by-supertype: got %q", got)
+	{
+		got := Run(-1)
+		if got == nil {
+			t.Fatal("Run(-1) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("caught:negative input"))) {
+			t.Fatalf("catch-by-supertype: got UTF16 %x", got.UTF16Copy())
+		}
 	}
-	if got := Run(1); got != "ok" {
-		t.Fatalf("no-throw path: got %q", got)
+	{
+		got := Run(1)
+		if got == nil {
+			t.Fatal("Run(1) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("ok"))) {
+			t.Fatalf("no-throw path: got UTF16 %x", got.UTF16Copy())
+		}
 	}
 }
 `)
@@ -125,17 +144,39 @@ public class MultiProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestRun(t *testing.T) {
-	if got := Run(1); got != "multi:state" {
-		t.Fatalf("multi-catch first type: got %q", got)
+	{
+		got := Run(1)
+		if got == nil {
+			t.Fatal("Run(1) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("multi:state"))) {
+			t.Fatalf("multi-catch first type: got UTF16 %x", got.UTF16Copy())
+		}
 	}
-	if got := Run(2); got != "multi:number" {
-		t.Fatalf("multi-catch second type: got %q", got)
+	{
+		got := Run(2)
+		if got == nil {
+			t.Fatal("Run(2) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("multi:number"))) {
+			t.Fatalf("multi-catch second type: got UTF16 %x", got.UTF16Copy())
+		}
 	}
-	if got := Run(0); got != "ok" {
-		t.Fatalf("no-throw path: got %q", got)
+	{
+		got := Run(0)
+		if got == nil {
+			t.Fatal("Run(0) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("ok"))) {
+			t.Fatalf("no-throw path: got UTF16 %x", got.UTF16Copy())
+		}
 	}
 }
 `)
@@ -170,16 +211,32 @@ public class FinallyProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestRun(t *testing.T) {
 	// Finally must run before control leaves the inner try, and the outer
 	// catch must see the rethrown IllegalStateException.
-	if got := Run(true); got != "try;catch;finally;outer:rethrown;" {
-		t.Fatalf("rethrow ordering: got %q", got)
+	{
+		got := Run(true)
+		if got == nil {
+			t.Fatal("Run(true) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("try;catch;finally;outer:rethrown;"))) {
+			t.Fatalf("rethrow ordering: got UTF16 %x", got.UTF16Copy())
+		}
 	}
-	if got := Run(false); got != "try;catch;finally;after;" {
-		t.Fatalf("normal ordering: got %q", got)
+	{
+		got := Run(false)
+		if got == nil {
+			t.Fatal("Run(false) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("try;catch;finally;after;"))) {
+			t.Fatalf("normal ordering: got UTF16 %x", got.UTF16Copy())
+		}
 	}
 }
 `)
@@ -230,15 +287,31 @@ public class UserExProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestRun(t *testing.T) {
 	// A subclass instance is caught by a clause for its supertype.
-	if got := Run(1); got != "app:missing" {
-		t.Fatalf("subclass caught by supertype: got %q", got)
+	{
+		got := Run(1)
+		if got == nil {
+			t.Fatal("Run(1) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("app:missing"))) {
+			t.Fatalf("subclass caught by supertype: got UTF16 %x", got.UTF16Copy())
+		}
 	}
-	if got := Run(2); got != "app:generic" {
-		t.Fatalf("exact user type: got %q", got)
+	{
+		got := Run(2)
+		if got == nil {
+			t.Fatal("Run(2) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("app:generic"))) {
+			t.Fatalf("exact user type: got UTF16 %x", got.UTF16Copy())
+		}
 	}
 }
 
@@ -377,11 +450,21 @@ public class ErrorProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestByThrowable(t *testing.T) {
-	if got := ByThrowable(1); got != "thr" {
-		t.Fatalf("AssertionError should be caught by catch (Throwable): got %q", got)
+	{
+		got := ByThrowable(1)
+		if got == nil {
+			t.Fatal("ByThrowable(1) returned null")
+		}
+		if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("thr"))) {
+			t.Fatalf("AssertionError should be caught by catch (Throwable): got UTF16 %x", got.UTF16Copy())
+		}
 	}
 }
 

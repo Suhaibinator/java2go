@@ -266,6 +266,11 @@ func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error
 	if ctx.callableSubclasses == nil {
 		ctx.callableSubclasses = &callableSubclassSourceInventory{}
 	}
+	// Fresh lookup contexts can reuse positive declaration ownership during
+	// this serial render without retaining any lexical resolution decisions.
+	previousIndex := activeResolutionFiles
+	activeResolutionFiles = sourceOwnershipIndex(ctx)
+	defer func() { activeResolutionFiles = previousIndex }()
 	defer func() {
 		if r := recover(); r != nil {
 			if strictErr, ok := r.(strictModeError); ok {

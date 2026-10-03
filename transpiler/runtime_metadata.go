@@ -113,7 +113,7 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 				public = reflectionPublic(method, scope)
 			}
 		}
-		if constructor != "" && public {
+		if constructor != "" && public && len(sourceReflectionConstructorCaptures(scope, ctx)) == 0 {
 			call := &ast.CallExpr{Fun: ast.NewIdent(executionConstructorImplementationName(constructor, scope)), Args: []ast.Expr{execution}}
 			if definition != nil && len(definition.TypeParameters) > 0 {
 				// A noarg source constructor can still have generic ABI arguments.

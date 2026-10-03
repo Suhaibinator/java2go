@@ -346,6 +346,13 @@ func findJavaPackageForClassScope(scope *symbol.ClassScope) string {
 	if scope == nil {
 		return ""
 	}
+	// Declaration ownership is stable inside this resolved render. Unknown
+	// scopes retain the ordinary search, including late synthetic registration.
+	if activeResolutionFiles != nil && activeResolutionFiles.graph == symbol.GlobalScope {
+		if file := activeResolutionFiles.files[scope]; file != nil {
+			return file.Package
+		}
+	}
 	for pkgName, pkg := range symbol.GlobalScope.Packages {
 		if pkg == nil {
 			continue

@@ -328,7 +328,7 @@ func lowerVolatileFieldUpdate(node, operand *sitter.Node, post, increment bool, 
 }
 
 func volatileFieldAccessorName(scope *symbol.ClassScope, field *symbol.Definition) string {
-	return symbol.GoIdentifier(collisionSafeExecutionIdentifier("Java2goVolatileFieldCell"+field.Name+"Java2goExecution", scope))
+	return collisionSafeExecutionIdentifier("Java2goVolatileFieldCell"+field.Name+"Java2goExecution", scope)
 }
 
 func volatileFieldAccessorDecls(scope *symbol.ClassScope, ctx Ctx) []ast.Decl {
@@ -340,7 +340,7 @@ func volatileFieldAccessorDecls(scope *symbol.ClassScope, ctx Ctx) []ast.Decl {
 		if field.IsStatic || !volatileFieldDefinition(field) || !sourceReflectionDeclaredField(scope, field) {
 			continue
 		}
-		result = append(result, &ast.FuncDecl{Name: ast.NewIdent(volatileFieldAccessorName(scope, field)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx)}}}, Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("VolatileFieldCell", ctx)}}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: &ast.SelectorExpr{X: ast.NewIdent("receiver"), Sel: ast.NewIdent(symbol.GoIdentifier(field.Name))}}}}}}})
+		result = append(result, &ast.FuncDecl{Name: ast.NewIdent(volatileFieldAccessorName(scope, field)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx)}}}, Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("VolatileFieldCell", ctx)}}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: &ast.SelectorExpr{X: ast.NewIdent("receiver"), Sel: ast.NewIdent(field.Name)}}}}}}})
 	}
 	return result
 }
@@ -349,9 +349,9 @@ func volatileFieldDescriptorCallback(scope *symbol.ClassScope, field *symbol.Def
 	params := []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: ast.NewIdent("any")}}
 	var cell ast.Expr
 	if field.IsStatic {
-		cell = &ast.UnaryExpr{Op: token.AND, X: ast.NewIdent(symbol.GoIdentifier(field.Name))}
+		cell = &ast.UnaryExpr{Op: token.AND, X: ast.NewIdent(field.Name)}
 	} else {
-		cell = stdjavaCall(ctx, "ReflectGeneratedVolatileFieldCellExecution", ast.NewIdent("execution"), ast.NewIdent("receiver"), javaTypeIDLiteral(sourceClassRuntimeTypeID(scope, ctx), ctx), metadataString(volatileFieldAccessorName(scope, field)))
+		cell = stdjavaCall(ctx, "ReflectGeneratedVolatileFieldCellExecution", ast.NewIdent("execution"), ast.NewIdent("receiver"), javaTypeIDLiteral(sourceClassRuntimeTypeID(scope, ctx), ctx), metadataGoName(volatileFieldAccessorName(scope, field)))
 	}
 	return &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: params}, Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("VolatileFieldCell", ctx)}}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{cell}}}}}
 }

@@ -79,7 +79,7 @@ public class MapProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]()")
 	assertContains(t, out, "stdjava.MapPutExecution(__java2goExecution, m, stdjava.JavaStringLiteralUTF16([]uint16{107}), stdjava.BoxInteger(int32(1)))")
-	assertContains(t, out, "stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](m.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution), stdjava.IntegerTypeID))")
+	assertContains(t, out, "stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](m.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution), stdjava.TypeID(\"java.lang.Integer\")))")
 	assertContains(t, out, "m.ContainsKey(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution)")
 	flat := normalizeSpaces(out)
 	newMap := strings.Index(flat, "m := stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]()")
@@ -129,7 +129,7 @@ public class KeywordProgram {
 	}
 	assertContains(t, out, "map_ := stdjava.NewMap")
 	assertContains(t, out, "stdjava.MapPutExecution(__java2goExecution, map_, stdjava.JavaStringLiteralUTF16([]uint16{97}), stdjava.BoxInteger(int32(1)))")
-	assertContains(t, out, "stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](map_.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{97}), __java2goExecution), stdjava.IntegerTypeID))")
+	assertContains(t, out, "stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](map_.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{97}), __java2goExecution), stdjava.TypeID(\"java.lang.Integer\")))")
 	flat := normalizeSpaces(out)
 	declaration := strings.Index(flat, "map_ := stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]()")
 	put := strings.Index(flat, "stdjava.MapPutExecution(__java2goExecution, map_,")

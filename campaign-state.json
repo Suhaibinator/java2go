@@ -12159,5 +12159,100 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "Full runtime race gate,25compiler parents,3JDKmonitor repeats and2original concurrent applications with20extra stress runs each",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress122": {
+    "status": "CAPTURED_CONSTRUCTOR_REFLECTION_DOLLAR_NAMES_AND_PACKAGE_OWNERSHIP_VERIFIED",
+    "implementation_changes_published": true,
+    "verification": {
+      "compiler_parent_count": 53,
+      "selected_parents": {
+        "122-dollar-focus-race": 4,
+        "122-constructor-abi-repair-native-race": 2,
+        "122-constructor-green-original-construction-race": 7,
+        "122-constructor-green-reflection-regressions-race": 6,
+        "122-ownership-facts-race": 3,
+        "122-ownership-jvm-race": 1,
+        "122-ownership-scaling-race": 3,
+        "122-dollar-adjacent-race": 9,
+        "122-syntax-families-race": 18
+      },
+      "matching_outer_race_binary": true,
+      "nested_race_explicit": true,
+      "native_timeout_seconds": 55,
+      "supervisor_seconds": 65,
+      "source_audits": [
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/compiler119-syntax-audit.json",
+          "sha256": "e07321766acdac698e8b308879159e00b761df38b56af07de21d008a9ad9d159"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/perf-ownership-independent-audit.json",
+          "sha256": "f1dd84c171e8da7bcd468a38f47838cd221e4cc2fa866b5dae91c34a3cbdd144"
+        }
+      ]
+    },
+    "scope": "Java dollar reflection names/accessors, captured local constructor reflection ABI and positive package ownership facts scoped to conversion. Canonical String/TypeID regression scaffolds preserve original Java and exact observations.",
+    "remaining": "Clone prerequisite verified separately but clone not included. Full reflection parameter enumeration/caller access and constant captures remain frontiers. Latest public CI six compiler shards, dependency and monitor-test lint fail; unit/build/application parity/nonparity/fuzz/vulnerability pass. Matching candidate lint reproduces the same five monitor-test warnings; assigned repair active. Actual Netty1212+8 strict stage timed out at300.25s after clearing allocator finalize; no closure/parity acceptance.",
+    "lint_diagnostic": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-lint/result.json",
+      "accepted": false
+    },
+    "publication_parent": "93487cba7e71546029d390f8f292c6864c287e3f",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-source-manifest.json",
+      "sha256": "4c57a01536a103e513d9f4bb06f1bbd9b6a91b74e0dfb8dba65c37bd8b6a9b04",
+      "members": 3217
+    },
+    "root_records": {
+      "evidence/122-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-build-transpiler/result.json",
+        "sha256": "4fcdd3b95fee53e21530b3822b876a51b228cd952afa3d4e1b1cfb07944e79c0"
+      },
+      "evidence/122-dollar-focus-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-dollar-focus-race/result.json",
+        "sha256": "39fc023115d8e27ef835a991622d3f38aa036f232e7a6415604e72bf8284308f"
+      },
+      "evidence/122-constructor-abi-repair-native-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-constructor-abi-repair-native-race/result.json",
+        "sha256": "fe78e3600e6b443c8c2ec947c664c68e3456f246939afd2349265ecd421a1200"
+      },
+      "evidence/122-constructor-green-original-construction-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-constructor-green-original-construction-race/result.json",
+        "sha256": "eb38bcf3a1c53a60d77192250a47b620549ea0a9598533bc8d985a46f667cfc3"
+      },
+      "evidence/122-constructor-green-reflection-regressions-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-constructor-green-reflection-regressions-race/result.json",
+        "sha256": "b0652f1ed1f6c0e1d431810860d27a10afd4ec15d1c3a0213730970ce90228c9"
+      },
+      "evidence/122-ownership-facts-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-ownership-facts-race/result.json",
+        "sha256": "0111fd4b399bacd83611377f697ce3abbd8a07ebe7c2b6a0775d656566dfe46e"
+      },
+      "evidence/122-ownership-jvm-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-ownership-jvm-race/result.json",
+        "sha256": "1e3087426e570a11672f1f143c8789c3f44829d677e9ce8e7a14291b2b07b364"
+      },
+      "evidence/122-ownership-scaling-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-ownership-scaling-race/result.json",
+        "sha256": "a76f85af6ce9b4cdc141c3cfb18c780f366caa2b477039a888a730cf8709caf5"
+      },
+      "evidence/122-dollar-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-dollar-adjacent-race/result.json",
+        "sha256": "9251b845ff976bc729ad706b2b9690df8a6cf4641e967da99376e7196d1368a7"
+      },
+      "evidence/122-syntax-families-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/122-syntax-families-race/result.json",
+        "sha256": "fefacf9344b3e0c9eef118c9cbdd9e2b3c431e63a7d838a0f2acad8b53f92717"
+      }
+    }
+  },
+  "active_resume_current122": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "53 coordinator-replayed compiler parents with matching race build and independent source audits",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }
