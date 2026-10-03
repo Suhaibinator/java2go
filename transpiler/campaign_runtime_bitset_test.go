@@ -29,9 +29,13 @@ public class CampaignRuntimeBitSet {
 	t.Logf("JDK BitSet oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestBitSetOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(%q))) { t.Fatalf("JVM %%q != generated Go %%v", %q, got) }
 }
 `, want, want))
 }

@@ -26,6 +26,10 @@ func TestCampaignSeededShuffleJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "ShuffleWorkflow", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestShuffle(t *testing.T){if got:=Run();got!=%q{t.Fatalf("got %%q want %%q",got,%q)}}`, want, want))
+ import (
+  "slices"
+  "testing"
+  "unicode/utf16"
+ )
+ func TestShuffle(t *testing.T){if got:=Run();got==nil||!slices.Equal(got.UTF16Copy(),utf16.Encode([]rune(%q))){t.Fatalf("got %%v want %%q",got,%q)}}`, want, want))
 }

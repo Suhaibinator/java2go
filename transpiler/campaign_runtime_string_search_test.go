@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignRuntimeStringSearchOverloads(t *testing.T) {
@@ -36,9 +37,13 @@ func TestCampaignRuntimeStringSearchOverloads(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "CampaignStringSearch", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import ("testing"; "slices")
 func TestSearch(t *testing.T) {
- if got := Run(); got != %q { t.Fatalf("JVM %%q != Go %%q", %q, got) }
+ got := Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a nonnull String") }
+ wantUnits := %#v
+ gotUnits := got.UTF16Copy()
+ if !slices.Equal(gotUnits, wantUnits) { t.Fatalf("JVM %%q (UTF16 %%x) != Go UTF16 %%x", %q, wantUnits, gotUnits) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }

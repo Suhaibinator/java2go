@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignStringBuilderCapacityJVMParity(t *testing.T) {
@@ -29,6 +30,13 @@ func TestCampaignStringBuilderCapacityJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "CampaignBuilderCapacity", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
-func TestCapacity(t *testing.T){if got:=Run();got!=%q{t.Fatalf("JVM %%q != Go %%q",%q,got)}}`, want, want))
+import ("testing"; "slices")
+func TestCapacity(t *testing.T) {
+ got := Run()
+ if got == nil { t.Fatal("Run returned null; JVM returned a nonnull String") }
+ wantUnits := %#v
+ gotUnits := got.UTF16Copy()
+ if !slices.Equal(gotUnits, wantUnits) { t.Fatalf("JVM %%q (UTF16 %%x) != Go UTF16 %%x", %q, wantUnits, gotUnits) }
+}
+`, utf16.Encode([]rune(want)), want))
 }

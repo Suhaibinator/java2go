@@ -13640,5 +13640,152 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "scoped-green-original-dependency-gates-red",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress127": {
+    "scope": "Nine legacy canonical String observers and two generated-name assertions; test-only CI checkpoint",
+    "verification": {
+      "compiler_parents": 31,
+      "compiler_gates": 8,
+      "runtime_race_parents": 605,
+      "skips": 0,
+      "lint_issues": 0,
+      "exported_files": 21,
+      "generated_module_pairs": 3,
+      "nested_go_calls": 54,
+      "nested_race_payloads": 30
+    },
+    "compatibility": [
+      "All nine original Java programs and JVM expectations unchanged; run once, reject null, compare complete UTF16 observations",
+      "Two source-shape assertions track allocated hygienic identifiers without weakening calls, length or bound guards"
+    ],
+    "implementation": {
+      "members": 456,
+      "sha256": "627cbbf6cf4394382920cb7a186952d8239315e055f905a6bee5b03d20795110",
+      "unchanged_from126": true
+    },
+    "evidence": [
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/127-public126-preimages.json",
+        "sha256": "ee6a320cc28d449c40ec3602a4484a2f3bbb1735ce32cd55670491bf2cb5a5e1"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/127-composed-source-before.json",
+        "sha256": "22f4ca14a3c2e7716046421c55d3e6a2ca73ff13016aea8c2fc24301ad8c2b20"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/127-composed-leaves.json",
+        "sha256": "2562e5ae0f0b05aa1dccd735f586a919a89db82bd5109af01478c7dd42919379"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/127-composition-records.json",
+        "sha256": "7b852c8e253d0e6b05a5a0a7410101eae877195aab6c632890f8c16a81859838"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/127-registered-plan.json",
+        "sha256": "520aa9f59c92b54853850f78c0d35a8b609e0fd37e554ee081e94a40a2fa5f29"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/127-verification-status.json",
+        "sha256": "770cb12481c8d954a69d61b180315fbfdd9bd567d373c70b6ab1bf7103f99be4"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/127-binary-sha256.json",
+        "sha256": "2a9601a794d61bd9b6957213ecd0f59f5c5e80bc9f86cb8c201550aff1762136"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/127-implementation456-preservation.json",
+        "sha256": "0ba4d1cb0894234c3e0af9516b816c26fd137e02f1c735223b7fec42816b735a"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/126-ci-initial-snapshot.json",
+        "sha256": "b256f3a83d9da6c2a9372a9715d2d1290dd704ec2e83c931aa7296b59c441fb7"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/127-ci11-source-v1-audit.json",
+        "sha256": "944432cf168ceb686fde42a6772ce604d8e0316652896759dc4ff82ffa65bde5"
+      },
+      {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/final127-source-gates-audit/FINAL127-SOURCE-GATES.json",
+        "sha256": "185aeefe56b9f166ba011497d2d4922d8bf875ea9a6a8c5abe303d66110d4d73"
+      }
+    ],
+    "pending": [
+      "CI126 six compiler shards and adversarial dependency job still fail; no full-CI or round acceptance",
+      "Full Commons/Gson/Netty applications remain active; latest accepted full round18",
+      "Private generic default/named receiver and constructor collision; original BoundOwner class bounds remain unsupported",
+      "Original exception metadata parent needs Cancellation/NoSuchAlgorithm and GeneralSecurityException hierarchy",
+      "Captured Map full application remains blocked by Collections.emptySet; do not suppress its failing tracked acceptance test",
+      "Enum values/text and measured runtime optimizations are frozen separately awaiting coordinator integration"
+    ],
+    "provenance_limits": [
+      "No full dependency rerun on this test-only checkpoint; all456 implementation inputs remain exact126, whose originalGson generatedallpackage racebuild is RED",
+      "Focused originalJava/strictgeneratedGo checks retain pinnedJDK21/Go1.27.1, raceCPU2/p1; somelegacyhelpers explicitly -mod=mod, no universalreadonly claim",
+      "Older fixturehelpers lack artifact exporthooks; no deleted generateddirectory evidence claim"
+    ],
+    "publication_parent": "1ab3afaa2bb6284bfb5b018726e0c56710a6f576",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-source-manifest.json",
+      "sha256": "22f4ca14a3c2e7716046421c55d3e6a2ca73ff13016aea8c2fc24301ad8c2b20",
+      "members": 3347
+    },
+    "root_records": {
+      "evidence/127-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-build-transpiler/result.json",
+        "sha256": "271e0aa928342636d6881fba64d7da4527f43e30a6e8b177a0ffa987a3f0482e"
+      },
+      "evidence/127-native-registration/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-registration/result.json",
+        "sha256": "0caddc7d52ea813f49459a9e6b2ad4b907f2faccd3c417fdf39e3c04836b03e4"
+      },
+      "evidence/127-native-00/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-00/result.json",
+        "sha256": "da5880408965711801a1003b199826ba105e2225905408b33cd6f258a6c1945e"
+      },
+      "evidence/127-native-01/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-01/result.json",
+        "sha256": "5f0e91667edc00dad886837e67ea80e8d34c64018872c2fddcaedf6f86e13aed"
+      },
+      "evidence/127-native-02/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-02/result.json",
+        "sha256": "824cd5a907f4a711ea08c5c56ced85246e8a40a91832fc5c34a876d5425fc99a"
+      },
+      "evidence/127-native-03/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-03/result.json",
+        "sha256": "9a10b1a32a4ca02a7ad42fd754004f63e1b6e5b794b5a89297abe628526307ac"
+      },
+      "evidence/127-native-04/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-04/result.json",
+        "sha256": "4ba44118195a9e44380feb95b998d9cbb4ef28c47de8ee35c2163c657d4f53c3"
+      },
+      "evidence/127-native-05/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-05/result.json",
+        "sha256": "640759b566f2a67e6238f6d7989ccdef0d8435b512ec2421485f5f8d7245694a"
+      },
+      "evidence/127-native-06/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-06/result.json",
+        "sha256": "23b122050c9d962230d81b6e5f8a66011923e3d7784302fb6aac18f9bedc1eac"
+      },
+      "evidence/127-native-07/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-native-07/result.json",
+        "sha256": "9d4964c2259662ffdec6c633dbe95fabb50eb7036b7b5ddd89e5250513a4ccdc"
+      },
+      "evidence/127-runtime-full-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-runtime-full-race/result.json",
+        "sha256": "4d0fe7b83b46fa0c37d1a7b77e3409a36efbd62d03ab6e93d30e5f46008a1077"
+      },
+      "evidence/127-lint/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/127-lint/result.json",
+        "sha256": "8c88601ccf47d3d473d3d9cc55f4665ef37dd0ccf8e4e1e18ce8eb2d4a7860d1"
+      }
+    }
+  },
+  "active_resume_current127": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "test-only-scoped-green-CI-and-full-dependencies-red",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

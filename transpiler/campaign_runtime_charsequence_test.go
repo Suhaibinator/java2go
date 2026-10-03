@@ -3,6 +3,7 @@ package transpiler
 import (
 	"fmt"
 	"testing"
+	"unicode/utf16"
 )
 
 func TestCampaignRuntimeCharSequence(t *testing.T) {
@@ -25,9 +26,16 @@ func TestCampaignRuntimeCharSequence(t *testing.T) {
 	t.Logf("JDK CharSequence oracle: %s", want)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestCharSequenceOracle(t *testing.T) {
-    if got := Run(); got != %q { t.Fatalf("JVM %%q != generated Go %%q", %q, got) }
+    var got *j.JavaString = Run()
+    if got == nil { t.Fatal("Run returned null") }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, %#v) { t.Fatalf("JVM %%q != generated Go UTF16 %%#v", %q, units) }
 }
-`, want, want))
+`, utf16.Encode([]rune(want)), want))
 }

@@ -64,7 +64,7 @@ func TestStaticNoncanonicalWildcardParametersRetainInferableBinders(t *testing.T
 	}
 	methods := owner.FindMethod().ByOriginalName("inspect")
 	synthetic, rewritten := synthesizeRawGenericFunctionParameters(methods[0], ctx)
-	if len(synthetic) != 1 || rewritten["cell"] != "Cell<CellT>" {
+	if len(synthetic) != 1 || rewritten["cell"] != "Cell<CellJava2goLocalT>" {
 		t.Fatalf("noncanonical wildcard lost its inferable binder: %#v, %#v", synthetic, rewritten)
 	}
 }

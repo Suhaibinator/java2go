@@ -33,6 +33,10 @@ func TestCampaignSeededRandomJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "SeededRandom", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestRandom(t *testing.T){if got:=Run();got!=%q{t.Fatalf("got %%q want %%q",got,%q)}}`, want, want))
+ import (
+  "slices"
+  "testing"
+  "unicode/utf16"
+ )
+ func TestRandom(t *testing.T){if got:=Run();got==nil||!slices.Equal(got.UTF16Copy(),utf16.Encode([]rune(%q))){t.Fatalf("got %%v want %%q",got,%q)}}`, want, want))
 }

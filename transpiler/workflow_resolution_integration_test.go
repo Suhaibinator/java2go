@@ -77,8 +77,8 @@ public class Lambdas {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "task.GetPayloadJava2goExecution(__java2goExecution)") ||
-		!strings.Contains(out, "task.GetAttemptsJava2goExecution(__java2goExecution)") {
+	if !strings.Contains(out, "taskJava2goLocal.GetPayloadJava2goExecution(__java2goExecution)") ||
+		!strings.Contains(out, "taskJava2goLocal.GetAttemptsJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected inferred SAM parameters to resolve method calls while parsing the lambda body, got:\n%s", out)
 	}
 }
