@@ -245,15 +245,22 @@ public class NullableTernaryLocalProgram {
 	if got := strings.Count(out, "var value *stdjava.Integer"); got != 2 {
 		t.Fatalf("nullable wrapper locals using object storage = %d, want 2:\n%s", got, out)
 	}
-	if !strings.Contains(out, "stdjava.StringRequireNonNull(value)") {
-		t.Fatalf("nullable String receiver was not normalized before length/concat:\n%s", out)
+	for _, receiverCheck := range []string{
+		"stdjava.RequireJavaString(value).Length()",
+		"stdjava.RequireJavaString(__java2goInvocationReceiver).Concat(__java2goInvocationArg0)",
+	} {
+		if !strings.Contains(out, receiverCheck) {
+			t.Fatalf("nullable String receiver was not normalized before length/concat; missing %q:\n%s", receiverCheck, out)
+		}
 	}
 
 	runGoTestInTempModule(t, out, `
 package main
 
 import (
+    "slices"
     "testing"
+    "unicode/utf16"
     "github.com/NickyBoy89/java2go/stdjava"
 )
 
@@ -266,8 +273,8 @@ func TestNullableTernaryLocals(t *testing.T) {
         {false, "false:go!:2:go?"},
     }
     for _, test := range stringCases {
-        if got := StringCase(test.choose); got != test.want {
-            t.Fatalf("StringCase(%v) = %q, want %q", test.choose, got, test.want)
+        if got := StringCase(test.choose); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(test.want))) {
+            t.Fatalf("StringCase(%v) = %v, want %q", test.choose, got, test.want)
         }
     }
 
@@ -279,8 +286,8 @@ func TestNullableTernaryLocals(t *testing.T) {
         {false, "false:8"},
     }
     for _, test := range boxedCases {
-        if got := BoxedCase(test.choose); got != test.want {
-            t.Fatalf("BoxedCase(%v) = %q, want %q", test.choose, got, test.want)
+        if got := BoxedCase(test.choose); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(test.want))) {
+            t.Fatalf("BoxedCase(%v) = %v, want %q", test.choose, got, test.want)
         }
     }
     if got := stdjava.UnboxInteger(BoxedReturn(true)); got != 13 {
@@ -362,7 +369,7 @@ public class TernaryTypingProgram {
 		t.Fatalf("reference-array conditional did not retain the common reified array ABI for its Object[] LUB:\n%s", out)
 	}
 	for _, expected := range []string{
-		`stdjava.NewReferenceArrayOf[string](2, stdjava.StringTypeID)`,
+		`stdjava.NewReferenceArrayOf[*stdjava.JavaString](2, stdjava.StringTypeID)`,
 		`stdjava.NewReferenceArrayOf[any](3, stdjava.ObjectTypeID)`,
 		`stdjava.ReferenceArrayLength(selected)`,
 	} {
@@ -374,14 +381,18 @@ public class TernaryTypingProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestTernaryStandaloneTyping(t *testing.T) {
-    if got := NestedOverload(true); got != "L" {
-        t.Fatalf("NestedOverload(true) = %q, want L", got)
+    if got := NestedOverload(true); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("L"))) {
+        t.Fatalf("NestedOverload(true) = %v, want L", got)
     }
-    if got := NullOverload(true); got != "S" {
-        t.Fatalf("NullOverload(true) = %q, want S", got)
+    if got := NullOverload(true); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("S"))) {
+        t.Fatalf("NullOverload(true) = %v, want S", got)
     }
     if !NumericBox(true) || !NumericBox(false) {
         t.Fatalf("NumericBox(true)=%v NumericBox(false)=%v, want true/true", NumericBox(true), NumericBox(false))

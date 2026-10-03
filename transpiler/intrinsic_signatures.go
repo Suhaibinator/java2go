@@ -54,12 +54,12 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 		if primitive, wrapper := builtinJavaWrapperPrimitive("java.lang."+class, ctx); wrapper {
 			switch method {
 			case "valueOf":
-				if isJavaStringType(actual(0)) || actual(0) == "null" {
-					return set("String", "int")
+				if isBuiltinJavaString(actual(0), ctx) || actual(0) == "null" || actual(0) == ternaryNullJavaType {
+					return set("java.lang.String", "int")
 				}
 				return set(primitive)
 			case "parseByte", "parseShort", "parseInt", "parseLong", "parseFloat", "parseDouble", "parseBoolean":
-				return set("String", "int")
+				return set("java.lang.String", "int")
 			case "compare":
 				return set(primitive, primitive)
 			case "toHexString":
@@ -629,8 +629,8 @@ func tryWrapperConstructorIntrinsic(node *sitter.Node, className string, source 
 	arg := invocationArgumentNode(node, 0)
 	actual, _ := inferExprJavaType(arg, ctx, source)
 	expected := primitive
-	if isJavaStringType(actual) || actual == "null" {
-		expected = "String"
+	if isBuiltinJavaString(actual, ctx) || actual == "null" || actual == ternaryNullJavaType {
+		expected = "java.lang.String"
 	} else if name == "Float" {
 		if actualPrimitive, _ := builtinJavaWrapperPrimitive(actual, ctx); actualPrimitive == "double" || actual == "double" {
 			expected = "double"
@@ -643,12 +643,11 @@ func tryWrapperConstructorIntrinsic(node *sitter.Node, className string, source 
 	argCtx.expectedType = expected
 	argCtx.expectedTypeRoot = arg
 	value := coerceArgumentToExpectedType(ParseExpr(arg, source, argCtx), arg, expected, ctx, source)
-	if expected == "String" {
-		parser := map[string]string{"Boolean": "ParseBoolean", "Byte": "ParseByte", "Short": "ParseShort", "Integer": "ParseInt", "Long": "ParseLong", "Float": "ParseFloat", "Double": "ParseDouble"}[name]
-		if parser == "" {
-			return nil, false
+	if expected == "java.lang.String" {
+		value = canonicalBoxedStringParse(className, []ast.Expr{value}, ctx)
+		if value == nil {
+			return unsupportedIntrinsicValue(node, "java.lang."+name, source, ctx), true
 		}
-		value = stdjavaCall(ctx, parser, value)
 	}
 	if name == "Float" && expected == "double" {
 		return stdjavaCall(ctx, "NewFloatFromDouble", value), true
@@ -661,10 +660,10 @@ func wrapperValueOfApplicable(invocation *sitter.Node, wrapper string, ctx Ctx, 
 	if len(expected) == 0 || len(expected) > 2 {
 		return false
 	}
-	if len(expected) == 2 && (expected[0] != "String" || (wrapper != "Byte" && wrapper != "Short" && wrapper != "Integer" && wrapper != "Long")) {
+	if len(expected) == 2 && (expected[0] != "java.lang.String" || (wrapper != "Byte" && wrapper != "Short" && wrapper != "Integer" && wrapper != "Long")) {
 		return false
 	}
-	if wrapper == "Character" && expected[0] == "String" {
+	if wrapper == "Character" && expected[0] == "java.lang.String" {
 		return false
 	}
 	for index, target := range expected {

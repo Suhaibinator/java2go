@@ -964,8 +964,12 @@ func tryStaticIntrinsicInvocation(invocation *sitter.Node, className, methodName
 			return unsupportedIntrinsicValue(invocation, "java.lang."+className, source, ctx), true
 		}
 		actual, _ := inferExprJavaType(invocationArgumentNode(invocation, 0), ctx, source)
-		if isJavaStringType(actual) || actual == "null" {
-			return stdjavaCall(ctx, className+"ValueOfString", args...), true
+		if isBuiltinJavaString(actual, ctx) || actual == "null" || actual == ternaryNullJavaType {
+			parsed := canonicalBoxedStringParse("java.lang."+className, args, ctx)
+			if parsed == nil {
+				return unsupportedIntrinsicValue(invocation, "java.lang."+className, source, ctx), true
+			}
+			return stdjavaCall(ctx, "Box"+className, parsed), true
 		}
 		return stdjavaCall(ctx, "Box"+className, args...), true
 	}

@@ -13,6 +13,7 @@ var builtinThrowableDescriptors = map[string]struct {
 	"LinkageError":                    {id: "java.lang.LinkageError", parent: "Error"},
 	"ExceptionInInitializerError":     {id: "java.lang.ExceptionInInitializerError", parent: "LinkageError"},
 	"NoClassDefFoundError":            {id: "java.lang.NoClassDefFoundError", parent: "LinkageError"},
+	"CloneNotSupportedException":      {id: "java.lang.CloneNotSupportedException", parent: "Exception"},
 	"Exception":                       {id: "java.lang.Exception", parent: "Throwable"},
 	"RuntimeException":                {id: "java.lang.RuntimeException", parent: "Exception"},
 	"IllegalArgumentException":        {id: "java.lang.IllegalArgumentException", parent: "RuntimeException"},

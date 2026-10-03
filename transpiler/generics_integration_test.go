@@ -88,8 +88,8 @@ public class Box<T> {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "NewBoxJava2goExecution[string](__java2goExecution)") {
-		t.Errorf("Expected diamond operator to infer 'string' type arg, got:\n%s", out)
+	if !strings.Contains(out, "NewBoxJava2goExecution[*stdjava.JavaString](__java2goExecution)") {
+		t.Errorf("Expected diamond operator to infer canonical String type arg, got:\n%s", out)
 	}
 	if !strings.Contains(out, "NewBoxJava2goExecution[*stdjava.Integer](__java2goExecution)") {
 		t.Errorf("Expected explicit type args on constructor call, got:\n%s", out)

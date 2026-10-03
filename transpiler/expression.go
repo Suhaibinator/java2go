@@ -521,6 +521,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				}
 			}
 
+			if cloned := objectCloneInvocation(objectNode, methodName, node.ChildByFieldName("arguments"), ctx, source); cloned != nil {
+				return cloned
+			}
+
 			// Object.toString is a nonvirtual super target, but its class and
 			// hashCode observations still dispatch on the complete receiver.
 			if objectNode != nil && objectNode.Type() == "super" && methodName == "toString" && ctx.currentClass != nil {
@@ -10544,6 +10548,10 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 			}
 		}
 	case "method_invocation":
+		if javaType, ok := arrayCloneResultType(node, ctx, source); ok {
+			return javaType, true
+		}
+
 		if name := node.ChildByFieldName("name"); name != nil && builtinThrowableTextSelected(node.ChildByFieldName("object"), name.Content(source), ctx, source) {
 			return "String", true
 		}

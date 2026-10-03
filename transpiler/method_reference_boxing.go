@@ -223,7 +223,9 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		if wrapper {
 			switch method {
 			case "new", "valueOf":
-				if len(expected) > 0 && !isJavaStringType(expected[0]) {
+				if len(expected) > 0 && isBuiltinJavaString(expected[0], ctx) {
+					expected[0] = "java.lang.String"
+				} else if len(expected) > 0 {
 					expected[0] = primitive
 					// Float(double) is its only narrowing constructor overload.
 					if constructor && class == "Float" && (argumentTypes[0] == "double" || argumentTypes[0] == "Double") {
@@ -235,7 +237,7 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 				}
 			case "parseByte", "parseShort", "parseInt", "parseLong", "parseFloat", "parseDouble", "parseBoolean":
 				if len(expected) > 0 {
-					expected[0] = "String"
+					expected[0] = "java.lang.String"
 				}
 				if len(expected) > 1 {
 					expected[1] = "int"
@@ -281,12 +283,11 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 			return nil, false
 		}
 		value := arguments[0]
-		if isJavaStringType(expected[0]) {
-			parser := map[string]string{"Boolean": "ParseBoolean", "Byte": "ParseByte", "Short": "ParseShort", "Integer": "ParseInt", "Long": "ParseLong", "Float": "ParseFloat", "Double": "ParseDouble"}[class]
-			if parser == "" {
+		if isBuiltinJavaString(expected[0], bodyCtx) {
+			value = canonicalBoxedStringParse(targetJavaType, arguments, bodyCtx)
+			if value == nil {
 				return nil, false
 			}
-			value = stdjavaCall(bodyCtx, parser, value)
 		}
 		name := "New" + class
 		if class == "Float" && expected[0] == "double" {
@@ -294,7 +295,13 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		}
 		call = stdjavaCall(bodyCtx, name, value)
 	} else if static {
-		if class == "String" && method == "valueOf" && len(arguments) == 1 {
+		if wrapper && method == "valueOf" && len(expected) > 0 && isBuiltinJavaString(expected[0], bodyCtx) {
+			parsed := canonicalBoxedStringParse(targetJavaType, arguments, bodyCtx)
+			if parsed == nil {
+				return nil, false
+			}
+			call = stdjavaCall(bodyCtx, "Box"+class, parsed)
+		} else if class == "String" && method == "valueOf" && len(arguments) == 1 {
 			if argumentTypes[0] == "char[]" {
 				call = stdjavaCall(bodyCtx, "JavaStringFromChars", arguments[0])
 			} else {

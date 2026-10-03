@@ -30,6 +30,7 @@ var builtinExceptionTypes = map[string]string{
 	"LinkageError":                    "Error",
 	"ExceptionInInitializerError":     "LinkageError",
 	"NoClassDefFoundError":            "LinkageError",
+	"CloneNotSupportedException":      "Exception",
 	"Exception":                       "Throwable",
 	"RuntimeException":                "Exception",
 	"IllegalArgumentException":        "RuntimeException",

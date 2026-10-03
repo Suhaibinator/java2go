@@ -150,6 +150,9 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				// source superclass can share its simple name with a JDK class.
 				superBase, _ := parseJavaTypeString(t.Content(source))
 				superScope := resolveClassScopeByQualifiedName(headerCtx, superBase)
+				if qualifyDeclaredReferenceType(symbol.JavaType{Original: superBase}, headerCtx) == "java.lang.Object" {
+					continue
+				}
 				if skipAbstractCollectionSuperclass(t.Content(source), headerCtx) {
 					continue
 				}
@@ -382,6 +385,7 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		if setterDecl := generateClassSelfSetter(ctx); setterDecl != nil {
 			declarations = append(declarations, setterDecl)
 		}
+		declarations = append(declarations, generateObjectCloneDecls(ctx)...)
 		declarations = append(declarations, generateAffineArrayViewDecls(ctx)...)
 
 		if helperDecls := buildInstanceFieldInitializerMethodDecl(ctx, instanceFieldInitializers); len(helperDecls) > 0 {
@@ -907,7 +911,7 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) [
 // qualifies types that live in another generated package.
 func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
 	ctx = classHeaderTypeCtx(ctx.currentClass, ctx)
-	if isExternalFunctionType(javaType, ctx) || canonicalIterationOwner(javaType, ctx) != "" || canonicalMapEntryOwner(javaType, ctx) != "" {
+	if externalCloneableType(javaType, ctx) || isExternalFunctionType(javaType, ctx) || canonicalIterationOwner(javaType, ctx) != "" || canonicalMapEntryOwner(javaType, ctx) != "" {
 		return nil
 	}
 	base, _ := parseJavaTypeString(javaType)

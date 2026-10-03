@@ -122,11 +122,21 @@ public class SyntheticArrayIdentityProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestSyntheticArrayIdentityRuntime(t *testing.T) {
-    if got := Run(); got != "3456:1:136:1:113" {
-        t.Fatalf("Run() = %q, want exact anonymous/interface/enum array parity", got)
+    const want = "3456:1:136:1:113"
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %q, want exact anonymous/interface/enum array parity", string(utf16.Decode(units)))
     }
 }
 `)

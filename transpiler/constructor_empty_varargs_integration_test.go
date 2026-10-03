@@ -74,12 +74,21 @@ public class ConstructorEmptyVarargsProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestConstructorEmptyVarargsRuntime(t *testing.T) {
     const want = "0:0:0:0:0"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %q, want %q", string(utf16.Decode(units)), want)
     }
 }
 `)

@@ -25,7 +25,7 @@ func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx 
 	if scope != nil && scope.IsEnum && name == "JavaEnumMetadata" {
 		return true
 	}
-	if scope != nil && !scope.IsInterface && name == "JavaDynamicTypeID" {
+	if scope != nil && !scope.IsInterface && (name == "JavaDynamicTypeID" || name == generatedObjectCloneMethod) {
 		return true
 	}
 	return referenceIdentityReservedSelector(name) && classNeedsReferenceIdentity(scope, ctx)
@@ -36,7 +36,7 @@ func referenceIdentityReservedSelector(name string) bool {
 		return true
 	}
 	switch name {
-	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod:
+	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod, generatedObjectCloneMethod:
 		return true
 	default:
 		return false
@@ -754,6 +754,9 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 
 	args = append(args, sourceIterationInterfaceIDs(scope, ctx)...)
 	args = append(args, sourceFunctionInterfaceIDs(scope, ctx)...)
+	if sourceDirectCloneable(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr("CloneableTypeID", ctx))
+	}
 	args = append(args, sourceMapEntryInterfaceIDs(scope, ctx)...)
 	args = append(args, sourceAbstractCollectionInterfaceIDs(scope, ctx)...)
 	if sourceDirectCharSequence(scope, ctx) {
@@ -972,6 +975,9 @@ func syntheticReferenceRegistrationDecl(
 	args = append(args, sourceIterationInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	args = append(args, sourceFunctionInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	args = append(args, sourceMapEntryInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
+	if sourceDirectCloneable(syntheticSourceTextScope(structName, ctx), ctx) {
+		args = append(args, stdjavaQualifiedExpr("CloneableTypeID", ctx))
+	}
 	registrationName := "__java2goSyntheticTypeRegistration" + sanitizeGoIdent(structName)
 	statements := []ast.Stmt{
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
@@ -981,6 +987,14 @@ func syntheticReferenceRegistrationDecl(
 		statements = append(statements, text)
 	}
 	if scope := syntheticSourceTextScope(structName, ctx); scope != nil {
+		if scope.Class != nil && scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Type() == "object_creation_expression" {
+			if setter := generateClassSelfSetter(classScopeCtx(scope, ctx)); setter != nil {
+				ctx.addHoistedDecl(setter)
+			}
+		}
+		for _, copier := range generateObjectCloneDecls(classScopeCtx(scope, ctx)) {
+			ctx.addHoistedDecl(copier)
+		}
 		for _, accessor := range sourceReflectionFieldAccessors(scope, classScopeCtx(scope, ctx)) {
 			ctx.addHoistedDecl(accessor)
 		}

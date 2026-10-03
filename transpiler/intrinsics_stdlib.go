@@ -569,9 +569,6 @@ func registerBoxedTypeIntrinsics() {
 // All wrappers are references. Factories and constructors must remain distinct:
 // valueOf may return a cached object, whereas new always preserves fresh identity.
 func registerBoxedObjectIntrinsics() {
-	registerIntrinsicOwner("java.lang.Integer", true)
-	registerIntrinsicOwner("java.lang.Long", true)
-	registerIntrinsicOwner("java.lang.Boolean", true)
 	// Imported calls use the same lowering only after declared overload applicability.
 	registerStaticIntrinsicImportSignature("Boolean", "parseBoolean", "java.lang.String")
 	registerStaticIntrinsicImportSignature("Integer", "parseInt", "java.lang.String")
@@ -584,6 +581,7 @@ func registerBoxedObjectIntrinsics() {
 		{"Integer", "int", "JavaIntegerParseInt"}, {"Long", "long", "JavaLongParseLong"},
 		{"Float", "float", "JavaFloatParseFloat"}, {"Double", "double", "JavaDoubleParseDouble"},
 	} {
+		registerIntrinsicOwner("java.lang."+spec.wrapper, true)
 		registerStaticIntrinsic(spec.wrapper, "valueOf", func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if len(args) < 1 || len(args) > 2 {
 				return nil

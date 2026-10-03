@@ -74,10 +74,19 @@ public class BoxedCollectorsProgram {
 `)
 	runGeneratedWithStdjava(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestBoxedCollectors(t *testing.T) {
-    if got := Run(); got != "2:4:2.0:2:2:3:6" {
-        t.Fatalf("Run() = %q", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = "2:4:2.0:2:2:3:6"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
     }
 }
 `)
@@ -135,10 +144,19 @@ public class BoxedStreamReferencesProgram {
 `)
 	runGeneratedWithStdjava(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestBoxedStreamReferences(t *testing.T) {
-    if got := Run(); got != "4:3:4:1:yes:6" {
-        t.Fatalf("Run() = %q", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = "4:3:4:1:yes:6"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
     }
 }
 `)

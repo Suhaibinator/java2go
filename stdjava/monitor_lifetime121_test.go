@@ -80,18 +80,25 @@ func TestMonitorLifetime121BoundObjectInfoViewIsCollectible(t *testing.T) {
 	monitorLifetime121Eventually(t, func() bool { return identity.Value() == nil })
 }
 
+// The caller receives only a weak identity and monitor handles. The allocating
+// frame ends before its GC checks, so no caller-local object can mask retention.
+func monitorLifetime121ActiveHandle(legacy bool) (weak.Pointer[monitorLifetime121Object], *MonitorGuard, *sync.Mutex) {
+	value := &monitorLifetime121Object{payload: make([]byte, 4096)}
+	identity := weak.Make(value)
+	var guard *MonitorGuard
+	var mutex *sync.Mutex
+	if legacy {
+		mutex = MonitorEnter(value)
+	} else {
+		guard = MonitorEnterExecution(NewExecution(), value)
+	}
+	runtime.KeepAlive(value)
+	return identity, guard, mutex
+}
+
 func TestMonitorLifetime121ActiveAndLegacyHandlesPinObject(t *testing.T) {
 	for _, legacy := range []bool{false, true} {
-		value := &monitorLifetime121Object{payload: make([]byte, 4096)}
-		identity := weak.Make(value)
-		var guard *MonitorGuard
-		var mutex *sync.Mutex
-		if legacy {
-			mutex = MonitorEnter(value)
-		} else {
-			guard = MonitorEnterExecution(NewExecution(), value)
-		}
-		value = nil
+		identity, guard, mutex := monitorLifetime121ActiveHandle(legacy)
 		for range 4 {
 			runtime.GC()
 			if identity.Value() == nil {
@@ -143,9 +150,12 @@ func TestMonitorLifetime121CanonicalAndNativeIdentities(t *testing.T) {
 	if monitorFor(first) == monitorFor(second) {
 		t.Fatal("canonical String allocations collapsed to content identity")
 	}
-	if monitorFor(first) != monitorFor(first) {
+	firstLookup := monitorFor(first)
+	aliasLookup := monitorFor(first)
+	if firstLookup != aliasLookup {
 		t.Fatal("canonical String alias lost its monitor")
 	}
+	runtime.KeepAlive(first)
 	if monitorFor("legacy") != monitorFor(string([]byte("legacy"))) {
 		t.Fatal("legacy native-string value comparison changed")
 	}
@@ -161,9 +171,12 @@ func TestMonitorLifetime121CanonicalAndNativeIdentities(t *testing.T) {
 		}
 	}
 	legacyHost := struct{ value *JavaString }{first}
-	if monitorFor(legacyHost) != monitorFor(legacyHost) {
+	hostLookup := monitorFor(legacyHost)
+	hostAliasLookup := monitorFor(legacyHost)
+	if hostLookup != hostAliasLookup {
 		t.Fatal("legacy comparable host value lost its existing identity semantics")
 	}
+	runtime.KeepAlive(legacyHost)
 }
 
 func monitorLifetime121Batch(count int) ([]weak.Pointer[monitorLifetime121Object], []monitorIdentity) {
@@ -229,7 +242,9 @@ func TestMonitorLifetime121ConcurrentLookupPreservesExclusionAcrossGC(t *testing
 	runtime.KeepAlive(value)
 }
 
-func TestMonitorLifetime121BlockedEntrantRetainsAllocation(t *testing.T) {
+// Only the owner handle and entrant goroutine can retain the allocation once
+// this setup frame returns; the observing test receives a weak identity.
+func monitorLifetime121BlockedEntrant() (weak.Pointer[monitorLifetime121Object], *MonitorGuard, <-chan struct{}, <-chan struct{}, chan<- struct{}, <-chan struct{}) {
 	value := &monitorLifetime121Object{payload: make([]byte, 4096)}
 	identity := weak.Make(value)
 	owner := MonitorEnterExecution(NewExecution(), value)
@@ -245,7 +260,12 @@ func TestMonitorLifetime121BlockedEntrantRetainsAllocation(t *testing.T) {
 		MonitorExitExecution(guard)
 		close(done)
 	}(value)
-	value = nil
+	runtime.KeepAlive(value)
+	return identity, owner, started, entered, release, done
+}
+
+func TestMonitorLifetime121BlockedEntrantRetainsAllocation(t *testing.T) {
+	identity, owner, started, entered, release, done := monitorLifetime121BlockedEntrant()
 	<-started
 	runtime.GC()
 	select {
@@ -270,7 +290,9 @@ func TestMonitorLifetime121BlockedEntrantRetainsAllocation(t *testing.T) {
 	monitorLifetime121Eventually(t, func() bool { return identity.Value() == nil })
 }
 
-func TestMonitorLifetime121WaitNotifyKeepsOneMonitorAcrossGC(t *testing.T) {
+// The observer cannot retain the object through its own allocating frame while
+// the waiter releases and later reacquires the physical monitor.
+func monitorLifetime121WaitingObject() (weak.Pointer[monitorLifetime121Object], <-chan struct{}, <-chan bool) {
 	value := &monitorLifetime121Object{payload: make([]byte, 4096)}
 	identity := weak.Make(value)
 	ready := make(chan struct{})
@@ -286,7 +308,12 @@ func TestMonitorLifetime121WaitNotifyKeepsOneMonitorAcrossGC(t *testing.T) {
 		MonitorExitExecution(outer)
 		done <- retainedOwnership
 	}(value)
-	value = nil
+	runtime.KeepAlive(value)
+	return identity, ready, done
+}
+
+func TestMonitorLifetime121WaitNotifyKeepsOneMonitorAcrossGC(t *testing.T) {
+	identity, ready, done := monitorLifetime121WaitingObject()
 	<-ready
 	for range 4 {
 		runtime.GC()

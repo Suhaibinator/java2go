@@ -55,12 +55,18 @@ public class KeywordMethodProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestKeywordMethodNames(t *testing.T) {
     const want = "field:range:value"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    reference := Run()
+    if reference == nil { t.Fatal("Run() returned null") }
+    if got := reference.UTF16Copy(); !slices.Equal(got, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %q, want %q", string(utf16.Decode(got)), want)
     }
 }
 `)
@@ -86,7 +92,7 @@ public class DiamondAssignmentProgram {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.NewMap[string, *stdjava.Integer]()") {
+	if !strings.Contains(out, "stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]()") {
 		t.Fatalf("expected assignment-target generics to type the diamond constructor, got:\n%s", out)
 	}
 	runGoTestInTempModule(t, out, `

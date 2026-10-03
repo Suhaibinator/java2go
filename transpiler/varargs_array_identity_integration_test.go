@@ -175,11 +175,21 @@ public class VarargsArrayIdentityProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestVarargsArrayIdentity(t *testing.T) {
-    if got := Run(); got != "ok" {
-        t.Fatalf("Run() = %q, want ok", got)
+    const want = "ok"
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %q, want ok", string(utf16.Decode(units)))
     }
 }
 `)

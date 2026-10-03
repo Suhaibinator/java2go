@@ -1,0 +1,13 @@
+{
+  "id": "source-string-host-hygiene",
+  "status": "unaccepted",
+  "test": "TestBoxedStringSourceBindersStrictJDK21Parity",
+  "source_sha256": "ddef1194ae6826154842164d95a1a357407fe109830343a1c52e5886e2accbf9",
+  "go_test_sha256": "285505280eb3dda2967d6d882cedee3831b863881d5446082e12a59edb05fc41",
+  "oracle_stdout_sha256": "0c84943bc2894338eee92db4c990dd29c6b5c7eb88c0392751b27b26e6635164",
+  "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_contains_resume/boxed-57a71de/evidence/green-sourcebinders-parity",
+  "proposed_repository_path": "campaign/reproducers/boxed-string-source-string-host-hygiene",
+  "failure": "source class String maps to Go string and collides with native presentation helpers",
+  "compiler_baseline": "57a71ded298937be5c38bc32e944a70cff6080dc",
+  "acceptance": "unaccepted; scoped parser parity does not accept this full probe"
+}

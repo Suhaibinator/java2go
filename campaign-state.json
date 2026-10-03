@@ -12186,8 +12186,9 @@
           "sha256": "e07321766acdac698e8b308879159e00b761df38b56af07de21d008a9ad9d159"
         },
         {
-          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/perf-ownership-independent-audit.json",
-          "sha256": "f1dd84c171e8da7bcd468a38f47838cd221e4cc2fa866b5dae91c34a3cbdd144"
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/perf-ownership-independent-audit-v2.json",
+          "sha256": "f1dd84c171e8da7bcd468a38f47838cd221e4cc2fa866b5dae91c34a3cbdd144",
+          "original_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/perf-ownership-independent-audit.json"
         }
       ]
     },
@@ -12253,6 +12254,407 @@
     "branch": "origin/codex/adversarial-campaign",
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "53 coordinator-replayed compiler parents with matching race build and independent source audits",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress123": {
+    "status": "OBJECT_ARRAY_ENUM_CLONE_BOXED_PARSERS_AND_MONITOR_LINT_VERIFIED",
+    "implementation_changes_published": true,
+    "verification": {
+      "compiler_parents": 55,
+      "selected_parents": {
+        "123-scaffold-generic-race": 16,
+        "123-scaffold-streams-race": 4,
+        "123-scaffold-streams-adjacent-race": 7,
+        "123-scaffold-arrays-race": 6,
+        "123-scaffold-legacy-race": 4,
+        "123-boxed-jvm-race": 10,
+        "123-boxed-original-race": 1,
+        "123-clone-jvm-race": 7
+      },
+      "full_runtime_race_parents": 594,
+      "runtime_skips": 0,
+      "full_repository_lint": "PASS",
+      "native_timeout_seconds": 55,
+      "supervisor_seconds": 65,
+      "source_audits": [
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/boxed-string-frozen-audit.json",
+          "sha256": "de3674217594c4664cbfd5384f496ce0335d53b075170c2e8265b221d72a7664"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/boxed-string-frontiers-supplement.json",
+          "sha256": "b62e78d0dfb51ee008295b5a47c95ffbce103b29282c7551b265dc14a856974f"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/object-clone-v3-audit.json",
+          "sha256": "e813110b9432bd9add7b070f9cbf9851355d61a2f3ba2d118146fbc527034118"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/object-clone-v3-red-format-supplement.json",
+          "sha256": "1fd86c81f7b95a9fb6a3295cbe2678a150f35fbf9d85019d4b121bac7b069866"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/scaffold14-independent-audit.json",
+          "sha256": "b048cb066d561e197ac470aad07b00be34dde32c5a9d3fa5312f6b64a1e4f898"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/audit-durability-recovery.json",
+          "sha256": "16266394c96e74a6e68f875374b9631ed2b77e5adcb3cea5f69219ce412d5fcb"
+        }
+      ],
+      "selector_inventory_correction": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-selector-correction.json",
+      "original_Gson": {
+        "report": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/report.json",
+          "sha256": "c8eeab5e94117344fc7a91005e899a19609cb061aeb5df3333af8cfef01ddbfb"
+        },
+        "implementation_sha256": "7ececba4afd12dd42ec004c5aadb790f70c6baf38fc8f95ec78ffc5fea7c60c9",
+        "implementation_members": 447,
+        "before_after_unchanged": true,
+        "source_members": 123,
+        "sources_equal_prior_frozen_replay": true,
+        "transpile_exit": 0,
+        "transpile_ms": 265434,
+        "generated_build_failure": {
+          "stage": "go-build-all",
+          "detail": "exit=1 error=\n\n# campaign.generated/round02-data-gson/java2go_scc_636f6d2f676f6f676c652f67736f6e\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_Gson.go:15:71: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JsonAdapterAnnotationTypeAdapterFactory.go:24:86: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_TypeAdapterFactory.go:8:118: undefined: T\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:2446:48: undefined: AtomicIntegerArray\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3475:48: J636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_URL (package-level variable) is not a type\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3571:48: J636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_URI (package-level variable) is not a type\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3703:48: undefined: InetAddress\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3916:48: undefined: Currency\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:4275:48: undefined: AtomicLongArray\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_LinkedTreeMap.go:1716:2: undefined: Comparator\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_LinkedTreeMap.go:1716:2: too many errors\n"
+        },
+        "observations": [
+          {
+            "seed": 17,
+            "repeat": 1,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "17"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-17-repeat-1/java",
+              "stdout": "seed=17 parsed=26 applied=13 rejected=17 orders=7 exportHash=638810bc\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 98,
+              "files": {
+                "out/audit.tsv": "385c3c45544f276ebdb3cc179fec75fcd3a2c0c44035cfc7f8ed313186eb1d54",
+                "out/orders.json": "9b0118ca7ceb998b5da12e38fe65acade1b273069fd24903f13175442601ffc5",
+                "out/stats.json": "d5b2f65236d891762b0c4ef9fdf4d049deb72c27bf10fa8d57006fcc30d10e09"
+              }
+            }
+          },
+          {
+            "seed": 17,
+            "repeat": 2,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "17"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-17-repeat-2/java",
+              "stdout": "seed=17 parsed=26 applied=13 rejected=17 orders=7 exportHash=638810bc\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 94,
+              "files": {
+                "out/audit.tsv": "385c3c45544f276ebdb3cc179fec75fcd3a2c0c44035cfc7f8ed313186eb1d54",
+                "out/orders.json": "9b0118ca7ceb998b5da12e38fe65acade1b273069fd24903f13175442601ffc5",
+                "out/stats.json": "d5b2f65236d891762b0c4ef9fdf4d049deb72c27bf10fa8d57006fcc30d10e09"
+              }
+            }
+          },
+          {
+            "seed": 17,
+            "repeat": 3,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "17"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-17-repeat-3/java",
+              "stdout": "seed=17 parsed=26 applied=13 rejected=17 orders=7 exportHash=638810bc\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 99,
+              "files": {
+                "out/audit.tsv": "385c3c45544f276ebdb3cc179fec75fcd3a2c0c44035cfc7f8ed313186eb1d54",
+                "out/orders.json": "9b0118ca7ceb998b5da12e38fe65acade1b273069fd24903f13175442601ffc5",
+                "out/stats.json": "d5b2f65236d891762b0c4ef9fdf4d049deb72c27bf10fa8d57006fcc30d10e09"
+              }
+            }
+          },
+          {
+            "seed": 41,
+            "repeat": 1,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "41"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-41-repeat-1/java",
+              "stdout": "seed=41 parsed=26 applied=13 rejected=17 orders=7 exportHash=b833bb4\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 94,
+              "files": {
+                "out/audit.tsv": "5defa21e78346aed6e4e4fa1581be0d327e353470708d0c69cfbfdc8d87fb588",
+                "out/orders.json": "3bbdbaa39f05b5019a281c1857c6ed4c9d775e43f6d96d335e7eafd0132f57c4",
+                "out/stats.json": "570689a57a55432139d7a874d4c2f4d9a898e886794a6a7906b62ece2e740fa3"
+              }
+            }
+          },
+          {
+            "seed": 41,
+            "repeat": 2,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "41"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-41-repeat-2/java",
+              "stdout": "seed=41 parsed=26 applied=13 rejected=17 orders=7 exportHash=b833bb4\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 97,
+              "files": {
+                "out/audit.tsv": "5defa21e78346aed6e4e4fa1581be0d327e353470708d0c69cfbfdc8d87fb588",
+                "out/orders.json": "3bbdbaa39f05b5019a281c1857c6ed4c9d775e43f6d96d335e7eafd0132f57c4",
+                "out/stats.json": "570689a57a55432139d7a874d4c2f4d9a898e886794a6a7906b62ece2e740fa3"
+              }
+            }
+          },
+          {
+            "seed": 41,
+            "repeat": 3,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "41"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-41-repeat-3/java",
+              "stdout": "seed=41 parsed=26 applied=13 rejected=17 orders=7 exportHash=b833bb4\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 98,
+              "files": {
+                "out/audit.tsv": "5defa21e78346aed6e4e4fa1581be0d327e353470708d0c69cfbfdc8d87fb588",
+                "out/orders.json": "3bbdbaa39f05b5019a281c1857c6ed4c9d775e43f6d96d335e7eafd0132f57c4",
+                "out/stats.json": "570689a57a55432139d7a874d4c2f4d9a898e886794a6a7906b62ece2e740fa3"
+              }
+            }
+          },
+          {
+            "seed": 97,
+            "repeat": 1,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "97"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-97-repeat-1/java",
+              "stdout": "seed=97 parsed=26 applied=10 rejected=20 orders=7 exportHash=ce86bed9\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 83,
+              "files": {
+                "out/audit.tsv": "b14881b761b49d8d08110cc320869188fc79377b9a3509122ec81248cacc2ad9",
+                "out/orders.json": "c3fa00a07f0c13e42cceee5bc192b30e6224cf9167ec52bc835f571cf8dd2cff",
+                "out/stats.json": "cc5b8511efcf436ce3a71251c0b2bb41f2035c711de240c57e4b6d7952e10b51"
+              }
+            }
+          },
+          {
+            "seed": 97,
+            "repeat": 2,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "97"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-97-repeat-2/java",
+              "stdout": "seed=97 parsed=26 applied=10 rejected=20 orders=7 exportHash=ce86bed9\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 98,
+              "files": {
+                "out/audit.tsv": "b14881b761b49d8d08110cc320869188fc79377b9a3509122ec81248cacc2ad9",
+                "out/orders.json": "c3fa00a07f0c13e42cceee5bc192b30e6224cf9167ec52bc835f571cf8dd2cff",
+                "out/stats.json": "cc5b8511efcf436ce3a71251c0b2bb41f2035c711de240c57e4b6d7952e10b51"
+              }
+            }
+          },
+          {
+            "seed": 97,
+            "repeat": 3,
+            "java": {
+              "command": [
+                "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+                "-Dfile.encoding=UTF-8",
+                "-Duser.language=en",
+                "-Duser.country=US",
+                "-Duser.timezone=UTC",
+                "-cp",
+                "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/java-oracle:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/gson-2.14.0.jar:/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/frozen/dependencies/error_prone_annotations-2.48.0.jar",
+                "campaign.data2.app.Main",
+                "97"
+              ],
+              "directory": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-gson-original-artifacts/20261003T072203Z-2213383472/runs/seed-97-repeat-3/java",
+              "stdout": "seed=97 parsed=26 applied=10 rejected=20 orders=7 exportHash=ce86bed9\n",
+              "stderr": "",
+              "exit_code": 0,
+              "timed_out": false,
+              "duration_ms": 81,
+              "files": {
+                "out/audit.tsv": "b14881b761b49d8d08110cc320869188fc79377b9a3509122ec81248cacc2ad9",
+                "out/orders.json": "c3fa00a07f0c13e42cceee5bc192b30e6224cf9167ec52bc835f571cf8dd2cff",
+                "out/stats.json": "cc5b8511efcf436ce3a71251c0b2bb41f2035c711de240c57e4b6d7952e10b51"
+              }
+            }
+          }
+        ],
+        "full_application_accepted": false,
+        "compiler_race_env": true,
+        "generated_race_requested": true
+      }
+    },
+    "scope": "Shallow source Object/array clone with fresh allocation metadata and volatile cells, Cloneable nominal check, explicit Enum clone failure. Canonical boxed String parser routes preserve factories versus fresh constructors and caller execution. Monitor test setup frames remove local strong roots without weakening GC assertions; canonical test scaffold migrations retain Java/oracles.",
+    "remaining": "Whole Gson fails Go-build-all at ConcurrentMap, method generic TypeAdapterFactory, native atomic/net/currency types and Comparator bridge. Nine original JVM observations stable and all123 source members strictly transpile, not Go parity. Netty1212+8 timeout remains. Full raw/concrete inner descriptors, boxed wrapper toString and source String host hygiene unresolved.",
+    "audit_path_correction": {
+      "milestone": 122,
+      "old_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/perf-ownership-independent-audit.json",
+      "new_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/evidence/perf-ownership-independent-audit-v2.json",
+      "sha256": "f1dd84c171e8da7bcd468a38f47838cd221e4cc2fa866b5dae91c34a3cbdd144",
+      "reason": "Original milestone121 v1 digest restored byte-exact; clarification now has distinct immutable v2 path, with recorded SHA recovery."
+    },
+    "publication_parent": "29ddf867ad9a485f9bdfbedad2cd9f620335e8ac",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-source-manifest.json",
+      "sha256": "1996a9ddcf4dbf15dd9d5d8f25a42af4d2f882f3609fe93380ee2d36e0d31901",
+      "members": 3239
+    },
+    "root_records": {
+      "evidence/123-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-build-transpiler/result.json",
+        "sha256": "4b0512ef05c2ee31749ee266609b4a133a9f59184e06bdef4c9c6d8232896039"
+      },
+      "evidence/123-scaffold-generic-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-scaffold-generic-race/result.json",
+        "sha256": "54f99e6a1288b4a0e74ce6e1457e42968ad57696de93922406cf3aa1feabb50d"
+      },
+      "evidence/123-scaffold-streams-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-scaffold-streams-race/result.json",
+        "sha256": "cbfb2185eb44b7500f489e1394911c8abaa3b05f5c2e47aa0924a11a204d3466"
+      },
+      "evidence/123-scaffold-streams-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-scaffold-streams-adjacent-race/result.json",
+        "sha256": "58e2784421de740505221e9711bde6a2239583a9bc623862a74ea6b591a8c8de"
+      },
+      "evidence/123-scaffold-arrays-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-scaffold-arrays-race/result.json",
+        "sha256": "2b6de3dc04bed0c46ba12ea482a82c79b34a17e58d9b9597b6068e3e089fc054"
+      },
+      "evidence/123-scaffold-legacy-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-scaffold-legacy-race/result.json",
+        "sha256": "ffdabba8ad731c4f45eafc59453bc1a170926dbf9a20d0ce262ef40f946ba7bf"
+      },
+      "evidence/123-boxed-jvm-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-boxed-jvm-race/result.json",
+        "sha256": "5043a314cc4c6a76423f5bfc35e9c07a6bdb832aac4f70e01f20fc07d0dcb149"
+      },
+      "evidence/123-boxed-original-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-boxed-original-race/result.json",
+        "sha256": "aa673eeb27186443a2571f8864aca5f88d92b606aae3efd3835134e5d777d1fc"
+      },
+      "evidence/123-clone-jvm-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-clone-jvm-race/result.json",
+        "sha256": "1044f4bcb9d899db0a2d367b4e904bfc2d9e46574fa9dc5c1be2889338d9f549"
+      },
+      "evidence/123-build-stdjava/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-build-stdjava/result.json",
+        "sha256": "e35743e336f462a9db0109b96b3abc3ca77217bfe2ee80249491987e800c9fb6"
+      },
+      "evidence/123-runtime-full-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-runtime-full-race/result.json",
+        "sha256": "7ecb7d8f5eda60338b32f8f809d3da1403f5faafd55936be85f7fd571519588a"
+      },
+      "evidence/123-lint/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-lint/result.json",
+        "sha256": "c863a34b092d232ead60b257c391a1b98e2ab4815924f41eec3f152ebd2ff372"
+      },
+      "evidence/123-build-campaign/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-build-campaign/result.json",
+        "sha256": "5f9a3e72c2ad8f0fd02c7448d9376ff0159029296eb9db6f2e2ef1d63323defd"
+      }
+    }
+  },
+  "active_resume_current123": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "55 independently replayed compiler parents, complete594 runtime race gate and full repository lint; original123-source Gson strictly generated and unresolved Go build preserved",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

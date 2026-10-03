@@ -32,7 +32,7 @@ public class GenericInterfaceEmptyVarargsProgram {
     }
 }
 `)
-	if count := strings.Count(out, "stdjava.ReferenceArrayLiteralOf[string](stdjava.StringTypeID)"); count != 3 {
+	if count := strings.Count(out, "stdjava.ReferenceArrayLiteralOf[*stdjava.JavaString](stdjava.StringTypeID)"); count != 3 {
 		t.Fatalf("empty generic-interface varargs calls emitted %d concrete arrays, want 3:\n%s", count, out)
 	}
 	if count := strings.Count(out, "stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID)"); count != 1 {
@@ -41,12 +41,16 @@ public class GenericInterfaceEmptyVarargsProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestGenericInterfaceEmptyVarargsBehavior(t *testing.T) {
     const want = "0:0:0:0"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %v, want %q", got, want)
     }
 }
 `)

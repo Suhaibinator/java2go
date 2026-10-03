@@ -164,8 +164,8 @@ func TestGenericReferenceArrayInferenceRetainsArrayRank(t *testing.T) {
 	}
 	for _, fragment := range []string{
 		`echoJava2goExecution[T](__java2goExecution, values)`,
-		`forwardJava2goExecution[string](__java2goExecution, matrix)`,
-		`peelJava2goExecution[string](__java2goExecution, result)`,
+		`forwardJava2goExecution[*stdjava.JavaString](__java2goExecution, matrix)`,
+		`peelJava2goExecution[*stdjava.JavaString](__java2goExecution, result)`,
 	} {
 		if !strings.Contains(flat, fragment) {
 			t.Fatalf("expected ranked generic-array inference fragment %q:\n%s", fragment, out)
@@ -175,11 +175,15 @@ func TestGenericReferenceArrayInferenceRetainsArrayRank(t *testing.T) {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestGenericArrayRankParity(t *testing.T) {
-    if got := Run(); got != "ranked:ranked" {
-        t.Fatalf("Run() = %q, want ranked:ranked", got)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("ranked:ranked"))) {
+        t.Fatalf("Run() = %v, want ranked:ranked", got)
     }
 }
 `)
