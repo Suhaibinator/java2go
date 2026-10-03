@@ -3,10 +3,12 @@ package stdjava
 import (
 	"math"
 	"reflect"
+	"runtime"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
+	"weak"
 )
 
 // This file provides Go runtime equivalents for the java.util.concurrent and
@@ -583,8 +585,11 @@ func NewObject() any {
 //
 // Generated superclass views share the ObjectInfo identity of their Java
 // allocation. Other supported runtime references retain their existing identity.
-// LIMITATION: the global registry retains acquired monitors and their object
-// graphs for the process lifetime, even after Java application references die.
+// Managed Java allocations use scalar identity keys and weak monitor values.
+// A live guard, entrant, waiter, or legacy mutex handle retains the monitor and
+// its anchor; an idle managed registry entry does not retain the Java object.
+// Arbitrary comparable host values keep the legacy value-key fallback described
+// below; they are outside the managed Java allocation lifecycle contract.
 type monitor struct {
 	// mu protects explicit logical ownership. The outermost explicit entry also
 	// holds legacyMu across the generated body; reentrant entries by the same
@@ -600,10 +605,11 @@ type monitor struct {
 	legacyMu   sync.Mutex
 	legacyCond *sync.Cond
 
-	// anchor keeps identity-bearing reference storage alive for as long as its
-	// monitor is registered. In particular, a slice monitor is keyed by its
-	// backing-storage address; retaining the slice prevents that address from
-	// being recycled for an unrelated Java array.
+	// anchor keeps identity-bearing reference storage alive while callers hold
+	// this monitor. The registry holds only a weak pointer to the monitor, so
+	// this strong edge cannot turn an idle registry entry into an object root.
+	// It also prevents scalar addresses from being recycled while a live
+	// monitor, including an interior legacyMu pointer, still uses that identity.
 	anchor interface{}
 }
 
@@ -615,9 +621,14 @@ type MonitorGuard struct {
 	released  bool
 }
 
-// monitorIdentity is a comparable description of a Java reference. Most
-// generated references are already comparable Go values and use comparable
-// directly. Java arrays are represented as Go slices, which cannot be map
+// monitorIdentity is a nonretaining description of a managed Java reference. Pointer
+// identities are scalar addresses, never strong Go pointers. Legacy native
+// value identities (including strings and class names) retain their existing
+// value comparison; these representations do not carry Java allocation identity.
+// The legacy comparable-host-value fallback can retain pointer fields until
+// monitor cleanup. A host value that points back to its monitor can form a rooted
+// cycle; managed Java allocations never take this compatibility path.
+// Java arrays are represented as Go slices, which cannot be map
 // keys, so their identity is the typed address of their first backing-storage
 // element together with the slice shape. An aliased Java array carries the
 // same slice header and therefore resolves to the same monitor.
@@ -631,21 +642,26 @@ type monitorIdentity struct {
 
 var (
 	monitorsMu sync.Mutex
-	monitors   = map[monitorIdentity]*monitor{}
+	monitors   = map[monitorIdentity]weak.Pointer[monitor]{}
 )
 
 func monitorIdentityFor(obj interface{}) monitorIdentity {
 	if carrier, ok := obj.(JavaObjectInfoCarrier); ok {
 		if identity := carrier.JavaObjectInfo(); identity != nil {
-			return monitorIdentity{comparable: identity}
+			return monitorIdentity{reference: reflect.TypeOf(identity), data: reflect.ValueOf(identity).Pointer()}
+		}
+	}
+	// Builtin throwables are Go values whose copies share this state pointer.
+	// Use that Java allocation identity without storing the pointer in the key.
+	if carrier, ok := obj.(interface{ ThrowableIdentity() *throwableState }); ok {
+		if identity := carrier.ThrowableIdentity(); identity != nil {
+			return monitorIdentity{reference: reflect.TypeOf(identity), data: reflect.ValueOf(identity).Pointer()}
 		}
 	}
 	value := reflect.ValueOf(obj)
-	if value.Type().Comparable() {
-		return monitorIdentity{comparable: obj}
-	}
-
 	switch value.Kind() {
+	case reflect.Pointer, reflect.UnsafePointer, reflect.Chan:
+		return monitorIdentity{reference: value.Type(), data: value.Pointer()}
 	case reflect.Slice:
 		return monitorIdentity{
 			reference: value.Type(),
@@ -656,9 +672,12 @@ func monitorIdentityFor(obj interface{}) monitorIdentity {
 	case reflect.Map:
 		// Maps are not emitted as Java object representations, but accepting a
 		// map-backed external reference is safe: reflect exposes its stable
-		// runtime identity and the monitor anchor keeps it alive.
+		// runtime identity and a live monitor's anchor keeps it alive.
 		return monitorIdentity{reference: value.Type(), data: value.Pointer()}
 	default:
+		if value.Type().Comparable() {
+			return monitorIdentity{comparable: obj}
+		}
 		// Do not let an unexpected backend representation reach Go's map hash
 		// operation and panic with "hash of unhashable type". Such a value is not
 		// a Java reference representation for which this runtime can promise
@@ -667,16 +686,35 @@ func monitorIdentityFor(obj interface{}) monitorIdentity {
 	}
 }
 
+type monitorCleanupEntry struct {
+	identity monitorIdentity
+	epoch    weak.Pointer[monitor]
+}
+
+// Managed cleanup keys contain no object, monitor, bound view, or execution.
+// Comparable host values retain the existing value-key compatibility caveat.
+// A delayed cleanup must not remove a replacement with the same scalar key.
+func cleanupMonitorEntry(entry monitorCleanupEntry) {
+	monitorsMu.Lock()
+	if monitors[entry.identity] == entry.epoch {
+		delete(monitors, entry.identity)
+	}
+	monitorsMu.Unlock()
+}
+
 func monitorRecord(obj interface{}) *monitor {
 	identity := monitorIdentityFor(obj)
 	monitorsMu.Lock()
 	defer monitorsMu.Unlock()
-	m, ok := monitors[identity]
-	if !ok {
+	m := monitors[identity].Value()
+	if m == nil {
 		m = &monitor{anchor: obj}
 		m.legacyCond = sync.NewCond(&m.legacyMu)
-		monitors[identity] = m
+		epoch := weak.Make(m)
+		monitors[identity] = epoch
+		runtime.AddCleanup(m, cleanupMonitorEntry, monitorCleanupEntry{identity, epoch})
 	}
+	runtime.KeepAlive(obj)
 	return m
 }
 
@@ -714,6 +752,7 @@ func MonitorEnter(obj interface{}) *sync.Mutex {
 	requireNonNullMonitorReference(obj, "monitor operation")
 	m := monitorFor(obj)
 	m.Lock()
+	runtime.KeepAlive(obj)
 	return m
 }
 
@@ -748,6 +787,7 @@ func MonitorEnterExecution(execution *Execution, obj interface{}) *MonitorGuard 
 	m.owner = execution
 	m.depth = 1
 	m.mu.Unlock()
+	runtime.KeepAlive(obj)
 	return &MonitorGuard{monitor: m, execution: execution}
 }
 
@@ -778,27 +818,40 @@ func MonitorExitExecution(guard *MonitorGuard) {
 	if releasePhysical {
 		m.legacyMu.Unlock()
 	}
+	// Released generated guards must not extend the Java allocation's lifetime.
+	guard.monitor = nil
+	guard.execution = nil
+	runtime.KeepAlive(m)
 }
 
 // MonitorWait retains the original wait implementation for legacy generated
 // code. The caller must hold the mutex returned by MonitorEnter.
 func MonitorWait(obj interface{}) {
 	requireNonNullMonitorReference(obj, "wait")
-	monitorRecord(obj).legacyCond.Wait()
+	m := monitorRecord(obj)
+	m.legacyCond.Wait()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorNotify retains the original notify implementation for legacy
 // generated code.
 func MonitorNotify(obj interface{}) {
 	requireNonNullMonitorReference(obj, "notify")
-	monitorRecord(obj).legacyCond.Signal()
+	m := monitorRecord(obj)
+	m.legacyCond.Signal()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorNotifyAll retains the original notifyAll implementation for legacy
 // generated code.
 func MonitorNotifyAll(obj interface{}) {
 	requireNonNullMonitorReference(obj, "notifyAll")
-	monitorRecord(obj).legacyCond.Broadcast()
+	m := monitorRecord(obj)
+	m.legacyCond.Broadcast()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorWaitExecution implements Object.wait(): the caller must hold obj's
@@ -830,6 +883,8 @@ func MonitorWaitExecution(execution *Execution, obj interface{}) {
 	m.owner = execution
 	m.depth = savedDepth
 	m.mu.Unlock()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorNotifyExecution implements Object.notify(): wake one waiter on obj's
@@ -845,6 +900,8 @@ func MonitorNotifyExecution(execution *Execution, obj interface{}) {
 	}
 	m.legacyCond.Signal()
 	m.mu.Unlock()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorNotifyAllExecution implements Object.notifyAll(): wake all waiters on
@@ -860,6 +917,8 @@ func MonitorNotifyAllExecution(execution *Execution, obj interface{}) {
 	}
 	m.legacyCond.Broadcast()
 	m.mu.Unlock()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 type classMonitorReference struct {

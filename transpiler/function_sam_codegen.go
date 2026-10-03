@@ -19,7 +19,7 @@ func sourceFunctionContract(scope *symbol.ClassScope, ctx Ctx) []string {
 			return nil
 		}
 		seen[owner] = true
-		ownerCtx := classScopeCtx(owner, ctx)
+		ownerCtx := classHeaderTypeCtx(owner, ctx)
 		bindings := map[string]string{}
 		for index, parameter := range owner.TypeParameters {
 			if index < len(arguments) {
@@ -29,7 +29,7 @@ func sourceFunctionContract(scope *symbol.ClassScope, ctx Ctx) []string {
 		}
 		parents := append(append([]string(nil), owner.ImplementedInterfaces...), owner.Superclass)
 		for _, parent := range parents {
-			qualified := qualifyJavaTypeInDeclaringContext(parent, owner)
+			qualified := qualifyDeclaredReferenceType(symbol.JavaType{Original: parent}, ownerCtx)
 			qualified = substituteJavaTypeParams(qualified, bindings)
 			base, args := parseJavaTypeString(qualified)
 			if isExternalFunctionType(base, ownerCtx) {

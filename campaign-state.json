@@ -12010,5 +12010,154 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "71 selected original and boundary regression parents independently passed; no fullCI/round acceptance",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress121": {
+    "status": "MONITOR_LIFETIME_FUNCTIONAL_HEADERS_AND_EXPLICIT_OBJECT_FINALIZE_VERIFIED",
+    "implementation_changes_published": true,
+    "scope": "Weak monitor registry values/scalar Java allocation identities avoid permanent managed object roots; guard/entrant/waiter/legacy mutex anchors preserve live monitors and cleanup epoch protects replacements. HoldsLock receiver is fenced through weaklookup. Functional declared header edges resolve in header context. Explicit canonical Object.super.finalize uses JDK emptybody without GC scheduling.",
+    "verification": {
+      "full_runtime_race_parents": 590,
+      "runtime_skips": 0,
+      "compiler_selected_parents": {
+        "121-header-registration-race": 3,
+        "121-header-transport-race": 5,
+        "121-header-callback-race": 1,
+        "121-header-project-race": 1,
+        "121-finalize-jvm-race": 3,
+        "121-monitor-jvm-race": 5,
+        "121-thread-jvm-race": 7
+      },
+      "compiler_parent_count": 25,
+      "original_concurrent_apps": {
+        "round01": {
+          "report_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-round01-concurrent-artifacts/20261003T064002Z-851108524/report.json",
+          "report_sha256": "0e8e6d0e0a7ed321d89df0eb63059a03874e47bffebea8c77411a4a94e8a92af",
+          "parity": 9,
+          "additional_stress": 20,
+          "implementation_sha256": "cf241b50990c4d7f051add57b045f4b7e9fae8b3ef29b7fe383e2939761f3708",
+          "implementation_members": 443,
+          "source_file_hashes_independently_matched": true,
+          "scratch_inherited_git_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
+          "all_generated_packages_and_main_race": true
+        },
+        "round02": {
+          "report_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-round02-concurrent-artifacts/20261003T064041Z-2193050209/report.json",
+          "report_sha256": "8f9b7d384f1fb59683b36240c63f87610788728642d3844c1678c59896a75e93",
+          "parity": 9,
+          "additional_stress": 20,
+          "implementation_sha256": "cf241b50990c4d7f051add57b045f4b7e9fae8b3ef29b7fe383e2939761f3708",
+          "implementation_members": 443,
+          "source_file_hashes_independently_matched": true,
+          "scratch_inherited_git_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
+          "all_generated_packages_and_main_race": true
+        }
+      },
+      "monitor_JDK21_oracle_repeats": 3,
+      "native_timeout_seconds": 55,
+      "supervisor_seconds": 65,
+      "matching_race_binaries": true,
+      "source_audits": [
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/monitor-prerequisite121-v2-audit.json",
+          "sha256": "87f7f02ab3e0022d3f5f0072c9e2962f6139a814b81b15c53c6780a96d5f58ab"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/object-super-finalize-audit.json",
+          "sha256": "e9834dc3c9390287a7e79f6251a501f9f2d88f3fd5c4a935128e8500c6a0c9f9"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/sql-thread-header-evaluation-audit.json",
+          "sha256": "f1a310db2bb74394ca9940183089045534e07377f63899e681f9d9b68db66d44"
+        }
+      ],
+      "runner_change_record": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-runner-mutation-restored.json"
+    },
+    "remaining": "No full WeakReference/ReferenceQueue contract or GC/finalizer scheduling accepted. Pointer-bearing arbitrary native host value cycles remain documented compatibility frontier. Constant variable captures, clone/generic/boxed/dollar repairs are separately active. Full Netty1212+8 strict and fullCI/round unaccepted.",
+    "parent_ci": "At public120 build/unit/lint/fuzz/vulnerability/nonparity/applicationparity PASS; five compiler shards and dependency gate fail, sixth compiler shard still running at last snapshot.",
+    "publication_parent": "06dba372aea9ea0cfe6ba3d77604867784b5896b",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-source-manifest.json",
+      "sha256": "67c4a9cb698380dbdb2dfde7a1a01f674759d40588cdbb6c6c04f6ecc23f0ae0",
+      "members": 3212
+    },
+    "root_records": {
+      "evidence/121-build-stdjava/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-build-stdjava/result.json",
+        "sha256": "3a458a89dd6b2c75bd4eaccbd1cee4cbdb657445e20df1372ab323a3ceab9ebc"
+      },
+      "evidence/121-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-build-transpiler/result.json",
+        "sha256": "30054b8f9e5a721f037a7eb9a1544402f40b449975a527c0db9018da2642e59d"
+      },
+      "evidence/121-build-campaign/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-build-campaign/result.json",
+        "sha256": "c29ae21293cc4790f584e1985ef0dd6fd8a2178910e43201571533eecc91366c"
+      },
+      "evidence/121-runtime-full-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-runtime-full-race/result.json",
+        "sha256": "c4bf13a0196ca68c97f6277267bb179d7804ce79db74b861156f67673c6e61fe"
+      },
+      "evidence/121-header-registration-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-header-registration-race/result.json",
+        "sha256": "d3e5376defc409ca339b764154895fced949c86bef0df985e587417613bc71b8"
+      },
+      "evidence/121-header-transport-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-header-transport-race/result.json",
+        "sha256": "a771001a9f25b373bc76a6872387fbc1af2ed832057aafa994e8cf6d824cc133"
+      },
+      "evidence/121-header-callback-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-header-callback-race/result.json",
+        "sha256": "b54cf1ba07f8a0a215d11a7efbd6785dbbc181604857c07a83b4d00ad14ed049"
+      },
+      "evidence/121-header-project-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-header-project-race/result.json",
+        "sha256": "1da4db24bdde2110dad880f9205ad9d86bf20879cec14df252bdd7277fda065f"
+      },
+      "evidence/121-finalize-jvm-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-finalize-jvm-race/result.json",
+        "sha256": "140235f724b969caadcf9af718fcf89377e884cf1108d05efd56e661a796a4e3"
+      },
+      "evidence/121-monitor-jvm-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-monitor-jvm-race/result.json",
+        "sha256": "891b0efbacefbaf117529a5af75f890e0a0624cd6a2e0006cca31af83556a748"
+      },
+      "evidence/121-thread-jvm-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-thread-jvm-race/result.json",
+        "sha256": "8d5e4afb3ec6e4d4e615627969a20eb988dcdff7504f2f11078c9c3a7ef55aae"
+      },
+      "evidence/121-round01-concurrent/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-round01-concurrent/result.json",
+        "sha256": "9d64ca2ac0555b0327576acc2d0aad7c151cf05020685151507a2f75bf405d47"
+      },
+      "evidence/121-round02-concurrent/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-round02-concurrent/result.json",
+        "sha256": "52ce49ffffa3004070011aa61b184f351b79eded4659591f1e07ee93b3aacae1"
+      },
+      "evidence/121-jdk-monitor-build/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-jdk-monitor-build/result.json",
+        "sha256": "26cf280860215308196258d79fa48ecc56dfba7d3b5888a54709803310e66d88"
+      },
+      "evidence/121-jdk-monitor-0/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-jdk-monitor-0/result.json",
+        "sha256": "5211e26d05e6d6c914690afccd2798934baeb0008eca4c5044c2d9b69a8409a3"
+      },
+      "evidence/121-jdk-monitor-1/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-jdk-monitor-1/result.json",
+        "sha256": "7148286ebd7691a2c5496f2960a76f1dceeb3788c420688e07b5a9ed4ab45786"
+      },
+      "evidence/121-jdk-monitor-2/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/121-jdk-monitor-2/result.json",
+        "sha256": "0098df2b36bbfb9eccfaa506bbc800616e2b28704412eacfd9a4df9c7de4be1f"
+      }
+    }
+  },
+  "active_resume_current121": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "Full runtime race gate,25compiler parents,3JDKmonitor repeats and2original concurrent applications with20extra stress runs each",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

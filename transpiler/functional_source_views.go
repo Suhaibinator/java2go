@@ -119,7 +119,7 @@ func sourceNativeFunctionalContracts(scope *symbol.ClassScope, ctx Ctx) []source
 			return
 		}
 		seen[key] = true
-		ownerCtx := classScopeCtx(owner, ctx)
+		ownerCtx := classHeaderTypeCtx(owner, ctx)
 		bindings := map[string]string{}
 		for i, p := range owner.TypeParameters {
 			if i < len(args) {
@@ -128,7 +128,9 @@ func sourceNativeFunctionalContracts(scope *symbol.ClassScope, ctx Ctx) []source
 			}
 		}
 		for _, edge := range append(append([]string(nil), owner.ImplementedInterfaces...), owner.Superclass) {
-			q := substituteJavaTypeParams(qualifyJavaTypeInDeclaringContext(edge, owner), bindings)
+			// Resolve the written edge in its header before body-only member types
+			// can replace the native family or one of its argument declarations.
+			q := substituteJavaTypeParams(qualifyDeclaredReferenceType(symbol.JavaType{Original: edge}, ownerCtx), bindings)
 			base, a := parseJavaTypeString(q)
 			if f := nativeFunctionalFamily(q, ownerCtx); f != "" {
 				collect(f, a)

@@ -493,6 +493,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if lowered := inheritedObjectTextInvocation(objectNode, methodName, ctx, source); lowered != nil {
 				return lowered
 			}
+			if lowered := objectSuperFinalizeInvocation(objectNode, methodName, ctx, source); lowered != nil {
+				return lowered
+			}
 
 			if isSystemOutSelector(objectNode, ctx, source) && (methodName == "println" || methodName == "print") {
 				argListNode := node.ChildByFieldName("arguments")
