@@ -630,7 +630,7 @@
       ]
     }
   ],
-  "next_action": "Continue independent CI driver repairs and retained compiler/runtime TDD; verify the complete combined successor before publishing producer changes. Commit and push verified milestones.",
+  "next_action": "Continue Sol TDD on the retained combined compiler gate failure, Comparable bridge and anonymous interface lowering, and complete TimSort parity/stress verification. Commit and push verified milestones; full CI and round acceptance remain pending.",
   "performance_team": {
     "latest_string_search_experiment": {
       "path": "performance/codegen/string_search/README.md",
@@ -798,7 +798,7 @@
     "branch": "codex/adversarial-campaign",
     "remote": "origin",
     "actions": "Commit and push each meaningful compatibility or harness milestone; never force-push; keep unfinished repairs outside stable checkpoints.",
-    "last_pushed_revision": "15ccefaec5cf8d57e99c57b26746862b83e931b4",
+    "last_pushed_revision": "b4deec14ff531788d2d0563f61f12db40f4a4d94",
     "last_pushed_branch": "origin/codex/adversarial-campaign"
   },
   "regression_status": {
@@ -23008,5 +23008,144 @@
     "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
     "checkpoint_kind": "four boxed test-driver compatibility fixes",
     "next": "Continue independent CI driver repairs and retained compiler/runtime TDD; verify the complete combined successor before publishing producer changes. Commit and push verified milestones."
+  },
+  "sol_progress138": {
+    "CI136": {
+      "fullCI": false,
+      "head": "15ccefaec5cf8d57e99c57b26746862b83e931b4",
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/136-ci-status.json",
+      "sha256": "700b5849f4786ae45d43464300d0ba6cb36a94436c023927eb14b388763cd911",
+      "statuses": {
+        "Adversarial dependency applications": "failure",
+        "Application parity": "success",
+        "Build": "success",
+        "Compiler regressions (0)": "failure",
+        "Compiler regressions (1)": "failure",
+        "Compiler regressions (2)": "failure",
+        "Compiler regressions (3)": "failure",
+        "Compiler regressions (4)": "failure",
+        "Compiler regressions (5)": "failure",
+        "E2E (non-parity)": "success",
+        "Fuzz corpus replay": "success",
+        "Lint": "success",
+        "Test": "failure",
+        "Unit tests": "success",
+        "Vulnerability Check": "success"
+      }
+    },
+    "CI138": "Unknown; no claim from previous head",
+    "Java_wants_helper_shape_assertion_changes": 0,
+    "allowed_root_publication_paths": [
+      "transpiler/assignment_expression_integration_test.go",
+      "transpiler/autoboxing_array_integration_test.go",
+      "transpiler/generic_array_runtime_integration_test.go",
+      "transpiler/codegen_batch1_integration_test.go",
+      "campaign-state.json",
+      "campaign/SOL_PROGRESS138.md"
+    ],
+    "full_CI_accepted": false,
+    "full_round_accepted": false,
+    "goal_authority": "Inherited root active checkpoint137 declaration",
+    "goal_status": "ACTIVE",
+    "held_frontiers": "All cumulative Class/ABI/Map/Reader/whole dependency frontiers remain held; prior realRED, NOTRUN, lint and INFRA artifacts preserved. No broad producer integration, round acceptance or performance claim.",
+    "latest_accepted_full_round": 18,
+    "owned_leaves": {
+      "transpiler/assignment_expression_integration_test.go": {
+        "postimage_sha256": "25fea11c27a77fd4ea70abc0b4bd26abba81a968ff0d5bc037f68dacd21c7982",
+        "preimage_sha256": "5466ffbd0b726f780e2cd2338e56c2897fad4e3564c2114d91ca5871dbe50a43"
+      },
+      "transpiler/autoboxing_array_integration_test.go": {
+        "postimage_sha256": "cffe8a37880845992797a36f9927a6c43033cd3b45802e3266df1e1000cea62d",
+        "preimage_sha256": "2e3f04e2276c3bf54de77fcfcbb238d4be146ffcb8c3b4cf6b71895aee58d116"
+      },
+      "transpiler/codegen_batch1_integration_test.go": {
+        "postimage_sha256": "dcf8b17515f8372cebfb3606a44cb63ddddab3836e9b5de16f03a61f1bdbe689",
+        "preimage_sha256": "39f9282b8d18c14f776618a4bc69dc604f923ae27e9b97abbfc38c95b2d9a626"
+      },
+      "transpiler/generic_array_runtime_integration_test.go": {
+        "postimage_sha256": "dcd8d8ec750dc49af12073d30b7394c72f345dd28106ce203549e4c0c796dc2f",
+        "preimage_sha256": "43fa26ad91a4633e0b858c16f118991ce43c2c178f30cf3585988f9f0aec8fcb"
+      }
+    },
+    "payloads_by_proposal_author": 0,
+    "peer": {
+      "JDK_inheritance": "Exact original public137 Java/fullwant bytes, peer3each only; no rootfreshJVMclaim",
+      "audit": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/four-driver138-independent-audit/PEER-FINAL-AUDIT.json",
+        "sha256": "c857a9e743f1b1867b75b929d1e7f0405ab90b4f0f73712e89db74765f7e6a28"
+      },
+      "contains_baseline_metadata_difference": [
+        "campaign-state.json",
+        "campaign/SOL_PROGRESS137.md"
+      ],
+      "generated_baseline_candidate_pairs": 4,
+      "intermediate_diagnostic_vet_RED_parents": 2,
+      "negative_receipts": 3,
+      "no_deeper_semantic_failure_in_selected_final_gates": true,
+      "original_JDK_observations": 12,
+      "original_transport_RED_parents": 4,
+      "positive_receipts": 26,
+      "raw_receipts": 29
+    },
+    "production_changes": 0,
+    "public_mutations_by_proposal_author": 0,
+    "publication_parent": "b4deec14ff531788d2d0563f61f12db40f4a4d94",
+    "root_fresh": {
+      "actual_go_version": "go1.27.1",
+      "actual_race_setting": true,
+      "actual_registry": "Inherited public137 Test1507/Benchmark2; outside-companion functions unchanged, no fresh138 list export in these five receipts",
+      "adjacent_compiler_parents": 11,
+      "all_exit0_no_timeout_no_SKIP_cleanup_clean": true,
+      "audit": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/four-driver138-independent-audit/ROOT138-FINAL-REQUESTED-SCOPE-AUDIT.json",
+        "sha256": "9ce7b665d04f6e0de57f7f0c8b7d09095ad7883f06f711fe912c850afef55c49"
+      },
+      "changed_compiler_parents": 4,
+      "core_nested_proof": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/four-driver138-independent-audit/ROOT138-CAPTURE-NESTED-PROOF.json",
+        "sha256": "6356e0dd16201f0e98b5e4fec87d9169b067d74bc5ec9068dae2226fbad8d22a"
+      },
+      "core_snapshots": 8,
+      "five_adjacent_nested_logs": "Not configured; exact outer CPU2/p1/race/readonly and unchanged helpers preserved",
+      "fresh_Go_version_m_receipt": false,
+      "fresh_JVM_observations": 0,
+      "fresh_generated_core_assertion_pairs": 4,
+      "fresh_registration_receipt": false,
+      "fresh_runtime_full_suite": false,
+      "full_pinned_lint_issues": 0,
+      "matching_race_binary_builds": 1,
+      "native_parent_PASS": 15,
+      "nested_captured_records": 18,
+      "raw_receipts": 5,
+      "source_only_binary_inline_buildinfo": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/four-driver138-independent-audit/ROOT138-BINARY-INLINE-BUILDINFO.json",
+        "sha256": "c1c61e8d9273dfc668a6d654874cf611b08644c18534ed5d6282834ece8d1236"
+      }
+    },
+    "scope": "Four test-only embedded generated-Go driver transport repairs on exact public137; no implementation join",
+    "source": {
+      "all_unowned_members_preserved": 3389,
+      "compact_sorted_JSON_map_sha256": "27abe8291524df5bb8767c7195d93206a8b8d60a451cb2a49c90cff96ea37261",
+      "members": 3393,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/source138-four-public137-driver-successor",
+      "postpublication_map": "Root must freeze actual map after exactfour leaves plus ledger/newnote; no forecast hash",
+      "source_audit": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/four-driver138-independent-audit/SOURCE-AND-FOUR-DRIVER-DELTA.json",
+        "sha256": "8c4ef70a4766293ee5641e3ac4e6b5480aa95bddc0764a29bfbd53720089755f"
+      }
+    },
+    "transport_contract": {
+      "Run_calls": 1,
+      "assertions_removed": 0,
+      "comparison": "Complete UTF16Copy equality with UTF16 encoding of unchanged whole expected output",
+      "generatedcore_edits": 0,
+      "null_rejected": true
+    }
+  },
+  "active_resume_current138": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "checkpoint_kind": "four test-driver transport compatibility fixes",
+    "next": "Continue Sol TDD on the retained combined compiler gate failure, Comparable bridge and anonymous interface lowering, and complete TimSort parity/stress verification. Commit and push verified milestones; full CI and round acceptance remain pending."
   }
 }

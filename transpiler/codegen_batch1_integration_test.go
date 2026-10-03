@@ -280,11 +280,20 @@ public class AnimalApp {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestPkgPrivateInheritance(t *testing.T) {
-	if got := Run(); got != "Woof" {
-		t.Fatalf("Run() = %q, want \"Woof\"", got)
+	got := Run()
+	if got == nil {
+	    t.Fatal("Run() returned null")
+	}
+	const want = "Woof"
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() = %q, want \"Woof\"", string(utf16.Decode(units)))
 	}
 }
 `)

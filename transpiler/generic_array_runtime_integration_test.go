@@ -80,11 +80,20 @@ func TestGenericReferenceArrayRuntimeUsesErasedStaticDescriptors(t *testing.T) {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestGenericArrayRuntimeParity(t *testing.T) {
-    if got := Run(); got != "alpha:gamma:gamma:7:7:1:4:4" {
-        t.Fatalf("Run() = %q, want exact generic read/write/covariant-store parity", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = "alpha:gamma:gamma:7:7:1:4:4"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %q, want exact generic read/write/covariant-store parity", string(utf16.Decode(units)))
     }
 }
 `)
