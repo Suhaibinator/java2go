@@ -55,7 +55,7 @@ func sourceReflectionPrivateMethodAccessors(scope *symbol.ClassScope, ctx Ctx) [
 			results = &ast.FieldList{List: []*ast.Field{{Type: typ}}}
 			body = &ast.ReturnStmt{Results: []ast.Expr{call}}
 		}
-		out = append(out, &ast.FuncDecl{Name: ast.NewIdent(sourceReflectionMethodExecutionName(scope, method, declaring)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{receiver}, Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, declaring)}}}, Type: &ast.FuncType{Params: parameters, Results: results}, Body: &ast.BlockStmt{List: []ast.Stmt{body}}})
+		out = append(out, &ast.FuncDecl{Name: ast.NewIdent(sourceReflectionMethodExecutionName(scope, method, declaring)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{receiver}, Type: classSubobjectDeclarationPointerType(scope, declaring)}}}, Type: &ast.FuncType{Params: parameters, Results: results}, Body: &ast.BlockStmt{List: []ast.Stmt{body}}})
 	}
 	return out
 }

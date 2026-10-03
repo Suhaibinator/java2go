@@ -170,7 +170,121 @@ func methodParameterReferenceType(parameter, method *symbol.Definition, owner *s
 			parameter.DirectTypeParameter.SourceName: parameter.DirectTypeParameter,
 		}
 	}
-	return qualifyDeclaredReferenceType(symbol.JavaType{Original: parameter.OriginalType, TypeParameterBindings: bindings}, declaring)
+	qualified := qualifyDeclaredReferenceType(symbol.JavaType{Original: parameter.OriginalType, TypeParameterBindings: bindings}, declaring)
+	return normalizeMethodMemberFormal(symbol.JavaType{Original: parameter.OriginalType, TypeParameterBindings: bindings}, qualified, owner, declaring)
+}
+
+// An implicit member type carries the enclosing declaration's parameters even
+// though Java spells only its own arguments. Use declaration identities to
+// recover those slots before substituting the invocation's receiver view.
+func normalizeMethodMemberFormal(javaType symbol.JavaType, qualified string, owner *symbol.ClassScope, ctx Ctx) string {
+	sourceBase, _ := javaArrayTypeParts(strings.TrimSpace(javaType.Original))
+	base, rank := javaArrayTypeParts(strings.TrimSpace(qualified))
+	suffix := strings.Repeat("[]", rank)
+	for _, prefix := range []string{"? extends ", "? super "} {
+		if strings.HasPrefix(sourceBase, prefix) {
+			child := symbol.JavaType{Original: strings.TrimPrefix(sourceBase, prefix), TypeParameterBindings: javaType.TypeParameterBindings}
+			return prefix + normalizeMethodMemberFormal(child, strings.TrimPrefix(base, prefix), owner, ctx) + suffix
+		}
+	}
+	sourceName, sourceArguments := parseJavaTypeString(sourceBase)
+	base, arguments := parseJavaTypeString(base)
+	for index := range arguments {
+		if index < len(sourceArguments) {
+			child := symbol.JavaType{Original: sourceArguments[index], TypeParameterBindings: javaType.TypeParameterBindings}
+			arguments[index] = normalizeMethodMemberFormal(child, arguments[index], owner, ctx)
+		}
+	}
+	if javaType.TypeParameterBindings[sourceName] == nil {
+		if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil && len(scope.TypeParameters) > len(scope.OwnTypeParameters()) {
+			// A raw generic member formal permits unchecked invocation conversion;
+			// its erasures are not invariant concrete source arguments.
+			if len(arguments) > 0 || len(scope.OwnTypeParameters()) == 0 {
+				if receiver, receiverArguments, typed := methodMemberFormalReceiver(javaType, sourceBase, scope, owner, ctx); typed {
+					arguments = normalizeClassTypeArguments(scope, arguments, receiver, receiverArguments)
+				}
+			}
+		}
+	}
+	if len(arguments) > 0 {
+		base += "<" + strings.Join(arguments, ", ") + ">"
+	}
+	return base + suffix
+}
+
+// Resolve source qualifiers before their spelling is canonicalized. An explicit
+// raw generic owner (Box.Member) differs from an implicit lexical Member even
+// though both qualify to the same nominal name. Nongeneric intermediate members
+// and fixed superclass views remain eligible for captured declaration slots.
+func methodMemberFormalReceiver(javaType symbol.JavaType, original string, scope, owner *symbol.ClassScope, ctx Ctx) (*symbol.ClassScope, []string, bool) {
+	receiver := owner
+	var receiverArguments []string
+	depth := 0
+	for index := 0; index < len(original); index++ {
+		switch original[index] {
+		case '<':
+			depth++
+		case '>':
+			depth--
+		case '.':
+			if depth != 0 {
+				continue
+			}
+			prefix := original[:index]
+			name, arguments := parseJavaTypeString(prefix)
+			prefixScope := resolveClassScopeByQualifiedName(ctx, name)
+			if prefixScope == nil {
+				continue
+			}
+			if len(arguments) == 0 && len(prefixScope.OwnTypeParameters()) > 0 {
+				return nil, nil, false
+			}
+			qualifiedPrefix := qualifyDeclaredReferenceType(symbol.JavaType{Original: prefix, TypeParameterBindings: javaType.TypeParameterBindings}, ctx)
+			_, qualifiedArguments := parseJavaTypeString(qualifiedPrefix)
+			carriedReceiver, carriedArguments, typed := methodMemberFormalCapturedReceiver(receiver, receiverArguments, prefixScope, len(qualifiedArguments), ctx)
+			if !typed {
+				return nil, nil, false
+			}
+			receiverArguments = normalizeClassTypeArguments(prefixScope, qualifiedArguments, carriedReceiver, carriedArguments)
+			receiver = prefixScope
+		}
+	}
+	_, supplied := parseJavaTypeString(original)
+	return methodMemberFormalCapturedReceiver(receiver, receiverArguments, scope, len(supplied), ctx)
+}
+
+func methodMemberFormalCapturedReceiver(receiver *symbol.ClassScope, receiverArguments []string, scope *symbol.ClassScope, supplied int, ctx Ctx) (*symbol.ClassScope, []string, bool) {
+	hidden := len(scope.TypeParameters) - len(scope.OwnTypeParameters())
+	providedHidden := supplied - len(scope.OwnTypeParameters())
+	complete := func(candidate *symbol.ClassScope, arguments []string) bool {
+		available := receiverClassTypeArgumentBindings(candidate, arguments)
+		for index := 0; index < hidden; index++ {
+			if index < providedHidden {
+				continue
+			}
+			if _, found := available.argumentFor(scope.TypeParameters[index]); !found {
+				return false
+			}
+		}
+		return true
+	}
+	if complete(receiver, receiverArguments) {
+		return receiver, receiverArguments, true
+	}
+	if scope.Enclosing != nil {
+		mapped := mapClassTypeArgumentStringsToAncestor(receiver, receiverArgumentsOrDeclaration(receiver, receiverArguments), scope.Enclosing, ctx)
+		if mapped != nil && complete(scope.Enclosing, mapped) {
+			return scope.Enclosing, mapped, true
+		}
+	}
+	return nil, nil, false
+}
+
+func receiverArgumentsOrDeclaration(scope *symbol.ClassScope, arguments []string) []string {
+	if arguments == nil && scope != nil {
+		return scope.GoTypeParameterNames()
+	}
+	return arguments
 }
 
 func qualifyTypeParameterBounds(parameters []symbol.TypeParam, ctx Ctx) []symbol.TypeParam {

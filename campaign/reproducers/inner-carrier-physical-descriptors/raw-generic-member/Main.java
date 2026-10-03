@@ -1,0 +1,7 @@
+class Storage<T> {
+ class Part<U> {}
+ int choose(Part value){return 1;} long choose(Object value){return 2L;}
+}
+public class Main {
+ public static void main(String[]args){Storage<String> owner=new Storage<String>();Storage<Integer> otherOwner=new Storage<Integer>();Storage<String>.Part<Integer> same=owner.new Part<Integer>();Storage<Integer>.Part<Integer> other=otherOwner.new Part<Integer>();System.out.print(owner.choose(same)+":"+owner.choose(other));}
+}

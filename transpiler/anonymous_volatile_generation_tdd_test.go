@@ -13,6 +13,7 @@ import (
 // Execution is a separately authorized generated/race workload; this producer
 // never launches Go or JVM itself and never changes the original fixture files.
 func TestGenerateAnonymousVolatileWitnessTDD(t *testing.T) {
+	withCleanDiagnostics(t)
 	root := os.Getenv("JAVA2GO_VOLATILE_GENERATED_DIR")
 	if root == "" {
 		root = t.TempDir()

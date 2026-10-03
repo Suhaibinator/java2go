@@ -135,6 +135,9 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 	if !ok {
 		return result
 	}
+	if expected := atomicArrayExpectedArguments(class, method, count, ctx); expected != nil {
+		return expected
+	}
 	if expected := atomicFieldUpdaterExpectedArguments(class, method, count, object, ctx, source); expected != nil {
 		return expected
 	}

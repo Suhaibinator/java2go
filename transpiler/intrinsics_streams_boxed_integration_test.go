@@ -36,10 +36,19 @@ public class BoxedStreamsProgram {
 `)
 	runGeneratedWithStdjava(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestBoxedStreams(t *testing.T) {
-    if got := Run(); got != "true:false:9:5:11:3:7:2.0:true:true" {
-        t.Fatalf("Run() = %q", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = "true:false:9:5:11:3:7:2.0:true:true"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
     }
 }
 `)

@@ -340,7 +340,7 @@ func volatileFieldAccessorDecls(scope *symbol.ClassScope, ctx Ctx) []ast.Decl {
 		if field.IsStatic || !volatileFieldDefinition(field) || !sourceReflectionDeclaredField(scope, field) {
 			continue
 		}
-		result = append(result, &ast.FuncDecl{Name: ast.NewIdent(volatileFieldAccessorName(scope, field)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx)}}}, Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("VolatileFieldCell", ctx)}}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: &ast.SelectorExpr{X: ast.NewIdent("receiver"), Sel: ast.NewIdent(field.Name)}}}}}}})
+		result = append(result, &ast.FuncDecl{Name: ast.NewIdent(volatileFieldAccessorName(scope, field)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: classSubobjectDeclarationPointerType(scope, ctx)}}}, Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("VolatileFieldCell", ctx)}}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: &ast.SelectorExpr{X: ast.NewIdent("receiver"), Sel: ast.NewIdent(field.Name)}}}}}}})
 	}
 	return result
 }

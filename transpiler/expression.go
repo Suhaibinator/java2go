@@ -4364,6 +4364,7 @@ func findBestMethodInHierarchies(
 	allowStatic bool,
 	ctx Ctx,
 	source []byte,
+	targets ...*invocationTargetInfo,
 ) *methodResolution {
 	if len(starts) == 0 {
 		return nil
@@ -4390,17 +4391,22 @@ func findBestMethodInHierarchies(
 				continue
 			}
 
+			candidate := &methodResolution{def: def, owner: scope, receiverScope: receiverScope}
+			var ownerArguments []string
+			if len(targets) > 0 {
+				ownerArguments = invocationOwnerTypeArguments(invocationTargetForReceiverScope(targets[0], receiverScope), candidate, ctx)
+			}
 			candidateTypeParams := methodCandidateTypeParameterNames(scope, def)
-			score, applicable := scoreMethodCandidate(def, scope, candidateTypeParams, argNodes, ctx, source)
+			if len(scope.TypeParameters) > 0 && len(ownerArguments) == len(scope.TypeParameters) {
+				// Receiver-owned parameters are already instantiated; only method
+				// declarations introduce inference variables at this invocation.
+				candidateTypeParams = methodCandidateTypeParameterNames(nil, def)
+			}
+			score, applicable := scoreMethodCandidate(def, scope, candidateTypeParams, argNodes, ctx, source, ownerArguments)
 			if !applicable {
 				continue
 			}
-			candidate := &methodResolution{
-				def:                def,
-				owner:              scope,
-				receiverScope:      receiverScope,
-				expandVarargsArray: score.expandVarargsArray,
-			}
+			candidate.expandVarargsArray = score.expandVarargsArray
 			if best == nil || methodCandidateScoreBetter(score, bestScore) ||
 				(score.phase == bestScore.phase && score.totalCost == bestScore.totalCost && score.exactCount == bestScore.exactCount && methodResolutionMoreSpecific(candidate, best, ctx)) {
 				best = candidate
@@ -4457,15 +4463,19 @@ func findBestMethodInHierarchies(
 	return best
 }
 
-func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, candidateTypeParams []string, argNodes []*sitter.Node, ctx Ctx, source []byte) (methodCandidateScore, bool) {
+func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, candidateTypeParams []string, argNodes []*sitter.Node, ctx Ctx, source []byte, ownerArgumentGroups ...[]string) (methodCandidateScore, bool) {
 	if def == nil || !methodInvocationArityApplicable(def, len(argNodes)) {
 		return methodCandidateScore{}, false
 	}
 
+	var ownerArguments []string
+	if len(ownerArgumentGroups) > 0 {
+		ownerArguments = ownerArgumentGroups[0]
+	}
 	parameterCount := len(def.Parameters)
 	variadic := parameterCount > 0 && executionParameterIsVariadic(def, parameterCount-1)
 	fixedArrayInvocation := variadic && len(argNodes) == parameterCount &&
-		invocationArgumentCanTargetVarargsArray(argNodes[parameterCount-1], def.Parameters[parameterCount-1], def, owner, candidateTypeParams, ctx, source)
+		invocationArgumentCanTargetVarargsArray(argNodes[parameterCount-1], def.Parameters[parameterCount-1], def, owner, candidateTypeParams, ctx, source, ownerArguments)
 
 	score := methodCandidateScore{expandVarargsArray: fixedArrayInvocation}
 	if variadic && !fixedArrayInvocation {
@@ -4488,7 +4498,7 @@ func scoreMethodCandidate(def *symbol.Definition, owner *symbol.ClassScope, cand
 		// Preserve that package provenance before resolving reference conversions;
 		// otherwise an unqualified imported type such as Rule<T> becomes invisible
 		// when Engine<T>.addRule is invoked from a different package.
-		expectedType := methodParameterReferenceType(parameter, def, owner, ctx)
+		expectedType := receiverInstantiatedMethodFormal(parameter, def, owner, ownerArguments, ctx)
 		if fixedArrayInvocation && index == parameterCount-1 {
 			expectedType += "[]"
 		}
@@ -4520,6 +4530,7 @@ func invocationArgumentCanTargetVarargsArray(
 	candidateTypeParams []string,
 	ctx Ctx,
 	source []byte,
+	ownerArgumentGroups ...[]string,
 ) bool {
 	if argNode == nil || parameter == nil {
 		return false
@@ -4541,7 +4552,11 @@ func invocationArgumentCanTargetVarargsArray(
 	if _, rank := javaArrayTypeParts(actualType); rank == 0 {
 		return false
 	}
-	expectedType := methodParameterReferenceType(parameter, method, owner, ctx) + "[]"
+	var ownerArguments []string
+	if len(ownerArgumentGroups) > 0 {
+		ownerArguments = ownerArgumentGroups[0]
+	}
+	expectedType := receiverInstantiatedMethodFormal(parameter, method, owner, ownerArguments, ctx) + "[]"
 	_, _, applicable := javaInvocationConversionCost(argNode, expectedType, candidateTypeParams, ctx, source)
 	return applicable
 }
@@ -5127,6 +5142,21 @@ func definitionParameterOriginalTypes(def *symbol.Definition) []string {
 	return types
 }
 
+// receiverInstantiatedMethodFormal substitutes only the existing receiver's
+// class arguments. Method parameters keep their distinct emitted aliases for
+// invocation inference, including when they shadow an enclosing declaration.
+func receiverInstantiatedMethodFormal(parameter, method *symbol.Definition, owner *symbol.ClassScope, ownerArguments []string, ctx Ctx) string {
+	formal := methodParameterReferenceType(parameter, method, owner, ctx)
+	if owner == nil || len(ownerArguments) != len(owner.TypeParameters) {
+		return formal
+	}
+	replacements := make(map[string]string, len(ownerArguments))
+	for index, parameter := range owner.TypeParameters {
+		replacements[parameter.EmittedName()] = ownerArguments[index]
+	}
+	return substituteJavaTypeParameters(formal, replacements)
+}
+
 // instantiatedMethodParameterTypes keeps Java's source-view conversions
 // separate from the generated callable descriptor. A method declared as
 // accept(T) on Sink<T>, invoked through Sink<First>, has a First argument
@@ -5141,57 +5171,29 @@ func instantiatedMethodParameterTypes(
 		return nil
 	}
 	types := make([]string, len(resolution.def.Parameters))
-	var ownerParameters []symbol.TypeParam
-	if resolution.owner != nil && len(ownerTypeArguments) == len(resolution.owner.TypeParameters) {
-		ownerParameters = resolution.owner.TypeParameters
-	}
 	methodBindings := map[string]string{}
 	if len(methodTypeBindings) > 0 && methodTypeBindings[0] != nil {
 		methodBindings = methodTypeBindings[0]
+	}
+	replacements := map[string]string{}
+	if resolution.owner != nil && len(ownerTypeArguments) == len(resolution.owner.TypeParameters) {
+		for index, parameter := range resolution.owner.TypeParameters {
+			replacements[parameter.EmittedName()] = ownerTypeArguments[index]
+		}
+	}
+	for _, parameter := range resolution.def.TypeParameters {
+		if bound := methodBindings[parameter.Name]; bound != "" {
+			replacements[parameter.EmittedName()] = bound
+		}
 	}
 	for index, definition := range resolution.def.Parameters {
 		if definition == nil {
 			continue
 		}
-		replacements := map[string]string{}
-		for spelling, declaration := range definition.TypeParameterBindings {
-			if !javaTypeReferencesTypeParameter(definition.OriginalType, spelling) {
-				continue
-			}
-			for ownerIndex, ownerParameter := range ownerParameters {
-				if ownerParameter.Declaration == declaration {
-					replacements[spelling] = ownerTypeArguments[ownerIndex]
-					break
-				}
-			}
-			for _, methodParameter := range resolution.def.TypeParameters {
-				if methodParameter.Declaration == declaration {
-					if bound := methodBindings[methodParameter.Name]; bound != "" {
-						replacements[spelling] = bound
-					}
-					break
-				}
-			}
-		}
-		if definition.DirectTypeParameter != nil {
-			for ownerIndex, ownerParameter := range ownerParameters {
-				if ownerParameter.Declaration == definition.DirectTypeParameter {
-					replacements[ownerParameter.Name] = ownerTypeArguments[ownerIndex]
-					replacements[ownerParameter.EmittedName()] = ownerTypeArguments[ownerIndex]
-					break
-				}
-			}
-			for _, methodParameter := range resolution.def.TypeParameters {
-				if methodParameter.Declaration == definition.DirectTypeParameter {
-					if bound := methodBindings[methodParameter.Name]; bound != "" {
-						replacements[methodParameter.Name] = bound
-						replacements[methodParameter.EmittedName()] = bound
-					}
-					break
-				}
-			}
-		}
-		types[index] = substituteJavaTypeParameters(definition.OriginalType, replacements)
+		formal := methodParameterReferenceType(definition, resolution.def, resolution.owner, Ctx{})
+		// Substitute declaration aliases together: an actual caller's T must
+		// not subsequently be captured by a same-named method substitution.
+		types[index] = substituteJavaTypeParameters(formal, replacements)
 	}
 	return types
 }
@@ -11001,6 +11003,7 @@ func findBestMethodForInvocationTarget(
 		allowStatic,
 		ctx,
 		source,
+		target,
 	)
 	if resolution == nil {
 		return nil, target
@@ -11335,7 +11338,11 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 	lowerBounds := make(map[string][]string, len(parameters))
 	typeParameterNames := make(map[string]struct{}, len(def.TypeParameters))
 	for _, typeParameter := range def.TypeParameters {
-		typeParameterNames[typeParameter.Name] = struct{}{}
+		// Source-owned formals are qualified to declaration aliases. A same-named
+		// class parameter is already bound by the receiver, not a method variable.
+		if owner == nil {
+			typeParameterNames[typeParameter.Name] = struct{}{}
+		}
 		typeParameterNames[typeParameter.EmittedName()] = struct{}{}
 	}
 	for index, parameter := range def.Parameters {
@@ -11382,7 +11389,11 @@ func genericArrayInvocationTypeBindings(def *symbol.Definition, invocationNode *
 	// target type. Existing argument lower bounds retain their more precise view.
 	if expectedTypeTargetsExpression(ctx, invocationNode) && strings.TrimSpace(ctx.expectedType) != "" {
 		targetBounds := make(map[string][]string)
-		collectGenericMethodInferenceBounds(def.OriginalType, ctx.expectedType, typeParameterNames, targetBounds, ctx)
+		returnFormal := def.OriginalType
+		if owner != nil {
+			returnFormal = qualifyDeclaredReferenceType(definitionDeclaredJavaType(def), declaring)
+		}
+		collectGenericMethodInferenceBounds(returnFormal, ctx.expectedType, typeParameterNames, targetBounds, ctx)
 		for name, candidates := range targetBounds {
 			if len(lowerBounds[name]) == 0 {
 				lowerBounds[name] = candidates

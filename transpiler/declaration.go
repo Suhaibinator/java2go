@@ -1628,7 +1628,7 @@ func generateClassSubobjectInstallerDecls(ctx Ctx) []ast.Decl {
 		return nil
 	}
 	receiverName := ShortName(scope.Class.Name)
-	receiverType := classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx)
+	receiverType := classSubobjectDeclarationPointerType(scope, ctx)
 	usedNames := map[string]struct{}{receiverName: {}}
 	for _, typeParam := range scope.GoTypeParameterNames() {
 		usedNames[typeParam] = struct{}{}
@@ -1684,7 +1684,7 @@ func constructorSubobjectInstallerCallStmt(
 	hookType := &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{
 		Names: []*ast.Ident{{Name: hookName}},
 		Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
-			Type: classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx),
+			Type: classSubobjectDeclarationPointerType(scope, ctx),
 		}}}},
 	}}}}
 	return &ast.IfStmt{

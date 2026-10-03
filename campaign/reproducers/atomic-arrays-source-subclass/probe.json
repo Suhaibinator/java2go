@@ -1,0 +1,43 @@
+{
+  "status": "pending",
+  "selected_by_ci": false,
+  "scope": "ordinary non-final JDK superclass lowering; explicitly outside bounded atomic arrays service patch",
+  "source_sha256": "7704cfee3b88a5656b7f9c6aed15ea58da778d140796966e5b44d35ada8604cc",
+  "oracle_sha256": "ae1a2b693a05cd1a6acb3eac6bc9b217e7e3a2490c0815ccb52cedc1febbd9a9",
+  "recorded_generated_go_sha256": "881f04276e5504e44ce7068cd26a542e530afb9ed5ae174feb9ee9bc28691386",
+  "failure_stage": "all generated packages race build",
+  "failure_exit_code": 1,
+  "failure_raw_log_sha256": "aec98fe8c557c0a35eda5e128f575b999c16bc5f242bf1e757b61762df8b7264",
+  "strict_translation_exit_code": 0,
+  "no_generated_files_edited": true,
+  "no_jdk_subclass_finality_assumed": true,
+  "required_next_scope": [
+    "native-superclass layout",
+    "native-superclass constructor execution",
+    "inherited native instance dispatch",
+    "nominal source-subclass ancestry"
+  ],
+  "not_acceptance": [
+    "genuine Gson123",
+    "whole JDK atomic arrays API",
+    "full campaign round"
+  ],
+  "diagnostic_evidence": {
+    "full_failure": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/evidence/source-subclass-frontier.log",
+      "sha256": "aec98fe8c557c0a35eda5e128f575b999c16bc5f242bf1e757b61762df8b7264",
+      "bytes": 2590
+    },
+    "generated_build_stderr": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/evidence/source-subclass-build.stderr",
+      "sha256": "2f083d59882097a1a09f9147905372426c3b866a40dd0ca285c068d1f24e7404",
+      "bytes": 517
+    },
+    "generated_go": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/evidence/source-subclass-frontier/TestCampaignAtomicArraysSourceSubclassFrontierJVM/generated/j_probe/Main.go",
+      "sha256": "881f04276e5504e44ce7068cd26a542e530afb9ed5ae174feb9ee9bc28691386",
+      "bytes": 4107
+    }
+  },
+  "probe_go_sha256": "449d32872c8e853b39ea60e60737375579a852726412da851b9f79b82d911a40"
+}

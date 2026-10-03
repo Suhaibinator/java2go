@@ -86,11 +86,15 @@ public class CustomEnumText {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestCustomEnumTextRuntime(t *testing.T) {
-    if got := Run(); got != "custom-ALPHA|custom-ALPHA|custom-ALPHA" {
-        t.Fatalf("Run() = %q", got)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("custom-ALPHA|custom-ALPHA|custom-ALPHA"))) {
+        t.Fatalf("Run() = %v", got)
     }
 }
 `)

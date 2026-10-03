@@ -21,7 +21,39 @@ func sourceClassGoTypeArgumentExprs(
 ) []ast.Expr {
 	arguments := normalizeClassTypeArguments(scope, sourceArguments, receiver, receiverArguments)
 	raw := sourceClassRawArgumentSlots(scope, sourceArguments, receiver, receiverArguments)
-	return sourceClassGoArguments(scope, arguments, raw, typeParameters, ctx)
+	var lexicalSlots []ast.Expr
+	if scope != nil && receiver != nil && receiverArguments == nil && ctx.currentClass != nil && (ctx.localScope == nil || !ctx.localScope.IsStatic) {
+		hidden := len(scope.TypeParameters) - len(scope.OwnTypeParameters())
+		providedHidden := len(sourceArguments) - len(scope.OwnTypeParameters())
+		if providedHidden < 0 {
+			providedHidden = 0
+		}
+		// Written arguments still use Java's method/local lexical context. Only a
+		// synthesized enclosing-instance slot already identifies its class binder;
+		// parsing its Go alias as Java text would capture a shadowing method binder.
+		for index := providedHidden; index < hidden && index < len(arguments); index++ {
+			declaration := scope.TypeParameters[index].Declaration
+			if declaration == nil || strings.TrimSpace(declaration.GoName) == "" {
+				continue
+			}
+			for _, parameter := range receiver.TypeParameters {
+				if parameter.Declaration != declaration {
+					continue
+				}
+				for _, lexical := range ctx.currentClass.TypeParameters {
+					if lexical.Declaration == declaration {
+						if lexicalSlots == nil {
+							lexicalSlots = make([]ast.Expr, len(arguments))
+						}
+						lexicalSlots[index] = ast.NewIdent(declaration.GoName)
+						break
+					}
+				}
+				break
+			}
+		}
+	}
+	return sourceClassGoArgumentsWithLexicalSlots(scope, arguments, raw, typeParameters, ctx, lexicalSlots)
 }
 
 func sourceClassRawArgumentSlots(scope *symbol.ClassScope, sourceArguments []string, receiver *symbol.ClassScope, receiverArguments []string) []bool {
@@ -54,10 +86,19 @@ func sourceClassRawArgumentSlots(scope *symbol.ClassScope, sourceArguments []str
 }
 
 func sourceClassGoArguments(scope *symbol.ClassScope, arguments []string, raw []bool, typeParameters []string, ctx Ctx) []ast.Expr {
+	return sourceClassGoArgumentsWithLexicalSlots(scope, arguments, raw, typeParameters, ctx, nil)
+}
+
+func sourceClassGoArgumentsWithLexicalSlots(scope *symbol.ClassScope, arguments []string, raw []bool, typeParameters []string, ctx Ctx, lexicalSlots []ast.Expr) []ast.Expr {
 	result := make([]ast.Expr, len(arguments))
+	// Seed before dependent bounds substitute binder slots. The Java argument
+	// strings and every unseeded raw/wildcard representation remain unchanged.
+	copy(result, lexicalSlots)
 	if scope == nil {
 		for index, argument := range arguments {
-			result[index] = javaTypeStringToGoTypeExpr(argument, typeParameters, ctx)
+			if result[index] == nil {
+				result[index] = javaTypeStringToGoTypeExpr(argument, typeParameters, ctx)
+			}
 		}
 		return result
 	}
@@ -70,7 +111,9 @@ func sourceClassGoArguments(scope *symbol.ClassScope, arguments []string, raw []
 	}
 	if !needsBound {
 		for index, argument := range arguments {
-			result[index] = javaTypeStringToGoTypeExpr(argument, typeParameters, ctx)
+			if result[index] == nil {
+				result[index] = javaTypeStringToGoTypeExpr(argument, typeParameters, ctx)
+			}
 		}
 		return result
 	}

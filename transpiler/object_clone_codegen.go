@@ -130,7 +130,7 @@ func generateObjectCloneDecls(ctx Ctx) []ast.Decl {
 	}
 	cloneName := synchronizedUniqueLocalName("__java2goClone", used)
 	selfName := synchronizedUniqueLocalName("__java2goCloneSelf", used)
-	typ := classSubobjectPointerTypeExpr(scope, scope.GoTypeParameterNames(), scope, ctx)
+	typ := classSubobjectDeclarationPointerType(scope, ctx)
 	body := []ast.Stmt{
 		&ast.AssignStmt{Lhs: []ast.Expr{ast.NewIdent(cloneName)}, Tok: token.DEFINE, Rhs: []ast.Expr{&ast.CallExpr{Fun: ast.NewIdent("new"), Args: []ast.Expr{typ.(*ast.StarExpr).X}}}},
 		&ast.IfStmt{Cond: &ast.BinaryExpr{X: ast.NewIdent(selfName), Op: token.EQL, Y: ast.NewIdent("nil")}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{ast.NewIdent(selfName)}, Tok: token.ASSIGN, Rhs: []ast.Expr{ast.NewIdent(cloneName)}}}}},

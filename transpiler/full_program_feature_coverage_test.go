@@ -102,7 +102,7 @@ func TestFullProgram_MethodReferencesAndNestedConstructors(t *testing.T) {
 	outputs := convertJavaProjectDir(t, root)
 	outer := normalizeSpaces(outputs["com/acme/refs/Outer.go"])
 
-	if !strings.Contains(outer, "NewMapperFuncAdapterJava2goExecution[string, string](IdJava2goExecution)") {
+	if !strings.Contains(outer, "NewMapperFuncAdapterJava2goExecution[*stdjava.JavaString, *stdjava.JavaString](IdJava2goExecution)") {
 		t.Fatalf("expected static method reference to map through SAM adapter:\n%s", outputs["com/acme/refs/Outer.go"])
 	}
 	// Inner (non-static) class: `this.new Inner(in)` lowers to the renamed

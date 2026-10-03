@@ -69,6 +69,43 @@ func TestBoxedStringLexicalBindersDeclineJDKOwnership(t *testing.T) {
 	if _, builtin := builtinJavaWrapperPrimitive("java.lang.Integer", wrapperBinder.Ctx); !builtin {
 		t.Fatal("canonical Integer disappeared under binder")
 	}
-	out := renderGoFileFromJava(t, `public class ParserBinder<String> {Object reject(String value){return java.lang.Integer.valueOf(value);}}`)
-	assertNotContains(t, out, "stdjava.JavaIntegerParseInt(value)")
+	for _, mode := range []struct {
+		name   string
+		strict bool
+	}{{"permissive", false}, {"strict", true}} {
+		t.Run(mode.name, func(t *testing.T) {
+			diagnostics.mu.Lock()
+			previousStrict, previousItems := diagnostics.strict, diagnostics.items
+			diagnostics.strict, diagnostics.items = mode.strict, nil
+			diagnostics.mu.Unlock()
+			defer func() {
+				diagnostics.mu.Lock()
+				diagnostics.strict, diagnostics.items = previousStrict, previousItems
+				diagnostics.mu.Unlock()
+			}()
+
+			var out string
+			var observed any
+			func() {
+				defer func() { observed = recover() }()
+				out = renderGoFileFromJava(t, `public class ParserBinder<String> {Object reject(String value){return java.lang.Integer.valueOf(value);}}`)
+			}()
+			want := Diagnostic{Kind: "intrinsic invocation", NodeType: "method_invocation", Message: "java.lang.Integer.valueOf(value)", ClassName: "ParserBinder", Line: 1}
+			items := Diagnostics()
+			if len(items) != 1 || items[0] != want {
+				t.Fatalf("binder refusal diagnostics = %v, want exactly %v", items, want)
+			}
+			if mode.strict {
+				failure, ok := observed.(strictModeError)
+				if !ok || failure.diagnostic != want {
+					t.Fatalf("strict binder refusal = %v, want exact strictModeError %v", observed, want)
+				}
+			} else {
+				if observed != nil {
+					t.Fatalf("unexpected permissive binder panic: %v", observed)
+				}
+				assertNotContains(t, out, "stdjava.JavaIntegerParseInt(value)")
+			}
+		})
+	}
 }

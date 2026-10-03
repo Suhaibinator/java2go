@@ -12656,5 +12656,243 @@
     "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
     "checkpoint_kind": "55 independently replayed compiler parents, complete594 runtime race gate and full repository lint; original123-source Gson strictly generated and unresolved Go build preserved",
     "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
+  },
+  "sol_progress124": {
+    "status": "ATOMIC_ARRAY_SERVICES_GENERIC_DECLARATION_ALIASES_AND_CI_TEST_ISOLATION_VERIFIED",
+    "implementation_changes_published": true,
+    "owned_leaves": 76,
+    "scope": "AtomicIntegerArray/AtomicLongArray JDK services, declaration-owned generic receiver/invocation identities, Go declaration AST aliases for clone/subobject/metadata/volatile helpers, canonical String scaffold migrations, exact strict/permissive boxed refusal and producer diagnostics isolation.",
+    "verification": {
+      "compiler_selected_parents": 155,
+      "compiler_unique_parents": 154,
+      "compiler_gates": 14,
+      "compiler_skips": 0,
+      "runtime_parents": 597,
+      "runtime_skips": 0,
+      "atomic_stress_parents": 60,
+      "atomic_stress_repeats": 20,
+      "repository_lint": "PASS 0 issues",
+      "native_seconds": 55,
+      "supervisor_seconds": 65,
+      "proofs": [
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/124-final76-source-v3-audit.json",
+          "sha256": "0446409eb9f54313c56b8c09e4e159cf6a97aaf8bfa4a6ff521531ffd0141498"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/124-final-source-before.json",
+          "sha256": "9274d0491f581a2fd6c26688e688381336d365abd20de0ccd67fd3d2c844e00b"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/124-final-runtime-reuse-proof.json",
+          "sha256": "fc09900ee69ce8b63fad540cfc297d85b6b8f5ca59f3590af5259d702ac95441"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-gson-final-analysis.json",
+          "sha256": "d868f8df403ae630b6adcdd939b9f763f7a5eb695c7106c1b89c97327668a68f"
+        },
+        {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/123-ci-snapshot.json",
+          "sha256": "0d9a7a9d85581988c27e70e95299fd012e22abf4ba460f23ec98b9e09114f841"
+        }
+      ],
+      "original_gson": {
+        "report": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-gson-finalreplay/artifacts/20261003T083544Z-2589056417/report.json",
+          "sha256": "d89ce03cba77589a6e203807711e7d2f81ec559ace7f7289a7773738c940674f"
+        },
+        "inputs_equal123": {
+          "source_members": 123,
+          "dependency_lock": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+          "maven_lock": "41f1abe23389dc163edf9cea84aee613dfdd38aaa39a0250138983d9d20bdced",
+          "JVM_observations": 9,
+          "all_observation_stream_status_file_hashes_match": true
+        },
+        "implementation": {
+          "reported_ambient_revision": "c1f1ae45cfe8d5465425efc562a54580add4f3ea",
+          "sha256": "9e869cfb516dcc5008adfb47bd4ec7ded37dbc4952c4154f527c569918dadf8d",
+          "file_members": 450,
+          "before_after_unchanged": true,
+          "candidate_publication_parent": "c4c6b5e0a0a5e7305152e0439a4cf7b5923db516",
+          "candidate_source_manifest": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/124-final-source-before.json"
+        },
+        "stages": {
+          "dependency-source-compile": {
+            "exit_code": 0,
+            "timed_out": false,
+            "duration_ms": 832
+          },
+          "go-build-all": {
+            "exit_code": 1,
+            "timed_out": false,
+            "duration_ms": 593
+          },
+          "java-oracle-compile": {
+            "exit_code": 0,
+            "timed_out": false,
+            "duration_ms": 377
+          },
+          "java-toolchain": {
+            "exit_code": 0,
+            "timed_out": false,
+            "duration_ms": 23
+          },
+          "maven-build": {
+            "exit_code": 0,
+            "timed_out": false,
+            "duration_ms": 1083
+          },
+          "transpile": {
+            "exit_code": 0,
+            "timed_out": false,
+            "duration_ms": 53576
+          }
+        },
+        "failure": {
+          "stage": "go-build-all",
+          "detail": "exit=1 error=\n\n# campaign.generated/round02-data-gson/java2go_scc_636f6d2f676f6f676c652f67736f6e\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_Gson.go:15:71: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_JsonAdapterAnnotationTypeAdapterFactory.go:24:86: undefined: ConcurrentMap\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e_TypeAdapterFactory.go:8:118: undefined: T\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3487:48: J636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_URL (package-level variable) is not a type\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3583:48: J636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_URI (package-level variable) is not a type\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3715:48: undefined: InetAddress\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c2f62696e64_TypeAdapters.go:3928:48: undefined: Currency\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_LinkedTreeMap.go:1716:2: undefined: Comparator\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_NonNullElementWrapperList.go:6:3: undefined: AbstractList\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_NonNullElementWrapperList.go:7:2: undefined: RandomAccess\njava2go_scc_636f6d2f676f6f676c652f67736f6e/636f6d2f676f6f676c652f67736f6e2f696e7465726e616c_NonNullElementWrapperList.go:7:2: too many errors\n"
+        },
+        "full_application_accepted": false,
+        "race_enabled": true,
+        "compiler_race_instrumented": false,
+        "no_performance_comparison_to123": true
+      }
+    },
+    "original_red": {
+      "snapshot": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/source124",
+      "manifest": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/124-source-candidate-before.json",
+      "compiler_selected": 123,
+      "passed": 121,
+      "failed": [
+        "TestLocalGenericEdgeAudit_ShadowedTypeParametersKeepDeclarationProvenance",
+        "TestConstructorDelegationMultiHopInitializesOnceAndKeepsMostDerivedDispatch"
+      ],
+      "both_final_pass": true,
+      "lint_SA4000": "corrected test-only fresh local references",
+      "producer_state_red": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-producer-fresh-red-corrected-cwd/result.json",
+      "initial_producer_wrong_cwd": "retained infrastructure failure; not semantic evidence"
+    },
+    "remaining": [
+      "Original Gson Go-build-all ConcurrentMap/generic TypeAdapterFactory/URL/URI/InetAddress/Currency/Comparator/AbstractList/RandomAccess; application unaccepted.",
+      "Three retained physical descriptor applications and method-consumer projection gate remain active.",
+      "Full Child clone carrier/capture forwarding and first canonical family constructor hygiene/member projection remain active unchanged fixtures.",
+      "Atomic source subclass fixture remains active unsupported; no full atomic inheritance claim.",
+      "Full Netty 1212+8 remains unaccepted; separate cache candidate reaches Long.BYTES strict frontier, not application parity.",
+      "New original floating-formatting differential fixture exposes reference-returning Double.toString adapter failure; retained for next repair.",
+      "Full accumulated CI and full campaign round acceptance pending; latest full accepted round18."
+    ],
+    "publication_parent": "c4c6b5e0a0a5e7305152e0439a4cf7b5923db516",
+    "full_round_accepted": false,
+    "full_CI_accepted": false,
+    "latest_accepted_full_round": 18,
+    "source_manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-source-manifest.json",
+      "sha256": "9274d0491f581a2fd6c26688e688381336d365abd20de0ccd67fd3d2c844e00b",
+      "members": 3296
+    },
+    "root_records": {
+      "evidence/124-final-build-transpiler/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-final-build-transpiler/result.json",
+        "sha256": "5355f44fdabe9df52bcf22297f92727940b70c3a04b8020aaa98e35a75643266"
+      },
+      "evidence/124-final-native-registration/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-final-native-registration/result.json",
+        "sha256": "273f873ccedc9936c7626e7ab663220dfadf2bdb0947b5c5e3676ea27b87397b"
+      },
+      "evidence/124-verified-generic-frozen-v3-focused/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-generic-frozen-v3-focused/result.json",
+        "sha256": "ed74d3b454428cf9f3412976cf7a125cfb9ccb33630309330997c8e639ff7f26"
+      },
+      "evidence/124-verified-generic-frozen-v3-originals/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-generic-frozen-v3-originals/result.json",
+        "sha256": "21540134f5e712df3f9366e7d866329b4c550ef67e7862d04bd888f31f8a07da"
+      },
+      "evidence/124-verified-generic-frozen-v3-abi/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-generic-frozen-v3-abi/result.json",
+        "sha256": "0687fb0c6b39539efda8c7a64d6de814a12394e24d7211acf05f880a86be73d0"
+      },
+      "evidence/124-verified-atomic-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-atomic-and-adjacent-race/result.json",
+        "sha256": "58987ddc1d37610c2b123654280e291ee7c297636f6ad9357ba2c1d2d6955236"
+      },
+      "evidence/124-verified-trivial3-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-trivial3-race/result.json",
+        "sha256": "85b8374e2b80ffdd52ce49b9d3e21f067c03d41f9ba660fe470e3d87fa612e4c"
+      },
+      "evidence/124-verified-trivial3-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-trivial3-adjacent-race/result.json",
+        "sha256": "6f1dcb98fc40d523600b7f7d00661e8a0c884495cb04b7860d620b349a4f8338"
+      },
+      "evidence/124-verified-full-program-enum-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-full-program-enum-race/result.json",
+        "sha256": "a2040de5856788f6db8898ac6968c3e53ef2ea20f813474b20437508944cfabb"
+      },
+      "evidence/124-verified-comparator4-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-comparator4-and-adjacent-race/result.json",
+        "sha256": "683ecf1fd728cf37e60b5db3126cfb1836590216e92c548212ac0b19571f3818"
+      },
+      "evidence/124-verified-constructor-delegation4-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-constructor-delegation4-race/result.json",
+        "sha256": "3cee01f9e3f4c6f9efc643d2626f345ff8c44751ed7e955a814550150aa7059c"
+      },
+      "evidence/124-verified-clone-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-clone-adjacent-race/result.json",
+        "sha256": "dbba8139a39fcd26eb987772bc213138ba3cbb45970d1a8629ce884c02b76db6"
+      },
+      "evidence/124-verified-final-generic-CI-frontiers-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-final-generic-CI-frontiers-race/result.json",
+        "sha256": "8cfcafb7158164ceee4abc30d594bc0bf3b5cf0535621ba475a47a2908d62672"
+      },
+      "evidence/124-verified-final-boxed-state-and-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-final-boxed-state-and-adjacent-race/result.json",
+        "sha256": "ea0ac7ad180882b0fa324ce23a07721f53061ba69e34f71182beaad45fcb262e"
+      },
+      "evidence/124-verified-final-clone-declaration-new-controls-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-final-clone-declaration-new-controls-race/result.json",
+        "sha256": "e96f8a8f2cab87979f9454d7c409e88334479b825816d8489416c7c7116f8faf"
+      },
+      "evidence/124-verified-final-clone-ABI-metadata-adjacent-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-verified-final-clone-ABI-metadata-adjacent-race/result.json",
+        "sha256": "843f28e0480aa3fe934abfd5a63feefac8ced82a599d4478c38573d5a5fe1037"
+      },
+      "evidence/124-final-lint/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-final-lint/result.json",
+        "sha256": "dcb2897f2640cb4aa239f8c49f28a9edac21a638871e0652fdf6c6b0af99048b"
+      },
+      "evidence/124-fixed-build-stdjava/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-fixed-build-stdjava/result.json",
+        "sha256": "03e8a3a3d743068f182915569052c4d2c5ad1067abe69a73c4ee2afe8a10b090"
+      },
+      "evidence/124-fixed-runtime-full-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-fixed-runtime-full-race/result.json",
+        "sha256": "b6665cad6c83a7dc02f1cc2e77cd0bd5f095334a281888a9d3811095cef6b963"
+      },
+      "evidence/124-fixed-atomic-stress20-race/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-fixed-atomic-stress20-race/result.json",
+        "sha256": "4607a0f9fc7c05356fc0c6016b2188936528701a315b83b62a9e41a93c9a9575"
+      },
+      "evidence/124-producer-green-build/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-producer-green-build/result.json",
+        "sha256": "db3cbc55419a3b478679c9e346446ff4c63ad4b5bb38c272a5343cf9ca3679b7"
+      },
+      "evidence/124-producer-green-witness/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-producer-green-witness/result.json",
+        "sha256": "b211de061132ca77df612afa2356e7adafdaac79092b3abcbf7cf09de6ec357d"
+      },
+      "evidence/124-gson-finalreplay/build-campaign-nonrace/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-gson-finalreplay/build-campaign-nonrace/result.json",
+        "sha256": "fc5a9ae2091879ab71ffa4d40cf821e244fbcc3bbb6525da29afd75d19686914"
+      },
+      "evidence/124-gson-finalreplay/build-transpiler-nonrace/result.json": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/124-gson-finalreplay/build-transpiler-nonrace/result.json",
+        "sha256": "4b38c1a97c0ae102a7e96da686e0e77ca99b6d11e6fd853737f722a86cee85b1"
+      }
+    }
+  },
+  "active_resume_current124": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; root-assigned parallel ownership; no Astra",
+    "checkpoint_kind": "155 selected compiler parents, complete597 runtime race suite,60 atomic stress passes, zero-issue lint; original123-source Gson strictly transpiles but Go build remains failed",
+    "next": "Continue original CI and dependency repairs with fresh durable evidence; commit and push verified scoped milestones."
   }
 }

@@ -37,6 +37,9 @@ var concurrencyRuntimeTypes = map[string]bool{
 // the same name. Generic args are themselves lowered through
 // javaTypeStringToGoTypeExpr.
 func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+	if expression, ok := atomicArrayRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
 	if expression, ok := atomicFieldUpdaterRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
 		return expression, true
 	}
