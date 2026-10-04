@@ -262,6 +262,10 @@ func ComparableCompareToExecution(execution *Execution, left, right any) int32 {
 func javaCompareValuesExecution(execution *Execution, left, right any) int32 {
 	ReferenceRequireNonNull(left)
 	switch left := left.(type) {
+	case *JavaString:
+		if right, ok := right.(*JavaString); ok && right != nil {
+			return left.CompareTo(right)
+		}
 	case string:
 		ReferenceRequireNonNull(right)
 		if right, ok := right.(string); ok {

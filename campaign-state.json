@@ -1676,6 +1676,12 @@
     "checkpoint_kind": "Package static-field Go universe reservation only; root and independent scoped acceptance",
     "next": "Root commits AND pushes verified Universe-only milestone. Repair separately witnessed generic intermediate raw SAM carrier frontier in larger private3884 terminal RED through scoped TDD; remaining402 default+1profile obligations and full-suite/later gates remain NOTRUN. Preserve all original applications/dependency/CI holds and every historical ledger value/note. Goal ACTIVE, accepted full round18 unchanged."
   },
+  "active_resume_current145": {
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "branch": "origin/codex/adversarial-campaign",
+    "checkpoint_kind": "Canonical Java String natural-comparison branch only; root and independent scoped acceptance, original full String control held.",
+    "next": "Root commits AND pushes the exact four-path String milestone. Continue separately scoped TDD for unchanged full String compiler frontiers and the larger private composition; preserve all original controls, dependency/CI holds and every historical ledger value/note. Goal ACTIVE; accepted full round18 unchanged."
+  },
   "active_resume_current99": {
     "agent_policy": "GPT-6.1 Sol/high only; no Astra; explicit file ownership and independent review; coordinator sole public/Git writer",
     "branch": "origin/codex/adversarial-campaign",
@@ -20308,6 +20314,193 @@
       "proposed_metadata_overlay_members": 3556
     },
     "status": "INDEPENDENT_UNIVERSE_SCOPED_PASS_SOURCE_PROPOSAL_READY_ROOT_PUBLICATION"
+  },
+  "sol_progress145": {
+    "CI": {
+      "checkpoint145": "Unknown until actual published-head checks; no full CI or no-new-regression claim is made."
+    },
+    "allocation_qualification": {
+      "CPU_JVM_or_current_macro_speed_claim": false,
+      "current_macro_allocation_not_measured": true,
+      "fresh_existing_canonical_nonnull_String_comparison_result_allocations_per_call": 0,
+      "historical_baseline_source_scope": "Old public142 source3539 only; not a fresh combined-source before measurement.",
+      "historical_full_Codec_macro_pair": "Old public142 matched diagnostic pair only. Current combined-source macro allocations, CPU or elapsed speed were not measured; no JVM/C2 or current macro speed claim.",
+      "historical_matched_pair": {
+        "bytes": 546694,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_netty_allocator_frontier/public142_string_compare_tdd_v1/MATCHED_FRESH_ALLOCATION_RESULT.json",
+        "sha256": "8a004f9f8ff935d542d07140bf2c1f48dfc158142c6a8bbd6f59592e850b6ed0"
+      },
+      "historical_public142_single_pair_baseline_allocations": 24
+    },
+    "checkpoint": 145,
+    "evidence": {
+      "full_String_control_held": {
+        "bytes": 1234,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/FULL_STRING_CONTROL_HELD.json",
+        "sha256": "6eb9a807cc7ba5307acb75d1530983d1b215a41a7959be5da165508313e33685"
+      },
+      "peer_final_raw_audit": {
+        "bytes": 4884,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_generic_resume/root-string144-independent-final-review/FINAL_AUDIT.json",
+        "sha256": "d810a95f4f1847f8f6937c92a6c177e53e3ab1457397731760469bf2c36cc756"
+      },
+      "peer_source_and_raw_proof": {
+        "bytes": 50331,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_generic_resume/root-string144-independent-final-review/VERIFIED_SOURCE_AND_RAW.json",
+        "sha256": "bd30a9d73e3f9b75c5bde8239e5157ea6ffd06d92af94b4ba58b818d6d10a2b9"
+      },
+      "root_actual145records": {
+        "bytes": 121719,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/RECORDS.json",
+        "sha256": "fa5ecf071eea82f3247f20ae9a69858ba4749e218b83010c732c04ab6de838b7"
+      },
+      "root_compiled_registries": {
+        "bytes": 193432,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/COMPILED_REGISTRIES.json",
+        "sha256": "742a9a4ca65f76cf52928c4654c66f9359e09f845c8c42b8cb02ee19448864f9"
+      },
+      "root_native_allocation": {
+        "bytes": 724,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/NATIVE_ALLOCATION.json",
+        "sha256": "3090319764afcee92e572adb15ba62a2f23ddf21a0d2c7a8ad5e341d0485367a"
+      },
+      "root_terminal": {
+        "bytes": 2271,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/ROOT_TERMINAL.json",
+        "sha256": "d54e44d474dd391cd4d9ac4908be26444a9083320bb9b50c5d16710b18c70949"
+      },
+      "root_whole_pairs": {
+        "bytes": 34465,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/WHOLE_PAIRS.json",
+        "sha256": "6c11189f35941f545c344fea1df7e582842515c701993696586753ab35eb2259"
+      },
+      "two_component_patch": {
+        "bytes": 5702,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_infra_resume/universe-string-public144-rootprep-v3/two-string-leaves.patch",
+        "sha256": "01cff06d58e5e8e00a55a369ee68340280f1706e755832b19b8519fefe24a6ea"
+      }
+    },
+    "fresh_acceptance": {
+      "Codec_execution_profile": "9 JDK source + 9 JDK binary; 9 Go race + 9 Go release; seeds17/41/97 x3, complete stdout/stderr and all accounts.tsv/rejects.tsv/summary.txt files equal.",
+      "Namespace_seed_profile": "17/41/97 x3; complete stdout and stderr equal.",
+      "actual_root_stages": 145,
+      "all_actual_stage_runner_supervisor_child_exits_agree_noerror_nointerrupt_nottimeout_cleanup_clean": true,
+      "all_actual_stages_exit_zero": false,
+      "compiler_parent_PASS_events": 26,
+      "compiler_repeat_explanation": "The complete seeded parent runs count3; 24 distinct parents yield 26 PASS events.",
+      "default_and_f1_os_profile_allpackages_race_compile_only": "PASS via go test -run ^$; not full package execution.",
+      "default_and_f1_os_profile_lint": "golangci-lint2.14.0 PASS, zero issues.",
+      "direct_Namespace_JDK_Go_pairs": 9,
+      "fresh_stress_processes": 20,
+      "mandatory_known_generated_build_RED_stages": 1,
+      "new_native_registered_parents": 3,
+      "positive_PASS_stages": 144,
+      "real_Codec_Go_runs": 18,
+      "real_Codec_JDK_runs": 18,
+      "registered_parents_each_stress": 19,
+      "runtime_registered_parents_PASS": 657,
+      "runtime_subtest_PASS_events": 1718,
+      "stress_parent_PASS_events": 380,
+      "symbol_registered_parents_PASS": 17,
+      "unique_registered_compiler_parents_PASS": 24
+    },
+    "full_CI_accepted": false,
+    "full_String_control": {
+      "conditional_NOTRUN": [
+        "build-entry-StringComparisonControl-race",
+        "buildinfo-StringComparisonControl-race",
+        "go-StringComparisonControl-1",
+        "go-StringComparisonControl-2",
+        "go-StringComparisonControl-3"
+      ],
+      "exact_historical_frontier_bytes": true,
+      "fresh_JDK3": [
+        {
+          "stage": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/jdk-main-StringComparisonControl-1",
+          "stdout_sha256": "e4badd8a3c4b22349762aee3e6cdfdaaa543f49c0ea1f2cc2ea2b3ab86f9a03c"
+        },
+        {
+          "stage": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/jdk-main-StringComparisonControl-2",
+          "stdout_sha256": "e4badd8a3c4b22349762aee3e6cdfdaaa543f49c0ea1f2cc2ea2b3ab86f9a03c"
+        },
+        {
+          "stage": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/jdk-main-StringComparisonControl-3",
+          "stdout_sha256": "e4badd8a3c4b22349762aee3e6cdfdaaa543f49c0ea1f2cc2ea2b3ab86f9a03c"
+        }
+      ],
+      "fresh_receipt": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/build-all-StringComparisonControl-race/result.json",
+      "full_native_parity": false,
+      "no_Go_executions": true,
+      "receipt_sha256": "2b7c48e7ea45984db6bd7dd813c060371c85998a2bad4035343f98aad1e60531",
+      "same_five_errors_sha256": "cdea1cedd2d583d7dab160518ef0a654ec70fb4c886bc6a69ddd9d340a599267",
+      "status": "MANDATORY_ORIGINAL_VALID_JAVA_GENERATED_BUILD_RED_KNOWN_EXACT_FIVE_ERRORS",
+      "strict_translation": "PASS"
+    },
+    "full_round_accepted": false,
+    "goal_status": "ACTIVE",
+    "held": [
+      "Original full String control is valid, stable on three fresh JDK runs and strict translation PASS, but its generated Go build retains exactly five historical errors. No Go execution, full String parity or repair is claimed; five dependent stages remain NOTRUN.",
+      "Four original 17-Java Universe applications retain their frozen strict PASS/generated compile RED boundary and are not relabelled green.",
+      "Larger private root3884 composition remains independently terminal at its first generic intermediate raw SAM carrier compile RED. Its remaining 402 default plus 1 profile obligations and all full-suite/later gates are NOTRUN; no acceptance is transferred.",
+      "All prior source-carrier, cancellation, close-order, readonly identity, US-ASCII/extra field/stale parent, generic metadata/dependency and platform holds remain. Full genuine Netty remains unaccepted."
+    ],
+    "latest_accepted_round": 18,
+    "native_deadline_qualification": {
+      "actual_parent_pass_durations": [
+        23.62,
+        14.98,
+        15.62
+      ],
+      "inner_timeout_seconds": 55,
+      "no_timeout": true,
+      "note": "Rounded parent sum54.22s leaves about0.78s test margin; outer55.264336 includes normal race exit grace. Observed pass only; no future environmental timing guarantee.",
+      "outer_duration_seconds": 55.264336,
+      "rounded_sum_seconds": 54.22,
+      "supervisor_seconds": 65
+    },
+    "nested_Go_qualification": {
+      "CPU2_p1_pinned_Go_hash_verified": true,
+      "actual_records": 89,
+      "explicit_mod_mod_overrides": 35,
+      "inherited_GOFLAGS_readonly": 54,
+      "no_universal_readonly_or89_compiled_child_claim": true
+    },
+    "parent_revision": "841b845eca4f9ea1f812d36f58a92a17c2c69893",
+    "scope": "Four-line canonical nonnull *JavaString pair branch in javaCompareValuesExecution calls existing UTF16 CompareTo directly. Existing left null validation and right null/wrong-type fallback remain. Three new native test parents exercise exact results, zero result allocations and caller Execution/source callback fallbacks. No compiler admission, source dispatch, caches or new String implementation.",
+    "source_identity": {
+      "actual_public144_manifest": {
+        "bytes": 472161,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/144-universe-publication/actual-source-manifest.json",
+        "sha256": "f89beb5e555a60440209352a92e7eb932e5f711c605f3c4e3b0eb80f8e594747"
+      },
+      "actual_public144_members": 3556,
+      "actual_published_manifest": "Root freezes the actual committed source map after publication. Private 3557 precedes checkpoint145 metadata; proposed 3558 adds the note and replaces only the ledger, without forecasting a public revision.",
+      "all3555_public_unowned_exact": true,
+      "allowed_root_publication_paths": [
+        "stdjava/campaign_public142_string_compare_test.go",
+        "stdjava/comparator.go",
+        "campaign-state.json",
+        "campaign/SOL_PROGRESS145.md"
+      ],
+      "component_paths": {
+        "stdjava/campaign_public142_string_compare_test.go": {
+          "after_sha256": "1f34e7e456f12bfcd07616eb119678838fe06c597b436e8904b88198373ec8b6",
+          "before_sha256": null
+        },
+        "stdjava/comparator.go": {
+          "after_sha256": "75f77f89f494c51136ea8c734b75f4b61f70f4c5d86375127493f37c71b2ebc5",
+          "before_sha256": "4543f1b0c2ae5778dfc79c352cf6b3103c51785d586433429d24410fac96231e"
+        }
+      },
+      "private_verified_source_manifest": {
+        "bytes": 472284,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-string-public144-independent/evidence/SOURCE_MANIFEST.json",
+        "sha256": "699309ec4cd59b64507151d111fc43ce4d48b1d68e77537ec07e53ffedc78e07"
+      },
+      "private_verified_source_members": 3557,
+      "proposed_metadata_overlay_members": 3558
+    },
+    "status": "INDEPENDENT_CANONICAL_STRING_COMPARISON_SCOPED_PASS_SOURCE_PROPOSAL_READY_ROOT_PUBLICATION"
   },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
