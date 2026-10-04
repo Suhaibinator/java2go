@@ -201,19 +201,26 @@ func (s *deleteOnCloseInputStream) Close() {
 }
 
 type randomAccessState struct {
-	mu     sync.Mutex
-	file   *os.File
-	closed bool
+	mu       sync.Mutex
+	file     *os.File
+	closed   bool
+	writable bool
 }
 
 func (s *randomAccessState) close() {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	if !s.closed {
-		s.closed = true
-		if err := s.file.Close(); err != nil {
-			throwIOException(err)
-		}
+	if s.closed {
+		s.mu.Unlock()
+		return
+	}
+	s.closed = true
+	file := s.file
+	s.mu.Unlock()
+	// A retained RawConn lease may delay Close. Publish the closed state without
+	// holding mu over the descriptor wait. Concurrent close completion ordering
+	// remains outside this finite service's contract.
+	if err := file.Close(); err != nil {
+		throwIOException(err)
 	}
 }
 func (s *randomAccessState) read(bytes []byte) (int, error) {
@@ -248,7 +255,7 @@ func NewRandomAccessFile(path any, mode string) *RandomAccessFile {
 	if err != nil {
 		throwIOException(err)
 	}
-	state := &randomAccessState{file: file}
+	state := &randomAccessState{file: file, writable: randomAccessFileWritableFromOpenFlags(flags)}
 	return &RandomAccessFile{state: state, channel: &FileChannel{state: state}}
 }
 func (r *RandomAccessFile) GetChannel() *FileChannel       { return r.channel }
@@ -287,32 +294,9 @@ func (r *RandomAccessFile) Length() int64 {
 type FileChannel struct{ state *randomAccessState }
 
 func (c *FileChannel) Read(buffer *ByteBuffer) int32 {
-	ReferenceRequireNonNull(buffer)
-	c.state.mu.Lock()
-	defer c.state.mu.Unlock()
-	if c.state.closed {
-		panic(newThrowableBase("ClosedChannelException", ""))
-	}
-	if buffer.Remaining() == 0 {
-		return 0
-	}
-	bytes := make([]byte, buffer.Remaining())
-	count, err := c.state.file.Read(bytes)
-	for i := 0; i < count; i++ {
-		buffer.array.Elements[int(buffer.offset+buffer.position)+i] = int8(bytes[i])
-	}
-	buffer.position += int32(count)
-	if count > 0 {
-		return int32(count)
-	}
-	if err == io.EOF {
-		return -1
-	}
-	if err != nil {
-		throwIOException(err)
-	}
-	return 0
+	return FileChannelReadExecution(NewExecution(), c, buffer)
 }
+
 func (c *FileChannel) Close() { c.state.close() }
 func (c *FileChannel) IsOpen() bool {
 	c.state.mu.Lock()

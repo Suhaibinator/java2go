@@ -91,12 +91,7 @@ func registerDigestIOIntrinsics() {
 		}
 		return stdjavaCall(ctx, "NewBufferedInputStreamExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)...)
 	})
-	registerConstructorIntrinsic("RandomAccessFile", func(_ []ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) != 2 {
-			return nil
-		}
-		return stdjavaCall(ctx, "NewRandomAccessFile", args...)
-	})
+	registerRandomAccessFileReferenceIntrinsic()
 	for _, name := range []string{"InputStream", "FilterInputStream", "FileInputStream", "ByteArrayInputStream", "BufferedInputStream", "RandomAccessFile"} {
 		registerInstanceIntrinsic(name, "read", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			all := append([]ast.Expr{recv}, args...)
@@ -146,7 +141,6 @@ func registerDigestIOIntrinsics() {
 		{"RandomAccessFile", "seek", "SeekPosition", "", 1},
 		{"RandomAccessFile", "getFilePointer", "GetFilePointer", "long", 0},
 		{"RandomAccessFile", "length", "Length", "long", 0},
-		{"FileChannel", "read", "Read", "int", 1},
 		{"FileChannel", "close", "Close", "", 0},
 		{"FileChannel", "isOpen", "IsOpen", "boolean", 0},
 		{"ByteBuffer", "flip", "Flip", "ByteBuffer", 0},
@@ -157,4 +151,5 @@ func registerDigestIOIntrinsics() {
 			registerInstanceIntrinsicResultType(entry.class, entry.java, entry.result)
 		}
 	}
+	registerReadonlyFileChannelReadIntrinsic()
 }

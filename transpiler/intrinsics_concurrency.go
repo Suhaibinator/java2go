@@ -386,6 +386,7 @@ func registerAtomicIntrinsics() {
 
 func registerThreadIntrinsics() {
 	registerThreadYieldIntrinsics()
+	registerThreadInterruptIntrinsics()
 	registerInstanceIntrinsicResultType("Thread", "isAlive", "boolean")
 	// new Thread(runnable) -> stdjava.NewThread(runnable). The Runnable argument
 	// is already a func() in generated code (lambda or method reference).

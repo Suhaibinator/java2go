@@ -68,4 +68,5 @@ func registerNIOPrimitiveIntrinsics() {
 		})
 		registerInstanceIntrinsicResultType("ByteBuffer", "put"+suffix, "java.nio.ByteBuffer")
 	}
+	registerNIOCharIntrinsics()
 }

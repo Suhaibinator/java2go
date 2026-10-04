@@ -1,8 +1,8 @@
 package stdjava
 
-// ByteBuffer models a mutable heap buffer. Views retain their Java byte[]
+// ByteBuffer models a heap buffer, including read-only views. Views retain their Java byte[]
 // identity while each buffer has independent capacity, position, limit and mark.
-// Direct buffers, read-only buffers and typed views remain unsupported.
+// Direct buffers and typed views remain unsupported.
 type ByteBuffer struct {
 	array        *PrimitiveArray[int8]
 	offset       int32
@@ -11,6 +11,7 @@ type ByteBuffer struct {
 	limit        int32
 	mark         int32
 	littleEndian bool
+	readOnly     bool
 }
 
 func ByteBufferWrap(array *PrimitiveArray[int8], bounds ...int32) *ByteBuffer {
@@ -32,9 +33,9 @@ func ByteBufferAllocate(capacity int32) *ByteBuffer {
 }
 func (b *ByteBuffer) Remaining() int32             { ReferenceRequireNonNull(b); return b.limit - b.position }
 func (b *ByteBuffer) HasRemaining() bool           { return b.Remaining() > 0 }
-func (b *ByteBuffer) HasArray() bool               { ReferenceRequireNonNull(b); return true }
-func (b *ByteBuffer) Array() *PrimitiveArray[int8] { ReferenceRequireNonNull(b); return b.array }
-func (b *ByteBuffer) ArrayOffset() int32           { ReferenceRequireNonNull(b); return b.offset }
+func (b *ByteBuffer) HasArray() bool               { ReferenceRequireNonNull(b); return !b.readOnly }
+func (b *ByteBuffer) Array() *PrimitiveArray[int8] { byteBufferRequireWritable(b); return b.array }
+func (b *ByteBuffer) ArrayOffset() int32           { byteBufferRequireWritable(b); return b.offset }
 func (b *ByteBuffer) Capacity() int32              { ReferenceRequireNonNull(b); return b.capacity }
 func (b *ByteBuffer) Position() int32              { ReferenceRequireNonNull(b); return b.position }
 func (b *ByteBuffer) Limit() int32                 { ReferenceRequireNonNull(b); return b.limit }
@@ -97,7 +98,7 @@ func (b *ByteBuffer) Clear() *ByteBuffer {
 // must preserve overlap and the shared backing array; only this view's cursor
 // and mark change, and its byte order remains unchanged.
 func (b *ByteBuffer) Compact() *ByteBuffer {
-	ReferenceRequireNonNull(b)
+	byteBufferRequireWritable(b)
 	remaining := b.limit - b.position
 	start := b.offset + b.position
 	copy(b.array.Elements[b.offset:b.offset+remaining], b.array.Elements[start:start+remaining])
@@ -113,7 +114,7 @@ func (b *ByteBuffer) Slice(bounds ...int32) *ByteBuffer {
 		index, length = bounds[0], bounds[1]
 		byteBufferCheckRange(index, length, b.limit)
 	}
-	return &ByteBuffer{array: b.array, offset: b.offset + index, capacity: length, limit: length, mark: -1}
+	return &ByteBuffer{array: b.array, offset: b.offset + index, capacity: length, limit: length, mark: -1, readOnly: b.readOnly}
 }
 func (b *ByteBuffer) Duplicate() *ByteBuffer {
 	ReferenceRequireNonNull(b)
@@ -154,7 +155,7 @@ func (b *ByteBuffer) GetInto(target *PrimitiveArray[int8], bounds ...int32) *Byt
 	return b
 }
 func (b *ByteBuffer) Put(value int8) *ByteBuffer {
-	ReferenceRequireNonNull(b)
+	byteBufferRequireWritable(b)
 	if b.position == b.limit {
 		panic(newThrowableBase("BufferOverflowException", ""))
 	}
@@ -163,13 +164,18 @@ func (b *ByteBuffer) Put(value int8) *ByteBuffer {
 	return b
 }
 func (b *ByteBuffer) PutAt(index int32, value int8) *ByteBuffer {
-	ReferenceRequireNonNull(b)
+	byteBufferRequireWritable(b)
 	byteBufferCheckRange(index, 1, b.limit)
 	b.array.Elements[b.offset+index] = value
 	return b
 }
 func (b *ByteBuffer) PutArray(source *PrimitiveArray[int8], bounds ...int32) *ByteBuffer {
 	ReferenceRequireNonNull(b)
+	// Convenience put(byte[]) evaluates src.length before range dispatch.
+	if len(bounds) == 0 {
+		ReferenceRequireNonNull(source)
+	}
+	byteBufferRequireWritable(b)
 	ReferenceRequireNonNull(source)
 	offset, length := int32(0), int32(len(source.Elements))
 	if len(bounds) == 2 {
@@ -185,7 +191,7 @@ func (b *ByteBuffer) PutArray(source *PrimitiveArray[int8], bounds ...int32) *By
 	return b
 }
 func (b *ByteBuffer) PutBuffer(source *ByteBuffer) *ByteBuffer {
-	ReferenceRequireNonNull(b)
+	byteBufferRequireWritable(b)
 	if b == source {
 		panic(NewIllegalArgumentException("source buffer is this buffer"))
 	}

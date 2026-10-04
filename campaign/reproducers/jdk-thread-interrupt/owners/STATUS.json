@@ -1,0 +1,12 @@
+{
+  "scope": "Canonical native field named Thread and actual source/foreign/binder ownership controls",
+  "oracle": "Actual installed JDK21 three byte-identical runs frozen; no runtime JVM delegation",
+  "source_java_sha256": {
+    "src/main/java/foreign/Thread.java": "59507adca571383a22debe262395642ef9877263a2284de92337f7c1d281df0b",
+    "src/main/java/probe/Binder.java": "c4afb1d0b8e4aab8c137d56e7cd0f6da1d2e59bd83f43053f2feeb0ce09d09fe",
+    "src/main/java/probe/Main.java": "fbad614c0827630c6bafa9d39d3c1aac2d3a2b77bc61231a15198f2688a169f4",
+    "src/main/java/shadow/Thread.java": "58f11d8f69e37a26266ed08580546091863e0491353ead386882e05b909c5ec7"
+  },
+  "expected_stdout_sha256": "2decd478aa94b99a3bdeb97f0ef168c8593255708dc57a5b1158ca7ab4769a3a",
+  "classification": "Mandatory selected actual GoRED held, valid JDK; not native-stage acceptance"
+}

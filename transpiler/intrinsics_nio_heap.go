@@ -63,7 +63,7 @@ func registerNIOHeapIntrinsics() {
 		return "", false
 	})
 	registerInstanceNodeIntrinsic("ByteBuffer", "put", lowerNIOHeapPut)
-	registerInstanceIntrinsicResultType("ByteBuffer", "put", "ByteBuffer")
+	registerNIOReadonlyIntrinsics()
 }
 
 func nioHeapArgumentKind(invocation *sitter.Node, index int, ctx Ctx, source []byte) string {
@@ -115,30 +115,9 @@ func lowerNIOHeapGet(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []b
 }
 
 func lowerNIOHeapPut(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr {
-	count := invocationArgumentCount(invocation)
-	name := ""
-	var expected []string
-	switch count {
-	case 1:
-		switch nioHeapArgumentKind(invocation, 0, ctx, source) {
-		case "byte":
-			name, expected = "Put", []string{"byte"}
-		case "array":
-			name, expected = "PutArray", []string{"byte[]"}
-		case "buffer":
-			name, expected = "PutBuffer", []string{"java.nio.ByteBuffer"}
-		default:
-			return nil
-		}
-	case 2:
-		name, expected = "PutAt", []string{"int", "byte"}
-	case 3:
-		if nioHeapArgumentKind(invocation, 0, ctx, source) != "array" {
-			return nil
-		}
-		name, expected = "PutArray", []string{"byte[]", "int", "int"}
-	default:
-		return nil
+	name, expected, applicable := nioHeapPutSignature(invocation, ctx, source)
+	if !applicable {
+		return unsupportedIntrinsicValue(invocation, "java.nio.ByteBuffer", source, ctx)
 	}
 	args := parseArgumentListWithExpectedTypes(invocation.ChildByFieldName("arguments"), source, ctx, expected)
 	return selectorCall(recv, name, args)

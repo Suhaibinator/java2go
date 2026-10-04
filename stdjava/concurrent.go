@@ -380,14 +380,15 @@ func decimalSuffix(name, prefix string) bool {
 // finishes. Java's Thread is far richer (priorities, interruption, daemon status,
 // fairness); those are out of scope and documented as such.
 type Thread struct {
-	interruptMu     sync.Mutex
-	interrupted     bool
-	interruptSignal chan struct{}
-	name            string
-	nameText        *JavaString
-	run             Runnable
-	done            chan struct{}
-	started         atomic.Bool
+	interruptExecution func(*Execution)
+	interruptMu        sync.Mutex
+	interrupted        bool
+	interruptSignal    chan struct{}
+	name               string
+	nameText           *JavaString
+	run                Runnable
+	done               chan struct{}
+	started            atomic.Bool
 }
 
 var threadSequence atomic.Int64

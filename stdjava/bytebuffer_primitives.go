@@ -70,6 +70,7 @@ func (b *ByteBuffer) readPrimitiveBits(width int32, indices ...int32) uint64 {
 	return bits
 }
 func (b *ByteBuffer) writePrimitiveBits(width int32, bits uint64, indices ...int32) *ByteBuffer {
+	byteBufferRequireWritable(b)
 	index := b.primitiveIndex(width, true, indices)
 	start := b.offset + index
 	for i := int32(0); i < width; i++ {
@@ -129,4 +130,12 @@ func (b *ByteBuffer) PutDouble(value float64) *ByteBuffer {
 }
 func (b *ByteBuffer) PutDoubleAt(index int32, value float64) *ByteBuffer {
 	return b.writePrimitiveBits(8, math.Float64bits(value), index)
+}
+
+func (b *ByteBuffer) GetChar(indices ...int32) rune { return rune(b.readPrimitiveBits(2, indices...)) }
+func (b *ByteBuffer) PutChar(value rune) *ByteBuffer {
+	return b.writePrimitiveBits(2, uint64(uint16(value)))
+}
+func (b *ByteBuffer) PutCharAt(index int32, value rune) *ByteBuffer {
+	return b.writePrimitiveBits(2, uint64(uint16(value)), index)
 }
