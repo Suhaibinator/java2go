@@ -1682,6 +1682,12 @@
     "checkpoint_kind": "Canonical Java String natural-comparison branch only; root and independent scoped acceptance, original full String control held.",
     "next": "Root commits AND pushes the exact four-path String milestone. Continue separately scoped TDD for unchanged full String compiler frontiers and the larger private composition; preserve all original controls, dependency/CI holds and every historical ledger value/note. Goal ACTIVE; accepted full round18 unchanged."
   },
+  "active_resume_current146": {
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "branch": "origin/codex/adversarial-campaign",
+    "checkpoint_kind": "Three canonical native Thread state/hint APIs only, with source virtual and full application holds retained.",
+    "next": "Root commits AND pushes the exact nine-path native Thread state milestone. Continue separately reviewed FileChannel positional read prerequisites for the latest actual normal Netty frontier; preserve source Thread installer/upcast/super/full String and all prior dependency/CI/full application holds. Goal ACTIVE, accepted full round18 unchanged."
+  },
   "active_resume_current99": {
     "agent_policy": "GPT-6.1 Sol/high only; no Astra; explicit file ownership and independent review; coordinator sole public/Git writer",
     "branch": "origin/codex/adversarial-campaign",
@@ -20501,6 +20507,309 @@
       "proposed_metadata_overlay_members": 3558
     },
     "status": "INDEPENDENT_CANONICAL_STRING_COMPARISON_SCOPED_PASS_SOURCE_PROPOSAL_READY_ROOT_PUBLICATION"
+  },
+  "sol_progress146": {
+    "CI_checkpoint146": "Unknown until actual published-head checks; no no-new-regression claim.",
+    "actual_acceptance": {
+      "actual_default_full_runtime_parent_PASS": 661,
+      "actual_default_full_symbol_parent_PASS": 17,
+      "actual_default_runtime_subtest_PASS_events": 1718,
+      "all_executed_runner_child_exits_and_cleanup_verified": true,
+      "all_executed_stages_exit_zero": false,
+      "base_conditional_NOTRUN": 5,
+      "base_executed": 100,
+      "base_positive_PASS": 96,
+      "base_records": 105,
+      "base_retained_known_RED": 4,
+      "combined_conditional_NOTRUN": 5,
+      "combined_executed": 120,
+      "combined_positive_PASS": 116,
+      "combined_records": 125,
+      "combined_retained_known_RED": 4,
+      "compiled_default_registered_Test_counts": {
+        "stdjava": 661,
+        "symbol": 17,
+        "transpiler": 1556
+      },
+      "compiled_f1_os_profile_registered_Test_counts": {
+        "stdjava": 662,
+        "symbol": 17,
+        "transpiler": 1556
+      },
+      "default_and_tagged_allpackages": "Race compile-only PASS; full execution not inferred.",
+      "default_and_tagged_golangci_lint_2_14": "PASS, zero issues.",
+      "direct_whole_JDK_Go_pairs": 9,
+      "direct_whole_profile": "Three full applications x3 complete independent JDK21/raceGo stdout/stderr/exits match original oracles; generated cores unchanged.",
+      "direct_whole_projects": [
+        "native-service-qualifiers",
+        "original-native-state",
+        "source-owner-shields"
+      ],
+      "six_test_binaries_and_CLI": "Matching race buildinfo verified by peer. Registry counts do not assert full compiler suite execution.",
+      "supplemental_executed_positive": 20,
+      "supplemental_records": 20,
+      "tagged_extra_OS_partial_write_parent": "Compiled and registered NOTRUN; no full tagged runtime acceptance.",
+      "tagged_runtime_executed_parents": 4
+    },
+    "checkpoint": 146,
+    "evidence": {
+      "controls_patch": {
+        "bytes": 15902,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/native-thread-services145-root-prep-v1/native-thread-services143-controls.patch",
+        "sha256": "e2c01539f1b812473f59c9fa1445013093e6fd88d80f0d37b684c4fc6c3148f1"
+      },
+      "owner_source_only_rebase": {
+        "bytes": 2423,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/native-thread-services145-root-prep-v1/METADATA_ONLY_145_REBASE_PROOF.json",
+        "sha256": "57d1f5447d1e48a3e2b7e5455bc6a04598ef79b08a60aa4f6690a8bf0564e84b"
+      },
+      "peer_final_with_fresh20": {
+        "bytes": 2737,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/thread-native-public145-root-final-with-fresh20-v1/FINAL-REVIEW.json",
+        "sha256": "1ca5aa5b127de5c7159d65aaecf8e5ccced38bbb54b1e94c50b8fd18b12f2ceb"
+      },
+      "production_patch": {
+        "bytes": 6589,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/native-thread-services145-root-prep-v1/native-thread-services143-production.patch",
+        "sha256": "31cfa5bb6885a82677d1d0329366b392ed6e13c480460f7f855fdc7bb1efcd1b"
+      },
+      "root_base105records": {
+        "bytes": 50703,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/records.json",
+        "sha256": "8598870b847c74ebc28adb1cc26be11f18b0f63f2a8aefb9ea013d4b807a78d7"
+      },
+      "root_base_terminal": {
+        "bytes": 754,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/TERMINAL.json",
+        "sha256": "f3c3a78e1b05f3326f6871daac34a0319c3711d21b26ed2845d1b27718bc49e9"
+      },
+      "root_compiled_registry": {
+        "bytes": 240718,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/ACTUAL_COMPILED_REGISTRY.json",
+        "sha256": "ac0259ef1defac48a433e9142aaeaed4221c2d172cf11a8a08911946ed68886b"
+      },
+      "root_direct_whole_pairs": {
+        "bytes": 3819,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/DIRECT_WHOLE_PAIRS.json",
+        "sha256": "eaf84444462ee53e8f0907ea03b4a3c7249adb6d280e5a3623f89ac945248d87"
+      },
+      "root_fresh20_records": {
+        "bytes": 10805,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/fresh20/records.json",
+        "sha256": "72a8570fe24833d01bd77bf7420467d9db33092a9a866c3c14c5163107fa153c"
+      },
+      "root_fresh20_terminal": {
+        "bytes": 667,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/fresh20/TERMINAL.json",
+        "sha256": "dee8654140698c7ce0eb85c40cf33726e4f7f3f92b68e2c019dc2ba23bf88a6c"
+      }
+    },
+    "full_CI_accepted": false,
+    "full_Thread_accepted": false,
+    "full_round_accepted": false,
+    "goal_status": "ACTIVE",
+    "held": [
+      "Source virtual observer callback installer, native upcast, true nonvirtual super and source construction/early-self/Start/Run/identity remain unaccepted. Manual private runtime callback controls do not prove Java source installer parity.",
+      "Three original native selected gates retain failure: invalid-array frontend diagnostic, source override whole-program and owners whole-program. Invalid-Java array diagnosis is distinct from valid-JDK source parity; no tests are dropped.",
+      "Fourth observer-virtual application is valid/stable on JDK3 and strict PASS, then generated all-package build RED. Its entry/buildinfo/three Go stages are NOTRUN.",
+      "All previous String full-control, source-carrier, lifecycle/cancellation/close-order, generic ABI/dependency/platform and original full application holds remain. Full Thread/CI/round/Netty acceptance is not claimed."
+    ],
+    "held_conditional_stages": [
+      {
+        "held_failure": "allpkg-observer-virtual-frontier-race",
+        "stage": "entry-observer-virtual-frontier-race",
+        "status": "NOT_RUN_AFTER_RETAINED_HELD_FAILURE"
+      },
+      {
+        "held_failure": "allpkg-observer-virtual-frontier-race",
+        "stage": "entry-buildinfo-observer-virtual-frontier",
+        "status": "NOT_RUN_AFTER_RETAINED_HELD_FAILURE"
+      },
+      {
+        "held_failure": "allpkg-observer-virtual-frontier-race",
+        "stage": "Go-observer-virtual-frontier-1",
+        "status": "NOT_RUN_AFTER_RETAINED_HELD_FAILURE"
+      },
+      {
+        "held_failure": "allpkg-observer-virtual-frontier-race",
+        "stage": "Go-observer-virtual-frontier-2",
+        "status": "NOT_RUN_AFTER_RETAINED_HELD_FAILURE"
+      },
+      {
+        "held_failure": "allpkg-observer-virtual-frontier-race",
+        "stage": "Go-observer-virtual-frontier-3",
+        "status": "NOT_RUN_AFTER_RETAINED_HELD_FAILURE"
+      }
+    ],
+    "held_native_receipts": [
+      {
+        "receipt": {
+          "bytes": 3273,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptInvalidArrayStrictFrontierHeld/result.json",
+          "sha256": "89b01200d2cd3e8d816283f2b52f625150e1a29840a1efc49458ccb31214a319"
+        },
+        "stage": "native-TestThreadInterruptInvalidArrayStrictFrontierHeld",
+        "status": "HELD_RED",
+        "stderr": {
+          "bytes": 0,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptInvalidArrayStrictFrontierHeld/stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 235,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptInvalidArrayStrictFrontierHeld/stdout",
+          "sha256": "721df3a27bce14e31c124cc7d1712bcbd7b08cd609063aaf6ebceb5d0219f812"
+        }
+      },
+      {
+        "receipt": {
+          "bytes": 3288,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptSourceOverrideWholeProgramHeldJVM/result.json",
+          "sha256": "bbe74ca7a85eeec3322a648d2d17b73a9daed395b08f5e92055874e2239d1661"
+        },
+        "stage": "native-TestThreadInterruptSourceOverrideWholeProgramHeldJVM",
+        "status": "HELD_RED",
+        "stderr": {
+          "bytes": 0,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptSourceOverrideWholeProgramHeldJVM/stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 1666,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptSourceOverrideWholeProgramHeldJVM/stdout",
+          "sha256": "92cdc3efccb2b0ac74edeb8eaa19a7928a8212714ed84d513ba676bce2261df6"
+        }
+      },
+      {
+        "receipt": {
+          "bytes": 3228,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptOwnersWholeProgramJVM/result.json",
+          "sha256": "2ea01d81a5c15ec756802b5e379918db4dd3dce040cee66b89aad9889587911e"
+        },
+        "stage": "native-TestThreadInterruptOwnersWholeProgramJVM",
+        "status": "HELD_RED",
+        "stderr": {
+          "bytes": 0,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptOwnersWholeProgramJVM/stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 387,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/native-TestThreadInterruptOwnersWholeProgramJVM/stdout",
+          "sha256": "a7bf12fdff6512dca8c6e10c81439463086060a569c1120a559c525eb385c86e"
+        }
+      },
+      {
+        "receipt": {
+          "bytes": 3074,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/allpkg-observer-virtual-frontier-race/result.json",
+          "sha256": "c3ab29fa42599b477d6f48ac1793375eb71054784bfc993c13811ea90c7239ce"
+        },
+        "stage": "allpkg-observer-virtual-frontier-race",
+        "status": "HELD_RED",
+        "stderr": {
+          "bytes": 378,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/allpkg-observer-virtual-frontier-race/stderr",
+          "sha256": "c2951e0ea846c2d6c39f11ed1b2c666227618b9c02b5c6334ed8549d4b3794ac"
+        },
+        "stdout": {
+          "bytes": 0,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/thread-native-public145-independent/allpkg-observer-virtual-frontier-race/stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "latest_accepted_round": 18,
+    "latest_actual_full_Netty": {
+      "elapsed_seconds": 98.219889,
+      "first_failure": "AdaptivePoolingAllocator.java2544 canonical FileChannel.read(ByteBuffer,long) unsupported intrinsic invocation; not positional-write RED.",
+      "no_generated_Go_JVM_or_Netty_acceptance": true,
+      "race_attempt": "Separate prior race strict run timed out at300 seconds and remains held; normal diagnostic does not establish matching race success.",
+      "source_scope": "Actual public1443556/f89beb normal CLI, not current Thread candidate replay.",
+      "terminal": {
+        "bytes": 19251,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_generic_null_resume/netty-public144-normal-strict/TERMINAL.json",
+        "sha256": "7747ee407fa93103e5d598d32c0de132fe659d3859dcf5e71cfb2329892997c1"
+      }
+    },
+    "nested_Go_qualification": "Original native helper inner compiler builds are not race and generated builds explicitly use mod=mod; direct root compiler/generated binaries use race and readonly. No universal nested-race or readonly claim.",
+    "parent_revision": "cec8a670412c87104d18db3a9efbd856272426d4",
+    "scope": "Native canonical Thread.isInterrupted(), Thread.interrupted() and Thread.onSpinWait(), with caller Execution, exact zero-argument applicability and Java static qualifier evaluation. Observer reads pending state without clearing; static interrupted clears the current executing thread exactly once; spin hint retains state with no fairness promise. A private observer callback slot and nonvirtual native default helper support manual runtime controls only; source callback installer/upcast/super admission remains held.",
+    "source_identity": {
+      "actual_public145_manifest": {
+        "bytes": 472385,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/145-string-publication/actual-source-manifest.json",
+        "sha256": "be654f7968e9b4d1e375020e3a7b8bf20b783447b5c816bee5583b4ba0d7453c"
+      },
+      "actual_public145_members": 3558,
+      "actual_publication": "Root freezes the actual committed source map after publication. The proposed3564 map adds only the note and ledger metadata to tested3563, not a forecast public revision.",
+      "all3556_public_unowned_exact": true,
+      "component_postimages": {
+        "stdjava/concurrent.go": {
+          "after": "05e1919194af935e5554298fab98d9d958a9402a76bcda8ee43fa5e296b37844",
+          "before": "56784b0cc96d0fea5a6fd1898b7d68e0bef84ba4f7db0bde6c752ab708f1b0b2",
+          "scope": "production"
+        },
+        "stdjava/thread_state_execution.go": {
+          "after": "1f6fe5c17976665779ada55047e819963969d0023e18a915e001f86c4619dba7",
+          "before": null,
+          "scope": "production"
+        },
+        "stdjava/thread_state_execution_test.go": {
+          "after": "24ff3013a97d2f52bb798370c4bf3d9cef084bc714bb7070a3aef87a2170918d",
+          "before": null,
+          "scope": "new-control-only"
+        },
+        "transpiler/intrinsics_concurrency.go": {
+          "after": "bc0aaa6028d133ae757b2fc1eb53d42157b1e9cb3172728e158f57d2c0c4e3e1",
+          "before": "0eb5051209fc4caf8e2bc70ae4577c53769d165132836dbc0ee0e178dde24be5",
+          "scope": "production"
+        },
+        "transpiler/intrinsics_thread_native_state.go": {
+          "after": "c5367d02c85899410420db39189ee63620452412942b740f2c4330090f4affb2",
+          "before": null,
+          "scope": "production"
+        },
+        "transpiler/native_thread_services143_ast_test.go": {
+          "after": "d9eb14b0d91f93f966a0fde6e4cfdc662eb529e5e0eae8586717329f952b6cb7",
+          "before": null,
+          "scope": "new-control-only"
+        },
+        "transpiler/native_thread_services143_preproducer_test.go": {
+          "after": "0ee6273f6cf35fcf94aed5caac002ed41c55854f1840da531ee6e2748d6fb509",
+          "before": null,
+          "scope": "new-control-only"
+        }
+      },
+      "private_verified_source_manifest": {
+        "bytes": 472974,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/native-thread-services145-root-prep-v1/source3563-manifest.json",
+        "sha256": "93b2d5c21b29877480f525096dfa6a3e1c59fce3585d3097cfd1d50ad557bb56"
+      },
+      "private_verified_source_members": 3563,
+      "proposed_metadata_overlay_members": 3564,
+      "publication_paths": [
+        "stdjava/concurrent.go",
+        "stdjava/thread_state_execution.go",
+        "stdjava/thread_state_execution_test.go",
+        "transpiler/intrinsics_concurrency.go",
+        "transpiler/intrinsics_thread_native_state.go",
+        "transpiler/native_thread_services143_ast_test.go",
+        "transpiler/native_thread_services143_preproducer_test.go",
+        "campaign-state.json",
+        "campaign/SOL_PROGRESS146.md"
+      ]
+    },
+    "status": "NATIVE_THREAD_STATE_SCOPED_ROOT_AND_PEER_PASS_SOURCE_PROPOSAL_READY_ROOT_PUBLICATION",
+    "stress": {
+      "count_each": 1,
+      "fresh_distinct_processes": 20,
+      "fresh_parent_PASS_events": 80,
+      "parallel_each": 1,
+      "prior_single_process_count20_parent_PASS_events": 80,
+      "qualification": "The prior count20 process and supplemental twenty distinct count1 processes remain separate immutable evidence. No receipt is relabelled.",
+      "registered_parents_each": 4
+    }
   },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
