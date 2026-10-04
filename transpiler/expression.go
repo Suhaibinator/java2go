@@ -3939,16 +3939,7 @@ func stageStaticInvocationQualifier(
 	if !ok {
 		return nil
 	}
-	body := []ast.Stmt{&ast.AssignStmt{
-		Lhs: []ast.Expr{&ast.Ident{Name: "_"}},
-		Tok: token.ASSIGN,
-		Rhs: []ast.Expr{qualifier},
-	}}
-	body = append(body, invocationClosureCallStatement(call, results))
-	return &ast.CallExpr{Fun: &ast.FuncLit{
-		Type: &ast.FuncType{Results: results},
-		Body: &ast.BlockStmt{List: body},
-	}}
+	return stageStaticQualifierWithResults(qualifier, call, results)
 }
 
 // stageVirtualDispatchInvocation models Java's invocation sequence around the
@@ -10838,8 +10829,8 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 				ownerTypeArgs = append([]string(nil), target.classJavaTypeArgs...)
 				ownerTypeOrigins = target.classTypeArgumentOrigins
 			}
-			if owner == nil && obj.Type() == "identifier" {
-				// Static field access through a class name.
+			if owner == nil {
+				// Static field access through a simple or qualified source class name.
 				owner = resolveClassScopeByIdentifier(ctx, source, obj)
 			}
 		}

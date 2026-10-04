@@ -1098,9 +1098,13 @@ func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) 
 	if objectNode == nil {
 		return "", false
 	}
-	javaType, ok := inferExprJavaType(objectNode, ctx, source)
+	var origin inferredJavaTypeOrigin
+	javaType, ok := inferExprJavaType(objectNode, ctx, source, &origin)
 	if !ok {
 		return "", false
+	}
+	if arraysUtilityOriginCanonical(javaType, origin, ctx) {
+		return "Arrays", true
 	}
 	// Every Java array inherits Object methods, independently of whether its
 	// component is primitive, external, or source-defined. Keep the runtime

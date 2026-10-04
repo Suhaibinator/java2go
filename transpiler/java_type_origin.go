@@ -11,11 +11,12 @@ import (
 // receives the declaration that owns it. Qualification cannot distinguish a
 // default-package class from a caller binder with the same spelling.
 type inferredJavaTypeOrigin struct {
-	nominalScope *symbol.ClassScope
-	parameter    *symbol.TypeParamDeclaration
-	arguments    []inferredJavaTypeOrigin
-	javaType     string
-	unresolved   bool
+	declaringOwner *symbol.ClassScope
+	nominalScope   *symbol.ClassScope
+	parameter      *symbol.TypeParamDeclaration
+	arguments      []inferredJavaTypeOrigin
+	javaType       string
+	unresolved     bool
 }
 
 func setInferredJavaTypeOrigin(outputs []*inferredJavaTypeOrigin, origin inferredJavaTypeOrigin) {
@@ -63,7 +64,7 @@ func declaredJavaTypeOrigin(javaType symbol.JavaType, declaring Ctx) inferredJav
 	}
 	base, _ := javaArrayTypeParts(readType)
 	base, args := parseJavaTypeString(base)
-	origin := inferredJavaTypeOrigin{javaType: readType}
+	origin := inferredJavaTypeOrigin{javaType: readType, declaringOwner: declaring.currentClass}
 	if declaration := javaType.TypeParameterBindings[base]; declaration != nil {
 		origin.parameter = declaration
 	} else {

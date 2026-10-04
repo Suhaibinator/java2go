@@ -1664,6 +1664,12 @@
     "checkpoint_kind": "Finite native F1 positional write with reviewed platform prerequisites",
     "next": "Continue held Java FileChannel write/source-carrier admission, active cancellation and close ordering through scoped TDD; preserve private generic helper-T, Arrays declaration-origin, Reader timeout and bound/raw-default holds. Verify frozen combined transport independently before broader acceptance. Commit and push verified milestones; goal ACTIVE, full CI and full-round acceptance remain pending."
   },
+  "active_resume_current143": {
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "branch": "origin/codex/adversarial-campaign",
+    "checkpoint_kind": "Canonical Arrays references/static qualification and qualified source field inference; root scoped acceptance",
+    "next": "Root publishes verified scoped milestone after its private Reader provenance window closes. Continue held original extra field controls, US-ASCII, stale-parent, source Thread/lifecycle, full Java FileChannel write and genuine dependency/CI gates through separate scoped TDD. All139/140/141/142 records remain exact; goal ACTIVE, accepted full round18 unchanged."
+  },
   "active_resume_current99": {
     "agent_policy": "GPT-6.1 Sol/high only; no Astra; explicit file ownership and independent review; coordinator sole public/Git writer",
     "branch": "origin/codex/adversarial-campaign",
@@ -19825,6 +19831,208 @@
     },
     "type": "finite-native-F1-and-reviewed-platform-prerequisites",
     "work_artifacts": "Process groups absent/leaders reaped verified; leftover readonly-consumer.dat retained in application work directory. No all-work-artifacts-clean claim."
+  },
+  "sol_progress143": {
+    "CI": {
+      "checkpoint142": {
+        "FAIL": 8,
+        "PASS": 7,
+        "compiler_log_tails_truncated": 6,
+        "failure_jobs": [
+          "Adversarial dependency applications",
+          "Compiler regressions (3)",
+          "Compiler regressions (1)",
+          "Compiler regressions (0)",
+          "Compiler regressions (4)",
+          "Compiler regressions (2)",
+          "Compiler regressions (5)",
+          "Test"
+        ],
+        "head": "60ba95e21860a9d312e2bf7b0687527245bd2575",
+        "jobs": 15,
+        "no_new_regression_claim": false,
+        "passing_jobs": [
+          "Application parity",
+          "Build",
+          "Fuzz corpus replay",
+          "E2E (non-parity)",
+          "Vulnerability Check",
+          "Lint",
+          "Unit tests"
+        ],
+        "scope": "Reported annotation differences and truncated provider logs remain explicit; no proof of absence of new regressions.",
+        "triage": {
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_string_conversion_resume/ci142-readonly-triage/TRIAGE.json",
+          "sha256": "088bc37ccd965ed5df0aa3049252f8fbb5fad7bffbc673282b78d5f3d83d5204"
+        }
+      },
+      "checkpoint143": "unknown until actual published exact-head checks"
+    },
+    "checkpoint": 143,
+    "evidence": {
+      "native_corrected_terminal": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/ROOT_NATIVE_CORRECTED_TERMINAL.json",
+        "sha256": "cfc4f7281aa0b39a3f33568844fe098b762f5d7869a648dcfaa090522977b5ef"
+      },
+      "original_draft": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint143-source-proposal/DELIVERY_INDEX.json",
+        "sha256": "5ec3f3284bc615d07b76ad4914ff310584e527dfeeb67fd78d675923d24f3be2"
+      },
+      "peer_final_raw_addendum": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_comparator_resume/arrays-field-public142-transport-review/FINAL_RAW_GATE_ADDENDUM.json",
+        "sha256": "354eb75c162f13269bd1a144564be949ed173af93865dc4d76c9c8ba8e518a68"
+      },
+      "registration_correction": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/ROOT_REGISTRATION_CORRECTION.json",
+        "sha256": "c05a42ab5c12c2423e0308e2235976133654a8077e6d9a3e958347111a9bcfd2"
+      },
+      "root_final_acceptance": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/ROOT_FINAL_ACCEPTANCE.json",
+        "sha256": "eba2683525d9e30c2fe8e2961fd85caa6c5c034d47f72320d5367388d06fd315"
+      },
+      "root_native_continuation": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-native-continuation.py",
+        "sha256": "7a6f3f51eea1a9ccd716c083c60c83f03adaa96cb07bd1e55179164a8a0ff762"
+      },
+      "root_replayer_authority": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/ROOT_REPLAYER.json",
+        "sha256": "1797653995e10da8efddbce81a8f019b3d72daa6346b119775f916377730efcc"
+      }
+    },
+    "fresh_acceptance": {
+      "accepted_payloads": 110,
+      "actual_bounded_payloads": 111,
+      "all_children_runner_exit0_no_error_no_interrupt_no_timeout_cleanup_clean": true,
+      "complete_application_groups": 4,
+      "default_and_tagged_allpackage_compile_only_PASS": true,
+      "default_and_tagged_lint_PASS": true,
+      "empty_selection_never_accepted": true,
+      "fresh_whole_Go_race_observations": 18,
+      "fresh_whole_JDK_observations": 18,
+      "full_CI": false,
+      "full_Netty": false,
+      "full_round": false,
+      "generated_core_go_and_postbuild_files_unchanged": true,
+      "goal_status": "active",
+      "held": "original additional field controls/block scopes/USASCII oracle/stale array assertion; full CI compiler/dependency; source Thread views and lifecycle; fullJava FileChannelwrite admission",
+      "nested_Go_flag_categories": {
+        "mod=mod": 36,
+        "other": 42
+      },
+      "registered_compiler_parents_PASS": 45,
+      "rejected_empty_test_selection": 1,
+      "root_native_continuation_sha256": "7a6f3f51eea1a9ccd716c083c60c83f03adaa96cb07bd1e55179164a8a0ff762",
+      "root_replayer_sha256": "ce0d73c2203e1bb974cccc6455b9ab175072ef41eae0ba947286cf3104043a2b",
+      "runtime_indented_PASS": 1718,
+      "runtime_registered_and_PASS": 654,
+      "source_manifest_sha256": "5ce9c35c51181ab2b74e1818f73a92fe36a145755c21a6be62ed4cdf8547701e",
+      "source_members": 3544,
+      "status": "SCOPED_PASS"
+    },
+    "full_CI_accepted": false,
+    "full_round_accepted": false,
+    "goal_status": "ACTIVE",
+    "held": [
+      "Original four extra field-control applications remain held with their full original failures and oracles; no selected-prefix/full parity relabel.",
+      "Original US-ASCII U+FFFF output mismatch remains distinct from separate UTF-8 diagnostic parity.",
+      "Stale Arrays parent assertion remains held separately; no fixture weakening.",
+      "Full CI and full campaign round remain unaccepted; CI143 unknown until exact published-head checks.",
+      "Full genuine Netty1220 remains unaccepted; latest actual fullstrict failure is historical wrapper133/source3394 245.257499s, not a current3544 replay.",
+      "All public142 finite positional/native platform/source-carrier/active cancellation/concurrent second-close/Thread identity/readonly class/type-map holds remain unchanged."
+    ],
+    "held_original_extra_field_controls": {
+      "before-declaration-block-and-generic-values": "Pre-existing first route borrows laterblocklocalp longtype forpackagep.Fields int32; allpkgRED retained",
+      "boxed-null-and-JDK-name-shields": "Original Cmode oracle9 mismatch atU+FFFF expected ?; actualcharsetdiagnosis frozen separateUTF8mode wholeequalsGo, no original9relabel.",
+      "java-value-prefix": "Pre-existing outofblock canonicalJava shield lookup emits undefinedjava; allpkgRED retained",
+      "primitive-fields-and-value-prefixes": "Qualified primitives/promotions/arrayread nowcompilePASS and first17rows correct; existing before-block provider binding causes UOE inblocksMain49;9fullRED retained"
+    },
+    "latest_accepted_round": 18,
+    "nested_Go_qualification": {
+      "all_GOMAXPROCS": 2,
+      "all_inherited_GOFLAGS": "-race -p=1 -mod=readonly",
+      "claim_limit": "mod=mod overrides readonly for36 existing helper invocations.42other includes env/list/mod operations; invocation flags do not independently prove78 compiled child executables or descendant cleanup. Outer111 infra group cleanup verified. No universal readonly claim.",
+      "command_categories": {
+        "build": 54,
+        "env": 8,
+        "list": 6,
+        "mod": 3,
+        "run": 4,
+        "test": 3
+      },
+      "explicit_mod_mod_overrides": 36,
+      "invocation_records": 78,
+      "other_invocations": 42
+    },
+    "optimization_or_speed_claim": false,
+    "owner_delivery": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_legacy_runtime_resume/arrays-field-public142-prep/DELIVERY.json",
+      "sha256": "72a64df44740b204ba4cd5898947e978aa3efd163ec3b4fec192f523d2fe8dbf"
+    },
+    "parent_revision": "60ba95e21860a9d312e2bf7b0687527245bd2575",
+    "registration_correction": {
+      "compiled_registered_Benchmarks": 2,
+      "compiled_registered_Tests": 1546,
+      "embedded_obligation": "TestArraysEquals belongs to TestCampaignRuntimeArraysEquals and is exercised under that registered owner.",
+      "owner_prepared_script": "Source-only owner continuation and root executed continuation remain distinct; root-only execution record above is authority.",
+      "planned_obligations": 46,
+      "raw_attempt": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/replay-evidence/native-TestArraysEquals/result.json",
+        "sha256": "945d1868828d861b31c254741ae2b4e7530d441978f41f7341c5bab388e8ea0f"
+      },
+      "registered_compiler_parents_PASS": 45,
+      "rejected_attempts": 1,
+      "rejected_raw_stdout": "PASS\\n only, with no --- PASS: test event. It is not counted as successful test selection.",
+      "root_continuation_sha256": "7a6f3f51eea1a9ccd716c083c60c83f03adaa96cb07bd1e55179164a8a0ff762",
+      "source_changes_for_correction": false
+    },
+    "scope": "Canonical java.util.Arrays nominal references and static byte[] copyOfRange qualification: evaluate qualifier once before arguments without dereferencing a null utility reference; retain source declaration origin and Java source/foreign/binder guards. General qualified source static field type inference resolves simple and qualified class owners. Existing ByteBuffer/RAF/nativeThread/F1 and public141 integer changes remain byte-exact.",
+    "source_identity": {
+      "actual_published_manifest": "Root must freeze actual committed tracked map afterward; proposal overlay and producer3544 map are not published source identity.",
+      "allowed_root_publication_paths": [
+        "stdjava/arrays_utility_reference.go",
+        "stdjava/arrays_utility_reference_test.go",
+        "transpiler/arrays_utility_reference.go",
+        "transpiler/arrays_utility_reference_campaign_test.go",
+        "transpiler/expression.go",
+        "transpiler/intrinsics.go",
+        "transpiler/intrinsics_arrays_copy_range.go",
+        "transpiler/intrinsics_concurrency.go",
+        "transpiler/java_type_origin.go",
+        "transpiler/qualified_source_static_field_inference_tdd_test.go",
+        "campaign-state.json",
+        "campaign/SOL_PROGRESS143.md"
+      ],
+      "candidate_manifest": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/candidate-source-manifest.json",
+        "sha256": "5ce9c35c51181ab2b74e1818f73a92fe36a145755c21a6be62ed4cdf8547701e"
+      },
+      "candidate_members": 3544,
+      "public142_baseline_manifest": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/baseline-source-manifest.json",
+        "sha256": "db524665c5ce63d9cfef8d76d1cd4fba5d01ac4e92997b9e4466f80bafc95fe8"
+      }
+    },
+    "status": "INDEPENDENT_SCOPED_PASS_SOURCE_PROPOSAL_READY_ROOT_PUBLICATION",
+    "verified_applications_before_final_gate": {
+      "all_four_generated_package_and_entry_race": true,
+      "applications": [
+        "original-arrays-challenge",
+        "owner-foreignSourceBinders",
+        "owner-declarationOriginShadow",
+        "owner-canonicalReferences"
+      ],
+      "fresh_Go_whole_observations": 18,
+      "fresh_JDK_whole_observations": 18,
+      "receipts": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/replay-applications-receipts.json",
+        "sha256": "b6b91e9f99e14de01caf072186467223b9866d292aeb7ee536ed9899af1e3258"
+      },
+      "scope": "Root terminal acceptance plus independent final raw audit confirms four complete application groups and exact whole outputs. All111 outer receipts are clean; 110 accepted plus one retained empty-selection rejection. No universal nested readonly/child-binary or descendant-cleanup claim.",
+      "summary": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/arrays-public142-independent/replay-complete-application-results.json",
+        "sha256": "9dc27f7a5ab91b63856a733a54508cc93f1d73ee6d724c4cd0c6d0c94bb71cdd"
+      }
+    }
   },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",

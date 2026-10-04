@@ -8,6 +8,13 @@ import (
 func init() {
 	registerIntrinsicOwner("java.util.Arrays", true)
 	registerStaticNodeIntrinsic("Arrays", "copyOfRange", lowerArraysByteCopyRange)
+	registerInstanceNodeIntrinsic("Arrays", "copyOfRange", lowerArraysUtilityByteCopyRange)
+	registerInstanceIntrinsicDerivedResultType("Arrays", "copyOfRange", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+		if !arraysByteCopyRangeSelected(invocation, ctx, source) {
+			return "", false
+		}
+		return "byte[]", true
+	})
 	registerStaticIntrinsicExpectedArguments("Arrays", "copyOfRange", func(invocation *sitter.Node, ctx Ctx, source []byte) []string {
 		if !arraysByteCopyRangeSelected(invocation, ctx, source) {
 			return nil
@@ -49,32 +56,9 @@ func arraysByteCopyRangeCanonicalOwner(invocation *sitter.Node, ctx Ctx, source 
 	}
 	class, ok := intrinsicStaticClassName(object, ctx, source)
 	if !ok || class != "Arrays" {
-		return false
+		return arraysUtilityReceiverCanonical(object, ctx, source)
 	}
-	name := object.Content(source)
-	if name == "java.util.Arrays" {
-		return true
-	}
-	if name != "Arrays" || ctx.currentFile == nil {
-		return false
-	}
-	if pkg, present := ctx.currentFile.Imports[name]; present {
-		return pkg == "java.util"
-	}
-	owner, known := canonicalIntrinsicOwner(name, ctx)
-	if !known || owner != "java.util.Arrays" {
-		return false
-	}
-	imported := false
-	for _, pkg := range intrinsicOnDemandImports(ctx) {
-		if pkg == "java.util" {
-			imported = true
-		}
-		if pkg != "java.util" && resolveClassScopeByQualifiedName(ctx, pkg+".Arrays") != nil {
-			return false
-		}
-	}
-	return imported
+	return canonicalArraysUtilityType(object.Content(source), ctx)
 }
 
 func arraysByteCopyRangeSelected(invocation *sitter.Node, ctx Ctx, source []byte) bool {
