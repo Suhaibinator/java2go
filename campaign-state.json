@@ -1670,6 +1670,12 @@
     "checkpoint_kind": "Canonical Arrays references/static qualification and qualified source field inference; root scoped acceptance",
     "next": "Root publishes verified scoped milestone after its private Reader provenance window closes. Continue held original extra field controls, US-ASCII, stale-parent, source Thread/lifecycle, full Java FileChannel write and genuine dependency/CI gates through separate scoped TDD. All139/140/141/142 records remain exact; goal ACTIVE, accepted full round18 unchanged."
   },
+  "active_resume_current144": {
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "branch": "origin/codex/adversarial-campaign",
+    "checkpoint_kind": "Package static-field Go universe reservation only; root and independent scoped acceptance",
+    "next": "Root commits AND pushes verified Universe-only milestone. Repair separately witnessed generic intermediate raw SAM carrier frontier in larger private3884 terminal RED through scoped TDD; remaining402 default+1profile obligations and full-suite/later gates remain NOTRUN. Preserve all original applications/dependency/CI holds and every historical ledger value/note. Goal ACTIVE, accepted full round18 unchanged."
+  },
   "active_resume_current99": {
     "agent_policy": "GPT-6.1 Sol/high only; no Astra; explicit file ownership and independent review; coordinator sole public/Git writer",
     "branch": "origin/codex/adversarial-campaign",
@@ -20033,6 +20039,275 @@
         "sha256": "9dc27f7a5ab91b63856a733a54508cc93f1d73ee6d724c4cd0c6d0c94bb71cdd"
       }
     }
+  },
+  "sol_progress144": {
+    "CI": {
+      "checkpoint143": {
+        "FAIL": 8,
+        "PASS": 7,
+        "head": "d374a764cd36360e3e5f99505d267f236bce575b",
+        "no_new_regression_claim": false,
+        "reported_annotation_comparison": "same31 reported annotation multiset; this does not establish absence of new regressions outside reported/truncated scope",
+        "reported_annotations": 31,
+        "triage": {
+          "bytes": 20754,
+          "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_comparator_resume/ci143-readonly-triage/TRIAGE.json",
+          "sha256": "0fb1baede52f89e68bd979b12c6d99c2dbfead9aeacfddf7ed43f2fa13c97dc5"
+        }
+      },
+      "checkpoint144": "unknown until actual published-head checks"
+    },
+    "checkpoint": 144,
+    "evidence": {
+      "controls_patch": {
+        "bytes": 9053,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/controls-final.patch",
+        "sha256": "75f1fe19d8b2274e2db59a7a02db2176663e89757570bd5ac0d403cb70613292"
+      },
+      "owner_final": {
+        "bytes": 12957,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/FINAL_DELIVERY.json",
+        "sha256": "f12f23b48bd94bf6db918d022169ebb757d0929342a9ff073c0424bc8aaa5ba0"
+      },
+      "peer_final_raw_audit": {
+        "bytes": 3647,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_generic_resume/root-universe143-independent-final-review/FINAL_AUDIT.json",
+        "sha256": "09ebd877e54ef6058e975569244cad6be964aba8eba55313a7f90ce94b9892b5"
+      },
+      "peer_source_memory_replay_and_raw_proof": {
+        "bytes": 32254,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_generic_resume/root-universe143-independent-final-review/VERIFIED_SOURCE_AND_RAW.json",
+        "sha256": "ce33f67743c1278a7c4556e801c0896d85a30747ede8525f3ba3dcae396f5021"
+      },
+      "production_patch": {
+        "bytes": 661,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/production-final.patch",
+        "sha256": "531d3e93495322add135c0bfd6acbee2dc99d962630d57082b4caefa2eb36df1"
+      },
+      "root_acceptance": {
+        "bytes": 573,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-public143-independent/evidence/ACCEPTANCE.json",
+        "sha256": "fabaade2db22f3cd61a8d39b82e0d5cac5bf37cf2d10c29861377430afa818ce"
+      },
+      "root_actual64records": {
+        "bytes": 26582,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-public143-independent/evidence/RECORDS.json",
+        "sha256": "f581d062808e33567d4db373d8288b9235484ca1ba60fead4a3794c99ee3bc33"
+      },
+      "root_compiled_registries": {
+        "bytes": 119897,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-public143-independent/evidence/COMPILED_REGISTRIES.json",
+        "sha256": "60ee6a53bb281e5d4adb282b7999018f1624f685159545e332710d16b9c49207"
+      },
+      "root_direct9wholepairs": {
+        "bytes": 3288,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-public143-independent/evidence/DIRECT_WHOLE_PAIRS.json",
+        "sha256": "d0225fd10dc76bfdf81e40654831f9402133c20aaab449b9695a55bf5719987a"
+      }
+    },
+    "fresh_acceptance": {
+      "actual_root_records": 64,
+      "all_record_child_runner_zero_noerror_nointerrupt_nottimeout_cleanup_clean": true,
+      "allpackages_default_campaign_compile_only": "PASS",
+      "compiler_parent_PASS_events": 26,
+      "direct_raw_JDK_whole_observations": 9,
+      "direct_raw_race_Go_whole_observations": 9,
+      "direct_seed_profile": "17/41/97 x3; unchanged4Java/two-package full application, exact whole stdout/stderr",
+      "lint": "golangci-lint2.14.0 default and campaign PASS",
+      "native_seeded_JDK_whole_observations_total": 9,
+      "native_seeded_count_explanation": "3 seeds per native parent x count3 =9 JDK and9 raceGo observations total, separate from direct raw9 pairs.",
+      "native_seeded_each_parent_observations": 3,
+      "native_seeded_parent_count": 3,
+      "native_seeded_raceGo_whole_observations_total": 9,
+      "performance_or_speed_claim": false,
+      "repeat_explanation": "The whole seeded parent runs count3; 24 unique parents therefore produce26 PASS events. No duplicate-parent coverage inflation.",
+      "runtime_registered_parents": 654,
+      "symbol_registered_parents": 17,
+      "unique_registered_compiler_parents_PASS": 24
+    },
+    "full_CI_accepted": false,
+    "full_round_accepted": false,
+    "goal_status": "ACTIVE",
+    "held": [
+      "Four original17Java applications retain strict PASS and two generated compile REDs each; no native application parity or repairs claimed.",
+      "Larger private root3884 composition is TERMINAL_FIRST_FOCUSED_RED/unaccepted:352 actual records351PASS+1RED;320 unique passing parents238compiler+82stdjava plus17 supplemental subcase gates x3. First failing attempt focused321 GenericIntermediateRemainsErased is not counted PASS or NOTRUN. Remaining402 default+1profile obligations and all full-suite/later gates NOTRUN.",
+      "All prior source-carrier/cancellation/close-order, readonly identity, US-ASCII/extra field/stale parent, generic metadata/dependency and platform held boundaries remain unchanged.",
+      "Full CI/full round/full genuine Netty remain unaccepted; fresh actualpublic143 Netty strict attempt timed out and does not establish a fresh FileChannel diagnostic or admission proof."
+    ],
+    "held_original17Java_applications": [
+      {
+        "name": "HierarchyMain",
+        "receipts": [
+          {
+            "bytes": 3719,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-HierarchyMain-strict/result.json",
+            "sha256": "24e223f528c8e3ebd6e6956a0ffe7a5c2b9d0dfbca01e0ba8162e8fc49a2e62e"
+          },
+          {
+            "bytes": 2430,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-HierarchyMain-allpackages-race/result.json",
+            "sha256": "b51a8a839b212cdb33c044ae641fb81714d59070292907f1113b17c6211ef083"
+          },
+          {
+            "bytes": 2778,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-HierarchyMain-entry-race/result.json",
+            "sha256": "6328dcc2e7a9cbd9281ce6157b155f8dbac65a44ebcbb2bc9ef8c56e11578c38"
+          }
+        ],
+        "status": "HELD_STRICT_GREEN_TWO_GENERATED_BUILD_REDS_NO_NATIVE"
+      },
+      {
+        "name": "InternalFailureMain",
+        "receipts": [
+          {
+            "bytes": 3755,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-InternalFailureMain-strict/result.json",
+            "sha256": "d048ce2e23738652c7006f7a6a97b245ddff1a72c2c874691bea5b9697122289"
+          },
+          {
+            "bytes": 2454,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-InternalFailureMain-allpackages-race/result.json",
+            "sha256": "b256b0899231c85467d9046712da82579d6a8a4ced09fd55d1d4c7e5de6593c2"
+          },
+          {
+            "bytes": 2814,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-InternalFailureMain-entry-race/result.json",
+            "sha256": "4f8caf3a392561b8f1aff8df9dc26559d25dddfea45c27464049558ecfe90d8b"
+          }
+        ],
+        "status": "HELD_STRICT_GREEN_TWO_GENERATED_BUILD_REDS_NO_NATIVE"
+      },
+      {
+        "name": "NamespaceMain",
+        "receipts": [
+          {
+            "bytes": 3719,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-NamespaceMain-strict/result.json",
+            "sha256": "82ca347b766902b8576dcdc628202cdb82b4bd98731e4db9c27bbe4ad072eb3d"
+          },
+          {
+            "bytes": 2430,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-NamespaceMain-allpackages-race/result.json",
+            "sha256": "b71646d26b0617985ac547dfa9be286f462462208ac0178c6c20573e968c0f89"
+          },
+          {
+            "bytes": 2778,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-NamespaceMain-entry-race/result.json",
+            "sha256": "88e5e2ea504826de24f60b56a497f58eb890ac003c948e5305e9047cc4f7e8f4"
+          }
+        ],
+        "status": "HELD_STRICT_GREEN_TWO_GENERATED_BUILD_REDS_NO_NATIVE"
+      },
+      {
+        "name": "CheckedFailureMain",
+        "receipts": [
+          {
+            "bytes": 3749,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-CheckedFailureMain-strict/result.json",
+            "sha256": "a695780af6a8f3b30c4300ba917657031c77f7cbdb23eb124bcd0ea8472ae8e0"
+          },
+          {
+            "bytes": 2450,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-CheckedFailureMain-allpackages-race/result.json",
+            "sha256": "a468aac36b3c13e0a64634b091a97710b7eeb2ace3f62016541f5fea25f56cc7"
+          },
+          {
+            "bytes": 2808,
+            "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/evidence/original-CheckedFailureMain-entry-race/result.json",
+            "sha256": "99d46a956b2bc472be5ae770ff00d7df72b24c42cf676784fd42c898c4cdb5c8"
+          }
+        ],
+        "status": "HELD_STRICT_GREEN_TWO_GENERATED_BUILD_REDS_NO_NATIVE"
+      }
+    ],
+    "larger_private_composition": {
+      "actual_record_PASS": 351,
+      "actual_record_RED": 1,
+      "actual_records": 352,
+      "all_full_suite_and_later_gates": "NOTRUN; no acceptance transfer",
+      "compiler_parent_PASS": 238,
+      "failed_receipt": {
+        "bytes": 3292,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/3884-independent/focused-321-TestDirectOwnerOverrideBridgeRuntime_GenericIntermediateRemainsErased/result.json",
+        "sha256": "1d1a9c4b40ea6735a61d7b7909dd9d7aae4f4b0e42680ad200c490e32db6957a"
+      },
+      "failure": "Go compile generic intermediate raw SAM carrier: Base[*First] versus Base[Numbered]",
+      "failure_record": {
+        "bytes": 30768,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/3884-independent/FAILURE-focus.json",
+        "sha256": "1202c99abdba02ad08ac204662f8db1132626cc9a1540c455a7e0aaf63922338"
+      },
+      "first_failed_attempt": "focused-321-TestDirectOwnerOverrideBridgeRuntime_GenericIntermediateRemainsErased",
+      "members": 3884,
+      "next_owner": "syntax agent assigned baseline/source proposal; no repaired outcome inferred",
+      "remaining_default_obligations_NOTRUN": 402,
+      "remaining_tagged_profile_obligations_NOTRUN": 1,
+      "status": "TERMINAL_FIRST_FOCUSED_RED_UNACCEPTED",
+      "stdjava_parent_PASS": 82,
+      "supplemental_repeats_each": 3,
+      "supplemental_subcase_gates": 17,
+      "unique_parent_PASS": 320
+    },
+    "latest_accepted_round": 18,
+    "native_deadline_qualification": {
+      "actual_process_duration_seconds": 55.845364,
+      "native_test_deadline_seconds": 55,
+      "outer_supervisor_seconds": 65,
+      "receipt": {
+        "bytes": 3019,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/universe-public143-independent/evidence/native-TestPackageStaticFieldsUniverse141CompleteSeededJDK21/result.json",
+        "sha256": "851294dc70d057b26905937dec24233bb2af749d16d34bcec6eaa31cdb95d711"
+      },
+      "rounded_inner_parent_durations_seconds": [
+        20.27,
+        16.69,
+        17.84
+      ],
+      "rounded_inner_parent_sum_seconds": 54.8,
+      "scope": "Native55s/outer65s unchanged. Rounded inner PASS durations20.27+16.69+17.84=54.80 below55 by onlyabout0.20s. Outer55.845364 includes race exit grace. Actual run passed without timeout; no future timing guarantee, speed claim or deadline extension."
+    },
+    "nested_Go_qualification": {
+      "CPU2_race_p1_and_pinned_Go_hash_verified": true,
+      "actual89nested_invocation_records": true,
+      "explicit_mod_mod_overrides": 35,
+      "inherited_readonly_without_explicit_mod_override": 54,
+      "scope": "Existing generated-module tidy and explicit mod=mod remain. No universal readonly or89compiled-child claim."
+    },
+    "optimization_or_speed_claim": false,
+    "parent_revision": "d374a764cd36360e3e5f99505d267f236bce575b",
+    "scope": "Reserve Go universe bindings in the existing package static-field allocator, supplied by a pure go/types.Universe.Names helper. Java declaration naming and field identity remain driven by existing allocator. No runtime, ABI, source-method/class/type-binder/import/local allocator admission changes.",
+    "source_identity": {
+      "actual_public143_manifest": {
+        "bytes": 470544,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/143-arrays-publication/actual-source-manifest.json",
+        "sha256": "681213765e3b182274d6eeaace5527477a4ab8d91c678f836344fc47f0884a34"
+      },
+      "actual_public143_members": 3545,
+      "actual_published_manifest": "Root freezes actual committed map after publication; private3555 is before144tracking, proposed3556 is metadata overlay only and not forecast public revision.",
+      "allowed_root_publication_paths": [
+        "transpiler/go_predeclared_binding_names.go",
+        "transpiler/package_static_binding_names.go",
+        "transpiler/package_static_fields_universe141_test.go",
+        "transpiler/testdata/package_fields_universe141/oracles/seed-17.stdout",
+        "transpiler/testdata/package_fields_universe141/oracles/seed-41.stdout",
+        "transpiler/testdata/package_fields_universe141/oracles/seed-97.stdout",
+        "transpiler/testdata/package_fields_universe141/project/pom.xml",
+        "transpiler/testdata/package_fields_universe141/project/src/main/java/org/packagefields/app/Main.java",
+        "transpiler/testdata/package_fields_universe141/project/src/main/java/org/packagefields/app/Probe.java",
+        "transpiler/testdata/package_fields_universe141/project/src/main/java/org/packagefields/state/OtherFields.java",
+        "transpiler/testdata/package_fields_universe141/project/src/main/java/org/packagefields/state/Store.java",
+        "campaign-state.json",
+        "campaign/SOL_PROGRESS144.md"
+      ],
+      "private_verified_source_manifest": {
+        "bytes": 472060,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/go-predeclared-package-fields143-implementation/candidate-source-manifest.json",
+        "sha256": "dda3673d8d48c11616876200de3c4bb1f9637ec0a1577d2303213b5677764f62"
+      },
+      "private_verified_source_members": 3555,
+      "proposed_metadata_overlay_members": 3556
+    },
+    "status": "INDEPENDENT_UNIVERSE_SCOPED_PASS_SOURCE_PROPOSAL_READY_ROOT_PUBLICATION"
   },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",

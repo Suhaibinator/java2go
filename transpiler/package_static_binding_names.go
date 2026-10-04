@@ -46,6 +46,9 @@ func resolvePackageStaticFieldNames(pkg *symbol.PackageScope) {
 	for name := range goReservedFuncNames {
 		reserve(name)
 	}
+	for _, name := range goPredeclaredBindingNames() {
+		reserve(name)
+	}
 	for _, file := range pkg.Files {
 		if file == nil {
 			continue
