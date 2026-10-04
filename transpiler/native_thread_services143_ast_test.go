@@ -90,21 +90,59 @@ func TestNativeThreadServices143ParsedExecutionAndQualifierAST(t *testing.T) {
 
 func TestNativeThreadServices143RequiresCallerExecution(t *testing.T) {
 	for _, source := range []string{`class Probe{boolean run(Thread t){return t.isInterrupted();}}`, `class Probe{boolean run(){return Thread.interrupted();}}`, `class Probe{void run(){Thread.onSpinWait();}}`} {
-		helper := setupParseHelper(t, source)
-		ctx := helper.Ctx.Clone()
-		ctx.currentClass = resolveClassScopeByQualifiedName(ctx, "Probe")
-		ctx.localScope = ctx.currentClass.FindMethodByName("run", nil)
-		ctx.executionContextName = ""
-		invocation := findNode(ctx.localScope.DeclarationNode, "method_invocation")
-		expression := ParseExpr(invocation, helper.File.Source, ctx)
-		ast.Inspect(expression, func(node ast.Node) bool {
-			if call, ok := node.(*ast.CallExpr); ok {
-				if sel, ok := call.Fun.(*ast.SelectorExpr); ok && (sel.Sel.Name == "ThreadIsInterruptedExecution" || sel.Sel.Name == "ThreadInterruptedExecution" || sel.Sel.Name == "ThreadOnSpinWaitExecution") {
-					t.Fatal("missing caller Execution lowered to service")
+		for _, mode := range []struct {
+			name   string
+			strict bool
+		}{{"permissive", false}, {"strict", true}} {
+			t.Run(source+"/"+mode.name, func(t *testing.T) {
+				strictRoutingState(t)
+				setStrictMode(mode.strict)
+				helper := setupParseHelper(t, source)
+				ctx := helper.Ctx.Clone()
+				ctx.currentClass = resolveClassScopeByQualifiedName(ctx, "Probe")
+				ctx.localScope = ctx.currentClass.FindMethodByName("run", nil)
+				ctx.executionContextName = ""
+				invocation := findNode(ctx.localScope.DeclarationNode, "method_invocation")
+				want := Diagnostic{Kind: "intrinsic invocation", NodeType: "method_invocation", Message: invocation.Content(helper.File.Source), ClassName: ctx.className, Line: invocation.StartPoint().Row + 1}
+				var expression ast.Expr
+				var observed any
+				func() {
+					defer func() { observed = recover() }()
+					expression = ParseExpr(invocation, helper.File.Source, ctx)
+				}()
+				items := Diagnostics()
+				if len(items) != 1 || items[0] != want {
+					t.Fatalf("missing caller diagnostic=%+v, want exact %+v", items, want)
 				}
-			}
-			return true
-		})
+				if mode.strict {
+					failure, ok := observed.(strictModeError)
+					if !ok || failure.diagnostic != want || expression != nil {
+						t.Fatalf("strict missing-caller refusal=%T/%v expression=%T", observed, observed, expression)
+					}
+					return
+				}
+				if observed != nil || expression == nil {
+					t.Fatalf("permissive missing-caller result=%T panic=%v", expression, observed)
+				}
+				placeholders := 0
+				ast.Inspect(expression, func(node ast.Node) bool {
+					if call, ok := node.(*ast.CallExpr); ok {
+						if id, ok := call.Fun.(*ast.Ident); ok && id.Name == "panic" && len(call.Args) == 1 {
+							if lit, ok := call.Args[0].(*ast.BasicLit); ok && lit.Kind == token.STRING && strings.Contains(lit.Value, "unsupported intrinsic invocation") && strings.Contains(lit.Value, invocation.Content(helper.File.Source)) {
+								placeholders++
+							}
+						}
+						if sel, ok := call.Fun.(*ast.SelectorExpr); ok && (sel.Sel.Name == "ThreadIsInterruptedExecution" || sel.Sel.Name == "ThreadInterruptedExecution" || sel.Sel.Name == "ThreadOnSpinWaitExecution" || sel.Sel.Name == "NewExecution") {
+							t.Fatal("missing caller Execution lowered to service or manufactured token")
+						}
+					}
+					return true
+				})
+				if placeholders != 1 {
+					t.Fatalf("permissive unsupported placeholders=%d want1", placeholders)
+				}
+			})
+		}
 	}
 }
 
