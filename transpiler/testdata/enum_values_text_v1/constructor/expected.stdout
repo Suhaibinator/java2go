@@ -1,0 +1,3 @@
+message=Cannot invoke "[Lenumfrontier.ConstructorControl$$VALUES;.clone()" because "enumfrontier.ConstructorControl$$VALUES.$VALUES" is null
+references=true:true:true
+cleanup=1

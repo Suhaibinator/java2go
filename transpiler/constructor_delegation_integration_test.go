@@ -1,6 +1,9 @@
 package transpiler
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"strings"
 	"testing"
 )
@@ -62,18 +65,83 @@ public class ConstructorDelegationProgram {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if got := strings.Count(out, "new(delegationChain)"); got != 1 {
-		t.Fatalf("DelegationChain allocations = %d, want exactly one terminal allocation:\n%s", got, out)
+	generated, err := parser.ParseFile(token.NewFileSet(), "generated.go", out, 0)
+	if err != nil {
+		t.Fatalf("parse generated constructor code: %v", err)
+	}
+	countAllocations := func(body *ast.BlockStmt) int {
+		count := 0
+		ast.Inspect(body, func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok || len(call.Args) != 1 {
+				return true
+			}
+			function, ok := call.Fun.(*ast.Ident)
+			if !ok || function.Name != "new" {
+				return true
+			}
+			allocated, ok := call.Args[0].(*ast.Ident)
+			if ok && allocated.Name == "delegationChain" {
+				count++
+			}
+			return true
+		})
+		return count
+	}
+	constructorFunctions, constructorAllocations, cloneAllocations := 0, 0, 0
+	for _, declaration := range generated.Decls {
+		function, ok := declaration.(*ast.FuncDecl)
+		if !ok || function.Body == nil {
+			continue
+		}
+		if function.Recv == nil && strings.HasPrefix(function.Name.Name, "newDelegationChain") && function.Type.Results != nil && len(function.Type.Results.List) == 1 {
+			result, ok := function.Type.Results.List[0].Type.(*ast.StarExpr)
+			if !ok {
+				continue
+			}
+			resultType, ok := result.X.(*ast.Ident)
+			if ok && resultType.Name == "delegationChain" {
+				constructorFunctions++
+				constructorAllocations += countAllocations(function.Body)
+			}
+		}
+		if function.Name.Name == "Java2goCloneSubobject" && function.Recv != nil && len(function.Recv.List) == 1 {
+			receiver, ok := function.Recv.List[0].Type.(*ast.StarExpr)
+			if !ok {
+				continue
+			}
+			receiverType, ok := receiver.X.(*ast.Ident)
+			if ok && receiverType.Name == "delegationChain" {
+				cloneAllocations += countAllocations(function.Body)
+			}
+		}
+	}
+	if constructorFunctions == 0 {
+		t.Fatalf("no DelegationChain constructor functions found:\n%s", out)
+	}
+	if constructorAllocations != 1 {
+		t.Fatalf("DelegationChain constructor allocations = %d, want exactly one terminal allocation:\n%s", constructorAllocations, out)
+	}
+	if cloneAllocations != 1 {
+		t.Fatalf("DelegationChain clone allocations = %d, want exactly one clone allocation:\n%s", cloneAllocations, out)
 	}
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
 
 func TestConstructorDelegationRuntime(t *testing.T) {
 	const want = "base:leaf|field:long:leaf:short:zero|1"
-	if got := Run(); got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null, want nonnull expected UTF16 content")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() UTF16 = %v, want %q", units, want)
 	}
 }
 `)
@@ -120,12 +188,20 @@ public class ConstructorOverloadProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
 
 func TestConstructorOverloadRuntime(t *testing.T) {
 	const want = "string|long|string"
-	if got := Run(); got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null, want nonnull expected UTF16 content")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() UTF16 = %v, want %q", units, want)
 	}
 }
 `)
@@ -184,12 +260,20 @@ public class ConstructorAbruptProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
 
 func TestConstructorAbruptRuntime(t *testing.T) {
 	const want = "1011|caught:11"
-	if got := Run(); got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null, want nonnull expected UTF16 content")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() UTF16 = %v, want %q", units, want)
 	}
 }
 `)
@@ -237,12 +321,20 @@ public class GenericInnerDelegation<T> {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+ "slices"
+ "testing"
+ "unicode/utf16"
+)
 
 func TestGenericInnerConstructorDelegationRuntime(t *testing.T) {
 	const want = "outer:field:target:delegate:inner"
-	if got := Run(); got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run() returned null, want nonnull expected UTF16 content")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() UTF16 = %v, want %q", units, want)
 	}
 }
 `)

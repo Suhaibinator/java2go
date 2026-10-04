@@ -15,10 +15,17 @@ func assertGeneratedClassInitializationResult(t *testing.T, source, want string)
 	runGeneratedWithStdjava(t, out, fmt.Sprintf(`
 package main
 
-import "testing"
+import (
+	"testing"
+	"unicode/utf16"
+)
 
 func TestClassInitializationResult(t *testing.T) {
-	if got := Run(); got != %q {
+	reference := Run()
+	if reference == nil {
+		t.Fatal("Run() returned null")
+	}
+	if got := string(utf16.Decode(reference.UTF16Copy())); got != %q {
 		t.Fatalf("Run() = %%q, want %%q", got, %q)
 	}
 }
@@ -665,10 +672,17 @@ public class Application {
 	testPath := filepath.Join(moduleRoot, "app", "class_initialization_test.go")
 	if err := os.WriteFile(testPath, []byte(`package app
 
-import "testing"
+import (
+    "testing"
+    "unicode/utf16"
+)
 
 func TestCrossPackageClassInitialization(t *testing.T) {
-    if got := Run(); got != "G" {
+    reference := Run()
+    if reference == nil {
+        t.Fatal("Run() returned null")
+    }
+    if got := string(utf16.Decode(reference.UTF16Copy())); got != "G" {
         t.Fatalf("Run() = %q, want %q", got, "G")
     }
 }

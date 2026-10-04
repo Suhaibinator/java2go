@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -59,7 +60,7 @@ or to fix crashes with the symbol handling`,
 	flagSet.StringVar(&modulePath, "module", "generated", "Module path to use when creating go.mod")
 	flagSet.StringVar(&ignoredAnnotations, "exclude-annotations", "", "A comma-separated list of annotations to exclude from the final code generation")
 	flagSet.StringVar(&mavenRoot, "maven", "", "Convert a local Maven reactor (offline, source dependencies only)")
-	flagSet.StringVar(&mainClass, "main-class", "", "Fully qualified Java application main class for -maven")
+	flagSet.StringVar(&mainClass, "main-class", "", "Java application main class (qualified for named packages) for -maven")
 	flagSet.StringVar(&runtimeRoot, "runtime", "", "Local java2go repository providing stdjava for -maven")
 	flagSet.Var(&dependencySources, "dependency-source", "Map groupId:artifactId=/path/to/Maven/source/project (repeatable)")
 	if err := flagSet.Parse(args); err != nil {
@@ -138,8 +139,10 @@ or to fix crashes with the symbol handling`,
 	}
 
 	for _, file := range files {
-		if file.Ast == nil {
-			return errors.New("not all files have ASTs")
+		// Check the entire raw input inventory before registering symbols or
+		// writing output. Metadata units are valid inputs, not missing classes.
+		if _, err := classifyCompilationUnit(file); err != nil {
+			return err
 		}
 	}
 
@@ -153,15 +156,12 @@ or to fix crashes with the symbol handling`,
 	if symbolAware {
 		log.Info("Generating symbol tables...")
 
-		for index, file := range files {
-			if file.Ast.HasError() {
-				log.WithFields(log.Fields{
-					"fileName": file.Name,
-				}).Warn("AST parse error in file, skipping file")
-				continue
-			}
-
+		for index := range files {
 			symbols := files[index].ParseSymbols()
+			unit, _ := classifyCompilationUnit(files[index])
+			if unit.packageMetadata {
+				symbols.Package = unit.packageName
+			}
 			// Add the symbols to the global symbol table
 			symbol.AddSymbolsToPackage(symbols)
 		}
@@ -170,11 +170,13 @@ or to fix crashes with the symbol handling`,
 
 		log.Info("Resolving symbols...")
 
+		var resolvingFiles []parsing.SourceFile
 		for _, file := range files {
-			if !file.Ast.HasError() {
-				ResolveFile(file)
+			if file.Symbols.BaseClass != nil {
+				resolvingFiles = append(resolvingFiles, file)
 			}
 		}
+		ResolveFiles(resolvingFiles)
 	}
 
 	if projectMode {
@@ -185,6 +187,9 @@ or to fix crashes with the symbol handling`,
 
 	log.Info("Converting files...")
 
+	// Resolution is complete. This conversion batch owns source syntax facts;
+	// per-file contexts still own their binders, target lookup and family audit.
+	sourceInventory := &callableSubclassSourceInventory{}
 	for _, file := range files {
 		if dryRun {
 			log.Infof("Not converting file \"%s\"", file.Name)
@@ -212,7 +217,7 @@ or to fix crashes with the symbol handling`,
 		}
 
 		// The converted AST, in Go's AST representation
-		initialContext := Ctx{projectMode: projectMode}
+		initialContext := Ctx{projectMode: projectMode, genericFamilies: &genericFamilyAnalysis{}, callableSubclasses: sourceInventory}
 		if symbolAware {
 			initialContext.currentFile = file.Symbols
 			initialContext.currentClass = file.Symbols.BaseClass
@@ -256,6 +261,20 @@ or to fix crashes with the symbol handling`,
 // strict mode an unsupported construct panics with a strictModeError, which this
 // function recovers into a returned error to restore fail-fast behavior.
 func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error) {
+	// A supplied inventory belongs to the caller's resolved conversion batch.
+	// Standalone renders retain fresh structural facts for this one file.
+	if ctx.callableSubclasses == nil {
+		ctx.callableSubclasses = &callableSubclassSourceInventory{}
+	}
+	// Fresh lookup contexts can reuse positive declaration ownership during
+	// this serial render without retaining any lexical resolution decisions.
+	previousIndex := activeResolutionFiles
+	activeResolutionFiles = sourceOwnershipIndex(ctx)
+	defer func() { activeResolutionFiles = previousIndex }()
+	// Fresh contexts may share syntax tuples during this serial conversion only.
+	previousImports := activeImportSourceInventory
+	activeImportSourceInventory = resolvedSourceInventory(ctx)
+	defer func() { activeImportSourceInventory = previousImports }()
 	defer func() {
 		if r := recover(); r != nil {
 			if strictErr, ok := r.(strictModeError); ok {
@@ -266,7 +285,15 @@ func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error
 		}
 	}()
 
+	unit, err := classifyCompilationUnit(file)
+	if err != nil {
+		return nil, err
+	}
+	if unit.packageMetadata {
+		return packageMetadataGoFile(file, unit, ctx), nil
+	}
 	node = ParseNode(file.Ast, file.Source, ctx).(ast.Node)
+	validateGeneratedExpressions(node, ctx)
 	return node, nil
 }
 
@@ -327,8 +354,23 @@ func bestInputRootForFile(fileName string, inputRoots []string) string {
 	return best
 }
 
+// goSourceBasename maps original Java unit filenames at one emission boundary.
+// File naming is independent of Java class/member visibility and identity.
+// Escape the entire UTF-8 stem, including the reserved escape namespace, so a
+// legal Java filename that resembles an encoded filename cannot overwrite it.
+// Hex endings cannot introduce Go's _test or platform filename suffixes.
+func goSourceBasename(name string) string {
+	const prefix = "java2goSource_"
+	stem := strings.TrimSuffix(filepath.Base(name), filepath.Ext(name))
+	if strings.Contains(stem, "$") || strings.HasPrefix(stem, "_") || strings.HasPrefix(stem, ".") ||
+		strings.HasPrefix(strings.ToLower(stem), strings.ToLower(prefix)) {
+		stem = prefix + hex.EncodeToString([]byte(stem))
+	}
+	return stem + ".go"
+}
+
 func outputRelativePath(file parsing.SourceFile, inputRoots []string, modulePath string) string {
-	baseFile := strings.TrimSuffix(filepath.Base(file.Name), filepath.Ext(file.Name)) + ".go"
+	baseFile := goSourceBasename(file.Name)
 
 	if file.Symbols != nil {
 		if packageSuffix, ok := packageRelativeToModule(file.Symbols.Package, modulePath); ok {
@@ -343,12 +385,12 @@ func outputRelativePath(file parsing.SourceFile, inputRoots []string, modulePath
 		absFile, err := filepath.Abs(file.Name)
 		if err == nil {
 			if rel, err := filepath.Rel(root, absFile); err == nil {
-				return strings.TrimSuffix(rel, filepath.Ext(rel)) + ".go"
+				return filepath.Join(filepath.Dir(rel), baseFile)
 			}
 		}
 	}
 
-	fallback := strings.TrimSuffix(filepath.Clean(file.Name), filepath.Ext(file.Name)) + ".go"
+	fallback := filepath.Join(filepath.Dir(filepath.Clean(file.Name)), baseFile)
 	// Avoid absolute paths under output directory in fallback.
 	fallback = strings.TrimPrefix(fallback, filepath.VolumeName(fallback))
 	fallback = strings.TrimPrefix(fallback, string(filepath.Separator))

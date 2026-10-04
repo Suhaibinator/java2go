@@ -1,0 +1,5 @@
+literal=true
+new=distinct:true:equal:true
+alias=true:intern=true:chars=true:null=true
+map=true:null-key=true:size=2
+effect=created:3:once:true:fresh-compare:false

@@ -494,8 +494,8 @@ public class Box<T> {
 		}
 		output := buf.String()
 
-		// Diamond operator should result in type inference - the call should include [String]
-		if !strings.Contains(output, "[String]") && !strings.Contains(output, "[string]") {
+		// Diamond operator should result in type inference - the call should include the canonical String type argument
+		if !strings.Contains(output, "NewBoxJava2goExecution[*stdjava.JavaString]") {
 			t.Errorf("Diamond operator should infer type arguments, got:\n%s", output)
 		}
 	})
@@ -608,7 +608,7 @@ public class Pair<K, V> {
 		}
 		output := buf.String()
 
-		if !strings.Contains(output, "NewPairJava2goExecution[string, *stdjava.Integer]") {
+		if !strings.Contains(output, "NewPairJava2goExecution[*stdjava.JavaString, *stdjava.Integer]") {
 			t.Errorf("Diamond operator should infer multiple type arguments, got:\n%s", output)
 		}
 	})

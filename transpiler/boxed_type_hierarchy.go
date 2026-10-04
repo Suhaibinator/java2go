@@ -14,6 +14,25 @@ func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
 		return scope.IsInterface
 	}
+	if owner, known := javaTime14Owner(base, ctx); known && owner == "java.time.ZoneId" {
+		return true
+	}
+	if isBuiltinEnum(javaType, ctx) {
+		return true
+	}
+	if nativeFunctionalFamily(javaType, ctx) != "" {
+		return true
+	}
+	if isBuiltinReflectType(javaType, ctx) {
+		return true
+	}
+	// util.Date is a Java class represented by the DateValue interface so its
+	// SQL subclasses can share the same erased field and method descriptor.
+	// Resolve the canonical owner: java.sql.Date and source Date classes remain
+	// concrete representations and must not inherit this classification.
+	if owner, ok := dateTimeRuntimeTypeID(base, ctx); ok && (owner == "java.util.Date" || owner == "java.text.DateFormat") {
+		return true
+	}
 	switch stripJavaQualifier(base) {
 	case "Number", "Comparable", "Serializable", "Cloneable", "Constable", "ConstantDesc", "CharSequence":
 		return true
@@ -38,6 +57,9 @@ func builtinJavaNumericReference(javaType string, ctx Ctx) bool {
 	if stripJavaQualifier(base) == "Number" && resolveClassScopeByQualifiedName(ctx, base) == nil {
 		return true
 	}
+	if _, ok := bigMathOwner(base, ctx); ok {
+		return true
+	}
 	primitive, wrapper := builtinJavaWrapperPrimitive(base, ctx)
 	return wrapper && primitive != "boolean" && primitive != "char"
 }
@@ -45,17 +67,65 @@ func builtinJavaNumericReference(javaType string, ctx Ctx) bool {
 // builtinJavaReferenceAssignable provides nominal library relationships that
 // are absent from the source-class symbol graph. Comparable<T> is invariant.
 func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
+	return builtinJavaReferenceAssignableWithTypeParameters(actual, expected, nil, ctx)
+}
+
+// Only invocation applicability may infer the candidate method's own binders.
+// Ordinary assignability and override checks keep invariant arguments.
+func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
+	if currencyReferenceAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
+	if nativeFunctionalAssignable(actual, expected, ctx) {
+		return true
+	}
+	if enumReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
+	if javaTimeReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
+	if dateTimeReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
 	if _, rank := javaArrayTypeParts(actual); rank != 0 {
 		return false
 	}
 	if _, rank := javaArrayTypeParts(expected); rank != 0 {
 		return false
 	}
+	if sourceCharSequenceAssignable(actual, expected, ctx) {
+		return true
+	}
+	if sourceAbstractCollectionAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
+	if sourceMapEntryAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
+	if characterIOReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
+	if builtinReflectTypeAssignable(actual, expected, ctx) {
+		return true
+	}
 	actualBase, _ := parseJavaTypeString(strings.TrimSpace(actual))
 	expectedBase, expectedArguments := parseJavaTypeString(strings.TrimSpace(expected))
+	if len(expectedArguments) == 0 && javaExceptionReferenceAssignable(actualBase, expectedBase, ctx) {
+		return true
+	}
+	if len(expectedArguments) == 0 && stripJavaQualifier(expectedBase) == "InputStream" && resolveClassScopeByQualifiedName(ctx, expectedBase) == nil && sourceInputStreamBase(resolveClassScopeByQualifiedName(ctx, actualBase), ctx) != "" {
+		return true
+	}
 	if resolveClassScopeByQualifiedName(ctx, expectedBase) != nil ||
 		resolveClassScopeByQualifiedName(ctx, actualBase) != nil {
 		return false
+	}
+	if builtinCollectionReferenceAssignable(actual, expected, candidateTypeParams) {
+		return true
+	}
+	if len(expectedArguments) == 0 && digestIOAssignable(actualBase, expectedBase) {
+		return true
 	}
 	primitive, wrapper := builtinJavaWrapperPrimitive(actualBase, ctx)
 	stringObject := stripJavaQualifier(actualBase) == "String"
@@ -68,7 +138,8 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 	case "Number":
 		return len(expectedArguments) == 0 && builtinJavaNumericReference(actual, ctx)
 	case "Comparable":
-		if !wrapper && !stringObject {
+		_, bigNumber := bigMathOwner(actualBase, ctx)
+		if !wrapper && !stringObject && !bigNumber {
 			return false
 		}
 		if len(expectedArguments) == 0 {
@@ -99,4 +170,30 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 		return len(expectedArguments) == 0 && stringObject
 	}
 	return false
+}
+
+// Runtime collection declarations retain their Java nominal ancestry even when
+// their Go implementations share an interface or a concrete container.
+func builtinCollectionReferenceAssignable(actual, expected string, candidateTypeParams []string) bool {
+	actualBase, actualArguments := parseJavaTypeString(actual)
+	expectedBase, expectedArguments := parseJavaTypeString(expected)
+	actualBase, expectedBase = stripJavaQualifier(actualBase), stripJavaQualifier(expectedBase)
+	parents := map[string][]string{
+		"Collection": {"Iterable"}, "List": {"Collection"}, "Set": {"Collection"},
+		"AbstractCollection": {"Collection"}, "Queue": {"Collection"}, "Deque": {"Queue"},
+		"ArrayDeque": {"AbstractCollection", "Deque"},
+		"ArrayList":  {"AbstractList"}, "LinkedList": {"List"}, "AbstractList": {"List"},
+		"HashSet": {"AbstractSet"}, "LinkedHashSet": {"HashSet"}, "TreeSet": {"Set"}, "AbstractSet": {"Set"},
+		"HashMap": {"AbstractMap"}, "LinkedHashMap": {"HashMap"}, "TreeMap": {"Map"}, "AbstractMap": {"Map"},
+	}
+	var reaches func(string) bool
+	reaches = func(current string) bool {
+		for _, parent := range parents[current] {
+			if parent == expectedBase || reaches(parent) {
+				return true
+			}
+		}
+		return false
+	}
+	return reaches(actualBase) && javaGenericArgumentsApplicable(actualArguments, expectedArguments, candidateTypeParams)
 }

@@ -32,3 +32,9 @@ func (s *Set[T]) String() string {
 	}
 	return "[" + strings.Join(parts, ", ") + "]"
 }
+
+// The existing backing allocation stores erased keys, including raw Java adds.
+func (s *Set[T]) collectionAdd(element any, execution *Execution) bool {
+	ReferenceRequireNonNull(s)
+	return javaReferenceIsNull(s.backing.PutObject(element, true, execution))
+}

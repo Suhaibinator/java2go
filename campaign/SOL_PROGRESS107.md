@@ -1,0 +1,7 @@
+# Milestone 107: canonical Class String and raw/diamond observations
+
+Two existing compiler tests now check the canonical JavaString representation. The Class String test retains its virtual-dispatch and caller Execution checks and compares a nonnull result losslessly against the original expected UTF16 content. The construction test retains raw erasure, updates literal representation, and adds a positive check for the inferred diamond type. All six embedded Java programs and the original expected result remain unchanged. Production code is unchanged.
+
+Fresh baseline execution reproduced both CI failures. The repaired focused tests passed, followed by 11 adjacent top-level tests and three subtests in normal and race runs. The coordinator independently rebuilt the matching source and reran those 14 race observations, including race instrumentation of generated fixture tests; no failures, skips, timeouts or surviving process groups occurred. Independent source review confirmed the exact two-file scope and preserved Java/expectations.
+
+Fresh raw evidence, source hashes and review records are retained under the ignored `.campaign/resume-20261002` directory. Earlier temporary evidence was cleared and is historical only. Full CI and the frozen dependency applications remain unaccepted; round18 is the latest full campaign acceptance. Sol-only repairs continue on the remaining runtime, compiler and dependency failures.

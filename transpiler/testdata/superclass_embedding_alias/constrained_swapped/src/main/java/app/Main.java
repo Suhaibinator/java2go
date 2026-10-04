@@ -1,0 +1,1 @@
+package app; public class Main {public static void main(String[] args){Leaf leaf=new Leaf(new p.Value(),"seed"); p.Base<p.Value,String> base=leaf; System.out.println(base.base()+":"+base.value.read()+":"+base.payload+":"+(base==leaf));}}

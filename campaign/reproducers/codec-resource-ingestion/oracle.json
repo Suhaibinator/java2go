@@ -1,0 +1,67 @@
+{
+  "runs": [
+    {
+      "exit_code": 0,
+      "repeat": 1,
+      "seed": 17,
+      "stderr": "",
+      "stdout": "seed=17\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    },
+    {
+      "exit_code": 0,
+      "repeat": 2,
+      "seed": 17,
+      "stderr": "",
+      "stdout": "seed=17\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    },
+    {
+      "exit_code": 0,
+      "repeat": 3,
+      "seed": 17,
+      "stderr": "",
+      "stdout": "seed=17\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    },
+    {
+      "exit_code": 0,
+      "repeat": 1,
+      "seed": 41,
+      "stderr": "",
+      "stdout": "seed=41\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    },
+    {
+      "exit_code": 0,
+      "repeat": 2,
+      "seed": 41,
+      "stderr": "",
+      "stdout": "seed=41\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    },
+    {
+      "exit_code": 0,
+      "repeat": 3,
+      "seed": 41,
+      "stderr": "",
+      "stdout": "seed=41\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    },
+    {
+      "exit_code": 0,
+      "repeat": 1,
+      "seed": 97,
+      "stderr": "",
+      "stdout": "seed=97\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    },
+    {
+      "exit_code": 0,
+      "repeat": 2,
+      "seed": 97,
+      "stderr": "",
+      "stdout": "seed=97\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    },
+    {
+      "exit_code": 0,
+      "repeat": 3,
+      "seed": 97,
+      "stderr": "",
+      "stdout": "seed=97\nbytes=3546:222613:366862468\nrelative=true\nmissing=true\n"
+    }
+  ]
+}

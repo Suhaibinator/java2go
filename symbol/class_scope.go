@@ -79,6 +79,13 @@ type EnumConstant struct {
 	Name      string
 	Arguments []*sitter.Node
 	Body      *sitter.Node
+	// Field retains the identity of the implicit public static final field.
+	// Name remains the Java spelling used by name(), valueOf and reflection.
+	Field *Definition
+}
+
+func (constant EnumConstant) EmittedName() string {
+	return constant.Field.Name
 }
 
 // IsTypeParameter checks if a given name is a type parameter of this class
@@ -254,6 +261,12 @@ func (cs *ClassScope) FindFieldByName(name string) *Definition {
 			return field
 		}
 	}
+	for index := range cs.EnumConstants {
+		constant := &cs.EnumConstants[index]
+		if constant.Name == name {
+			return constant.Field
+		}
+	}
 	return nil
 }
 
@@ -261,6 +274,12 @@ func (cs *ClassScope) FindFieldByDisplayName(name string) *Definition {
 	for _, field := range cs.Fields {
 		if field.Name == name {
 			return field
+		}
+	}
+	for index := range cs.EnumConstants {
+		constant := &cs.EnumConstants[index]
+		if constant.Field != nil && constant.Field.Name == name {
+			return constant.Field
 		}
 	}
 	return nil

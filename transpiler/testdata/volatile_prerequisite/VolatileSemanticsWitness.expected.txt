@@ -1,0 +1,8 @@
+zero|0|true|true
+init|4294967301
+alias|-9223372036854775801|true|true
+compound|12|12|14|14
+lost-update|1
+publication|73
+putfield-null-order|1
+getfield-null-order|1

@@ -1,0 +1,4 @@
+ctor|2|true|false
+access|java.lang.IllegalAccessException
+cause|java.lang.IllegalArgumentException|constructor rejected|true
+state|true|7|true

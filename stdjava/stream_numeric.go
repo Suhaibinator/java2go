@@ -1,6 +1,9 @@
 package stdjava
 
-import "math"
+import (
+	"math"
+	"reflect"
+)
 
 // This file implements the java.util.stream primitive-stream surface. IntStream,
 // LongStream and DoubleStream are modelled as Stream[int32], Stream[int64] and
@@ -113,11 +116,7 @@ func StreamOfArray[T any](array any) Stream[T] {
 	panic(NewIllegalArgumentException("Arrays.stream requires an array"))
 }
 
-// StringCharsStream returns a stream of the string's characters as ints,
-// matching String.chars. It reuses the existing rune view from StringChars, so
-// it inherits that function's documented approximation: Java yields one element
-// per UTF-16 code unit and this yields one per rune, which agree for BMP
-// characters.
+// StringCharsStream returns UTF-16 code units as ints, matching String.chars.
 func StringCharsStream(s string) Stream[int32] {
 	runes := StringChars(s)
 	out := make([]int32, len(runes))
@@ -147,11 +146,18 @@ func StreamSum[T JavaPrimitiveNumber](s Stream[T]) T {
 }
 
 // StreamAverage returns the arithmetic mean of a numeric stream, matching
-// IntStream.average. It is empty for an empty stream, and the sum is
-// accumulated in float64 to match Java, which averages in double.
+// IntStream.average. Integral streams accumulate in Java long arithmetic before
+// converting the total to double; floating streams retain floating arithmetic.
 func StreamAverage[T JavaPrimitiveNumber](s Stream[T]) Optional[float64] {
 	if len(s.elements) == 0 {
 		return Optional[float64]{}
+	}
+	if primitiveStreamIntegral[T]() {
+		var total int64
+		for _, e := range s.elements {
+			total += int64(e)
+		}
+		return OptionalOf(float64(total) / float64(len(s.elements)))
 	}
 	total := 0.0
 	for _, e := range s.elements {
@@ -187,20 +193,23 @@ func StreamAsDoubleStream[T JavaPrimitiveNumber](s Stream[T]) Stream[float64] {
 // double with infinite empty sentinels. One generic type carries all three, so
 // the element type decides what the accessors return.
 //
-// The sum is accumulated at the element's own width rather than in float64,
-// which would silently lose precision above 2^53 for a long stream.
+// Integral sums use a long accumulator, matching both IntSummaryStatistics and
+// LongSummaryStatistics. The element-width sum remains available to native Go
+// callers through the legacy GetSum accessor.
 type SummaryStatistics[T JavaPrimitiveNumber] struct {
-	count int64
-	sum   T
-	min   T
-	max   T
-	empty bool
+	count   int64
+	sum     T
+	longSum int64
+	min     T
+	max     T
+	empty   bool
 }
 
 // StreamSummaryStatistics collects count, sum, min and max in one pass,
 // matching IntStream.summaryStatistics.
 func StreamSummaryStatistics[T JavaPrimitiveNumber](s Stream[T]) *SummaryStatistics[T] {
 	stats := &SummaryStatistics[T]{empty: true}
+	integral := primitiveStreamIntegral[T]()
 	for _, e := range s.elements {
 		if stats.empty {
 			stats.min = e
@@ -216,6 +225,9 @@ func StreamSummaryStatistics[T JavaPrimitiveNumber](s Stream[T]) *SummaryStatist
 		}
 		stats.count++
 		stats.sum += e
+		if integral {
+			stats.longSum += int64(e)
+		}
 	}
 	return stats
 }
@@ -223,9 +235,12 @@ func StreamSummaryStatistics[T JavaPrimitiveNumber](s Stream[T]) *SummaryStatist
 // GetCount matches getCount on all three Java classes.
 func (s *SummaryStatistics[T]) GetCount() int64 { return s.count }
 
-// GetSum returns the sum at the element's own width. Java widens an int stream's
-// sum to long, which the transpiler reflects in the call's declared result type.
+// GetSum retains the native element-width API and serves double statistics.
+// Translated integral statistics use GetSumLong for Java's long result.
 func (s *SummaryStatistics[T]) GetSum() T { return s.sum }
+
+// GetSumLong reports the Java long accumulator for integral statistics.
+func (s *SummaryStatistics[T]) GetSumLong() int64 { return s.longSum }
 
 // GetMin and GetMax report Java's empty-stream sentinels: the element type's
 // extremes, which for a double stream are the infinities.
@@ -249,7 +264,20 @@ func (s *SummaryStatistics[T]) GetAverage() float64 {
 	if s.count == 0 {
 		return 0
 	}
+	if primitiveStreamIntegral[T]() {
+		return float64(s.longSum) / float64(s.count)
+	}
 	return float64(s.sum) / float64(s.count)
+}
+
+// Kind detects defined aliases as well as the concrete primitive types in the
+// numeric constraint; a type switch on a zero value would miss those aliases.
+func primitiveStreamIntegral[T JavaPrimitiveNumber]() bool {
+	switch reflect.TypeFor[T]().Kind() {
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	}
+	return false
 }
 
 // summaryEmptyMin and summaryEmptyMax return the sentinel Java reports for an

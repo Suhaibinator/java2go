@@ -477,6 +477,9 @@ func TestShortName(t *testing.T) {
 		{"Test", "tt"},
 		{"Box", "bx"},
 		{"LinkedList", "lt"},
+		{"Gizmo", "go_"},
+		{"If", "if_"},
+		{"ΔeltaΩ", "δω"},
 		{"A", "aa"},
 		{"", ""},
 	}

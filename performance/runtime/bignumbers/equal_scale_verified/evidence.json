@@ -1,0 +1,209 @@
+{
+  "scope": "Allocation improvement versus frozen Go baseline only; no CPU or JVM speed claim",
+  "baseline_manifest_sha256": "cfa1862b593ccf1a4ed25e39cbcb2b57a16a5ab0c87904e4ccac3f9f29ae1d44",
+  "baseline_bigdecimal_sha256": "27aeed236c7bf15ce6d70c3e1103aec7177b31ce510745677365b19c62ad93bf",
+  "candidate_bigdecimal_sha256": "c6668f2f009f575491c06b3556b02a424e5405028786c641f738ab8473cff2f6",
+  "patch_sha256": "a168cd860e01f3f3545bc5c71975626dbf0b161ada7f13abc72a6d66ac17a9be",
+  "measured_source_hashes": {
+    "source/DecimalCompareProbe.java": "54658040c6ba6a9d4b24b7f0545f4c299845b5f550960fccb4735cbeefd1675a",
+    "harness/DecimalCompareDriver.java": "f8a5eb31d40dfe5f6fc336dc91f137b2aeb850ed55529f12cee2f013d8619916",
+    "harness/allocation_test.go.txt": "b677f7efd09cb71283d45ed4893163948f0d6bcdfa565e186d1aa587182a8ec9",
+    "harness/driver.go.txt": "2e733639022fcbf6aff2cc26151cd5023f7cc127b5b20016efd86b44a77e57f0",
+    "harness/regression_test.go.txt": "cccf16f4b88c71a07e60ceb7c709518eb2545e5a5976105d1fd06fdbf5c574c0"
+  },
+  "generated_hashes": {
+    "DecimalCompareProbe.go": "a7e032c1553645a942445e1174e78b3a88cce94ff1a60ec40bd8c54d80f32a01"
+  },
+  "configuration": {
+    "LANG": "en_US.UTF-8",
+    "LC_ALL": "en_US.UTF-8",
+    "JAVA_HOME": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+    "JDK": "21.0.6",
+    "GOMAXPROCS": "2",
+    "GOMEMLIMIT": "256MiB",
+    "GOGC": "100",
+    "GOCACHE": "/private/tmp/java2go-campaign-go-cache",
+    "TMPDIR": "/private/tmp",
+    "TZ": "UTC",
+    "jvm_flags": [
+      "-XX:+UseSerialGC",
+      "-XX:ActiveProcessorCount=2",
+      "-Xms32m",
+      "-Xmx256m"
+    ]
+  },
+  "runtime_guard": {
+    "baseline_allocations": 6,
+    "candidate_allocations": 0,
+    "allocs_per_run_iterations": 100
+  },
+  "workload": {
+    "seed": 97,
+    "pairs": 128,
+    "repeats": [
+      1,
+      8
+    ],
+    "modes": [
+      0,
+      1,
+      2
+    ],
+    "fresh_trials_per_variant": 3,
+    "allocs_per_run_iterations": 16,
+    "observations": {
+      "baseline": [
+        [
+          "mode=0 repeats=1 allocs=480 checksum=886",
+          "mode=0 repeats=8 allocs=3840 checksum=7088",
+          "mode=1 repeats=1 allocs=1200 checksum=886",
+          "mode=1 repeats=8 allocs=9602 checksum=7088",
+          "mode=2 repeats=1 allocs=480 checksum=4210",
+          "mode=2 repeats=8 allocs=3840 checksum=33680"
+        ],
+        [
+          "mode=0 repeats=1 allocs=480 checksum=886",
+          "mode=0 repeats=8 allocs=3840 checksum=7088",
+          "mode=1 repeats=1 allocs=1200 checksum=886",
+          "mode=1 repeats=8 allocs=9602 checksum=7088",
+          "mode=2 repeats=1 allocs=480 checksum=4210",
+          "mode=2 repeats=8 allocs=3840 checksum=33680"
+        ],
+        [
+          "mode=0 repeats=1 allocs=480 checksum=886",
+          "mode=0 repeats=8 allocs=3840 checksum=7088",
+          "mode=1 repeats=1 allocs=1200 checksum=886",
+          "mode=1 repeats=8 allocs=9602 checksum=7088",
+          "mode=2 repeats=1 allocs=480 checksum=4210",
+          "mode=2 repeats=8 allocs=3840 checksum=33680"
+        ]
+      ],
+      "candidate": [
+        [
+          "mode=0 repeats=1 allocs=0 checksum=886",
+          "mode=0 repeats=8 allocs=0 checksum=7088",
+          "mode=1 repeats=1 allocs=0 checksum=886",
+          "mode=1 repeats=8 allocs=0 checksum=7088",
+          "mode=2 repeats=1 allocs=224 checksum=4210",
+          "mode=2 repeats=8 allocs=1792 checksum=33680"
+        ],
+        [
+          "mode=0 repeats=1 allocs=0 checksum=886",
+          "mode=0 repeats=8 allocs=0 checksum=7088",
+          "mode=1 repeats=1 allocs=0 checksum=886",
+          "mode=1 repeats=8 allocs=0 checksum=7088",
+          "mode=2 repeats=1 allocs=224 checksum=4210",
+          "mode=2 repeats=8 allocs=1792 checksum=33680"
+        ],
+        [
+          "mode=0 repeats=1 allocs=0 checksum=886",
+          "mode=0 repeats=8 allocs=0 checksum=7088",
+          "mode=1 repeats=1 allocs=0 checksum=886",
+          "mode=1 repeats=8 allocs=0 checksum=7088",
+          "mode=2 repeats=1 allocs=224 checksum=4210",
+          "mode=2 repeats=8 allocs=1792 checksum=33680"
+        ]
+      ]
+    }
+  },
+  "semantic": {
+    "seeds": [
+      17,
+      97,
+      65537
+    ],
+    "modes": [
+      0,
+      1,
+      2
+    ],
+    "pairs": 128,
+    "repeats": 8,
+    "fresh_workload_processes": 27,
+    "jvm_groups_per_variant": 6,
+    "runtime_suite_per_variant": true,
+    "race_suite_per_variant": true,
+    "parity": [
+      {
+        "seed": 17,
+        "mode": 0,
+        "stdout_sha256": "319e8b2baa3ef39d00d1fe9d2a2b219bbe4e1b7200e92ee72544076bc755d8ba",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "seed": 17,
+        "mode": 1,
+        "stdout_sha256": "319e8b2baa3ef39d00d1fe9d2a2b219bbe4e1b7200e92ee72544076bc755d8ba",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "seed": 17,
+        "mode": 2,
+        "stdout_sha256": "6ceaeaef9521c1e039236802ef2a401fa971049aec7b69d92783e8b53b0dbbe8",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "seed": 97,
+        "mode": 0,
+        "stdout_sha256": "908bc7ecc85aa845b42a0375d0b343136c8ba0a6dfcefe4c8ea54ca775d5a613",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "seed": 97,
+        "mode": 1,
+        "stdout_sha256": "908bc7ecc85aa845b42a0375d0b343136c8ba0a6dfcefe4c8ea54ca775d5a613",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "seed": 97,
+        "mode": 2,
+        "stdout_sha256": "bea10c5409d9f3461af29601c5391b9888e95ad2e081a45ac9b06c77715c4d44",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "seed": 65537,
+        "mode": 0,
+        "stdout_sha256": "38045549b4fa31d6badb6a67fbd3ee0462470343d4be3614c174ba9eef4b0d95",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "seed": 65537,
+        "mode": 1,
+        "stdout_sha256": "38045549b4fa31d6badb6a67fbd3ee0462470343d4be3614c174ba9eef4b0d95",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "seed": 65537,
+        "mode": 2,
+        "stdout_sha256": "85d10723d84dd0cbdbf56e19907fa4dab013f136208509e5af0527a8c850bce5",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "before_after_source_file_count": 1251
+  },
+  "retained_failures": [
+    {
+      "kind": "infrastructure",
+      "stage": "baseline race build",
+      "detail": "Home Go build-cache permission denied; retried with explicit writable campaign cache."
+    },
+    {
+      "kind": "pre-existing compatibility limitation",
+      "stage": "C-locale BigIntegerParsing JVM oracle",
+      "jdk_stdout_fragment": "NumberFormatException:For input string: \"?\"",
+      "go_stdout_fragment": "NumberFormatException:For input string: \"\ud835\udfd9\"",
+      "jdk_C_properties": {
+        "file.encoding": "UTF-8",
+        "native.encoding": "US-ASCII",
+        "stdout.encoding": "US-ASCII",
+        "stderr.encoding": "US-ASCII"
+      },
+      "jdk_UTF8_properties": {
+        "file.encoding": "UTF-8",
+        "native.encoding": "UTF-8",
+        "stdout.encoding": "UTF-8",
+        "stderr.encoding": "UTF-8"
+      }
+    }
+  ]
+}

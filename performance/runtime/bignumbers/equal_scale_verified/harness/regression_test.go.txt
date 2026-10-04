@@ -1,0 +1,31 @@
+package stdjava
+import("testing";"math")
+var decimalCompareSink int32
+func TestEqualScaleCandidateAllocation(t *testing.T){
+ a:=NewBigDecimal("123456789012345678901234567890.00")
+ b:=NewBigDecimal("123456789012345678901234567891.00")
+ if got:=testing.AllocsPerRun(100,func(){decimalCompareSink=a.CompareTo(b)});got!=0{t.Fatalf("equal-scale compare allocated %g, want zero",got)}
+ if decimalCompareSink!=-1{t.Fatal("incorrect result")}
+}
+func TestEqualScaleCandidateExtremeScaleAndImmutability(t *testing.T){
+ for _,scale:=range []int32{math.MinInt32,math.MinInt32+1,-1,0,1,math.MaxInt32}{
+  for _,coefficient:=range []string{"-123456789012345678901234567890","-2","0","2","123456789012345678901234567890"}{
+   a:=NewBigDecimal(coefficient);b:=NewBigDecimal(coefficient)
+   // Direct setup covers legal internal scale endpoints that the bounded
+   // generated constructor surface cannot necessarily express from text.
+   a.scale=scale;b.scale=scale
+   before:=a.coefficient.String();hash:=a.HashCode()
+   if a==b||!a.Equals(b)||a.CompareTo(b)!=0{t.Fatal("equal value changed reference/equality semantics")}
+   if a.scale!=scale||a.coefficient.String()!=before||a.HashCode()!=hash{t.Fatal("receiver mutated")}
+   if b.scale!=scale||b.coefficient.String()!=before{t.Fatal("argument mutated")}
+  }
+ }
+ a:=NewBigDecimal("2.0");b:=NewBigDecimal("2.00")
+ if a.CompareTo(b)!=0||a.Equals(b){t.Fatal("different-scale fallback changed")}
+}
+func TestEqualScaleCandidateNulls(t *testing.T){
+ a:=NewBigDecimal("1.00")
+ for _,pair:=range [][2]*BigDecimal{{nil,a},{a,nil},{nil,nil}}{
+  func(){defer func(){if p:=recover();!CaughtAs(p,"NullPointerException"){t.Fatalf("null compare panic %T %v",p,p)}}();pair[0].CompareTo(pair[1])}()
+ }
+}

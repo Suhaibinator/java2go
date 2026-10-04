@@ -148,7 +148,7 @@ func prepareAffineArrayRowLoop(node *sitter.Node, source []byte, ctx Ctx) (Ctx, 
 			continue
 		}
 		argsNode := candidate.node.ChildByFieldName("arguments")
-		args := nodeutil.NamedChildrenOf(argsNode)
+		args := nodeutil.SemanticNamedChildrenOf(argsNode)
 		if candidate.accessor.RowParameter < 0 || candidate.accessor.RowParameter >= len(args) || candidate.accessor.ColumnParameter < 0 || candidate.accessor.ColumnParameter >= len(args) {
 			continue
 		}
@@ -438,7 +438,7 @@ func matchAffineBlockedLimit(node *sitter.Node, blockName string, source []byte)
 	if object == nil || object.Content(source) != "Math" || name == nil || name.Content(source) != "min" {
 		return nil, nil, false
 	}
-	args := nodeutil.NamedChildrenOf(node.ChildByFieldName("arguments"))
+	args := nodeutil.SemanticNamedChildrenOf(node.ChildByFieldName("arguments"))
 	if len(args) != 2 {
 		return nil, nil, false
 	}
@@ -825,7 +825,7 @@ func affineRowClassDeclaresPackageIdent(class *symbol.ClassScope, name string) b
 		}
 	}
 	for _, constant := range class.EnumConstants {
-		if sanitizeGoIdent(constant.Name) == name {
+		if sanitizeGoIdent(constant.EmittedName()) == name {
 			return true
 		}
 	}
@@ -990,8 +990,8 @@ func lowerAffineArrayRowLoop(
 	fallbackCtx.localScope = cloneLocalScopeDefinition(baseCtx.localScope)
 	fallbackCtx.suppressUnsupportedDiagnostics = true
 
-	specializedBody := ParseStmt(bodyNode, source, rowCtx).(*ast.BlockStmt)
-	fallbackBody := ParseStmt(bodyNode, source, fallbackCtx).(*ast.BlockStmt)
+	specializedBody := parseLoopBody(bodyNode, source, rowCtx)
+	fallbackBody := parseLoopBody(bodyNode, source, fallbackCtx)
 
 	if initNode := node.ChildByFieldName("init"); initNode != nil && initNode.Type() == "local_variable_declaration" {
 		fallbackBody.List = append(unusedLocalDiscardStatements(ordinaryInit, node, source), fallbackBody.List...)

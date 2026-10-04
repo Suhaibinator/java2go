@@ -45,7 +45,11 @@ func identifierHasValueBinding(name string, ctx Ctx) bool {
 	if ctx.currentClass != nil && findFieldInHierarchy(ctx.currentClass, name, ctx) != nil {
 		return true
 	}
-	return false
+	// Imported fields share Java's value namespace with lexical fields. When
+	// one import also introduces a member type, the value must still be
+	// evaluated as a qualifier so its declaring class initialization runs.
+	imported := resolveStaticImportedField(name, ctx)
+	return imported.source != nil || staticFieldIntrinsics[imported.intrinsic] != nil || imported.problem != ""
 }
 
 func identifierHasLocalBinding(name string, ctx Ctx) bool {
@@ -73,6 +77,18 @@ func staticFieldQualifierScope(node *sitter.Node, source []byte, ctx Ctx) (scope
 		if resolved := resolveClassScopeByQualifiedName(ctx, node.Content(source)); resolved != nil {
 			return resolved, true
 		}
+	case "field_access":
+		// Dotted source member types are field_access nodes in expression
+		// grammar. Resolve their declaration before treating the path as a
+		// value expression, whose evaluation and side effects must be kept.
+		_, root := qualifiedReceiverName(node, source)
+		imported := resolveStaticImportedField(root, ctx)
+		_, bound := resolveReferenceTypeParameter(symbol.JavaType{Original: root}, ctx)
+		if !bound && imported.source == nil && staticFieldIntrinsics[imported.intrinsic] == nil && imported.problem == "" {
+			if resolved := qualifiedSourceClassReceiver(ctx, source, node); resolved != nil {
+				return resolved, true
+			}
+		}
 	}
 
 	javaType, ok := inferExprJavaType(node, ctx, source)
@@ -94,20 +110,11 @@ func resolveStaticFieldAccess(node *sitter.Node, source []byte, ctx Ctx) (*stati
 	switch node.Type() {
 	case "identifier":
 		name := node.Content(source)
-		if identifierHasLocalBinding(name, ctx) {
+		resolution := resolveUnqualifiedStaticField(name, ctx)
+		if resolution == nil {
 			return nil, false
 		}
-		for scope := ctx.currentClass; scope != nil; scope = scope.Enclosing {
-			resolution := findFieldResolutionInHierarchy(scope, name, ctx)
-			if resolution == nil {
-				continue
-			}
-			if !resolution.def.IsStatic {
-				return nil, false
-			}
-			return &staticFieldAccess{resolution: resolution}, true
-		}
-		return nil, false
+		return &staticFieldAccess{resolution: resolution}, true
 
 	case "field_access":
 		objectNode := node.ChildByFieldName("object")
@@ -134,11 +141,15 @@ func staticFieldStorageExpr(access *staticFieldAccess, ctx Ctx) ast.Expr {
 	if access == nil || access.resolution == nil || access.resolution.def == nil {
 		return &ast.BadExpr{}
 	}
-	return qualifiedNameExpr(
+	storage := qualifiedNameExpr(
 		access.resolution.def.Name,
 		findJavaPackageForClassScope(access.resolution.owner),
 		ctx,
 	)
+	if _, samePackage := storage.(*ast.Ident); samePackage && staticFieldStorageShadowed(access.resolution.def, ctx) {
+		return &ast.StarExpr{X: &ast.CallExpr{Fun: ast.NewIdent(staticFieldStorageHelperName(access.resolution.def, access.resolution.owner))}}
+	}
+	return storage
 }
 
 func staticFieldValueType(access *staticFieldAccess, ctx Ctx) ast.Expr {
@@ -224,12 +235,10 @@ func typedLocalDeclaration(name string, typeExpr, value ast.Expr) ast.Stmt {
 // and getstatic. A simple write initializes only after its RHS has completed;
 // a compound write initializes and captures the old value before its RHS.
 func lowerStaticFieldAssignment(node *sitter.Node, source []byte, ctx Ctx) (ast.Expr, bool) {
-	if node == nil || node.Type() != "assignment_expression" || node.ChildCount() < 3 {
+	lhsNode, opNode, rhsNode, valid := assignmentExpressionNodes(node, source)
+	if !valid {
 		return nil, false
 	}
-	lhsNode := node.Child(0)
-	opNode := node.Child(1)
-	rhsNode := node.Child(2)
 	access, ok := resolveStaticFieldAccess(lhsNode, source, ctx)
 	if !ok || opNode == nil || rhsNode == nil {
 		return nil, false

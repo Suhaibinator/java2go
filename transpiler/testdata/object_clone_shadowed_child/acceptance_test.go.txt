@@ -1,0 +1,62 @@
+package transpiler
+
+import "testing"
+
+// Class, method and local T declarations retain distinct Go aliases in clone
+// receiver/allocation types. Captures stay shallow; most-derived self is rewired.
+func TestObjectCloneShadowedLocalAliasesStrictJVM(t *testing.T) {
+	files := map[string]string{"pom.xml": `<project><groupId>clonealias</groupId><artifactId>clonealias</artifactId><version>1</version></project>`, "src/main/java/clonealias/Main.java": `package clonealias;
+interface ClassMark { int classCode(); }
+interface MethodMark { int methodCode(); }
+interface LocalMark { int localCode(); }
+class ClassValue implements ClassMark {
+ final int value; ClassValue(int value) { this.value=value; }
+ public int classCode() { return value; }
+}
+class MethodValue implements MethodMark {
+ final int value; MethodValue(int value) { this.value=value; }
+ public int methodCode() { return value; }
+}
+class LocalValue implements LocalMark {
+ final int value; LocalValue(int value) { this.value=value; }
+ public int localCode() { return value; }
+}
+class Outer<T extends ClassMark> {
+ final T classValue;
+ Outer(T value) { classValue=value; }
+ <T extends MethodMark> String probe(T methodValue) throws CloneNotSupportedException {
+  final int[] capture={5};
+  class Local<T extends LocalMark> implements java.lang.Cloneable {
+   final T localValue;
+   final Object shared;
+   final Local<T> originalSelf=this;
+   volatile int cell=3;
+   int own=1;
+   Local(T value,Object shared) { Main.constructions++; localValue=value; this.shared=shared; }
+   Local<T> copy() throws CloneNotSupportedException { return (Local<T>)super.clone(); }
+   boolean retains(Local<T> source) { return localValue==source.localValue && shared==source.shared && originalSelf==source; }
+   int read() { return classValue.classCode()*100+methodValue.methodCode()*10+localValue.localCode()+capture[0]+own; }
+  }
+  class Child extends Local<LocalValue> {
+   int child=7;
+   Child(LocalValue value,Object shared) { super(value,shared); }
+   int read() { return super.read()+child; }
+  }
+  Child source=new Child(new LocalValue(4),classValue);
+  Local<LocalValue> copy=source.copy();
+  boolean faithful=copy!=source && copy instanceof Child && copy.getClass()==source.getClass() && copy.retains(source) && Main.constructions==1;
+  ((Child)copy).child=9; copy.own=2; copy.cell=8; capture[0]=6;
+  synchronized(source) { System.out.println(Thread.holdsLock(source)+":"+Thread.holdsLock(copy)); }
+  return faithful+":"+source.read()+":"+copy.read()+":"+source.cell+":"+copy.cell;
+ }
+}
+public class Main {
+ static int constructions;
+ public static void main(String[] args) throws CloneNotSupportedException {
+  System.out.println(new Outer<ClassValue>(new ClassValue(2)).probe(new MethodValue(3)));
+ }
+}
+`}
+	runCampaignCompilerStrictProjectOracle47Args(t, files, "clonealias.Main", "true:false\ntrue:248:251:3:8\n")
+}
+

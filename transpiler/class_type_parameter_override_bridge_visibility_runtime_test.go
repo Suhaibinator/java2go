@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf16"
 
 	"github.com/NickyBoy89/java2go/symbol"
 )
@@ -131,14 +132,19 @@ func runOverrideBridgeVisibilityProject(t *testing.T, outputs map[string]string,
 	testSource := fmt.Sprintf(`
 package b
 
-import "testing"
+import ("slices"; "testing")
 
 func TestVisibilityBehavior(t *testing.T) {
-    if got := Run(); got != %q {
-        t.Fatalf("Run() = %%q, want %%q", got, %q)
+    got := Run()
+    want := %#v
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    if !slices.Equal(got.UTF16Copy(), want) {
+        t.Fatalf("Run() UTF16 = %%v, want %%v", got.UTF16Copy(), want)
     }
 }
-`, want, want)
+`, utf16.Encode([]rune(want)))
 	if err := os.WriteFile(testPath, []byte(testSource), 0o600); err != nil {
 		t.Fatalf("write generated behavior test: %v", err)
 	}

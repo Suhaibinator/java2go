@@ -1,0 +1,5 @@
+# Verification status at checkpoint17
+
+The original README records preparation history; its sources and oracle package remain byte-for-byte unchanged. The JVM oracle has now been validated in nine fresh JDK21 executions (seeds 17, 41, 97, each three times). A second independent wrapper reproduced all nine observations. Both published baseline53af25a and the frozen checkpoint17 candidate pass strict transpilation but fail all-package Go compilation with `undefined: Integer` and `value.toString undefined`. No Go application execution occurred. Runtime text behavior without metadata is therefore unverified, and this supplemental probe remains required alongside the original full challenges.
+
+The coordinator independently checked raw streams, status, original hashes and identical diagnostic bytes. Verbose evidence is retained under `.campaign/checkpoints/checkpoint17-full-v6/nometa-baseline-candidate-red.tar.gz`. The paired report SHA256 is77d71ab4c1f404613aaadee6d3d14860c1e9fde5477f00ea7b7aad6aab025c36. The original oracle SHA256 is e03c6bdbccd1ffa41218d4e276d3e909e93a408efcd9fdb7a8fa955f8ac0014b.

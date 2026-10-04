@@ -1,0 +1,30 @@
+package main
+import("testing";"fmt";"github.com/NickyBoy89/java2go/stdjava")
+var identityAllocationSink any
+var identityAllocationBool bool
+var identityAllocationInt int64
+func TestObjectIdentityAllocations(t *testing.T){
+ execution:=stdjava.NewExecution();leaf:=MakeJava2goExecution(execution,17,1024)
+ base:=leaf.graphRoot
+ if leaf.JavaObjectInfo()!=base.JavaObjectInfo() || !stdjava.JavaReferenceEqual(leaf,base){t.Fatal("not canonical")}
+ beforeTypes,beforeClasses,beforeDescriptors,beforeMonitors:=stdjava.ObjectIdentityDiagnosticCounts()
+ probes:=[]struct{name string;run func()}{
+  {"construct_graph_8byte_payload",func(){identityAllocationSink=MakeJava2goExecution(execution,17,8)}},
+  {"new_object_info_without_provider",func(){identityAllocationSink=stdjava.NewObjectInfo("GraphLeaf",nil)}},
+  {"new_generated_object_info",func(){identityAllocationSink=stdjava.NewGeneratedObjectInfo(leaf)}},
+  {"reference_equality",func(){identityAllocationBool=stdjava.JavaReferenceEqual(leaf,base)}},
+  {"exact_leaf_view",func(){identityAllocationSink=stdjava.ObjectView[*graphLeaf](leaf,"GraphLeaf")}},
+  {"base_to_leaf_view",func(){identityAllocationSink=stdjava.ObjectView[*graphLeaf](base,"GraphLeaf")}},
+  {"leaf_to_base_view",func(){identityAllocationSink=stdjava.ObjectView[*graphRoot](leaf,"GraphRoot")}},
+  {"leaf_to_interface_view",func(){identityAllocationSink=stdjava.ObjectView[graphTag](leaf,"GraphTag")}},
+  {"erased_descriptor_base_view",func(){identityAllocationSink=stdjava.ObjectView[*graphRoot](leaf,stdjava.ObjectTypeID)}},
+  {"get_class_warmed",func(){identityAllocationSink=stdjava.ObjectGetClass(base)}},
+  {"generated_views_1",func(){identityAllocationInt=ViewsJava2goExecution(execution,leaf,1)}},
+  {"generated_views_64",func(){identityAllocationInt=ViewsJava2goExecution(execution,leaf,64)}},
+ }
+ for _,probe:=range probes{fmt.Printf("%s_allocs=%g\n",probe.name,testing.AllocsPerRun(64,probe.run))}
+ types,classes,descriptors,monitors:=stdjava.ObjectIdentityDiagnosticCounts()
+ fmt.Printf("registry_counts_before=%d,%d,%d,%d after=%d,%d,%d,%d\n",beforeTypes,beforeClasses,beforeDescriptors,beforeMonitors,types,classes,descriptors,monitors)
+ if types!=beforeTypes || descriptors!=beforeDescriptors || monitors!=beforeMonitors {t.Fatal("instance/view calls grew registries")}
+ if leaf.JavaObjectInfo()!=base.JavaObjectInfo(){t.Fatal("view query replaced identity")}
+}

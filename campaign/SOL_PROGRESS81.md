@@ -1,0 +1,9 @@
+# Sol progress81: declaration-origin compiler milestone
+
+Published the exact eleven-file Stream declaration-origin repair after independent coordinator inspection. Inference retains selected source declarations, captured binder identity and nominal join origins; Stream result shells retain canonical owners. Invocation dispatch uses the selected source method and declines unproved origins. No Java fixture or expected observation changed.
+
+The causal regression previously exposed three nominal-LUB failures after eighty controls passed. The general fix now passes all83 controls, two neighbors and53 bridge race records. Ten runtime contracts pass on both baseline and candidate. The coordinator independently reread the raw test event inventories and all twenty terminal supervisor/channel receipts, then checked every protected public baseline and publication hash.
+
+The two historical full application comparisons are retained explicitly: production, Java fixtures, expectations and relevant test logic are unchanged; the formatting successor removes one trailing newline only. This is a scoped component milestone. The compiler comparison retains the same four historical failures on each side,26PASS4FAIL, without waiver. Interrupted, denied and wrong-cwd receipts remain preserved. Full current CI, full round, Gson, Netty and performance acceptance remain outstanding; checkpoint18 is still the latest accepted full round.
+
+Continue the Sol-only campaign. Rebase the atomic runtime's final all-package compile against this public revision before publishing that component. Complete Map/Future CI, repair UTF16 chars contracts, and fix the newly observed volatile generated-family reflection/storage/erasure failures. Preserve user untracked performance files and all original regression assertions.

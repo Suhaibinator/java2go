@@ -67,13 +67,16 @@ func StrToToken(input string) token.Token {
 }
 
 // ShortName returns the short-name representation of a class's name for use
-// in methods and construtors
+// in methods and constructors
 // Ex: Test -> ts
 func ShortName(longName string) string {
 	if len(longName) == 0 {
 		return ""
 	}
-	return string(unicode.ToLower(rune(longName[0]))) + string(unicode.ToLower(rune(longName[len(longName)-1])))
+	// Java identifiers may contain multibyte letters. Choose code points,
+	// then apply the same keyword escaping used for other generated names.
+	letters := []rune(longName)
+	return sanitizeGoIdent(string(unicode.ToLower(letters[0])) + string(unicode.ToLower(letters[len(letters)-1])))
 }
 
 // GenStruct is a utility method for generating the ast representation of
@@ -94,6 +97,10 @@ func GenStructWithTypeParams(structName string, structFields *ast.FieldList, typ
 // (T extends Ranked -> T Ranked) from a class upper bound (T extends Base ->
 // T *Base), and to qualify bounds declared in another generated package.
 func genStructWithTypeParamsInContext(structName string, structFields *ast.FieldList, typeParams []symbol.TypeParam, ctx Ctx) ast.Decl {
+	structFields = fieldsWithAllocationIdentity(structName, structFields, typeParams, ctx)
+	if specs := canonicalGenericTypeSpecs(structName, structFields, typeParams, ctx); specs != nil {
+		return &ast.GenDecl{Tok: token.TYPE, Specs: specs}
+	}
 	typeSpec := &ast.TypeSpec{
 		Name: &ast.Ident{
 			Name: structName,
@@ -143,6 +150,7 @@ func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast
 		return nil
 	}
 
+	typeParams = qualifyTypeParameterBounds(typeParams, ctx)
 	paramNames := symbol.GoTypeParamNames(typeParams)
 	parameterLookup := newTypeParameterLookup(typeParams)
 	fields := make([]*ast.Field, len(typeParams))
@@ -296,6 +304,9 @@ func GenInterface(name string, methods *ast.FieldList, typeParams []symbol.TypeP
 }
 
 func genInterfaceInContext(name string, methods *ast.FieldList, typeParams []symbol.TypeParam, ctx Ctx) ast.Decl {
+	if specs := canonicalGenericInterfaceSpecs(name, methods, typeParams, ctx); specs != nil {
+		return &ast.GenDecl{Tok: token.TYPE, Specs: specs}
+	}
 	typeSpec := &ast.TypeSpec{
 		Name: &ast.Ident{Name: name},
 		Type: &ast.InterfaceType{

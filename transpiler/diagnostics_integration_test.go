@@ -20,7 +20,7 @@ func withCleanDiagnostics(t *testing.T) {
 }
 
 // TestDiagnostics_UnsupportedStatementDoesNotCrash verifies that an unsupported
-// statement (a Java `assert`) is converted into an UNSUPPORTED placeholder, a
+// statement (a Java local record declaration) is converted into an UNSUPPORTED placeholder, a
 // diagnostic is recorded, and the surrounding supported code still converts.
 func TestDiagnostics_UnsupportedStatementDoesNotCrash(t *testing.T) {
 	withCleanDiagnostics(t)
@@ -29,7 +29,7 @@ func TestDiagnostics_UnsupportedStatementDoesNotCrash(t *testing.T) {
 public class Robust {
     public int compute() {
         int before = 1;
-        assert before == 1;
+        record UnsupportedLocal(int value) {}
         int after = before + 1;
         return after;
     }
@@ -41,7 +41,7 @@ public class Robust {
 	if !strings.Contains(out, "UNSUPPORTED") {
 		t.Fatalf("expected an UNSUPPORTED stub in output, got:\n%s", out)
 	}
-	// The supported statements surrounding the assert must still be converted.
+	// The supported statements surrounding the local record must still be converted.
 	// int locals are pinned to int32 (K1), so the initializers carry int32(...).
 	if !strings.Contains(out, "before := int32(1)") {
 		t.Errorf("expected supported statement before the unsupported one, got:\n%s", out)
@@ -59,7 +59,7 @@ public class Robust {
 	}
 	found := false
 	for _, d := range diags {
-		if d.NodeType == "assert_statement" && d.Kind == "statement" {
+		if d.NodeType == "record_declaration" && d.Kind == "statement" {
 			found = true
 			if d.Line == 0 {
 				t.Errorf("expected diagnostic to record a source line, got 0")
@@ -67,7 +67,7 @@ public class Robust {
 		}
 	}
 	if !found {
-		t.Errorf("expected a diagnostic for assert_statement, got: %v", diags)
+		t.Errorf("expected a diagnostic for record_declaration, got: %v", diags)
 	}
 }
 
@@ -107,7 +107,7 @@ func TestRun_StrictMode_FailsOnUnsupported(t *testing.T) {
 	writeJavaSource(t, inputDir, "Strict.java", `
 public class Strict {
     public void m() {
-        assert true;
+        record UnsupportedLocal(int value) {}
     }
 }
 `)
@@ -130,7 +130,7 @@ func TestRun_NonStrictMode_SucceedsWithDiagnostics(t *testing.T) {
 	writeJavaSource(t, inputDir, "Lenient.java", `
 public class Lenient {
     public void m() {
-        assert true;
+        record UnsupportedLocal(int value) {}
     }
 }
 `)

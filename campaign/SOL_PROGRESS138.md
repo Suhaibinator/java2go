@@ -1,0 +1,9 @@
+# Sol campaign checkpoint 138
+
+Checkpoint 138 changes four embedded generated Go test drivers across four test files. Each calls Run once, rejects null, and compares every UTF16 unit with the unchanged full expectation. Original Java inputs, wants, helpers and all compiler-shape assertions remain intact. No production code changes.
+
+The joined source uses public137 parent `b4deec14ff531788d2d0563f61f12db40f4a4d94`, with 3393 members and compact sorted map `27abe8291524df5bb8767c7195d93206a8b8d60a451cb2a49c90cff96ea37261`. All 3389 unowned members are preserved. Root independently passes all four changed parents and eleven adjacent parents with race enabled, plus full pinned lint with zero issues. Five raw receipts are exit0 without skips, timeouts or cleanup failures. The matching native binary records Go1.27.1 and race=true, verified by a source-only read of its build-info block. No fresh registration, runtime-suite or JVM rerun is claimed for these five receipts.
+
+The peers retain four original transport failures and two intermediate diagnostic vet failures. Their 12 original JVM observations (three per program) match the unchanged whole expectations. Root's eight fresh captured snapshots prove all four generated cores and companion assertions equal the frozen peer versions and bind the joined runtime. The five additional adjacent parents retain their original helpers and CPU2/p1/race environment; no nested JSON exports were configured for that group.
+
+Full CI and full-round acceptance remain false; latest accepted full round remains 18 and the goal remains ACTIVE. Exact-head CI136 retains six compiler, dependency and aggregate failures, with the other seven jobs passing. CI138 is unknown. All held implementation, dependency and performance frontiers and prior negative evidence remain unwaived.

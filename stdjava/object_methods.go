@@ -2,6 +2,7 @@ package stdjava
 
 import (
 	"reflect"
+	"sync"
 	"unicode/utf16"
 )
 
@@ -15,7 +16,7 @@ func ObjectInstanceOf(value any, expected TypeID) bool {
 		return true
 	}
 	actual, ok := ObjectDynamicType(value)
-	return ok && JavaTypeAssignable(actual, expected)
+	return (ok && JavaTypeAssignable(actual, expected)) || nativeJavaInterfaceAssignable(value, expected)
 }
 
 // ObjectPattern supplies the source-declared view after a successful pattern
@@ -35,6 +36,13 @@ func ObjectEqualsExecution(execution *Execution, left, right any) bool {
 	left, right = collectionObjectView(left), collectionObjectView(right)
 	if javaReferenceIsNull(right) {
 		right = nil
+	}
+	// The exact companion precedes every collision-renamed companion in the
+	// method set. Keep reflection for renamed methods and other signatures.
+	if equals, ok := left.(interface {
+		EqualsJava2goExecution(*Execution, any) bool
+	}); ok {
+		return equals.EqualsJava2goExecution(execution, right)
 	}
 	if result, ok := objectExecutionMethod(execution, left, "EqualsJava2goExecution", []any{right}); ok {
 		return result.Bool()
@@ -62,6 +70,11 @@ func StringEquals(left string, right any) bool {
 func ObjectHashCodeExecution(execution *Execution, value any) int32 {
 	ReferenceRequireNonNull(value)
 	value = collectionObjectView(value)
+	if hash, ok := value.(interface {
+		HashCodeJava2goExecution(*Execution) int32
+	}); ok {
+		return hash.HashCodeJava2goExecution(execution)
+	}
 	if result, ok := objectExecutionMethod(execution, value, "HashCodeJava2goExecution", nil); ok {
 		return int32(result.Int())
 	}
@@ -75,35 +88,35 @@ func ObjectHashCodeExecution(execution *Execution, value any) int32 {
 		}
 		return hash
 	}
-	if carrier, ok := value.(JavaObjectInfoCarrier); ok {
-		if info := carrier.JavaObjectInfo(); info != nil {
-			pointer := uint64(reflect.ValueOf(info).Pointer())
-			return int32(pointer ^ (pointer >> 32))
-		}
-	}
-	reflected := reflect.ValueOf(value)
-	switch reflected.Kind() {
-	case reflect.Pointer, reflect.UnsafePointer, reflect.Map, reflect.Chan, reflect.Slice, reflect.Func:
-		pointer := uint64(reflected.Pointer())
-		return int32(pointer ^ (pointer >> 32))
-	default:
-		panic(NewClassCastException("value has no Java object identity"))
-	}
+	return objectIdentityHashCode(value)
 }
 
-// Generated execution companions may be renamed to avoid a source member
-// collision. Resolve their signature and pass the current logical execution.
-func objectExecutionMethod(execution *Execution, receiver any, name string, args []any) (reflect.Value, bool) {
-	value := reflect.ValueOf(receiver)
+type objectExecutionMethodKey struct {
+	receiver reflect.Type
+	name     string
+}
+
+// Go method sets and signatures are immutable. Cache discovery, including a
+// missing companion, without retaining a bound receiver, execution, arguments,
+// return value, or Java type registration. LoadOrStore publishes a complete
+// immutable candidate list for concurrent callers.
+var objectExecutionMethodMetadata sync.Map
+
+func objectExecutionMethodCandidates(receiver reflect.Type, name string) []reflect.Method {
+	key := objectExecutionMethodKey{receiver: receiver, name: name}
+	if cached, ok := objectExecutionMethodMetadata.Load(key); ok {
+		return cached.([]reflect.Method)
+	}
+	var candidates []reflect.Method
 	executionType := reflect.TypeOf((*Execution)(nil))
-	for index := 0; index < value.NumMethod(); index++ {
-		methodInfo := value.Type().Method(index)
+	for index := 0; index < receiver.NumMethod(); index++ {
+		methodInfo := receiver.Method(index)
 		if !isCollisionSafeExecutionMethodName(methodInfo.Name, name) {
 			continue
 		}
-		method := value.Method(index)
-		signature := method.Type()
-		if signature.NumIn() != len(args)+1 || signature.In(0) != executionType || signature.NumOut() != 1 {
+		// Method metadata includes the receiver before the logical execution.
+		signature := methodInfo.Type
+		if signature.NumIn() < 2 || signature.In(1) != executionType || signature.NumOut() != 1 {
 			continue
 		}
 		if (name == "EqualsJava2goExecution" && signature.Out(0).Kind() != reflect.Bool) ||
@@ -112,13 +125,29 @@ func objectExecutionMethod(execution *Execution, receiver any, name string, args
 		}
 		// equals(SomeClass) is an overload, not Object.equals(Object).
 		// Only the erased Object parameter participates in virtual equality.
-		if name == "EqualsJava2goExecution" && signature.In(1) != reflect.TypeOf((*any)(nil)).Elem() {
+		if name == "EqualsJava2goExecution" && (signature.NumIn() < 3 || signature.In(2) != reflect.TypeOf((*any)(nil)).Elem()) {
+			continue
+		}
+		candidates = append(candidates, methodInfo)
+	}
+	actual, _ := objectExecutionMethodMetadata.LoadOrStore(key, candidates)
+	return actual.([]reflect.Method)
+}
+
+// Generated execution companions may be renamed to avoid a source member
+// collision. Discover their immutable signatures once, then bind the current
+// receiver, arguments, and logical execution for every invocation.
+func objectExecutionMethod(execution *Execution, receiver any, name string, args []any) (reflect.Value, bool) {
+	value := reflect.ValueOf(receiver)
+	for _, candidate := range objectExecutionMethodCandidates(value.Type(), name) {
+		signature := candidate.Type
+		if signature.NumIn() != len(args)+2 {
 			continue
 		}
 		parameters := []reflect.Value{reflect.ValueOf(execution)}
 		compatible := true
 		for argumentIndex, arg := range args {
-			expected := signature.In(argumentIndex + 1)
+			expected := signature.In(argumentIndex + 2)
 			if nilJavaReference(arg) {
 				parameters = append(parameters, reflect.Zero(expected))
 			} else if argument := reflect.ValueOf(arg); argument.Type().AssignableTo(expected) {
@@ -129,7 +158,7 @@ func objectExecutionMethod(execution *Execution, receiver any, name string, args
 			}
 		}
 		if compatible {
-			return method.Call(parameters)[0], true
+			return value.Method(candidate.Index).Call(parameters)[0], true
 		}
 	}
 	return reflect.Value{}, false

@@ -1,0 +1,13 @@
+package main
+import("fmt";"testing";"github.com/NickyBoy89/java2go/stdjava")
+var decimalWorkloadSink int64
+func TestDecimalCompareWorkloadAllocations(t *testing.T){
+ execution:=stdjava.NewExecution()
+ for _,mode:=range []int32{0,1,2}{
+  SetupJava2goExecution(execution,97,128,mode)
+  for _,repeats:=range []int32{1,8}{
+   allocations:=testing.AllocsPerRun(16,func(){decimalWorkloadSink=RunJava2goExecution(execution,repeats)})
+   fmt.Printf("mode=%d repeats=%d allocs=%g checksum=%d\n",mode,repeats,allocations,decimalWorkloadSink)
+  }
+ }
+}

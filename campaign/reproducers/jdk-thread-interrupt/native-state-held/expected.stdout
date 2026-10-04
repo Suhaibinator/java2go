@@ -1,0 +1,8 @@
+new-initial:false:false
+new-repeated:true:false
+terminated-retained:true:false
+terminated-request:true:false
+alive:true:true:false:false
+current:true:true:false:false
+reset:true:false
+null:java.lang.NullPointerException

@@ -54,11 +54,22 @@ public class AssignmentValueProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestAssignmentValueRuntime(t *testing.T) {
-	if got := Run(); got != "alpha:alpha:7:7:15:1:15:6:6:-126:-126:false:false:value=2.0:value=2.0:2147483644:9223372036854775807:0:0" {
-        t.Fatalf("Run() = %q", got)
+	got := Run()
+	if got == nil {
+	    t.Fatal("Run() returned null")
+	}
+	const want = "alpha:alpha:7:7:15:1:15:6:6:-126:-126:false:false:value=2.0:value=2.0:2147483644:9223372036854775807:0:0"
+	wantUnits := utf16.Encode([]rune(want))
+	gotUnits := got.UTF16Copy()
+	if !slices.Equal(gotUnits, wantUnits) {
+        t.Fatalf("Run() UTF16 = %v, want %v", gotUnits, wantUnits)
     }
 }
 `)

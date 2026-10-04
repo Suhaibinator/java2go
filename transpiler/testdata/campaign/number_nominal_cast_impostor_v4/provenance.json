@@ -1,0 +1,111 @@
+{
+  "main_class": "probe.impostor.Main",
+  "observations": [
+    {
+      "repeat": 1,
+      "seed": 17,
+      "stderr": "observations/seed-17-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-17-repeat-1.stdout",
+      "stdout_sha256": "35ee15b551fe9550f48f5cea6e503ed8ccf58a203b64aca2129ff6f2f80813d3"
+    },
+    {
+      "repeat": 2,
+      "seed": 17,
+      "stderr": "observations/seed-17-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-17-repeat-2.stdout",
+      "stdout_sha256": "35ee15b551fe9550f48f5cea6e503ed8ccf58a203b64aca2129ff6f2f80813d3"
+    },
+    {
+      "repeat": 3,
+      "seed": 17,
+      "stderr": "observations/seed-17-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-17-repeat-3.stdout",
+      "stdout_sha256": "35ee15b551fe9550f48f5cea6e503ed8ccf58a203b64aca2129ff6f2f80813d3"
+    },
+    {
+      "repeat": 1,
+      "seed": 41,
+      "stderr": "observations/seed-41-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-41-repeat-1.stdout",
+      "stdout_sha256": "a8656ec4c835c963aacb6fcd2b2d1f7c43877cb6943eefaf1541e2a99b34c8d9"
+    },
+    {
+      "repeat": 2,
+      "seed": 41,
+      "stderr": "observations/seed-41-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-41-repeat-2.stdout",
+      "stdout_sha256": "a8656ec4c835c963aacb6fcd2b2d1f7c43877cb6943eefaf1541e2a99b34c8d9"
+    },
+    {
+      "repeat": 3,
+      "seed": 41,
+      "stderr": "observations/seed-41-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-41-repeat-3.stdout",
+      "stdout_sha256": "a8656ec4c835c963aacb6fcd2b2d1f7c43877cb6943eefaf1541e2a99b34c8d9"
+    },
+    {
+      "repeat": 1,
+      "seed": 97,
+      "stderr": "observations/seed-97-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-97-repeat-1.stdout",
+      "stdout_sha256": "9cc394eeeb90bf14d1d3abc3fdbc753b0be3699c41ce77b5d2de11800f5f53ff"
+    },
+    {
+      "repeat": 2,
+      "seed": 97,
+      "stderr": "observations/seed-97-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-97-repeat-2.stdout",
+      "stdout_sha256": "9cc394eeeb90bf14d1d3abc3fdbc753b0be3699c41ce77b5d2de11800f5f53ff"
+    },
+    {
+      "repeat": 3,
+      "seed": 97,
+      "stderr": "observations/seed-97-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-97-repeat-3.stdout",
+      "stdout_sha256": "9cc394eeeb90bf14d1d3abc3fdbc753b0be3699c41ce77b5d2de11800f5f53ff"
+    }
+  ],
+  "original_reports": [
+    {
+      "manifest_sha256": "8d788ff34524d93abf3f8a23abf0fdd5d58789fccd5da54d52526d55acce787b",
+      "path": "/private/tmp/java2go-data-prereq-oracles-v4-utf8-lsgo6gzh/run-number-sixmethod-impostor-seed-17-cb5_rlj2/report.json",
+      "seed": 17,
+      "sha256": "1128718bb01bac4c5325046451e386e5ab2be43966a6c4a29de111d94788b8f0"
+    },
+    {
+      "manifest_sha256": "e415b04416d9a99542dd623dd8b4e41983355c357389812e5b9b6b658971911a",
+      "path": "/private/tmp/java2go-data-prereq-oracles-v4-utf8-lsgo6gzh/run-number-sixmethod-impostor-seed-41-nyflj989/report.json",
+      "seed": 41,
+      "sha256": "1846e835e8669d6ed4ce394bd35933be578ce586e7c30b5fd9ed568c312bdcdb"
+    },
+    {
+      "manifest_sha256": "d83d8bd6ba49ea901332c3a73f7f03cd204ba685f118fbb5fe944541a45e242f",
+      "path": "/private/tmp/java2go-data-prereq-oracles-v4-utf8-lsgo6gzh/run-number-sixmethod-impostor-seed-97-buqi9itw/report.json",
+      "seed": 97,
+      "sha256": "2c39969d2a74fda18f5d61b8fd908e663f299378a94a4747c8cd249940b69d83"
+    }
+  ],
+  "project_files": {
+    "pom.xml": "89063b0777a93a5b9f902a5e5806966a9ff219d34874ad0b4cafc9a69d4ae923",
+    "src/main/java/probe/api/Carrier.java": "3345a09e282b5f9305d15ffc8c475c02b68a03ffea5e5211f6070ac1cd8a0b64",
+    "src/main/java/probe/api/Factory.java": "44ed9f60209d28500bd62570679eeae9570f9f84576b8fdce0916ee01e155de0",
+    "src/main/java/probe/impostor/Main.java": "20abbcdd9651bda19cd6fb8abc3e1cb6f3b604610bd15ae1398f1485b85fdb88",
+    "src/main/java/probe/impostor/NumberImpostor.java": "9202bf1b9e2328a8e7357d65a4968a38c0ed0cdf727075ec87b74ebb028db832",
+    "src/main/java/probe/impostor/SourceNumberCast.java": "b87cbd828a74cbb7a951d9de371d3cf37afbab814f9f9557cde2c40a70daa0d3",
+    "src/main/java/probe/model/IntegerCarrier.java": "226f3db8541f154c7b9704ff6cf550fb6da4efbd660300a439dba838ed8aa767",
+    "src/main/java/probe/model/NamedFactory.java": "2236ad50e975ebc48ff2f91f997d69ce6cdd955fcfbbc647759e04d8a0e3d035",
+    "src/main/java/probe/model/NumberCarrier.java": "9bffd6e412d95e755b74886fe4a6d7c5da78362d8817cf4bcf2dab02dbd65366",
+    "src/main/java/probe/model/TextCarrier.java": "9713d7f7c644e35b096617771334d567377ac328d288d2143df76318180ffe77",
+    "src/main/java/probe/number/Main.java": "ebb88dcf2061e9dc3dca8a0794958225587dc55457a504d445c301cb5bcf19ce",
+    "src/main/java/probe/shadow/Number.java": "f135eff576a41f5a445518e82ae8894e29ed9bc9180f2464565688aba927ca01"
+  }
+}

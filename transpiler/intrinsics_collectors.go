@@ -2,7 +2,6 @@ package transpiler
 
 import (
 	"go/ast"
-	"go/token"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -65,7 +64,7 @@ func inferCollectorJavaType(collector *sitter.Node, elementJavaType string, ctx 
 	case "counting":
 		return "java.lang.Long", true
 	case "joining":
-		return "String", true
+		return "java.lang.String", true
 	case "summingInt", "summingLong", "summingDouble":
 		return "java.lang." + ternaryBoxedJavaType(numericCollectorJavaType(name)), true
 	case "averagingInt", "averagingLong", "averagingDouble":
@@ -85,9 +84,9 @@ func inferCollectorJavaType(collector *sitter.Node, elementJavaType string, ctx 
 			return "", false
 		}
 		value := "List<" + elementJavaType + ">"
-		if invocationArgumentCount(collector) == 2 {
+		if count := invocationArgumentCount(collector); count == 2 || name == "groupingBy" && count == 3 {
 			var ok bool
-			value, ok = inferCollectorJavaType(invocationArgumentNode(collector, 1), elementJavaType, ctx, source)
+			value, ok = inferCollectorJavaType(invocationArgumentNode(collector, count-1), elementJavaType, ctx, source)
 			if !ok {
 				return "", false
 			}
@@ -134,7 +133,7 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 	case "joining":
 		// joining() / joining(sep) / joining(sep, prefix, suffix); the runtime
 		// takes all three, so the shorter forms pass empty strings.
-		separator, prefix, suffix := emptyStringLit(), emptyStringLit(), emptyStringLit()
+		separator, prefix, suffix := javaStringLiteralUnitsExpr(nil, ctx), javaStringLiteralUnitsExpr(nil, ctx), javaStringLiteralUnitsExpr(nil, ctx)
 		switch arity {
 		case 0:
 		case 1:
@@ -146,7 +145,7 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		default:
 			return nil, ""
 		}
-		return stdjavaCall(ctx, "StreamJoining", streamExpr, separator, prefix, suffix), "String"
+		return stdjavaCall(ctx, "JavaStringStreamJoining", streamExpr, separator, prefix, suffix), "java.lang.String"
 
 	case "summingInt", "summingLong", "summingDouble":
 		if arity != 1 {
@@ -180,11 +179,13 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 		}
 		// The merge function resolves duplicate keys: (V, V) -> V.
 		merge := parseCollectorLambda(collector, 2, []string{valueType, valueType}, valueType, ctx, source)
+		mergeValueType := javaTypeStringToGoTypeExpr(valueType, inScopeTypeParameters(ctx), ctx)
+		merge = stdjavaGenericCall(ctx, "BiFunctionCallbackExecution", []ast.Expr{mergeValueType, mergeValueType, mergeValueType}, []ast.Expr{intrinsicExecutionExpr(ctx), merge})
 		return stdjavaCall(ctx, "StreamToMapMerging", streamExpr, key, value, merge, intrinsicExecutionExpr(ctx)),
 			"Map<" + keyType + "," + valueType + ">"
 
 	case "groupingBy":
-		if arity != 1 && arity != 2 {
+		if arity != 1 && arity != 2 && arity != 3 {
 			return nil, ""
 		}
 		keyType := collectorLambdaResultJavaType(collector, 0, elementJavaType, ctx, source)
@@ -196,9 +197,17 @@ func lowerCollector(collector *sitter.Node, streamExpr ast.Expr, elementJavaType
 			return stdjavaCall(ctx, "StreamGroupingBy", streamExpr, classifier, intrinsicExecutionExpr(ctx)),
 				"Map<" + keyType + ",List<" + elementJavaType + ">>"
 		}
-		downstream, downstreamType := lowerDownstreamCollector(collector, 1, elementJavaType, ctx, source)
+		downstream, downstreamType := lowerDownstreamCollector(collector, arity-1, elementJavaType, ctx, source)
 		if downstream == nil {
 			return nil, ""
+		}
+		if arity == 3 {
+			mapType := "Map<" + keyType + "," + downstreamType + ">"
+			factoryCtx := ctx.Clone()
+			factoryCtx.expectedType = "Supplier<" + mapType + ">"
+			factoryCtx.expectedTypeRoot = invocationArgumentNode(collector, 1)
+			factory := ParseExpr(invocationArgumentNode(collector, 1), source, factoryCtx)
+			return stdjavaCall(ctx, "StreamGroupingByDownstreamWith", streamExpr, classifier, factory, downstream, intrinsicExecutionExpr(ctx)), mapType
 		}
 		return stdjavaCall(ctx, "StreamGroupingByDownstream", streamExpr, classifier, downstream, intrinsicExecutionExpr(ctx)),
 			"Map<" + keyType + "," + downstreamType + ">"
@@ -297,7 +306,7 @@ func parseCollectorLambda(collector *sitter.Node, argIndex int, paramJavaTypes [
 	if resultJavaType != "" {
 		resultType = javaTypeStringToGoTypeExpr(resultJavaType, typeParams, ctx)
 	}
-	return retypeLambdaWithTypes(parsed, paramTypes, resultType)
+	return functionCallbackExpr(retypeLambdaWithTypes(parsed, paramTypes, resultType), argCtx.expectedType, ctx)
 }
 
 // collectorLambdaResultJavaType infers what a collector's lambda argument
@@ -324,8 +333,4 @@ func numericCollectorJavaType(name string) string {
 		return "double"
 	}
 	return "int"
-}
-
-func emptyStringLit() ast.Expr {
-	return &ast.BasicLit{Kind: token.STRING, Value: `""`}
 }

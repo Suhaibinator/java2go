@@ -1,0 +1,90 @@
+package main
+
+import (
+	"encoding/json"
+	sj "github.com/NickyBoy89/java2go/stdjava"
+	"os"
+	"runtime"
+	"strings"
+	"testing"
+)
+
+var sink int32
+
+func failure(fn func()) (name string) {
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(interface{ ThrowableTypeName() string }); ok {
+				name = e.ThrowableTypeName()
+			} else {
+				panic(r)
+			}
+		}
+	}()
+	fn()
+	return "none"
+}
+func main() {
+	cases := []struct {
+		Name, S       string
+		Needle        any
+		From          int32
+		HasFrom, Last bool
+	}{
+		{Name: "ascii-delimiter", S: "job-17|payload", Needle: int32('|')},
+		{Name: "generated-call-shape", S: "job-17|payload", Needle: int32('|')},
+		{Name: "long-ascii-delimiter", S: strings.Repeat("x", 4096) + "|data", Needle: int32('|')},
+		{Name: "supplementary-point", S: "🧪|naïve/雪|🧪", Needle: int32(0x1f9ea), From: 1, HasFrom: true},
+		{Name: "isolated-high-point", S: "a😀b😀a", Needle: int32(0xd83d), From: 2, HasFrom: true},
+		{Name: "isolated-low-point", S: "a😀b😀a", Needle: int32(0xde00), From: 2, HasFrom: true},
+		{Name: "unicode-needle-low-start", S: "a😀b😀a", Needle: "😀", From: 2, HasFrom: true},
+		{Name: "unicode-last-low-start", S: "a😀b😀a", Needle: "😀", From: 2, HasFrom: true, Last: true},
+		{Name: "empty-needle-overrun", S: "a😀b😀a", Needle: "", From: 100, HasFrom: true},
+		{Name: "last-negative", S: "a😀b😀a", Needle: "😀", From: -1, HasFrom: true, Last: true},
+		{Name: "invalid-codepoint", S: "a😀b😀a", Needle: int32(0x110000)},
+	}
+	out := []map[string]any{}
+	for _, c := range cases {
+		var from []any
+		if c.HasFrom {
+			from = []any{c.From}
+		}
+		call := func() {
+			if c.Name == "generated-call-shape" {
+				sink = sj.StringIndexOf(sj.StringRequireNonNull(c.S), int32('|'))
+				return
+			}
+			if c.Last {
+				sink = sj.StringLastIndexOf(c.S, c.Needle, from...)
+			} else {
+				sink = sj.StringIndexOf(c.S, c.Needle, from...)
+			}
+		}
+		allocs := testing.AllocsPerRun(1000, call)
+		runtime.GC()
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
+		for i := 0; i < 1000; i++ {
+			call()
+		}
+		runtime.ReadMemStats(&after)
+		out = append(out, map[string]any{"name": c.Name, "result": sink, "allocs_per_call": allocs, "bytes_per_call": float64(after.TotalAlloc-before.TotalAlloc) / 1000})
+	}
+	checks := map[string]string{
+		"null-receiver":               failure(func() { sj.StringIndexOf(sj.NullString(), "x") }),
+		"null-string-needle-negative": failure(func() { sj.StringLastIndexOf("abc", sj.NullString(), int32(-1)) }),
+		"null-start":                  failure(func() { sj.StringIndexOf("abc", "x", (*sj.Integer)(nil)) }),
+		"null-receiver-invalid-point": failure(func() { sj.StringIndexOf(sj.NullString(), int32(-1)) }),
+	}
+	invalid := []int32{}
+	for _, s := range []string{"\xff", "a\xed\xa0\x80b", "\xe2\x82"} {
+		for _, n := range []any{"�", "a", int32(0xfffd), ""} {
+			for _, f := range []int32{-1, 0, 1, 2, 20} {
+				invalid = append(invalid, sj.StringIndexOf(s, n, f), sj.StringLastIndexOf(s, n, f))
+			}
+		}
+	}
+	if err := json.NewEncoder(os.Stdout).Encode(map[string]any{"observations": out, "null_checks": checks, "invalid_go_utf8_regression": invalid}); err != nil {
+		panic(err)
+	}
+}

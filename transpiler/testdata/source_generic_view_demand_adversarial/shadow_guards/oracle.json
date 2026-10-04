@@ -1,0 +1,30 @@
+{
+  "status": "PROVISIONAL_PREDICTIONS_PENDING_FRESH_JDK21_GRANT",
+  "main_class": "app.Main",
+  "observations": [
+    {
+      "name": "shadow",
+      "args": [
+        "shadow"
+      ],
+      "stdout": "shadow:true:true\n",
+      "stderr": ""
+    },
+    {
+      "name": "guards",
+      "args": [
+        "guards"
+      ],
+      "stdout": "true:true:guarded\n",
+      "stderr": ""
+    },
+    {
+      "name": "binder",
+      "args": [
+        "binder"
+      ],
+      "stdout": "method:seed:true\n",
+      "stderr": ""
+    }
+  ]
+}

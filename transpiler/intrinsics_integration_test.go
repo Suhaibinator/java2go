@@ -29,27 +29,81 @@ func TestIntrinsics_StringMethods(t *testing.T) {
 		expr string
 		want string
 	}{
-		{"length", "s.length()", "stdjava.StringLength(stdjava.StringRequireNonNull(s))"},
-		{"isEmpty", "s.isEmpty()", "len(stdjava.StringRequireNonNull(s)) == 0"},
-		{"isBlank", "s.isBlank()", "stdjava.StringIsBlank(stdjava.StringRequireNonNull(s))"},
-		{"charAt", "s.charAt(2)", "stdjava.StringCharAt(stdjava.StringRequireNonNull(s), 2)"},
-		{"substring1", "s.substring(1)", "stdjava.StringSubstring(stdjava.StringRequireNonNull(s), 1)"},
-		{"substring2", "s.substring(1, 3)", "stdjava.StringSubstringRange(stdjava.StringRequireNonNull(s), 1, 3)"},
-		{"indexOf", "s.indexOf(\"x\")", "stdjava.StringIndexOf(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"lastIndexOf", "s.lastIndexOf(\"x\")", "stdjava.StringLastIndexOf(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"contains", "s.contains(\"x\")", "strings.Contains(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"startsWith", "s.startsWith(\"x\")", "strings.HasPrefix(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"endsWith", "s.endsWith(\"x\")", "strings.HasSuffix(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"equals", "s.equals(\"x\")", "stdjava.StringEquals(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"equalsIgnoreCase", "s.equalsIgnoreCase(\"x\")", "stdjava.StringEqualsIgnoreCase(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"compareTo", "s.compareTo(\"x\")", "stdjava.StringCompareTo(stdjava.StringRequireNonNull(s), \"x\")"},
-		{"toUpperCase", "s.toUpperCase()", "strings.ToUpper(stdjava.StringRequireNonNull(s))"},
-		{"toLowerCase", "s.toLowerCase()", "strings.ToLower(stdjava.StringRequireNonNull(s))"},
-		{"trim", "s.trim()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
-		{"strip", "s.strip()", "strings.TrimSpace(stdjava.StringRequireNonNull(s))"},
-		{"replace", "s.replace(\"a\", \"b\")", "stdjava.StringReplace(stdjava.StringRequireNonNull(s), \"a\", \"b\")"},
-		{"split", "s.split(\",\")", "stdjava.StringSplitArray(stdjava.StringRequireNonNull(s), \",\")"},
-		{"chars", "s.chars()", "stdjava.StringCharsStream(stdjava.StringRequireNonNull(s))"},
+		{"length", "s.length()", "stdjava.RequireJavaString(s).Length()"},
+		{"isEmpty", "s.isEmpty()", "stdjava.RequireJavaString(s).Length() == 0"},
+		{"isBlank", "s.isBlank()", "stdjava.JavaStringIsBlank(stdjava.RequireJavaString(s))"},
+		{"charAt", "s.charAt(2)", `stdjava.BoxCharacter(int32(func() rune {
+			__java2goInvocationReceiver := s
+			var __java2goInvocationArg0 int32 = 2
+			return stdjava.RequireJavaString(__java2goInvocationReceiver).CharAt(__java2goInvocationArg0)
+		}()))`},
+		{"substring1", "s.substring(1)", `func() *stdjava.JavaString {
+			__java2goInvocationReceiver := s
+			var __java2goInvocationArg0 int32 = 1
+			return stdjava.JavaStringSubstringFrom(stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()`},
+		{"substring2", "s.substring(1, 3)", `func() *stdjava.JavaString {
+			__java2goInvocationReceiver := s
+			var __java2goInvocationArg0 int32 = 1
+			var __java2goInvocationArg1 int32 = 3
+			return stdjava.RequireJavaString(__java2goInvocationReceiver).Substring(__java2goInvocationArg0, __java2goInvocationArg1)
+		}()`},
+		{"indexOf", "s.indexOf(\"x\")", `stdjava.BoxInteger(int32(func() int32 {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{120})
+			return stdjava.JavaStringIndexOf(stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()))`},
+		{"lastIndexOf", "s.lastIndexOf(\"x\")", `stdjava.BoxInteger(int32(func() int32 {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{120})
+			return stdjava.JavaStringLastIndexOf(stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()))`},
+		{"contains", "s.contains(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{120})
+			return stdjava.JavaStringContainsExecution(__java2goExecution, stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"startsWith", "s.startsWith(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{120})
+			return stdjava.JavaStringStartsWith(stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"endsWith", "s.endsWith(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{120})
+			return stdjava.JavaStringEndsWith(stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"equals", "s.equals(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{120})
+			return stdjava.RequireJavaString(__java2goInvocationReceiver).Equals(__java2goInvocationArg0)
+		}())`},
+		{"equalsIgnoreCase", "s.equalsIgnoreCase(\"x\")", `stdjava.BoxBoolean(func() bool {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{120})
+			return stdjava.JavaStringEqualsIgnoreCase(stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}())`},
+		{"compareTo", "s.compareTo(\"x\")", `stdjava.BoxInteger(int32(func() int32 {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{120})
+			return stdjava.RequireJavaString(__java2goInvocationReceiver).CompareTo(__java2goInvocationArg0)
+		}()))`},
+		{"toUpperCase", "s.toUpperCase()", "stdjava.JavaStringToUpperCase(stdjava.RequireJavaString(s))"},
+		{"toLowerCase", "s.toLowerCase()", "stdjava.JavaStringToLowerCase(stdjava.RequireJavaString(s))"},
+		{"trim", "s.trim()", "stdjava.JavaStringTrim(stdjava.RequireJavaString(s))"},
+		{"strip", "s.strip()", "stdjava.JavaStringStrip(stdjava.RequireJavaString(s))"},
+		{"replace", "s.replace(\"a\", \"b\")", `func() *stdjava.JavaString {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{97})
+			__java2goInvocationArg1 := stdjava.JavaStringLiteralUTF16([]uint16{98})
+			return stdjava.JavaStringReplaceExecution(__java2goExecution, stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0, __java2goInvocationArg1)
+		}()`},
+		{"split", "s.split(\",\")", `func() *stdjava.ReferenceArray {
+			__java2goInvocationReceiver := s
+			__java2goInvocationArg0 := stdjava.JavaStringLiteralUTF16([]uint16{44})
+			return stdjava.JavaStringSplitArray(stdjava.RequireJavaString(__java2goInvocationReceiver), __java2goInvocationArg0)
+		}()`},
+		{"chars", "s.chars()", "stdjava.JavaStringCharsStream(stdjava.RequireJavaString(s))"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -72,9 +126,9 @@ func TestIntrinsics_StringStatics(t *testing.T) {
 		expr string
 		want string
 	}{
-		{"valueOf", "String.valueOf(5)", "stdjava.StringValueOf(5)"},
-		{"format", "String.format(\"%d\", 5)", "fmt.Sprintf(\"%d\", 5)"},
-		{"join", "String.join(\",\", parts)", "strings.Join(parts, \",\")"},
+		{"valueOf", "String.valueOf(5)", "stdjava.JavaStringValueOfInt(int32(5))"},
+		{"format", "String.format(\"%d\", 5)", "stdjava.JavaStringFormatExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{37, 100}), stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID, stdjava.BoxInteger(int32(5))))"},
+		{"join", "String.join(\",\", parts)", "stdjava.JavaStringJoinArrayExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{44}), parts)"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -105,11 +159,11 @@ public class SBProgram {
 }
 `
 	out := renderIntrinsicProgram(t, src)
-	assertContains(t, out, "sb.Append(\"a\")")
-	assertContains(t, out, "sb.Append(stdjava.StringValueOf(1))")
-	assertContains(t, out, "sb.Insert(0, \"z\")")
+	assertContains(t, out, "sb.Append(stdjava.JavaStringTextOperandExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{97})))")
+	assertContains(t, out, "sb.Append(stdjava.JavaStringValueOfInt(int32(1)))")
+	assertContains(t, out, "sb.Insert(0, stdjava.JavaStringTextOperandExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{122})))")
 	assertContains(t, out, "sb.Reverse()")
-	assertContains(t, out, "sb.String()")
+	assertContains(t, out, "sb.ToJavaString()")
 	assertContains(t, out, "stdjava.NewStringBuilder()")
 }
 
@@ -162,11 +216,12 @@ func TestIntrinsics_BoxedTypes(t *testing.T) {
 		expr string
 		want string
 	}{
-		{"parseInt", "Integer.parseInt(s)", "stdjava.ParseInt(s)"},
-		{"intToString", "Integer.toString(5)", "fmt.Sprint(5)"},
-		{"parseLong", "Long.parseLong(s)", "stdjava.ParseLong(s)"},
-		{"parseDouble", "Double.parseDouble(s)", "stdjava.ParseDouble(s)"},
-		{"parseBoolean", "Boolean.parseBoolean(s)", "stdjava.ParseBoolean(s)"},
+		{"parseInt", "Integer.parseInt(s)", "stdjava.JavaIntegerParseInt(s)"},
+		{"intToString", "Integer.toString(5)", "stdjava.JavaStringValueOfInt(5)"},
+		// Generated helper ABI assertion only; independent JVM inputs/streams are unchanged.
+		{"parseLong", "Long.parseLong(s)", "stdjava.JavaLongParseLong(s)"},
+		{"parseDouble", "Double.parseDouble(s)", "stdjava.JavaDoubleParseDouble(s)"},
+		{"parseBoolean", "Boolean.parseBoolean(s)", "stdjava.JavaBooleanParseBoolean(s)"},
 		{"isDigit", "Character.isDigit(c)", "stdjava.CharIsDigit(c)"},
 		{"isLetter", "Character.isLetter(c)", "stdjava.CharIsLetter(c)"},
 		{"charToUpper", "Character.toUpperCase(c)", "stdjava.CharToUpperCase(c)"},
@@ -246,19 +301,25 @@ public class LiteralReceiver {
 }
 `
 	out := renderIntrinsicProgram(t, src)
-	assertContains(t, out, `strings.TrimSpace("  hi  ")`)
+	assertContains(t, out, `stdjava.JavaStringTrim(stdjava.JavaStringLiteralUTF16([]uint16{32, 32, 104, 105, 32, 32}))`)
 	// split returns a descriptor-bearing String[]; array.length must use the
 	// wrapper helper rather than native len so null/descriptor behavior survives.
-	assertContains(t, out, `stdjava.ReferenceArrayLength(stdjava.StringSplitArray("a,b,c", ","))`)
-	assertContains(t, out, `stdjava.ReferenceArrayGet[string](stdjava.StringSplitArray("a,b", ","), 1, stdjava.StringTypeID)`)
+	assertContains(t, out, `stdjava.ReferenceArrayLength(stdjava.JavaStringSplitArray(stdjava.JavaStringLiteralUTF16([]uint16{97, 44, 98, 44, 99}), stdjava.JavaStringLiteralUTF16([]uint16{44})))`)
+	assertContains(t, out, `stdjava.ReferenceArrayGet[*stdjava.JavaString](stdjava.JavaStringSplitArray(stdjava.JavaStringLiteralUTF16([]uint16{97, 44, 98}), stdjava.JavaStringLiteralUTF16([]uint16{44})), 1, stdjava.StringTypeID)`)
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestStringSplitArrayRuntime(t *testing.T) {
-	if got := Trimmed(); got != "hi" {
-		t.Fatalf("Trimmed() = %q, want hi", got)
+	trimmed := Trimmed()
+	if trimmed == nil { t.Fatal("Trimmed() returned null") }
+	if got := trimmed.UTF16Copy(); !slices.Equal(got, utf16.Encode([]rune("hi"))) {
+		t.Fatalf("Trimmed() = %q, want hi", string(utf16.Decode(got)))
 	}
 	if got := Parts(); got != 3 {
 		t.Fatalf("Parts() = %d, want 3", got)
@@ -266,8 +327,10 @@ func TestStringSplitArrayRuntime(t *testing.T) {
 	if got := TrailingEmptyParts(); got != 2 {
 		t.Fatalf("TrailingEmptyParts() = %d, want Java trailing-empty length 2", got)
 	}
-	if got := Second(); got != "b" {
-		t.Fatalf("Second() = %q, want b", got)
+	second := Second()
+	if second == nil { t.Fatal("Second() returned null") }
+	if got := second.UTF16Copy(); !slices.Equal(got, utf16.Encode([]rune("b"))) {
+		t.Fatalf("Second() = %q, want b", string(utf16.Decode(got)))
 	}
 	if got := DescriptorChecks(); got != 3 {
 		t.Fatalf("DescriptorChecks() = %d, want String[] and covariant Object[] bits", got)
@@ -285,7 +348,7 @@ public class Chained {
 }
 `
 	out := renderIntrinsicProgram(t, src)
-	assertContains(t, out, "strings.ToUpper(strings.TrimSpace(stdjava.StringRequireNonNull(s)))")
+	assertContains(t, out, "stdjava.JavaStringToUpperCase(stdjava.JavaStringTrim(stdjava.RequireJavaString(s)))")
 }
 
 func TestJavaStdlibImportsStripped(t *testing.T) {

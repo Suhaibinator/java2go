@@ -1,17 +1,13 @@
 package transpiler
 
 import (
-	"bytes"
 	"fmt"
 	"go/build"
 	"go/format"
-	"go/parser"
-	"go/token"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -27,9 +23,9 @@ func (f *repeatedFlag) Set(value string) error { *f = append(*f, value); return 
 
 // Project conversion stages a complete module before publishing it. Failed
 // dependency resolution, conversion, or cycle checks leave the output untouched.
-func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, output, module, excluded string, stdout io.Writer) error {
+func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, output, module, excluded string, stdout io.Writer) (resultErr error) {
 	if mainClass == "" || runtimeRoot == "" {
-		return fmt.Errorf("-maven requires -main-class fully.qualified.Class and -runtime /path/to/java2go")
+		return fmt.Errorf("-maven requires -main-class Class (qualified for named packages) and -runtime /path/to/java2go")
 	}
 	if !validProjectModule(module) {
 		return fmt.Errorf("invalid Go module path %q", module)
@@ -83,7 +79,8 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.RemoveAll(staging) }()
+	published := false
+	defer func() { finishMavenProjectStaging(staging, published, &resultErr) }()
 	inputs := filepath.Join(staging, "sources")
 	generated := filepath.Join(staging, "output")
 	if err = os.MkdirAll(inputs, 0755); err != nil {
@@ -134,11 +131,11 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 				return fmt.Errorf("no Java type declaration in %s", path)
 			}
 			pkg := symbols.Package
-			if pkg == "" {
-				return fmt.Errorf("maven source %s requires a named Java package", path)
-			}
 			for _, class := range symbols.TopLevelClasses {
-				key := pkg + "." + class.Class.OriginalName
+				key := class.Class.OriginalName
+				if pkg != "" {
+					key = pkg + "." + key
+				}
 				if previous := classes[key]; previous != "" {
 					return fmt.Errorf("duplicate Java type %s in %s and %s", key, previous, path)
 				}
@@ -173,11 +170,13 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	if err = runInternal(args, stdout, true); err != nil {
 		return err
 	}
-	split := strings.LastIndex(mainClass, ".")
-	mainPackage := mainClass[:split]
-	mainType := mainClass[split+1:]
+	mainPackage, mainType := "", mainClass
+	if split := strings.LastIndex(mainClass, "."); split >= 0 {
+		mainPackage, mainType = mainClass[:split], mainClass[split+1:]
+	}
 	scope := symbol.GlobalScope.FindPackage(mainPackage)
 	entry := ""
+	genericProcessEntry := false
 	if scope != nil {
 		for _, file := range scope.Files {
 			class := file.FindClassScope(mainType)
@@ -186,7 +185,11 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 			}
 			for _, method := range class.Methods {
 				if projectMain(method) {
-					entry = method.Name
+					entry = symbol.GoIdentifier(method.Name)
+					if genericMainProcessBoundary(method, Ctx{currentFile:file,currentClass:class,localScope:method}) {
+						entry = genericMainProcessEntryName(method,class)
+						genericProcessEntry = true
+					}
 				}
 			}
 		}
@@ -194,69 +197,37 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	if entry == "" {
 		return fmt.Errorf("%s must declare public static void main(String[])", mainClass)
 	}
-	graph := map[string]map[string]bool{}
-	paths := make([]string, 0, len(packages))
-	for path := range packages {
-		paths = append(paths, path)
+	mainImport, entry, err := lowerProjectPackages(generated, module, runtimeRoot, packages, strings.ReplaceAll(mainPackage, ".", "/"), entry)
+	if err != nil {
+		return err
 	}
-	sort.Strings(paths)
-	for _, packagePath := range paths {
-		graph[packagePath] = map[string]bool{}
-		err = filepath.WalkDir(filepath.Join(generated, filepath.FromSlash(projectPackagePath(packagePath))), func(path string, d fs.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
-			}
-			if d.IsDir() {
-				if path != filepath.Join(generated, filepath.FromSlash(projectPackagePath(packagePath))) {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if filepath.Ext(path) != ".go" {
-				return nil
-			}
-			set := token.NewFileSet()
-			file, err := parser.ParseFile(set, path, nil, parser.ParseComments)
-			if err != nil {
-				return fmt.Errorf("parse generated Go %s: %w", path, err)
-			}
-			name := packagePath[strings.LastIndex(packagePath, "/")+1:]
-			file.Name.Name = "j_" + sanitizeGoIdent(name)
-			for _, spec := range file.Imports {
-				importPath, err := strconv.Unquote(spec.Path.Value)
-				if err != nil {
-					return err
-				}
-				if _, ok := packages[importPath]; ok {
-					graph[packagePath][importPath] = true
-					spec.Path.Value = strconv.Quote(module + "/" + projectPackagePath(importPath))
-				}
-			}
-			var data bytes.Buffer
-			if err = format.Node(&data, set, file); err != nil {
+	for _, m := range plan.Modules {
+		for _, resource := range m.Resources {
+			if err = copyProjectResources(resource, filepath.Join(generated, "resources")); err != nil {
 				return err
 			}
-			return os.WriteFile(path, data.Bytes(), 0644)
-		})
-		if err != nil {
-			return err
 		}
 	}
-	if cycle := projectImportCycle(graph); len(cycle) > 0 {
-		return fmt.Errorf("java package cycle cannot be represented as Go imports: %s; move mutually dependent classes into one Java package before conversion", strings.Join(cycle, " -> "))
+	resourceImport, err := embedProjectResources(generated, module)
+	if err != nil {
+		return err
 	}
 	launcher := fmt.Sprintf(`package main
 import (
  app %q
+ %s
  "os"
  stdjava "github.com/NickyBoy89/java2go/stdjava"
 )
 func main() {
- args := stdjava.NewReferenceArrayOf[string](len(os.Args)-1, stdjava.StringTypeID)
- for i, value := range os.Args[1:] { stdjava.ReferenceArraySet(args, i, value) }
+ args := stdjava.NewReferenceArrayOf[*stdjava.JavaString](len(os.Args)-1, stdjava.StringTypeID)
+ for i, value := range os.Args[1:] { stdjava.ReferenceArraySet(args, i, stdjava.JavaStringFromHostUTF8(value)) }
  app.%s(args)
 }
-`, module+"/"+projectPackagePath(strings.ReplaceAll(mainPackage, ".", "/")), entry)
+`, mainImport, resourceImport, entry)
+	if genericProcessEntry {
+		launcher = fmt.Sprintf("package main\nimport (app %q; %s)\nfunc main(){app.%s()}\n", mainImport, resourceImport, entry)
+	}
 	data, err := format.Source([]byte(launcher))
 	if err != nil {
 		return err
@@ -268,13 +239,6 @@ func main() {
 	if err = writeProjectFile(filepath.Join(generated, "go.mod"), []byte(goMod)); err != nil {
 		return err
 	}
-	for _, m := range plan.Modules {
-		for _, resource := range m.Resources {
-			if err = copyProjectResources(resource, filepath.Join(generated, "resources")); err != nil {
-				return err
-			}
-		}
-	}
 	// Refuse to replace any files produced by another writer while converting.
 	if err = os.Remove(output); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("publish project output: %w", err)
@@ -282,8 +246,26 @@ func main() {
 	if err = os.Rename(generated, output); err != nil {
 		return fmt.Errorf("publish project output: %w", err)
 	}
+	published = true
 	return nil
 }
+
+// Only a successfully published module discards staging. In particular, panic
+// unwinding must not confuse a nil named error with successful conversion.
+func finishMavenProjectStaging(staging string, published bool, result *error) {
+	if published {
+		_ = os.RemoveAll(staging)
+		return
+	}
+	if *result != nil {
+		*result = fmt.Errorf("%w; failed project artifacts retained at %s", *result, staging)
+		return
+	}
+	// Keep the original panic value and stack; add the artifact location without
+	// recovering or converting the failure into a successful return.
+	_, _ = fmt.Fprintf(os.Stderr, "project conversion interrupted; artifacts retained at %s\n", staging)
+}
+
 func validProjectModule(module string) bool {
 	if module == "" || strings.HasPrefix(module, "/") || strings.HasSuffix(module, "/") {
 		return false
@@ -392,49 +374,6 @@ func copyProjectResources(resource project.Resource, root string) error {
 		}
 		return writeProjectFile(target, data)
 	})
-}
-func projectImportCycle(graph map[string]map[string]bool) []string {
-	states := map[string]int{}
-	stack := []string{}
-	var visit func(string) []string
-	visit = func(node string) []string {
-		if states[node] == 1 {
-			for i, n := range stack {
-				if n == node {
-					return append(append([]string{}, stack[i:]...), node)
-				}
-			}
-		}
-		if states[node] == 2 {
-			return nil
-		}
-		states[node] = 1
-		stack = append(stack, node)
-		edges := []string{}
-		for edge := range graph[node] {
-			edges = append(edges, edge)
-		}
-		sort.Strings(edges)
-		for _, edge := range edges {
-			if cycle := visit(edge); cycle != nil {
-				return cycle
-			}
-		}
-		stack = stack[:len(stack)-1]
-		states[node] = 2
-		return nil
-	}
-	nodes := []string{}
-	for node := range graph {
-		nodes = append(nodes, node)
-	}
-	sort.Strings(nodes)
-	for _, node := range nodes {
-		if cycle := visit(node); cycle != nil {
-			return cycle
-		}
-	}
-	return nil
 }
 
 // Prefix every Java package component so vendor, internal, testdata, leading

@@ -1,0 +1,6 @@
+seed=17,folded=true,before=
+qualifiers=lexical,shadow,trace=Q17|H17|
+lateAlias=true,same=false
+touch=true,true,true,trace=Q17|H17|C|S|F|
+arithmetic=-2147483648,1,1,66,true,1.75
+dynamic=true,same=false,shadow=source-17,finalTrace=Q17|H17|C|S|F|

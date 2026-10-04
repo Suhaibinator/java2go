@@ -1,0 +1,11 @@
+--- a/stdjava/monitor_observation.go
++++ b/stdjava/monitor_observation.go
+@@ -8 +8,7 @@
+-	monitor := monitorRecord(value)
++	identity := monitorIdentityFor(value)
++	monitorsMu.Lock()
++	monitor := monitors[identity]
++	monitorsMu.Unlock()
++	if monitor == nil {
++		return false
++	}

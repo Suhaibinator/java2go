@@ -1,0 +1,92 @@
+{
+  "main_class": "probe.number.Main",
+  "observations": [
+    {
+      "repeat": 1,
+      "seed": 17,
+      "stderr": "observations/seed-17-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-17-repeat-1.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    },
+    {
+      "repeat": 2,
+      "seed": 17,
+      "stderr": "observations/seed-17-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-17-repeat-2.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    },
+    {
+      "repeat": 3,
+      "seed": 17,
+      "stderr": "observations/seed-17-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-17-repeat-3.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    },
+    {
+      "repeat": 1,
+      "seed": 41,
+      "stderr": "observations/seed-41-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-41-repeat-1.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    },
+    {
+      "repeat": 2,
+      "seed": 41,
+      "stderr": "observations/seed-41-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-41-repeat-2.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    },
+    {
+      "repeat": 3,
+      "seed": 41,
+      "stderr": "observations/seed-41-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-41-repeat-3.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    },
+    {
+      "repeat": 1,
+      "seed": 97,
+      "stderr": "observations/seed-97-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-97-repeat-1.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    },
+    {
+      "repeat": 2,
+      "seed": 97,
+      "stderr": "observations/seed-97-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-97-repeat-2.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    },
+    {
+      "repeat": 3,
+      "seed": 97,
+      "stderr": "observations/seed-97-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "observations/seed-97-repeat-3.stdout",
+      "stdout_sha256": "dc73557ad0b62c8adcb253a884b79743a235ad95136f27a7022d215a6a6866de"
+    }
+  ],
+  "original_report": "/private/tmp/java2go-number-jvm-v2-63zj42dk/report.json",
+  "original_report_sha256": "80230ba60e9c14b2411e75f7d6e5d1a86f2569c70f32922dc36727db1983e4c4",
+  "project_files": {
+    "README.md": "89d7b9fc9e7211051f86c8686b3ca63e27be7bf4129b43c5bd33c957e4fee08d",
+    "pom.xml": "89063b0777a93a5b9f902a5e5806966a9ff219d34874ad0b4cafc9a69d4ae923",
+    "src/main/java/probe/api/Carrier.java": "3345a09e282b5f9305d15ffc8c475c02b68a03ffea5e5211f6070ac1cd8a0b64",
+    "src/main/java/probe/api/Factory.java": "44ed9f60209d28500bd62570679eeae9570f9f84576b8fdce0916ee01e155de0",
+    "src/main/java/probe/model/IntegerCarrier.java": "226f3db8541f154c7b9704ff6cf550fb6da4efbd660300a439dba838ed8aa767",
+    "src/main/java/probe/model/NamedFactory.java": "2236ad50e975ebc48ff2f91f997d69ce6cdd955fcfbbc647759e04d8a0e3d035",
+    "src/main/java/probe/model/NumberCarrier.java": "9bffd6e412d95e755b74886fe4a6d7c5da78362d8817cf4bcf2dab02dbd65366",
+    "src/main/java/probe/model/TextCarrier.java": "9713d7f7c644e35b096617771334d567377ac328d288d2143df76318180ffe77",
+    "src/main/java/probe/number/Main.java": "ebb88dcf2061e9dc3dca8a0794958225587dc55457a504d445c301cb5bcf19ce",
+    "src/main/java/probe/shadow/Number.java": "f135eff576a41f5a445518e82ae8894e29ed9bc9180f2464565688aba927ca01"
+  },
+  "source_manifest_sha256": "d1e3707d81bcc8dcde7ea73d8bf018c67176ee69dee2388959b500c27a78290e"
+}

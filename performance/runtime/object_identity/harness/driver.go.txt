@@ -1,0 +1,8 @@
+package main
+import("fmt";"os";"strconv";"runtime")
+func heap()int64{runtime.GC();runtime.GC();var m runtime.MemStats;runtime.ReadMemStats(&m);return int64(m.HeapAlloc)}
+func metric(phase string,baseline int64){current:=heap();fmt.Fprintf(os.Stderr,"{\"phase\":%q,\"delta\":%d}\n",phase,current-baseline)}
+func main(){seed,_:=strconv.Atoi(os.Args[1]);mode,_:=strconv.Atoi(os.Args[2]);for pass:=0;pass<3;pass++{scenario(seed,mode,pass==2)}}
+func scenario(seed,mode int,measured bool){Cycle(int32(seed),4,1024,0);Clear();fmt.Sprintf("round=%d checksum=%d",0,int64(0));baseline:=heap()
+for round:=0;round<3;round++{checksum:=Cycle(int32(seed+round*31),32,131072,int32(mode));fmt.Printf("round=%d checksum=%d\n",round,checksum);if measured{metric(fmt.Sprintf("round-%d",round),baseline)}else{heap()};fmt.Printf("retained=%d\n",RetainedChecksum())}
+Clear();fmt.Println("cleared");if measured{metric("cleared",baseline)}else{heap()};fmt.Printf("retained=%d\n",RetainedChecksum())}

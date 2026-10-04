@@ -1,0 +1,22 @@
+package stdjava
+import "testing"
+
+func TestCandidateVacatedSlots(t *testing.T) {
+ type contained struct { pointer *int; bytes []byte; label string }
+ first,second,third:=1,2,3
+ for _,index:=range []int32{0,1,2} {
+  values:=[]contained{{&first,[]byte{1},"a"},{&second,[]byte{2},"b"},{&third,[]byte{3},"c"}}
+  list:=NewListFrom(values...)
+  capacity:=cap(list.elements)
+  removed:=list.RemoveAt(index)
+  if removed.pointer!=values[index].pointer { t.Fatal("returned identity changed") }
+  if cap(list.elements)!=capacity || list.Size()!=2 { t.Fatal("shape changed") }
+  tail:=list.elements[:capacity][2]
+  if tail.pointer!=nil || tail.bytes!=nil || tail.label!="" { t.Fatalf("slot not zero after remove %d: %#v",index,tail) }
+  want:=append(append([]contained{},values[:index]...),values[index+1:]...)
+  for i,value:=range list.elements { if value.pointer!=want[i].pointer { t.Fatal("survivor order changed") } }
+ }
+ list:=NewListFrom(&first,&second,&third)
+ for list.Size()>0 { list.RemoveAt(list.Size()-1) }
+ for _,value:=range list.elements[:cap(list.elements)] { if value!=nil { t.Fatal("empty list retains pointer") } }
+}

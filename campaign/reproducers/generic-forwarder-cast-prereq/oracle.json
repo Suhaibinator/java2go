@@ -1,0 +1,133 @@
+{
+  "compile": {
+    "command": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "/private/tmp/generic-forwarder-cast-oracle.jhqlv1qj/classes",
+      "src/probe/forward/state/Trace.java",
+      "src/probe/forward/source/Token.java",
+      "src/probe/forward/source/RawCursor.java",
+      "src/probe/forward/source/Forwarder.java",
+      "src/probe/forward/app/Main.java"
+    ],
+    "exit": 0,
+    "stderr_bytes": 0,
+    "stderr_path": "javac.stderr",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_bytes": 0,
+    "stdout_path": "javac.stdout",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timed_out": false,
+    "timeout_seconds": 300
+  },
+  "jdk_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "kind": "supplemental-generic-forwarder-cast-jdk21-oracle",
+  "runs": [
+    {
+      "exit": 0,
+      "repeat": 1,
+      "seed": 17,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+    },
+    {
+      "exit": 0,
+      "repeat": 2,
+      "seed": 17,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+    },
+    {
+      "exit": 0,
+      "repeat": 3,
+      "seed": 17,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+    },
+    {
+      "exit": 0,
+      "repeat": 1,
+      "seed": 41,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+    },
+    {
+      "exit": 0,
+      "repeat": 2,
+      "seed": 41,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+    },
+    {
+      "exit": 0,
+      "repeat": 3,
+      "seed": 41,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+    },
+    {
+      "exit": 0,
+      "repeat": 1,
+      "seed": 97,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+    },
+    {
+      "exit": 0,
+      "repeat": 2,
+      "seed": 97,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+    },
+    {
+      "exit": 0,
+      "repeat": 3,
+      "seed": 97,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+    }
+  ],
+  "seeds": {
+    "17": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-17.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 633,
+        "path": "expected.seed-17.stdout",
+        "sha256": "c4a89dd2ec0ffe66de955fe5049f261850a1a424f8cb987fd0fe65876e4cf5c3"
+      }
+    },
+    "41": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-41.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 633,
+        "path": "expected.seed-41.stdout",
+        "sha256": "e75972eb5b7011bc898248ba82786f927ddc288d8b9540f5ece68e5ff535eb95"
+      }
+    },
+    "97": {
+      "stderr": {
+        "bytes": 0,
+        "path": "expected.seed-97.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 568,
+        "path": "expected.seed-97.stdout",
+        "sha256": "eb9ab271c84961fd4f80d9f2a0f183affd46554a8f513c68a3f2674052ea3ebb"
+      }
+    }
+  },
+  "source_manifest_sha256": "c3981c63e32b5faa7280fc4909b037ff6c55c43a0bf60c87ec88cb904be2f573"
+}

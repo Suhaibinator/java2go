@@ -52,13 +52,21 @@ public class FieldBackedCalls {
 		"stdjava.EvaluationValue(fs.values).Add(",
 		".values.Get(0)",
 		".values.Size()",
-		"stdjava.EvaluationValue(fs.byKey).Put(",
-		".byKey.Get(",
+		"stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey), stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}), fs.worker.NameJava2goExecution(__java2goExecution))",
+		"stdjava.ObjectView[*stdjava.JavaString](fs.byKey.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}), __java2goExecution), stdjava.StringTypeID)",
 	}
 	for _, check := range checks {
 		if !strings.Contains(out, check) {
 			t.Errorf("generated field receiver is missing %q:\n%s", check, out)
 		}
+	}
+	add := strings.Index(out, "stdjava.EvaluationValue(fs.values).Add(")
+	put := strings.Index(out, "stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey),")
+	getList := strings.Index(out, "fs.values.Get(0)")
+	getMap := strings.Index(out, "fs.byKey.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}), __java2goExecution)")
+	size := strings.Index(out, "fs.values.Size()")
+	if add < 0 || put <= add || getList <= put || getMap <= getList || size <= getMap {
+		t.Errorf("generated calls changed Java statement or return-expression evaluation order:\n%s", out)
 	}
 	for _, stale := range []string{".parser.parse(", ".worker.name(", ".values.add(", ".values.get(", ".values.size(", ".byKey.put(", ".byKey.get("} {
 		if strings.Contains(out, stale) {
@@ -138,7 +146,13 @@ public class StableRanker<T extends Ranked> {
 	if strings.Count(flat, ".PrimaryScoreJava2goExecution(__java2goExecution)") != 4 {
 		t.Fatalf("expected type-parameter receiver calls to use Ranked's generated method names:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.StringCompareTo(stdjava.StringRequireNonNull(func() string") ||
+	// The String intrinsic stages its receiver and argument before the null
+	// check, preserving Java's invocation evaluation order.
+	receiverStage := strings.Index(flat, "__java2goInvocationReceiver := func() string")
+	argumentStage := strings.Index(flat, "__java2goInvocationArg0 := func() string")
+	compareCall := strings.Index(flat, "stdjava.StringCompareTo(stdjava.StringRequireNonNull(__java2goInvocationReceiver), __java2goInvocationArg0)")
+	if receiverStage < 0 || argumentStage <= receiverStage || compareCall <= argumentStage ||
+		!strings.Contains(flat, "return func() int32 {") || !strings.Contains(flat, "}() < 0") ||
 		strings.Count(flat, ".StableKeyJava2goExecution(__java2goExecution)") != 2 {
 		t.Fatalf("expected String return from the bound method to drive compareTo intrinsic lowering:\n%s", out)
 	}

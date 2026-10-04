@@ -182,6 +182,43 @@ func DisambiguateTypeParamGoNames(parameters []TypeParam) {
 	}
 }
 
+// ReserveTypeParamNominalNames runs during symbol resolution, before any Go AST
+// is rendered. A package-local nominal type remains an unqualified Go name even
+// when its Java use was qualified; a generic binder must not capture that name.
+// Later DisambiguateTypeParamGoNames calls preserve these allocated spellings.
+func ReserveTypeParamNominalNames(parameters []TypeParam, nominalNames map[string]struct{}) {
+	// Parsed declarations already have stable lexical aliases. Collect all of
+	// them before allocating any replacement, including aliases belonging to
+	// different methods or nested classes that will later share an ABI context.
+	for index := range parameters {
+		if parameters[index].Declaration == nil {
+			parameters[index].Declaration = &TypeParamDeclaration{SourceName: parameters[index].Name, GoName: parameters[index].Name}
+		}
+	}
+	occupied := make(map[string]struct{}, len(nominalNames)+2*len(parameters))
+	for name := range nominalNames {
+		occupied[name] = struct{}{}
+	}
+	for _, parameter := range parameters {
+		occupied[parameter.Name] = struct{}{}
+		occupied[parameter.EmittedName()] = struct{}{}
+	}
+	for _, parameter := range parameters {
+		if _, collision := nominalNames[parameter.EmittedName()]; !collision {
+			continue
+		}
+		for suffix := 2; ; suffix++ {
+			candidate := fmt.Sprintf("%s%d", parameter.Name, suffix)
+			if _, collision := occupied[candidate]; collision {
+				continue
+			}
+			parameter.Declaration.GoName = candidate
+			occupied[candidate] = struct{}{}
+			break
+		}
+	}
+}
+
 func FindVisibleTypeParam(parameters []TypeParam, sourceName string) *TypeParamDeclaration {
 	for index := len(parameters) - 1; index >= 0; index-- {
 		parameter := parameters[index]

@@ -1,0 +1,4 @@
+null|null|true|true
+empty|[]|true|true
+values|[-128, -1, 0, 1, 127, 17]|[-128, -1, 0, 1, 127, 17]|false
+mutation|[-128, -1, 0, 1, 127, 17]|[-128, 2, 0, 1, 127, 17]

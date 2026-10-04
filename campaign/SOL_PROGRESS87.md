@@ -1,0 +1,7 @@
+# Sol progress87: whole-program symbol resolution
+
+Symbol resolution now performs ordinary file work before one package hierarchy and static-name allocation pass. A transient declaration-to-file index avoids repeated graph searches. Ordinary selectors avoid the expensive reference-identity predicate. The constructor/static-field collision found by independent review is covered by its original regression.
+
+The fresh current86 composition passes all27 required resolver records and four unchanged JVM observations. All20 explicit packages compile; nine report no test files during this compile-only check, with zero skipped assertions. Allocation probes retain their original bounds: splitting the same26-class graph costs0.89 times the joined version; ordinary selector checks use zero allocations. Original RED artifacts, independent reviews, exact source/tool pins and both clean durable supervisors are preserved.
+
+Full Netty symbol resolution clears in about20 seconds, but strict translation still fails its300-second bound converting the first AbstractByteBuf file. That timeout and empty output are retained as failure. Experimental generic planning work is excluded from this commit. Full program/CI/round compatibility and Java performance superiority remain unaccepted; checkpoint18 is still the latest accepted full round. Continue the Sol-only adversarial repairs against unchanged Netty, Commons and Gson challenges.

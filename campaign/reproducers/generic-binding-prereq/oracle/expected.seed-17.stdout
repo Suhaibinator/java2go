@@ -1,0 +1,6 @@
+seed=17,routes=1,2,3,4,5,1
+retail=I/17/54/5/p[agent-17/primitive:21]b[agent-17/boxed:27]g[agent-17/wide:35]g[agent-17/widened:44]g[agent-17/forwarded:54]pX
+reserve=G/34/37/1/b[agent-17/reserve:37]
+bound=25,42
+rejection=true,touches=1,before=I/17/54/5/p[agent-17/primitive:21]b[agent-17/boxed:27]g[agent-17/wide:35]g[agent-17/widened:44]g[agent-17/forwarded:54]
+evaluations=opebewebebefbeep

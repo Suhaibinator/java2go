@@ -54,11 +54,11 @@ type pom struct {
 	Managed      []Dependency `xml:"dependencyManagement>dependencies>dependency"`
 	Profiles     []struct{}   `xml:"profiles>profile"`
 	Build        struct {
-		SourceDirectory string     `xml:"sourceDirectory"`
-		Resources       []resource `xml:"resources>resource"`
-		Plugins         []struct{} `xml:"plugins>plugin"`
-		ManagedPlugins  []struct{} `xml:"pluginManagement>plugins>plugin"`
-		Extensions      []struct{} `xml:"extensions>extension"`
+		SourceDirectory string                  `xml:"sourceDirectory"`
+		Resources       []resource              `xml:"resources>resource"`
+		Plugins         []compilerPluginElement `xml:"plugins>plugin"`
+		ManagedPlugins  []struct{}              `xml:"pluginManagement>plugins>plugin"`
+		Extensions      []struct{}              `xml:"extensions>extension"`
 	} `xml:"build"`
 }
 
@@ -66,6 +66,7 @@ type Resource struct{ Directory, Target string }
 type Module struct {
 	Directory, GroupID, ArtifactID, Version, SourceDirectory string
 	Resources                                                []Resource
+	Compiler                                                 *CompilerMetadata
 	dependencies                                             []Dependency
 	rawDependencies, rawManaged                              []Dependency
 	managed                                                  map[string]Dependency
@@ -211,7 +212,7 @@ func (r *resolver) read(path string) (*Module, error) {
 		return nil, fmt.Errorf("parse %s/pom.xml: %w", path, err)
 	}
 	p := &m.model
-	if len(p.Profiles) > 0 || len(p.Build.Plugins) > 0 || len(p.Build.ManagedPlugins) > 0 || len(p.Build.Extensions) > 0 {
+	if len(p.Profiles) > 0 || len(p.Build.ManagedPlugins) > 0 || len(p.Build.Extensions) > 0 {
 		return nil, fmt.Errorf("%s: Maven profiles, build plugins and extensions are unsupported; supply a source-only POM with generated sources already materialized", path)
 	}
 	if p.Parent != nil {
@@ -228,6 +229,9 @@ func (r *resolver) read(path string) (*Module, error) {
 		}
 		if parent.GroupID != p.Parent.GroupID || parent.ArtifactID != p.Parent.ArtifactID || parent.Version != p.Parent.Version {
 			return nil, fmt.Errorf("%s: local parent coordinates do not match declared parent", path)
+		}
+		if len(parent.model.Build.Plugins) > 0 {
+			return nil, fmt.Errorf("%s: inherited compiler build plugins are unsupported; declare compiler metadata in each child POM", path)
 		}
 		for key, value := range parent.properties {
 			m.properties[key] = value
@@ -266,6 +270,10 @@ func (r *resolver) read(path string) (*Module, error) {
 	m.properties["project.groupId"] = m.GroupID
 	m.properties["project.artifactId"] = m.ArtifactID
 	m.properties["project.version"] = m.Version
+	m.Compiler, err = resolveCompilerMetadata(p.Build.Plugins, p.RawProperties.Values, m.properties)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
+	}
 	if p.Packaging != "" && p.Packaging != "jar" && p.Packaging != "pom" {
 		return nil, fmt.Errorf("%s: unsupported packaging %q (supported: jar, pom)", path, p.Packaging)
 	}

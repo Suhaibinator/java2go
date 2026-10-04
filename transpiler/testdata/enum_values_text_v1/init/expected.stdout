@@ -1,0 +1,6 @@
+before=
+init=qualifier;ctor:A:NPE;ctor:B:NPE;ready:2;:1:2
+later=true:qualifier;ctor:A:NPE;ctor:B:NPE;ready:2;:ok
+first-fail=ExceptionInInitializerError
+later-fail=NoClassDefFoundError
+cleanup=2

@@ -1,0 +1,1 @@
+package p; public class Base {public int inherited; public int observed; public Base(){this(4);} public Base(int value){inherited=value; observed=probe();} public int probe(){return -1;} public int base(){return 11;}}

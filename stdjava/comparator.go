@@ -96,13 +96,22 @@ func SortWith[T any](l *List[T], c Comparator[T], execution ...*Execution) {
 	if l == nil {
 		panic(NewNullPointerException("Collections.sort on null"))
 	}
-	if c == nil {
-		SortSliceStableNatural(l.elements, execution...)
+	elements := l.Slice()
+	if l.viewRoot != nil {
+		elements = append([]T(nil), elements...)
+	}
+	SortSliceWith(elements, c, execution...)
+	if l.viewRoot != nil {
+		l.writeSortedView(optionalComparisonExecution(execution), len(elements), func(index int32) {
+			l.Set(index, elements[index])
+		})
 		return
 	}
-	sort.SliceStable(l.elements, func(i, j int) bool {
-		return c(l.elements[i], l.elements[j]) < 0
-	})
+	if l.array != nil || l.erasedStorage {
+		for i, element := range elements {
+			l.Set(int32(i), element)
+		}
+	}
 }
 
 // SortSliceWith sorts a slice with an explicit comparator, matching
@@ -138,11 +147,11 @@ func optionalComparisonExecution(executions []*Execution) *Execution {
 // Collections.max(coll, cmp). Java returns the first maximal element, so a later
 // element replaces the incumbent only when it compares strictly greater.
 func MaxWith[T any](l *List[T], c Comparator[T], execution ...*Execution) T {
-	if l == nil || len(l.elements) == 0 {
+	if l == nil || l.Size() == 0 {
 		panic(NewNoSuchElementException("Collections.max on an empty collection"))
 	}
-	best := l.elements[0]
-	for _, e := range l.elements[1:] {
+	best := l.Get(0)
+	for _, e := range l.Slice()[1:] {
 		if compareWithNatural(c, e, best, execution...) > 0 {
 			best = e
 		}
@@ -153,11 +162,11 @@ func MaxWith[T any](l *List[T], c Comparator[T], execution ...*Execution) T {
 // MinWith returns the smallest element under an explicit comparator, matching
 // Collections.min(coll, cmp). As with MaxWith, ties keep the earlier element.
 func MinWith[T any](l *List[T], c Comparator[T], execution ...*Execution) T {
-	if l == nil || len(l.elements) == 0 {
+	if l == nil || l.Size() == 0 {
 		panic(NewNoSuchElementException("Collections.min on an empty collection"))
 	}
-	best := l.elements[0]
-	for _, e := range l.elements[1:] {
+	best := l.Get(0)
+	for _, e := range l.Slice()[1:] {
 		if compareWithNatural(c, e, best, execution...) < 0 {
 			best = e
 		}
@@ -188,13 +197,26 @@ func SortArrayWith[T any](array any, c Comparator[T], execution ...*Execution) {
 		SortSliceStableNatural(values.elements, execution...)
 		return
 	}
-	sort.SliceStable(values.elements, func(i, j int) bool {
-		left, leftOK := values.elements[i].(T)
-		right, rightOK := values.elements[j].(T)
+	sortJavaObjectArray(values.elements, func(leftRaw, rightRaw any) int32 {
+		left, leftOK := leftRaw.(T)
+		right, rightOK := rightRaw.(T)
+		if (!leftOK && leftRaw == nil) || (!rightOK && rightRaw == nil) {
+			// Checked reference-array stores erase Java null to an untyped nil.
+			// Only a nullable reference view may recover it for the comparator.
+			kind := reflect.TypeOf((*T)(nil)).Elem().Kind()
+			if kind == reflect.Pointer || kind == reflect.Interface {
+				if !leftOK && leftRaw == nil {
+					left, leftOK = ObjectView[T](nil, values.componentType), true
+				}
+				if !rightOK && rightRaw == nil {
+					right, rightOK = ObjectView[T](nil, values.componentType), true
+				}
+			}
+		}
 		if !leftOK || !rightOK {
 			panic(NewClassCastException("Arrays.sort comparator does not accept the array's element type"))
 		}
-		return c(left, right) < 0
+		return c(left, right)
 	})
 }
 
@@ -240,10 +262,14 @@ func ComparableCompareToExecution(execution *Execution, left, right any) int32 {
 func javaCompareValuesExecution(execution *Execution, left, right any) int32 {
 	ReferenceRequireNonNull(left)
 	switch left := left.(type) {
+	case *JavaString:
+		if right, ok := right.(*JavaString); ok && right != nil {
+			return left.CompareTo(right)
+		}
 	case string:
 		ReferenceRequireNonNull(right)
 		if right, ok := right.(string); ok {
-			return int32(cmp.Compare(left, right))
+			return StringCompareTo(left, right)
 		}
 	case int8:
 		if right, ok := right.(int8); ok {
@@ -310,7 +336,7 @@ func compareViaReflectOrdering(left, right any) (int32, bool) {
 	case reflect.Float32, reflect.Float64:
 		return javaDoubleCompare(leftValue.Float(), rightValue.Float()), true
 	case reflect.String:
-		return int32(cmp.Compare(leftValue.String(), rightValue.String())), true
+		return StringCompareTo(leftValue.String(), rightValue.String()), true
 	}
 	return 0, false
 }

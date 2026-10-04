@@ -1,0 +1,433 @@
+{
+  "java_search_cases": 7956,
+  "java_null_cases": {
+    "null-receiver": "NullPointerException",
+    "null-string-needle-negative": "NullPointerException",
+    "null-start": "NullPointerException",
+    "null-receiver-invalid-point": "NullPointerException"
+  },
+  "oracle_sha256": "6bc1ccf2a51f3efe3a7f9864d1e87322cfedcdd29cef226c6cdff48cb4a524a6",
+  "go_version": "go version go1.27.1 darwin/arm64",
+  "java_version": "21.0.6+8-LTS-188",
+  "baseline_string_search_sha256": "474ef49ed4ae32f9807c3e95653f67abe61b28d4d80d3737b6019264e9b57e1d",
+  "checks": {
+    "both_full_runtime_suites": "pass",
+    "invalid_go_utf8_results": 120,
+    "all_search_matrix_outputs": "match Java exactly",
+    "all_probe_results": "baseline/candidate match"
+  },
+  "trials": {
+    "baseline": [
+      [
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 84,
+          "name": "ascii-delimiter",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 100,
+          "name": "generated-call-shape",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 18452.08,
+          "name": "long-ascii-delimiter",
+          "result": 4096
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 104,
+          "name": "supplementary-point",
+          "result": 11
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 68,
+          "name": "isolated-high-point",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 68,
+          "name": "isolated-low-point",
+          "result": 2
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "unicode-needle-low-start",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "unicode-last-low-start",
+          "result": 1
+        },
+        {
+          "allocs_per_call": 2,
+          "bytes_per_call": 64,
+          "name": "empty-needle-overrun",
+          "result": 7
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "last-negative",
+          "result": -1
+        },
+        {
+          "allocs_per_call": 2,
+          "bytes_per_call": 64,
+          "name": "invalid-codepoint",
+          "result": -1
+        }
+      ],
+      [
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 84,
+          "name": "ascii-delimiter",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 100.016,
+          "name": "generated-call-shape",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 18452.064,
+          "name": "long-ascii-delimiter",
+          "result": 4096
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 104,
+          "name": "supplementary-point",
+          "result": 11
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 68.016,
+          "name": "isolated-high-point",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 68,
+          "name": "isolated-low-point",
+          "result": 2
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "unicode-needle-low-start",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "unicode-last-low-start",
+          "result": 1
+        },
+        {
+          "allocs_per_call": 2,
+          "bytes_per_call": 64,
+          "name": "empty-needle-overrun",
+          "result": 7
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "last-negative",
+          "result": -1
+        },
+        {
+          "allocs_per_call": 2,
+          "bytes_per_call": 64,
+          "name": "invalid-codepoint",
+          "result": -1
+        }
+      ],
+      [
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 84,
+          "name": "ascii-delimiter",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 100.016,
+          "name": "generated-call-shape",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 18452.08,
+          "name": "long-ascii-delimiter",
+          "result": 4096
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 104,
+          "name": "supplementary-point",
+          "result": 11
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 68,
+          "name": "isolated-high-point",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 3,
+          "bytes_per_call": 68,
+          "name": "isolated-low-point",
+          "result": 2
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "unicode-needle-low-start",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "unicode-last-low-start",
+          "result": 1
+        },
+        {
+          "allocs_per_call": 2,
+          "bytes_per_call": 64,
+          "name": "empty-needle-overrun",
+          "result": 7
+        },
+        {
+          "allocs_per_call": 4,
+          "bytes_per_call": 96,
+          "name": "last-negative",
+          "result": -1
+        },
+        {
+          "allocs_per_call": 2,
+          "bytes_per_call": 64,
+          "name": "invalid-codepoint",
+          "result": -1
+        }
+      ]
+    ],
+    "candidate": [
+      [
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "ascii-delimiter",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 1,
+          "bytes_per_call": 16,
+          "name": "generated-call-shape",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "long-ascii-delimiter",
+          "result": 4096
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "supplementary-point",
+          "result": 11
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "isolated-high-point",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "isolated-low-point",
+          "result": 2
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "unicode-needle-low-start",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "unicode-last-low-start",
+          "result": 1
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "empty-needle-overrun",
+          "result": 7
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "last-negative",
+          "result": -1
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "invalid-codepoint",
+          "result": -1
+        }
+      ],
+      [
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "ascii-delimiter",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 1,
+          "bytes_per_call": 16,
+          "name": "generated-call-shape",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0.016,
+          "name": "long-ascii-delimiter",
+          "result": 4096
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "supplementary-point",
+          "result": 11
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "isolated-high-point",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "isolated-low-point",
+          "result": 2
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "unicode-needle-low-start",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "unicode-last-low-start",
+          "result": 1
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "empty-needle-overrun",
+          "result": 7
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "last-negative",
+          "result": -1
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "invalid-codepoint",
+          "result": -1
+        }
+      ],
+      [
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "ascii-delimiter",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 1,
+          "bytes_per_call": 16,
+          "name": "generated-call-shape",
+          "result": 6
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "long-ascii-delimiter",
+          "result": 4096
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "supplementary-point",
+          "result": 11
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "isolated-high-point",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "isolated-low-point",
+          "result": 2
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "unicode-needle-low-start",
+          "result": 4
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "unicode-last-low-start",
+          "result": 1
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "empty-needle-overrun",
+          "result": 7
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "last-negative",
+          "result": -1
+        },
+        {
+          "allocs_per_call": 0,
+          "bytes_per_call": 0,
+          "name": "invalid-codepoint",
+          "result": -1
+        }
+      ]
+    ]
+  }
+}

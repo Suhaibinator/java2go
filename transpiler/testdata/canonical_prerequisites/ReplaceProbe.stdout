@@ -1,0 +1,16 @@
+units:56320,0,97,56320,0,97:false
+missing:97,55296,97,56320,0,97:true
+overlap:98,98,97:false
+same-one:97,55296,97,56320,0,97:true
+same-many:97,98,97,98:false
+empty:120,97,120,55296,120,97,120,56320,120,0,120,97,120:false
+empty-both:97,55296,97,56320,0,97:false
+char:97,56320,97,56320,0,97:true:true
+callbacks:zbz:rabTtrueUtrue
+receiver-null:rab
+target-null:rab
+target-text-null:TtrueUtrue
+replacement-null:Ttrue
+abrupt:true:Ttrue
+char-unbox:ra
+builder:zbz

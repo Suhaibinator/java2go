@@ -283,19 +283,27 @@ public class OverrideBridgeExecutionProbe {
 package main
 
 import (
+    "slices"
     "testing"
     "time"
+    "unicode/utf16"
+
+    "github.com/NickyBoy89/java2go/stdjava"
 )
 
 func TestOverrideBridgeExecution(t *testing.T) {
-    result := make(chan string, 1)
+    result := make(chan *stdjava.JavaString, 1)
     go func() {
         result <- Run()
     }()
     select {
     case got := <-result:
-        if got != "SB:1:2" {
-            t.Fatalf("Run() = %q, want SB:1:2", got)
+        if got == nil {
+            t.Fatal("Run() returned null, want SB:1:2")
+        }
+        want := utf16.Encode([]rune("SB:1:2"))
+        if units := got.UTF16Copy(); !slices.Equal(units, want) {
+            t.Fatalf("Run() UTF16 = %v, want %v (SB:1:2)", units, want)
         }
     case <-time.After(3 * time.Second):
         t.Fatal("raw override bridge lost the caller execution token and deadlocked")

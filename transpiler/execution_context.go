@@ -50,14 +50,22 @@ func newExecutionExpr(ctx Ctx) ast.Expr {
 // it both a narrow source body and an erased ancestor bridge, which Go cannot
 // overload under one selector. Such a body receives its collision-safe exact
 // name here; the bridge planner retains the ancestor's stable erased name.
+// Carry the render context through bridge selection so the immutable source-family
+// inventory is reused within this render, without sharing it across conversions.
 // Checking source-level generated names globally keeps a user method such as
 // FooJava2goExecution from colliding with either hidden implementation.
-func executionImplementationName(def *symbol.Definition, owner *symbol.ClassScope) string {
+func executionImplementationName(def *symbol.Definition, owner *symbol.ClassScope, ctx Ctx) string {
 	if def == nil {
 		return ""
 	}
-	if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(owner, def, classScopeCtx(owner, Ctx{})); bridged {
+	if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(owner, def, classScopeCtx(owner, ctx)); bridged {
 		return directOwnerOverrideBridgeExactExecutionName(selection.bridge)
+	}
+	if name := mapEntrySourceImplementationName(def, owner, ctx); name != "" {
+		return name
+	}
+	if name := iterationSourceImplementationName(def, owner, ctx); name != "" {
+		return name
 	}
 	return collisionSafeExecutionIdentifier(def.Name+executionMethodSuffix, owner)
 }
@@ -93,7 +101,7 @@ func generatedIdentifierExists(name string, owner *symbol.ClassScope) bool {
 			}
 		}
 		for _, enumConstant := range scope.EnumConstants {
-			if enumConstant.Name == name {
+			if enumConstant.EmittedName() == name {
 				return true
 			}
 		}
@@ -129,7 +137,7 @@ func prependExecutionArgument(ctx Ctx, args []ast.Expr) []ast.Expr {
 }
 
 func prependExecutionMethodArgument(ctx Ctx, def *symbol.Definition, args []ast.Expr) []ast.Expr {
-	if def == nil || def.DeclarationNode == nil {
+	if def == nil || (def.DeclarationNode == nil && !def.RuntimeDefault) {
 		return args
 	}
 	return prependExecutionArgument(ctx, args)
@@ -142,10 +150,10 @@ func executionMethodCallName(def *symbol.Definition, owner *symbol.ClassScope, c
 	// Runtime/synthetic members (enum name/ordinal/valueOf, record accessors,
 	// generated equality helpers) have no source declaration and are emitted only
 	// in their public form. They contain no Java synchronized body to re-enter.
-	if executionExpr(ctx) == nil || def.DeclarationNode == nil {
+	if executionExpr(ctx) == nil || (def.DeclarationNode == nil && !def.RuntimeDefault) {
 		return def.Name
 	}
-	return executionImplementationName(def, owner)
+	return executionImplementationName(def, owner, ctx)
 }
 
 func executionConstructorImplementationName(name string, owner *symbol.ClassScope) string {
@@ -177,7 +185,29 @@ func executionFieldInitializerMethodName() string {
 }
 
 func executionStringMethodName(scope *symbol.ClassScope) string {
-	return collisionSafeExecutionIdentifier("String"+executionMethodSuffix, scope)
+	base := "String" + executionMethodSuffix
+	for suffix := 0; ; suffix++ {
+		candidate := base
+		if suffix > 0 {
+			candidate += strconv.Itoa(suffix)
+		}
+		if generatedIdentifierExists(candidate, scope) {
+			continue
+		}
+		occupied := false
+		if scope != nil {
+			for _, method := range scope.Methods {
+				if method != nil && !method.IsStatic && !method.Constructor &&
+					candidate == collisionSafeExecutionIdentifier(method.Name+executionMethodSuffix, scope) {
+					occupied = true
+					break
+				}
+			}
+		}
+		if !occupied {
+			return candidate
+		}
+	}
 }
 
 func executionNameForParams(params *ast.FieldList, reservedNames ...string) string {
@@ -245,7 +275,7 @@ func executionMethodField(public *ast.Field, def *symbol.Definition, owner *symb
 	executionName := executionNameForParams(params, reservedNames...)
 	params.List = append([]*ast.Field{executionParameterField(executionName, ctx)}, params.List...)
 	return &ast.Field{
-		Names: []*ast.Ident{{Name: executionImplementationName(def, owner)}},
+		Names: []*ast.Ident{{Name: executionImplementationName(def, owner, ctx)}},
 		Type: &ast.FuncType{
 			Params:  params,
 			Results: cloneFieldList(functionType.Results),
@@ -261,6 +291,9 @@ func executionParameterTypeExpr(def *symbol.Definition, index int, javaType stri
 }
 
 func executionParameterIsVariadic(def *symbol.Definition, index int) bool {
+	if def != nil && def.IsVariadic && index >= 0 && index == len(def.Parameters)-1 {
+		return true
+	}
 	if def == nil || def.DeclarationNode == nil {
 		return false
 	}

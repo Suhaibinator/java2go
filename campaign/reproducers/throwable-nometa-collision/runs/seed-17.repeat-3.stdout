@@ -1,0 +1,7 @@
+seed=17,expected=probe.nometa.Lookalike@2a,initial=0:0:0:1
+valueOf=probe.nometa.Lookalike@2a,matches=true,calls=0:0:0:2
+direct=probe.nometa.Lookalike@2a,matches=true,calls=0:0:0:3
+aliasValueOf#1=probe.nometa.Lookalike@2a,matches=true,calls=0:0:0:4
+aliasValueOf#2=probe.nometa.Lookalike@2a,matches=true,calls=0:0:0:5
+aliasValueOf#3=probe.nometa.Lookalike@2a,matches=true,calls=0:0:0:6
+aliasDirect=probe.nometa.Lookalike@2a,matches=true,calls=0:0:0:7

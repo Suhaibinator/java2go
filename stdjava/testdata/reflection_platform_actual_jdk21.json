@@ -1,0 +1,548 @@
+{
+  "17": {
+    "abstract-first": [
+      "java.lang.InstantiationException",
+      "null",
+      "null",
+      "null",
+      "SssOoNnnTttEeB"
+    ],
+    "access-nonnull": [
+      "java.lang.IllegalArgumentException",
+      "6e,6f,6e,2d,6e,75,6c,6c,20,6f,62,6a,65,63,74,20,66,6f,72,20,70,72,69,76,61,74,65,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,28,29",
+      "null",
+      "null",
+      ""
+    ],
+    "annotation-default-names": [
+      "true",
+      "64,65,66,61,75,6c,74",
+      "64,65,66,61,75,6c,74",
+      "3a9,d800"
+    ],
+    "annotation-default-numbers": [
+      "true",
+      "7",
+      "7",
+      "8"
+    ],
+    "annotation-empty-identity": [
+      "0",
+      "true",
+      "true"
+    ],
+    "annotation-explicit-names": [
+      "true",
+      "65,78,70,6c,69,63,69,74",
+      "65,78,70,6c,69,63,69,74",
+      "3b2,d800"
+    ],
+    "annotation-explicit-numbers": [
+      "true",
+      "3",
+      "3",
+      "5"
+    ],
+    "annotation-inherited-content": [
+      "65,78,70,6c,69,63,69,74",
+      "SssOoNnnTttEeB"
+    ],
+    "annotation-lookup": [
+      "true",
+      "true",
+      "true",
+      "SssOoNnnTttEeB"
+    ],
+    "broken-first": [
+      "java.lang.ExceptionInInitializerError",
+      "null",
+      "java.lang.IllegalStateException",
+      "69,6e,69,74,20,3bb",
+      "SssOoNnnTttEeB"
+    ],
+    "broken-lookup": [
+      "SssOoNnnTttEe"
+    ],
+    "broken-second": [
+      "java.lang.NoClassDefFoundError",
+      "43,6f,75,6c,64,20,6e,6f,74,20,69,6e,69,74,69,61,6c,69,7a,65,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,42,72,6f,6b,65,6e",
+      "java.lang.ExceptionInInitializerError",
+      "45,78,63,65,70,74,69,6f,6e,20,6a,61,76,61,2e,6c,61,6e,67,2e,49,6c,6c,65,67,61,6c,53,74,61,74,65,45,78,63,65,70,74,69,6f,6e,3a,20,69,6e,69,74,20,3bb,20,5b,69,6e,20,74,68,72,65,61,64,20,22,6d,61,69,6e,22,5d",
+      "SssOoNnnTttEeB"
+    ],
+    "lookup-private": [
+      "2",
+      "false",
+      "true",
+      ""
+    ],
+    "lookup-public": [
+      "1",
+      "true",
+      "true",
+      ""
+    ],
+    "override-local": [
+      "true",
+      "false",
+      ""
+    ],
+    "override-revoked": [
+      "false",
+      "Sss"
+    ],
+    "private-denied": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      ""
+    ],
+    "private-denied-wrongcount": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      ""
+    ],
+    "private-instances": [
+      "true",
+      "Sss"
+    ],
+    "private-revoked": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      "Sss"
+    ],
+    "public-after-wrongcount": [
+      "OK",
+      "true",
+      "SssOo"
+    ],
+    "public-emptyargs": [
+      "OK",
+      "true",
+      "SssOoNnn"
+    ],
+    "public-lookup-private": [
+      "java.lang.NoSuchMethodException",
+      "70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,2e,3c,69,6e,69,74,3e,28,29",
+      "null",
+      "null",
+      ""
+    ],
+    "public-nullargs": [
+      "OK",
+      "true",
+      "SssOoNn"
+    ],
+    "public-wrongcount-first": [
+      "java.lang.IllegalArgumentException",
+      "77,72,6f,6e,67,20,6e,75,6d,62,65,72,20,6f,66,20,61,72,67,75,6d,65,6e,74,73,3a,20,31,20,65,78,70,65,63,74,65,64,3a,20,30",
+      "null",
+      "null",
+      "SssO"
+    ],
+    "seed": [
+      "17"
+    ],
+    "target-error-wrapper": [
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "java.lang.AssertionError",
+      "62,6f,64,79,20,65,72,72,6f,72",
+      "true",
+      "SssOoNnnTttEe"
+    ],
+    "target-wrapper": [
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "java.lang.IllegalStateException",
+      "63,74,6f,72,20,3a9,d800",
+      "true",
+      "true",
+      "SssOoNnnTt"
+    ],
+    "target-wrapper-second": [
+      "true",
+      "true",
+      "SssOoNnnTtt"
+    ],
+    "thrower-lookup": [
+      "SssOoNnn"
+    ],
+    "wrapper-cause-locked": [
+      "java.lang.IllegalStateException",
+      "43,61,6e,27,74,20,6f,76,65,72,77,72,69,74,65,20,63,61,75,73,65,20,77,69,74,68,20,61,20,6e,75,6c,6c",
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "true"
+    ]
+  },
+  "41": {
+    "abstract-first": [
+      "java.lang.InstantiationException",
+      "null",
+      "null",
+      "null",
+      "SssOoNnnTttEeB"
+    ],
+    "access-nonnull": [
+      "java.lang.IllegalArgumentException",
+      "6e,6f,6e,2d,6e,75,6c,6c,20,6f,62,6a,65,63,74,20,66,6f,72,20,70,72,69,76,61,74,65,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,28,29",
+      "null",
+      "null",
+      ""
+    ],
+    "annotation-default-names": [
+      "true",
+      "64,65,66,61,75,6c,74",
+      "64,65,66,61,75,6c,74",
+      "3a9,d800"
+    ],
+    "annotation-default-numbers": [
+      "true",
+      "7",
+      "7",
+      "8"
+    ],
+    "annotation-empty-identity": [
+      "0",
+      "true",
+      "true"
+    ],
+    "annotation-explicit-names": [
+      "true",
+      "65,78,70,6c,69,63,69,74",
+      "65,78,70,6c,69,63,69,74",
+      "3b2,d800"
+    ],
+    "annotation-explicit-numbers": [
+      "true",
+      "3",
+      "3",
+      "5"
+    ],
+    "annotation-inherited-content": [
+      "65,78,70,6c,69,63,69,74",
+      "SssOoNnnTttEeB"
+    ],
+    "annotation-lookup": [
+      "true",
+      "true",
+      "true",
+      "SssOoNnnTttEeB"
+    ],
+    "broken-first": [
+      "java.lang.ExceptionInInitializerError",
+      "null",
+      "java.lang.IllegalStateException",
+      "69,6e,69,74,20,3bb",
+      "SssOoNnnTttEeB"
+    ],
+    "broken-lookup": [
+      "SssOoNnnTttEe"
+    ],
+    "broken-second": [
+      "java.lang.NoClassDefFoundError",
+      "43,6f,75,6c,64,20,6e,6f,74,20,69,6e,69,74,69,61,6c,69,7a,65,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,42,72,6f,6b,65,6e",
+      "java.lang.ExceptionInInitializerError",
+      "45,78,63,65,70,74,69,6f,6e,20,6a,61,76,61,2e,6c,61,6e,67,2e,49,6c,6c,65,67,61,6c,53,74,61,74,65,45,78,63,65,70,74,69,6f,6e,3a,20,69,6e,69,74,20,3bb,20,5b,69,6e,20,74,68,72,65,61,64,20,22,6d,61,69,6e,22,5d",
+      "SssOoNnnTttEeB"
+    ],
+    "lookup-private": [
+      "2",
+      "false",
+      "true",
+      ""
+    ],
+    "lookup-public": [
+      "1",
+      "true",
+      "true",
+      ""
+    ],
+    "override-local": [
+      "true",
+      "false",
+      ""
+    ],
+    "override-revoked": [
+      "false",
+      "Sss"
+    ],
+    "private-denied": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      ""
+    ],
+    "private-denied-wrongcount": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      ""
+    ],
+    "private-instances": [
+      "true",
+      "Sss"
+    ],
+    "private-revoked": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      "Sss"
+    ],
+    "public-after-wrongcount": [
+      "OK",
+      "true",
+      "SssOo"
+    ],
+    "public-emptyargs": [
+      "OK",
+      "true",
+      "SssOoNnn"
+    ],
+    "public-lookup-private": [
+      "java.lang.NoSuchMethodException",
+      "70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,2e,3c,69,6e,69,74,3e,28,29",
+      "null",
+      "null",
+      ""
+    ],
+    "public-nullargs": [
+      "OK",
+      "true",
+      "SssOoNn"
+    ],
+    "public-wrongcount-first": [
+      "java.lang.IllegalArgumentException",
+      "77,72,6f,6e,67,20,6e,75,6d,62,65,72,20,6f,66,20,61,72,67,75,6d,65,6e,74,73,3a,20,31,20,65,78,70,65,63,74,65,64,3a,20,30",
+      "null",
+      "null",
+      "SssO"
+    ],
+    "seed": [
+      "41"
+    ],
+    "target-error-wrapper": [
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "java.lang.AssertionError",
+      "62,6f,64,79,20,65,72,72,6f,72",
+      "true",
+      "SssOoNnnTttEe"
+    ],
+    "target-wrapper": [
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "java.lang.IllegalStateException",
+      "63,74,6f,72,20,3a9,d800",
+      "true",
+      "true",
+      "SssOoNnnTt"
+    ],
+    "target-wrapper-second": [
+      "true",
+      "true",
+      "SssOoNnnTtt"
+    ],
+    "thrower-lookup": [
+      "SssOoNnn"
+    ],
+    "wrapper-cause-locked": [
+      "java.lang.IllegalStateException",
+      "43,61,6e,27,74,20,6f,76,65,72,77,72,69,74,65,20,63,61,75,73,65,20,77,69,74,68,20,61,20,6e,75,6c,6c",
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "true"
+    ]
+  },
+  "97": {
+    "abstract-first": [
+      "java.lang.InstantiationException",
+      "null",
+      "null",
+      "null",
+      "SssOoNnnTttEeB"
+    ],
+    "access-nonnull": [
+      "java.lang.IllegalArgumentException",
+      "6e,6f,6e,2d,6e,75,6c,6c,20,6f,62,6a,65,63,74,20,66,6f,72,20,70,72,69,76,61,74,65,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,28,29",
+      "null",
+      "null",
+      ""
+    ],
+    "annotation-default-names": [
+      "true",
+      "64,65,66,61,75,6c,74",
+      "64,65,66,61,75,6c,74",
+      "3a9,d800"
+    ],
+    "annotation-default-numbers": [
+      "true",
+      "7",
+      "7",
+      "8"
+    ],
+    "annotation-empty-identity": [
+      "0",
+      "true",
+      "true"
+    ],
+    "annotation-explicit-names": [
+      "true",
+      "65,78,70,6c,69,63,69,74",
+      "65,78,70,6c,69,63,69,74",
+      "3b2,d800"
+    ],
+    "annotation-explicit-numbers": [
+      "true",
+      "3",
+      "3",
+      "5"
+    ],
+    "annotation-inherited-content": [
+      "65,78,70,6c,69,63,69,74",
+      "SssOoNnnTttEeB"
+    ],
+    "annotation-lookup": [
+      "true",
+      "true",
+      "true",
+      "SssOoNnnTttEeB"
+    ],
+    "broken-first": [
+      "java.lang.ExceptionInInitializerError",
+      "null",
+      "java.lang.IllegalStateException",
+      "69,6e,69,74,20,3bb",
+      "SssOoNnnTttEeB"
+    ],
+    "broken-lookup": [
+      "SssOoNnnTttEe"
+    ],
+    "broken-second": [
+      "java.lang.NoClassDefFoundError",
+      "43,6f,75,6c,64,20,6e,6f,74,20,69,6e,69,74,69,61,6c,69,7a,65,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,42,72,6f,6b,65,6e",
+      "java.lang.ExceptionInInitializerError",
+      "45,78,63,65,70,74,69,6f,6e,20,6a,61,76,61,2e,6c,61,6e,67,2e,49,6c,6c,65,67,61,6c,53,74,61,74,65,45,78,63,65,70,74,69,6f,6e,3a,20,69,6e,69,74,20,3bb,20,5b,69,6e,20,74,68,72,65,61,64,20,22,6d,61,69,6e,22,5d",
+      "SssOoNnnTttEeB"
+    ],
+    "lookup-private": [
+      "2",
+      "false",
+      "true",
+      ""
+    ],
+    "lookup-public": [
+      "1",
+      "true",
+      "true",
+      ""
+    ],
+    "override-local": [
+      "true",
+      "false",
+      ""
+    ],
+    "override-revoked": [
+      "false",
+      "Sss"
+    ],
+    "private-denied": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      ""
+    ],
+    "private-denied-wrongcount": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      ""
+    ],
+    "private-instances": [
+      "true",
+      "Sss"
+    ],
+    "private-revoked": [
+      "java.lang.IllegalAccessException",
+      "63,6c,61,73,73,20,61,70,70,2e,4d,61,69,6e,20,63,61,6e,6e,6f,74,20,61,63,63,65,73,73,20,61,20,6d,65,6d,62,65,72,20,6f,66,20,63,6c,61,73,73,20,70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,20,77,69,74,68,20,6d,6f,64,69,66,69,65,72,73,20,22,70,72,69,76,61,74,65,22",
+      "null",
+      "null",
+      "Sss"
+    ],
+    "public-after-wrongcount": [
+      "OK",
+      "true",
+      "SssOo"
+    ],
+    "public-emptyargs": [
+      "OK",
+      "true",
+      "SssOoNnn"
+    ],
+    "public-lookup-private": [
+      "java.lang.NoSuchMethodException",
+      "70,2e,54,61,72,67,65,74,73,24,53,65,63,72,65,74,2e,3c,69,6e,69,74,3e,28,29",
+      "null",
+      "null",
+      ""
+    ],
+    "public-nullargs": [
+      "OK",
+      "true",
+      "SssOoNn"
+    ],
+    "public-wrongcount-first": [
+      "java.lang.IllegalArgumentException",
+      "77,72,6f,6e,67,20,6e,75,6d,62,65,72,20,6f,66,20,61,72,67,75,6d,65,6e,74,73,3a,20,31,20,65,78,70,65,63,74,65,64,3a,20,30",
+      "null",
+      "null",
+      "SssO"
+    ],
+    "seed": [
+      "97"
+    ],
+    "target-error-wrapper": [
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "java.lang.AssertionError",
+      "62,6f,64,79,20,65,72,72,6f,72",
+      "true",
+      "SssOoNnnTttEe"
+    ],
+    "target-wrapper": [
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "java.lang.IllegalStateException",
+      "63,74,6f,72,20,3a9,d800",
+      "true",
+      "true",
+      "SssOoNnnTt"
+    ],
+    "target-wrapper-second": [
+      "true",
+      "true",
+      "SssOoNnnTtt"
+    ],
+    "thrower-lookup": [
+      "SssOoNnn"
+    ],
+    "wrapper-cause-locked": [
+      "java.lang.IllegalStateException",
+      "43,61,6e,27,74,20,6f,76,65,72,77,72,69,74,65,20,63,61,75,73,65,20,77,69,74,68,20,61,20,6e,75,6c,6c",
+      "java.lang.reflect.InvocationTargetException",
+      "null",
+      "true"
+    ]
+  }
+}

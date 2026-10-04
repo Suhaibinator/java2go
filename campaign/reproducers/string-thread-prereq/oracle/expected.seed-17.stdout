@@ -1,0 +1,7 @@
+seed=17
+trace=A:intern>B:compare>B:intern>A:complete>main:joined
+workers=separate:true:callback:true
+context=isolated:true:persistent:true:reset:true
+dynamic=distinct-equal:true:intern:true:hash:-1663274519
+late-literal=true
+unicode=length:4:high:55296:low:56320:intern:true
