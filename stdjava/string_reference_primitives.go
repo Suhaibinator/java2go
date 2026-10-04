@@ -19,7 +19,18 @@ func JavaStringValueOfChar(value rune) *JavaString {
 }
 
 func JavaStringValueOfInt(value int32) *JavaString {
-	return javaStringFromNumericASCII(strconv.FormatInt(int64(value), 10), false)
+	// The Go formatter already returns static text for these values.
+	if value >= 0 && value < 100 {
+		return javaStringFromNumericASCII(strconv.FormatInt(int64(value), 10), false)
+	}
+	// Every decimal int32, including the sign, fits in eleven bytes.
+	var buffer [11]byte
+	text := strconv.AppendInt(buffer[:0], int64(value), 10)
+	units := make([]uint16, len(text))
+	for index, value := range text {
+		units[index] = uint16(value)
+	}
+	return &JavaString{units: units}
 }
 
 func JavaStringValueOfLong(value int64) *JavaString {
