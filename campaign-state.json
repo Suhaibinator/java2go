@@ -26034,5 +26034,58 @@
     "goal_status": "ACTIVE",
     "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
     "next": "Integrate accepted source components with restored suppression/identity; continue Class.cast prerequisites, FileChannel callbacks, Throwable frames and pinned Netty source/JVM validation."
+  },
+  "sol_progress154": {
+    "checkpoint": 154,
+    "status": "SCOPED_DECLARED_SOURCE_NAME_ALLOCATION_GREEN",
+    "goal_status": "ACTIVE",
+    "parent_revision": "a5b5e0d80de632f21651339eb4e34720a6c9d5a4",
+    "scope": "One declaredFileType producer function plus suffix walker and tests; ordered declaration lookup and identity retained.",
+    "tdd": "Compiled actual153 baseline semantic controls pass but eight zero-allocation cases RED; candidate eight zero-allocation cases each repeated3 green.",
+    "validation": {
+      "baseline_actual_allocation_RED_cases": 8,
+      "baseline_semantic_parents": 2,
+      "candidate_allocation_measurements": 24,
+      "candidate_allocations_per_query": 0,
+      "candidate_manifest_sha256": "f7fd92f98f742643eda7b040dd530d69112cbb7af8ab7490282f887abed3d406",
+      "compiler_controls": 21,
+      "default_f1_race_build_testcompile_lint215": "PASS",
+      "fresh_existing_JDK_Go_projects": 3,
+      "full_CI_round_Netty_pass": false,
+      "generated_program_performance_claim": false,
+      "records": 19,
+      "runtime_parents": 672,
+      "source_unchanged": true,
+      "status": "ROOT_PUBLIC154_DECLARED_NAME_ALLOCATION_FINITE_PASS",
+      "symbol_parents": 17
+    },
+    "raw_audit": {
+      "status": "ROOT_PUBLIC154_RAW_AUDIT_PASS",
+      "records": 19,
+      "exit_counts": {
+        "0": 18,
+        "1": 1
+      },
+      "expected_actual_RED": "baseline-allocation-RED",
+      "result_sha256": "0e06c83732a2e2d4e5758e605e285ff08d8a18861d0fef7849337bf1fabeab51",
+      "candidate_manifest_sha256": "f7fd92f98f742643eda7b040dd530d69112cbb7af8ab7490282f887abed3d406",
+      "verifier_sha256": "095fbb7b4b6776db388db9b46be1a220c1e71debab446069788e334bb992a7cc",
+      "source_unchanged": true,
+      "no_full_CI_round_Netty_or_generated_application_performance_claim": true
+    },
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public154/run/ROOT_RAW_AUDIT.json",
+    "held": [
+      "Full CI and accumulated coherent integration/round",
+      "Source channel writes and callback stacks",
+      "Full original Netty strict/allpackages/JVM-Go parity"
+    ],
+    "accepted_full_checkpoint": 18,
+    "generated_application_performance_claim": false
+  },
+  "active_resume_current154": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
+    "next": "Finish Write1/Write2 native and source dispatch, independently verify cast/static-field join and accumulated compiler gates, retain new genuine Netty partial-write controls."
   }
 }

@@ -116,10 +116,13 @@ func declaredFileType(name string, file *symbol.FileScope, ctx Ctx) *symbol.Clas
 	if file == nil {
 		return nil
 	}
-	parts := strings.Split(name, ".")
+	root, suffix, nested := strings.Cut(name, ".")
 	for _, top := range file.TopLevelClasses {
-		if top.Class != nil && top.Class.OriginalName == parts[0] {
-			return directMemberTypePath(top, parts[1:], ctx)
+		if top.Class != nil && top.Class.OriginalName == root {
+			if !nested {
+				return top
+			}
+			return directMemberTypeSuffixPath(top, suffix, ctx)
 		}
 	}
 	return nil
