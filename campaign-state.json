@@ -26338,5 +26338,20 @@
     "root_receipts": 14,
     "production_Java_oracle_changes": false,
     "fullCI": "UNACCEPTED"
+  },
+  "sol_progress163": {
+    "status": "SCANNER_NEGATIVE_PREDICATE_FOCUSED_AND_FINITE_COMPATIBILITY_PASS",
+    "base": "e2139c13dc945270bbcc0facb59b4998919ed413",
+    "root_source_manifest_sha256": "feb3b854d48e8fcd8856adebe12875f70ef4fd9f758e868b6bdcfc5af698ed97",
+    "root_focused_raw_audit_sha256": "0b776b4486d2ad7e7f546595b32b8e4c3d3354edf5ec975823c3efcb9401ade4",
+    "owner_delivery_sha256": "a6a7467d87554d43cb5fbd333a3a3950b2835c90bb542c6c744c93cb2df062a6",
+    "owner_raw_receipts": 974,
+    "owner_accepted_apps_exact_generatedGo": 45,
+    "owner_selected_compiler_parents": 93,
+    "root_normal_parents": 7,
+    "root_semantic_race20_parents": 5,
+    "fullNetty": "RETRY_IN_PROGRESS_NOT_ACCEPTED",
+    "performance_vsJava": "NOT_MEASURED",
+    "fullCI": "UNACCEPTED"
   }
 }

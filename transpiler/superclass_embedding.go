@@ -134,13 +134,14 @@ func superclassEmbeddingSourceIdentifierExists(name string, ctx Ctx) bool {
 				if node == nil {
 					return false
 				}
-				if node.Type() == "identifier" || node.Type() == "type_identifier" {
+				kind := node.Type()
+				if kind == "identifier" || kind == "type_identifier" {
 					identifier := sanitizeGoIdent(node.Content(file.Source))
 					if identifier == name || symbol.Uppercase(identifier) == name || symbol.Lowercase(identifier) == name {
 						return true
 					}
 				}
-				if node.Type() == "method_declaration" {
+				if kind == "method_declaration" && superclassEmbeddingMethodNameMayMatch(node, file.Source, name) {
 					method := synthAnonClassMethodDefinition(node, file.Source, false)
 					if method != nil && (method.Name == name ||
 						(strings.HasPrefix(name, method.Name+executionMethodSuffix) && collisionSafeExecutionIdentifier(method.Name+executionMethodSuffix, nil) == name) ||
@@ -160,6 +161,43 @@ func superclassEmbeddingSourceIdentifierExists(name string, ctx Ctx) bool {
 					return true
 				}
 			}
+		}
+	}
+	return false
+}
+
+// superclassEmbeddingMethodNameMayMatch only rejects names that cannot match
+// either visibility spelling. Keep full synthesis for uncertain syntax and all
+// possible direct/execution names; it remains responsible for actual admission.
+func superclassEmbeddingMethodNameMayMatch(method *sitter.Node, source []byte, query string) bool {
+	if method == nil || method.HasError() || method.IsMissing() || method.HasChanges() {
+		return true
+	}
+	nameNode := method.ChildByFieldName("name")
+	typeNode := method.ChildByFieldName("type")
+	if nameNode == nil || typeNode == nil || nameNode.IsMissing() || typeNode.IsMissing() ||
+		nameNode.HasError() || typeNode.HasError() || nameNode.HasChanges() || typeNode.HasChanges() || nameNode.Type() != "identifier" {
+		return true
+	}
+	start, end := method.StartByte(), method.EndByte()
+	if start > end || uint64(end) > uint64(len(source)) {
+		return true
+	}
+	nameStart, nameEnd := nameNode.StartByte(), nameNode.EndByte()
+	typeStart, typeEnd := typeNode.StartByte(), typeNode.EndByte()
+	if nameStart < start || nameStart > nameEnd || nameEnd > end || typeStart < start || typeStart > typeEnd || typeEnd > end {
+		return true
+	}
+	originalName := nameNode.Content(source)
+	if originalName == "" {
+		return true
+	}
+	for _, possible := range [2]string{
+		sanitizeGoIdent(symbol.HandleExportStatus(false, originalName)),
+		sanitizeGoIdent(symbol.HandleExportStatus(true, originalName)),
+	} {
+		if query == possible || strings.HasPrefix(query, possible+executionMethodSuffix) || strings.HasPrefix(query, possible+"Java2goExactExecution") {
+			return true
 		}
 	}
 	return false
