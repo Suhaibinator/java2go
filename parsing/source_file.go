@@ -27,12 +27,13 @@ func (file *SourceFile) ParseAST() error {
 	file.canonicalizeUnicodeEscapes()
 	parser := sitter.NewParser()
 	parser.SetLanguage(java.GetLanguage())
-	tree, err := parser.ParseCtx(context.Background(), nil, file.Source)
+	parserInput := unicodeLineTerminatorParserSource(file.Source)
+	tree, err := parser.ParseCtx(context.Background(), nil, parserInput)
 	if err != nil {
 		return err
 	}
 
-	if parserSource, repairs := parenthesizedAssignmentParserSource(tree.RootNode(), file.Source); len(repairs) != 0 {
+	if parserSource, repairs := parenthesizedAssignmentParserSource(tree.RootNode(), parserInput); len(repairs) != 0 {
 		repaired, repairError := parser.ParseCtx(context.Background(), nil, parserSource)
 		if repairError != nil {
 			return repairError

@@ -26203,5 +26203,65 @@
     "goal_status": "ACTIVE",
     "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
     "next": "Repair coherent compiler declaration-origin gap, reverify all applications, rerun full Netty under declared1GiB/300s profile, and continue exception stack/source Thread compatibility."
+  },
+  "sol_progress157": {
+    "checkpoint": 157,
+    "status": "SCOPED_UNICODE_LINE_TERMINATOR_PARSER_GREEN",
+    "goal_status": "ACTIVE",
+    "parent_revision": "042196192b357c894edb836020cc84839eacf21a",
+    "scope": "SourceFile.ParseAST only, equal-width private parser source helper, and two regression parents. Original source bytes and byte maps preserved; no private ParseSymbols/SourceFilename or metadata consumer import.",
+    "validation": {
+      "JDK_compilations": 11,
+      "all_sources_inputs_unchanged": true,
+      "baseline_semantic_RED": true,
+      "candidate_manifest_sha256": "41d609bc9f77520073d9c15f10f0f95fc09f561f98b630cb3843a586cc8031f3",
+      "compiler_unicode_mapping": "PASS",
+      "default_f1_build_testcompile_lint215": "PASS",
+      "full_CI_Netty_T2_accepted": false,
+      "new_parent_stress_repetitions": 20,
+      "records": 31,
+      "registries": {
+        "parsing": 5,
+        "stdjava": 678,
+        "symbol": 17
+      },
+      "status": "ROOT_PUBLIC157_PARSER_FINITE_PASS"
+    },
+    "raw_audit": {
+      "status": "ROOT_PUBLIC157_INDEPENDENT_RAW_AUDIT_PASS",
+      "records": 31,
+      "exit_counts": {
+        "0": 30,
+        "1": 1
+      },
+      "result_sha256": "1e93868d2ace4c45c02ea4ebfb7c5c49f2ce7f97f7f52d971eb20dff4d10d38e",
+      "candidate_manifest_sha256": "41d609bc9f77520073d9c15f10f0f95fc09f561f98b630cb3843a586cc8031f3",
+      "baseline_semantic_RED": "compiled old ParseAST with same new tests: exit1, valid declarations missing",
+      "JDK_compilations": 11,
+      "stress_repetitions": 20,
+      "registries": {
+        "parsing": 5,
+        "stdjava": 678,
+        "symbol": 17
+      },
+      "all_source_inputs_raw_streams_cleanup_rehashed": true,
+      "full_CI_Netty_T2": false,
+      "held_diagnostic_rows": "reportUnsupported still uses parser rows; escaped-line physical-row calibration is a separate open issue"
+    },
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public157/run/ROOT_RAW_AUDIT.json",
+    "accepted_full_checkpoint": 18,
+    "held": [
+      "Physical diagnostic rows after Unicode-escaped line terminators",
+      "General escaped identifiers and full Unicode lexical preprocessing",
+      "Full class-facts adapter/Throwable integration",
+      "Full compiler campaign/CI and original source Netty parity"
+    ],
+    "performance_claim": false
+  },
+  "active_resume_current157": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
+    "next": "Join canonical JDK nominal inventory, repair actual native ByteBuffer identities, verify full channel matrix and rerun original Netty graph; continue source Thread and Throwable identity work."
   }
 }
