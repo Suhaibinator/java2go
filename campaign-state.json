@@ -25836,5 +25836,53 @@
     "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
     "checkpoint_kind": "Two Thread guard test functions isolate ambient strict-mode state while retaining stronger original assertions.",
     "next": "Root may verify and commit AND push exactly four publication paths. Preserve original source/invalid-array held witnesses; continue separately reviewed dynamic FileChannel/source Thread and generic frontend work. Goal ACTIVE; accepted full round18 unchanged."
+  },
+  "sol_progress149": {
+    "checkpoint": 149,
+    "status": "SCOPED_RUNTIME_AND_SIGNATURE_METADATA_GREEN",
+    "goal_status": "ACTIVE",
+    "parent_revision": "e16b99bbbc122756ce7d9c736f9c6aa497301fd4",
+    "scope": "Source-backed FileChannel runtime protocol, native delegation, and canonical NIO declaration metadata; compiler admission remains held.",
+    "verification": {
+      "status": "PASS scoped FileChannel runtime and canonical declaration metadata",
+      "stages": 75,
+      "all_terminal_zero": true,
+      "race_runtime_parents": 671,
+      "race_symbol_parents": 17,
+      "fresh_close_processes": 20,
+      "JDK_observations": 24,
+      "build_and_lint_profiles": [
+        "default",
+        "f1_os_profile"
+      ],
+      "toolchain": "Go1.27.3 / JDK21.0.6",
+      "records_sha256": "85501c5697235a8db2e8d7cf6c2cad5280cf5f3c1418ceca966c5783b937cbea",
+      "source_sha256": "8870059376ad612afed625fe11010eb42358c595be5139033203f8bead82ef7b",
+      "scope_exclusions": [
+        "Compiler FileChannel source admission and current-Execution consumer routing",
+        "Full SourceCarrierMain translation",
+        "Native dynamic class/interface/array membership",
+        "Full tagged runtime/OS partial-write test",
+        "Full CI, full round, full Netty compatibility"
+      ],
+      "completed_utc": "2026-10-21T04:48:29.312243+00:00"
+    },
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/stageA-metadata-independent/ROOT_VERIFIED.json",
+    "source_manifest": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/stageA-metadata-independent/SOURCE.json",
+    "performance_claim": false,
+    "accepted_full_round": 18,
+    "next_blockers": [
+      "FileChannel compiler source/native routing and NIO declaration origins",
+      "Suppression storage collision: full new application and reducer are RED",
+      "Reader scalar declaration-origin consumer repair: independent verification pending"
+    ],
+    "known_ci": "Last checked public148:7PASS/8FAIL; not rerun as fullCI by this scoped milestone."
+  },
+  "active_resume_current149": {
+    "branch": "origin/codex/adversarial-campaign",
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "resume_evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
+    "next": "Continue collision repair and full private compiler-union verification; retain all original challenges. No fullNetty acceptance."
   }
 }

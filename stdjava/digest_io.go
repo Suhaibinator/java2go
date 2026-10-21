@@ -291,17 +291,18 @@ func (r *RandomAccessFile) Length() int64 {
 	return info.Size()
 }
 
-type FileChannel struct{ state *randomAccessState }
-
-func (c *FileChannel) Read(buffer *ByteBuffer) int32 {
-	return FileChannelReadExecution(NewExecution(), c, buffer)
+type FileChannel struct {
+	state  *randomAccessState
+	source *fileChannelSourceState
 }
 
-func (c *FileChannel) Close() { c.state.close() }
+func (c *FileChannel) Read(buffer *ByteBuffer) int32 {
+	return FileChannelReadVirtualExecution(NewExecution(), c, buffer)
+}
+
+func (c *FileChannel) Close() { FileChannelCloseVirtualExecution(NewExecution(), c) }
 func (c *FileChannel) IsOpen() bool {
-	c.state.mu.Lock()
-	defer c.state.mu.Unlock()
-	return !c.state.closed
+	return FileChannelIsOpenVirtual(c)
 }
 
 func init() {
