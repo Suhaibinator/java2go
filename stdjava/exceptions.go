@@ -559,17 +559,31 @@ func newExceptionConstructorBaseExecution(execution *Execution, name string, arg
 	switch len(arguments) {
 	case 0:
 	case 1:
+		if text, ok := arguments[0].(*JavaString); ok {
+			return newJavaThrowableBase(name, text)
+		}
 		if text, ok := arguments[0].(string); ok {
 			message = text
 		} else {
 			causeInitialized = true
 			if !javaReferenceIsNull(arguments[0]) {
 				cause = arguments[0]
+				if throwableHasCanonicalDiagnosticText(cause) {
+					return newJavaThrowableCause(execution, name, cause)
+				}
 				message = exceptionCauseMessageExecution(execution, cause)
 			}
 		}
 	case 2:
 		causeInitialized = true
+		if text, ok := arguments[0].(*JavaString); ok {
+			base := newJavaThrowableBase(name, text)
+			base.state.causeInitialized = true
+			if !javaReferenceIsNull(arguments[1]) {
+				base.state.cause = arguments[1]
+			}
+			return base
+		}
 		message = StringReferenceValue(arguments[0])
 		if !javaReferenceIsNull(arguments[1]) {
 			cause = arguments[1]

@@ -26427,5 +26427,27 @@
     },
     "fullCI": "UNACCEPTED",
     "fullRound": "UNACCEPTED"
+  },
+  "sol_progress167": {
+    "status": "CANONICAL_EXCEPTION_CONSTRUCTOR_REFERENCE_FINITE_PASS",
+    "base": "3b89d1f097c2fdb73c3d917ac0c00ac2559b968c",
+    "root_source_manifest_sha256": "c6dc83cfa1b4533ef0de5c201a151a2a00405c25b2e5052e8bec42f4c3d7a4bf",
+    "root_audit_sha256": "f2223773dbc391c71fb80417a3e59d98a629b396dad5ddb02e6918ca3e17731a",
+    "Sol_delivery_sha256": "f85fdc564d7e220fbb51fbf0b5f7fdd0a24a263d6e9504afc64052507a83b1e4",
+    "positive_receipts": 24,
+    "owned_race20_parent_passes": 140,
+    "full_race_registries": {
+      "parsing": 10,
+      "stdjava": 794,
+      "symbol": 21
+    },
+    "primary_original_CI_parents": [
+      "TestCampaignExceptionTypesAndFinalCatchJVMParity",
+      "TestCampaignExceptionCauseConstructorsJVMParity"
+    ],
+    "default_F1": "race build/testcompile/lint PASS",
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED actual normal300s timeout retained",
+    "fullRound": "UNACCEPTED"
   }
 }
