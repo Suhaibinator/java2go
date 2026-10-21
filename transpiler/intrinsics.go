@@ -1154,8 +1154,9 @@ func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) 
 		proof := ctx.Clone()
 		proof.currentFile = nil
 		proof.syntheticTypeParameters = nil
-		declaring := classScopeCtx(origin.declaringOwner, proof)
-		if declaring.currentFile == nil || findFileScopeForClassScope(origin.declaringOwner, proof) != declaring.currentFile {
+		// A directly registered owner retains its existing file certificate.
+		// Late scopes instead need their exact live registry and lexical tree.
+		if findFileScopeForClassScope(origin.declaringOwner, proof) == nil && !intrinsicLexicalDeclaringFile(origin.declaringOwner, ctx.currentFile, ctx) {
 			return "", false
 		}
 		name := stripJavaQualifier(origin.externalName)

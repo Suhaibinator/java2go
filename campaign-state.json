@@ -26353,5 +26353,23 @@
     "fullNetty": "RETRY_IN_PROGRESS_NOT_ACCEPTED",
     "performance_vsJava": "NOT_MEASURED",
     "fullCI": "UNACCEPTED"
+  },
+  "sol_progress164": {
+    "status": "READER_ACCESSOR_AND_LEXICAL_SOURCE_RESOLUTION_FINITE_PASS",
+    "base": "bde455c62a9ddcbcc40eb4c4b8623edb87070dbf",
+    "root_source_manifest_sha256": "dcb4a0eafd871f014499896ae471c2685779052d21ca43905296b243f4b2042a",
+    "root_audit_sha256": "d92812fd3d2df0716d09f73bb8ee53cd7102493698aa9372a8d4222c457c24c5",
+    "Sol_delivery_sha256": "b32364db6d7ce03b44f9b1b1a0b4c73c3e8355d0925d7894d4d7828534e84751",
+    "root_receipts": 48,
+    "whole_applications_JDK3_Go3": 2,
+    "focused_race20": 7,
+    "existing_provenance_parents": 22,
+    "full_race_registry": {
+      "parsing": 10,
+      "stdjava": 787,
+      "symbol": 21
+    },
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "CompositeByteBuf.java236 strictfailure, no timeout, build/app not reached"
   }
 }
