@@ -787,6 +787,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if instanceResolution != nil && companionInterfaceReceiver {
 				methodIdent = &ast.Ident{Name: instanceResolution.def.Name}
 			}
+			if instanceResolution == nil && staticResolution == nil && knownArrayMethodIsAbsent(node, ctx, source) {
+				break
+			}
 			return markDirectVarargsExpansion(&ast.CallExpr{
 				Fun:  &ast.SelectorExpr{X: objectExpr, Sel: methodIdent},
 				Args: callArgs,

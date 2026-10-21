@@ -1688,6 +1688,43 @@
     "checkpoint_kind": "Three canonical native Thread state/hint APIs only, with source virtual and full application holds retained.",
     "next": "Root commits AND pushes the exact nine-path native Thread state milestone. Continue separately reviewed FileChannel positional read prerequisites for the latest actual normal Netty frontier; preserve source Thread installer/upcast/super/full String and all prior dependency/CI/full application holds. Goal ACTIVE, accepted full round18 unchanged."
   },
+  "active_resume_current147": {
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "branch": "origin/codex/adversarial-campaign",
+    "checkpoint_kind": "Two-new-leaf finite native positional FileChannel read milestone only.",
+    "next": "Root may commit AND push exact four paths after its independent publication preimage and concurrent diagnostic completion checks. Continue separately reviewed canonical declaration/native-source carrier/platform read admission and private negative-guard repair. Goal ACTIVE; accepted full round18 unchanged."
+  },
+  "active_resume_current148": {
+    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
+    "branch": "origin/codex/adversarial-campaign",
+    "checkpoint_kind": "Two Thread guard test functions isolate ambient strict-mode state while retaining stronger original assertions.",
+    "next": "Root may verify and commit AND push exactly four publication paths. Preserve original source/invalid-array held witnesses; continue separately reviewed dynamic FileChannel/source Thread and generic frontend work. Goal ACTIVE; accepted full round18 unchanged."
+  },
+  "active_resume_current149": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "branch": "origin/codex/adversarial-campaign",
+    "goal_status": "ACTIVE",
+    "next": "Continue collision repair and full private compiler-union verification; retain all original challenges. No fullNetty acceptance.",
+    "resume_evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "active_resume_current150": {
+    "agent_policy": "GPT-6.1 Sol/high only",
+    "goal_status": "ACTIVE",
+    "next": "Run fresh826 private compiler-union stages from1; preserve full Netty/Reader challenges and independent exception parity evidence.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "active_resume_current151": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "next": "Continue Netty dependency source resolution, compiler performance, FileChannel construction, nominal casts/list metadata and Throwable stack contracts. Preserve full applications and independently verify integrations.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "active_resume_current152": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "next": "Integrate accepted private components and rerun compiler gates; continue wrapper constants, Class.cast, source FileChannel, Throwable stack contracts and dependency-source closure.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
   "active_resume_current99": {
     "agent_policy": "GPT-6.1 Sol/high only; no Astra; explicit file ownership and independent review; coordinator sole public/Git writer",
     "branch": "origin/codex/adversarial-campaign",
@@ -5919,7 +5956,7 @@
     "status": "verified-clean",
     "verification": "Exact golangci-lint 2.14.0 reports0; focused race/JVM regressions and independently rebuilt full business application pass after replacing recursive cyclic binding with package-local lexical analysis."
   },
-  "next_action": "Continue private generic helper-T TDD, Arrays declaration-origin inference and NIO F1; retain Reader timeout/bound raw-default holds. Independently verify frozen combined transport before implementation acceptance. Commit and push verified milestones; goal ACTIVE, full CI and round acceptance remain pending.",
+  "next_action": "Integrate accepted private components and rerun compiler gates; continue wrapper constants, Class.cast, source FileChannel, Throwable stack contracts and dependency-source closure.",
   "oracle_repeats": 3,
   "performance_findings": {
     "array_write_candidate": "Unsigned bounds predicate enables inlining in isolated runtime copy; focused timings improved, live patch not applied",
@@ -20811,6 +20848,400 @@
       "registered_parents_each": 4
     }
   },
+  "sol_progress147": {
+    "CI146": "7PASS/8FAIL; two new negative guards under active private evaluation repair, not published here; no no-new-regression proof.",
+    "actual_acceptance": {
+      "all_actual_supervisor_runner_child_exit_zero_clean": true,
+      "all_native_parent_PASS_events": 770,
+      "all_native_parent_PASS_events_are_NOT_unique_tests": true,
+      "allpackage_default_and_tagged": "Race build and compile-only test PASS; no compiler/full tagged suite execution implied.",
+      "compiled_parent_counts": {
+        "default_runtime": 665,
+        "symbol": 17,
+        "tagged_runtime": 666
+      },
+      "default_and_tagged_pinned_lint_2_14": "PASS, zero issues.",
+      "fresh_JDK_source_members": 6,
+      "fresh_JDK_whole_groups": 5,
+      "fresh_JDK_whole_observations": 45,
+      "fresh_count1_parallel1_parents_each": 4,
+      "fresh_distinct_PID_count": 20,
+      "fresh_process_parent_PASS_events": 80,
+      "fresh_processes": 20,
+      "full_default_runtime_parent_PASS": 665,
+      "full_default_runtime_subtest_PASS": 1721,
+      "full_symbol_parent_PASS": 17,
+      "full_symbol_subtest_PASS": 15,
+      "kind_counts": {
+        "build": 10,
+        "exec": 54,
+        "native": 27
+      },
+      "native_focus_parent_PASS": 4,
+      "native_vectors_linked_to_regular_file_JDK_whole_stdout": 3,
+      "nested_modes": "Exact seven captured build/compile records race/readonly/p1, fourteen lint list/env captures inherited race/readonly/p1; no universal unobserved-child claim.",
+      "records": 91,
+      "tagged_OS_partial_write": "Compiled and registered only; NOTRUN.",
+      "tagged_executed_parents": 4
+    },
+    "actual_full_PASS_counts": {
+      "bytes": 609,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint147-root-source-audit-v1/ACTUAL_FULL_PASS_COUNTS.json",
+      "sha256": "05bef680e985ed07f4d8c7a56d631d18ca6ac5f84f2e48d5b72f8fc791f9304b"
+    },
+    "checkpoint": 147,
+    "fresh_R_source_Netty_diagnostic": {
+      "copied_dependencies": 43,
+      "duration_seconds": 134.805231,
+      "first_failure": "AdaptivePoolingAllocator.java2544 positional FileChannel.read",
+      "full_original_inputs": 1220,
+      "no_Netty_acceptance": true,
+      "normal_compiler_only": true,
+      "packet": {
+        "bytes": 27764,
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-read-C-public146-diagnostic-v1/DELIVERY_INDEX.json",
+        "sha256": "5dfd4a0b38dcdeaa362e320afcad6dc604b40910ed87a47bd5cf151869d79c61"
+      }
+    },
+    "full_CI_accepted": false,
+    "full_Java_positional_read_accepted": false,
+    "full_Netty_accepted": false,
+    "full_round_accepted": false,
+    "goal_status": "ACTIVE",
+    "held": [
+      "Linux actual execution and unsupported-platform C admission",
+      "Source/direct/provider carrier and virtual dispatch/upcast/super identity",
+      "Active cancellation and simultaneous second-close completion",
+      "Java frontend positional read C declaration/dispatch proof; canonical formal not nativefactory proof",
+      "Original full1220 Netty and prior full application/CI/round controls"
+    ],
+    "latest_accepted_full_round": 18,
+    "metadata_raw_audit": {
+      "bytes": 294732,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint147-root-source-audit-v1/AUDIT.json",
+      "sha256": "bc9bc08ceaed73cf786cbab568b73575d9ad1ab9b3215aa34d586e7c5e8b235b"
+    },
+    "note": {
+      "bytes": 4994,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint147-final-source-proposal-v2/campaign/SOL_PROGRESS147.md",
+      "sha256": "b9371f7649e0932485ac1f74bb90949020ec9872474d3d89b882e1bc14bb6592"
+    },
+    "owner_delivery": {
+      "bytes": 10674,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-read-R-public146-tdd-v1/DELIVERY_INDEX.json",
+      "sha256": "623a6550919b897c6b4a373c79a732cd764e3e6776546f76bfb07340460550b7"
+    },
+    "owner_patch": {
+      "bytes": 13869,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-read-R-public146-tdd-v1/native-positional-read-R.patch",
+      "sha256": "b7bc9712d49e568d004e851eca6d5cf5e685ea970284cee4bde7bdb3d793c94d"
+    },
+    "owner_source_manifest": {
+      "bytes": 473316,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-read-R-public146-tdd-v1/FINAL_SOURCE_MANIFEST.json",
+      "sha256": "edb9008821c1571b649c48443793bda552914cc6ec181dbc66468855cc0d2417"
+    },
+    "parent_revision": "90d7f9312d917a2ef840987ed9403659bf4ed236",
+    "producer_peer": {
+      "bytes": 7482,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_evaluation_assertions/file-channel-read-R146-independent-final-review/FINAL_REVIEW.json",
+      "sha256": "7e1dbf133d56f0274ab81371e0cdd39c438eb65adfdb1353c818fae8ff156e8a"
+    },
+    "public_baseline_manifest": {
+      "bytes": 473075,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/146-thread-publication/actual-source-manifest.json",
+      "sha256": "5dd9332b218d62eac636615eef54d7d41efc2c87d2331d4be58e04797b5f4632"
+    },
+    "publication_paths": [
+      "stdjava/file_channel_read_positional_unix.go",
+      "stdjava/file_channel_read_positional_unix_test.go",
+      "campaign-state.json",
+      "campaign/SOL_PROGRESS147.md"
+    ],
+    "root3917": "First296positive; stage297native55timeout, not accepted; no later-gate acceptance.",
+    "root_inputs_after": {
+      "bytes": 16567,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/positional-read-R-public146-independent/INPUTS_AFTER.json",
+      "sha256": "024b928fd0ddeb1c60940aeed8573f9aac9b3fbd6383acc6a56430db3c581f72"
+    },
+    "root_raw_peer": {
+      "bytes": 3431,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/positional-read-R146-root-final-audit-v1/FINAL-REVIEW.json",
+      "sha256": "6352837c58ff9490c72754c5822def91ee618d9d6c4821d9600b0061de38edae"
+    },
+    "root_raw_source_proof": {
+      "bytes": 149412,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/positional-read-R146-root-final-audit-v1/EXACT-RAW-SOURCE-PROOF.json",
+      "sha256": "9f39d9da2277a36aed1dd6c8dda9aeef45ccef89ec67c9d06abd15634d009727"
+    },
+    "root_records": {
+      "bytes": 135082,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/positional-read-R-public146-independent/RECORDS.json",
+      "sha256": "cecdcbfd2737dd117d2f75431e97f8fc705357205288a4cd53c03f0c71c66478"
+    },
+    "root_terminal": {
+      "bytes": 530,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/positional-read-R-public146-independent/TERMINAL.json",
+      "sha256": "dae65d0373f53d31493b271e6e03ee9dd0757ec5bb2886cab53866f189bdbc17"
+    },
+    "scope": "Finite regular RAF-backed native positional FileChannel read API only; no Java frontend/source carrier admission.",
+    "status": "ROOT_NATIVE_R_SCOPED_GREEN_FINAL_PEER_VERIFIED"
+  },
+  "sol_progress148": {
+    "actual_acceptance": {
+      "actual_candidate_positive_parents": 18,
+      "all_expected_statuses_raw_and_cleanup_verified": true,
+      "allpackage_default_tagged": "Race build and test -run=^$ compile-only PASS.",
+      "default_tagged_lint": "Pinned2.14 --no-config default rules, zero issues.",
+      "distinct_native_PIDs": 24,
+      "existing_public_candidate_positive_parents": 13,
+      "expected_baseline_exact_panics_exit2": 2,
+      "fresh_metadata_registry_reuse_guards": 6,
+      "fresh_v2_positive_exit0": 31,
+      "fresh_v2_records": 36,
+      "native_outer_count": 1,
+      "nested_modes": "Six generated race/modmod builds, four inner compiler builds no explicit race/readonly under GOFLAGS=-p=1, four outer explicit race/readonly builds, fourteen lint metadata commands with inherited outer flags.",
+      "original_held_specific_failures_exit1": 3,
+      "private_compiled_Test_registry": 1561,
+      "private_diagnostic_candidate_positive_parents": 5,
+      "private_registry_not_public_count_or_full_execution_claim": true,
+      "quiet_CLI_setup": "Real strict-state setter, not full conversion predecessor.",
+      "race_binary_reuse": "Three literal post-HOLD checksums; fresh guard streams match old streams. No invented pre-HOLD checksum.",
+      "separate_external_direct_whole_pairs_claimed": false,
+      "symbol17": "PASS unchanged suite",
+      "two_original_native_whole_helpers": "Each original parent outercount1 enforces internal3JDK/3Go full stdout/stderr/exit comparisons; no separately preserved successful streams or generated cores.",
+      "v1_history": "16 retained raw rows14zero2baselinepanic plus semantic-marker controller HOLD, not completed v1 acceptance."
+    },
+    "all_original23_Java_strings_and_oracles_unchanged": true,
+    "checkpoint": 148,
+    "component_patch": {
+      "bytes": 11566,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/ci-thread-strict-public147-root-prep-v1/two-functions-strict-state.patch",
+      "sha256": "c95f2297d9c87741e118ea751327e340de6a25d03891425e9ca939f1f3ab61b4"
+    },
+    "fullCI147_checked": false,
+    "full_Netty_accepted": false,
+    "full_round_accepted": false,
+    "full_runtime665_rerun": false,
+    "full_tagged_runtime_and_OSPartial": "NOTRUN",
+    "goal_status": "ACTIVE",
+    "held": [
+      "Invalid-Java array frontend witness remains RED; no JDK-validity claim.",
+      "Valid source override and owners whole programs remain RED with original diagnostics and oracles.",
+      "Source virtual/native upcast/nonvirtual super/constructor installers and dynamic FileChannel carrier/platform fronts",
+      "Full original Netty/application/CI/fullround gates"
+    ],
+    "last_CI146": "7PASS/8FAIL; no no-new-regression proof.",
+    "latest_accepted_full_round": 18,
+    "metadata_raw_audit": {
+      "bytes": 118933,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint148-root-source-audit-v1/AUDIT.json",
+      "sha256": "37ad728238d9fd00e4137610d095551e45cd2f0a78144701f60b3a90321ab523"
+    },
+    "note": {
+      "bytes": 5411,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint148-final-source-proposal-v2/campaign/SOL_PROGRESS148.md",
+      "sha256": "58bb7cf0c1798a2218a033fd6c16d32f408e6a93ccd076c5397e0a77bb1d8a11"
+    },
+    "owner_final": {
+      "bytes": 1931,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/ci-thread-strict-public147-root-prep-v1/OWNER_FINAL_DELIVERY.json",
+      "sha256": "3a549b39b91d795699266a4abc10310feef78781ec4df58e2a60e560375ac03c"
+    },
+    "parent_revision": "d11bf1e67d8437cd1466039dd672f1cc609d8dcc",
+    "private_diagnostic_excluded": "transpiler/ci146_native_thread_strict_state_diagnostic_test.go",
+    "proposed_public_members": 3568,
+    "public_baseline_manifest": {
+      "bytes": 473417,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/147-read-publication/actual-source-manifest.json",
+      "sha256": "019b3e92fe7239cfa62d7072026d7d28a24bbc856d8c0263ff4f511f070e931c"
+    },
+    "publication_paths": [
+      "transpiler/native_thread_services143_ast_test.go",
+      "transpiler/native_thread_services143_preproducer_test.go",
+      "campaign-state.json",
+      "campaign/SOL_PROGRESS148.md"
+    ],
+    "root_final_raw_peer": {
+      "bytes": 4767,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/ci-thread147-root-final-audit-v2-v1/FINAL-REVIEW.json",
+      "sha256": "05a804db57e1b4356dd71cc69c583f27f6f01be7e3cb01a6c0dbfa403de2b8f2"
+    },
+    "root_inputs_after": {
+      "bytes": 19695,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent-v2/INPUTS_AFTER.json",
+      "sha256": "57654226320d4d10f522a14ca686f742741bfa91a39cba5b466f28d2cdef767b"
+    },
+    "root_observed_outer_exit": {
+      "bytes": 449,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent-v2/ROOT_OUTER_EXIT_TOOL_OBSERVATION.json",
+      "sha256": "62cf2b01f7313cf5dc109eeb9d84c45525e358f9ea1c41c05aea500122263060"
+    },
+    "root_raw_source_proof": {
+      "bytes": 64167,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/ci-thread147-root-final-audit-v2-v1/EXACT-RAW-SOURCE-PROOF.json",
+      "sha256": "77b78bb6c0fd3319d71d3c360ecc80c429aa716a64e6a2e413996cf3309b4bd7"
+    },
+    "root_records": {
+      "bytes": 102167,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent-v2/RECORDS.json",
+      "sha256": "d7a90fa9112691b972810ed1b9eb468cf774fcfacb223fe8684efa54e64f8d37"
+    },
+    "root_terminal": {
+      "bytes": 842,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent-v2/TERMINAL.json",
+      "sha256": "5a615ac164cc2aa90778dcf288037078c47f8160bf58f79ba5f3adc6a9ac15fb"
+    },
+    "root_v1_controller_HOLD": {
+      "bytes": 4260,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent/FAILURE.json",
+      "sha256": "09e66940bca4ebfcb49fc0f9c3afb05db3c578ef1bef1c6e94477607ac20e9e8"
+    },
+    "same_count_different_membership": true,
+    "scope": "Only TestNativeThreadServices143RequiresCallerExecution and TestNativeThreadServices143PreProducerNegativeShield; zero production/import/shared helper/public registration changes.",
+    "source_peer": {
+      "bytes": 4765,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/ci-thread-strict-public147-root-prep-v1/PEER_FINAL_AUDIT.json",
+      "sha256": "1fb68c9eb7849fe5d517b17505930db6dabea98e9d83837a3b0fb6c99a92d5ee"
+    },
+    "status": "ROOT_TWO_TEST_FUNCTION_SCOPED_GREEN_EXPECTED_BASELINE_AND_ORIGINAL_HELD_RED_RETAINED",
+    "tested_private_candidate_manifest": {
+      "bytes": 473553,
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/ci-thread-strict-public147-root-prep-v1/source-manifest.json",
+      "sha256": "2f91e607a1d95e15388a439aa7883decc25faf4835b8200e86d7953f543c4124"
+    },
+    "tested_private_candidate_members": 3568
+  },
+  "sol_progress149": {
+    "accepted_full_round": 18,
+    "checkpoint": 149,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/stageA-metadata-independent/ROOT_VERIFIED.json",
+    "goal_status": "ACTIVE",
+    "known_ci": "Last checked public148:7PASS/8FAIL; not rerun as fullCI by this scoped milestone.",
+    "next_blockers": [
+      "FileChannel compiler source/native routing and NIO declaration origins",
+      "Suppression storage collision: full new application and reducer are RED",
+      "Reader scalar declaration-origin consumer repair: independent verification pending"
+    ],
+    "parent_revision": "e16b99bbbc122756ce7d9c736f9c6aa497301fd4",
+    "performance_claim": false,
+    "scope": "Source-backed FileChannel runtime protocol, native delegation, and canonical NIO declaration metadata; compiler admission remains held.",
+    "source_manifest": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/stageA-metadata-independent/SOURCE.json",
+    "status": "SCOPED_RUNTIME_AND_SIGNATURE_METADATA_GREEN",
+    "verification": {
+      "JDK_observations": 24,
+      "all_terminal_zero": true,
+      "build_and_lint_profiles": [
+        "default",
+        "f1_os_profile"
+      ],
+      "completed_utc": "2026-10-21T04:48:29.312243+00:00",
+      "fresh_close_processes": 20,
+      "race_runtime_parents": 671,
+      "race_symbol_parents": 17,
+      "records_sha256": "85501c5697235a8db2e8d7cf6c2cad5280cf5f3c1418ceca966c5783b937cbea",
+      "scope_exclusions": [
+        "Compiler FileChannel source admission and current-Execution consumer routing",
+        "Full SourceCarrierMain translation",
+        "Native dynamic class/interface/array membership",
+        "Full tagged runtime/OS partial-write test",
+        "Full CI, full round, full Netty compatibility"
+      ],
+      "source_sha256": "8870059376ad612afed625fe11010eb42358c595be5139033203f8bead82ef7b",
+      "stages": 75,
+      "status": "PASS scoped FileChannel runtime and canonical declaration metadata",
+      "toolchain": "Go1.27.3 / JDK21.0.6"
+    }
+  },
+  "sol_progress150": {
+    "accepted_full_round": 18,
+    "checkpoint": 150,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/ci-lint150/DELIVERY_INDEX.json",
+    "full_CI": "NOT YET VERIFIED",
+    "goal_status": "ACTIVE",
+    "parent_revision": "9d1f3aceafeca9e9ec98d17c4ed3e09eaf15fd38",
+    "red": "CI149 actual golangci-lint2.15.0 errcheck main_test.go78, reproduced locally.",
+    "root_lint": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/ci150-independent-lint215/result.json",
+    "scope": "Check cleanup Wait error in TestCampaignSignalsCancelStageTreeAndPreserveReport; preserve process completion wait and existing assertions. No production changes.",
+    "status": "SCOPED_TEST_CLEANUP_LINT_GREEN",
+    "validation": [
+      "Existing cmd/javacampaign race tests including SIGINT/SIGTERM pass with process inspection",
+      "Exact2.15 default and f1 lint pass;2.14 default compatibility pass",
+      "Coordinator independently reran2.15 all-package lint:0issues"
+    ]
+  },
+  "sol_progress151": {
+    "accepted_full_round": 18,
+    "checkpoint": 151,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public151/run/ROOT_RAW_AUDIT.json",
+    "goal_status": "ACTIVE",
+    "held": [
+      "Full original cast C7 and Class.cast",
+      "Full private compiler replay:707 focused tests passed; known invalid-array strict diagnostic failed at708; remaining checks unverified",
+      "Source FileChannel construction and full Netty source/JVM/Go parity",
+      "Complete CI, full round, full tagged runtime and OS partial-write checks"
+    ],
+    "parent_revision": "81a19207d301c817eb1ff8acdfb9b5230287212e",
+    "performance_claim": false,
+    "scope": "NewObject allocates a nonzero-sized private carrier with java.lang.Object identity. Equality, hashing and monitor identity are preserved. Cast predicates and unknown-host inference are unchanged.",
+    "status": "SCOPED_NATIVE_OBJECT_ALLOCATION_IDENTITY_GREEN",
+    "tdd": "Fresh native baseline from public150 compiles, then fails because Object allocations lack class metadata; the candidate passes.",
+    "validation": {
+      "allpackage_race_build_testcompile": [
+        "default",
+        "f1_os_profile"
+      ],
+      "baseline_runtime671": "PASS fresh race",
+      "candidate_runtime672": "PASS fresh race no FAIL/SKIP",
+      "candidate_source_manifest_sha256": "dcf3d82f469b85776e54fa9e6677dfda94d9a37d1dfc25ecc167b97f0caa3ac4",
+      "fresh_JDK_observations": 3,
+      "fresh_native_object_monitor_processes": 20,
+      "lint": "golangci-lint2.15: zero issues in both profiles",
+      "raw_expected_semantic_RED": 1,
+      "raw_pass": 38,
+      "raw_records": 39,
+      "result_sha256": "5e678c41be00e8337b906f743c4b470db0fc1227b51848dcd7a7fab4b17590df"
+    }
+  },
+  "sol_progress152": {
+    "accepted_full_checkpoint": 18,
+    "checkpoint": 152,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public152/run/ROOT_RAW_AUDIT.json",
+    "goal_status": "ACTIVE",
+    "held": [
+      "Full826 successor, fullCI/round",
+      "Class.cast and FileChannel source construction",
+      "Throwable stack contracts",
+      "Netty dependency-source closure and fullJVM/Go parity",
+      "Full tagged runtime/OSpartial"
+    ],
+    "parent_revision": "bc9a7b751adccc65a6ec2e1c9c7f42d09d306918",
+    "performance_claim": false,
+    "scope": "Known array receiver plus absent member name uses existing strict diagnostic. Receiver type proof excludes consumer target typing; unresolved unknown receivers and Object/clone names preserve existing routing.",
+    "status": "SCOPED_ARRAY_METHOD_DIAGNOSTIC_GREEN",
+    "tdd": "Fresh actualpublic151 binary runs unchanged original held test and fails semantic diagnostic assertion; exactcandidate passes. Fresh JDK rejects invalid source and validates legal array controls.",
+    "validation": {
+      "allpackage_race_build_testcompile": [
+        "default",
+        "f1_os_profile"
+      ],
+      "candidate_manifest_sha256": "90bf947e90cf07fa7385cbe555a3a0718f574e64c6f10d4607c555091552d6b0",
+      "expected_rejections": [
+        "jdk-invalid-array-rejected",
+        "actual-public151-original-held-RED"
+      ],
+      "focused_existing_compiler_parents": 14,
+      "fresh_JDK_positive_runs": 3,
+      "full826_CI_round_Netty_accepted": false,
+      "lint": "golangci-lint2.15 zero issues both profiles",
+      "raw_pass": 20,
+      "raw_records": 22,
+      "result_sha256": "6837d61e478dbc9767ffd8072d010dca11323af8299477d276f00caa85edf4a1",
+      "runtime_parents": 672,
+      "status": "ROOT_FINITE_PUBLIC152_PASS",
+      "verifier_sha256": "a026be252e8eab8da0b379c83ec92506e4cd66fb10189ccc050eac7d1c757bd7"
+    }
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
@@ -25560,391 +25991,5 @@
       "sol_writer_dispatch_v6": "Final native publication preparation and fresh CI gates"
     },
     "updated_at": "2026-09-30T15:48:30.979530+00:00"
-  },
-  "sol_progress147": {
-    "checkpoint": 147,
-    "status": "ROOT_NATIVE_R_SCOPED_GREEN_FINAL_PEER_VERIFIED",
-    "goal_status": "ACTIVE",
-    "scope": "Finite regular RAF-backed native positional FileChannel read API only; no Java frontend/source carrier admission.",
-    "parent_revision": "90d7f9312d917a2ef840987ed9403659bf4ed236",
-    "public_baseline_manifest": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/146-thread-publication/actual-source-manifest.json",
-      "bytes": 473075,
-      "sha256": "5dd9332b218d62eac636615eef54d7d41efc2c87d2331d4be58e04797b5f4632"
-    },
-    "owner_delivery": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-read-R-public146-tdd-v1/DELIVERY_INDEX.json",
-      "bytes": 10674,
-      "sha256": "623a6550919b897c6b4a373c79a732cd764e3e6776546f76bfb07340460550b7"
-    },
-    "owner_patch": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-read-R-public146-tdd-v1/native-positional-read-R.patch",
-      "bytes": 13869,
-      "sha256": "b7bc9712d49e568d004e851eca6d5cf5e685ea970284cee4bde7bdb3d793c94d"
-    },
-    "owner_source_manifest": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-read-R-public146-tdd-v1/FINAL_SOURCE_MANIFEST.json",
-      "bytes": 473316,
-      "sha256": "edb9008821c1571b649c48443793bda552914cc6ec181dbc66468855cc0d2417"
-    },
-    "producer_peer": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_evaluation_assertions/file-channel-read-R146-independent-final-review/FINAL_REVIEW.json",
-      "bytes": 7482,
-      "sha256": "7e1dbf133d56f0274ab81371e0cdd39c438eb65adfdb1353c818fae8ff156e8a"
-    },
-    "root_terminal": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/positional-read-R-public146-independent/TERMINAL.json",
-      "bytes": 530,
-      "sha256": "dae65d0373f53d31493b271e6e03ee9dd0757ec5bb2886cab53866f189bdbc17"
-    },
-    "root_records": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/positional-read-R-public146-independent/RECORDS.json",
-      "bytes": 135082,
-      "sha256": "cecdcbfd2737dd117d2f75431e97f8fc705357205288a4cd53c03f0c71c66478"
-    },
-    "root_inputs_after": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/positional-read-R-public146-independent/INPUTS_AFTER.json",
-      "bytes": 16567,
-      "sha256": "024b928fd0ddeb1c60940aeed8573f9aac9b3fbd6383acc6a56430db3c581f72"
-    },
-    "root_raw_peer": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/positional-read-R146-root-final-audit-v1/FINAL-REVIEW.json",
-      "bytes": 3431,
-      "sha256": "6352837c58ff9490c72754c5822def91ee618d9d6c4821d9600b0061de38edae"
-    },
-    "root_raw_source_proof": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/positional-read-R146-root-final-audit-v1/EXACT-RAW-SOURCE-PROOF.json",
-      "bytes": 149412,
-      "sha256": "9f39d9da2277a36aed1dd6c8dda9aeef45ccef89ec67c9d06abd15634d009727"
-    },
-    "metadata_raw_audit": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint147-root-source-audit-v1/AUDIT.json",
-      "bytes": 294732,
-      "sha256": "bc9bc08ceaed73cf786cbab568b73575d9ad1ab9b3215aa34d586e7c5e8b235b"
-    },
-    "actual_full_PASS_counts": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint147-root-source-audit-v1/ACTUAL_FULL_PASS_COUNTS.json",
-      "bytes": 609,
-      "sha256": "05bef680e985ed07f4d8c7a56d631d18ca6ac5f84f2e48d5b72f8fc791f9304b"
-    },
-    "actual_acceptance": {
-      "records": 91,
-      "kind_counts": {
-        "exec": 54,
-        "build": 10,
-        "native": 27
-      },
-      "all_actual_supervisor_runner_child_exit_zero_clean": true,
-      "fresh_JDK_source_members": 6,
-      "fresh_JDK_whole_groups": 5,
-      "fresh_JDK_whole_observations": 45,
-      "native_vectors_linked_to_regular_file_JDK_whole_stdout": 3,
-      "compiled_parent_counts": {
-        "default_runtime": 665,
-        "tagged_runtime": 666,
-        "symbol": 17
-      },
-      "full_default_runtime_parent_PASS": 665,
-      "full_default_runtime_subtest_PASS": 1721,
-      "full_symbol_parent_PASS": 17,
-      "full_symbol_subtest_PASS": 15,
-      "native_focus_parent_PASS": 4,
-      "fresh_processes": 20,
-      "fresh_distinct_PID_count": 20,
-      "fresh_count1_parallel1_parents_each": 4,
-      "fresh_process_parent_PASS_events": 80,
-      "tagged_executed_parents": 4,
-      "tagged_OS_partial_write": "Compiled and registered only; NOTRUN.",
-      "all_native_parent_PASS_events": 770,
-      "all_native_parent_PASS_events_are_NOT_unique_tests": true,
-      "allpackage_default_and_tagged": "Race build and compile-only test PASS; no compiler/full tagged suite execution implied.",
-      "default_and_tagged_pinned_lint_2_14": "PASS, zero issues.",
-      "nested_modes": "Exact seven captured build/compile records race/readonly/p1, fourteen lint list/env captures inherited race/readonly/p1; no universal unobserved-child claim."
-    },
-    "CI146": "7PASS/8FAIL; two new negative guards under active private evaluation repair, not published here; no no-new-regression proof.",
-    "root3917": "First296positive; stage297native55timeout, not accepted; no later-gate acceptance.",
-    "full_CI_accepted": false,
-    "full_Netty_accepted": false,
-    "full_Java_positional_read_accepted": false,
-    "full_round_accepted": false,
-    "latest_accepted_full_round": 18,
-    "held": [
-      "Linux actual execution and unsupported-platform C admission",
-      "Source/direct/provider carrier and virtual dispatch/upcast/super identity",
-      "Active cancellation and simultaneous second-close completion",
-      "Java frontend positional read C declaration/dispatch proof; canonical formal not nativefactory proof",
-      "Original full1220 Netty and prior full application/CI/round controls"
-    ],
-    "fresh_R_source_Netty_diagnostic": {
-      "normal_compiler_only": true,
-      "first_failure": "AdaptivePoolingAllocator.java2544 positional FileChannel.read",
-      "duration_seconds": 134.805231,
-      "full_original_inputs": 1220,
-      "copied_dependencies": 43,
-      "packet": {
-        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-read-C-public146-diagnostic-v1/DELIVERY_INDEX.json",
-        "bytes": 27764,
-        "sha256": "5dfd4a0b38dcdeaa362e320afcad6dc604b40910ed87a47bd5cf151869d79c61"
-      },
-      "no_Netty_acceptance": true
-    },
-    "publication_paths": [
-      "stdjava/file_channel_read_positional_unix.go",
-      "stdjava/file_channel_read_positional_unix_test.go",
-      "campaign-state.json",
-      "campaign/SOL_PROGRESS147.md"
-    ],
-    "note": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint147-final-source-proposal-v2/campaign/SOL_PROGRESS147.md",
-      "bytes": 4994,
-      "sha256": "b9371f7649e0932485ac1f74bb90949020ec9872474d3d89b882e1bc14bb6592"
-    }
-  },
-  "active_resume_current147": {
-    "branch": "origin/codex/adversarial-campaign",
-    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
-    "checkpoint_kind": "Two-new-leaf finite native positional FileChannel read milestone only.",
-    "next": "Root may commit AND push exact four paths after its independent publication preimage and concurrent diagnostic completion checks. Continue separately reviewed canonical declaration/native-source carrier/platform read admission and private negative-guard repair. Goal ACTIVE; accepted full round18 unchanged."
-  },
-  "sol_progress148": {
-    "checkpoint": 148,
-    "status": "ROOT_TWO_TEST_FUNCTION_SCOPED_GREEN_EXPECTED_BASELINE_AND_ORIGINAL_HELD_RED_RETAINED",
-    "goal_status": "ACTIVE",
-    "scope": "Only TestNativeThreadServices143RequiresCallerExecution and TestNativeThreadServices143PreProducerNegativeShield; zero production/import/shared helper/public registration changes.",
-    "parent_revision": "d11bf1e67d8437cd1466039dd672f1cc609d8dcc",
-    "public_baseline_manifest": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/evidence/147-read-publication/actual-source-manifest.json",
-      "bytes": 473417,
-      "sha256": "019b3e92fe7239cfa62d7072026d7d28a24bbc856d8c0263ff4f511f070e931c"
-    },
-    "component_patch": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/ci-thread-strict-public147-root-prep-v1/two-functions-strict-state.patch",
-      "bytes": 11566,
-      "sha256": "c95f2297d9c87741e118ea751327e340de6a25d03891425e9ca939f1f3ab61b4"
-    },
-    "owner_final": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/ci-thread-strict-public147-root-prep-v1/OWNER_FINAL_DELIVERY.json",
-      "bytes": 1931,
-      "sha256": "3a549b39b91d795699266a4abc10310feef78781ec4df58e2a60e560375ac03c"
-    },
-    "source_peer": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/ci-thread-strict-public147-root-prep-v1/PEER_FINAL_AUDIT.json",
-      "bytes": 4765,
-      "sha256": "1fb68c9eb7849fe5d517b17505930db6dabea98e9d83837a3b0fb6c99a92d5ee"
-    },
-    "root_terminal": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent-v2/TERMINAL.json",
-      "bytes": 842,
-      "sha256": "5a615ac164cc2aa90778dcf288037078c47f8160bf58f79ba5f3adc6a9ac15fb"
-    },
-    "root_records": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent-v2/RECORDS.json",
-      "bytes": 102167,
-      "sha256": "d7a90fa9112691b972810ed1b9eb468cf774fcfacb223fe8684efa54e64f8d37"
-    },
-    "root_inputs_after": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent-v2/INPUTS_AFTER.json",
-      "bytes": 19695,
-      "sha256": "57654226320d4d10f522a14ca686f742741bfa91a39cba5b466f28d2cdef767b"
-    },
-    "root_observed_outer_exit": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent-v2/ROOT_OUTER_EXIT_TOOL_OBSERVATION.json",
-      "bytes": 449,
-      "sha256": "62cf2b01f7313cf5dc109eeb9d84c45525e358f9ea1c41c05aea500122263060"
-    },
-    "root_final_raw_peer": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/ci-thread147-root-final-audit-v2-v1/FINAL-REVIEW.json",
-      "bytes": 4767,
-      "sha256": "05a804db57e1b4356dd71cc69c583f27f6f01be7e3cb01a6c0dbfa403de2b8f2"
-    },
-    "root_raw_source_proof": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_shard_resume/ci-thread147-root-final-audit-v2-v1/EXACT-RAW-SOURCE-PROOF.json",
-      "bytes": 64167,
-      "sha256": "77b78bb6c0fd3319d71d3c360ecc80c429aa716a64e6a2e413996cf3309b4bd7"
-    },
-    "metadata_raw_audit": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint148-root-source-audit-v1/AUDIT.json",
-      "bytes": 118933,
-      "sha256": "37ad728238d9fd00e4137610d095551e45cd2f0a78144701f60b3a90321ab523"
-    },
-    "root_v1_controller_HOLD": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/ci-thread-strict-public147-independent/FAILURE.json",
-      "bytes": 4260,
-      "sha256": "09e66940bca4ebfcb49fc0f9c3afb05db3c578ef1bef1c6e94477607ac20e9e8"
-    },
-    "actual_acceptance": {
-      "fresh_v2_records": 36,
-      "fresh_v2_positive_exit0": 31,
-      "expected_baseline_exact_panics_exit2": 2,
-      "original_held_specific_failures_exit1": 3,
-      "all_expected_statuses_raw_and_cleanup_verified": true,
-      "fresh_metadata_registry_reuse_guards": 6,
-      "distinct_native_PIDs": 24,
-      "native_outer_count": 1,
-      "actual_candidate_positive_parents": 18,
-      "existing_public_candidate_positive_parents": 13,
-      "private_diagnostic_candidate_positive_parents": 5,
-      "private_compiled_Test_registry": 1561,
-      "private_registry_not_public_count_or_full_execution_claim": true,
-      "symbol17": "PASS unchanged suite",
-      "two_original_native_whole_helpers": "Each original parent outercount1 enforces internal3JDK/3Go full stdout/stderr/exit comparisons; no separately preserved successful streams or generated cores.",
-      "separate_external_direct_whole_pairs_claimed": false,
-      "race_binary_reuse": "Three literal post-HOLD checksums; fresh guard streams match old streams. No invented pre-HOLD checksum.",
-      "v1_history": "16 retained raw rows14zero2baselinepanic plus semantic-marker controller HOLD, not completed v1 acceptance.",
-      "quiet_CLI_setup": "Real strict-state setter, not full conversion predecessor.",
-      "nested_modes": "Six generated race/modmod builds, four inner compiler builds no explicit race/readonly under GOFLAGS=-p=1, four outer explicit race/readonly builds, fourteen lint metadata commands with inherited outer flags.",
-      "allpackage_default_tagged": "Race build and test -run=^$ compile-only PASS.",
-      "default_tagged_lint": "Pinned2.14 --no-config default rules, zero issues."
-    },
-    "private_diagnostic_excluded": "transpiler/ci146_native_thread_strict_state_diagnostic_test.go",
-    "tested_private_candidate_members": 3568,
-    "tested_private_candidate_manifest": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_independent_review/ci-thread-strict-public147-root-prep-v1/source-manifest.json",
-      "bytes": 473553,
-      "sha256": "2f91e607a1d95e15388a439aa7883decc25faf4835b8200e86d7953f543c4124"
-    },
-    "proposed_public_members": 3568,
-    "same_count_different_membership": true,
-    "all_original23_Java_strings_and_oracles_unchanged": true,
-    "fullCI147_checked": false,
-    "last_CI146": "7PASS/8FAIL; no no-new-regression proof.",
-    "full_runtime665_rerun": false,
-    "full_tagged_runtime_and_OSPartial": "NOTRUN",
-    "held": [
-      "Invalid-Java array frontend witness remains RED; no JDK-validity claim.",
-      "Valid source override and owners whole programs remain RED with original diagnostics and oracles.",
-      "Source virtual/native upcast/nonvirtual super/constructor installers and dynamic FileChannel carrier/platform fronts",
-      "Full original Netty/application/CI/fullround gates"
-    ],
-    "full_Netty_accepted": false,
-    "full_round_accepted": false,
-    "latest_accepted_full_round": 18,
-    "publication_paths": [
-      "transpiler/native_thread_services143_ast_test.go",
-      "transpiler/native_thread_services143_preproducer_test.go",
-      "campaign-state.json",
-      "campaign/SOL_PROGRESS148.md"
-    ],
-    "note": {
-      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/checkpoint148-final-source-proposal-v2/campaign/SOL_PROGRESS148.md",
-      "bytes": 5411,
-      "sha256": "58bb7cf0c1798a2218a033fd6c16d32f408e6a93ccd076c5397e0a77bb1d8a11"
-    }
-  },
-  "active_resume_current148": {
-    "branch": "origin/codex/adversarial-campaign",
-    "agent_policy": "GPT-6.1 Sol/high only; explicit parallel ownership; no Astra",
-    "checkpoint_kind": "Two Thread guard test functions isolate ambient strict-mode state while retaining stronger original assertions.",
-    "next": "Root may verify and commit AND push exactly four publication paths. Preserve original source/invalid-array held witnesses; continue separately reviewed dynamic FileChannel/source Thread and generic frontend work. Goal ACTIVE; accepted full round18 unchanged."
-  },
-  "sol_progress149": {
-    "checkpoint": 149,
-    "status": "SCOPED_RUNTIME_AND_SIGNATURE_METADATA_GREEN",
-    "goal_status": "ACTIVE",
-    "parent_revision": "e16b99bbbc122756ce7d9c736f9c6aa497301fd4",
-    "scope": "Source-backed FileChannel runtime protocol, native delegation, and canonical NIO declaration metadata; compiler admission remains held.",
-    "verification": {
-      "status": "PASS scoped FileChannel runtime and canonical declaration metadata",
-      "stages": 75,
-      "all_terminal_zero": true,
-      "race_runtime_parents": 671,
-      "race_symbol_parents": 17,
-      "fresh_close_processes": 20,
-      "JDK_observations": 24,
-      "build_and_lint_profiles": [
-        "default",
-        "f1_os_profile"
-      ],
-      "toolchain": "Go1.27.3 / JDK21.0.6",
-      "records_sha256": "85501c5697235a8db2e8d7cf6c2cad5280cf5f3c1418ceca966c5783b937cbea",
-      "source_sha256": "8870059376ad612afed625fe11010eb42358c595be5139033203f8bead82ef7b",
-      "scope_exclusions": [
-        "Compiler FileChannel source admission and current-Execution consumer routing",
-        "Full SourceCarrierMain translation",
-        "Native dynamic class/interface/array membership",
-        "Full tagged runtime/OS partial-write test",
-        "Full CI, full round, full Netty compatibility"
-      ],
-      "completed_utc": "2026-10-21T04:48:29.312243+00:00"
-    },
-    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/stageA-metadata-independent/ROOT_VERIFIED.json",
-    "source_manifest": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/stageA-metadata-independent/SOURCE.json",
-    "performance_claim": false,
-    "accepted_full_round": 18,
-    "next_blockers": [
-      "FileChannel compiler source/native routing and NIO declaration origins",
-      "Suppression storage collision: full new application and reducer are RED",
-      "Reader scalar declaration-origin consumer repair: independent verification pending"
-    ],
-    "known_ci": "Last checked public148:7PASS/8FAIL; not rerun as fullCI by this scoped milestone."
-  },
-  "active_resume_current149": {
-    "branch": "origin/codex/adversarial-campaign",
-    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
-    "goal_status": "ACTIVE",
-    "resume_evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
-    "next": "Continue collision repair and full private compiler-union verification; retain all original challenges. No fullNetty acceptance."
-  },
-  "sol_progress150": {
-    "checkpoint": 150,
-    "status": "SCOPED_TEST_CLEANUP_LINT_GREEN",
-    "goal_status": "ACTIVE",
-    "parent_revision": "9d1f3aceafeca9e9ec98d17c4ed3e09eaf15fd38",
-    "scope": "Check cleanup Wait error in TestCampaignSignalsCancelStageTreeAndPreserveReport; preserve process completion wait and existing assertions. No production changes.",
-    "red": "CI149 actual golangci-lint2.15.0 errcheck main_test.go78, reproduced locally.",
-    "validation": [
-      "Existing cmd/javacampaign race tests including SIGINT/SIGTERM pass with process inspection",
-      "Exact2.15 default and f1 lint pass;2.14 default compatibility pass",
-      "Coordinator independently reran2.15 all-package lint:0issues"
-    ],
-    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/ci-lint150/DELIVERY_INDEX.json",
-    "root_lint": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/ci150-independent-lint215/result.json",
-    "full_CI": "NOT YET VERIFIED",
-    "accepted_full_round": 18
-  },
-  "active_resume_current150": {
-    "agent_policy": "GPT-6.1 Sol/high only",
-    "goal_status": "ACTIVE",
-    "next": "Run fresh826 private compiler-union stages from1; preserve full Netty/Reader challenges and independent exception parity evidence.",
-    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
-  },
-  "sol_progress151": {
-    "checkpoint": 151,
-    "status": "SCOPED_NATIVE_OBJECT_ALLOCATION_IDENTITY_GREEN",
-    "goal_status": "ACTIVE",
-    "parent_revision": "81a19207d301c817eb1ff8acdfb9b5230287212e",
-    "scope": "NewObject allocates a nonzero-sized private carrier with java.lang.Object identity. Equality, hashing and monitor identity are preserved. Cast predicates and unknown-host inference are unchanged.",
-    "tdd": "Fresh native baseline from public150 compiles, then fails because Object allocations lack class metadata; the candidate passes.",
-    "validation": {
-      "baseline_runtime671": "PASS fresh race",
-      "candidate_runtime672": "PASS fresh race no FAIL/SKIP",
-      "fresh_JDK_observations": 3,
-      "fresh_native_object_monitor_processes": 20,
-      "allpackage_race_build_testcompile": [
-        "default",
-        "f1_os_profile"
-      ],
-      "lint": "golangci-lint2.15: zero issues in both profiles",
-      "raw_records": 39,
-      "raw_pass": 38,
-      "raw_expected_semantic_RED": 1,
-      "result_sha256": "5e678c41be00e8337b906f743c4b470db0fc1227b51848dcd7a7fab4b17590df",
-      "candidate_source_manifest_sha256": "dcf3d82f469b85776e54fa9e6677dfda94d9a37d1dfc25ecc167b97f0caa3ac4"
-    },
-    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public151/run/ROOT_RAW_AUDIT.json",
-    "held": [
-      "Full original cast C7 and Class.cast",
-      "Full private compiler replay:707 focused tests passed; known invalid-array strict diagnostic failed at708; remaining checks unverified",
-      "Source FileChannel construction and full Netty source/JVM/Go parity",
-      "Complete CI, full round, full tagged runtime and OS partial-write checks"
-    ],
-    "accepted_full_round": 18,
-    "performance_claim": false
-  },
-  "active_resume_current151": {
-    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
-    "goal_status": "ACTIVE",
-    "next": "Continue Netty dependency source resolution, compiler performance, FileChannel construction, nominal casts/list metadata and Throwable stack contracts. Preserve full applications and independently verify integrations.",
-    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
   }
 }
