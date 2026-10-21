@@ -25884,5 +25884,28 @@
     "goal_status": "ACTIVE",
     "resume_evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
     "next": "Continue collision repair and full private compiler-union verification; retain all original challenges. No fullNetty acceptance."
+  },
+  "sol_progress150": {
+    "checkpoint": 150,
+    "status": "SCOPED_TEST_CLEANUP_LINT_GREEN",
+    "goal_status": "ACTIVE",
+    "parent_revision": "9d1f3aceafeca9e9ec98d17c4ed3e09eaf15fd38",
+    "scope": "Check cleanup Wait error in TestCampaignSignalsCancelStageTreeAndPreserveReport; preserve process completion wait and existing assertions. No production changes.",
+    "red": "CI149 actual golangci-lint2.15.0 errcheck main_test.go78, reproduced locally.",
+    "validation": [
+      "Existing cmd/javacampaign race tests including SIGINT/SIGTERM pass with process inspection",
+      "Exact2.15 default and f1 lint pass;2.14 default compatibility pass",
+      "Coordinator independently reran2.15 all-package lint:0issues"
+    ],
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/ci-lint150/DELIVERY_INDEX.json",
+    "root_lint": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/ci150-independent-lint215/result.json",
+    "full_CI": "NOT YET VERIFIED",
+    "accepted_full_round": 18
+  },
+  "active_resume_current150": {
+    "agent_policy": "GPT-6.1 Sol/high only",
+    "goal_status": "ACTIVE",
+    "next": "Run fresh826 private compiler-union stages from1; preserve full Netty/Reader challenges and independent exception parity evidence.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
   }
 }

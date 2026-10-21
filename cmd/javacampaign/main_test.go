@@ -75,7 +75,10 @@ func TestCampaignSignalsCancelStageTreeAndPreserveReport(t *testing.T) {
 					if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil && !errors.Is(err, syscall.ESRCH) {
 						t.Errorf("CLI cleanup: %v", err)
 					}
-					<-done
+					var exit *exec.ExitError
+					if err := <-done; err != nil && !errors.As(err, &exit) {
+						t.Errorf("CLI cleanup wait: %v", err)
+					}
 				}
 			})
 			var pids []int
