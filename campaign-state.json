@@ -26145,5 +26145,63 @@
     "goal_status": "ACTIVE",
     "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
     "next": "Finish native/source channel writes and resource/RAF prerequisites, preserve genuine Netty partial-write oracle, integrate compiler components and continue original full Netty attempts."
+  },
+  "sol_progress156": {
+    "checkpoint": 156,
+    "status": "SCOPED_FILECHANNEL_WRITE_RUNTIME_GREEN",
+    "goal_status": "ACTIVE",
+    "parent_revision": "f395419b584342bb263fe419e7f2e8cdf9d9e4ef",
+    "scope": "Two declaration regions in file_channel_reference.go; three new runtime implementation files and three new runtime test files. Compiler and all other public runtime files unchanged.",
+    "validation": {
+      "FreeBSD": "compile-only CGO0",
+      "all_sources_unchanged": true,
+      "default_f1_racebuild_testcompile_lint215": "PASS",
+      "full_compiler_CI_round_Netty_accepted": false,
+      "new_actual_RLIMIT_partial_runs": 3,
+      "old_actual_RLIMIT_partial_seeds": [
+        17,
+        41,
+        97
+      ],
+      "records": 21,
+      "runtime_registries": {
+        "stdjava": 678,
+        "symbol": 17
+      },
+      "source_manifest_sha256": "0d3a6b881f1dafaff3b8d8c0a22cfb4c6bca9383bb052394b2883013a6631b2d",
+      "source_native_lease_stress_count": 20,
+      "status": "ROOT_PUBLIC156_RUNTIME_FINITE_PASS"
+    },
+    "raw_audit": {
+      "status": "ROOT_PUBLIC156_INDEPENDENT_RAW_AUDIT_PASS",
+      "records": 21,
+      "exit0": 21,
+      "result_sha256": "5bcd12cb7015f3a0572a382e7e2b1dbfe90feba8993acdf2d75401c1eb582d73",
+      "source_manifest_sha256": "0d3a6b881f1dafaff3b8d8c0a22cfb4c6bca9383bb052394b2883013a6631b2d",
+      "all_raw_streams_cleanup_sources_rehashed": true,
+      "runtime": 678,
+      "symbol": 17,
+      "partial_profile_runs": 6,
+      "source_native_lease_count": 20,
+      "FreeBSD": "compile-only",
+      "compiler_unchanged": true,
+      "full_CI_round_Netty_claim": false
+    },
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public156/run/ROOT_RAW_AUDIT.json",
+    "baseline": "Published155 runtime672 PASS; newAPI test-only overlay compile gap retained, not called a semantic runtime failure.",
+    "held": [
+      "Compiler source/lowering integration",
+      "Full coherent accumulated CI/round",
+      "Full source Netty translation/build/behavioral parity",
+      "Active native-write cancellation and broader platform behavior"
+    ],
+    "accepted_full_checkpoint": 18,
+    "performance_claim": false
+  },
+  "active_resume_current156": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
+    "next": "Repair coherent compiler declaration-origin gap, reverify all applications, rerun full Netty under declared1GiB/300s profile, and continue exception stack/source Thread compatibility."
   }
 }

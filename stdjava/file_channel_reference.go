@@ -8,6 +8,8 @@ import "sync/atomic"
 type FileChannelSourceMethods struct {
 	Read      func(*Execution, *ByteBuffer) int32
 	ReadAt    func(*Execution, *ByteBuffer, int64) int32
+	Write     func(*Execution, *ByteBuffer) int32
+	WriteAt   func(*Execution, *ByteBuffer, int64) int32
 	ImplClose func(*Execution)
 }
 
@@ -35,7 +37,7 @@ func NewFileChannelSourceReference(rootInfo *ObjectInfo, methods FileChannelSour
 	}
 	// The existing source predicate has released the registry lock before this
 	// independent ancestry query. The ObjectInfo view provider is never invoked.
-	if !JavaTypeAssignable(rootInfo.DynamicType(), JavaNIOFileChannelType) || methods.Read == nil || methods.ReadAt == nil || methods.ImplClose == nil {
+	if !JavaTypeAssignable(rootInfo.DynamicType(), JavaNIOFileChannelType) || methods.Read == nil || methods.ReadAt == nil || methods.ImplClose == nil || (methods.Write == nil) != (methods.WriteAt == nil) {
 		panic(NewUnsupportedOperationException("FileChannel source declaration has an incomplete protocol"))
 	}
 	return &FileChannel{source: &fileChannelSourceState{rootInfo: rootInfo, methods: methods, closeLock: NewObject()}}
