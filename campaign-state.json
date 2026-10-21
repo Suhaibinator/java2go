@@ -5956,7 +5956,7 @@
     "status": "verified-clean",
     "verification": "Exact golangci-lint 2.14.0 reports0; focused race/JVM regressions and independently rebuilt full business application pass after replacing recursive cyclic binding with package-local lexical analysis."
   },
-  "next_action": "Integrate accepted private components and rerun compiler gates; continue wrapper constants, Class.cast, source FileChannel, Throwable stack contracts and dependency-source closure.",
+  "next_action": "Integrate accepted source components with restored suppression/identity; continue Class.cast prerequisites, FileChannel callbacks, Throwable frames and pinned Netty source/JVM validation.",
   "oracle_repeats": 3,
   "performance_findings": {
     "array_write_candidate": "Unsigned bounds predicate enables inlining in isolated runtime copy; focused timings improved, live patch not applied",
@@ -25991,5 +25991,48 @@
       "sol_writer_dispatch_v6": "Final native publication preparation and fresh CI gates"
     },
     "updated_at": "2026-09-30T15:48:30.979530+00:00"
+  },
+  "sol_progress153": {
+    "checkpoint": 153,
+    "status": "SCOPED_NUMERIC_WRAPPER_WIDTH_CONSTANTS_GREEN",
+    "goal_status": "ACTIVE",
+    "parent_revision": "389249ce588938831adab26d4969744ad1b7efad",
+    "scope": "One canonical numeric-wrapper static producer table; BYTES/SIZE emit typed Java int and register int inference. Boolean/source/binder/import/value shields retained.",
+    "tdd": "Compiled baseline inference and compound-assignment regressions fail, strict CLI consumer fails; exact candidate passes.",
+    "validation": {
+      "fresh_JDK": 9,
+      "fresh_Go": 6,
+      "new_compiler_parents": 7,
+      "adjacent_compiler_parents": 15,
+      "runtime_parents": 672,
+      "symbol_parents": 17,
+      "default_f1_race_build_testcompile_lint215": "PASS",
+      "candidate_manifest_sha256": "ec44a350c1efcdf59a1e64eda745fe40cab61323f05d5b1e49086023bd9d2bc6",
+      "expected_semantic_REDs": [
+        "baseline-DeclaredIntAndEmission-RED",
+        "baseline-CompoundAssignmentProof-RED",
+        "baseline-strict-cli-RED"
+      ],
+      "fullNetty_CI_round_accepted": false,
+      "positive_records": 41,
+      "records": 44,
+      "result_sha256": "247613ce842374e9d264da6dfa4811dad42d77b532ea073a7ff9f85ef5eb9114",
+      "status": "ROOT_PUBLIC153_FINITE_CONSTANTS_AUDIT_PASS"
+    },
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public153/run/ROOT_RAW_AUDIT.json",
+    "held": [
+      "Normal full1220 Netty CLI still300s TIMEOUT",
+      "FullCI/round and coherent private union",
+      "SourceFileChannel/Class.cast/Throwable stack and callback contracts",
+      "Dependency-source closure/fullNetty parity"
+    ],
+    "accepted_full_checkpoint": 18,
+    "performance_claim": false
+  },
+  "active_resume_current153": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
+    "next": "Integrate accepted source components with restored suppression/identity; continue Class.cast prerequisites, FileChannel callbacks, Throwable frames and pinned Netty source/JVM validation."
   }
 }

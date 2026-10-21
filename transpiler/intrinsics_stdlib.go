@@ -674,6 +674,19 @@ func registerBoxedObjectIntrinsics() {
 			registerInstanceIntrinsicResultType(spec.wrapper, method, spec.primitive)
 		}
 	}
+	// Wrapper widths are Java int constants, independent of the wrapped type.
+	for _, width := range []struct{ wrapper, bytes, bits string }{
+		{"Byte", "1", "8"}, {"Short", "2", "16"}, {"Integer", "4", "32"},
+		{"Long", "8", "64"}, {"Character", "2", "16"},
+		{"Float", "4", "32"}, {"Double", "8", "64"},
+	} {
+		for _, constant := range []struct{ field, value string }{{"BYTES", width.bytes}, {"SIZE", width.bits}} {
+			registerStaticFieldIntrinsic(width.wrapper, constant.field, func(_ Ctx) ast.Expr {
+				return callIdent("int32", &ast.BasicLit{Kind: token.INT, Value: constant.value})
+			})
+			registerStaticFieldIntrinsicResultType(width.wrapper, constant.field, "int")
+		}
+	}
 	for _, constant := range []struct{ field, value string }{{"TRUE", "true"}, {"FALSE", "false"}} {
 		registerStaticFieldIntrinsic("Boolean", constant.field, func(ctx Ctx) ast.Expr {
 			return stdjavaCall(ctx, "BoxBoolean", &ast.Ident{Name: constant.value})
