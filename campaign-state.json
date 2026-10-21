@@ -26087,5 +26087,63 @@
     "goal_status": "ACTIVE",
     "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
     "next": "Finish Write1/Write2 native and source dispatch, independently verify cast/static-field join and accumulated compiler gates, retain new genuine Netty partial-write controls."
+  },
+  "sol_progress155": {
+    "checkpoint": 155,
+    "status": "SCOPED_INVALID_ARRAY_METHOD_TEST_EXPECTATIONS_GREEN",
+    "goal_status": "ACTIVE",
+    "parent_revision": "f06860a0726689474640ac38717e9b2f28478dfb",
+    "scope": "Exactly one NegativeShield test function; only three invalid array rows change behavior to require expression rejection. All20 Java literals and17 other contracts retained; production unchanged.",
+    "validation": {
+      "JDK_invalid_array_rejections": 3,
+      "Java_literals_unchanged": 20,
+      "actual_baseline_mode_failures": 6,
+      "array_thread_parents": 10,
+      "candidate_modes": 40,
+      "companion_parents": 4,
+      "default_f1_race_build_testcompile_lint215": "PASS",
+      "full_CI_round_Netty_accepted": false,
+      "nonarray_contracts_unchanged": 17,
+      "only_test_function_changed": true,
+      "production_unchanged": true,
+      "records": 19,
+      "source_manifest_sha256": "690ce39c5bfe6620e0dafaa997867ca04e20c15fc664cc8407ec67e1e9d9b6bb",
+      "status": "ROOT_PUBLIC155_TEST_EXPECTATION_FINITE_PASS",
+      "valid_array_Object_clone_parents": 4
+    },
+    "raw_audit": {
+      "status": "ROOT_PUBLIC155_RAW_AUDIT_PASS",
+      "records": 19,
+      "exit_counts": {
+        "0": 15,
+        "1": 4
+      },
+      "actual_expected_nonzero": [
+        "baseline-original6-RED",
+        "jdk-invalid-array-1",
+        "jdk-invalid-array-2",
+        "jdk-invalid-array-3"
+      ],
+      "result_sha256": "a5d94b064aff32b2e3961da93ab4a4f20e2ceb851fc9afdbeb48f3f7eea31ba2",
+      "candidate_manifest_sha256": "690ce39c5bfe6620e0dafaa997867ca04e20c15fc664cc8407ec67e1e9d9b6bb",
+      "verifier_sha256": "e81e06ab9748795268da42d9d714e77d726c51c7acd51b0151b300a08bdbfd01",
+      "source_unchanged": true,
+      "production_unchanged": true,
+      "full_CI_round_Netty_claim": false
+    },
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public155/run/ROOT_RAW_AUDIT.json",
+    "held": [
+      "Other compiler/dependency CI failures",
+      "Full coherent accumulated round",
+      "Full Netty translation/build/JVM-Go parity"
+    ],
+    "accepted_full_checkpoint": 18,
+    "performance_claim": false
+  },
+  "active_resume_current155": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
+    "next": "Finish native/source channel writes and resource/RAF prerequisites, preserve genuine Netty partial-write oracle, integrate compiler components and continue original full Netty attempts."
   }
 }
