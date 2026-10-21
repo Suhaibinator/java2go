@@ -25907,5 +25907,44 @@
     "goal_status": "ACTIVE",
     "next": "Run fresh826 private compiler-union stages from1; preserve full Netty/Reader challenges and independent exception parity evidence.",
     "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "sol_progress151": {
+    "checkpoint": 151,
+    "status": "SCOPED_NATIVE_OBJECT_ALLOCATION_IDENTITY_GREEN",
+    "goal_status": "ACTIVE",
+    "parent_revision": "81a19207d301c817eb1ff8acdfb9b5230287212e",
+    "scope": "NewObject allocates a nonzero-sized private carrier with java.lang.Object identity. Equality, hashing and monitor identity are preserved. Cast predicates and unknown-host inference are unchanged.",
+    "tdd": "Fresh native baseline from public150 compiles, then fails because Object allocations lack class metadata; the candidate passes.",
+    "validation": {
+      "baseline_runtime671": "PASS fresh race",
+      "candidate_runtime672": "PASS fresh race no FAIL/SKIP",
+      "fresh_JDK_observations": 3,
+      "fresh_native_object_monitor_processes": 20,
+      "allpackage_race_build_testcompile": [
+        "default",
+        "f1_os_profile"
+      ],
+      "lint": "golangci-lint2.15: zero issues in both profiles",
+      "raw_records": 39,
+      "raw_pass": 38,
+      "raw_expected_semantic_RED": 1,
+      "result_sha256": "5e678c41be00e8337b906f743c4b470db0fc1227b51848dcd7a7fab4b17590df",
+      "candidate_source_manifest_sha256": "dcf3d82f469b85776e54fa9e6677dfda94d9a37d1dfc25ecc167b97f0caa3ac4"
+    },
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public151/run/ROOT_RAW_AUDIT.json",
+    "held": [
+      "Full original cast C7 and Class.cast",
+      "Full private compiler replay:707 focused tests passed; known invalid-array strict diagnostic failed at708; remaining checks unverified",
+      "Source FileChannel construction and full Netty source/JVM/Go parity",
+      "Complete CI, full round, full tagged runtime and OS partial-write checks"
+    ],
+    "accepted_full_round": 18,
+    "performance_claim": false
+  },
+  "active_resume_current151": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "next": "Continue Netty dependency source resolution, compiler performance, FileChannel construction, nominal casts/list metadata and Throwable stack contracts. Preserve full applications and independently verify integrations.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
   }
 }

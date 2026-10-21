@@ -574,7 +574,7 @@ func NewObject() any {
 	// Pointers to distinct zero-sized Go variables are permitted to compare
 	// equal. Use a non-zero-sized token so every live Java Object has a distinct
 	// identity, including when two objects are used as nested monitor locks.
-	return new(byte)
+	return new(canonicalObject)
 }
 
 // --- intrinsic object monitors (synchronized) ------------------------------
