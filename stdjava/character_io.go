@@ -27,6 +27,7 @@ func NewReaderBase(lock ...any) *ReaderBase {
 }
 func ReaderReadCharExecution(execution *Execution, reader Reader) int32 {
 	ReferenceRequireNonNull(reader)
+	reader = readerVirtualInvocationReceiver(reader)
 	if source, ok := reader.(interface{ JavaReaderReadChar(*Execution) int32 }); ok {
 		return source.JavaReaderReadChar(execution)
 	}
@@ -41,6 +42,7 @@ func ReaderReadCharDefaultExecution(execution *Execution, reader Reader) int32 {
 }
 func ReaderReadArrayExecution(execution *Execution, reader Reader, buffer *PrimitiveArray[rune]) int32 {
 	ReferenceRequireNonNull(reader)
+	reader = readerVirtualInvocationReceiver(reader)
 	if source, ok := reader.(interface {
 		JavaReaderReadArray(*Execution, *PrimitiveArray[rune]) int32
 	}); ok {
@@ -56,6 +58,7 @@ func ReaderReadArrayDefaultExecution(execution *Execution, reader Reader, buffer
 }
 func ReaderReadCharsExecution(execution *Execution, reader Reader, buffer *PrimitiveArray[rune], offset, length int32) int32 {
 	ReferenceRequireNonNull(reader)
+	reader = readerVirtualInvocationReceiver(reader)
 	// Dispatch precedes validation: Java overrides can observe even null or zero-length arguments.
 	if source, ok := reader.(interface {
 		JavaReaderReadChars(*Execution, *PrimitiveArray[rune], int32, int32) int32

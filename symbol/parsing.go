@@ -178,6 +178,7 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 	}
 
 	return &FileScope{
+		parsedRoot:      root,
 		Source:          source,
 		Imports:         imports,
 		Package:         filePackage,

@@ -26449,5 +26449,31 @@
     "fullCI": "UNACCEPTED",
     "fullNetty": "UNACCEPTED actual normal300s timeout retained",
     "fullRound": "UNACCEPTED"
+  },
+  "sol_progress168": {
+    "status": "CUMULATIVE_READER_CLONE_GENERIC_SIGNATURE_AND_VIRTUAL_DISPATCH_FINITE_PASS",
+    "base": "97e80bda439192b540571b3a01f4d9db59c6abd5",
+    "root_source_manifest_sha256": "1e5ab1bfeb55f8ea9a17bbd68f57c9f57d168abb60dd307040a50e6b7e2a3426",
+    "root_audit_sha256": "db79bf380aa5e00f9331c471bda8ab93245e9cc15945f980cb6fe15a645970ef",
+    "cumulative_delivery_sha256": "ede54307ac0f84717be919a68c87676bdb7c9a14d99e6c6d34d0d1b29cd3a81a",
+    "all_positive_receipts": 104,
+    "fresh_JDK_runs": 39,
+    "fresh_Go_runs": 39,
+    "full_race_registries": {
+      "parsing": 10,
+      "stdjava": 801,
+      "symbol": 23
+    },
+    "owned_runtime_race20_parent_passes": 100,
+    "compiler_proof_race20_parent_passes": 40,
+    "original_matrix_cases": 11,
+    "generic_storage_bridge_clone_parents": 48,
+    "related_reader_resource_parents": 16,
+    "namespace_subcases": 6,
+    "original_exception_CI_parents": 2,
+    "default_F1": "race build/testcompile/lint PASS",
+    "fullCI": "UNACCEPTED generic origin stack overflow active",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED"
   }
 }

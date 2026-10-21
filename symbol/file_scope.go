@@ -1,8 +1,13 @@
 package symbol
 
+import sitter "github.com/smacker/go-tree-sitter"
+
 // FileScope represents the scope in a single source file, that can contain one
 // or more source classes
 type FileScope struct {
+	// parsedRoot is the original tree passed to ParseSymbols. Keep it independent
+	// of mutable class/definition aliases; only the parsing owner initializes it.
+	parsedRoot *sitter.Node
 	// Source retains the parsed Java bytes so later whole-program symbol passes
 	// can classify declarations that refer to members in another source file.
 	Source []byte
@@ -20,6 +25,15 @@ type FileScope struct {
 	TopLevelClasses []*ClassScope
 	// The first top-level declaration (kept for backward compatibility)
 	BaseClass *ClassScope
+}
+
+// ParsedRoot returns this file's original parse anchor. Synthetic or zero-value
+// file scopes have no parse certificate. Callers cannot replace the anchor.
+func (fs *FileScope) ParsedRoot() *sitter.Node {
+	if fs == nil {
+		return nil
+	}
+	return fs.parsedRoot
 }
 
 // FindClass searches through a file to find if a given class has been defined

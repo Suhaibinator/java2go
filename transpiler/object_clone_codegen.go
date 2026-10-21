@@ -57,6 +57,11 @@ func sourceSuperSelectsObjectClone(scope *symbol.ClassScope, ctx Ctx) bool {
 		declaring := classHeaderTypeCtx(current, ctx)
 		parent := resolveSuperclassScopeInDeclaringContext(declaring, current)
 		if parent == nil {
+			// A native body is selected only with both actual declaration proof
+			// and a registered, complete copier for its represented Java state.
+			if capability, proved := sourceNativeObjectCloneCapability(current, declaring); proved {
+				return capability.root == current
+			}
 			written := strings.TrimSpace(current.Superclass)
 			return written == "" || qualifyDeclaredReferenceType(symbol.JavaType{Original: written}, declaring) == "java.lang.Object"
 		}
@@ -120,7 +125,11 @@ func objectCloneInvocation(object *sitter.Node, method string, arguments *sitter
 // without using exported accessors or running constructors/initializers.
 func generateObjectCloneDecls(ctx Ctx) []ast.Decl {
 	scope := ctx.currentClass
-	if scope == nil || scope.Class == nil || scope.IsInterface || scope.IsEnum || !sourceInheritsObjectTextDefault(scope, ctx) {
+	if scope == nil || scope.Class == nil || scope.IsInterface || scope.IsEnum {
+		return nil
+	}
+	capability, nativeClone := sourceNativeObjectCloneCapability(scope, ctx)
+	if !sourceInheritsObjectTextDefault(scope, ctx) && !nativeClone {
 		return nil
 	}
 	used := generatedInstanceUsedNames(ctx)
@@ -154,6 +163,15 @@ func generateObjectCloneDecls(ctx Ctx) []ast.Decl {
 		field := parent.selectors[0]
 		copied := &ast.CallExpr{Fun: &ast.SelectorExpr{X: selector(receiver, field), Sel: ast.NewIdent(generatedObjectCloneMethod)}, Args: []ast.Expr{ast.NewIdent(selfName)}}
 		body = append(body, &ast.AssignStmt{Lhs: []ast.Expr{selector(cloneName, field)}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.TypeAssertExpr{X: copied, Type: classSubobjectPointerTypeWithGoArguments(parent.scope, parent.goTypeArguments, ctx)}}})
+	}
+	if nativeClone && capability.root == scope {
+		// Only the source/native root owns this carrier. Descendant copiers
+		// recursively receive their newly copied source parent above.
+		body = append(body, &ast.AssignStmt{
+			Lhs: []ast.Expr{selector(cloneName, capability.storageSelector)},
+			Tok: token.ASSIGN,
+			Rhs: []ast.Expr{stdjavaCall(ctx, capability.contract.stateCopier, selector(receiver, capability.storageSelector))},
+		})
 	}
 	if classNeedsReferenceObjectInfo(scope, ctx) && sourceHierarchyRoot(scope, ctx) {
 		body = append(body, &ast.AssignStmt{Lhs: []ast.Expr{selector(cloneName, "ObjectInfo")}, Tok: token.ASSIGN, Rhs: []ast.Expr{stdjavaCall(ctx, "NewGeneratedObjectInfo", ast.NewIdent(selfName))}})

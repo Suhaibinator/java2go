@@ -219,6 +219,7 @@ func canonicalGenericInterfaceSpecs(name string, methods *ast.FieldList, paramet
 		return nil
 	}
 	genericFamilyPhysicalFields(methods, parameters, ctx)
+	canonicalGenericPhysicalSignature(&ast.InterfaceType{Methods: methods}, ctx)
 	raw := availableCanonicalGenericName(name + "Java2goErased")
 	return []ast.Spec{
 		&ast.TypeSpec{Name: ast.NewIdent(raw), Type: &ast.InterfaceType{Methods: methods}},
@@ -233,6 +234,7 @@ func canonicalGenericReceiverBody(method *ast.FuncDecl, ctx Ctx) {
 	parameters := ctx.currentClass.TypeParameters
 	genericFamilyPhysicalFields(method.Type.Params, parameters, ctx)
 	genericFamilyPhysicalFields(method.Type.Results, parameters, ctx)
+	canonicalGenericPhysicalSignature(method.Type, ctx)
 	ast.Inspect(method.Body, func(node ast.Node) bool {
 		switch value := node.(type) {
 		case *ast.ValueSpec:

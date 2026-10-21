@@ -113,7 +113,11 @@ func characterIOInvocation(object *sitter.Node, name string, argsNode *sitter.No
 	}
 	isSuper := object.Type() == "super" && ctx.currentClass != nil && characterIOBaseTypeExpr(ctx.currentClass.Superclass, ctx) != nil
 	javaType, ok := inferExprJavaType(object, ctx, source)
-	if !isSuper && (!ok || len(sourceCharacterIOProtocols(resolveClassScopeByQualifiedName(ctx, javaType), ctx)) == 0) {
+	var readerOwner *symbol.ClassScope
+	if name == "read" && !isSuper {
+		readerOwner, _ = readerSourceInvocationOwner(object, ctx, source)
+	}
+	if !isSuper && readerOwner == nil && (!ok || len(sourceCharacterIOProtocols(resolveClassScopeByQualifiedName(ctx, javaType), ctx)) == 0) {
 		return nil
 	}
 	if argsNode != nil && nodeutil.SemanticNamedChildCount(argsNode) > 0 {
@@ -138,6 +142,8 @@ func characterIOInvocation(object *sitter.Node, name string, argsNode *sitter.No
 		var owner *symbol.ClassScope
 		if isSuper {
 			owner = ctx.currentClass
+		} else if readerOwner != nil {
+			owner = readerOwner
 		} else {
 			base, _ := parseJavaTypeString(javaType)
 			owner = resolveClassScopeByQualifiedName(ctx, base)
@@ -493,9 +499,8 @@ func readerNativeReadOperation(object *sitter.Node, name string, arguments *sitt
 	var owner *symbol.ClassScope
 	if object.Type() == "super" {
 		owner = ctx.currentClass
-	} else if javaType, ok := inferExprJavaType(object, ctx, source); ok {
-		base, _ := parseJavaTypeString(javaType)
-		owner = resolveClassScopeByQualifiedName(ctx, base)
+	} else {
+		owner, _ = readerSourceInvocationOwner(object, ctx, source)
 	}
 	if readerNativeCarrierPath(owner, ast.NewIdent(sourceInstanceReceiverName(ctx)), ctx) == nil {
 		return ""
