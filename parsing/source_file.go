@@ -27,7 +27,7 @@ func (file *SourceFile) ParseAST() error {
 	file.canonicalizeUnicodeEscapes()
 	parser := sitter.NewParser()
 	parser.SetLanguage(java.GetLanguage())
-	parserInput := unicodeLineTerminatorParserSource(file.Source)
+	parserInput := physicalLineTerminatorParserSource(unicodeLineTerminatorParserSource(file.Source))
 	tree, err := parser.ParseCtx(context.Background(), nil, parserInput)
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func (file *SourceFile) ParseAST() error {
 		}
 	}
 	file.Ast = tree.RootNode()
-	return nil
+	return physicalLineTerminatorLiteralError(file.Ast, parserInput)
 }
 
 func (file *SourceFile) ParseSymbols() *symbol.FileScope {

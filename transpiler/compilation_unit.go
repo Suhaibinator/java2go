@@ -42,7 +42,11 @@ func classifyCompilationUnit(file parsing.SourceFile) (compilationUnitInfo, erro
 		case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
 			types++
 		default:
-			return compilationUnitInfo{}, fmt.Errorf("unsupported compilation unit %q in %s at line %d", node.Type(), file.Name, node.StartPoint().Row+1)
+			source, offset := file.Source, node.StartByte()
+			if file.UnicodeSource != nil && uint64(offset) <= uint64(len(file.Source)) {
+				source, offset = file.UnicodeSource.Original, file.UnicodeSource.OriginalOffset(offset)
+			}
+			return compilationUnitInfo{}, fmt.Errorf("unsupported compilation unit %q in %s at line %d", node.Type(), file.Name, physicalSourceLine(source, offset))
 		}
 	}
 	if types > 0 {

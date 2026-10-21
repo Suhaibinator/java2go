@@ -100,7 +100,13 @@ func reportUnsupported(kind string, node *sitter.Node, source []byte, ctx Ctx) D
 	}
 	if node != nil {
 		diag.NodeType = node.Type()
-		diag.Line = node.StartPoint().Row + 1
+		sourceForLine, offset := source, node.StartByte()
+		if file := ctx.currentFile; file != nil && file.OriginalSource != nil && int(offset) < len(file.SourceOffsets) {
+			if originalOffset := file.SourceOffsets[offset]; uint64(originalOffset) <= uint64(len(file.OriginalSource)) {
+				sourceForLine, offset = file.OriginalSource, originalOffset
+			}
+		}
+		diag.Line = physicalSourceLine(sourceForLine, offset)
 		diag.Message = nodeSnippet(node, source)
 		if file := ctx.currentFile; file != nil && file.OriginalSource != nil && int(node.EndByte()) < len(file.SourceOffsets) {
 			start, end := file.SourceOffsets[node.StartByte()], file.SourceOffsets[node.EndByte()]
