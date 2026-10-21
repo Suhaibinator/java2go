@@ -26312,5 +26312,20 @@
     "checkpoint": "campaign/SOL_PROGRESS160.md",
     "public_base": "31f2c903d2b7b62487fc0640616245f4fb405adc",
     "next": "Finish profiled compiler scan optimization and full Netty rerun; finish Reader/T2 integration and CI repairs. Full round acceptance remains unproven."
+  },
+  "sol_progress161": {
+    "status": "TEST_HARNESS_ABI_MAINTENANCE_TWO_PARENTS_GREEN_TWO_BEHAVIOR_FAILURES_RETAINED",
+    "base": "b7a842bf54d75a071e3c462c4b4b9a69c4fe821b",
+    "source_manifest_sha256": "f2be812292e3d3c5f1c74c9606c50524be9e57162344d2434379f029da934ae4",
+    "root_raw_audit_sha256": "ee9ea1362d59ca2c4305d27a77e5b876e61024a2e5812f20d5b62ec0b5100e4a",
+    "Sol_delivery_sha256": "c51dafc620499181a20964423adb950c602cf451169a1687e2706e224009a068",
+    "original_Java_expected_production_unchanged": true,
+    "generated_child_race": false,
+    "remaining": [
+      "ExceptionTypes constructor selection",
+      "RandomAccessFile(File,mode)",
+      "fullCI",
+      "Netty"
+    ]
   }
 }

@@ -24,9 +24,17 @@ func TestCampaignExceptionCauseConstructorsJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "ExceptionCauseConstructors", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestExceptionCause(t *testing.T) { if got:=Run();got!=%q {t.Fatalf("got %%q want %%q",got,%q)} }
- `, want, want))
+import (
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestExceptionCause(t *testing.T) {
+    var got *j.JavaString = Run()
+    if got == nil || !got.Equals(j.JavaStringFromHostUTF8(%q)) {
+        t.Fatalf("Run() UTF16 object = %%#v, want %%q", got, %q)
+    }
+}
+`, want, want))
 }
 
 func TestCampaignExceptionTypesAndFinalCatchJVMParity(t *testing.T) {
@@ -60,6 +68,15 @@ func TestCampaignExceptionTypesAndFinalCatchJVMParity(t *testing.T) {
 	want := campaignRuntimeJavaOracle(t, "ExceptionSignatures", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestSignatures(t *testing.T) {if got:=Run();got!=%q {t.Fatalf("got %%q want %%q",got,%q)}}`, want, want))
+import (
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestSignatures(t *testing.T) {
+    var got *j.JavaString = Run()
+    if got == nil || !got.Equals(j.JavaStringFromHostUTF8(%q)) {
+        t.Fatalf("Run() UTF16 object = %%#v, want %%q", got, %q)
+    }
+}
+`, want, want))
 }

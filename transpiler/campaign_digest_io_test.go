@@ -54,7 +54,15 @@ public class CampaignDigestIO {
 	want := campaignRuntimeJavaOracle(t, "CampaignDigestIO", source)
 	generated := renderGoFileFromJava(t, source)
 	runGoTestInTempModule(t, generated, fmt.Sprintf(`package main
- import "testing"
- func TestDigestIO(t *testing.T) { if got:=Run(); got!=%q { t.Fatalf("JVM %%q != generated Go %%q",%q,got) } }
- `, want, want))
+import (
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
+func TestDigestIO(t *testing.T) {
+    var got *j.JavaString = Run()
+    if got == nil || !got.Equals(j.JavaStringFromHostUTF8(%q)) {
+        t.Fatalf("Run() UTF16 object = %%#v, want %%q", got, %q)
+    }
+}
+`, want, want))
 }
