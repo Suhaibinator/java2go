@@ -12,11 +12,41 @@ import (
 // storage view. In particular, a canonical generic core still declares its
 // original parameters, and a variable is a finite declaration reference.
 func reflectiveTypeDescriptorExpr(javaType symbol.JavaType, ctx Ctx) (ast.Expr, bool) {
+	expression, _, supported := reflectiveTypeDescriptorNode(javaType, ctx)
+	return expression, supported
+}
+
+// The optional raw TypeID records a resolved Class node. It is not Java erasure
+// and does not admit a new physical storage or family representation.
+func reflectiveTypeDescriptorNode(javaType symbol.JavaType, ctx Ctx) (ast.Expr, ast.Expr, bool) {
 	original := strings.TrimSpace(javaType.Original)
+	if original == "" {
+		return nil, nil, false
+	}
+	// Wildcard bounds may themselves end in array syntax. Resolve the prefix
+	// first, so ? extends T[] remains a wildcard with an array upper bound.
+	if strings.HasPrefix(original, "?") {
+		return reflectiveWildcardDescriptorNode(javaType, ctx)
+	}
 	base, rank := javaArrayTypeParts(original)
-	if original == "" || rank != 0 || strings.HasPrefix(base, "?") {
-		// Generic arrays and wildcard trees await their independent JVM controls.
-		return nil, false
+	if rank != 0 {
+		if base == "void" {
+			return nil, nil, false
+		}
+		component, raw, supported := reflectiveTypeDescriptorNode(symbol.JavaType{
+			Original: base + strings.Repeat("[]", rank-1), TypeParameterBindings: javaType.TypeParameterBindings,
+		}, ctx)
+		if !supported {
+			return nil, nil, false
+		}
+		// JDK reflection returns an array Class only when its resolved component
+		// is a Class. A parameterized List<?> component remains a generic array.
+		if raw != nil {
+			arrayRaw := stdjavaCall(ctx, "ArrayTypeID", raw)
+			return reflectiveDescriptorLiteral("ReflectClassKind", ctx, metadataKey("Raw", arrayRaw)), arrayRaw, true
+		}
+		return reflectiveDescriptorLiteral("ReflectGenericArrayKind", ctx,
+			metadataKey("Component", &ast.UnaryExpr{Op: token.AND, X: component})), nil, true
 	}
 	// This API receives source declaration syntax. Captured source bindings are
 	// authoritative even when a generated Go binder has the same spelling as
@@ -27,19 +57,19 @@ func reflectiveTypeDescriptorExpr(javaType symbol.JavaType, ctx Ctx) (ast.Expr, 
 	}
 	if declaration := bindings[base]; declaration != nil {
 		if !reflectiveClassVariableAccessible(declaration, ctx) {
-			return nil, false
+			return nil, nil, false
 		}
 		binding, found := resolveReferenceTypeParameter(symbol.JavaType{
 			Original: original, TypeParameterBindings: bindings,
 		}, ctx)
 		if !found {
-			return nil, false
+			return nil, nil, false
 		}
 		owner := reflectiveClassVariableOwner(binding)
 		if owner == nil {
 			// The agreed ABI has class declaration keys only. A method or
 			// constructor variable must never acquire its enclosing class's key.
-			return nil, false
+			return nil, nil, false
 		}
 		name := binding.parameter.Name
 		if declaration := binding.parameter.Declaration; declaration != nil && declaration.SourceName != "" {
@@ -47,26 +77,26 @@ func reflectiveTypeDescriptorExpr(javaType symbol.JavaType, ctx Ctx) (ast.Expr, 
 		}
 		return reflectiveDescriptorLiteral("ReflectVariableKind", ctx,
 			metadataKey("VariableDeclaration", javaTypeIDLiteral(sourceClassRuntimeTypeID(owner, ctx), ctx)),
-			metadataKey("VariableName", metadataString(name))), true
+			metadataKey("VariableName", metadataString(name))), nil, true
 	}
 	name, arguments, ok := reflectiveNamedTypeParts(base)
 	if !ok {
-		return nil, false
+		return nil, nil, false
 	}
 	raw, sourceScope, ok := reflectiveRawClassTypeID(name, ctx)
 	if !ok {
-		return nil, false
+		return nil, nil, false
 	}
 	if len(arguments) == 0 {
-		return reflectiveDescriptorLiteral("ReflectClassKind", ctx, metadataKey("Raw", raw)), true
+		return reflectiveDescriptorLiteral("ReflectClassKind", ctx, metadataKey("Raw", raw)), raw, true
 	}
 	if sourceScope != nil && len(arguments) != len(sourceScope.OwnTypeParameters()) {
-		return nil, false
+		return nil, nil, false
 	}
 	if sourceScope == nil && canonicalMapEntryOwner(name, ctx) != "" {
 		// Its raw class has an existing binary identity, but its parameterized
 		// owner is outside the initial top-level control.
-		return nil, false
+		return nil, nil, false
 	}
 	actual := reflectiveDescriptorSlice(ctx)
 	for _, argument := range arguments {
@@ -74,7 +104,7 @@ func reflectiveTypeDescriptorExpr(javaType symbol.JavaType, ctx Ctx) (ast.Expr, 
 			Original: argument, TypeParameterBindings: javaType.TypeParameterBindings,
 		}, ctx)
 		if !supported {
-			return nil, false
+			return nil, nil, false
 		}
 		actual.Elts = append(actual.Elts, expression)
 	}
@@ -82,9 +112,45 @@ func reflectiveTypeDescriptorExpr(javaType symbol.JavaType, ctx Ctx) (ast.Expr, 
 	if sourceScope != nil && sourceScope.Enclosing != nil {
 		// A nested parameterized owner requires the segmented-owner control;
 		// do not manufacture an owner from flattened physical Go arguments.
-		return nil, false
+		return nil, nil, false
 	}
-	return reflectiveDescriptorLiteral("ReflectParameterizedKind", ctx, values...), true
+	return reflectiveDescriptorLiteral("ReflectParameterizedKind", ctx, values...), nil, true
+}
+
+func reflectiveCanonicalObjectDescriptor(ctx Ctx) ast.Expr {
+	return reflectiveDescriptorLiteral("ReflectClassKind", ctx, metadataKey("Raw", stdjavaQualifiedExpr("ObjectTypeID", ctx)))
+}
+
+func reflectiveWildcardDescriptorNode(javaType symbol.JavaType, ctx Ctx) (ast.Expr, ast.Expr, bool) {
+	original := strings.TrimSpace(javaType.Original)
+	upper, lower := reflectiveDescriptorSlice(ctx), reflectiveDescriptorSlice(ctx)
+	upper.Elts = append(upper.Elts, reflectiveCanonicalObjectDescriptor(ctx))
+	if original != "?" {
+		remainder := strings.TrimSpace(strings.TrimPrefix(original, "?"))
+		parts := strings.Fields(remainder)
+		if len(parts) < 2 || (parts[0] != "extends" && parts[0] != "super") {
+			return nil, nil, false
+		}
+		bound := strings.TrimSpace(strings.TrimPrefix(remainder, parts[0]))
+		base, rank := javaArrayTypeParts(bound)
+		_, primitive := javaPrimitiveType(base)
+		if strings.HasPrefix(bound, "?") || rank == 0 && (primitive || base == "void") {
+			return nil, nil, false
+		}
+		expression, _, supported := reflectiveTypeDescriptorNode(symbol.JavaType{
+			Original: bound, TypeParameterBindings: javaType.TypeParameterBindings,
+		}, ctx)
+		if !supported {
+			return nil, nil, false
+		}
+		if parts[0] == "extends" {
+			upper.Elts = []ast.Expr{expression}
+		} else {
+			lower.Elts = []ast.Expr{expression}
+		}
+	}
+	return reflectiveDescriptorLiteral("ReflectWildcardKind", ctx,
+		metadataKey("UpperBounds", upper), metadataKey("LowerBounds", lower)), nil, true
 }
 
 // Use the carried declaration list rather than walking Enclosing: static
@@ -214,10 +280,11 @@ func reflectiveTypeVariableDescriptorsExpr(scope *symbol.ClassScope, ctx Ctx) (a
 	result := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("TypeVariableDescriptor", ctx)}}
 	for _, parameter := range scope.OwnTypeParameters() {
 		bounds := parameter.Bounds
-		if len(bounds) == 0 {
-			bounds = []symbol.JavaType{{Original: "java.lang.Object"}}
-		}
 		emittedBounds := reflectiveDescriptorSlice(ctx)
+		if len(bounds) == 0 {
+			// An implicit platform bound has no source type occurrence to resolve.
+			emittedBounds.Elts = append(emittedBounds.Elts, reflectiveCanonicalObjectDescriptor(ctx))
+		}
 		for _, bound := range bounds {
 			expression, supported := reflectiveTypeDescriptorExpr(bound, declaring)
 			if !supported {
@@ -248,7 +315,7 @@ func reflectiveGenericSuperclassDescriptorExpr(scope *symbol.ClassScope, ctx Ctx
 	}
 	superclass := strings.TrimSpace(scope.Superclass)
 	if superclass == "" {
-		superclass = "java.lang.Object"
+		return &ast.UnaryExpr{Op: token.AND, X: reflectiveCanonicalObjectDescriptor(ctx)}, true
 	}
 	expression, supported := reflectiveTypeDescriptorExpr(symbol.JavaType{
 		Original: superclass, TypeParameterBindings: symbol.VisibleTypeParamBindings(scope.TypeParameters),

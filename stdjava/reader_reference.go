@@ -51,6 +51,9 @@ func NewBufferedReaderReference(source any, sizes ...int32) *BufferedReader {
 	if size <= 0 {
 		panic(NewJavaIllegalArgumentExceptionMessage(JavaStringFromHostUTF8("Buffer size <= 0")))
 	}
+	if reader, ok := source.(*StringReader); ok && reader.reference != nil {
+		return newBufferedStringReaderReference(reader, size)
+	}
 	// A FileReader constructor can be unwrapped by the existing compiler into
 	// its canonical path String. This conversion occurs only at the host path.
 	if path, ok := source.(*JavaString); ok {

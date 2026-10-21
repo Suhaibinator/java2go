@@ -45,7 +45,7 @@ func enumInheritedTextInvocation(object *sitter.Node, method string, ctx Ctx, so
 		return nil
 	}
 	if object.Type() == "super" {
-		receiver := ast.NewIdent(ShortName(ctx.className))
+		receiver := ast.NewIdent(sourceInstanceReceiverName(ctx))
 		if enumConstantMethodContext(ctx) {
 			if declared := findDeclaredToStringMethod(ctx.currentClass); declared != nil {
 				// The enclosing enum is a constant body's superclass; bypass its virtual wrapper.

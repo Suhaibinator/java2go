@@ -35,10 +35,10 @@ func inputStreamBaseReceiver(ctx Ctx) ast.Expr {
 	if base == "FilterInputStream" {
 		return filterInputField(ctx)
 	}
-	return &ast.SelectorExpr{X: ast.NewIdent(ShortName(ctx.className)), Sel: ast.NewIdent(base)}
+	return &ast.SelectorExpr{X: ast.NewIdent(sourceInstanceReceiverName(ctx)), Sel: ast.NewIdent(base)}
 }
 func filterInputField(ctx Ctx) ast.Expr {
-	return &ast.SelectorExpr{X: &ast.SelectorExpr{X: ast.NewIdent(ShortName(ctx.className)), Sel: ast.NewIdent("FilterInputStream")}, Sel: ast.NewIdent("In")}
+	return &ast.SelectorExpr{X: &ast.SelectorExpr{X: ast.NewIdent(sourceInstanceReceiverName(ctx)), Sel: ast.NewIdent("FilterInputStream")}, Sel: ast.NewIdent("In")}
 }
 func inheritedFilterInputName(name string, ctx Ctx) bool {
 	if name != "in" || !sourceFilterInputStream(ctx.currentClass, ctx) {

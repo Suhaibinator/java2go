@@ -15,6 +15,9 @@ func nullaryBuiltinConstructorReference(node *sitter.Node, class, target, result
 	if len(arguments) == 0 {
 		_, arguments = parseJavaTypeString(result)
 	}
+	if canonicalMapReferenceOwner(class, ctx) != "" && len(arguments) == 0 {
+		arguments = []string{"java.lang.Object", "java.lang.Object"}
+	}
 	types := make([]ast.Expr, len(arguments))
 	for index, arg := range arguments {
 		types[index] = javaTypeStringToGoTypeExpr(arg, inScopeTypeParameters(ctx), ctx)

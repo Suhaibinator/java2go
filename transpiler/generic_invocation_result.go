@@ -18,7 +18,10 @@ func inferredGenericInvocationResult(def *symbol.Definition, node *sitter.Node, 
 		returnType.TypeParameterBindings = map[string]*symbol.TypeParamDeclaration{def.DirectTypeParameter.SourceName: def.DirectTypeParameter}
 	}
 	result := qualifyDeclaredReferenceType(returnType, declaring)
-	bindings := genericArrayInvocationTypeBindings(def, node, ctx, source)
+	bindings := genericJavaInvocationTypeBindings(def, node, ctx, source)
+	if _, owner := invocationMethodDeclarationContext(def, ctx); owner != nil && def.RequiresHelper && !def.IsStatic && !def.Constructor {
+		bindings = completeMethodInvocationTypeBindings(def, bindings, ctx)
+	}
 	qualified := make(map[string]string, len(bindings)*2)
 	for _, parameter := range def.TypeParameters {
 		actual, found := bindings[parameter.Name]

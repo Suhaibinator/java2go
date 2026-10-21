@@ -20,10 +20,22 @@ func methodReferenceJavaSignature(ctx Ctx) ([]string, string) {
 		result = "void"
 	}
 	if method != nil {
-		for index := range method.Parameters {
-			parameters = append(parameters, substituteJavaTypeParams(definitionParameterJavaSignatureType(method, index), bindings))
+		var entry *genericMethodEntryABI
+		if owner := classScopeOwningMethodDefinition(method); owner != nil && owner.IsInterface {
+			entry = planGenericMethodEntryABI(owner, method, ctx)
 		}
-		result = substituteJavaTypeParams(method.OriginalType, bindings)
+		for index := range method.Parameters {
+			javaType := definitionParameterJavaSignatureType(method, index)
+			if entry != nil {
+				javaType = entry.parameterJavaTypes[index]
+			}
+			parameters = append(parameters, substituteJavaTypeParams(javaType, bindings))
+		}
+		javaType := method.OriginalType
+		if entry != nil {
+			javaType = entry.resultJavaType
+		}
+		result = substituteJavaTypeParams(javaType, bindings)
 	}
 	if ctx.lambdaParameterJavaTypes != nil {
 		parameters = append([]string(nil), ctx.lambdaParameterJavaTypes...)
@@ -487,13 +499,29 @@ func instantiateStaticMethodReference(reference ast.Expr, definition *symbol.Def
 	for index, parameter := range definition.TypeParameters {
 		types[index] = javaTypeStringToGoTypeExpr(bindings[parameter.Name], inScopeTypeParameters(ctx), ctx)
 	}
+	declaring, known := genericMethodOwnerContext(definition)
+	physicalEntry := (*genericMethodEntryABI)(nil)
+	if known {
+		physicalEntry = planStaticGenericMethodPhysicalABI(declaring.currentClass, definition, ctx)
+	}
+	if physicalEntry != nil {
+		if physical, _, ok := genericMethodPhysicalTypeArguments(definition, ctx); ok {
+			types = physical
+		}
+	}
 	specialized := *definition
 	specialized.TypeParameters = nil
 	specialized.OriginalType = substituteJavaTypeParams(definition.OriginalType, bindings)
+	if physicalEntry != nil {
+		specialized.OriginalType = physicalEntry.resultJavaType
+	}
 	specialized.Parameters = make([]*symbol.Definition, len(definition.Parameters))
 	for index, parameter := range definition.Parameters {
 		copy := *parameter
 		copy.OriginalType = substituteJavaTypeParams(parameter.OriginalType, bindings)
+		if physicalEntry != nil {
+			copy.OriginalType = physicalEntry.parameterJavaTypes[index]
+		}
 		copy.TypeParameterBindings = nil
 		copy.DirectTypeParameter = nil
 		specialized.Parameters[index] = &copy
@@ -507,7 +535,17 @@ func convertedStaticMethodReference(reference ast.Expr, definition *symbol.Defin
 	if definition == nil || functionType == nil {
 		return reference
 	}
-	if !staticMethodReferenceNeedsConversion(definition, ctx) && methodReferenceUsesExecutionSAM(ctx) {
+	var original *symbol.Definition
+	if owner != nil && definition.DeclarationNode != nil {
+		for _, candidate := range owner.Methods {
+			if candidate.DeclarationNode != nil && candidate.DeclarationNode.Equal(definition.DeclarationNode) {
+				original = candidate
+				break
+			}
+		}
+	}
+	physicalEntry := planStaticGenericMethodPhysicalABI(owner, original, ctx)
+	if physicalEntry == nil && !staticMethodReferenceNeedsConversion(definition, ctx) && methodReferenceUsesExecutionSAM(ctx) {
 		return generatedStaticVarargsMethodReference(reference, definition, owner, functionType, executionAware, ctx)
 	}
 	parameters := cloneFieldList(functionType.Params)
@@ -519,6 +557,22 @@ func convertedStaticMethodReference(reference ast.Expr, definition *symbol.Defin
 	resolution := &methodResolution{def: definition, owner: owner}
 	javaArgs := methodReferenceConvertedArguments(args[1:], resolution, nil, false, ctx)
 	javaArgs = generatedMethodReferenceVarargsArguments(resolution, nil, javaArgs, false, ctx)
+	if physicalEntry != nil {
+		actualTypes, _ := methodReferenceJavaSignature(ctx)
+		for index, parameter := range original.Parameters {
+			if index >= len(javaArgs) || index >= len(actualTypes) {
+				break
+			}
+			if physicalEntry.implicitObjectScalar(parameter) {
+				javaArgs[index] = args[index+1]
+				if primitive, ok := javaPrimitiveType(actualTypes[index]); ok {
+					javaArgs[index] = javaBoxExpr(javaArgs[index], primitive, ctx)
+				}
+			}
+		}
+		_, javaTypes, _ := genericMethodPhysicalTypeArguments(original, ctx)
+		javaArgs = append(dependentTypeWitnessArgumentsForJavaTypes(original, javaTypes, ctx), javaArgs...)
+	}
 	if executionAware {
 		javaArgs = append([]ast.Expr{execution}, javaArgs...)
 	}
@@ -527,7 +581,34 @@ func convertedStaticMethodReference(reference ast.Expr, definition *symbol.Defin
 	if definition.Constructor && owner != nil && owner.Class != nil {
 		actualResult = owner.Class.OriginalName
 	}
-	call = methodReferenceResultConversion(call, actualResult, ctx)
+	if physicalEntry != nil {
+		parameters, result := methodReferenceJavaSignature(ctx)
+		bindings := methodReferenceInferredBindings(original, parameters, result, ctx)
+		logical := make([]ast.Expr, len(original.TypeParameters))
+		for index, parameter := range original.TypeParameters {
+			logical[index] = javaTypeStringToGoTypeExpr(bindings[parameter.Name], inScopeTypeParameters(ctx), ctx)
+		}
+		if result != "void" {
+			call = genericMethodProjectedResult(call, original, logical, bindings, result, ctx)
+			declaredResult := definitionDeclaredJavaType(original)
+			base, rank := javaArrayTypeParts(declaredResult.Original)
+			for _, parameter := range original.TypeParameters {
+				if rank != 0 || declaredResult.TypeParameterBindings[base] != parameter.Declaration {
+					continue
+				}
+				actualResult = bindings[parameter.Name]
+				if _, primitive := javaPrimitiveType(result); !primitive {
+					// The erased result was already projected to the consuming
+					// reference SAM view. Primitive SAMs still unbox/widen below.
+					actualResult = result
+				}
+				break
+			}
+			call = methodReferenceResultConversion(call, actualResult, ctx)
+		}
+	} else {
+		call = methodReferenceResultConversion(call, actualResult, ctx)
+	}
 	return &ast.FuncLit{
 		Type: &ast.FuncType{Params: parameters, Results: cloneFieldList(functionType.Results)},
 		Body: &ast.BlockStmt{List: []ast.Stmt{invocationClosureCallStatement(call, functionType.Results)}},

@@ -20,7 +20,7 @@ public class ListProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.NewList[*stdjava.JavaString]()")
+	assertContains(t, out, "stdjava.NewArrayList[*stdjava.JavaString]()")
 	assertContains(t, out, "xs.Add(stdjava.JavaStringLiteralUTF16([]uint16{97}))")
 	assertContains(t, out, "xs.Get(0)")
 	assertContains(t, out, "xs.Size()")
@@ -40,7 +40,7 @@ public class DeclProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "a *stdjava.List[*stdjava.JavaString]")
-	assertContains(t, out, "b *stdjava.Map[*stdjava.JavaString, *stdjava.Integer]")
+	assertContains(t, out, "b stdjava.JavaMap")
 	// A Java Set declaration stays a nominal iterable interface, so a source
 	// implementation or native set can occupy this field without changing it.
 	assertContains(t, out, "c stdjava.JavaIterable")
@@ -79,13 +79,13 @@ public class MapProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]()")
 	assertContains(t, out, "stdjava.MapPutExecution(__java2goExecution, m, stdjava.JavaStringLiteralUTF16([]uint16{107}), stdjava.BoxInteger(int32(1)))")
-	assertContains(t, out, "stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](m.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution), stdjava.TypeID(\"java.lang.Integer\")))")
-	assertContains(t, out, "m.ContainsKey(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution)")
+	assertContains(t, out, "stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](stdjava.MapGetExecution(__java2goExecution, m, stdjava.JavaStringLiteralUTF16([]uint16{107})), stdjava.TypeID(\"java.lang.Integer\")))")
+	assertContains(t, out, "stdjava.MapContainsKeyExecution(__java2goExecution, m, stdjava.JavaStringLiteralUTF16([]uint16{107}))")
 	flat := normalizeSpaces(out)
-	newMap := strings.Index(flat, "m := stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]()")
+	newMap := strings.Index(flat, "m := stdjava.MapReferenceView(stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]())")
 	put := strings.Index(flat, "stdjava.MapPutExecution(__java2goExecution, m,")
-	get := strings.Index(flat, "m.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution)")
-	contains := strings.Index(flat, "m.ContainsKey(stdjava.JavaStringLiteralUTF16([]uint16{107}), __java2goExecution)")
+	get := strings.Index(flat, "stdjava.MapGetExecution(__java2goExecution, m, stdjava.JavaStringLiteralUTF16([]uint16{107}))")
+	contains := strings.Index(flat, "stdjava.MapContainsKeyExecution(__java2goExecution, m, stdjava.JavaStringLiteralUTF16([]uint16{107}))")
 	if newMap < 0 || put <= newMap || get <= put || contains <= get {
 		t.Fatalf("map construction, put, get, and containsKey changed Java execution order:\n%s", out)
 	}
@@ -127,13 +127,17 @@ public class KeywordProgram {
 	if strings.Contains(out, "map :=") || strings.Contains(out, "map.Put") {
 		t.Fatalf("Go keyword `map` was not sanitized:\n%s", out)
 	}
-	assertContains(t, out, "map_ := stdjava.NewMap")
+	if strings.Contains(normalizeSpaces(out), "stdjava.MapPutExecution(__java2goExecution, map,") ||
+		strings.Contains(normalizeSpaces(out), "stdjava.MapGetExecution(__java2goExecution, map,") {
+		t.Fatalf("Go keyword `map` was not sanitized in a protocol receiver:\n%s", out)
+	}
+	assertContains(t, out, "map_ := stdjava.MapReferenceView(stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]())")
 	assertContains(t, out, "stdjava.MapPutExecution(__java2goExecution, map_, stdjava.JavaStringLiteralUTF16([]uint16{97}), stdjava.BoxInteger(int32(1)))")
-	assertContains(t, out, "stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](map_.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{97}), __java2goExecution), stdjava.TypeID(\"java.lang.Integer\")))")
+	assertContains(t, out, "stdjava.UnboxInteger(stdjava.ObjectView[*stdjava.Integer](stdjava.MapGetExecution(__java2goExecution, map_, stdjava.JavaStringLiteralUTF16([]uint16{97})), stdjava.TypeID(\"java.lang.Integer\")))")
 	flat := normalizeSpaces(out)
-	declaration := strings.Index(flat, "map_ := stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]()")
+	declaration := strings.Index(flat, "map_ := stdjava.MapReferenceView(stdjava.NewMap[*stdjava.JavaString, *stdjava.Integer]())")
 	put := strings.Index(flat, "stdjava.MapPutExecution(__java2goExecution, map_,")
-	get := strings.Index(flat, "map_.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{97}), __java2goExecution)")
+	get := strings.Index(flat, "stdjava.MapGetExecution(__java2goExecution, map_, stdjava.JavaStringLiteralUTF16([]uint16{97}))")
 	if declaration < 0 || put <= declaration || get <= put {
 		t.Fatalf("sanitized map receiver changed identity or Java execution order:\n%s", out)
 	}

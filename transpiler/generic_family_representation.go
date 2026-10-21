@@ -12,8 +12,11 @@ import (
 // can have different erasures: Base<T> uses Object while Child<N extends
 // Number> uses Number, with a checked override bridge between them.
 type genericFamilyBinderRepresentation struct {
-	erasure string
-	goName  string
+	erasure           string
+	goName            string
+	sourceBound       *symbol.ClassScope
+	sourceFile        *symbol.FileScope
+	sourceCertificate *genericFamilySourceBoundCertificate
 }
 
 func genericFamilyBinderErasure(parameter symbol.TypeParam, ctx Ctx, visiting map[typeParameterIdentityKey]bool) (string, error) {
@@ -29,6 +32,9 @@ func genericFamilyBinderErasure(parameter symbol.TypeParam, ctx Ctx, visiting ma
 	}
 	visiting[key] = true
 	defer delete(visiting, key)
+	if source, _, ok := genericFamilyConcreteSourceBound(parameter, ctx, map[*symbol.TypeParamDeclaration]bool{}); ok {
+		return javaInferenceTypeName(source), nil
+	}
 	bound := parameter.Bounds[0]
 	if dependency, found := resolveReferenceTypeParameter(bound, ctx); found {
 		return genericFamilyBinderErasure(dependency.parameter, dependency.context, visiting)
@@ -56,6 +62,10 @@ func (plan *genericFamilyPlan) addBinderRepresentations(scope *symbol.ClassScope
 			return err
 		}
 		representation := genericFamilyBinderRepresentation{erasure: erasure}
+		if source, file, ok := genericFamilyConcreteSourceBound(parameter, parameterCtx, map[*symbol.TypeParamDeclaration]bool{}); ok {
+			representation.sourceBound = source
+			representation.sourceFile = file
+		}
 		switch erasure {
 		case "java.lang.Object":
 			representation.goName = "any"
@@ -64,7 +74,9 @@ func (plan *genericFamilyPlan) addBinderRepresentations(scope *symbol.ClassScope
 		case "java.lang.Enum":
 			representation.goName = "JavaEnum"
 		default:
-			return fmt.Errorf("generic family bound requires an unsupported physical representation: %s", erasure)
+			if representation.sourceBound == nil {
+				return fmt.Errorf("generic family bound requires an unsupported physical representation: %s", erasure)
+			}
 		}
 		if prior, exists := plan.representations[parameter.Declaration]; exists && prior != representation {
 			return fmt.Errorf("generic family binder has inconsistent declaration erasure")
@@ -83,6 +95,9 @@ func genericFamilyBinderGoType(parameter symbol.TypeParam, ctx Ctx) ast.Expr {
 	representation, ok := plan.representations[parameter.Declaration]
 	if !ok {
 		return nil
+	}
+	if representation.sourceBound != nil {
+		return genericFamilySourceBoundGoType(representation, ctx)
 	}
 	if representation.goName == "any" {
 		return ast.NewIdent("any")

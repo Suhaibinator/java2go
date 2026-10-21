@@ -153,12 +153,7 @@ func registerIOConstructors() {
 		return stdjavaCall(ctx, "NewByteArrayInputStream", args[0])
 	})
 
-	registerConstructorIntrinsic("StringReader", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
-		if len(args) != 1 {
-			return nil
-		}
-		return stdjavaCall(ctx, "NewStringReader", args[0])
-	})
+	registerStringReaderReferenceIntrinsics()
 
 	// InputStreamReader over System.in is the console-reading idiom and has no
 	// path to open, so it binds to the stdin-specific shim.
@@ -276,13 +271,15 @@ func registerIOInstanceMethods() {
 
 	// Character readers that are only ever wrapped; close is the one method
 	// transpiled code calls on them directly.
-	registerInstanceIntrinsic("StringReader", "read", ioMethod("ReadChar", 0))
-	registerInstanceIntrinsic("StringReader", "close", ioMethod("Close", 0))
 	registerInstanceIntrinsic("InputStreamReader", "close", ioMethod("Close", 0))
 
 	// BufferedReader / FileReader
 	for _, t := range []string{"BufferedReader", "FileReader"} {
-		registerInstanceIntrinsic(t, "close", ioMethod("Close", 0))
+		if t == "BufferedReader" {
+			registerBufferedStringReaderReferenceIntrinsics()
+		} else {
+			registerInstanceIntrinsic(t, "close", ioMethod("Close", 0))
+		}
 		// readLine returns (string, bool); transpiled code that assigns it expects a
 		// single value. Emitting the method call keeps the two-value shape, which
 		// only fits the `(line, ok)` idiom; documented as an approximation and left
@@ -290,8 +287,7 @@ func registerIOInstanceMethods() {
 		// pattern the transpiler would need a loop rewrite, which is out of scope
 		// here, so readLine is emitted as a method call returning the line.
 		if t == "BufferedReader" {
-			registerInstanceIntrinsic(t, "readLine", ioMethod("ReadLineReference", 0))
-			registerInstanceIntrinsicResultType(t, "readLine", "String")
+			// Canonical readLine/close are registered by the helper above.
 		} else {
 			registerInstanceIntrinsic(t, "readLine", ioMethod("ReadLine", 0))
 		}

@@ -11,6 +11,12 @@ func NewStringBuilderJavaString(text *JavaString) *StringBuilder {
 	return NewStringBuilder().AppendJavaString(text)
 }
 
+// NewStringBufferJavaString preserves the canonical Buffer allocation class.
+func NewStringBufferJavaString(text *JavaString) *StringBuilder {
+	RequireJavaString(text)
+	return NewStringBuffer().AppendJavaString(text)
+}
+
 // AppendJavaString is the String overload: a null reference contributes "null".
 func (b *StringBuilder) AppendJavaString(text *JavaString) *StringBuilder {
 	ReferenceRequireNonNull(b)

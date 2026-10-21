@@ -16,8 +16,8 @@ func functionRuntimeTypeExpr(javaType string, arguments, parameters []string, ct
 	if !isExternalFunctionType(javaType, ctx) {
 		return nil, false
 	}
-	if len(arguments) == 0 {
-		arguments = []string{"Object", "Object"}
+	if len(arguments) == 0 && rawCanonicalFunctionTarget(javaType, ctx) != nil {
+		return applyTypeArguments(stdjavaQualifiedExpr("Function", ctx), []ast.Expr{ast.NewIdent("any"), ast.NewIdent("any")}), true
 	}
 	if len(arguments) != 2 {
 		return nil, false

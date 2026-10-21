@@ -6,6 +6,9 @@ import "go/ast"
 // and result boundaries, not only at constructor call sites. Source classes
 // with these simple names retain their own representation.
 func digestIORuntimeTypeExpr(baseName string, ctx Ctx) (ast.Expr, bool) {
+	if result, ok := fileChannelDeclarationRuntimeTypeExpr(baseName, ctx); ok {
+		return result, true
+	}
 	if result, ok := characterIORuntimeTypeExpr(baseName, ctx); ok {
 		return result, true
 	}
@@ -26,7 +29,7 @@ func digestIORuntimeTypeExpr(baseName string, ctx Ctx) (ast.Expr, bool) {
 		name = "JavaFile"
 	case "Path":
 		name = "JavaPath"
-	case "FilterInputStream", "FileInputStream", "ByteArrayInputStream", "BufferedInputStream", "RandomAccessFile", "FileChannel":
+	case "FilterInputStream", "FileInputStream", "ByteArrayInputStream", "BufferedInputStream", "RandomAccessFile":
 		name = base
 	}
 	if name == "" {
@@ -141,8 +144,6 @@ func registerDigestIOIntrinsics() {
 		{"RandomAccessFile", "seek", "SeekPosition", "", 1},
 		{"RandomAccessFile", "getFilePointer", "GetFilePointer", "long", 0},
 		{"RandomAccessFile", "length", "Length", "long", 0},
-		{"FileChannel", "close", "Close", "", 0},
-		{"FileChannel", "isOpen", "IsOpen", "boolean", 0},
 		{"ByteBuffer", "flip", "Flip", "ByteBuffer", 0},
 		{"ByteBuffer", "clear", "Clear", "ByteBuffer", 0},
 	} {
@@ -152,4 +153,7 @@ func registerDigestIOIntrinsics() {
 		}
 	}
 	registerReadonlyFileChannelReadIntrinsic()
+	registerFileChannelWriteIntrinsics()
+	registerRandomAccessFileWriteIntrinsics()
+	registerFileChannelSourceLifecycleIntrinsics()
 }

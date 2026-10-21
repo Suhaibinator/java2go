@@ -19,7 +19,13 @@ const (
 // Source descriptor methods are emitted even for leaves without ObjectInfo.
 // Reserve exactly that selector independently of hierarchy carrier eligibility.
 func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx Ctx) bool {
-	if iterationProtocolReservedSelector(name) {
+	if name == threadSourceBundleMethod && threadSourceRoot(scope, ctx) != nil {
+		return true
+	}
+	if fileChannelSourceReservedSelector(scope, name, ctx) {
+		return true
+	}
+	if iterationProtocolReservedSelector(name) || name == "JavaReaderState" {
 		return true
 	}
 	if scope != nil && scope.IsEnum && name == "JavaEnumMetadata" {
@@ -36,7 +42,7 @@ func referenceIdentityReservedSelector(name string) bool {
 		return true
 	}
 	switch name {
-	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod, generatedObjectCloneMethod:
+	case "ObjectInfo", "JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod, generatedObjectCloneMethod, "JavaReaderState":
 		return true
 	default:
 		return false
@@ -225,6 +231,12 @@ func javaSourceTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 // javaTypeDescriptorExpr returns the nominal runtime descriptor for a Java
 // type. Array descriptors nest around the immediate component descriptor.
 func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
+	if ctx.genericInterfaceMethodBody != nil {
+		if ctx.genericInterfaceMethodBody.scalar(javaType, ctx) {
+			return stdjavaQualifiedExpr("ObjectTypeID", ctx), true
+		}
+		ctx.genericInterfaceMethodBody = nil
+	}
 	javaType = strings.TrimSpace(javaType)
 	if javaType == "" {
 		return nil, false
@@ -688,7 +700,7 @@ func sourceHierarchyUsesMostDerived(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil || scope.IsInterface || scope.IsEnum {
 		return false
 	}
-	return resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx) || len(sourceNativeFunctionalContracts(scope, ctx)) != 0
+	return threadSourceRoot(scope, ctx) != nil || fileChannelSourceRoot(scope, ctx) != nil || resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx) || len(sourceNativeFunctionalContracts(scope, ctx)) != 0
 }
 
 func classNeedsReferenceObjectInfo(scope *symbol.ClassScope, ctx Ctx) bool {
@@ -739,6 +751,10 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, stdjavaQualifiedExpr("EnumTypeID", ctx))
 	} else if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(parent), ctx))
+	} else if threadSourceDirectRoot(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr("ThreadTypeID", ctx))
+	} else if fileChannelSourceDirectRoot(scope, ctx) {
+		args = append(args, stdjavaQualifiedExpr("JavaNIOFileChannelType", ctx))
 	} else if isExceptionJavaType(classScopeCtx(scope, ctx), scope.Superclass) {
 		args = append(args, stdjavaCall(ctx, "BuiltinThrowableTypeID", &ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(scope.Superclass)}))
 	} else if constant := characterIONominalConstant(scope.Superclass, classScopeCtx(scope, ctx)); constant != "" {
@@ -752,6 +768,7 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(implementedScope), ctx))
 	}
 
+	args = append(args, sourceDeclaredExternalInterfaceIDs(scope, ctx)...)
 	args = append(args, sourceIterationInterfaceIDs(scope, ctx)...)
 	args = append(args, sourceFunctionInterfaceIDs(scope, ctx)...)
 	if sourceDirectCloneable(scope, ctx) {
@@ -778,6 +795,9 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	statements := []ast.Stmt{
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(id, ctx))},
+	}
+	if location := sourceRuntimeLocationRegistrationStmt(javaTypeIDLiteral(id, ctx), ctx); location != nil {
+		statements = append(statements, location)
 	}
 	if scope.IsEnum {
 		statements = append(statements, enumConstantRegistrationStmts(scope, ctx)...)
@@ -908,6 +928,15 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 			appendCase(javaClassBinaryName(interfaceScope), receiverExpr)
 		}
 	}
+	if threadSourceRoot(scope, ctx) != nil {
+		appendCase("java.lang.Thread", threadSourceNativeViewExpr(scope, receiverExpr, ctx))
+		appendCase("java.lang.Runnable", threadSourceNativeViewExpr(scope, receiverExpr, ctx))
+	}
+	if fileChannelSourceRoot(scope, ctx) != nil {
+		for _, id := range fileChannelSourceCanonicalViewIDs() {
+			appendCase(id, methodCall(receiverExpr, fileChannelSourceViewMethod))
+		}
+	}
 	for _, contract := range sourceNativeFunctionalContracts(scope, ctx) {
 		appendCase("java.util.function."+contract.family, sourceNativeFunctionalViewExpr(scope, contract, receiverExpr, ctx))
 	}
@@ -927,7 +956,11 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 			Body: &ast.BlockStmt{List: cases},
 		}}},
 	}
-	return []ast.Decl{dynamicType, viewMethod}
+	declarations := []ast.Decl{dynamicType, viewMethod}
+	if forwarder := threadSourceObjectInfoForwarder(scope, receiver, receiverName, ctx); forwarder != nil {
+		declarations = append(declarations, forwarder)
+	}
+	return declarations
 }
 
 // fixedJavaDynamicTypeDecl gives a value whose Go pointer already is every
@@ -972,9 +1005,11 @@ func syntheticReferenceRegistrationDecl(
 	}
 	args := []ast.Expr{javaTypeIDLiteral(dynamicID, ctx), superID}
 	args = append(args, interfaceIDs...)
+	args = append(args, sourceDeclaredExternalInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	args = append(args, sourceIterationInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	args = append(args, sourceFunctionInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	args = append(args, sourceMapEntryInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
+	args = append(args, sourceMapReferenceInterfaceIDs(syntheticSourceTextScope(structName, ctx), ctx)...)
 	if sourceDirectCloneable(syntheticSourceTextScope(structName, ctx), ctx) {
 		args = append(args, stdjavaQualifiedExpr("CloneableTypeID", ctx))
 	}
@@ -982,6 +1017,9 @@ func syntheticReferenceRegistrationDecl(
 	statements := []ast.Stmt{
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", args...)},
 		&ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", javaTypeIDLiteral(dynamicID, ctx))},
+	}
+	if location := sourceRuntimeLocationRegistrationStmt(javaTypeIDLiteral(dynamicID, ctx), ctx); location != nil {
+		statements = append(statements, location)
 	}
 	if text := sourceToStringRegistration(syntheticSourceTextScope(structName, ctx), dynamicID, ctx); text != nil {
 		statements = append(statements, text)

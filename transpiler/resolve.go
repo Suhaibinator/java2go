@@ -124,6 +124,9 @@ func resolveTypeParameterNominalNames(file parsing.SourceFile) {
 		scopes = append(scopes, scope)
 		if scope.Class != nil {
 			nominal[scope.Class.Name] = struct{}{}
+			if scope.Class.OriginalName != "" {
+				nominal[scope.Class.OriginalName] = struct{}{}
+			}
 		}
 		for _, nested := range scope.Subclasses {
 			collect(nested)

@@ -82,6 +82,7 @@ func canonicalGenericTypeSpecs(name string, fields *ast.FieldList, parameters []
 	if canonicalGenericFamily(ctx.currentClass, ctx) != nil {
 		genericFamilyPhysicalFields(fields, parameters, ctx)
 	}
+	canonicalGenericStorageFields(fields, ctx)
 	return []ast.Spec{
 		&ast.TypeSpec{Name: ast.NewIdent(raw), Type: &ast.StructType{Fields: fields}},
 		&ast.TypeSpec{Name: ast.NewIdent(name), TypeParams: &ast.FieldList{List: makeTypeParamFieldsInContext(parameters, ctx)}, Assign: token.Pos(1), Type: ast.NewIdent(raw)},
@@ -156,7 +157,7 @@ func canonicalGenericMethodType(typ string, def *symbol.Definition, ctx Ctx) boo
 	if !contains {
 		return true
 	}
-	if mapEntryArgumentIndependent(typ, ctx) {
+	if mapReferenceArgumentIndependent(typ, ctx) || mapEntryArgumentIndependent(typ, ctx) {
 		return true
 	}
 	if _, rank := javaArrayTypeParts(typ); rank != 0 {
@@ -196,6 +197,9 @@ func canonicalGenericMethodSignature(def *symbol.Definition, ctx Ctx) bool {
 }
 
 func erasedAnonymousMethodJavaType(typ string, ctx Ctx) string {
+	if ctx.genericInterfaceMethodBody.scalar(typ, ctx) {
+		return "java.lang.Object"
+	}
 	if ctx.erasedGenericMethodBody == nil || ctx.localScope == nil {
 		return typ
 	}

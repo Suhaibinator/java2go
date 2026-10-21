@@ -1,0 +1,87 @@
+[
+  {
+    "name": "BinderNotQualifier",
+    "entry": "probe.Main",
+    "want": "java.util.Comparator\n",
+    "files": {
+      "src/main/java/probe/Main.java": "package probe; public class Main<Comparator> { <Comparator> void check() { System.out.println(java.util.Comparator.class.getName()); } public static void main(String[] args) { new Main<Object>().<Object>check(); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  },
+  {
+    "name": "ExplicitCanonical",
+    "entry": "probe.Main",
+    "want": "java.util.Comparator:true\n",
+    "files": {
+      "src/main/java/probe/Comparator.java": "package probe; public class Comparator {}\n",
+      "src/main/java/probe/Main.java": "package probe; import java.util.Comparator; public class Main { public static void main(String[] args) { System.out.println(Comparator.class.getName()+\":\"+(Comparator.class==java.util.Comparator.class)); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  },
+  {
+    "name": "ForeignExplicit",
+    "entry": "probe.Main",
+    "want": "foreign.Comparator:true\n",
+    "files": {
+      "src/main/java/foreign/Comparator.java": "package foreign; public interface Comparator {}\n",
+      "src/main/java/probe/Main.java": "package probe; import java.util.*; import foreign.Comparator; public class Main { public static void main(String[] args) { System.out.println(Comparator.class.getName()+\":\"+(Comparator.class==foreign.Comparator.class)); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  },
+  {
+    "name": "SourceNoInitialization",
+    "entry": "probe.Main",
+    "want": "probe.Main$Comparator:0\n",
+    "files": {
+      "src/main/java/probe/Main.java": "package probe; import java.util.*; public class Main { static int count; static class Comparator { static {count++;} } public static void main(String[] args) { Class<?> c=Comparator.class; System.out.println(c.getName()+\":\"+count); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  },
+  {
+    "name": "SourcePrefix",
+    "entry": "probe.Main",
+    "want": "probe.Main$java$util$Comparator:true\n",
+    "files": {
+      "src/main/java/probe/Main.java": "package probe; import java.util.*; public class Main { static class java { static class util { interface Comparator {} } } public static void main(String[] args) { System.out.println(java.util.Comparator.class.getName()+\":\"+(java.util.Comparator.class==Main.java.util.Comparator.class)); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  },
+  {
+    "name": "SourceSamePackage",
+    "entry": "probe.Main",
+    "want": "probe.Comparator:true\n",
+    "files": {
+      "src/main/java/probe/Comparator.java": "package probe; public class Comparator {}\n",
+      "src/main/java/probe/Main.java": "package probe; import java.util.*; public class Main { public static void main(String[] args) { System.out.println(Comparator.class.getName()+\":\"+(Comparator.class==probe.Comparator.class)); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  },
+  {
+    "name": "UnrelatedSourceDemand",
+    "entry": "probe.Main",
+    "want": "java.util.Comparator:true\n",
+    "files": {
+      "src/main/java/foreign/Marker.java": "package foreign; public class Marker {}\n",
+      "src/main/java/probe/Main.java": "package probe; import java.util.*; import foreign.*; public class Main { public static void main(String[] args) { System.out.println(Comparator.class.getName()+\":\"+(Comparator.class==java.util.Comparator.class)); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  },
+  {
+    "name": "ValueNamespace",
+    "entry": "probe.Main",
+    "want": "java.util.Comparator:true\n",
+    "files": {
+      "src/main/java/probe/Main.java": "package probe; import java.util.*; public class Main { static Object Comparator=new Object(); static Object java=new Object(); public static void main(String[] args) { Object Comparator=new Object(); Object java=new Object(); System.out.println(Comparator.class.getName()+\":\"+(Comparator.class==java.util.Comparator.class)); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  },
+  {
+    "name": "WildcardCanonical",
+    "entry": "probe.Main",
+    "want": "java.util.Comparator:true:true\n",
+    "files": {
+      "src/main/java/probe/Main.java": "package probe; import java.util.*; public class Main { public static void main(String[] args) { System.out.println(Comparator.class.getName()+\":\"+(Comparator.class==java.util.Comparator.class)+\":\"+(Comparator[].class.getComponentType()==Comparator.class)); }}\n",
+      "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>class-literal136</artifactId><version>1</version><properties><maven.compiler.release>21</maven.compiler.release></properties></project>\n"
+    }
+  }
+]

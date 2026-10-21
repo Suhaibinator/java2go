@@ -98,6 +98,9 @@ func collectionNeedsSliceForRange(node *sitter.Node, ctx Ctx, source []byte) boo
 // pointer (mutations are shared); Optional is a value type.
 func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx Ctx) ast.Expr {
 	writtenName := baseName
+	if containsString(scopeTypeParams, writtenName) || resolveClassScopeByQualifiedName(ctx, writtenName) != nil {
+		return nil
+	}
 	baseName = stripJavaQualifier(baseName)
 	if baseName == "Iterable" || baseName == "Iterator" {
 		if containsString(scopeTypeParams, writtenName) || canonicalIterationOwner(writtenName, ctx) == "" {
@@ -107,7 +110,7 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 	if canonicalAbstractCollectionOwner(writtenName, ctx) == "java.util.Set" || canonicalAbstractCollectionOwner(writtenName, ctx) == "java.util.AbstractSet" {
 		return stdjavaQualifiedExpr("JavaIterable", ctx)
 	}
-	if canonicalAbstractMapOwner(writtenName, ctx) {
+	if canonicalMapReferenceOwner(writtenName, ctx) == "java.util.Map" || canonicalAbstractMapOwner(writtenName, ctx) {
 		return stdjavaQualifiedExpr("JavaMap", ctx)
 	}
 	if canonicalMapEntryOwner(writtenName, ctx) != "" {
@@ -133,6 +136,9 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 	case containsString(listTypeNames, baseName):
 		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("List", ctx), argExprs())}
 	case containsString(mapTypeNames, baseName):
+		if len(typeArgs) == 0 {
+			typeArgs = []string{"java.lang.Object", "java.lang.Object"}
+		}
 		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("Map", ctx), argExprs())}
 	case containsString(setTypeNames, baseName):
 		return &ast.StarExpr{X: applyTypeArguments(stdjavaQualifiedExpr("Set", ctx), argExprs())}
@@ -155,21 +161,36 @@ func collectionTypeExpr(baseName string, typeArgs, scopeTypeParams []string, ctx
 }
 
 func registerCollectionConstructors() {
-	// new ArrayList<T>() / new LinkedList<T>() -> stdjava.NewList[T]()
-	for _, name := range []string{"ArrayList", "LinkedList"} {
-		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
-			if len(args) == 1 {
-				return stdjavaGenericCall(ctx, "NewListWithArgument", typeArgs, append(args, intrinsicExecutionExpr(ctx)))
+	registerIntrinsicOwner("java.util.ArrayList", true)
+	registerIntrinsicOwner("java.util.LinkedList", true)
+	registerConstructorIntrinsic("ArrayList", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+		if len(args) == 1 {
+			return stdjavaGenericCall(ctx, "NewArrayListWithArgument", typeArgs, append(args, intrinsicExecutionExpr(ctx)))
+		}
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaGenericCall(ctx, "NewArrayList", typeArgs, nil)
+	})
+	registerConstructorNodeIntrinsic("LinkedList", func(typeArgs, args []ast.Expr, node *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+		if len(args) == 1 {
+			actual, _ := inferExprJavaType(invocationArgumentNode(node, 0), ctx, source)
+			if _, primitive := javaPrimitiveType(actual); primitive {
+				return unsupportedIntrinsicOwnerValue("java.util.LinkedList capacity overload", node, source, ctx)
 			}
-			if len(args) != 0 {
-				return nil
-			}
-			return stdjavaGenericCall(ctx, "NewList", typeArgs, nil)
-		})
-	}
+			return stdjavaGenericCall(ctx, "NewLinkedListFromCollection", typeArgs, append(args, intrinsicExecutionExpr(ctx)))
+		}
+		if len(args) != 0 {
+			return nil
+		}
+		return stdjavaGenericCall(ctx, "NewLinkedList", typeArgs, nil)
+	})
 	// Hash-based implementations use Java hashCode/equals collision buckets.
 	for _, name := range []string{"HashMap", "LinkedHashMap"} {
 		registerConstructorIntrinsic(name, func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+			if len(typeArgs) == 0 {
+				typeArgs = []ast.Expr{ast.NewIdent("any"), ast.NewIdent("any")}
+			}
 			if len(args) == 1 {
 				return stdjavaGenericCall(ctx, "NewMapWithArgument", typeArgs, append(args, intrinsicExecutionExpr(ctx)))
 			}

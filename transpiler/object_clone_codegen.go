@@ -102,7 +102,7 @@ func objectCloneInvocation(object *sitter.Node, method string, arguments *sitter
 			return stdjavaCall(ctx, "EnumCloneExecution", intrinsicExecutionExpr(ctx))
 		}
 		if sourceSuperSelectsObjectClone(ctx.currentClass, ctx) {
-			return stdjavaCall(ctx, "ObjectCloneExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+			return stdjavaCall(ctx, "ObjectCloneExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(sourceInstanceReceiverName(ctx)))
 		}
 		return nil // A source super.clone override retains ordinary source dispatch.
 	}
@@ -123,11 +123,8 @@ func generateObjectCloneDecls(ctx Ctx) []ast.Decl {
 	if scope == nil || scope.Class == nil || scope.IsInterface || scope.IsEnum || !sourceInheritsObjectTextDefault(scope, ctx) {
 		return nil
 	}
-	receiver := ShortName(scope.Class.Name)
-	used := map[string]struct{}{receiver: {}}
-	for _, name := range scope.GoTypeParameterNames() {
-		used[name] = struct{}{}
-	}
+	used := generatedInstanceUsedNames(ctx)
+	receiver := synchronizedUniqueLocalName(ShortName(scope.Class.Name), used)
 	cloneName := synchronizedUniqueLocalName("__java2goClone", used)
 	selfName := synchronizedUniqueLocalName("__java2goCloneSelf", used)
 	typ := classSubobjectDeclarationPointerType(scope, ctx)

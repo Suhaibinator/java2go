@@ -14,7 +14,7 @@ func TestCanonicalResourceReaderResourceNameABI(t *testing.T) {
 
 func TestCanonicalResourceReaderNullableLineABI(t *testing.T) {
 	out := renderGoFileFromJava(t, `import java.io.BufferedReader; public class ReaderABI { static String line(BufferedReader reader) throws Exception { return reader.readLine(); } }`)
-	if !strings.Contains(out, ".ReadLineReference()") {
+	if !strings.Contains(out, "stdjava.BufferedStringReaderReadLineExecution(__java2goExecution, reader)") || !strings.Contains(out, "func lineJava2goExecution(__java2goExecution *stdjava.Execution, reader *stdjava.BufferedReader) *stdjava.JavaString") {
 		t.Fatalf("readLine must expose a nullable Java String; empty content must remain distinct from EOF:\n%s", out)
 	}
 }

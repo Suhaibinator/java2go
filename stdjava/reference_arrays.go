@@ -448,12 +448,27 @@ func ObjectView[T any](value any, requested TypeID) T {
 		}
 	}
 	if (!ok || !JavaTypeAssignable(actual, requested)) && !nativeJavaInterfaceAssignable(value, requested) {
-		panic(NewClassCastException(fmt.Sprintf("Java value %s is not assignable to %s", actual, requested)))
+		panic(referenceCastException(actual, requested))
 	}
 	// A Java SAM's direct Go shape may expose a public source wrapper whose
 	// execution companion has a collision-safe name. The declaration's explicit
 	// native view binds the exact implementation and preserves allocation identity.
 	if isNativeFunctionalTypeID(requested) {
+		if carrier, ok := value.(JavaObjectInfoCarrier); ok {
+			if info := carrier.JavaObjectInfo(); info != nil {
+				if view, ok := info.resolveView(requested).(T); ok {
+					return view
+				}
+			}
+		}
+	}
+	// An embedded source base may happen to satisfy a Go interface while its
+	// methods are not the Java virtual receiver. The declaration's provider
+	// owns that view, after nominal permission and native SAM resolution.
+	javaTypeRegistry.RLock()
+	source := javaTypeRegistry.types[actual].source
+	javaTypeRegistry.RUnlock()
+	if source {
 		if carrier, ok := value.(JavaObjectInfoCarrier); ok {
 			if info := carrier.JavaObjectInfo(); info != nil {
 				if view, ok := info.resolveView(requested).(T); ok {
@@ -749,7 +764,7 @@ func JavaArrayCast[T any](value any, expectedArrayType TypeID) T {
 	}
 	actual, ok := ObjectDynamicType(value)
 	if !ok || !JavaTypeAssignable(actual, expectedArrayType) {
-		panic(NewClassCastException(fmt.Sprintf("Java value %s is not assignable to %s", actual, expectedArrayType)))
+		panic(referenceCastException(actual, expectedArrayType))
 	}
 	result, ok := value.(T)
 	if !ok {

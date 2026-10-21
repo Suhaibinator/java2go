@@ -186,10 +186,7 @@ func runCampaignThrowableStrictSingleFileOracle(t *testing.T, source, expected s
 	if err := writeProjectFile(filepath.Join(generated, "launcher.go"), []byte("package main\nfunc main(){"+entry+"()}\n")); err != nil {
 		t.Fatal(err)
 	}
-	mod := "module generated\n\ngo 1.27.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\nreplace github.com/NickyBoy89/java2go => " + repo + "\n"
-	if err := writeProjectFile(filepath.Join(generated, "go.mod"), []byte(mod)); err != nil {
-		t.Fatal(err)
-	}
+	prepareCampaignReadonlyRuntimeModule(t, generated, repo)
 	run("all generated packages race build", generated, 5*time.Minute, "go", "build", "-race", "-mod=mod", "./...")
 	binary := filepath.Join(root, "app")
 	run("entry point race build", generated, 5*time.Minute, "go", "build", "-race", "-mod=mod", "-o", binary, ".")

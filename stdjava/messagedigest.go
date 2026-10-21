@@ -25,7 +25,8 @@ func NewNoSuchAlgorithmException(message string) NoSuchAlgorithmException {
 	return NoSuchAlgorithmException{newThrowableBase("NoSuchAlgorithmException", message)}
 }
 func init() {
-	RegisterException("NoSuchAlgorithmException", "Exception")
+	RegisterException("GeneralSecurityException", "Exception")
+	RegisterException("NoSuchAlgorithmException", "GeneralSecurityException")
 	RegisterJavaType("MessageDigest", ObjectTypeID)
 }
 func (*MessageDigest) JavaDynamicTypeID() TypeID { return "MessageDigest" }

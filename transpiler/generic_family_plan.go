@@ -60,9 +60,49 @@ func newGenericFamilyInventory(ctx Ctx) *genericFamilyInventory {
 		parents:         make(map[*symbol.ClassScope][]*symbol.ClassScope, len(scopes)),
 	}
 	for _, scope := range scopes {
-		inventory.parents[scope] = genericFamilyParents(scope, ctx)
+		dependencies := genericFamilyParents(scope, ctx)
+		// An inner allocation stores its enclosing instance. Their physical
+		// layouts must migrate together, independently of source inheritance.
+		if enclosing := genericFamilyEnclosingLayoutDependency(scope); enclosing != nil {
+			present := false
+			for _, dependency := range dependencies {
+				present = present || dependency == enclosing
+			}
+			if !present {
+				dependencies = append(dependencies, enclosing)
+			}
+		}
+		inventory.parents[scope] = dependencies
 	}
 	return inventory
+}
+
+// An enclosing layout dependency is proven by carried declarations, never by
+// source spelling. Static members and older synthetic scopes with no hidden
+// declaration view keep their existing independent layout and audit behavior.
+func genericFamilyEnclosingLayoutDependency(scope *symbol.ClassScope) *symbol.ClassScope {
+	if scope == nil || !scope.IsInner || scope.Enclosing == nil || len(scope.Enclosing.TypeParameters) == 0 {
+		return nil
+	}
+	hidden := len(scope.TypeParameters) - len(scope.OwnTypeParameters())
+	if hidden < len(scope.Enclosing.TypeParameters) {
+		return nil
+	}
+	carried := make(map[*symbol.TypeParamDeclaration]struct{}, hidden)
+	for _, parameter := range scope.TypeParameters[:hidden] {
+		if parameter.Declaration != nil {
+			carried[parameter.Declaration] = struct{}{}
+		}
+	}
+	for _, parameter := range scope.Enclosing.TypeParameters {
+		if parameter.Declaration == nil {
+			return nil
+		}
+		if _, present := carried[parameter.Declaration]; !present {
+			return nil
+		}
+	}
+	return scope.Enclosing
 }
 
 // A source event contains declaration structure only. In particular it never
@@ -234,7 +274,7 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 			if err := plan.addBinderRepresentations(local, localCtx); err != nil {
 				return nil, err
 			}
-			if !plan.typeSupported(event.javaType, localCtx, true) {
+			if !plan.typeSupported(event.javaType, localCtx, true, canonicalClassFamilyTypeOccurrence(event.javaType, event.node, event.file.Source)) {
 				return nil, fmt.Errorf("local generic family specialization needs shared storage: %s", event.javaType)
 			}
 			if err := plan.auditTypeSyntax(event.node, event.file.Source, localCtx); err != nil {
@@ -244,7 +284,7 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 			continue
 		}
 		plan.anonymous[genericFamilyKey(event.file, event.node)] = genericFamilyAnonymous{owner: event.owner, parent: event.parent, node: event.node, javaType: event.javaType}
-		if !plan.typeSupported(event.javaType, event.lexical, true) {
+		if !plan.typeSupported(event.javaType, event.lexical, true, canonicalClassFamilyTypeOccurrence(event.javaType, event.node, event.file.Source)) {
 			return nil, fmt.Errorf("anonymous generic family specialization needs shared storage: %s", event.javaType)
 		}
 		if err := plan.auditTypeSyntax(event.body, event.file.Source, event.lexical); err != nil {
@@ -275,7 +315,7 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 				}
 			}
 			for _, parent := range append([]string{scope.Superclass}, scope.ImplementedInterfaces...) {
-				if !plan.typeSupported(parent, classHeaderTypeCtx(scope, declarationCtx), true) {
+				if !plan.typeSupported(parent, classHeaderTypeCtx(scope, declarationCtx), true, canonicalClassFamilyHeaderTypeOccurrence(parent, scope.Class.DeclarationNode, declarationCtx)) {
 					return nil, fmt.Errorf("generic family specialization needs shared storage: %s", parent)
 				}
 			}
@@ -287,6 +327,9 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 				return nil, err
 			}
 		}
+	}
+	if err := certifyGenericFamilySourceBounds(plan, ctx); err != nil {
+		return nil, err
 	}
 	return plan, nil
 }
@@ -309,7 +352,7 @@ func genericFamilyParents(scope *symbol.ClassScope, ctx Ctx) []*symbol.ClassScop
 // typeSupported checks source types, retaining declaration identity for class
 // versus method binders. A runtime List<T>/Map<K,V> is not a source alias: Go
 // pointer reinterpretation would break writes and Java's delayed checkcasts.
-func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization bool) bool {
+func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization bool, occurrences ...*sitter.Node) bool {
 	typ = strings.TrimSpace(typ)
 	if typ == "" {
 		return true
@@ -321,6 +364,12 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 	base, args := parseJavaTypeString(component)
 	// Enum has one nominal erased object representation regardless of E.
 	if rank == 0 && isBuiltinEnum(component, ctx) {
+		return true
+	}
+	if genericFamilyCanonicalComparableHeader(typ, ctx, occurrences...) {
+		return true
+	}
+	if canonicalClassArgumentIndependent(typ, ctx, occurrences...) {
 		return true
 	}
 	declaration := visibleTypeParameterDeclarationForJavaType(base, ctx)
@@ -338,7 +387,7 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 	if !specialization && !containsOwned {
 		return true
 	}
-	if mapEntryArgumentIndependent(typ, ctx) {
+	if mapReferenceArgumentIndependent(typ, ctx) || mapEntryArgumentIndependent(typ, ctx) {
 		return true
 	}
 	target := resolveClassScopeByQualifiedName(ctx, base)
@@ -359,7 +408,7 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 		return false
 	}
 	for _, argument := range args {
-		if !plan.typeSupported(argument, ctx, true) {
+		if !plan.typeSupported(argument, ctx, true, occurrences...) {
 			return false
 		}
 	}
@@ -398,7 +447,7 @@ func (plan *genericFamilyPlan) auditTypeSyntax(root *sitter.Node, source []byte,
 		}
 		switch node.Type() {
 		case "generic_type", "array_type", "type_identifier":
-			if !plan.typeSupported(node.Content(source), lexical, false) {
+			if !plan.typeSupported(node.Content(source), lexical, false, node) {
 				return fmt.Errorf("generic family type requires unsupported physical storage: %s", node.Content(source))
 			}
 		}

@@ -156,6 +156,10 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				if skipAbstractCollectionSuperclass(t.Content(source), headerCtx) {
 					continue
 				}
+				if storage := fileChannelSourceStorageField(ctx.currentClass, headerCtx); storage != nil {
+					fields.List = append(fields.List, storage)
+					continue
+				}
 				// A class extending a built-in exception embeds the stdjava runtime
 				// type so it inherits the Throwable method set and message storage.
 				if storage, builtin := builtinExceptionStorageTypeName(superBase, headerCtx); builtin {
@@ -163,6 +167,9 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					continue
 				}
 				if baseType := characterIOBaseTypeExpr(t.Content(source), headerCtx); baseType != nil {
+					if canonicalReaderNativeEdge(ctx.currentClass, headerCtx) {
+						baseType = superclassEmbeddingTypeExpr(ctx.currentClass, t.Content(source), typeParams, headerCtx)
+					}
 					fields.List = append(fields.List, &ast.Field{Type: baseType})
 					continue
 				}
@@ -173,8 +180,8 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				// A class extending java.lang.Thread embeds *stdjava.Thread so it
 				// inherits Start()/Join(); the constructor wires the embedded Thread
 				// to dispatch to this struct's Run() override.
-				if super := stripJavaQualifier(t.Content(source)); super == "Thread" && superScope == nil {
-					fields.List = append(fields.List, &ast.Field{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("Thread", ctx)}})
+				if threadSourceDirectRoot(ctx.currentClass, headerCtx) {
+					fields.List = append(fields.List, &ast.Field{Type: superclassEmbeddingTypeExpr(ctx.currentClass, t.Content(source), typeParams, headerCtx)})
 					continue
 				}
 				// When the superclass is a user-defined class (possibly a nested class
@@ -367,9 +374,13 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, volatileFieldAccessorDecls(ctx.currentClass, ctx)...)
 		declarations = append(declarations, buildClassStringerBridgeDecls(ctx)...)
 		declarations = append(declarations, generateInputStreamBridgeDecls(ctx)...)
+		declarations = append(declarations, fileChannelSourceBridgeDecls(ctx)...)
+		declarations = append(declarations, threadSourceBridgeDecls(ctx)...)
 		declarations = append(declarations, generateCharacterIOBridgeDecls(ctx)...)
 		declarations = append(declarations, generateFunctionSAMBridgeDecls(ctx)...)
 		declarations = append(declarations, generateSourceObjectEqualsBridgeDecls(ctx)...)
+		declarations = append(declarations, generateSourceNativeComparableBridgeDecls(ctx)...)
+		declarations = append(declarations, generateSourceInterfaceVirtualEntries(ctx)...)
 		declarations = append(declarations, generateIterationBridgeDecls(ctx)...)
 		declarations = append(declarations, generateMapEntryBridgeDecls(ctx)...)
 		declarations = append(declarations, generateAbstractCollectionDefaultDecls(ctx)...)
@@ -1064,7 +1075,11 @@ func buildInheritedInterfaceDefaultForwarder(
 	childScope *symbol.ClassScope,
 	ctx Ctx,
 ) []ast.Decl {
-	if def == nil || parentScope == nil || childScope == nil || def.RequiresHelper {
+	if def == nil || parentScope == nil || childScope == nil {
+		return nil
+	}
+	entry := planGenericMethodEntryABI(parentScope, def, ctx)
+	if def.RequiresHelper && entry == nil {
 		return nil
 	}
 	typeBindings := map[string]string{}
@@ -1075,6 +1090,9 @@ func buildInheritedInterfaceDefaultForwarder(
 		}
 	}
 	mapType := func(javaType string) ast.Expr {
+		if entry != nil {
+			javaType = genericMethodErasedJavaType(def, javaType)
+		}
 		javaType = substituteJavaTypeParameters(javaType, typeBindings)
 		return javaTypeStringToGoTypeExpr(javaType, childScope.TypeParameterNames(), ctx)
 	}
@@ -1145,7 +1163,11 @@ func buildInterfaceAbstractExecutionBridge(
 	scope *symbol.ClassScope,
 	ctx Ctx,
 ) []ast.Decl {
-	if def == nil || scope == nil || scope.Class == nil || def.HasBody || def.IsStatic || def.IsPrivate || def.Constructor || def.RequiresHelper {
+	if def == nil || scope == nil || scope.Class == nil || def.HasBody || def.IsStatic || def.IsPrivate || def.Constructor {
+		return nil
+	}
+	entry := planGenericMethodEntryABI(scope, def, ctx)
+	if def.RequiresHelper && entry == nil {
 		return nil
 	}
 	params := &ast.FieldList{}
@@ -1162,6 +1184,9 @@ func buildInterfaceAbstractExecutionBridge(
 		}}}
 	}
 
+	if entry != nil {
+		entry.apply(params, results)
+	}
 	executionName := executionNameForParams(params, scope.GoTypeParameterNames()...)
 	usedNames := map[string]struct{}{executionName: {}}
 	for _, argument := range methodCallArgs(params) {
@@ -1779,6 +1804,9 @@ func generateClassDispatchInterface(ctx Ctx) ast.Decl {
 	methods := &ast.FieldList{}
 	typeParams := scope.TypeParameterNames()
 	for _, method := range scope.Methods {
+		if fileChannelSourceProtocolSlot(method, scope, ctx) != "" {
+			continue
+		}
 		if method == nil || method.Constructor || method.IsStatic || method.IsPrivate || (method.RequiresHelper && !genericMethodHasErasedEntry(method)) {
 			continue
 		}
@@ -1817,6 +1845,9 @@ func generateClassDispatchInterface(ctx Ctx) ast.Decl {
 		if executionField := executionMethodField(publicMethod, method, scope, ctx); executionField != nil {
 			methods.List = append(methods.List, executionField)
 		}
+	}
+	if fileChannelSourceRoot(scope, ctx) != nil {
+		methods.List = append(methods.List, fileChannelSourceProtocolFields(ctx, true)...)
 	}
 	return genInterfaceInContext(classDispatchTypeName(scope), methods, scope.TypeParameters, ctx)
 }
@@ -2423,14 +2454,21 @@ func explicitSuperConstructorAssignment(
 	if invocation == nil || invocation.kind != explicitSuperConstructorInvocation || ctx.currentClass == nil {
 		return nil
 	}
+	if native := threadSourceSuperConstructor(invocation.parsedArgs, ctx.currentClass, receiverName, ctx); native != nil {
+		return native
+	}
+
 	superType := strings.TrimSpace(ctx.currentClass.Superclass)
 	if superType == "" {
 		return nil
 	}
+	if fileChannelSourceDirectRoot(ctx.currentClass, ctx) && len(invocation.parsedArgs) == 0 {
+		return &ast.EmptyStmt{Implicit: true}
+	}
 	if skipAbstractCollectionSuperclass(superType, ctx) && len(invocation.parsedArgs) == 0 {
 		return &ast.EmptyStmt{Implicit: true}
 	}
-	if statement := characterIOSuperConstructor(invocation.parsedArgs, ctx); statement != nil {
+	if statement := characterIOSuperConstructor(invocation.parsedArgs, ctx, ast.NewIdent(receiverName), mostDerived); statement != nil {
 		return statement
 	}
 	if statement := filterInputSuperConstructor(invocation.parsedArgs, ctx); statement != nil {
@@ -2523,7 +2561,17 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 	if scope == nil {
 		return nil
 	}
+	if native := threadSourceSuperConstructor(nil, scope, receiverName, ctx); native != nil {
+		return native
+	}
+
 	if parent == nil {
+		if canonicalReaderNativeEdge(scope, ctx) {
+			return characterIOSuperConstructor(nil, ctx, ast.NewIdent(receiverName), mostDerived)
+		}
+		if fileChannelSourceDirectRoot(scope, ctx) {
+			return &ast.EmptyStmt{Implicit: true}
+		}
 		base, _ := parseJavaTypeString(scope.Superclass)
 		if storage, builtin := builtinExceptionStorageTypeName(base, ctx); builtin {
 			return &ast.AssignStmt{
@@ -2719,7 +2767,13 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 		structType = instantiateGenericType(ctx.className, typeParamExprs(scope.GoTypeParameterNames()))
 	}
 
-	recvName := ShortName(ctx.className)
+	used := generatedInstanceUsedNames(ctx, options.leadingParams...)
+	used[executionName] = struct{}{}
+	used[constructorSelfParam] = struct{}{}
+	if enclosing := scope.EnclosingFieldName(); enclosing != "" {
+		used[enclosing] = struct{}{}
+	}
+	recvName := synchronizedUniqueLocalName(ShortName(ctx.className), used)
 	usesMostDerived := options.forceMostDerived || constructorUsesMostDerived(scope, ctx)
 	body := []ast.Stmt{
 		&ast.AssignStmt{
@@ -2763,18 +2817,26 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 		params.List = append(params.List, options.leadingParams...)
 	}
 	body = append(body, options.terminalPreSuper...)
+	if options.terminalPreSuperForReceiver != nil {
+		body = append(body, options.terminalPreSuperForReceiver(recvName)...)
+	}
 	if superInit := implicitSuperConstructorAssignmentWithSelf(ctx, recvName, mostDerived); superInit != nil {
 		body = append(body, superInit)
 	}
 
 	// A Thread subclass with no explicit constructor still needs its embedded
 	// *stdjava.Thread wired so Start() dispatches to this instance's Run().
-	if stmt := threadBaseWiringStmt(ctx); stmt != nil {
+	if stmt := threadBaseWiringStmtForReceiver(ctx, recvName); stmt != nil {
 		body = append(body, stmt)
 	}
 
 	if setterCall := classSelfSetterCallStmtWithValue(ctx, recvName, mostDerived); setterCall != nil {
 		body = append(body, setterCall)
+	}
+
+	if install := fileChannelSourceCarrierInitStmt(scope, recvName, mostDerived, ctx); install != nil {
+		// Dispatch and root ObjectInfo are ready before source initializers.
+		body = append(body, install)
 	}
 
 	if initializer := constructorInitializerCall(recvName, executionName, options, ctx); initializer != nil {
@@ -2840,6 +2902,9 @@ func generateAbstractClassInterface(ctx Ctx) ast.Decl {
 	methods := &ast.FieldList{}
 
 	for _, method := range scope.Methods {
+		if fileChannelSourceProtocolSlot(method, scope, ctx) != "" {
+			continue
+		}
 		if method.Constructor || method.IsStatic || method.IsPrivate {
 			continue
 		}
@@ -2874,6 +2939,9 @@ func generateAbstractClassInterface(ctx Ctx) ast.Decl {
 		methods.List = append(methods.List, publicMethod)
 	}
 
+	if fileChannelSourceRoot(scope, ctx) != nil {
+		methods.List = append(methods.List, fileChannelSourceProtocolFields(ctx, true)...)
+	}
 	return genInterfaceInContext(ctx.className+"I", methods, scope.TypeParameters, ctx)
 }
 
@@ -3022,15 +3090,6 @@ func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symb
 	executionName := executionParameterName(node, source, ctx)
 	ctx.executionContextName = executionName
 	params := ParseNode(node.ChildByFieldName("parameters"), source, ctx).(*ast.FieldList)
-	params.List = append([]*ast.Field{
-		executionParameterField(executionName, ctx),
-		{Names: []*ast.Ident{{Name: ShortName(ctx.className)}}, Type: &ast.StarExpr{X: receiverBaseType}},
-	}, params.List...)
-
-	body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
-	if declarationHasModifier(node, "synchronized") {
-		body.List = append(synchronizedMethodPrologue(ctx, false, node, source), body.List...)
-	}
 
 	var results *ast.FieldList
 	if def != nil && strings.TrimSpace(def.OriginalType) != "" && strings.TrimSpace(def.OriginalType) != "void" {
@@ -3040,6 +3099,22 @@ func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symb
 			},
 		}
 	}
+	fields := append([]*ast.Field{executionParameterField(executionName, ctx), {Type: receiverBaseType}}, params.List...)
+	if results != nil {
+		fields = append(fields, results.List...)
+	}
+	receiverName := synchronizedUniqueLocalName(ShortName(ctx.className), sourceInstanceReceiverUsedNames(ctx, fields...))
+	ctx = withSourceInstanceReceiver(ctx, receiverName)
+	params.List = append([]*ast.Field{
+		executionParameterField(executionName, ctx),
+		{Names: []*ast.Ident{{Name: receiverName}}, Type: &ast.StarExpr{X: receiverBaseType}},
+	}, params.List...)
+
+	body := ParseStmt(node.ChildByFieldName("body"), source, ctx).(*ast.BlockStmt)
+	if declarationHasModifier(node, "synchronized") {
+		body.List = append(synchronizedMethodPrologue(ctx, false, node, source), body.List...)
+	}
+
 	if results != nil && bodyNeedsFallbackReturn(body) {
 		body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{zeroValueForType(results.List[0].Type)}})
 	}
@@ -3055,7 +3130,7 @@ func buildEnumMethodImplementation(funcName string, node *sitter.Node, def *symb
 }
 
 func buildEnumMethodWrapper(def *symbol.Definition, overrides map[string]string, defaultImpl string, params *ast.FieldList, results *ast.FieldList, receiver *ast.FieldList, ctx Ctx) *ast.FuncDecl {
-	recvName := ShortName(ctx.className)
+	recvName := receiver.List[0].Names[0].Name
 	args := []ast.Expr{executionExpr(ctx), &ast.Ident{Name: recvName}}
 	if params != nil {
 		for _, field := range params.List {
@@ -3546,9 +3621,13 @@ func buildEnumStringerBridgeDecls(ctx Ctx, source []byte) []ast.Decl {
 	inheritedCtx := ctx.Clone()
 	inheritedCtx.localScope = inherited
 	inheritedCtx.executionContextName = executionNameForClass(ctx.currentClass)
-	receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{ast.NewIdent(receiverName)}, Type: &ast.StarExpr{X: receiverBase}}}}
 	params := &ast.FieldList{}
 	results := &ast.FieldList{List: []*ast.Field{{Type: javaStringReferenceType(ctx)}}}
+	fields := []*ast.Field{executionParameterField(inheritedCtx.executionContextName, inheritedCtx), {Type: receiverBase}, {Type: javaStringReferenceType(inheritedCtx)}}
+	receiverName = synchronizedUniqueLocalName(receiverName, sourceInstanceReceiverUsedNames(inheritedCtx, fields...))
+	inheritedCtx = withSourceInstanceReceiver(inheritedCtx, receiverName)
+	receiver := &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{ast.NewIdent(receiverName)}, Type: &ast.StarExpr{X: receiverBase}}}}
+	defaultResult = stdjavaCall(inheritedCtx, "EnumNameJavaString", ast.NewIdent(receiverName))
 	defaultImpl := "_" + ctx.className + "_" + inherited.Name + "_default"
 	declarations = append(declarations, &ast.FuncDecl{
 		Name: ast.NewIdent(defaultImpl),
@@ -3688,7 +3767,7 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 	helperTypeArgs := typeParamExprs(combinedTypeParamNames)
 	helperTypeExpr := instantiateGenericType(helperName, helperTypeArgs)
 
-	receiverShortName := ShortName(ctx.className)
+	receiverShortName := sourceInstanceReceiverName(ctx)
 	constructorName := "New" + helperName
 	constructorParams := &ast.FieldList{
 		List: []*ast.Field{
@@ -3721,7 +3800,13 @@ func genInstanceGenericHelperDecls(ctx Ctx, def *symbol.Definition, doc *ast.Com
 	}
 	constructor := genFuncDeclWithTypeParamsInContext(constructorName, combinedTypeParams, constructorParams, returnType, constructorBody, ctx)
 
-	helperRecvName := receiverShortName + "Helper"
+	fields := append([]*ast.Field{executionParameterField(ctx.executionContextName, ctx), {Type: helperTypeExpr}}, params.List...)
+	if results != nil {
+		fields = append(fields, results.List...)
+	}
+	used := sourceInstanceReceiverUsedNames(ctx, fields...)
+	used[receiverShortName] = struct{}{}
+	helperRecvName := synchronizedUniqueLocalName(receiverShortName+"Helper", used)
 	helperReceiver := &ast.FieldList{
 		List: []*ast.Field{
 			{
@@ -3783,6 +3868,10 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 		return nil, nil
 	}
 
+	declarationCtx := ctx.Clone()
+	declarationCtx.localScope = def
+	binders := newTypeParameterLookup(visibleTypeParameterDeclarations(declarationCtx))
+
 	usedNames := make(map[string]struct{})
 	for _, typeParam := range def.TypeParameters {
 		usedNames[typeParam.Name] = struct{}{}
@@ -3814,6 +3903,20 @@ func synthesizeRawGenericFunctionParameters(def *symbol.Definition, ctx Ctx) ([]
 		base, explicitArgs := parseJavaTypeString(javaType)
 		if base == "" {
 			continue
+		}
+		// A captured bare variable (including its array form) is not a raw
+		// source class. Declaration identity wins over a same-named class.
+		if len(explicitArgs) == 0 && !strings.Contains(base, ".") {
+			if param.DirectTypeParameter != nil || param.TypeParameterBindings[base] != nil {
+				continue
+			}
+			// Older synthetic definitions lack captured metadata. Resolve those
+			// in this method's lexical view; an explicit empty map is authoritative.
+			if param.TypeParameterBindings == nil {
+				if _, bound := binders.resolve(symbol.JavaType{}, base); bound {
+					continue
+				}
+			}
 		}
 		target := resolveClassScopeByQualifiedName(ctx, base)
 		if target == nil || len(target.TypeParameters) == 0 {
@@ -4027,13 +4130,14 @@ func wildcardSyntheticBounds(upperBound string, targetParam *symbol.TypeParam, b
 // value, so their constructor lowering continues to use the same path and
 // ordering as before.
 type constructorLoweringOptions struct {
-	definition                 *symbol.Definition
-	leadingParams              []*ast.Field
-	leadingThisArgs            []ast.Expr
-	terminalPreSuper           []ast.Stmt
-	fieldInitializerMethodName string
-	forceMostDerived           bool
-	skipClassInitialization    bool
+	definition                  *symbol.Definition
+	leadingParams               []*ast.Field
+	leadingThisArgs             []ast.Expr
+	terminalPreSuper            []ast.Stmt
+	terminalPreSuperForReceiver func(string) []ast.Stmt
+	fieldInitializerMethodName  string
+	forceMostDerived            bool
+	skipClassInitialization     bool
 }
 
 func constructorInitializerCall(
@@ -4185,6 +4289,9 @@ func buildSourceConstructorDecls(
 			})
 		}
 		body.List = append(body.List, options.terminalPreSuper...)
+		if options.terminalPreSuperForReceiver != nil {
+			body.List = append(body.List, options.terminalPreSuperForReceiver(receiverName)...)
+		}
 
 		var superInit ast.Stmt
 		if constructorInvocation != nil && constructorInvocation.kind == explicitSuperConstructorInvocation {
@@ -4200,6 +4307,9 @@ func buildSourceConstructorDecls(
 		}
 		if setterCall := classSelfSetterCallStmtWithValue(ctx, receiverName, mostDerived); setterCall != nil {
 			body.List = append(body.List, setterCall)
+		}
+		if install := fileChannelSourceCarrierInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); install != nil {
+			body.List = append(body.List, install)
 		}
 		if initializer := constructorInitializerCall(receiverName, executionName, options, ctx); initializer != nil {
 			body.List = append(body.List, initializer)
@@ -4312,6 +4422,9 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		methodDefinition := ctx.currentClass.FindMethod().By(comparison)
+		if declared := interfaceDeclaredMethod(ctx.currentClass, node); declared != nil {
+			methodDefinition = []*symbol.Definition{declared}
+		}
 
 		if len(methodDefinition) == 0 {
 			log.WithFields(log.Fields{
@@ -4337,6 +4450,14 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					},
 				}
 			}
+
+			fields := append([]*ast.Field{executionParameterField(executionName, ctx), {Type: &ast.StarExpr{X: receiverBaseType}}}, params.List...)
+			if results != nil {
+				fields = append(fields, results.List...)
+			}
+			receiverName := synchronizedUniqueLocalName(ShortName(ctx.className), sourceInstanceReceiverUsedNames(ctx, fields...))
+			ctx = withSourceInstanceReceiver(ctx, receiverName)
+			receiver.List[0].Names[0].Name = receiverName
 
 			implDecls := []ast.Decl{}
 			defaultImpl := ""
@@ -4377,7 +4498,35 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		var results *ast.FieldList
 		var sourceResults *ast.FieldList
 		if strings.TrimSpace(ctx.localScope.OriginalType) != "" && strings.TrimSpace(ctx.localScope.OriginalType) != "void" {
-			sourceResultType := javaTypeStringToGoTypeExpr(ctx.localScope.OriginalType, inScopeTypeParameters(ctx), ctx)
+			declaredResult := definitionDeclaredJavaType(ctx.localScope)
+			resultBase, resultRank := javaArrayTypeParts(strings.TrimSpace(declaredResult.Original))
+			resultParameter := declaredResult.TypeParameterBindings[resultBase]
+			var sourceResultType ast.Expr
+			if resultRank == 0 && resultParameter != nil {
+				// A captured declaration already owns its allocated Go binder;
+				// do not resolve that alias as Java syntax in this method again.
+				name := resultParameter.GoName
+				if name == "" {
+					name = resultParameter.SourceName
+				}
+				sourceResultType = ast.NewIdent(name)
+				// An admitted family still lowers its own declaration to the
+				// existing physical carrier representation. A same-named method
+				// binder is a different declaration and keeps its allocated alias.
+				for _, parameter := range ctx.currentClass.TypeParameters {
+					if parameter.Declaration == resultParameter {
+						sourceResultType = genericFamilyPhysicalGoType(sourceResultType, ctx.currentClass.TypeParameters, ctx)
+						break
+					}
+				}
+			} else {
+				if physical, known := canonicalResultPhysicalExpr(declaredJavaTypeOrigin(declaredResult, ctx), ctx); known {
+					sourceResultType = physical
+				} else {
+					resultJavaType := qualifyDeclaredReferenceType(declaredResult, ctx)
+					sourceResultType = javaTypeStringToGoTypeExpr(resultJavaType, inScopeTypeParameters(ctx), ctx)
+				}
+			}
 			sourceResults = &ast.FieldList{List: []*ast.Field{{Type: sourceResultType}}}
 			results = &ast.FieldList{
 				List: []*ast.Field{
@@ -4389,6 +4538,16 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					)},
 				},
 			}
+		}
+
+		if !static {
+			fields := append([]*ast.Field{executionParameterField(executionName, ctx), {Type: &ast.StarExpr{X: receiverBaseType}}}, params.List...)
+			if results != nil {
+				fields = append(fields, results.List...)
+			}
+			receiverName := synchronizedUniqueLocalName(ShortName(ctx.className), sourceInstanceReceiverUsedNames(ctx, fields...))
+			ctx = withSourceInstanceReceiver(ctx, receiverName)
+			receiver.List[0].Names[0].Name = receiverName
 		}
 
 		var body *ast.BlockStmt
@@ -4435,7 +4594,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		// Dereferencing only on the nil path produces Go's native nil-pointer panic,
 		// which the exception bridge normalizes to NullPointerException when caught.
 		if !static && bodyNode != nil {
-			body.List = append([]ast.Stmt{instanceMethodNilReceiverGuard(ShortName(ctx.className))}, body.List...)
+			body.List = append([]ast.Stmt{instanceMethodNilReceiverGuard(sourceInstanceReceiverName(ctx))}, body.List...)
 		}
 
 		if results != nil && bodyNeedsFallbackReturn(body) {

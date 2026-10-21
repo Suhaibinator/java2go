@@ -351,14 +351,21 @@ func projectDependentTypeParameterReceiver(
 	ctx Ctx,
 	source []byte,
 ) ast.Expr {
-	if value == nil || receiverNode == nil || expectedScope == nil || ctx.dependentTypeWitnesses == nil {
+	if value == nil || receiverNode == nil || expectedScope == nil {
 		return value
 	}
-	javaType, ok := inferExprJavaType(receiverNode, ctx, source)
+	var origin inferredJavaTypeOrigin
+	javaType, ok := inferExprJavaType(receiverNode, ctx, source, &origin)
 	if !ok {
 		return value
 	}
 	if projected, ok := dependentTypeParameterConcreteViewExpr(value, javaType, expectedScope, ctx); ok {
+		return projected
+	}
+	if projected, ok := methodBoundConcretePointerReceiverExpr(value, origin, expectedScope, ctx); ok {
+		return projected
+	}
+	if projected, ok := classBoundConcretePointerReceiverExpr(value, javaType, expectedScope, ctx); ok {
 		return projected
 	}
 	return value

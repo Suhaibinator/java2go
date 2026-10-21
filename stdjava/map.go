@@ -139,36 +139,7 @@ func (m *Map[K, V]) insert(key any, value any, hash int32, index int, exec *Exec
 func (m *Map[K, V]) ComputeIfAbsent(key K, mapping func(K) V, execution ...*Execution) V {
 	ReferenceRequireNonNull(m)
 	ReferenceRequireNonNull(mapping)
-	exec := optionalComparisonExecution(execution)
-	var record *mapRecord[K, V]
-	var hash int32
-	var index int
-	// TreeMap defers validating a key in an empty tree until a non-null value
-	// actually needs insertion. A null-producing callback can therefore use null.
-	if !m.sorted || len(m.entries) != 0 {
-		record, hash, index = m.find(key, exec)
-	}
-	if record != nil && !javaReferenceIsNull(record.value) {
-		return collectionElementView[V](record.value)
-	}
-	before := m.modCount
-	computed := mapping(key)
-	if m.modCount != before {
-		panic(NewConcurrentModificationException("mapping function modified map"))
-	}
-	if record != nil && m.sorted {
-		record.value = computed
-		return computed
-	}
-	if javaReferenceIsNull(computed) {
-		return computed
-	}
-	if record != nil {
-		record.value = computed
-		return computed
-	}
-	m.insert(key, computed, hash, index, exec)
-	return computed
+	return collectionElementView[V](m.ComputeIfAbsentObject(key, func(value any) any { return mapping(collectionElementView[K](value)) }, execution...))
 }
 
 func (m *Map[K, V]) Get(key any, execution ...*Execution) V {

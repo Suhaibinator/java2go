@@ -16,6 +16,13 @@ import (
 // methods and fields. Rename the storage edge, rather than the Java member, by
 // embedding an alias of the exact parent instantiation only when necessary.
 func superclassEmbeddingNeedsAlias(scope *symbol.ClassScope, ctx Ctx) bool {
+	if threadSourceDirectRoot(scope, ctx) {
+		return superclassEmbeddingMemberExists("Thread", scope, ctx)
+	}
+
+	if canonicalReaderNativeEdge(scope, ctx) {
+		return superclassEmbeddingMemberExists("ReaderBase", scope, ctx)
+	}
 	parent := resolveSuperclassScopeInDeclaringContext(ctx, scope)
 	return parent != nil && parent.Class != nil && !parent.IsInterface &&
 		superclassEmbeddingMemberExists(parent.Class.Name, scope, ctx)
@@ -236,6 +243,19 @@ func superclassEmbeddingGeneratedIdentifierExists(name string, owner *symbol.Cla
 // superclassEmbeddedSelectorName always names the immediate edge belonging to
 // scope. Every hierarchy walk must call it again for the next child edge.
 func superclassEmbeddedSelectorName(scope *symbol.ClassScope, ctx Ctx) string {
+	if threadSourceDirectRoot(scope, ctx) {
+		if superclassEmbeddingNeedsAlias(scope, ctx) {
+			return superclassEmbeddingAliasName(scope, ctx)
+		}
+		return "Thread"
+	}
+
+	if canonicalReaderNativeEdge(scope, ctx) {
+		if superclassEmbeddingNeedsAlias(scope, ctx) {
+			return superclassEmbeddingAliasName(scope, ctx)
+		}
+		return "ReaderBase"
+	}
 	parent := resolveSuperclassScopeInDeclaringContext(ctx, scope)
 	if parent == nil || parent.Class == nil {
 		return ""
@@ -248,6 +268,13 @@ func superclassEmbeddedSelectorName(scope *symbol.ClassScope, ctx Ctx) string {
 
 func superclassEmbeddingTypeExpr(scope *symbol.ClassScope, javaType string, typeParams []string, ctx Ctx) ast.Expr {
 	if !superclassEmbeddingNeedsAlias(scope, ctx) {
+		if threadSourceDirectRoot(scope, ctx) {
+			return &ast.StarExpr{X: stdjavaQualifiedExpr("Thread", ctx)}
+		}
+
+		if canonicalReaderNativeEdge(scope, ctx) {
+			return characterIOBaseTypeExpr(scope.Superclass, classHeaderTypeCtx(scope, ctx))
+		}
 		return javaTypeStringToGoTypeExpr(javaType, typeParams, classHeaderTypeCtx(scope, ctx))
 	}
 	alias := instantiateGenericType(superclassEmbeddingAliasName(scope, ctx), typeParamExprs(scope.GoTypeParameterNames()))
@@ -260,6 +287,13 @@ func superclassEmbeddingAliasDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 	}
 	declarationCtx := classHeaderTypeCtx(scope, ctx)
 	parentType := javaTypeStringToGoTypeExpr(scope.Superclass, scope.TypeParameterNames(), declarationCtx)
+	if threadSourceDirectRoot(scope, ctx) {
+		parentType = &ast.StarExpr{X: stdjavaQualifiedExpr("Thread", ctx)}
+	}
+
+	if canonicalReaderNativeEdge(scope, ctx) {
+		parentType = characterIOBaseTypeExpr(scope.Superclass, declarationCtx)
+	}
 	if pointer, ok := parentType.(*ast.StarExpr); ok {
 		parentType = pointer.X
 	}

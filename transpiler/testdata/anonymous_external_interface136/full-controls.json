@@ -1,0 +1,75 @@
+[
+  {
+    "name": "nativeStatefulEquals",
+    "entry": "probe.Main",
+    "want": "true:true:true\n",
+    "files": {
+      "pom.xml": "<project><groupId>anonymous</groupId><artifactId>control</artifactId><version>1</version></project>",
+      "src/main/java/probe/Main.java": "package probe;public class Main{public static void main(String[]args){Object a=new java.lang.Comparable<Object>(){int state=3;public int compareTo(Object v){return 0;}public boolean equals(Object v){state++;return state==4&&v==this;}};System.out.println(a.equals(a)+\":\"+java.lang.Comparable.class.isAssignableFrom(a.getClass())+\":\"+(a instanceof java.lang.Comparable));}}"
+    }
+  },
+  {
+    "name": "genericCapturedMethodBinder",
+    "entry": "probe.Main",
+    "want": "true:true:true\n",
+    "files": {
+      "pom.xml": "<project><groupId>anonymous</groupId><artifactId>control</artifactId><version>1</version></project>",
+      "src/main/java/probe/Main.java": "package probe;public class Main{static<T>Object make(T token){final int start=7;return new java.lang.Comparable<T>(){int state=start;public int compareTo(T value){state++;return value==token?state:-1;}public boolean equals(Object x){return token!=null&&state==7&&x==this;}};}public static void main(String[]args){Object token=new Object();Object a=make(token);System.out.println(a.equals(a)+\":\"+(a instanceof java.lang.Comparable)+\":\"+java.lang.Comparable.class.isAssignableFrom(a.getClass()));}}"
+    }
+  },
+  {
+    "name": "constructorCallbackOrder",
+    "entry": "probe.Main",
+    "want": "true:true\n",
+    "files": {
+      "pom.xml": "<project><groupId>anonymous</groupId><artifactId>control</artifactId><version>1</version></project>",
+      "src/main/java/probe/Main.java": "package probe;public class Main{static int order;static int mark(int n){order=order*10+n;return n;}static class Box{boolean ok;Box(Object v){mark(3);ok=v.equals(v)&&v instanceof java.lang.Comparable;}}public static void main(String[]args){final int captured=mark(1);Box b=new Box(new java.lang.Comparable<Object>(){int field=mark(2);public int compareTo(Object v){return 0;}public boolean equals(Object v){return captured==1&&field==2&&v==this;}});System.out.println(b.ok+\":\"+(order==123));}}"
+    }
+  },
+  {
+    "name": "wildcardAndExplicitImports",
+    "entry": "probe.Main",
+    "want": "true:true:true\n",
+    "files": {
+      "pom.xml": "<project><groupId>anonymous</groupId><artifactId>control</artifactId><version>1</version></project>",
+      "src/main/java/probe/Main.java": "package probe;import java.util.*;public class Main{public static void main(String[]args){Object a=new Comparable<Object>(){public int compareTo(Object v){return 0;}};Object b=new Comparator<Object>(){public int compare(Object a,Object b){return 0;}};System.out.println((a instanceof java.lang.Comparable)+\":\"+Comparator.class.isAssignableFrom(b.getClass())+\":\"+(!(b instanceof java.lang.Comparable)));}}"
+    }
+  },
+  {
+    "name": "sourceClassInterfaceAndForeign",
+    "entry": "probe.Main",
+    "want": "true:true:true:true:true\n",
+    "files": {
+      "pom.xml": "<project><groupId>anonymous</groupId><artifactId>control</artifactId><version>1</version></project>",
+      "src/main/java/probe/Main.java": "package probe;public class Main{static class Comparable{int n;Comparable(int x){n=x;}boolean check(){return false;}}interface Source{boolean check();}public static void main(String[]args){Comparable a=new Comparable(4){boolean check(){return n==4;}};Source b=new Source(){public boolean check(){return true;}};foreign.Comparable c=new foreign.Comparable(){public boolean check(){return true;}};System.out.println(a.check()+\":\"+b.check()+\":\"+c.check()+\":\"+(!(a instanceof java.lang.Comparable))+\":\"+(!(c instanceof java.lang.Comparable)));}}",
+      "src/main/java/foreign/Comparable.java": "package foreign;public interface Comparable{boolean check();}"
+    }
+  },
+  {
+    "name": "qualifiedSourcePrefixNestedShadow",
+    "entry": "probe.Main",
+    "want": "true:true\n",
+    "files": {
+      "pom.xml": "<project><groupId>anonymous</groupId><artifactId>control</artifactId><version>1</version></project>",
+      "src/main/java/probe/Main.java": "package probe;public class Main{static class java{static class lang{static class Comparable<T>{int n;Comparable(int x){n=x;}boolean check(){return false;}}}}public static void main(String[]args){Object a=new java.lang.Comparable<Object>(9){boolean check(){return n==9;}};System.out.println(java.lang.Comparable.class.isAssignableFrom(a.getClass())+\":\"+(a instanceof java.lang.Comparable));}}"
+    }
+  },
+  {
+    "name": "genericClassAndMethodShadowCanonicalQualified",
+    "entry": "probe.Main",
+    "want": "true:true\n",
+    "files": {
+      "pom.xml": "<project><groupId>anonymous</groupId><artifactId>control</artifactId><version>1</version></project>",
+      "src/main/java/probe/Main.java": "package probe;public class Main<Comparable>{Comparable token;Main(Comparable t){token=t;}<T>Object make(){return new java.lang.Comparable<Comparable>(){public int compareTo(Comparable value){return value==token?1:0;}public boolean equals(Object value){return token!=null&&value==this;}};}public static void main(String[]args){Object a=new Main<Object>(new Object()).<Object>make();System.out.println(a.equals(a)+\":\"+(a instanceof java.lang.Comparable));}}"
+    }
+  },
+  {
+    "name": "canonicalAnonymousDirectCompareHeldBridge",
+    "entry": "probe.Main",
+    "want": "4:5\n",
+    "files": {
+      "pom.xml": "<project><groupId>anonymous</groupId><artifactId>control</artifactId><version>1</version></project>",
+      "src/main/java/probe/Main.java": "package probe;public class Main{public static void main(String[]args){final int initial=3;java.lang.Comparable<Object> a=new java.lang.Comparable<Object>(){int state=initial;public int compareTo(Object value){state++;return value==this?state:-1;}};System.out.println(a.compareTo(a)+\":\"+a.compareTo(a));}}"
+    }
+  }
+]

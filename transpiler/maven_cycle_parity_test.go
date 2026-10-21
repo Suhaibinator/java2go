@@ -64,6 +64,7 @@ func runCampaignCompilerProjectOracle(t *testing.T, files map[string]string, mai
 	if output, err := compiler.CombinedOutput(); err != nil {
 		t.Fatalf("compiler: %v\n%s", err, output)
 	}
+	prepareCampaignReadonlyRuntimeModule(t, generated, repo)
 	command := exec.CommandContext(ctx, "go", "run", "-mod=mod", "./cmd/app")
 	command.Dir = generated
 	command.Env = append(os.Environ(), "GOWORK=off")

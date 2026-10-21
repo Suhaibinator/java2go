@@ -217,7 +217,7 @@ or to fix crashes with the symbol handling`,
 		}
 
 		// The converted AST, in Go's AST representation
-		initialContext := Ctx{projectMode: projectMode, genericFamilies: &genericFamilyAnalysis{}, callableSubclasses: sourceInventory}
+		initialContext := Ctx{projectMode: projectMode, runtimeLocationProfile: sourceRuntimeLocationClasspath, genericFamilies: &genericFamilyAnalysis{}, callableSubclasses: sourceInventory}
 		if symbolAware {
 			initialContext.currentFile = file.Symbols
 			initialContext.currentClass = file.Symbols.BaseClass

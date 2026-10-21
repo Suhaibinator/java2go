@@ -41,7 +41,6 @@ func TestGenericFamilyBoundRepresentationRejectsUnprovenBounds(t *testing.T) {
 	for _, source := range []string{
 		`class Number{} abstract class Base<T extends Number>{T value;}`,
 		`class Enum<T>{} abstract class Base<T extends Enum<T>>{T value;}`,
-		`abstract class Base<T extends java.lang.Number>{java.util.Map<String,T> values;}`,
 	} {
 		helper := setupParseHelper(t, source)
 		if plan, err := planGenericFamily(helper.File.Symbols.FindClassScope("Base"), helper.Ctx); err == nil || plan != nil {
@@ -60,5 +59,24 @@ func TestGenericFamilyBoundRepresentationEnumUsesNominalView(t *testing.T) {
 	representation := plan.representations[scope.TypeParameters[0].Declaration]
 	if representation.erasure != "java.lang.Enum" || representation.goName != "JavaEnum" {
 		t.Fatalf("unexpected Enum representation: %#v", representation)
+	}
+}
+
+func TestGenericFamilyBoundRepresentationMapUsesNominalView(t *testing.T) {
+	assertMapReferenceTypedRead(t, "java.lang.Number")
+	helper := setupParseHelper(t, `abstract class Base<T extends java.lang.Number>{java.util.Map<String,T> values;}`)
+	scope := helper.File.Symbols.FindClassScope("Base")
+	plan, err := planGenericFamily(scope, helper.Ctx)
+	if err != nil || plan == nil {
+		t.Fatalf("erased Map field rejected: %v", err)
+	}
+	if got := plan.representations[scope.TypeParameters[0].Declaration].erasure; got != "java.lang.Number" {
+		t.Fatalf("bound descriptor = %q", got)
+	}
+	if !mapReferenceArgumentIndependent("java.util.Map<String,T>", helper.Ctx) {
+		t.Fatal("physical Map proof absent")
+	}
+	if descriptor, ok := javaTypeDescriptorExpr("java.util.Map<String,T>", helper.Ctx); !ok || descriptor == nil {
+		t.Fatal("nominal Map descriptor absent")
 	}
 }

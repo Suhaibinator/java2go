@@ -69,7 +69,27 @@ func (cs *ClassScope) EnclosingFieldName() string {
 	if IsReserved(name) {
 		name += "_"
 	}
-	return name
+	// Source fields and methods use separate Java namespaces but share Go's
+	// selector namespace with this synthesized field. ResolveFiles finishes
+	// member naming before emission; use those emitted names without renaming
+	// the declarations or caching a spelling from an earlier resolution pass.
+	for {
+		collision := false
+		for _, field := range cs.Fields {
+			if field != nil && !field.IsStatic && field.Name == name {
+				collision = true
+			}
+		}
+		for _, method := range cs.Methods {
+			if method != nil && !method.IsStatic && !method.Constructor && method.Name == name {
+				collision = true
+			}
+		}
+		if !collision {
+			return name
+		}
+		name += "_"
+	}
 }
 
 // EnumConstant represents a single enum constant and its constructor arguments.

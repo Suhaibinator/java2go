@@ -26,7 +26,7 @@ func inheritedObjectTextInvocation(object *sitter.Node, method string, ctx Ctx, 
 		return nil
 	}
 	if object.Type() == "super" {
-		return stdjavaCall(ctx, "ObjectDefaultJavaStringExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+		return stdjavaCall(ctx, "ObjectDefaultJavaStringExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(sourceInstanceReceiverName(ctx)))
 	}
 	receiver := stdjavaCall(ctx, "ReferenceRequireNonNull", ParseExpr(object, source, ctx))
 	return stdjavaCall(ctx, "JavaStringValueOfExecution", intrinsicExecutionExpr(ctx), receiver)

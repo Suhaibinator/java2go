@@ -924,7 +924,8 @@ func (s *ByteArrayInputStream) Close() {}
 
 // StringReader models java.io.StringReader: a reader over an in-memory string.
 type StringReader struct {
-	reader *strings.Reader
+	reader    *strings.Reader
+	reference *stringReaderReferenceState
 }
 
 // NewStringReader reads from the given string, matching
@@ -997,8 +998,9 @@ func (r *InputStreamReader) Close() {
 // BufferedReader models java.io.BufferedReader over a file, a FileReader, or an
 // InputStreamReader.
 type BufferedReader struct {
-	src ioSource
-	buf *bufio.Reader
+	src       ioSource
+	buf       *bufio.Reader
+	reference *bufferedStringReaderReferenceState
 }
 
 // NewBufferedReader opens the source for reading, matching

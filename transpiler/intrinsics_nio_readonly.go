@@ -100,6 +100,9 @@ func registerNIOReadonlyIntrinsics() {
 func registerReadonlyFileChannelReadIntrinsic() {
 	registerIntrinsicOwner("java.nio.channels.FileChannel", true)
 	applicable := func(node *sitter.Node, ctx Ctx, source []byte) bool {
+		if invocationArgumentCount(node) == 2 {
+			return fileChannelReadPositionalApplicable(node, ctx, source)
+		}
 		arg := unwrapParenthesizedExpressionNode(invocationArgumentNode(node, 0))
 		return arg != nil && arg.Type() != "null_literal" && nioHeapSignatureApplicable(node, "java.nio.channels.FileChannel", []string{"java.nio.ByteBuffer"}, ctx, source)
 	}
@@ -107,8 +110,14 @@ func registerReadonlyFileChannelReadIntrinsic() {
 		if !applicable(node, ctx, source) {
 			return unsupportedIntrinsicValue(node, "int", source, ctx)
 		}
+		if invocationArgumentCount(node) == 2 {
+			return lowerFileChannelReadPositional(recv, node, ctx, source)
+		}
 		args := parseArgumentListWithExpectedTypes(node.ChildByFieldName("arguments"), source, ctx, []string{"java.nio.ByteBuffer"})
-		return stdjavaCall(ctx, "FileChannelReadExecution", intrinsicExecutionExpr(ctx), recv, args[0])
+		if executionExpr(ctx) == nil {
+			return unsupportedIntrinsicValue(node, "int", source, ctx)
+		}
+		return stdjavaCall(ctx, "FileChannelReadVirtualExecution", executionExpr(ctx), recv, args[0])
 	})
 	registerInstanceIntrinsicDerivedResultType("FileChannel", "read", func(node *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 		if applicable(node, ctx, source) {

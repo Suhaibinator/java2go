@@ -1,0 +1,22 @@
+{
+  "CollisionA": {
+    "stderr": "",
+    "stdout": "8\n17\n71\n-31\nClassCast\n901\n902\n25\nI10;I20;O;I20;D;E;\n"
+  },
+  "CollisionB": {
+    "stderr": "",
+    "stdout": "8\n17\n71\n-31\nClassCast\n901\n902\n25\nI10;I20;O;I20;D;E;\n"
+  },
+  "Erasure": {
+    "stderr": "",
+    "stdout": "7\n6\n17\n-17\nClassCast\nB10:3;B10:4;B20:3;B20:null;\n"
+  },
+  "Namespace": {
+    "stderr": "",
+    "stdout": "5\n7\n12\n-37\nfalse:false:true\n"
+  },
+  "Selection": {
+    "stderr": "",
+    "stdout": "16\n2\n37\n47\n88\n-23\nClassCast\n48\nctor:9;ctor:29;R;A;C10:9;C30:9;C40:9;O;C40:9;ctor:49;B50;\n"
+  }
+}

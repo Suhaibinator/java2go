@@ -32,7 +32,7 @@ func throwableTextInvocation(object *sitter.Node, method string, ctx Ctx, source
 	var receiver ast.Expr
 	if object.Type() == "super" {
 		runtimeName += "Default"
-		receiver = ast.NewIdent(ShortName(ctx.className))
+		receiver = ast.NewIdent(sourceInstanceReceiverName(ctx))
 	} else {
 		receiver = ParseExpr(object, source, ctx)
 	}

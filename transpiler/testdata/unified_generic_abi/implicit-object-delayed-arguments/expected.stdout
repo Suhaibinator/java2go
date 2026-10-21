@@ -1,0 +1,6 @@
+cast:1:1:0
+broad-cast:2:2:0
+instance:3:3:0
+broad:true:4:4:1
+null:true:2
+boxing:9:3

@@ -160,6 +160,11 @@ func makeTypeParamFieldsInContext(typeParams []symbol.TypeParam, ctx Ctx) []*ast
 			paramNames,
 			ctx,
 		)
+		if family := canonicalGenericFamily(ctx.currentClass, ctx); family != nil && tp.Declaration != nil {
+			if representation, present := family.representations[tp.Declaration]; present && representation.sourceCertificate != nil {
+				constraint = ast.NewIdent("any")
+			}
+		}
 		if ctx.dependentTypeWitnesses != nil && ctx.dependentTypeWitnesses.hasSource(tp.Declaration) {
 			// A concrete Java upper bound admits every generated subclass pointer,
 			// while Go's *Base constraint admits only the exact Base subobject. The

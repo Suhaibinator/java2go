@@ -11,9 +11,11 @@ import (
 // the transpiler. Callbacks retain Java initialization and execution semantics.
 // Descriptors are registered without constructing or initializing Java classes.
 type ClassDescriptor struct {
-	SimpleName    string
-	HasSimpleName bool
-	Type          TypeID
+	// RuntimeLocation is optional explicit immutable declaration provenance.
+	RuntimeLocation ClassRuntimeLocation
+	SimpleName      string
+	HasSimpleName   bool
+	Type            TypeID
 	// NestHost is the outermost parsed declaration, independent of binary spelling.
 	// Empty metadata preserves the legacy single-class nest.
 	NestHost            TypeID
@@ -73,6 +75,7 @@ type MethodDescriptor struct {
 var reflectionRegistry sync.Map
 
 func RegisterClassDescriptor(descriptor ClassDescriptor) {
+	RegisterClassRuntimeLocation(descriptor.Type, descriptor.RuntimeLocation)
 	if initialize := descriptor.Initialize; initialize != nil {
 		state := descriptor.Initialization
 		if state == nil {
@@ -107,10 +110,12 @@ func RegisterClassDescriptor(descriptor ClassDescriptor) {
 	reflectionRegistry.Store(descriptor.Type, descriptor)
 }
 func classDescriptor(id TypeID) ClassDescriptor {
-	if descriptor, ok := reflectionRegistry.Load(id); ok {
-		return descriptor.(ClassDescriptor)
+	descriptor := ClassDescriptor{Type: id}
+	if stored, ok := reflectionRegistry.Load(id); ok {
+		descriptor = stored.(ClassDescriptor)
 	}
-	return ClassDescriptor{Type: id}
+	descriptor.RuntimeLocation = ClassRuntimeLocationOf(id)
+	return descriptor
 }
 func ClassForName(execution *Execution, name string) *Class {
 	if nilJavaReference(name) {

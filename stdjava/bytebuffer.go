@@ -4,20 +4,21 @@ package stdjava
 // identity while each buffer has independent capacity, position, limit and mark.
 // Direct buffers and typed views remain unsupported.
 type ByteBuffer struct {
-	array        *PrimitiveArray[int8]
-	offset       int32
-	capacity     int32
-	position     int32
-	limit        int32
-	mark         int32
-	littleEndian bool
-	readOnly     bool
+	array          *PrimitiveArray[int8]
+	offset         int32
+	capacity       int32
+	position       int32
+	limit          int32
+	mark           int32
+	littleEndian   bool
+	readOnly       bool
+	allocationKind byteBufferAllocationKind
 }
 
 func ByteBufferWrap(array *PrimitiveArray[int8], bounds ...int32) *ByteBuffer {
 	ReferenceRequireNonNull(array)
 	length := int32(len(array.Elements))
-	buffer := &ByteBuffer{array: array, capacity: length, limit: length, mark: -1}
+	buffer := &ByteBuffer{array: array, capacity: length, limit: length, mark: -1, allocationKind: byteBufferHeapAllocation}
 	if len(bounds) == 2 {
 		offset, count := bounds[0], bounds[1]
 		byteBufferCheckRange(offset, count, length)
@@ -114,7 +115,7 @@ func (b *ByteBuffer) Slice(bounds ...int32) *ByteBuffer {
 		index, length = bounds[0], bounds[1]
 		byteBufferCheckRange(index, length, b.limit)
 	}
-	return &ByteBuffer{array: b.array, offset: b.offset + index, capacity: length, limit: length, mark: -1, readOnly: b.readOnly}
+	return &ByteBuffer{array: b.array, offset: b.offset + index, capacity: length, limit: length, mark: -1, readOnly: b.readOnly, allocationKind: b.allocationKind}
 }
 func (b *ByteBuffer) Duplicate() *ByteBuffer {
 	ReferenceRequireNonNull(b)
@@ -212,9 +213,13 @@ func byteBufferCheckRange(offset, length, limit int32) {
 		panic(NewIndexOutOfBoundsException("ByteBuffer range"))
 	}
 }
-func (*ByteBuffer) JavaDynamicTypeID() TypeID { return "ByteBuffer" }
+func (b *ByteBuffer) JavaDynamicTypeID() TypeID {
+	if b == nil {
+		return ""
+	}
+	return b.allocationKind.dynamicTypeID()
+}
 func init() {
-	RegisterJavaType("ByteBuffer", ObjectTypeID)
 	RegisterException("BufferUnderflowException", "RuntimeException")
 	RegisterException("BufferOverflowException", "RuntimeException")
 	RegisterException("InvalidMarkException", "IllegalStateException")

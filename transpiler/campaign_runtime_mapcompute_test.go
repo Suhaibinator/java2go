@@ -41,11 +41,15 @@ import (
     "slices"
     "testing"
     "unicode/utf16"
+    stdjava "github.com/NickyBoy89/java2go/stdjava"
 )
 func TestComputeOracle(t *testing.T) {
     got := Run()
     if got == nil {
         t.Fatal("Run() returned null")
+    }
+    if !stdjava.ObjectInstanceOf(got, stdjava.StringTypeID) {
+        t.Fatal("missing Java String return view")
     }
     const want = %q
     if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {

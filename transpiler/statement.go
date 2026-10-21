@@ -146,6 +146,9 @@ func parseStatementBlock(node, omitted *sitter.Node, source []byte, ctx Ctx) *as
 }
 
 func parseReturnValue(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
+	if ctx.rawFunctionTarget.resultBoundary(node, ctx) {
+		return ctx.rawFunctionTarget.result(ParseExpr(node, source, ctx), node, ctx, source)
+	}
 	if node != nil && node.Type() == "null_literal" && strings.TrimSpace(ctx.expectedType) != "" {
 		if isBuiltinJavaString(ctx.expectedType, ctx) {
 			return javaStringNullExpr(ctx)
@@ -208,7 +211,7 @@ func lowerSimpleArrayAssignmentCall(node *sitter.Node, source []byte, ctx Ctx) (
 	rhsCtx.expectedTypeRoot = rhsNode
 	rhs := ParseExpr(rhsNode, source, rhsCtx)
 	rhs = coerceArgumentToExpectedType(rhs, rhsNode, lhsJavaType, ctx, source)
-	array := ParseExpr(arrayNode, source, ctx)
+	array := projectErasedFieldArrayOperand(ParseExpr(arrayNode, source, ctx), arrayNode, ctx, source)
 	index := parseJavaIndexExpr(indexNode, source, ctx)
 	if javaBinaryOperandMayHaveEffects(indexNode, source, ctx) || javaBinaryOperandMayHaveEffects(rhsNode, source, ctx) {
 		array = snapshotJavaExpressionValue(array, ctx)
@@ -515,6 +518,9 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if !valid {
 			return &ast.BadStmt{}
 		}
+		if lowered, ok := lowerReaderLockAssignment(node, source, ctx); ok {
+			return &ast.ExprStmt{X: lowered}
+		}
 		if lowered, ok := lowerVolatileFieldAssignment(node, source, ctx); ok {
 			return &ast.ExprStmt{X: lowered}
 		}
@@ -585,6 +591,31 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				}
 			}
 			recordLocalVariableDefinition(ctx, nameNode.Content(source), originalType, parsedType)
+		}
+		// A resource initializer belongs to this actual declaration, rather than
+		// a later consuming call. Keep the canonical physical view even for null.
+		if typeNode, nameNode, valueNode := node.ChildByFieldName("type"), node.ChildByFieldName("name"), node.ChildByFieldName("value"); typeNode != nil && nameNode != nil && valueNode != nil {
+			declared := typeNode.Content(source)
+			if owner, known := fileChannelDeclarationOwner(declared, ctx); known && owner == "java.nio.channels.FileChannel" {
+				target, _ := fileChannelSourceTarget(declared, nil, ctx)
+				valueCtx := ctx.Clone()
+				valueCtx.expectedType, valueCtx.expectedTypeRoot = declared, valueNode
+				value := ParseExpr(valueNode, source, valueCtx)
+				if fileChannelSourceOperand(valueNode, ctx, source) {
+					value = fileChannelSourceProjection(value, target, ctx)
+				}
+				return &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{
+					Names: []*ast.Ident{localBindingIdent(nameNode, source, ctx)}, Type: target, Values: []ast.Expr{value},
+				}}}}
+			}
+			// Preserve the source resource's own representation; only literal null
+			// needs a type to be expressible in the existing short declaration.
+			if unwrapParenthesizedExpressionNode(valueNode).Type() == "null_literal" && visibleTypeParameterDeclarationForJavaType(declared, ctx) == nil {
+				if scope := resolveClassScopeByQualifiedName(ctx, declared); scope != nil && fileChannelSourceRoot(scope, ctx) != nil {
+					target := javaTypeStringToGoTypeExpr(declared, inScopeTypeParameters(ctx), ctx)
+					return &ast.AssignStmt{Lhs: []ast.Expr{localBindingIdent(nameNode, source, ctx)}, Tok: token.DEFINE, Rhs: []ast.Expr{&ast.CallExpr{Fun: target, Args: []ast.Expr{ast.NewIdent("nil")}}}}
+				}
+			}
 		}
 		var offset int
 		if nodeutil.SemanticNamedChild(node, 0).Type() == "modifiers" {
@@ -861,6 +892,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 				rawName := synchronizedUniqueLocalName(fmt.Sprintf("__java2goEnhancedForElement_%d", node.StartByte()), usedNames)
 				rawValue := &ast.Ident{Name: rawName}
 				rangeValue = rawValue
+				rangeExpr = projectErasedFieldArrayOperand(rangeExpr, valueNode, ctx, source)
 				rangeExpr = stdjavaCall(ctx, "ReferenceArrayIterationElements", rangeExpr)
 				referenceBinding = &ast.AssignStmt{
 					Lhs: []ast.Expr{bindingValue},
@@ -875,6 +907,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 					)},
 				}
 			} else if _, _, _, primitive := expressionUsesPrimitiveArray(valueNode, ctx, source); primitive {
+				rangeExpr = projectErasedFieldArrayOperand(rangeExpr, valueNode, ctx, source)
 				rangeExpr = stdjavaCall(ctx, "PrimitiveArrayIterationElements", rangeExpr)
 			}
 			// Collection iteration reads list slots when the iterator advances;

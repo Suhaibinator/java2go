@@ -249,13 +249,7 @@ func AddSuppressed(primary, suppressed interface{}) {
 	if sameThrowableIdentity(primary, suppressed) {
 		panic(NewIllegalArgumentExceptionWithCause("Self-suppression not permitted", primary))
 	}
-	carrier, ok := primary.(interface {
-		AddSuppressedValue(interface{})
-	})
-	if !ok {
-		return
-	}
-	carrier.AddSuppressedValue(suppressed)
+	appendThrowableSuppressedState(primary, suppressed)
 }
 
 // sameThrowableIdentity compares the shared state allocated for one Java
@@ -265,28 +259,34 @@ func AddSuppressed(primary, suppressed interface{}) {
 // with identical type and message must remain distinct.
 func sameThrowableIdentity(left, right interface{}) bool {
 	leftCarrier, leftOK := left.(interface {
-		ThrowableIdentity() *throwableState
+		throwableCauseState() *throwableState
 	})
 	rightCarrier, rightOK := right.(interface {
-		ThrowableIdentity() *throwableState
+		throwableCauseState() *throwableState
 	})
 	if !leftOK || !rightOK {
 		return false
 	}
-	leftIdentity := leftCarrier.ThrowableIdentity()
-	return leftIdentity != nil && leftIdentity == rightCarrier.ThrowableIdentity()
+	leftIdentity := leftCarrier.throwableCauseState()
+	return leftIdentity != nil && leftIdentity == rightCarrier.throwableCauseState()
 }
 
 // GetSuppressed returns a snapshot of the exceptions attached to primary, in
 // the order in which resource close failures occurred.
 func GetSuppressed(primary interface{}) []interface{} {
 	carrier, ok := primary.(interface {
-		SuppressedValues() []interface{}
+		throwableCauseState() *throwableState
 	})
 	if !ok {
 		return []interface{}{}
 	}
-	return carrier.SuppressedValues()
+	state := carrier.throwableCauseState()
+	if state == nil {
+		return []interface{}{}
+	}
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	return append([]interface{}{}, state.suppressed...)
 }
 
 // GetSuppressedArray exposes Throwable.getSuppressed through the generated

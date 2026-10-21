@@ -345,6 +345,9 @@ func compareViaReflectOrdering(left, right any) (int32, bool) {
 // right, and reports whether such a method was found and applicable.
 func compareViaCompareToExecution(execution *Execution, left, right any) (int32, bool) {
 	ReferenceRequireNonNull(left)
+	if result, found := callRegisteredSourceErasedContractExecution(execution, left, right, ComparableTypeID, "compareTo(Ljava/lang/Object;)I"); found {
+		return result, true
+	}
 	receiver := reflect.ValueOf(left)
 	executionType := reflect.TypeOf((*Execution)(nil))
 	typeOfReceiver := receiver.Type()

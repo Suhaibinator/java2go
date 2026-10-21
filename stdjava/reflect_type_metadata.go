@@ -81,12 +81,18 @@ func (field *Field) GetGenericType() ReflectType {
 	return field.GetType()
 }
 func reflectTypeEqual(execution *Execution, left, right ReflectType) bool {
-	if nilJavaReference(left) {
-		return nilJavaReference(right)
+	if JavaReferenceEqual(left, right) {
+		return true
 	}
-	return !nilJavaReference(right) && ObjectEqualsExecution(execution, left, right)
+	if nilJavaReference(left) {
+		return false
+	}
+	return ObjectEqualsExecution(execution, left, right)
 }
 func reflectTypeSliceEqual(execution *Execution, left []ReflectType, right *ReferenceArray) bool {
+	if right == nil {
+		return false
+	}
 	values := ReferenceArrayIterationElements(right)
 	if len(left) != len(values) {
 		return false
@@ -156,7 +162,12 @@ func (value *metadataParameterizedType) EqualsJava2goExecution(execution *Execut
 	if !ObjectInstanceOf(other, ParameterizedTypeTypeID) {
 		return false
 	}
-	return reflectTypeEqual(execution, value.owner, ReflectTypeMemberExecution(execution, other, ParameterizedTypeTypeID, "GetOwnerType")) && reflectTypeEqual(execution, value.raw, ReflectTypeMemberExecution(execution, other, ParameterizedTypeTypeID, "GetRawType")) && reflectTypeSliceEqual(execution, value.arguments, ReflectArrayMemberExecution(execution, other, ParameterizedTypeTypeID, "GetActualTypeArguments", ReflectTypeTypeID))
+	if JavaReferenceEqual(value, other) {
+		return true
+	}
+	owner := ReflectTypeMemberExecution(execution, other, ParameterizedTypeTypeID, "GetOwnerType")
+	raw := ReflectTypeMemberExecution(execution, other, ParameterizedTypeTypeID, "GetRawType")
+	return reflectTypeEqual(execution, value.owner, owner) && reflectTypeEqual(execution, value.raw, raw) && reflectTypeSliceEqual(execution, value.arguments, ReflectArrayMemberExecution(execution, other, ParameterizedTypeTypeID, "GetActualTypeArguments", ReflectTypeTypeID))
 }
 func (value *metadataParameterizedType) HashCode() int32 {
 	return value.HashCodeJava2goExecution(NewExecution())
@@ -212,7 +223,7 @@ func (value *metadataWildcardType) Equals(other any) bool {
 	return value.EqualsJava2goExecution(NewExecution(), other)
 }
 func (value *metadataWildcardType) EqualsJava2goExecution(execution *Execution, other any) bool {
-	return ObjectInstanceOf(other, WildcardTypeTypeID) && reflectTypeSliceEqual(execution, value.upper, ReflectArrayMemberExecution(execution, other, WildcardTypeTypeID, "GetUpperBounds", ReflectTypeTypeID)) && reflectTypeSliceEqual(execution, value.lower, ReflectArrayMemberExecution(execution, other, WildcardTypeTypeID, "GetLowerBounds", ReflectTypeTypeID))
+	return ObjectInstanceOf(other, WildcardTypeTypeID) && reflectTypeSliceEqual(execution, value.lower, ReflectArrayMemberExecution(execution, other, WildcardTypeTypeID, "GetLowerBounds", ReflectTypeTypeID)) && reflectTypeSliceEqual(execution, value.upper, ReflectArrayMemberExecution(execution, other, WildcardTypeTypeID, "GetUpperBounds", ReflectTypeTypeID))
 }
 func (value *metadataWildcardType) HashCode() int32 {
 	return reflectTypeSliceHash(NewExecution(), value.upper) ^ reflectTypeSliceHash(NewExecution(), value.lower)
@@ -244,11 +255,11 @@ func (value *metadataTypeVariable) Equals(other any) bool {
 	return value.EqualsJava2goExecution(NewExecution(), other)
 }
 func (value *metadataTypeVariable) EqualsJava2goExecution(execution *Execution, other any) bool {
-	if !ObjectInstanceOf(other, TypeVariableTypeID) {
+	variable, ok := other.(*metadataTypeVariable)
+	if !ok || variable == nil {
 		return false
 	}
-	name := ReflectStringMemberJavaStringExecution(execution, other, TypeVariableTypeID, "GetName")
-	return reflectionIdentifierJavaString(value.name).Equals(name) && JavaReferenceEqual(ClassLiteral(value.declaration), ReflectDeclarationMemberExecution(execution, other, TypeVariableTypeID, "GetGenericDeclaration"))
+	return JavaReferenceEqual(ClassLiteral(value.declaration), ClassLiteral(variable.declaration)) && reflectionIdentifierJavaString(value.name).Equals(reflectionIdentifierJavaString(variable.name))
 }
 func (value *metadataTypeVariable) HashCode() int32 {
 	return ObjectHashCodeExecution(NewExecution(), ClassLiteral(value.declaration)) ^ reflectionIdentifierJavaString(value.name).HashCode()

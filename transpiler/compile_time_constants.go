@@ -138,11 +138,18 @@ func compileTimeConstantExpression(
 			}
 			return isCompileTimeConstantField(resolution.def, resolution.owner, source, ctx, visiting)
 		}
-		return false
+		imported := resolveStaticImportedField(name, ctx)
+		return imported.problem == "" && imported.source == nil && wrapperDimensionConstantVariable(imported.intrinsic)
 	case "field_access":
 		object := node.ChildByFieldName("object")
 		if object == nil {
 			return false
+		}
+		if owner, ok := intrinsicStaticClassName(object, ctx, source); ok {
+			field := node.ChildByFieldName("field")
+			if field != nil && wrapperDimensionConstantVariable(intrinsicKey{owner, field.Content(source)}) {
+				return true
+			}
 		}
 		_, typeQualifier := staticFieldQualifierScope(object, source, ctx)
 		if !typeQualifier {

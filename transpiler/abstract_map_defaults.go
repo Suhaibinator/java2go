@@ -47,7 +47,20 @@ func directAbstractMap(scope *symbol.ClassScope, ctx Ctx) bool {
 }
 func abstractMapSpecs(scope *symbol.ClassScope, ctx Ctx) []abstractMapDefault {
 	if !directAbstractMap(scope, ctx) {
-		return nil
+		var result []abstractMapDefault
+		_, concurrent := sourceMapReferenceArguments(scope, "java.util.concurrent.ConcurrentMap", ctx)
+		for _, spec := range mapProtocolSourceContracts(scope, ctx) {
+			if spec.java == "putIfAbsent" && !concurrent || spec.java == "getOrDefault" || spec.java == "computeIfAbsent" {
+				if concurrent && spec.java == "getOrDefault" {
+					spec.algorithm = "ConcurrentMapDefaultGetOrDefaultExecution"
+				}
+				if concurrent && spec.java == "computeIfAbsent" {
+					spec.algorithm = "ConcurrentMapDefaultComputeIfAbsentExecution"
+				}
+				result = append(result, spec)
+			}
+		}
+		return result
 	}
 	_, args := parseJavaTypeString(scope.Superclass)
 	bindings := map[string]string{"K": "java.lang.Object", "V": "java.lang.Object"}
@@ -62,38 +75,56 @@ func abstractMapSpecs(scope *symbol.ClassScope, ctx Ctx) []abstractMapDefault {
 			result[index].parameters[arg] = substituteJavaTypeParams(result[index].parameters[arg], bindings)
 		}
 	}
+	for _, spec := range mapProtocolSourceContracts(scope, ctx) {
+		if spec.java == "putAll" {
+			spec.algorithm = "AbstractMapPutAllExecution"
+			spec.dispatch = "MapPutAllExecution"
+			result = append(result, spec)
+		} else if spec.java == "getOrDefault" || spec.java == "putIfAbsent" || spec.java == "computeIfAbsent" {
+			_, concurrent := sourceMapReferenceArguments(scope, "java.util.concurrent.ConcurrentMap", ctx)
+			if concurrent && spec.java == "putIfAbsent" {
+				continue
+			}
+			if concurrent && spec.java == "getOrDefault" {
+				spec.algorithm = "ConcurrentMapDefaultGetOrDefaultExecution"
+			}
+			if concurrent && spec.java == "computeIfAbsent" {
+				spec.algorithm = "ConcurrentMapDefaultComputeIfAbsentExecution"
+			}
+			result = append(result, spec)
+		}
+	}
 	return result
 }
 func prepareAbstractMapDefaults() {
 	for _, scope := range allSourceClassScopes() {
 		ctx := Ctx{currentClass: scope, currentFile: findFileScopeForClassScope(scope)}
-		for _, spec := range abstractMapSpecs(scope, ctx) {
-			if method, _ := sourceCollectionMethod(scope, spec.java, spec.parameters, ctx); method != nil {
-				continue
-			}
-			method := &symbol.Definition{OriginalName: spec.java, Name: symbol.Uppercase(spec.java), OriginalType: spec.result, HasBody: true, RuntimeDefault: true}
-			used := map[string]struct{}{}
-			for _, name := range scope.GoTypeParameterNames() {
-				used[name] = struct{}{}
-			}
-			for _, formal := range spec.parameters {
-				name := synchronizedUniqueLocalName("__java2goMapArgument", used)
-				used[name] = struct{}{}
-				method.Parameters = append(method.Parameters, &symbol.Definition{OriginalName: name, Name: name, OriginalType: formal})
-			}
-			scope.Methods = append(scope.Methods, method)
-		}
+		prepareAbstractMapDefaultsForScope(scope, ctx)
 	}
 }
-func sourceHasAbstractMap(scope *symbol.ClassScope, ctx Ctx) bool {
-	seen := map[*symbol.ClassScope]bool{}
-	for current := scope; current != nil && !seen[current]; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
-		seen[current] = true
-		if directAbstractMap(current, ctx) {
-			return true
-		}
+
+// Local declarations are synthesized after the source-wide preparation pass.
+// Install the same inherited platform definitions on their actual scope.
+func prepareAbstractMapDefaultsForScope(scope *symbol.ClassScope, ctx Ctx) {
+	if scope == nil {
+		return
 	}
-	return false
+	for _, spec := range abstractMapSpecs(scope, ctx) {
+		if method, _ := sourceCollectionMethod(scope, spec.java, spec.parameters, ctx); method != nil {
+			continue
+		}
+		method := &symbol.Definition{OriginalName: spec.java, Name: symbol.Uppercase(spec.java), OriginalType: spec.result, HasBody: true, RuntimeDefault: true}
+		used := map[string]struct{}{}
+		for _, name := range scope.GoTypeParameterNames() {
+			used[name] = struct{}{}
+		}
+		for _, formal := range spec.parameters {
+			name := synchronizedUniqueLocalName("__java2goMapArgument", used)
+			used[name] = struct{}{}
+			method.Parameters = append(method.Parameters, &symbol.Definition{OriginalName: name, Name: name, OriginalType: formal})
+		}
+		scope.Methods = append(scope.Methods, method)
+	}
 }
 func abstractMapDefaultSpec(method *symbol.Definition, owner *symbol.ClassScope, ctx Ctx) (abstractMapDefault, bool) {
 	if method == nil || !method.RuntimeDefault {
@@ -127,6 +158,9 @@ func abstractMapStateField(ctx Ctx) *ast.Field {
 }
 func abstractMapAlgorithmCall(spec abstractMapDefault, receiver ast.Expr, args []ast.Expr, execution ast.Expr, ctx Ctx) ast.Expr {
 	arguments := append([]ast.Expr{execution, abstractMapReference(receiver, ctx)}, args...)
+	if spec.java == "computeIfAbsent" {
+		arguments = append(arguments, mapMappingApplyExpression(args[1], spec.parameters[1], ctx))
+	}
 	if spec.java == "keySet" || spec.java == "values" {
 		arguments = append(arguments, &ast.CallExpr{Fun: &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(abstractMapStateAccessor)}})
 	}
@@ -149,12 +183,15 @@ func abstractMapResultProjection(raw ast.Expr, javaType string, ctx Ctx) ast.Exp
 	return stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{physical}, []ast.Expr{raw, descriptor})
 }
 func generateAbstractMapDefaultDecls(ctx Ctx) []ast.Decl {
-	if !directAbstractMap(ctx.currentClass, ctx) {
+	if len(abstractMapSpecs(ctx.currentClass, ctx)) == 0 {
 		return nil
 	}
 	var declarations []ast.Decl
 	receiverName := abstractCollectionReceiverName(ctx, nil)
-	declarations = append(declarations, &ast.FuncDecl{Name: ast.NewIdent(abstractMapStateAccessor), Recv: abstractCollectionReceiver(ctx, receiverName), Type: &ast.FuncType{Params: &ast.FieldList{}, Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("AbstractMapDefaultsState", ctx)}}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{instanceMethodNilReceiverGuard(receiverName), &ast.ReturnStmt{Results: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: &ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(abstractMapStateFieldName(ctx.currentClass))}}}}}}})
+	if directAbstractMap(ctx.currentClass, ctx) {
+		declarations = append(declarations, &ast.FuncDecl{Name: ast.NewIdent(abstractMapStateAccessor), Recv: abstractCollectionReceiver(ctx, receiverName), Type: &ast.FuncType{Params: &ast.FieldList{}, Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("AbstractMapDefaultsState", ctx)}}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{instanceMethodNilReceiverGuard(receiverName), &ast.ReturnStmt{Results: []ast.Expr{&ast.UnaryExpr{Op: token.AND, X: &ast.SelectorExpr{X: ast.NewIdent(receiverName), Sel: ast.NewIdent(abstractMapStateFieldName(ctx.currentClass))}}}}}}})
+	}
+
 	for _, method := range ctx.currentClass.Methods {
 		spec, found := abstractMapDefaultSpec(method, ctx.currentClass, ctx)
 		if !found {
@@ -234,22 +271,10 @@ func abstractMapAncestorArguments(receiver, owner *symbol.ClassScope, ctx Ctx) [
 }
 
 func generateAbstractMapBridgeDecls(ctx Ctx) []ast.Decl {
-	if ctx.currentClass == nil || ctx.currentClass.IsInterface || !sourceHasAbstractMap(ctx.currentClass, ctx) {
+	if ctx.currentClass == nil || ctx.currentClass.IsInterface || len(mapProtocolSourceContracts(ctx.currentClass, ctx)) == 0 {
 		return nil
 	}
-	contracts := append([]abstractMapDefault{{java: "entrySet", result: "java.util.Set", role: "MapEntrySetJava2goExecution"}}, abstractMapDefaults...)
-	for current := ctx.currentClass; current != nil; current = resolveSuperclassScopeInDeclaringContext(ctx, current) {
-		if directAbstractMap(current, ctx) {
-			specs := abstractMapSpecs(current, ctx)
-			for index := range specs {
-				for parameter := range specs[index].parameters {
-					specs[index].parameters[parameter] = abstractMapTypeInReceiver(specs[index].parameters[parameter], current, ctx)
-				}
-			}
-			contracts = append(contracts[:1], specs...)
-			break
-		}
-	}
+	contracts := mapProtocolSourceContracts(ctx.currentClass, ctx)
 	var declarations []ast.Decl
 	for _, contract := range contracts {
 		if contract.role == "" {
@@ -298,9 +323,19 @@ func generateAbstractMapBridgeDecls(ctx Ctx) []ast.Decl {
 		receiver := abstractCollectionReceiverName(ctx, params)
 		execution := executionNameForParams(params, ctx.currentClass.GoTypeParameterNames()...)
 		params.List = append([]*ast.Field{executionParameterField(execution, ctx)}, params.List...)
+		var apply ast.Expr
+		if contract.java == "computeIfAbsent" {
+			name := synchronizedUniqueLocalName("__java2goMapApply", used)
+			apply = ast.NewIdent(name)
+			params.List = append(params.List, &ast.Field{Names: []*ast.Ident{ast.NewIdent(name)}, Type: mapMappingApplyType(ctx)})
+		}
 		var call ast.Expr
 		if spec, found := abstractMapDefaultSpec(method, owner, ctx); found {
-			call = abstractMapAlgorithmCall(spec, ast.NewIdent(receiver), args, ast.NewIdent(execution), ctx)
+			if spec.java == "computeIfAbsent" {
+				call = stdjavaCall(ctx, spec.algorithm, ast.NewIdent(execution), abstractMapReference(ast.NewIdent(receiver), ctx), args[0], args[1], apply)
+			} else {
+				call = abstractMapAlgorithmCall(spec, ast.NewIdent(receiver), args, ast.NewIdent(execution), ctx)
+			}
 		} else {
 			var selected ast.Expr = ast.NewIdent(receiver)
 			if classNeedsVirtualDispatch(owner, ctx) {
@@ -312,7 +347,7 @@ func generateAbstractMapBridgeDecls(ctx Ctx) []ast.Decl {
 		if contract.result != "void" {
 			var result ast.Expr
 			switch contract.java {
-			case "get", "remove", "put":
+			case "get", "remove", "put", "getOrDefault", "putIfAbsent", "computeIfAbsent":
 				result = ast.NewIdent("any")
 			case "entrySet", "keySet", "values":
 				result = stdjavaQualifiedExpr("JavaIterable", ctx)
@@ -329,7 +364,7 @@ func abstractMapProtocolReservedSelector(name string) bool {
 	if name == abstractMapStateAccessor {
 		return true
 	}
-	for _, spec := range abstractMapDefaults {
+	for _, spec := range append(append([]abstractMapDefault(nil), abstractMapDefaults...), abstractMapDefault{role: "MapPutAllJava2goExecution"}, abstractMapDefault{role: "MapPutIfAbsentJava2goExecution"}, abstractMapDefault{role: "MapGetOrDefaultJava2goExecution"}, abstractMapDefault{role: "MapComputeIfAbsentJava2goExecution"}) {
 		if spec.role != "" && spec.role == name {
 			return true
 		}
@@ -350,6 +385,8 @@ func rewriteAbstractMapDefaultInvocation(invocation, object *sitter.Node, receiv
 	var call ast.Expr
 	if object != nil && object.Type() == "super" {
 		call = abstractMapAlgorithmCall(spec, receiver, args, intrinsicExecutionExpr(ctx), ctx)
+	} else if spec.java == "computeIfAbsent" {
+		call = mapComputeProtocolCall(receiver, args, invocation, ctx, source)
 	} else {
 		call = stdjavaCall(ctx, spec.dispatch, append([]ast.Expr{intrinsicExecutionExpr(ctx), abstractMapReference(receiver, ctx)}, args...)...)
 	}
@@ -368,6 +405,9 @@ func mapErasedResultProjection(raw ast.Expr, invocation *sitter.Node, logicalRes
 		parent = parent.Parent()
 	}
 	if parent != nil && parent.Type() == "expression_statement" {
+		return raw
+	}
+	if expectedTypeTargetsExpression(ctx, invocation) && strings.TrimSpace(ctx.expectedType) == "void" {
 		return raw
 	}
 	target := logicalResult
@@ -434,7 +474,7 @@ func rewriteExplicitAbstractMapSuperInvocation(object *sitter.Node, methodName s
 		}
 		resolution := &methodResolution{def: definition, owner: ctx.currentClass}
 		args, _ := parseResolvedInvocationArguments(resolution, invocation.ChildByFieldName("arguments"), source, ctx, spec.parameters, nil, invocation)
-		call := abstractMapAlgorithmCall(spec, ast.NewIdent(ShortName(ctx.className)), args, intrinsicExecutionExpr(ctx), ctx)
+		call := abstractMapAlgorithmCall(spec, ast.NewIdent(sourceInstanceReceiverName(ctx)), args, intrinsicExecutionExpr(ctx), ctx)
 		if !spec.rawResult {
 			return call
 		}

@@ -41,7 +41,7 @@ class Use{Adapter<String> make(){return new Adapter<String>(){String state;publi
 func TestGenericFamilyPlanRejectsPartialStorageMigration(t *testing.T) {
 	for _, test := range []struct{ name, body, extra string }{
 		{name: "runtime field", body: "java.util.List<T> values;"},
-		{name: "runtime method", body: "java.util.Map<String,T> values(){return null;}"},
+
 		{name: "runtime local", body: "T read(){java.util.List<T> values=null;return null;}"},
 		{name: "array slot", body: "T[] values;"},
 		{name: "constructor typed local", body: "T value; Adapter(T value){this.value=value;T copy=this.value;}"},
@@ -90,5 +90,20 @@ func TestGenericFamilyPlanClosesSourceStorageDependencies(t *testing.T) {
 				t.Errorf("missing transitive storage dependency %s", name)
 			}
 		}
+	}
+}
+
+func TestGenericFamilyPlanAcceptsErasedMapMethod(t *testing.T) {
+	assertMapReferenceTypedRead(t, "java.lang.Integer")
+	helper := setupParseHelper(t, `abstract class Adapter<T>{java.util.Map<String,T> values(){return null;}}`)
+	scope := helper.File.Symbols.FindClassScope("Adapter")
+	if plan, err := planGenericFamily(scope, helper.Ctx); err != nil || plan == nil {
+		t.Fatalf("erased Map method rejected: %v", err)
+	}
+	if !mapReferenceArgumentIndependent("java.util.Map<String,T>", helper.Ctx) {
+		t.Fatal("physical Map proof absent")
+	}
+	if descriptor, ok := javaTypeDescriptorExpr("java.util.Map<String,T>", helper.Ctx); !ok || descriptor == nil {
+		t.Fatal("nominal Map descriptor absent")
 	}
 }

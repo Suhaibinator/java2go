@@ -98,6 +98,9 @@ func enumConstantRegistrationStmts(scope *symbol.ClassScope, ctx Ctx) []ast.Stmt
 			continue
 		}
 		id := javaTypeIDLiteral(enumConstantDynamicType(scope, constant), ctx)
+		if location := sourceRuntimeLocationRegistrationStmt(id, ctx); location != nil {
+			stmts = append(stmts, location)
+		}
 		stmts = append(stmts, &ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaType", id, javaTypeIDLiteral(javaClassBinaryName(scope), ctx))}, &ast.ExprStmt{X: stdjavaCall(ctx, "RegisterJavaSourceType", id)}, &ast.ExprStmt{X: stdjavaCall(ctx, "RegisterClassDescriptor", &ast.CompositeLit{Type: stdjavaQualifiedExpr("ClassDescriptor", ctx), Elts: []ast.Expr{metadataKey("Type", id), metadataKey("SimpleName", metadataString("")), metadataKey("HasSimpleName", ast.NewIdent("true"))}})})
 	}
 	return stmts

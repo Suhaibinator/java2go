@@ -12,11 +12,14 @@ import (
 // default-package class from a caller binder with the same spelling.
 type inferredJavaTypeOrigin struct {
 	declaringOwner *symbol.ClassScope
-	nominalScope   *symbol.ClassScope
-	parameter      *symbol.TypeParamDeclaration
-	arguments      []inferredJavaTypeOrigin
-	javaType       string
-	unresolved     bool
+	externalName string
+	arrayRank    int
+	wildcard     bool
+	nominalScope *symbol.ClassScope
+	parameter    *symbol.TypeParamDeclaration
+	arguments    []inferredJavaTypeOrigin
+	javaType     string
+	unresolved   bool
 }
 
 func setInferredJavaTypeOrigin(outputs []*inferredJavaTypeOrigin, origin inferredJavaTypeOrigin) {
@@ -58,24 +61,31 @@ func definitionDeclaredJavaType(def *symbol.Definition) symbol.JavaType {
 }
 
 func declaredJavaTypeOrigin(javaType symbol.JavaType, declaring Ctx) inferredJavaTypeOrigin {
-	readType := readableWildcardProjection(javaType.Original)
-	if original := strings.TrimSpace(javaType.Original); strings.HasPrefix(original, "?") && !strings.HasPrefix(strings.TrimSpace(strings.TrimPrefix(original, "?")), "extends") {
-		readType = "java.lang.Object"
-	}
-	base, _ := javaArrayTypeParts(readType)
+	original := strings.TrimSpace(javaType.Original)
+	readType := readableWildcardProjection(original)
+	base, rank := javaArrayTypeParts(readType)
 	base, args := parseJavaTypeString(base)
-	origin := inferredJavaTypeOrigin{javaType: readType, declaringOwner: declaring.currentClass}
+	origin := inferredJavaTypeOrigin{javaType: readType, declaringOwner: declaring.currentClass, arrayRank: rank, wildcard: strings.HasPrefix(original, "?")}
+	if origin.wildcard && !strings.HasPrefix(strings.TrimSpace(strings.TrimPrefix(original, "?")), "extends") {
+		origin.externalName = "java.lang.Object"
+		return origin
+	}
 	if declaration := javaType.TypeParameterBindings[base]; declaration != nil {
 		origin.parameter = declaration
+	} else if _, primitive := javaPrimitiveType(base); primitive || base == "void" || base == "null" || base == ternaryNullJavaType {
 	} else {
-		// A missing captured binder is a nominal declaration, not an invitation to
-		// reinterpret the signature in the consuming method's binder namespace.
+		declaring = declaring.Clone()
+		declaring.syntheticTypeParameters = nil
 		origin.nominalScope = resolveClassScopeByQualifiedName(declaring, base)
+		if origin.nominalScope == nil {
+			origin.externalName = declaredExternalNominalOwner(base, javaType.TypeParameterBindings, declaring)
+			origin.unresolved = origin.externalName == ""
+		}
 	}
 	for _, arg := range args {
 		origin.arguments = append(origin.arguments, declaredJavaTypeOrigin(symbol.JavaType{Original: arg, TypeParameterBindings: javaType.TypeParameterBindings}, declaring))
 	}
-	return origin
+	return declarationMemberTypeOrigins(origin, base, javaType, declaring)
 }
 
 func substituteJavaTypeOrigin(origin inferredJavaTypeOrigin, bindings map[*symbol.TypeParamDeclaration]inferredJavaTypeOrigin) inferredJavaTypeOrigin {
@@ -85,6 +95,7 @@ func substituteJavaTypeOrigin(origin inferredJavaTypeOrigin, bindings map[*symbo
 		if replacement, ok := bindings[value.parameter]; value.parameter != nil && ok && replacement.parameter != value.parameter && !visiting[value.parameter] {
 			visiting[value.parameter] = true
 			result := substitute(replacement)
+			result.arrayRank += value.arrayRank
 			delete(visiting, value.parameter)
 			return result
 		}
@@ -173,57 +184,35 @@ func recordFieldTypeOrigin(outputs []*inferredJavaTypeOrigin, start *symbol.Clas
 	recordDefinitionTypeOrigin(outputs, field.def, field.owner, ctx, sourceClassOriginBindings(start, arguments, field.owner, ctx), javaType)
 }
 
-func boundReceiverTypeOrigin(parameter *symbol.TypeParamDeclaration, expected *symbol.ClassScope, ctx Ctx) inferredJavaTypeOrigin {
-	bindings := referenceTypeParameterBindings(ctx)
-	byDeclaration := map[*symbol.TypeParamDeclaration]referenceTypeParameterBinding{}
-	for _, binding := range bindings {
-		byDeclaration[binding.parameter.Declaration] = binding
-	}
-	seen := map[*symbol.TypeParamDeclaration]bool{}
-	var visit func(*symbol.TypeParamDeclaration) (inferredJavaTypeOrigin, bool)
-	visit = func(declaration *symbol.TypeParamDeclaration) (inferredJavaTypeOrigin, bool) {
-		if declaration == nil || seen[declaration] {
-			return inferredJavaTypeOrigin{}, false
-		}
-		seen[declaration] = true
-		binding, known := byDeclaration[declaration]
-		if !known {
-			return inferredJavaTypeOrigin{}, false
-		}
-		for _, bound := range binding.parameter.Bounds {
-			origin := declaredJavaTypeOrigin(bound, binding.context)
-			if origin.parameter != nil {
-				if result, ok := visit(origin.parameter); ok {
-					return result, true
-				}
-			}
-			if origin.nominalScope == expected {
-				return origin, true
-			}
-		}
-		return inferredJavaTypeOrigin{}, false
-	}
-	origin, _ := visit(parameter)
-	return origin
-}
-
 func gatherMethodTypeOriginBindings(formal, actual inferredJavaTypeOrigin, methodParameters map[*symbol.TypeParamDeclaration]bool, candidates map[*symbol.TypeParamDeclaration][]inferredJavaTypeOrigin) {
+	if !completeJavaTypeOrigin(actual) || actual.arrayRank < formal.arrayRank {
+		return
+	}
 	if methodParameters[formal.parameter] {
+		actual.arrayRank -= formal.arrayRank
+		base, _ := javaArrayTypeParts(actual.javaType)
+		if _, primitive := javaPrimitiveType(base); primitive && actual.arrayRank == 0 {
+			return
+		}
+		actual.javaType = base + strings.Repeat("[]", actual.arrayRank)
 		candidates[formal.parameter] = append(candidates[formal.parameter], actual)
 		return
 	}
-	for index, arg := range formal.arguments {
-		if index < len(actual.arguments) {
-			gatherMethodTypeOriginBindings(arg, actual.arguments[index], methodParameters, candidates)
+	if formal.nominalScope != actual.nominalScope || formal.externalName != actual.externalName || formal.arrayRank != actual.arrayRank {
+		return
+	}
+	for i, arg := range formal.arguments {
+		if i < len(actual.arguments) {
+			gatherMethodTypeOriginBindings(arg, actual.arguments[i], methodParameters, candidates)
 		}
 	}
 }
 
 func sameJavaTypeOrigin(left, right inferredJavaTypeOrigin) bool {
-	if left.nominalScope != right.nominalScope || left.parameter != right.parameter || left.unresolved != right.unresolved || len(left.arguments) != len(right.arguments) {
+	if left.externalName != right.externalName || left.arrayRank != right.arrayRank || left.wildcard != right.wildcard || left.nominalScope != right.nominalScope || left.parameter != right.parameter || left.unresolved != right.unresolved || len(left.arguments) != len(right.arguments) {
 		return false
 	}
-	if left.nominalScope == nil && left.parameter == nil && left.javaType != right.javaType {
+	if left.nominalScope == nil && left.parameter == nil && left.externalName == "" && stripOriginArrayDisplay(left.javaType) != stripOriginArrayDisplay(right.javaType) {
 		return false
 	}
 	for index, arg := range left.arguments {
@@ -242,54 +231,28 @@ func recordJoinedJavaTypeOrigin(outputs []*inferredJavaTypeOrigin, javaType stri
 	if len(outputs) == 0 || outputs[0] == nil {
 		return
 	}
+	// Primitive promotion is selected by the existing expression typing rule;
+	// it has no declaration namespace and cannot lose a nominal reference.
+	if _, primitive := javaPrimitiveType(javaType); primitive {
+		setInferredJavaTypeOrigin(outputs, inferredJavaTypeOrigin{javaType: javaType})
+		return
+	}
 	var contributions []inferredJavaTypeOrigin
 	for _, value := range values {
 		if value.javaType != "null" && value.javaType != ternaryNullJavaType {
 			contributions = append(contributions, value)
 		}
 	}
-	unresolved := inferredJavaTypeOrigin{javaType: javaType, unresolved: true}
-	if len(contributions) == 0 || contributions[0].unresolved || contributions[0].nominalScope == nil && contributions[0].parameter == nil {
-		setInferredJavaTypeOrigin(outputs, unresolved)
+	// A null-only conditional has no nominal identity to lose. Keep its
+	// intrinsic null proof so contextual reference conversion can remain deferred.
+	if len(values) > 0 && len(contributions) == 0 {
+		setInferredJavaTypeOrigin(outputs, inferredJavaTypeOrigin{javaType: ternaryNullJavaType})
 		return
-	}
-	if len(selected) > 0 && selected[0].nominalScope != nil {
-		chosen := selected[0]
-		for _, value := range contributions {
-			if value.unresolved || value.nominalScope == nil || !javaReferenceTypeAssignable(value.nominalScope, chosen.nominalScope, ctx) {
-				setInferredJavaTypeOrigin(outputs, unresolved)
-				return
-			}
-		}
-		_, arguments := parseJavaTypeString(javaType)
-		if len(arguments) > 0 {
-			// The chosen parameterized arm already owns its argument origins.
-			// No absent generic arguments are invented from a common class name.
-			for _, value := range contributions {
-				if value.nominalScope == chosen.nominalScope && value.javaType == javaType {
-					chosen.arguments = value.arguments
-					break
-				}
-			}
-			if len(chosen.arguments) != len(arguments) {
-				setInferredJavaTypeOrigin(outputs, unresolved)
-				return
-			}
-		}
-		chosen.javaType = javaType
-		setInferredJavaTypeOrigin(outputs, chosen)
-		return
-	}
-	for _, value := range contributions[1:] {
-		if !sameJavaTypeOrigin(contributions[0], value) {
-			setInferredJavaTypeOrigin(outputs, unresolved)
-			return
-		}
 	}
 	if joined, known := joinedJavaTypeOrigin(javaType, contributions, ctx); known {
 		setInferredJavaTypeOrigin(outputs, joined)
 	} else {
-		setInferredJavaTypeOrigin(outputs, unresolved)
+		setInferredJavaTypeOrigin(outputs, inferredJavaTypeOrigin{javaType: javaType, unresolved: true})
 	}
 }
 
@@ -300,57 +263,54 @@ func joinedJavaTypeOrigin(javaType string, values []inferredJavaTypeOrigin, ctx 
 	if len(values) == 0 {
 		return inferredJavaTypeOrigin{}, false
 	}
-	projected := readableWildcardProjection(javaType)
-	base, arguments := parseJavaTypeString(projected)
+	first := values[0]
+	if !completeJavaTypeOrigin(first) {
+		return inferredJavaTypeOrigin{}, false
+	}
 	same := true
 	for _, value := range values[1:] {
-		if !sameJavaTypeOrigin(values[0], value) {
+		if !completeJavaTypeOrigin(value) {
+			return inferredJavaTypeOrigin{}, false
+		}
+		if !sameJavaTypeOrigin(first, value) {
 			same = false
-			break
 		}
 	}
-	firstBase, _ := parseJavaTypeString(values[0].javaType)
-	if same && base == firstBase {
-		result := values[0]
-		result.javaType = javaType
-		return result, true
-	}
-	scope := resolveClassScopeByQualifiedName(ctx, base)
-	if same && scope != nil && values[0].nominalScope == scope {
-		result := values[0]
-		result.javaType = javaType
-		return result, true
-	}
-	if scope == nil {
-		return inferredJavaTypeOrigin{}, false
-	}
-	for _, value := range values {
-		if value.javaType == "null" || value.javaType == ternaryNullJavaType {
-			continue
+	if same {
+		if javaType != "" {
+			first.javaType = javaType
 		}
-		if value.nominalScope != nil && javaReferenceTypeAssignable(value.nominalScope, scope, ctx) {
-			continue
-		}
-		if value.parameter != nil && boundReceiverTypeOrigin(value.parameter, scope, ctx).nominalScope == scope {
-			continue
-		}
-		return inferredJavaTypeOrigin{}, false
+		return first, true
 	}
-	result := inferredJavaTypeOrigin{nominalScope: scope, javaType: javaType}
-	for index, argument := range arguments {
-		var candidates []inferredJavaTypeOrigin
-		for _, value := range values {
-			if index < len(value.arguments) {
-				candidates = append(candidates, value.arguments[index])
+	// Common source classes are selected by actual ancestry, never result text.
+	if first.nominalScope != nil {
+		for scope := first.nominalScope; scope != nil; scope = resolveSuperclassScopeInDeclaringContext(ctx, scope) {
+			selected := inferredJavaTypeOrigin{nominalScope: scope, arrayRank: first.arrayRank, javaType: javaType}
+			all := true
+			for _, value := range values {
+				_, _, applicable, handled := declaredOriginConversion(value, selected, ctx)
+				if !handled || !applicable {
+					all = false
+					break
+				}
+			}
+			if all {
+				return selected, true
 			}
 		}
-		origin, known := joinedJavaTypeOrigin(argument, candidates, ctx)
-		if !known {
-			origin = inferredJavaTypeOrigin{javaType: argument}
-		}
-		result.arguments = append(result.arguments, origin)
 	}
-	return result, true
+	// An unrelated reference join owns the canonical root only from complete
+	// contributing declarations. Unknown/primitive/binder arms do not prove it.
+	for _, value := range values {
+		if value.parameter != nil || value.arrayRank == 0 && value.nominalScope == nil && value.externalName == "" {
+			return inferredJavaTypeOrigin{}, false
+		}
+	}
+	root := intrinsicJavaTypeOrigin("java.lang.Object")
+	if javaType != "" {
+		root.javaType = javaType
+	}
+	return root, true
 }
 
 // This receives the already selected source method. It never repeats the
@@ -389,9 +349,11 @@ func recordMethodTypeOrigin(outputs []*inferredJavaTypeOrigin, resolution *metho
 				continue
 			}
 			actualOrigin.javaType = actualType
-			gatherMethodTypeOriginBindings(declaredJavaTypeOrigin(definitionDeclaredJavaType(formal), declaring), actualOrigin, methodParameters, candidates)
+			formalType := definitionDeclaredJavaType(formal)
+
+			gatherMethodTypeOriginBindings(declaredJavaTypeOrigin(formalType, declaring), actualOrigin, methodParameters, candidates)
 		}
-		inferred := resolvedMethodInvocationTypeBindings(def, node, ctx, source)
+		inferred := genericJavaInvocationTypeBindings(def, node, ctx, source)
 		explicit := node.ChildByFieldName("type_arguments")
 		for index, parameter := range def.TypeParameters {
 			if explicit != nil && index < int(explicit.NamedChildCount()) {

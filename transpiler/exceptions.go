@@ -20,6 +20,7 @@ var builtinExceptionTypes = map[string]string{
 	"ZoneRulesException":              "DateTimeException",
 	"Throwable":                       "",
 	"ParseException":                  "Exception",
+	"URISyntaxException":              "Exception",
 	"ExecutionException":              "Exception",
 	"TimeoutException":                "Exception",
 	"CancellationException":           "IllegalStateException",
@@ -49,7 +50,8 @@ var builtinExceptionTypes = map[string]string{
 	"UnsupportedOperationException":   "RuntimeException",
 	"IOException":                     "Exception",
 	"UnsupportedEncodingException":    "IOException",
-	"NoSuchAlgorithmException":        "Exception",
+	"GeneralSecurityException":        "Exception",
+	"NoSuchAlgorithmException":        "GeneralSecurityException",
 	"NoSuchElementException":          "RuntimeException",
 	"ConcurrentModificationException": "RuntimeException",
 }
@@ -66,6 +68,9 @@ func isBuiltinExceptionType(className string) bool {
 // built-in exception type, e.g. stdjava.NewIllegalArgumentException(args). The
 // Types with modeled cause overloads preserve the entire Java argument list.
 func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	if call := uriSyntaxExceptionConstructorExpr(className, arguments, args, ctx, source); call != nil {
+		return call
+	}
 	if stripJavaQualifier(className) == "NullPointerException" {
 		if _, builtin := builtinExceptionStorageTypeName(className, ctx); builtin {
 			// NPE exposes only () and (String), so even an untyped null argument
@@ -81,6 +86,9 @@ func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, a
 		}
 	}
 	if call := canonicalMessagePrerequisiteConstructorExpr(className, arguments, args, ctx, source); call != nil {
+		return call
+	}
+	if call := canonicalSecurityExceptionConstructorExpr(className, arguments, args, ctx, source); call != nil {
 		return call
 	}
 	if call := canonicalThrowableConstructorExpr(className, arguments, args, ctx, source); call != nil {
@@ -111,11 +119,21 @@ func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, a
 // value as a cause. Resolve the actual JDK owner before matching a simple name.
 func canonicalMessagePrerequisiteConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
 	name := stripJavaQualifier(className)
-	if name != "IndexOutOfBoundsException" && name != "NumberFormatException" && name != "ParseException" && name != "ArithmeticException" && name != "ClassCastException" {
+	if name != "IndexOutOfBoundsException" && name != "NumberFormatException" && name != "ParseException" && name != "ArithmeticException" && name != "ClassCastException" && name != "CancellationException" {
 		return nil
 	}
 	if _, builtin := builtinExceptionStorageTypeName(className, ctx); !builtin {
 		return nil
+	}
+	// CancellationException exposes only ()/(String). Reject unsupported arities
+	// and argument types rather than falling through to a native string ABI.
+	cancellation := name == "CancellationException"
+	rejectCancellation := func() ast.Expr {
+		reportUnsupported("expression", arguments, source, ctx)
+		return &ast.BadExpr{}
+	}
+	if cancellation && ((arguments == nil && len(args) != 0) || (arguments != nil && nodeutil.SemanticNamedChildCount(arguments) != len(args))) {
+		return rejectCancellation()
 	}
 	helper := "NewJava" + name + "Message"
 	if name == "NumberFormatException" {
@@ -138,6 +156,9 @@ func canonicalMessagePrerequisiteConstructorExpr(className string, arguments *si
 			return stdjavaCall(ctx, helper, message)
 		}
 	}
+	if cancellation {
+		return rejectCancellation()
+	}
 	return nil
 }
 
@@ -147,7 +168,7 @@ func canonicalMessagePrerequisiteConstructorExpr(className string, arguments *si
 // Additional builtin constructor families are separate runtime ABI migrations.
 func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
 	name := stripJavaQualifier(className)
-	if name != "Throwable" && name != "Exception" && name != "RuntimeException" && name != "IllegalStateException" && name != "IllegalArgumentException" && name != "IOException" {
+	if name != "Throwable" && name != "Exception" && name != "RuntimeException" && name != "IllegalStateException" && name != "IllegalArgumentException" && name != "IOException" && name != "ConcurrentModificationException" {
 		return nil
 	}
 	if _, builtin := builtinExceptionStorageTypeName(className, ctx); !builtin {
@@ -156,10 +177,27 @@ func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node,
 	if len(args) == 0 {
 		return stdjavaCall(ctx, "NewJava"+name+"Message", ast.NewIdent("nil"))
 	}
+	cme := name == "ConcurrentModificationException"
+	rejectCME := func() ast.Expr {
+		reportUnsupported("expression", arguments, source, ctx)
+		return &ast.BadExpr{}
+	}
 	if arguments == nil || nodeutil.SemanticNamedChildCount(arguments) != len(args) {
+		if cme {
+			return rejectCME()
+		}
 		return nil
 	}
-	if (name == "Throwable" || name == "Exception" || name == "IllegalArgumentException" || name == "IOException") && len(args) == 2 {
+	if (name == "Throwable" || name == "Exception" || name == "IllegalArgumentException" || name == "IOException" || cme) && len(args) == 2 {
+		if cme {
+			messageType, messageKnown := inferExprJavaType(nodeutil.SemanticNamedChild(arguments, 0), ctx, source)
+			causeType, causeKnown := inferExprJavaType(nodeutil.SemanticNamedChild(arguments, 1), ctx, source)
+			messageApplicable := messageKnown && (messageType == "null" || throwableConstructorMessageType(symbol.JavaType{Original: messageType}, ctx, map[typeParameterIdentityKey]bool{}))
+			causeApplicable := causeKnown && (causeType == "null" || javaExceptionReferenceAssignable(causeType, "java.lang.Throwable", ctx))
+			if !messageApplicable || !causeApplicable {
+				return rejectCME()
+			}
+		}
 		// The two-argument declaration is (String, Throwable); coerce a null literal
 		// according to that declaration instead of interpreting its runtime value.
 		message := stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{javaStringReferenceType(ctx)}, []ast.Expr{args[0], stdjavaQualifiedExpr("StringTypeID", ctx)})
@@ -167,6 +205,9 @@ func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node,
 	}
 	actual, known := inferExprJavaType(nodeutil.SemanticNamedChild(arguments, 0), ctx, source)
 	if !known {
+		if cme {
+			return rejectCME()
+		}
 		return nil
 	}
 	if len(args) == 1 {
@@ -182,6 +223,9 @@ func canonicalThrowableConstructorExpr(className string, arguments *sitter.Node,
 		if name != "IllegalStateException" && javaExceptionReferenceAssignable(actual, "java.lang.Throwable", ctx) {
 			return stdjavaCall(ctx, "NewJava"+name+"CauseExecution", intrinsicExecutionExpr(ctx), args[0])
 		}
+	}
+	if cme {
+		return rejectCME()
 	}
 	return nil
 }
@@ -222,20 +266,16 @@ func exceptionSuperclassName(ctx Ctx, scope *symbol.ClassScope) string {
 	if scope == nil {
 		return ""
 	}
-	super, _ := parseJavaTypeString(strings.TrimSpace(scope.Superclass))
-	if super == "" {
+	super, rank := javaArrayTypeParts(strings.TrimSpace(scope.Superclass))
+	if super == "" || rank != 0 {
 		return ""
 	}
-	base := stripJavaQualifier(super)
-	if isBuiltinExceptionType(base) {
-		return base
+	declaring := classScopeCtx(scope, ctx)
+	if !javaExceptionReferenceAssignable(super, "java.lang.Throwable", declaring) {
+		return ""
 	}
-	if parentScope := resolveClassScopeByQualifiedName(ctx, super); parentScope != nil {
-		if exceptionSuperclassName(ctx, parentScope) != "" {
-			return base
-		}
-	}
-	return ""
+	base, _ := parseJavaTypeString(super)
+	return stripJavaQualifier(base)
 }
 
 // isUserDefinedExceptionClass reports whether scope is a user class that extends
@@ -249,18 +289,10 @@ func isUserDefinedExceptionClass(ctx Ctx, scope *symbol.ClassScope) bool {
 // user-defined class that extends one. It is used to route getMessage() /
 // printStackTrace() through the runtime.
 func isExceptionJavaType(ctx Ctx, javaType string) bool {
-	base, _ := parseJavaTypeString(strings.TrimSpace(javaType))
-	switch stripJavaQualifier(base) {
-	case "ReflectiveOperationException", "ClassNotFoundException", "NoSuchMethodException", "NoSuchFieldException", "IllegalAccessException", "InvocationTargetException":
-		return true
+	if _, rank := javaArrayTypeParts(strings.TrimSpace(javaType)); rank != 0 {
+		return false
 	}
-	if isBuiltinExceptionType(base) {
-		return true
-	}
-	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
-		return isUserDefinedExceptionClass(ctx, scope)
-	}
-	return false
+	return javaExceptionReferenceAssignable(javaType, "java.lang.Throwable", ctx)
 }
 
 // buildExceptionRegistrationDecl emits an init() function that registers a

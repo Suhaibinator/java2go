@@ -106,38 +106,44 @@ func directAbstractCollectionDefaults(scope *symbol.ClassScope, ctx Ctx) []abstr
 func prepareAbstractCollectionDefaults() {
 	for _, scope := range allSourceClassScopes() {
 		ctx := Ctx{currentClass: scope, currentFile: findFileScopeForClassScope(scope)}
-		for _, spec := range directAbstractCollectionDefaults(scope, ctx) {
-			exists := false
-			for _, method := range scope.Methods {
-				if method.OriginalName != spec.java || method.IsStatic || len(method.Parameters) != len(spec.parameters) {
-					continue
-				}
-				same := true
-				for index, formal := range spec.parameters {
-					same = same && javaInferenceSameType(method.Parameters[index].OriginalType, formal, ctx)
-				}
-				if same {
-					exists = true
-					break
-				}
-			}
-			if exists {
+		prepareAbstractCollectionDefaultsForScope(scope, ctx)
+	}
+}
+
+// Anonymous scopes are created after the global platform-symbol preparation.
+// Reuse the exact inherited method declarations in their lexical context.
+func prepareAbstractCollectionDefaultsForScope(scope *symbol.ClassScope, ctx Ctx) {
+	for _, spec := range directAbstractCollectionDefaults(scope, ctx) {
+		exists := false
+		for _, method := range scope.Methods {
+			if method.OriginalName != spec.java || method.IsStatic || len(method.Parameters) != len(spec.parameters) {
 				continue
 			}
-			method := &symbol.Definition{OriginalName: spec.java, Name: symbol.Uppercase(spec.java), OriginalType: spec.result, HasBody: true, RuntimeDefault: true}
+			same := true
 			for index, formal := range spec.parameters {
-				used := map[string]struct{}{}
-				for _, parameter := range scope.GoTypeParameterNames() {
-					used[parameter] = struct{}{}
-				}
-				name := synchronizedUniqueLocalName("__java2goCollectionArgument", used)
-				if index != 0 {
-					name = "other"
-				}
-				method.Parameters = append(method.Parameters, &symbol.Definition{OriginalName: name, Name: name, OriginalType: formal})
+				same = same && javaInferenceSameType(method.Parameters[index].OriginalType, formal, ctx)
 			}
-			scope.Methods = append(scope.Methods, method)
+			if same {
+				exists = true
+				break
+			}
 		}
+		if exists {
+			continue
+		}
+		method := &symbol.Definition{OriginalName: spec.java, Name: symbol.Uppercase(spec.java), OriginalType: spec.result, HasBody: true, RuntimeDefault: true}
+		for index, formal := range spec.parameters {
+			used := map[string]struct{}{}
+			for _, parameter := range scope.GoTypeParameterNames() {
+				used[parameter] = struct{}{}
+			}
+			name := synchronizedUniqueLocalName("__java2goCollectionArgument", used)
+			if index != 0 {
+				name = "other"
+			}
+			method.Parameters = append(method.Parameters, &symbol.Definition{OriginalName: name, Name: name, OriginalType: formal})
+		}
+		scope.Methods = append(scope.Methods, method)
 	}
 }
 
@@ -293,7 +299,7 @@ func generateAbstractCollectionBridgeDecls(ctx Ctx) []ast.Decl {
 }
 
 func sourceAbstractCollectionInterfaceIDs(scope *symbol.ClassScope, ctx Ctx) []ast.Expr {
-	var result []ast.Expr
+	result := sourceMapReferenceInterfaceIDs(scope, ctx)
 	for _, parent := range append(append([]string(nil), scope.ImplementedInterfaces...), scope.Superclass) {
 		owner := canonicalAbstractCollectionOwner(parent, classScopeCtx(scope, ctx))
 		constant := map[string]string{"java.util.Collection": "CollectionTypeID", "java.util.Set": "SetTypeID"}[owner]

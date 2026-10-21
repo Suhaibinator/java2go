@@ -1,0 +1,1 @@
+package app;public class java {public static class net {public static class URL {private String text;public URL(String text){this.text=text;}public String toString(){return "source-url:"+text;}}}}

@@ -11,6 +11,9 @@ import (
 // an external bound; method shape or the object's dynamic type is not evidence
 // that its static Java type satisfies that bound.
 func sourceRuntimeReferenceAssignable(actual *symbol.ClassScope, arguments []string, expected string, ctx Ctx) bool {
+	if threadSourceRuntimeAssignable(actual, arguments, expected, ctx) {
+		return true
+	}
 	expected = qualifyDeclaredReferenceType(symbol.JavaType{Original: expected}, ctx)
 	arguments = append([]string(nil), arguments...)
 	for index, argument := range arguments {

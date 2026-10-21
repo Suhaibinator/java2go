@@ -80,11 +80,18 @@ func narrowDirectOwnerFieldSelectionReceiver(
 	ctx Ctx,
 	source []byte,
 ) ast.Expr {
-	if receiver == nil || receiverNode == nil || receiverNode.Type() != "field_access" ||
+	if receiver == nil || receiverNode == nil ||
 		outerResolution == nil || outerResolution.def == nil || outerResolution.def.IsStatic {
 		return receiver
 	}
-	sourceView, erasure, ok := directOwnerFieldAccessView(receiverNode, ctx, source)
+	var sourceView, erasure string
+	var ok bool
+	switch receiverNode.Type() {
+	case "field_access":
+		sourceView, erasure, ok = directOwnerFieldAccessView(receiverNode, ctx, source)
+	case "method_invocation":
+		sourceView, erasure, ok = directOwnerMethodResultView(receiverNode, ctx, source)
+	}
 	if !ok {
 		return receiver
 	}

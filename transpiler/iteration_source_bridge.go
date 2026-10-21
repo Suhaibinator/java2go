@@ -61,8 +61,14 @@ func generateIterationBridgeDecls(ctx Ctx) []ast.Decl {
 		if method == nil || !method.HasBody {
 			continue
 		}
-		receiver := ast.NewIdent("receiver")
-		call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(executionImplementationName(method, owner, ctx))}, Args: []ast.Expr{ast.NewIdent("execution")}}
+		used := map[string]struct{}{}
+		for _, name := range scope.GoTypeParameterNames() {
+			used[name] = struct{}{}
+		}
+		receiverName := synchronizedUniqueLocalName("receiver", used)
+		executionName := executionNameForParams(nil, append(scope.GoTypeParameterNames(), receiverName)...)
+		receiver := ast.NewIdent(receiverName)
+		call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(executionImplementationName(method, owner, ctx))}, Args: []ast.Expr{ast.NewIdent(executionName)}}
 		var results *ast.FieldList
 		body := &ast.BlockStmt{List: []ast.Stmt{&ast.ExprStmt{X: call}}}
 		if contract.result != "void" {
@@ -72,7 +78,7 @@ func generateIterationBridgeDecls(ctx Ctx) []ast.Decl {
 		declarations = append(declarations, &ast.FuncDecl{
 			Name: ast.NewIdent(contract.bridge),
 			Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{receiver}, Type: &ast.StarExpr{X: instantiateGenericType(ctx.className, typeParamExprs(scope.GoTypeParameterNames()))}}}},
-			Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: results},
+			Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField(executionName, ctx)}}, Results: results},
 			Body: body,
 		})
 	}

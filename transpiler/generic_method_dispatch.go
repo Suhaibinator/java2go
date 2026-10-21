@@ -2,6 +2,7 @@ package transpiler
 
 import (
 	"go/ast"
+	"reflect"
 	"strings"
 	"unicode"
 
@@ -51,10 +52,28 @@ func javaTypeContainsParameter(typ, name string) bool {
 }
 
 func genericMethodErasedJavaType(def *symbol.Definition, typ string) string {
+	declaring, ownerKnown := genericMethodOwnerContext(def)
+	parameters := def.TypeParameters
+	if ownerKnown {
+		declaring.localScope = def
+		declaring.syntheticTypeParameters = nil
+		declaredType := definitionDeclaredJavaType(def)
+		declaredType.Original = typ
+		typ = qualifyDeclaredReferenceType(declaredType, declaring)
+		parameters = qualifyTypeParameterBounds(parameters, declaring)
+	}
 	bindings := map[string]string{}
-	for _, parameter := range def.TypeParameters {
-		erasure := rawTypeParameterErasure(parameter, def.TypeParameters)
-		bindings[parameter.Name] = erasure
+	slots, _, physicalKnown := declaredGenericMethodPhysicalSlots(def)
+	for index, parameter := range parameters {
+		erasure := rawTypeParameterErasure(parameter, parameters)
+		if physicalKnown {
+			erasure = slots[index].javaType
+		} else if ownerKnown && parameter.Declaration != nil && len(parameter.Bounds) == 0 {
+			erasure = "java.lang.Object"
+		}
+		if !ownerKnown {
+			bindings[parameter.Name] = erasure
+		}
 		bindings[parameter.EmittedName()] = erasure
 	}
 	return substituteJavaTypeParameters(typ, bindings)
@@ -62,6 +81,10 @@ func genericMethodErasedJavaType(def *symbol.Definition, typ string) string {
 
 func eraseGenericMethodSignature(def *symbol.Definition, params, results *ast.FieldList, ctx Ctx) {
 	if !genericMethodHasErasedEntry(def) {
+		return
+	}
+	if plan := planGenericMethodEntryABI(ctx.currentClass, def, ctx); plan != nil {
+		plan.apply(params, results)
 		return
 	}
 	for i, p := range def.Parameters {
@@ -87,10 +110,25 @@ func genericMethodErasedEntryDecls(ctx Ctx, def *symbol.Definition, params, resu
 			typeArgs[index] = javaTypeStringToGoTypeExpr(rawTypeParameterErasure(parameter, ctx.currentClass.TypeParameters), nil, ctx)
 		}
 	}
-	for _, tp := range def.TypeParameters {
-		typeArgs = append(typeArgs, javaTypeStringToGoTypeExpr(rawTypeParameterErasure(tp, def.TypeParameters), ctx.currentClass.TypeParameterNames(), ctx))
+	_, ownerKnown := genericMethodOwnerContext(def)
+	physical, _, physicalKnown := genericMethodPhysicalTypeArguments(def, ctx)
+	for index, tp := range def.TypeParameters {
+		var argument ast.Expr
+		if physicalKnown {
+			argument = physical[index]
+		} else if ownerKnown && tp.Declaration != nil && len(tp.Bounds) == 0 {
+			argument = &ast.Ident{Name: "any"}
+		} else {
+			argument = javaTypeStringToGoTypeExpr(rawTypeParameterErasure(tp, def.TypeParameters), ctx.currentClass.TypeParameterNames(), ctx)
+		}
+		typeArgs = append(typeArgs, argument)
 	}
-	recv := ShortName(ctx.className)
+	fields := append([]*ast.Field{executionParameterField(ctx.executionContextName, ctx), {Type: receiverBaseType}, {Type: applyTypeArguments(ast.NewIdent("New"+def.HelperName), typeArgs)}}, params.List...)
+	if results != nil {
+		fields = append(fields, results.List...)
+	}
+	recv := synchronizedUniqueLocalName(ShortName(ctx.className), sourceInstanceReceiverUsedNames(ctx, fields...))
+	ctx = withSourceInstanceReceiver(ctx, recv)
 	helper := &ast.CallExpr{Fun: applyTypeArguments(&ast.Ident{Name: "New" + def.HelperName}, typeArgs), Args: []ast.Expr{&ast.Ident{Name: recv}}}
 	call := &ast.CallExpr{Fun: &ast.SelectorExpr{X: helper, Sel: &ast.Ident{Name: executionImplementationName(def, ctx.currentClass, ctx)}}, Args: append([]ast.Expr{&ast.Ident{Name: ctx.executionContextName}}, methodCallArgs(params)...)}
 	body := &ast.BlockStmt{List: []ast.Stmt{invocationClosureCallStatement(call, results)}}
@@ -103,11 +141,24 @@ func genericMethodErasedEntryDecls(ctx Ctx, def *symbol.Definition, params, resu
 // Use the inferred Java descriptor as well as its Go view: structural Go
 // interface satisfaction alone cannot prove nominal Java assignability.
 func genericMethodProjectedResult(call ast.Expr, def *symbol.Definition, typeArgs []ast.Expr, javaBindings map[string]string, consumingJavaType string, ctx Ctx) ast.Expr {
+	declaredReturn := definitionDeclaredJavaType(def)
+	returnBase, returnRank := javaArrayTypeParts(strings.TrimSpace(declaredReturn.Original))
+	returnParameter := declaredReturn.TypeParameterBindings[returnBase]
+	_, ownerKnown := genericMethodOwnerContext(def)
 	for i, tp := range def.TypeParameters {
-		if (strings.TrimSpace(def.OriginalType) == tp.Name || strings.TrimSpace(def.OriginalType) == tp.EmittedName()) && i < len(typeArgs) {
+		methodReturn := returnRank == 0 && tp.Declaration != nil && returnParameter == tp.Declaration
+		if !ownerKnown && def.DeclarationNode == nil && returnParameter == nil {
+			// Standalone synthetic definitions retain their existing text contract.
+			// Parsed source methods instead require the captured declaration above.
+			methodReturn = returnRank == 0 && (returnBase == tp.Name || returnBase == tp.EmittedName())
+		}
+		if methodReturn && i < len(typeArgs) {
 			targetJavaType := javaBindings[tp.Name]
 			targetType := typeArgs[i]
-			if _, primitive := javaPrimitiveType(consumingJavaType); consumingJavaType != "" && !primitive {
+			if strings.TrimSpace(targetJavaType) != "" {
+				targetType = javaTypeStringToGoTypeExpr(targetJavaType, inScopeTypeParameters(ctx), ctx)
+			}
+			if _, primitive := javaPrimitiveType(consumingJavaType); consumingJavaType != "" && strings.TrimSpace(consumingJavaType) != "var" && !primitive {
 				// javac casts an erased invocation result to its consuming
 				// reference view. A broader assignment must not introduce a
 				// checkcast to the narrower argument-inferred type.
@@ -122,4 +173,28 @@ func genericMethodProjectedResult(call ast.Expr, def *symbol.Definition, typeArg
 		}
 	}
 	return call
+}
+
+// The compiler can already have projected an invocation to its consuming
+// view. Preserve that value instead of applying a source-inferred superclass
+// selector to it a second time. Both the runtime callee and Go type must match;
+// an ordinary source method named ObjectView has no such guarantee.
+func runtimeObjectViewHasExpectedType(expr ast.Expr, expectedJavaType string, ctx Ctx) bool {
+	call, ok := expr.(*ast.CallExpr)
+	if !ok {
+		return false
+	}
+	indexed, ok := call.Fun.(*ast.IndexExpr)
+	if !ok {
+		return false
+	}
+	callee, ok := indexed.X.(*ast.SelectorExpr)
+	if !ok || callee.Sel.Name != "ObjectView" {
+		return false
+	}
+	if !reflect.DeepEqual(callee, stdjavaQualifiedExpr("ObjectView", ctx)) {
+		return false
+	}
+	expectedGoType := javaTypeStringToGoTypeExpr(expectedJavaType, inScopeTypeParameters(ctx), ctx)
+	return reflect.DeepEqual(indexed.Index, expectedGoType)
 }

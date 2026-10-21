@@ -89,146 +89,56 @@ func (a *AtomicBoolean) CompareAndSet(expect, update bool) bool {
 	return a.v.CompareAndSwap(expect, update)
 }
 
-// ConcurrentHashMap publishes immutable collision-bucket snapshots. User
-// hashCode/equals callbacks run outside the mutex, allowing reentrant reads.
-// Writers validate the snapshot version before publishing; concurrent writes
-// may cause a callback to be retried. Key/entry views are snapshots.
-type ConcurrentHashMap[K, V any] struct {
-	mu      sync.RWMutex
-	buckets map[int32][]MapEntry[K, V]
-	version uint64
-	size    int32
-}
+// ConcurrentHashMap keeps one allocation across typed and erased Java aliases.
+// Its private core publishes bucket membership under a mutex; user callbacks
+// execute outside that mutex and writes validate their observed version.
+type ConcurrentHashMap[K, V any] struct{ concurrentMapCore }
 
 func NewConcurrentHashMap[K, V any]() *ConcurrentHashMap[K, V] {
-	return &ConcurrentHashMap[K, V]{buckets: make(map[int32][]MapEntry[K, V])}
-}
-func (c *ConcurrentHashMap[K, V]) snapshot(hash int32) ([]MapEntry[K, V], uint64) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.buckets[hash], c.version
-}
-func concurrentEntryIndex[K, V any](entries []MapEntry[K, V], key any, execution *Execution) int {
-	for i, entry := range entries {
-		if ObjectsEqual(key, entry.Key, execution) {
-			return i
-		}
-	}
-	return -1
+	return &ConcurrentHashMap[K, V]{concurrentMapCore: concurrentMapCore{buckets: make(map[int32][]*concurrentMapRecord)}}
 }
 func (c *ConcurrentHashMap[K, V]) Put(key K, value V, execution ...*Execution) V {
-	ReferenceRequireNonNull(key)
-	ReferenceRequireNonNull(value)
-	exec := optionalComparisonExecution(execution)
-	hash := ObjectsHashCode(key, exec)
-	for {
-		entries, version := c.snapshot(hash)
-		index := concurrentEntryIndex(entries, key, exec)
-		updated := append([]MapEntry[K, V](nil), entries...)
-		previous := collectionZero[V]()
-		if index >= 0 {
-			previous = updated[index].Value
-			updated[index].Value = value
-		} else {
-			updated = append(updated, MapEntry[K, V]{Key: key, Value: value})
-		}
-		c.mu.Lock()
-		if c.version != version {
-			c.mu.Unlock()
-			continue
-		}
-		if c.buckets == nil {
-			c.buckets = make(map[int32][]MapEntry[K, V])
-		}
-		c.buckets[hash] = updated
-		c.version++
-		if index < 0 {
-			c.size++
-		}
-		c.mu.Unlock()
-		return previous
-	}
+	return collectionElementView[V](c.PutObject(key, value, execution...))
+}
+func (c *ConcurrentHashMap[K, V]) PutIfAbsent(key K, value V, execution ...*Execution) V {
+	return collectionElementView[V](c.PutIfAbsentObject(key, value, execution...))
 }
 func (c *ConcurrentHashMap[K, V]) Get(key any, execution ...*Execution) V {
-	value, _ := c.GetOk(key, execution...)
-	return value
+	return collectionElementView[V](c.GetObject(key, execution...))
 }
 func (c *ConcurrentHashMap[K, V]) GetOk(key any, execution ...*Execution) (V, bool) {
-	ReferenceRequireNonNull(key)
-	exec := optionalComparisonExecution(execution)
-	entries, _ := c.snapshot(ObjectsHashCode(key, exec))
-	if index := concurrentEntryIndex(entries, key, exec); index >= 0 {
-		return entries[index].Value, true
-	}
-	return collectionZero[V](), false
-}
-func (c *ConcurrentHashMap[K, V]) ContainsKey(key any, execution ...*Execution) bool {
-	_, ok := c.GetOk(key, execution...)
-	return ok
-}
-func (c *ConcurrentHashMap[K, V]) ContainsValue(value any, execution ...*Execution) bool {
-	ReferenceRequireNonNull(value)
-	for _, entry := range c.EntrySet() {
-		if ObjectsEqual(value, entry.Value, execution...) {
-			return true
-		}
-	}
-	return false
+	ReferenceRequireNonNull(c)
+	value, present := c.getObject(key, optionalComparisonExecution(execution))
+	return collectionElementView[V](value), present
 }
 func (c *ConcurrentHashMap[K, V]) Remove(key any, execution ...*Execution) V {
-	ReferenceRequireNonNull(key)
-	exec := optionalComparisonExecution(execution)
-	hash := ObjectsHashCode(key, exec)
-	for {
-		entries, version := c.snapshot(hash)
-		index := concurrentEntryIndex(entries, key, exec)
-		if index < 0 {
-			return collectionZero[V]()
-		}
-		previous := entries[index].Value
-		updated := make([]MapEntry[K, V], 0, len(entries)-1)
-		updated = append(updated, entries[:index]...)
-		updated = append(updated, entries[index+1:]...)
-		c.mu.Lock()
-		if c.version != version {
-			c.mu.Unlock()
-			continue
-		}
-		if len(updated) == 0 {
-			delete(c.buckets, hash)
-		} else {
-			c.buckets[hash] = updated
-		}
-		c.version++
-		c.size--
-		c.mu.Unlock()
-		return previous
-	}
+	return collectionElementView[V](c.RemoveObject(key, execution...))
 }
-func (c *ConcurrentHashMap[K, V]) Size() int32 { c.mu.RLock(); defer c.mu.RUnlock(); return c.size }
+
+// Legacy native slices consume typed elements; Java view iteration stays erased.
 func (c *ConcurrentHashMap[K, V]) EntrySet() []MapEntry[K, V] {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	entries := make([]MapEntry[K, V], 0, c.size)
-	for _, bucket := range c.buckets {
-		entries = append(entries, bucket...)
+	ReferenceRequireNonNull(c)
+	entries := c.entrySnapshot()
+	out := make([]MapEntry[K, V], len(entries))
+	for i, e := range entries {
+		out[i] = MapEntry[K, V]{Key: collectionElementView[K](e.Key), Value: collectionElementView[V](e.Value)}
 	}
-	return entries
+	return out
 }
 func (c *ConcurrentHashMap[K, V]) KeySet() []K {
 	entries := c.EntrySet()
-	keys := make([]K, len(entries))
-	for i, entry := range entries {
-		keys[i] = entry.Key
+	out := make([]K, len(entries))
+	for i, e := range entries {
+		out[i] = e.Key
 	}
-	return keys
+	return out
 }
 
 // Runnable is the Go counterpart of java.lang.Runnable: anything with a Run()
 // method. Anonymous Runnable classes and Thread subclasses (whose run() override
 // is generated as Run()) satisfy it, so they can be handed to a Thread directly.
 const (
-	RunnableTypeID TypeID = "Runnable"
+	RunnableTypeID TypeID = "java.lang.Runnable"
 	ThreadTypeID   TypeID = "java.lang.Thread"
 )
 
@@ -316,16 +226,20 @@ func (*PlainRunnableFuncAdapter) JavaDynamicTypeID() TypeID {
 // transpiler appends a numeric suffix, which invokeSuffixedExecutionRunnable
 // discovers before falling back to the public Go entry point.
 func RunRunnableExecution(execution *Execution, value any) {
-	r := asRunnable(value)
-	if r == nil {
+	if thread, ok := value.(*Thread); ok {
+		thread.runJava2goExecution(execution)
 		return
 	}
-	// Preserve the caller's logical execution for a direct Thread.run() without
-	// exporting an execution-aware method that Go would promote through embedded
-	// Thread subclasses. The exact type assertion deliberately excludes those
-	// subclasses so their generated/overridden Run method remains authoritative.
-	if thread, ok := r.(*Thread); ok {
-		thread.runJava2goExecution(execution)
+	// A source Thread's declaration-backed provider owns its native view. Check
+	// nominal ancestry before the unrelated legacy Runnable method-set adapter.
+	if carrier, ok := value.(JavaObjectInfoCarrier); ok {
+		if info := carrier.JavaObjectInfo(); info != nil && JavaTypeAssignable(info.DynamicType(), ThreadTypeID) {
+			ThreadRunExecution(execution, ObjectView[*Thread](value, ThreadTypeID))
+			return
+		}
+	}
+	r := asRunnable(value)
+	if r == nil {
 		return
 	}
 	if generated, ok := r.(executionRunnable); ok {
@@ -380,16 +294,19 @@ func decimalSuffix(name, prefix string) bool {
 // finishes. Java's Thread is far richer (priorities, interruption, daemon status,
 // fairness); those are out of scope and documented as such.
 type Thread struct {
+	sourceObjectInfo       *ObjectInfo
+	sourceRunExecution     func(*Execution)
+	sourceStartExecution   func(*Execution)
 	isInterruptedExecution func(*Execution) bool
-	interruptExecution func(*Execution)
-	interruptMu        sync.Mutex
-	interrupted        bool
-	interruptSignal    chan struct{}
-	name               string
-	nameText           *JavaString
-	run                Runnable
-	done               chan struct{}
-	started            atomic.Bool
+	interruptExecution     func(*Execution)
+	interruptMu            sync.Mutex
+	interrupted            bool
+	interruptSignal        chan struct{}
+	name                   string
+	nameText               *JavaString
+	run                    Runnable
+	done                   chan struct{}
+	started                atomic.Bool
 }
 
 var threadSequence atomic.Int64
@@ -422,7 +339,10 @@ func newNamedThread(name string) *Thread {
 // JavaDynamicTypeID lets the reified reference-array runtime recognize the
 // compact stdjava-backed representation using its canonical java.lang.Thread
 // descriptor, matching compiler-generated casts and reference-array components.
-func (*Thread) JavaDynamicTypeID() TypeID {
+func (t *Thread) JavaDynamicTypeID() TypeID {
+	if t != nil && t.sourceObjectInfo != nil {
+		return t.sourceObjectInfo.DynamicType()
+	}
 	return ThreadTypeID
 }
 
@@ -497,23 +417,16 @@ func NewThreadBase(self Runnable) *Thread {
 // Runnable even when it has not been subclassed, so the runtime representation
 // must expose Run to remain a valid generated Runnable and Runnable[] view.
 func (t *Thread) Run() {
-	t.runJava2goExecution(NewExecution())
+	ThreadRunExecution(NewExecution(), t)
 }
 
 func (t *Thread) runJava2goExecution(execution *Execution) {
-	RunRunnableExecution(execution, t.run)
+	ThreadRunExecution(execution, t)
 }
 
 // Start can transition a Thread from NEW to alive only once.
 func (t *Thread) Start() {
-	if !t.started.CompareAndSwap(false, true) {
-		panic(NewIllegalThreadStateException("thread already started"))
-	}
-	go func() {
-		defer close(t.done)
-		defer reportUncaughtTaskException()
-		RunRunnableExecution(&Execution{thread: t}, t.run)
-	}()
+	ThreadStartExecution(NewExecution(), t)
 }
 
 // Join on a NEW or terminated Thread returns immediately, as in Java.

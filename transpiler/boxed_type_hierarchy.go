@@ -10,6 +10,9 @@ import (
 // generic member ABI just like source-declared interfaces. The symbol graph
 // does not contain these runtime-provided declarations.
 func javaTypeHasInterfaceRepresentation(javaType string, ctx Ctx) bool {
+	if mapReferenceArgumentIndependent(javaType, ctx) {
+		return true
+	}
 	base, _ := parseJavaTypeString(strings.TrimSpace(javaType))
 	if scope := resolveClassScopeByQualifiedName(ctx, base); scope != nil {
 		return scope.IsInterface
@@ -73,6 +76,12 @@ func builtinJavaReferenceAssignable(actual, expected string, ctx Ctx) bool {
 // Only invocation applicability may infer the candidate method's own binders.
 // Ordinary assignability and override checks keep invariant arguments.
 func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
+	if threadSourceNativeReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
+	if uriReferenceAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
 	if currencyReferenceAssignable(actual, expected, candidateTypeParams, ctx) {
 		return true
 	}
@@ -98,6 +107,9 @@ func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, c
 		return true
 	}
 	if sourceAbstractCollectionAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
+	if sourceMapReferenceAssignable(actual, expected, candidateTypeParams, ctx) {
 		return true
 	}
 	if sourceMapEntryAssignable(actual, expected, candidateTypeParams, ctx) {

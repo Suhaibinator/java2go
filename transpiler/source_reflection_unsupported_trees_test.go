@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// These valid declarations exercise the explicit unsupported-tree policy;
-// they do not predict Java wildcard/array output or weaken the JVM controls.
+// Preserve the original declarations while asserting their complete supported
+// metadata trees. Independent controls retain the remaining rejection policy.
 func TestSourceReflectionUnsupportedTrees(t *testing.T) {
 	ctx := sourceGenericViewDemandTestContext(t, map[string]string{
 		"probe/Pending.java": `package probe; import java.util.List;
@@ -30,18 +30,28 @@ func TestSourceReflectionUnsupportedTrees(t *testing.T) {
 				if reflectCoreString(t, reflectCoreKey(t, descriptor, "Name")) != name {
 					continue
 				}
-				kind := reflectCoreKey(t, reflectCoreComposite(t, reflectCoreKey(t, descriptor, "GenericType")), "Kind")
-				conversion, ok := kind.(*ast.CallExpr)
-				if !ok || len(conversion.Args) != 1 {
-					t.Fatal("unsupported tree silently erased")
-				}
-				selector, ok := conversion.Fun.(*ast.SelectorExpr)
-				if !ok || selector.Sel.Name != "ReflectTypeKind" {
-					t.Fatal("unsupported kind ABI")
-				}
-				literal, ok := conversion.Args[0].(*ast.BasicLit)
-				if !ok || literal.Value != "255" {
-					t.Fatal("unsupported kind must reach the closed runtime rejection")
+				tree := reflectCoreKey(t, descriptor, "GenericType")
+				if name == "array" {
+					array := reflectCoreComposite(t, tree)
+					reflectCoreKind(t, array, "ReflectClassKind")
+					reflectMetadataArrayRaw(t, reflectCoreKey(t, array, "Raw"), 1, "java.lang.String")
+				} else {
+					parameter := reflectCoreComposite(t, tree)
+					reflectCoreKind(t, parameter, "ReflectParameterizedKind")
+					if got := reflectCoreTypeID(t, reflectCoreKey(t, parameter, "Raw")); got != "java.util.List" {
+						t.Fatalf("raw=%q", got)
+					}
+					arguments := reflectCoreSlice(t, reflectCoreKey(t, parameter, "Arguments"))
+					if len(arguments) != 1 {
+						t.Fatal("wildcard argument arity")
+					}
+					wildcard := reflectCoreComposite(t, arguments[0])
+					reflectCoreKind(t, wildcard, "ReflectWildcardKind")
+					upper, lower := reflectCoreSlice(t, reflectCoreKey(t, wildcard, "UpperBounds")), reflectCoreSlice(t, reflectCoreKey(t, wildcard, "LowerBounds"))
+					if len(upper) != 1 || len(lower) != 0 {
+						t.Fatal("unbounded wildcard bounds")
+					}
+					reflectCoreClass(t, upper[0], "java.lang.Object")
 				}
 				return
 			}

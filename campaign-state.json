@@ -26263,5 +26263,54 @@
     "goal_status": "ACTIVE",
     "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
     "next": "Join canonical JDK nominal inventory, repair actual native ByteBuffer identities, verify full channel matrix and rerun original Netty graph; continue source Thread and Throwable identity work."
+  },
+  "sol_progress160": {
+    "status": "WIP_INTEGRATION_INDEPENDENT_FINITE_PASS_NOT_FULLROUND",
+    "implementation_source_manifest_sha256": "d26aab772ff47f66ce1587ed7945ea4a8e873bc39b8ef27bbcb3d3c7aa7ff60e",
+    "source_members": 4075,
+    "applications": 46,
+    "fresh_JDK": 258,
+    "fresh_Go": 258,
+    "additional_Go_race_stress": 120,
+    "raw_receipts": 879,
+    "runtime_symbol_parsing": [
+      786,
+      17,
+      10
+    ],
+    "default_f1_build_testcompile_lint": "PASS",
+    "old_test_audit_sha256": "805c67137974e3c534ca6ce9365194605317a522f52bcb77871d9d2fbba95b2d",
+    "evidence": {
+      "run:root-coherent4075/run/ROOT_RAW_AUDIT.json": "5adba9fc0fca7eca05617cc495d13fbbdf436b9b865c01550e8c04d48c1cd4a3",
+      "root4075-original39-replay:root4075-original39-replay/ROOT_RAW_AUDIT.json": "3716c2bb47ca1c4ebccd39e5bfa67cd5d84aae71e317ad7ea8c2b265ef8ca410",
+      "root4075-rawgeneric-replay:root4075-rawgeneric-replay/ROOT_RAW_AUDIT.json": "973b7d1e396ece9548a9398a5a3e8b070648642d5fb105a70a97e2080eeb40f4",
+      "run:root4075-thread6-replay/run/ROOT_RAW_AUDIT.json": "e033efc8d650797c919d8ee11e1d6b3fd7e3e5c10f8e5df41570ba1eda93d565"
+    },
+    "held": [
+      "full compiler CI",
+      "full Gson/dependency campaign acceptance",
+      "Reader clone successor",
+      "T2 frame and default-metadata successor",
+      "Netty full strict transpilation/build/execution",
+      "performance advantage over Java"
+    ],
+    "publication_whitespace_only": {
+      "path": "transpiler/generic_method_dispatch.go",
+      "before_sha256": "7f067154abbf88f151042234a2abe7a03adc83f992e50dbdf032bce8a25b17a4",
+      "after_sha256": "95ff620fb08df761f8ac5ad77a46946a86e3ece2be2691f9ad533f94ad7570eb",
+      "change": "Remove one empty EOF line only; all Go tokens and gofmt canonical output unchanged.",
+      "canonical_sha256": "95ff620fb08df761f8ac5ad77a46946a86e3ece2be2691f9ad533f94ad7570eb",
+      "gofmt_sha256": "49f6b08b2a6f0ea1746a6ab647f73af598e14371250f8ec61ce232b17e83b7aa",
+      "original_publish160_driver_exit": 1,
+      "reason": "git diff --check found new blank line at EOF",
+      "original_script_sha256": "46ca56abc987b93c62bd6ed46df10d65a63b31d953b837e7fe696b4561590a8f"
+    }
+  },
+  "active_resume_current160": {
+    "updated_utc": "2026-10-21T21:48:16.305229+00:00",
+    "status": "ACTIVE Sol-only continuous adversarial campaign",
+    "checkpoint": "campaign/SOL_PROGRESS160.md",
+    "public_base": "31f2c903d2b7b62487fc0640616245f4fb405adc",
+    "next": "Finish profiled compiler scan optimization and full Netty rerun; finish Reader/T2 integration and CI repairs. Full round acceptance remains unproven."
   }
 }

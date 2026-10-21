@@ -146,7 +146,11 @@ func registerStringBuilderIntrinsics() {
 		registerInstanceIntrinsicResultType(typeName, "toString", "String")
 		registerInstanceIntrinsicResultType(typeName, "length", "int")
 		registerInstanceIntrinsicResultType(typeName, "charAt", "char")
-		registerConstructorNodeIntrinsic(typeName, lowerStringBuilderConstructor)
+		constructor := lowerStringBuilderConstructor
+		if typeName == "StringBuffer" {
+			constructor = lowerStringBufferConstructor
+		}
+		registerConstructorNodeIntrinsic(typeName, constructor)
 		registerInstanceIntrinsic(typeName, "append", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 			if !expectArgs(args, 1) {
 				return nil
@@ -569,6 +573,7 @@ func registerBoxedTypeIntrinsics() {
 // All wrappers are references. Factories and constructors must remain distinct:
 // valueOf may return a cached object, whereas new always preserves fresh identity.
 func registerBoxedObjectIntrinsics() {
+	registerWrapperDimensionConstants()
 	// Imported calls use the same lowering only after declared overload applicability.
 	registerStaticIntrinsicImportSignature("Boolean", "parseBoolean", "java.lang.String")
 	registerStaticIntrinsicImportSignature("Integer", "parseInt", "java.lang.String")

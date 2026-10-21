@@ -1,0 +1,6 @@
+field=true
+parameter=true
+lambda-java=true
+pattern-java=true
+qualified-binder=true
+binder=true

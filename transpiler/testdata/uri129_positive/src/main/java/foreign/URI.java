@@ -1,0 +1,1 @@
+package foreign;public class URI {public String normalize(){return "foreign-normalize";}}

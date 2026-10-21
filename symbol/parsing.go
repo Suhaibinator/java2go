@@ -388,6 +388,18 @@ func ParseMethodDefinition(node *sitter.Node, source []byte, declaring *ClassSco
 	return scope.Methods[0]
 }
 
+// ParseFieldDefinitions shares ordinary declaration metadata with hoisted
+// local fields without registering those fields on the enclosing class.
+func ParseFieldDefinitions(node *sitter.Node, source []byte, declaring *ClassScope) []*Definition {
+	if node == nil || node.Type() != "field_declaration" || declaring == nil {
+		return nil
+	}
+	scope := *declaring
+	scope.Fields = nil
+	parseClassMember(&scope, node, source)
+	return scope.Fields
+}
+
 // parseClassMember parses a single class member (field, method, constructor, or nested class)
 func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 	switch node.Type() {

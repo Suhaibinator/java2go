@@ -336,8 +336,42 @@ func planDirectOwnerCallableOverrideBridgeFamilyUnchecked(
 ) (*directOwnerOverrideBridgeFamilyPlan, bool) {
 	if (!ordinaryConcreteCallableOwner(owner) && !ordinaryCovariantCallableOwner(owner)) || !ordinarySourceMethod(owner, method) ||
 		len(method.TypeParameters) != 0 ||
-		executionParameterIsVariadic(method, len(method.Parameters)-1) ||
-		classHasUnmodeledCallableSubclass(owner, ctx) {
+		executionParameterIsVariadic(method, len(method.Parameters)-1) {
+		return nil, false
+	}
+
+	// A declaration without captured/class parameters cannot erase an argument,
+	// and Java primitive/void results cannot be covariant. Such a descriptor has
+	// no bridge family to discover among unrelated source declarations. Retain
+	// the full path for every enclosing, captured or incomplete signature.
+	switch strings.TrimSpace(method.OriginalType) {
+	case "void", "boolean", "byte", "short", "char", "int", "long", "float", "double":
+		parameterFree := len(ctx.syntheticTypeParameters) == 0 && method.DirectTypeParameter == nil && len(method.TypeParameterBindings) == 0
+		for current := owner; current != nil && parameterFree; current = current.Enclosing {
+			parameterFree = len(current.TypeParameters) == 0 && len(current.DeclaredTypeParameters) == 0 &&
+				(current.Class == nil || len(current.Class.TypeParameters) == 0 && current.Class.DirectTypeParameter == nil && len(current.Class.TypeParameterBindings) == 0)
+		}
+		if parameterFree {
+			for _, parameter := range method.Parameters {
+				if parameter == nil || parameter.DirectTypeParameter != nil || len(parameter.TypeParameterBindings) != 0 {
+					parameterFree = false
+					break
+				}
+			}
+		}
+		if parameterFree {
+			return nil, false
+		}
+	}
+	// A legal, explicitly final source class has no descendants. Its own
+	// unchecked family therefore cannot acquire requiresErasedView below.
+	// Ancestor-target and generic-family planning remain separate entry paths.
+	declaration := owner.Class.DeclarationNode
+	if declaration != nil && declaration.Type() == "class_declaration" &&
+		declarationHasModifier(declaration, "final") && findFileScopeForClassScope(owner, ctx) != nil {
+		return nil, false
+	}
+	if classHasUnmodeledCallableSubclass(owner, ctx) {
 		return nil, false
 	}
 

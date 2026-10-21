@@ -78,6 +78,8 @@ func preparedAnonymousFieldReceiverExpr(node *sitter.Node, source []byte, ctx Ct
 // physical ABI. Source offsets alone cannot distinguish an AST containing the
 // previous caller's Execution, captured local names or generic substitutions.
 type anonymousReceiverEmissionStamp struct {
+	receiverOwner                                           *symbol.ClassScope
+	receiverName                                            string
 	source                                                  *byte
 	sourceLength                                            int
 	file                                                    *symbol.FileScope
@@ -92,7 +94,7 @@ type anonymousReceiverEmissionStamp struct {
 }
 
 func anonymousReceiverStamp(source []byte, ctx Ctx) anonymousReceiverEmissionStamp {
-	return anonymousReceiverEmissionStamp{source: anonymousReceiverSourceIdentity(source), sourceLength: len(source), file: ctx.currentFile, class: ctx.currentClass, local: ctx.localScope, erased: ctx.erasedGenericMethodBody, lexicalBody: ctx.localBindingBody, expectedRoot: ctx.expectedTypeRoot, hoisted: ctx.hoistedDecls, counter: ctx.anonClassCounter, families: ctx.genericFamilies, witnesses: ctx.dependentTypeWitnesses, execution: ctx.executionContextName, className: ctx.className, expectedType: ctx.expectedType, physicalABI: anonymousReceiverPhysicalABI(ctx), locals: anonymousReceiverLocalBindings(ctx.localScope)}
+	return anonymousReceiverEmissionStamp{receiverOwner: ctx.currentClass, receiverName: sourceInstanceReceiverName(ctx), source: anonymousReceiverSourceIdentity(source), sourceLength: len(source), file: ctx.currentFile, class: ctx.currentClass, local: ctx.localScope, erased: ctx.erasedGenericMethodBody, lexicalBody: ctx.localBindingBody, expectedRoot: ctx.expectedTypeRoot, hoisted: ctx.hoistedDecls, counter: ctx.anonClassCounter, families: ctx.genericFamilies, witnesses: ctx.dependentTypeWitnesses, execution: ctx.executionContextName, className: ctx.className, expectedType: ctx.expectedType, physicalABI: anonymousReceiverPhysicalABI(ctx), locals: anonymousReceiverLocalBindings(ctx.localScope)}
 }
 
 func anonymousReceiverPhysicalABI(ctx Ctx) string {

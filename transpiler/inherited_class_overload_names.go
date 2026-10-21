@@ -56,6 +56,14 @@ func resolveInheritedClassOverloadNames() {
 		}
 	}
 	affected := map[*symbol.Definition]bool{}
+	// The fixed runtime Reader state selector cannot be an ordinary Java
+	// method selector. Allocate its genuine override/interface family together:
+	// declaring-class suffixes can differ when a child owns suffix-like fields.
+	for _, method := range methods {
+		if symbol.Uppercase(method.OriginalName) == "JavaReaderState" {
+			affected[root(method)] = true
+		}
+	}
 	for _, scope := range scopes {
 		visible := append([]*symbol.Definition(nil), scope.Methods...)
 		for _, ancestor := range ancestorSets[scope] {

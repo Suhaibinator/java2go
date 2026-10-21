@@ -96,6 +96,9 @@ func sourceGenericViewDemandType(node *sitter.Node, ctx Ctx, source []byte) *sym
 		}
 	}
 	javaType := node.Content(source)
+	if genericFamilyCanonicalComparableHeader(javaType, ctx, node) {
+		return ctx.currentClass
+	}
 	base, arguments := parseJavaTypeString(javaType)
 	if visibleTypeParameterDeclarationForJavaType(base, ctx) != nil || sourceGenericViewLocalTypeShadowed(node, base, source) {
 		return nil

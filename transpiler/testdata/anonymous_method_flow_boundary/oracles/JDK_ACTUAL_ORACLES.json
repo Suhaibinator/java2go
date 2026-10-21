@@ -1,0 +1,36 @@
+{
+  "classes": {
+    "flow/api/Action.class": "5c1dc9827065a6aecdab4f96090a5831f981e06745a75c00bd417a3bf5cf3737",
+    "flow/api/Factories$1.class": "04f4879d1264288fda691a8fbecf255f3a91bf513b6cefb272baa3425dff6a22",
+    "flow/api/Factories$1Work.class": "400c864e98ae1ca1ff21e6fd5e34fe3a6745926e380aa5fb6d1b8f7cfc2bade4",
+    "flow/api/Factories$2.class": "80635c786ee52f1d91c1951882a77970ab1ffc922d120c71b3eff17c29f55492",
+    "flow/api/Factories.class": "5a0672045b1c5d2c0a8e7dde0d8069aadabfd89b3d390522afc807e52a78ab28",
+    "flow/app/Main.class": "9238e5b7d6829460aaeb5a17ff69bf1e6c54c56dccb5d7c4a761416364104827",
+    "workflow/state/Ledger$Fault.class": "dee1fbecc240df8dbd2e991d60ea648a93d5c98e58bc5c323d4e7550526a1f07",
+    "workflow/state/Ledger.class": "cd34412c7e5ad28af01e47e00b0813bb7d58ceb55ddd449bcc279feaff58f1b5"
+  },
+  "descriptor_sha256": "b58dc912c26f7366bd1169285c211d6ed623a6780936f281f2a2802d70773ee9",
+  "fixture_manifest_sha256": "57d823ee23b24a25b038049166195dbd85fb55568539f47d90f878a251538751",
+  "oracles": {
+    "17": {
+      "actual_runs": 3,
+      "bytes": 373,
+      "lines": 10,
+      "sha256": "8e6c350ecabce2939a8e0a88edc8c126a65d37e2f3c6e06feed4274a887a43b2"
+    },
+    "41": {
+      "actual_runs": 3,
+      "bytes": 373,
+      "lines": 10,
+      "sha256": "9f38c5de1f27ab0794ae8e17c54c13dac88e8c4613c9b6b7171a3203b703638c"
+    },
+    "97": {
+      "actual_runs": 3,
+      "bytes": 373,
+      "lines": 10,
+      "sha256": "473c320db41d5c074719d1554e8a0b07ed3e901c7d0a250024c78fdeb3edfcff"
+    }
+  },
+  "producer_edits": 0,
+  "status": "VALID_FRESH_JDK21_COMPLETE_FOCUSED_JAVA_SEEDED_ORACLES"
+}

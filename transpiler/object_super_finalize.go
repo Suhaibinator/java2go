@@ -26,5 +26,5 @@ func objectSuperFinalizeInvocation(object *sitter.Node, method string, ctx Ctx, 
 			return nil
 		}
 	}
-	return stdjavaCall(ctx, "ObjectDefaultFinalizeExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)))
+	return stdjavaCall(ctx, "ObjectDefaultFinalizeExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(sourceInstanceReceiverName(ctx)))
 }

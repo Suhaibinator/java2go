@@ -18,6 +18,7 @@ func (*ReaderBase) JavaReaderMarker()    {}
 func (*ReaderBase) JavaCloseableMarker() {}
 func NewReaderBase(lock ...any) *ReaderBase {
 	base := &ReaderBase{}
+	base.Lock = base
 	if len(lock) > 0 {
 		ReferenceRequireNonNull(lock[0])
 		base.Lock = lock[0]
@@ -48,6 +49,9 @@ func ReaderReadArrayExecution(execution *Execution, reader Reader, buffer *Primi
 	return ReaderReadArrayDefaultExecution(execution, reader, buffer)
 }
 func ReaderReadArrayDefaultExecution(execution *Execution, reader Reader, buffer *PrimitiveArray[rune]) int32 {
+	if buffer == nil {
+		panic(NewJavaNullPointerExceptionMessage(JavaStringFromHostUTF8(`Cannot read the array length because "cbuf" is null`)))
+	}
 	return ReaderReadCharsExecution(execution, reader, buffer, 0, PrimitiveArrayLength(buffer))
 }
 func ReaderReadCharsExecution(execution *Execution, reader Reader, buffer *PrimitiveArray[rune], offset, length int32) int32 {

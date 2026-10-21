@@ -127,10 +127,22 @@ func discoverCanonicalGenericFamilies(ctx Ctx) []*genericFamilyPlan {
 }
 
 func genericFamilyPhysicalJavaType(typ string, ctx Ctx) string {
-	if ctx.localScope == nil || ctx.localScope.Constructor || ctx.localScope.IsStatic || canonicalGenericFamily(ctx.currentClass, ctx) == nil {
+	if ctx.localScope == nil || ctx.localScope.IsStatic {
 		return typ
 	}
 	plan := canonicalGenericFamily(ctx.currentClass, ctx)
+	if plan == nil {
+		return typ
+	}
+	if ctx.localScope.Constructor {
+		certified := false
+		for _, representation := range plan.representations {
+			certified = certified || (representation.sourceCertificate != nil && representation.sourceCertificate.constructors[ctx.localScope])
+		}
+		if !certified {
+			return typ
+		}
+	}
 	bindings := map[string]string{}
 	for _, parameter := range ctx.currentClass.TypeParameters {
 		if parameter.Declaration != nil && visibleTypeParameterDeclarationForJavaType(parameter.Name, ctx) == parameter.Declaration {

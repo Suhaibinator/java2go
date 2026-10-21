@@ -196,10 +196,20 @@ func registerStaticFieldIntrinsic(className, fieldName string, gen func(ctx Ctx)
 // using the intrinsics table. It resolves the receiver's Java type, looks up the
 // table, and returns the generated expression (or nil if nothing matched).
 func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []byte, ctx Ctx) (ast.Expr, bool) {
+	if methodName == "addSuppressed" {
+		if rewritten := throwableAddSuppressedInvocation(objectNode, ctx, source); rewritten != nil {
+			return rewritten, true
+		}
+	}
 	if rewritten := rewriteExplicitAbstractMapSuperInvocation(objectNode, methodName, ctx, source); rewritten != nil {
 		return rewritten, true
 	}
 	receiverType, ok := intrinsicMethodReceiverTypeName(objectNode, methodName, ctx, source)
+	if methodName == "cast" {
+		if _, proved := classCastReceiverOrigin(objectNode, ctx, source); proved {
+			receiverType, ok = "Class", true
+		}
+	}
 	// Object's zero-argument monitor methods are final and inherited by every
 	// Java reference type, including source classes. Preserve the original
 	// receiver expression rather than projecting it to an embedded Go base.
@@ -207,10 +217,13 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 		receiverType, ok = "Object", true
 	}
 	if methodName == "initCause" {
-		if objectNode != nil && objectNode.Type() == "super" && ctx.currentClass != nil && isBuiltinExceptionType(ctx.currentClass.Superclass) && resolveClassScopeByQualifiedName(ctx, ctx.currentClass.Superclass) == nil {
-			args := intrinsicArgs(objectNode, methodName, source, ctx)
-			if len(args) == 1 {
-				return stdjavaCall(ctx, "ThrowableInitCauseDefaultExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(ShortName(ctx.className)), args[0]), true
+		if objectNode != nil && objectNode.Type() == "super" && ctx.currentClass != nil {
+			declaring := classScopeCtx(ctx.currentClass, ctx)
+			if _, builtin := builtinExceptionStorageTypeName(ctx.currentClass.Superclass, declaring); builtin {
+				args := intrinsicArgs(objectNode, methodName, source, ctx)
+				if len(args) == 1 {
+					return stdjavaCall(ctx, "ThrowableInitCauseDefaultExecution", intrinsicExecutionExpr(ctx), ast.NewIdent(sourceInstanceReceiverName(ctx)), args[0]), true
+				}
 			}
 		}
 		if javaType, known := inferExprJavaType(objectNode, ctx, source); known && isExceptionJavaType(ctx, javaType) {
@@ -232,6 +245,9 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 	_, hasNodeIntrinsic := instanceNodeIntrinsics[intrinsicKey{receiverType, methodName}]
 	gen, ok := instanceIntrinsics[intrinsicKey{receiverType, methodName}]
 	if !ok && !hasNodeIntrinsic {
+		if refused := unimplementedPlatformMemberExpr(objectNode, methodName, ctx, source); refused != nil {
+			return refused, true
+		}
 		return nil, false
 	}
 
@@ -1056,6 +1072,22 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 // runtime classes. Resolve it before the usual source-method exclusion, keeping
 // the exact receiver (and therefore its canonical raw Java class) intact.
 func intrinsicMethodReceiverTypeName(objectNode *sitter.Node, methodName string, ctx Ctx, source []byte) (string, bool) {
+	if receiver, ok := reflectObjectInvocationReceiver(objectNode, methodName, ctx, source); receiver != "" {
+		return receiver, ok
+	}
+	if _, selected := fileChannelLifecycleSelection(objectNode, methodName, ctx, source); selected {
+		return "FileChannel", true
+	}
+	if methodName == "read" {
+		if receiver, handled := fileChannelReadReceiverSelection(objectNode, ctx, source); handled {
+			return receiver, receiver != ""
+		}
+	}
+	if methodName == "write" {
+		if receiver, handled := fileChannelWriteReceiverSelection(objectNode, ctx, source); handled {
+			return receiver, receiver != ""
+		}
+	}
 	if objectNode != nil && enumFinalMethod(methodName) {
 		invocation := objectNode.Parent()
 		arguments := invocation.ChildByFieldName("arguments")
@@ -1111,6 +1143,34 @@ func intrinsicReceiverTypeName(objectNode *sitter.Node, ctx Ctx, source []byte) 
 	// array object as the receiver so identity and its reified class survive.
 	if _, rank := javaArrayTypeParts(javaType); rank > 0 {
 		return "Object", true
+	}
+	// A source member's external type belongs to its declaration namespace.
+	// Validate that donor before using its retained identity; caller type roots
+	// and binders must not reinterpret a cross-file receiver declaration.
+	// Class declares one type parameter; its native receiver ABI is erased.
+	// Accept that exact declared arity without admitting other generic natives.
+	classArgument := origin.externalName == "java.lang.Class" && len(origin.arguments) == 1 && completeJavaTypeOrigin(origin.arguments[0])
+	if completeJavaTypeOrigin(origin) && origin.externalName != "" && origin.declaringOwner != nil && origin.parameter == nil && origin.nominalScope == nil && origin.arrayRank == 0 && !origin.wildcard && (len(origin.arguments) == 0 || classArgument) {
+		proof := ctx.Clone()
+		proof.currentFile = nil
+		proof.syntheticTypeParameters = nil
+		declaring := classScopeCtx(origin.declaringOwner, proof)
+		if declaring.currentFile == nil || findFileScopeForClassScope(origin.declaringOwner, proof) != declaring.currentFile {
+			return "", false
+		}
+		name := stripJavaQualifier(origin.externalName)
+		if owners, registered := intrinsicOwners[name]; registered {
+			if !owners[origin.externalName] {
+				return "", false
+			}
+			return intrinsicOwnerKey(origin.externalName), true
+		}
+		// These closed native families still use their original legacy keys.
+		// The complete declaration certificate above supplies their identity.
+		switch origin.externalName {
+		case "java.lang.StringBuilder", "java.lang.StringBuffer":
+			return name, true
+		}
 	}
 	base, _ := parseJavaTypeString(javaType)
 	if erased, bounded := javaTypeParameterErasure(base, ctx); bounded {

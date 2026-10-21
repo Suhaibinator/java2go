@@ -41,6 +41,9 @@ func identFromNode(node *sitter.Node, source []byte) *ast.Ident {
 
 // A Ctx is all the context that is needed to parse a single source file
 type Ctx struct {
+	// Emitted body receiver, keyed by its actual Java declaration owner.
+	emittedReceiverOwner           *symbol.ClassScope
+	emittedReceiverName            string
 	preparedAnonymousReceiverRoot  *sitter.Node
 	preparedAnonymousReceiverExpr  ast.Expr
 	preparedAnonymousReceiverStamp anonymousReceiverEmissionStamp
@@ -48,6 +51,8 @@ type Ctx struct {
 	volatileStorageRoot *sitter.Node
 	// Project entrypoints retain their Java signature and receive argv from a launcher.
 	projectMode bool
+	// Explicit supported execution profile, independent of source ownership.
+	runtimeLocationProfile sourceRuntimeLocationProfile
 	// Immutable named-family analysis shared only within this resolved file render.
 	genericFamilies *genericFamilyAnalysis
 	// Structural source facts shared only within a resolved conversion batch.
@@ -71,7 +76,12 @@ type Ctx struct {
 	localScope *symbol.Definition
 
 	// Anonymous universal-method callbacks use their declaration-bound erased ABI.
-	erasedGenericMethodBody *symbol.Definition
+	erasedGenericMethodBody    *symbol.Definition
+	genericInterfaceMethodBody *genericInterfaceMethodBodyABI
+	// Declaration-proven raw Function erasure belongs only to its lambda scope.
+	rawFunctionTarget *rawFunctionTargetABI
+	// Implicit Object argument origin belongs to one admitted argument root.
+	genericImplicitArgument *genericMethodImplicitArgumentABI
 
 	// executionContextName is the hidden *stdjava.Execution parameter active
 	// while lowering one generated Java method, constructor, or callback. Calls
@@ -416,10 +426,13 @@ func transferTargetInsideBoundary(transfer *tryControlTransfer, boundary *sitter
 // pointing at the same things as the previous Ctx
 func (c Ctx) Clone() Ctx {
 	return Ctx{
+		emittedReceiverOwner:                c.emittedReceiverOwner,
+		emittedReceiverName:                 c.emittedReceiverName,
 		preparedAnonymousReceiverRoot:       c.preparedAnonymousReceiverRoot,
 		preparedAnonymousReceiverExpr:       c.preparedAnonymousReceiverExpr,
 		preparedAnonymousReceiverStamp:      c.preparedAnonymousReceiverStamp,
 		projectMode:                         c.projectMode,
+		runtimeLocationProfile:              c.runtimeLocationProfile,
 		genericFamilies:                     c.genericFamilies,
 		callableSubclasses:                  c.callableSubclasses,
 		sourceOwnership:                     c.sourceOwnership,
@@ -431,6 +444,9 @@ func (c Ctx) Clone() Ctx {
 		currentClass:                        c.currentClass,
 		localScope:                          c.localScope,
 		erasedGenericMethodBody:             c.erasedGenericMethodBody,
+		genericInterfaceMethodBody:          c.genericInterfaceMethodBody,
+		rawFunctionTarget:                   c.rawFunctionTarget,
+		genericImplicitArgument:             c.genericImplicitArgument,
 		executionContextName:                c.executionContextName,
 		lastType:                            c.lastType,
 		expectedType:                        c.expectedType,
@@ -515,7 +531,16 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
 				declCtx := ctx.Clone()
 				if nameNode := c.ChildByFieldName("name"); nameNode != nil && ctx.currentFile != nil {
-					if scope := ctx.currentFile.FindClassScope(nameNode.Content(source)); scope != nil {
+					var declared *symbol.ClassScope
+					for _, scope := range ctx.currentFile.TopLevelClasses {
+						if scope != nil && scope.Class != nil && scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Equal(c) {
+							declared = scope
+							break
+						}
+					}
+					if declared != nil {
+						declCtx.currentClass = declared
+					} else if scope := ctx.currentFile.FindClassScope(nameNode.Content(source)); scope != nil {
 						declCtx.currentClass = scope
 					}
 				}
@@ -618,7 +643,10 @@ func ParseNode(node *sitter.Node, source []byte, ctx Ctx) interface{} {
 			return true
 		}
 
-		def := ctx.currentClass.FindMethod().By(comparison)[0]
+		def := interfaceDeclaredMethod(ctx.currentClass, node)
+		if def == nil {
+			def = ctx.currentClass.FindMethod().By(comparison)[0]
+		}
 		ctx.localScope = def
 
 		parameters := &ast.FieldList{}
@@ -791,6 +819,9 @@ func lowerTryStatement(node *sitter.Node, source []byte, ctx Ctx, withResources 
 		if returnType != "" && returnType != "void" {
 			hasReturnValue = true
 			returnValueType = javaTypeStringToGoTypeExpr(returnType, inScopeTypeParameters(ctx), ctx)
+			if ctx.rawFunctionTarget.active(ctx) {
+				returnValueType = ast.NewIdent("any")
+			}
 			returnValueType = directOwnerTypeParameterMethodResultType(
 				ctx.currentClass,
 				ctx.localScope,
@@ -1320,69 +1351,112 @@ func parseResourceDecls(resourcesNode *sitter.Node, source []byte, ctx Ctx) []re
 func buildResourceCloseDeferStmt(resourceName string, resourceNode *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 	resourceName = localBindingName(resourceName, ctx)
 	closeBody := []ast.Stmt{}
-	closeExecutionName := ""
+	// Resource cleanup selects the inherited canonical declaration from the
+	// resource's own type/origin. A matching Go method shape is not a proof.
+	var channelView ast.Expr
+	var sourceScope *symbol.ClassScope
+	canonical := false
 	if resourceNode != nil {
-		if typeNode := resourceNode.ChildByFieldName("type"); typeNode != nil {
-			if scope := resolveClassScopeByQualifiedName(ctx, typeNode.Content(source)); scope != nil {
-				if resolution := findInstanceMethodInHierarchy(scope, "close", 0, ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
-					closeExecutionName = executionImplementationName(resolution.def, resolution.owner, ctx)
+		if typ := resourceNode.ChildByFieldName("type"); typ != nil {
+			declared := typ.Content(source)
+			if isVarKeywordType(declared) {
+				value := resourceNode.ChildByFieldName("value")
+				if value != nil {
+					inference := ctx.Clone()
+					inference.expectedType, inference.expectedTypeRoot = "", nil
+					var origin inferredJavaTypeOrigin
+					_, known := inferExprJavaType(value, inference, source, &origin)
+					if known && !origin.unresolved && origin.parameter == nil {
+						sourceScope = origin.nominalScope
+						if sourceScope == nil {
+							canonical = fileChannelReadExternalExpression(value, "java.nio.channels.FileChannel", inference, source)
+						}
+					}
+				}
+			} else {
+				owner, known := fileChannelDeclarationOwner(declared, ctx)
+				canonical = known && owner == "java.nio.channels.FileChannel"
+				if !canonical && visibleTypeParameterDeclarationForJavaType(declared, ctx) == nil {
+					sourceScope = resolveClassScopeByQualifiedName(ctx, declared)
 				}
 			}
 		}
 	}
-	// AutoCloseable and other unresolved interface-typed resources hide the
-	// concrete source class from static lookup. Generated close methods still use
-	// one globally collision-safe execution name, so probe that structural method
-	// before falling back to the public Close ABI.
-	if closeExecutionName == "" {
-		closeExecutionName = executionImplementationName(&symbol.Definition{Name: "Close"}, ctx.currentClass, ctx)
-	}
-	if execution := executionExpr(ctx); execution != nil && closeExecutionName != "" {
-		usedNames := map[string]struct{}{resourceName: {}}
-		if ctx.executionContextName != "" {
-			usedNames[ctx.executionContextName] = struct{}{}
+	if canonical {
+		channelView = ast.NewIdent(resourceName)
+	} else if sourceScope != nil && fileChannelSourceRoot(sourceScope, ctx) != nil {
+		selected := findInstanceMethodInHierarchy(sourceScope, "close", 0, ctx)
+		if selected == nil || selected.def == nil || selected.def.DeclarationNode == nil {
+			channelView = fileChannelSourceProjection(ast.NewIdent(resourceName), &ast.StarExpr{X: stdjavaQualifiedExpr("FileChannel", ctx)}, ctx)
 		}
-		executionReceiverName := synchronizedUniqueLocalName("__java2goCloseExecutionReceiver", usedNames)
-		hasExecutionReceiverName := synchronizedUniqueLocalName("__java2goHasCloseExecutionReceiver", usedNames)
-		executionCloseInterface := &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{
-			Names: []*ast.Ident{{Name: closeExecutionName}},
-			Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
-				Type: &ast.StarExpr{X: stdjavaQualifiedExpr("Execution", ctx)},
-			}}}},
-		}}}}
-		closeBody = append(closeBody,
-			&ast.AssignStmt{
-				Lhs: []ast.Expr{&ast.Ident{Name: executionReceiverName}, &ast.Ident{Name: hasExecutionReceiverName}},
-				Tok: token.DEFINE,
-				Rhs: []ast.Expr{&ast.TypeAssertExpr{
-					X: &ast.CallExpr{
-						Fun:  &ast.InterfaceType{Methods: &ast.FieldList{}},
-						Args: []ast.Expr{&ast.Ident{Name: resourceName}},
-					},
-					Type: executionCloseInterface,
-				}},
-			},
-			&ast.IfStmt{
-				Cond: &ast.Ident{Name: hasExecutionReceiverName},
-				Body: &ast.BlockStmt{List: []ast.Stmt{
-					&ast.ExprStmt{X: &ast.CallExpr{
-						Fun: &ast.SelectorExpr{
-							X:   &ast.Ident{Name: executionReceiverName},
-							Sel: &ast.Ident{Name: closeExecutionName},
-						},
-						Args: []ast.Expr{execution},
-					}},
-					&ast.ReturnStmt{},
-				}},
-			},
-		)
 	}
-	closeBody = append(closeBody, &ast.ExprStmt{X: &ast.CallExpr{
-		Fun: &ast.SelectorExpr{
-			X:   &ast.Ident{Name: resourceName},
-			Sel: &ast.Ident{Name: "Close"},
-		},
-	}})
+	if execution := executionExpr(ctx); execution != nil && channelView != nil {
+		closeBody = append(closeBody, &ast.ExprStmt{X: stdjavaCall(ctx, "FileChannelCloseVirtualExecution", execution, channelView)})
+	} else {
+		closeExecutionName := ""
+		if resourceNode != nil {
+			if typeNode := resourceNode.ChildByFieldName("type"); typeNode != nil {
+				if scope := resolveClassScopeByQualifiedName(ctx, typeNode.Content(source)); scope != nil {
+					if resolution := findInstanceMethodInHierarchy(scope, "close", 0, ctx); resolution != nil && resolution.def != nil && resolution.def.DeclarationNode != nil {
+						closeExecutionName = executionImplementationName(resolution.def, resolution.owner, ctx)
+					}
+				}
+			}
+		}
+		// AutoCloseable and other unresolved interface-typed resources hide the
+		// concrete source class from static lookup. Generated close methods still use
+		// one globally collision-safe execution name, so probe that structural method
+		// before falling back to the public Close ABI.
+		if closeExecutionName == "" {
+			closeExecutionName = executionImplementationName(&symbol.Definition{Name: "Close"}, ctx.currentClass, ctx)
+		}
+		if execution := executionExpr(ctx); execution != nil && closeExecutionName != "" {
+			usedNames := map[string]struct{}{resourceName: {}}
+			if ctx.executionContextName != "" {
+				usedNames[ctx.executionContextName] = struct{}{}
+			}
+			executionReceiverName := synchronizedUniqueLocalName("__java2goCloseExecutionReceiver", usedNames)
+			hasExecutionReceiverName := synchronizedUniqueLocalName("__java2goHasCloseExecutionReceiver", usedNames)
+			executionCloseInterface := &ast.InterfaceType{Methods: &ast.FieldList{List: []*ast.Field{{
+				Names: []*ast.Ident{{Name: closeExecutionName}},
+				Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{{
+					Type: &ast.StarExpr{X: stdjavaQualifiedExpr("Execution", ctx)},
+				}}}},
+			}}}}
+			closeBody = append(closeBody,
+				&ast.AssignStmt{
+					Lhs: []ast.Expr{&ast.Ident{Name: executionReceiverName}, &ast.Ident{Name: hasExecutionReceiverName}},
+					Tok: token.DEFINE,
+					Rhs: []ast.Expr{&ast.TypeAssertExpr{
+						X: &ast.CallExpr{
+							Fun:  &ast.InterfaceType{Methods: &ast.FieldList{}},
+							Args: []ast.Expr{&ast.Ident{Name: resourceName}},
+						},
+						Type: executionCloseInterface,
+					}},
+				},
+				&ast.IfStmt{
+					Cond: &ast.Ident{Name: hasExecutionReceiverName},
+					Body: &ast.BlockStmt{List: []ast.Stmt{
+						&ast.ExprStmt{X: &ast.CallExpr{
+							Fun: &ast.SelectorExpr{
+								X:   &ast.Ident{Name: executionReceiverName},
+								Sel: &ast.Ident{Name: closeExecutionName},
+							},
+							Args: []ast.Expr{execution},
+						}},
+						&ast.ReturnStmt{},
+					}},
+				},
+			)
+		}
+		closeBody = append(closeBody, &ast.ExprStmt{X: &ast.CallExpr{
+			Fun: &ast.SelectorExpr{
+				X:   &ast.Ident{Name: resourceName},
+				Sel: &ast.Ident{Name: "Close"},
+			},
+		}})
+	}
 	return &ast.DeferStmt{
 		Call: &ast.CallExpr{
 			Fun: stdjavaQualifiedExpr("CloseResource", ctx),

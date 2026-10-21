@@ -178,28 +178,45 @@ func collectionEqualityFailure(equal *bool) {
 }
 
 func (c *ConcurrentHashMap[K, V]) javaMapLookup(key any, execution *Execution) (any, bool) {
-	value, present := c.GetOk(key, execution)
+	ReferenceRequireNonNull(c)
+	value, present := c.getObject(key, execution)
 	return value, present
 }
 func (c *ConcurrentHashMap[K, V]) Equals(other any) bool {
-	return c.EqualsJava2goExecution(nil, other)
+	return c.EqualsJava2goExecution(NewExecution(), other)
 }
-func (c *ConcurrentHashMap[K, V]) EqualsJava2goExecution(execution *Execution, other any) (equal bool) {
-	defer collectionEqualityFailure(&equal)
+func (c *ConcurrentHashMap[K, V]) EqualsJava2goExecution(execution *Execution, other any) bool {
 	ReferenceRequireNonNull(c)
 	if JavaReferenceEqual(c, other) {
 		return true
 	}
-	if javaReferenceIsNull(other) {
+	if !ObjectInstanceOf(other, MapTypeID) {
 		return false
 	}
-	right, ok := other.(javaMapValue)
-	if !ok || c.Size() != right.Size() {
-		return false
+	if execution == nil {
+		execution = NewExecution()
 	}
-	for _, entry := range c.EntrySet() {
-		value, present := right.javaMapLookup(entry.Key, execution)
-		if !present || !ObjectsEqual(entry.Value, value, execution) {
+	right := MapReferenceView(other)
+	for _, record := range c.recordSnapshot() {
+		prior := c.recordValue(record)
+		value := MapGetExecution(execution, right, record.key)
+		if javaReferenceIsNull(value) || !ObjectsEqual(value, prior, execution) {
+			return false
+		}
+	}
+	cursor := abstractMapIterator(execution, right)
+	for IteratorHasNextExecution(execution, cursor) {
+		entry := abstractMapNextEntry(execution, cursor)
+		key := MapEntryGetKeyExecution(execution, entry)
+		if javaReferenceIsNull(key) {
+			return false
+		}
+		value := MapEntryGetValueExecution(execution, entry)
+		if javaReferenceIsNull(value) {
+			return false
+		}
+		actual := c.GetObject(key, execution)
+		if javaReferenceIsNull(actual) || !ObjectsEqual(value, actual, execution) {
 			return false
 		}
 	}
@@ -208,9 +225,5 @@ func (c *ConcurrentHashMap[K, V]) EqualsJava2goExecution(execution *Execution, o
 func (c *ConcurrentHashMap[K, V]) HashCode() int32 { return c.HashCodeJava2goExecution(nil) }
 func (c *ConcurrentHashMap[K, V]) HashCodeJava2goExecution(execution *Execution) int32 {
 	ReferenceRequireNonNull(c)
-	var hash int32
-	for _, entry := range c.EntrySet() {
-		hash += entry.HashCodeJava2goExecution(execution)
-	}
-	return hash
+	return c.hashCode(execution)
 }

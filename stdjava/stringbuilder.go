@@ -8,11 +8,13 @@ import "fmt"
 // modeled by this shared representation.
 type StringBuilder struct {
 	buf []rune
+	// The canonical allocation class is immutable even though content changes.
+	class stringBuilderClass
 }
 
 // NewStringBuilder returns an empty StringBuilder, matching `new StringBuilder()`.
 func NewStringBuilder() *StringBuilder {
-	return &StringBuilder{}
+	return newStringBuilderAllocation(stringBuilderClassBuilder, nil)
 }
 
 // NewStringBuilderCapacity implements the int constructor. Capacity is a
@@ -22,13 +24,13 @@ func NewStringBuilderCapacity(capacity int32) *StringBuilder {
 	if capacity < 0 {
 		panic(NewNegativeArraySizeException(fmt.Sprint(capacity)))
 	}
-	return &StringBuilder{buf: make([]rune, 0, int(capacity))}
+	return newStringBuilderAllocation(stringBuilderClassBuilder, make([]rune, 0, int(capacity)))
 }
 
 // NewStringBuilderString returns a StringBuilder seeded with the given string,
 // matching `new StringBuilder(String)`.
 func NewStringBuilderString(s string) *StringBuilder {
-	return &StringBuilder{buf: StringChars(StringRequireNonNull(s))}
+	return newStringBuilderAllocation(stringBuilderClassBuilder, StringChars(StringRequireNonNull(s)))
 }
 
 // Append appends the textual representation of value to the builder and returns

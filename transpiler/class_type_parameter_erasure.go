@@ -87,6 +87,9 @@ func directOwnerInterfaceErasure(
 	if !ok {
 		return "", false
 	}
+	if representation, certified := genericFamilySourceBoundDefinition(owner, definition, ctx); certified {
+		return representation.erasure, true
+	}
 	erasure := qualifyJavaTypeInDeclaringContext(use.erasure, owner)
 	if leafObjectErasure(owner, erasure, ctx) || genericFamilyIsObjectErasure(owner, erasure, ctx) {
 		return erasure, true
@@ -1275,6 +1278,8 @@ func callablePhysicalTypeKey(javaType string, ctx Ctx) string {
 
 func classScopeCtx(scope *symbol.ClassScope, ctx Ctx) Ctx {
 	result := ctx.Clone()
+	result.emittedReceiverOwner = nil
+	result.emittedReceiverName = ""
 	result.currentClass = scope
 	result.memberTypeHeaderOwner = nil
 	result.localScope = nil

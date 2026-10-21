@@ -14,6 +14,7 @@ import "strings"
 // List is a generic, slice-backed list matching the subset of java.util.List
 // used by transpiled code.
 type List[T any] struct {
+	allocationKind listAllocationKind
 	elements       []T
 	erasedElements []any
 	erasedStorage  bool

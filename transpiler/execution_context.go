@@ -360,6 +360,9 @@ func generateExecutionCompanionInterface(scope *symbol.ClassScope, ctx Ctx) ast.
 	typeParams := scope.TypeParameterNames()
 	methods := &ast.FieldList{}
 	for _, method := range scope.Methods {
+		if fileChannelSourceProtocolSlot(method, scope, ctx) != "" {
+			continue
+		}
 		if method == nil || method.Constructor || method.IsStatic || method.IsPrivate || (method.RequiresHelper && !genericMethodHasErasedEntry(method)) {
 			continue
 		}
@@ -383,6 +386,9 @@ func generateExecutionCompanionInterface(scope *symbol.ClassScope, ctx Ctx) ast.
 		if hidden := executionMethodField(public, method, scope, ctx); hidden != nil {
 			methods.List = append(methods.List, hidden)
 		}
+	}
+	if fileChannelSourceRoot(scope, ctx) != nil {
+		methods.List = append(methods.List, fileChannelSourceProtocolFields(ctx, true)...)
 	}
 	if len(methods.List) == 0 {
 		return nil

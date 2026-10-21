@@ -156,6 +156,9 @@ func staticFieldValueType(access *staticFieldAccess, ctx Ctx) ast.Expr {
 	if access == nil || access.resolution == nil || access.resolution.def == nil {
 		return &ast.Ident{Name: "any"}
 	}
+	if declared, ok := staticFieldDeclaredStorageType(access.resolution.def, access.resolution.owner, ctx); ok {
+		return declared
+	}
 	javaType := qualifyJavaTypeInDeclaringContext(access.resolution.def.OriginalType, access.resolution.owner)
 	typeExpr := javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx)
 	return abstractClassToInterface(typeExpr, javaType, ctx)

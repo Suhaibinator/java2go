@@ -43,7 +43,7 @@ func throwableMessageInvocation(object *sitter.Node, method string, ctx Ctx, sou
 		}
 	}
 	if object.Type() == "super" {
-		return stdjavaCall(ctx, "JavaThrowableMessageDefault", ast.NewIdent(ShortName(ctx.className)))
+		return stdjavaCall(ctx, "JavaThrowableMessageDefault", ast.NewIdent(sourceInstanceReceiverName(ctx)))
 	}
 	return stdjavaCall(ctx, "JavaThrowableMessageExecution", intrinsicExecutionExpr(ctx), ParseExpr(object, source, ctx))
 }

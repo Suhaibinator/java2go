@@ -88,7 +88,7 @@ func staticFieldStorageShadowed(field *symbol.Definition, ctx Ctx) bool {
 	if definitionBindsGoName(ctx.localScope, field.Name) {
 		return true
 	}
-	return ctx.currentClass != nil && ctx.currentClass.Class != nil && ShortName(ctx.currentClass.Class.Name) == field.Name
+	return ctx.currentClass != nil && ctx.currentClass.Class != nil && sourceInstanceReceiverName(ctx) == field.Name
 }
 
 // Build from the actual emitted ValueSpec, so the pointer type is exactly the

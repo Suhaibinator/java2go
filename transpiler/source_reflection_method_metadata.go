@@ -33,7 +33,7 @@ func sourceReflectionMethodSignature(scope *symbol.ClassScope, method *symbol.De
 	declaring := classScopeCtx(sourceReflectionJavaDeclarationScope(scope), ctx).Clone()
 	declaring.localScope = method
 	descriptor := func(original string, bindings map[string]*symbol.TypeParamDeclaration) (ast.Expr, bool) {
-		return javaTypeDescriptorExpr(qualifyDeclaredReferenceType(symbol.JavaType{Original: original, TypeParameterBindings: bindings}, declaring), declaring)
+		return declaredOriginDescriptor(declaredJavaTypeOrigin(symbol.JavaType{Original: original, TypeParameterBindings: bindings}, declaring), declaring, map[*symbol.TypeParamDeclaration]bool{})
 	}
 	parameters := make([]ast.Expr, len(method.Parameters))
 	for index, parameter := range method.Parameters {

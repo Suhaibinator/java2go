@@ -17,6 +17,11 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 	if expected := functionalDefaultExpected(invocation, ctx, source); expected != nil {
 		return expected
 	}
+	if method == "equals" {
+		if _, ok := reflectObjectInvocationReceiver(object, method, ctx, source); ok {
+			return []string{"java.lang.Object"}
+		}
+	}
 	count := invocationArgumentCount(invocation)
 	result := make([]string, count)
 	set := func(types ...string) []string {
@@ -157,6 +162,20 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 	if (class == "StringBuilder" || class == "StringBuffer") && method == "setLength" {
 		return set("int")
 	}
+	if (class == "StringBuilder" || class == "StringBuffer") && method == "charAt" {
+		argument := invocationArgumentNode(invocation, 0)
+		if argument == nil {
+			return result
+		}
+		argumentCtx := ctx.Clone()
+		argumentCtx.expectedType = ""
+		argumentCtx.expectedTypeRoot = nil
+		var origin inferredJavaTypeOrigin
+		if _, known := inferExprJavaType(argument, argumentCtx, source, &origin); !known || origin.nominalScope != nil {
+			return result
+		}
+		return set("int")
+	}
 	if expected, known := bigMathExpectedArgumentTypes(class, method, count); known {
 		return expected
 	}
@@ -263,10 +282,13 @@ func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, s
 			return set("Object")
 		}
 	}
+	class = mapIntrinsicLogicalName(class)
 	if containsString(mapTypeNames, class) || class == "ConcurrentHashMap" || class == "ConcurrentMap" {
 		switch method {
 		case "put", "putIfAbsent":
 			return set(element(0), element(1))
+		case "putAll":
+			return set("java.util.Map<? extends " + element(0) + ",? extends " + element(1) + ">")
 		case "get", "containsKey", "containsValue", "remove":
 			return set("Object", "Object")
 		case "getOrDefault":
@@ -567,6 +589,7 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 			return "boolean", true
 		}
 	}
+	receiver = mapIntrinsicLogicalName(receiver)
 	if containsString(mapTypeNames, receiver) || receiver == "ConcurrentHashMap" || receiver == "ConcurrentMap" {
 		switch name {
 		case "keySet":
@@ -584,6 +607,8 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 			return "boolean", true
 		case "size":
 			return "int", true
+		case "clear", "putAll":
+			return "void", true
 		case "containsKey", "containsValue", "isEmpty":
 			return "boolean", true
 		}
@@ -698,7 +723,7 @@ func parseTypedIntrinsicArguments(object *sitter.Node, method string, source []b
 	return parseTypedIntrinsicInvocationArguments(object.Parent(), object, class, method, source, ctx)
 }
 
-func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, staticClass, method string, source []byte, ctx Ctx) []ast.Expr {
+func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, staticClass, method string, source []byte, ctx Ctx, preserveFunctionObject ...bool) []ast.Expr {
 	argList := invocation.ChildByFieldName("arguments")
 	if argList == nil {
 		return nil
@@ -758,7 +783,7 @@ func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, sta
 		callbackType := argCtx.expectedType
 		_, callback := perArgument[index]
 		receiver, _ := intrinsicReceiverTypeName(object, ctx, source)
-		if method == "computeIfAbsent" && index == 1 && (containsString(mapTypeNames, receiver) || receiver == "ConcurrentHashMap" || receiver == "ConcurrentMap") {
+		if method == "computeIfAbsent" && index == 1 && (containsString(mapTypeNames, mapIntrinsicLogicalName(receiver)) || mapIntrinsicLogicalName(receiver) == "ConcurrentHashMap" || mapIntrinsicLogicalName(receiver) == "ConcurrentMap") {
 			callback = true
 		}
 		if !callback {
@@ -779,6 +804,10 @@ func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, sta
 			}
 		}
 		if callback {
+			if len(preserveFunctionObject) != 0 && preserveFunctionObject[0] && isExternalFunctionType(callbackType, ctx) {
+				args = append(args, parsed)
+				continue
+			}
 			if isExternalFunctionType(callbackType, ctx) {
 				parsed = functionCallbackExpr(parsed, callbackType, ctx)
 			}

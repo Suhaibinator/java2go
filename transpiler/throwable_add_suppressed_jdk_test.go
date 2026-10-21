@@ -1,0 +1,11 @@
+package transpiler
+
+import "testing"
+
+func TestThrowableAddSuppressedReferenceBodyJDK(t *testing.T) {
+	files := map[string]string{
+		"pom.xml":                     "<project><groupId>observe</groupId><artifactId>guard128</artifactId><version>1</version></project>",
+		"src/main/java/app/Main.java": "package app;\nimport java.security.GeneralSecurityException;\nclass Child extends GeneralSecurityException {\n static String trace=\"\"; Child(String text){super(text);}\n public void addSuppressed(String text){trace+=\"S\";}\n public void addSuppressed(Object value){trace+=\"O\";}\n void append(Throwable value){super.addSuppressed(value);}\n}\npublic class Main {\n static int calls;static Throwable arg(Throwable value){calls++;return value;}\n public static void main(String[] args){\n Child first=new Child(\"first\"),second=new Child(\"second\");Throwable other=new Exception(\"other\");\n first.addSuppressed((String)null);first.addSuppressed((Object)other);first.addSuppressed(other);first.append(second);\n Child receiver=first;receiver.addSuppressed(receiver=second);\n System.out.println(Child.trace+\":\"+first.getSuppressed().length+\":\"+second.getSuppressed().length+\":\"+(first.getSuppressed()[2]==second));\n Throwable canonical=first;\n synchronized(first){canonical.addSuppressed(other);System.out.println(Thread.holdsLock(first)+\":\"+first.getSuppressed().length);}\n try{canonical.addSuppressed(first);}catch(IllegalArgumentException e){System.out.println((e.getMessage()==\"Self-suppression not permitted\")+\":\"+(e.getCause()==first));}\n try{canonical.addSuppressed((Throwable)null);}catch(NullPointerException e){System.out.println((e.getMessage()==\"Cannot suppress a null exception.\")+\":\"+(e.getCause()==null));}\n Throwable absent=null;try{absent.addSuppressed(arg(other));}catch(NullPointerException e){System.out.println(\"receiver-null:\"+calls);}\n try{canonical.addSuppressed(arg(null));}catch(NullPointerException e){System.out.println(\"argument-null:\"+calls);}finally{System.out.println(\"cleanup:\"+first.getSuppressed().length);}\n }\n}\n",
+	}
+	runCampaignCompilerStrictProjectOracle(t, files, "app.Main", "SO:3:0:true\ntrue:4\ntrue:true\ntrue:true\nreceiver-null:1\nargument-null:2\ncleanup:4\n")
+}

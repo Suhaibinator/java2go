@@ -1,0 +1,1 @@
+package model; public class State implements parent.Order<State>,java.io.Serializable { public int key; public State(int key){this.key=key;} public int compareTo(State other){return key-other.key;} public static class Child extends State{public Child(int key){super(key);}} }

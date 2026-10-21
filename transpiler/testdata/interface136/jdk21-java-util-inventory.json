@@ -1,0 +1,3202 @@
+{
+  "completeness": "Every direct java.base/java/util/*.java source member read and validated to package java.util; comments/string/char literals excluded from top-level brace scan. All top-level declaration names retained, not just interfaces; duplicate names rejected. Nested members listed separately and excluded from demand imports. Only public top-level interface kinds are emitted as direct platform interface IDs.",
+  "declarations": {
+    "AbstractCollection": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/AbstractCollection.java"
+    },
+    "AbstractList": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/AbstractList.java"
+    },
+    "AbstractMap": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/AbstractMap.java"
+    },
+    "AbstractQueue": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/AbstractQueue.java"
+    },
+    "AbstractSequentialList": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/AbstractSequentialList.java"
+    },
+    "AbstractSet": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/AbstractSet.java"
+    },
+    "ArrayDeque": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/ArrayDeque.java"
+    },
+    "ArrayList": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/ArrayList.java"
+    },
+    "ArrayPrefixHelpers": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ArrayPrefixHelpers.java"
+    },
+    "Arrays": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Arrays.java"
+    },
+    "ArraysParallelSortHelpers": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ArraysParallelSortHelpers.java"
+    },
+    "Base64": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Base64.java"
+    },
+    "BitSet": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/BitSet.java"
+    },
+    "Calendar": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Calendar.java"
+    },
+    "CollSer": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    "Collection": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Collection.java"
+    },
+    "Collections": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Collections.java"
+    },
+    "ComparableTimSort": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ComparableTimSort.java"
+    },
+    "Comparator": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Comparator.java"
+    },
+    "Comparators": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/Comparators.java"
+    },
+    "ConcurrentModificationException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/ConcurrentModificationException.java"
+    },
+    "Currency": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Currency.java"
+    },
+    "Date": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Date.java"
+    },
+    "DecimalDigits": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/DecimalDigits.java"
+    },
+    "Deque": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Deque.java"
+    },
+    "Dictionary": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Dictionary.java"
+    },
+    "Digits": {
+      "kind": "interface",
+      "public": false,
+      "source": "java.base/java/util/Digits.java"
+    },
+    "DoubleSummaryStatistics": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/DoubleSummaryStatistics.java"
+    },
+    "DualPivotQuicksort": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/DualPivotQuicksort.java"
+    },
+    "DuplicateFormatFlagsException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/DuplicateFormatFlagsException.java"
+    },
+    "EmptyStackException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/EmptyStackException.java"
+    },
+    "EnumMap": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    "EnumSet": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/EnumSet.java"
+    },
+    "Enumeration": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Enumeration.java"
+    },
+    "EventListener": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/EventListener.java"
+    },
+    "EventListenerProxy": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/EventListenerProxy.java"
+    },
+    "EventObject": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/EventObject.java"
+    },
+    "FormatFlagsConversionMismatchException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/FormatFlagsConversionMismatchException.java"
+    },
+    "FormatItem": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    "FormatProcessor": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/FormatProcessor.java"
+    },
+    "Formattable": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Formattable.java"
+    },
+    "FormattableFlags": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/FormattableFlags.java"
+    },
+    "Formatter": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Formatter.java"
+    },
+    "FormatterBuilder": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    "FormatterClosedException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/FormatterClosedException.java"
+    },
+    "GregorianCalendar": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/GregorianCalendar.java"
+    },
+    "HashMap": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/HashMap.java"
+    },
+    "HashSet": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/HashSet.java"
+    },
+    "Hashtable": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Hashtable.java"
+    },
+    "HexDigits": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/HexDigits.java"
+    },
+    "HexFormat": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/HexFormat.java"
+    },
+    "IdentityHashMap": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    "IllegalFormatArgumentIndexException": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/IllegalFormatArgumentIndexException.java"
+    },
+    "IllegalFormatCodePointException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IllegalFormatCodePointException.java"
+    },
+    "IllegalFormatConversionException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IllegalFormatConversionException.java"
+    },
+    "IllegalFormatException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IllegalFormatException.java"
+    },
+    "IllegalFormatFlagsException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IllegalFormatFlagsException.java"
+    },
+    "IllegalFormatPrecisionException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IllegalFormatPrecisionException.java"
+    },
+    "IllegalFormatWidthException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IllegalFormatWidthException.java"
+    },
+    "IllformedLocaleException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IllformedLocaleException.java"
+    },
+    "ImmutableCollections": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    "InputMismatchException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/InputMismatchException.java"
+    },
+    "IntSummaryStatistics": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/IntSummaryStatistics.java"
+    },
+    "InvalidPropertiesFormatException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/InvalidPropertiesFormatException.java"
+    },
+    "Iterator": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Iterator.java"
+    },
+    "JapaneseImperialCalendar": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/JapaneseImperialCalendar.java"
+    },
+    "JumboEnumSet": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/JumboEnumSet.java"
+    },
+    "KeyValueHolder": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/KeyValueHolder.java"
+    },
+    "LinkedHashMap": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    "LinkedHashSet": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/LinkedHashSet.java"
+    },
+    "LinkedList": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/LinkedList.java"
+    },
+    "List": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/List.java"
+    },
+    "ListIterator": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/ListIterator.java"
+    },
+    "ListResourceBundle": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/ListResourceBundle.java"
+    },
+    "Locale": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Locale.java"
+    },
+    "LocaleISOData": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/LocaleISOData.java"
+    },
+    "LongSummaryStatistics": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/LongSummaryStatistics.java"
+    },
+    "Map": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Map.java"
+    },
+    "MissingFormatArgumentException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/MissingFormatArgumentException.java"
+    },
+    "MissingFormatWidthException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/MissingFormatWidthException.java"
+    },
+    "MissingResourceException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/MissingResourceException.java"
+    },
+    "NavigableMap": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/NavigableMap.java"
+    },
+    "NavigableSet": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/NavigableSet.java"
+    },
+    "NoSuchElementException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/NoSuchElementException.java"
+    },
+    "Objects": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Objects.java"
+    },
+    "Observable": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Observable.java"
+    },
+    "Observer": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Observer.java"
+    },
+    "OctalDigits": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/OctalDigits.java"
+    },
+    "Optional": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Optional.java"
+    },
+    "OptionalDouble": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/OptionalDouble.java"
+    },
+    "OptionalInt": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/OptionalInt.java"
+    },
+    "OptionalLong": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/OptionalLong.java"
+    },
+    "PrimitiveIterator": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/PrimitiveIterator.java"
+    },
+    "PriorityQueue": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/PriorityQueue.java"
+    },
+    "Properties": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Properties.java"
+    },
+    "PropertyPermission": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/PropertyPermission.java"
+    },
+    "PropertyPermissionCollection": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/PropertyPermission.java"
+    },
+    "PropertyResourceBundle": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/PropertyResourceBundle.java"
+    },
+    "Queue": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Queue.java"
+    },
+    "Random": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Random.java"
+    },
+    "RandomAccess": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/RandomAccess.java"
+    },
+    "RegularEnumSet": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/RegularEnumSet.java"
+    },
+    "ResourceBundle": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    "ReverseOrderDequeView": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ReverseOrderDequeView.java"
+    },
+    "ReverseOrderListView": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ReverseOrderListView.java"
+    },
+    "ReverseOrderSortedMapView": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ReverseOrderSortedMapView.java"
+    },
+    "ReverseOrderSortedSetView": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/ReverseOrderSortedSetView.java"
+    },
+    "Scanner": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Scanner.java"
+    },
+    "SequencedCollection": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/SequencedCollection.java"
+    },
+    "SequencedMap": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/SequencedMap.java"
+    },
+    "SequencedSet": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/SequencedSet.java"
+    },
+    "ServiceConfigurationError": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/ServiceConfigurationError.java"
+    },
+    "ServiceLoader": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/ServiceLoader.java"
+    },
+    "Set": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Set.java"
+    },
+    "SimpleTimeZone": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/SimpleTimeZone.java"
+    },
+    "SortedMap": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/SortedMap.java"
+    },
+    "SortedSet": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/SortedSet.java"
+    },
+    "Spliterator": {
+      "kind": "interface",
+      "public": true,
+      "source": "java.base/java/util/Spliterator.java"
+    },
+    "Spliterators": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    "SplittableRandom": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/SplittableRandom.java"
+    },
+    "Stack": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Stack.java"
+    },
+    "StringJoiner": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/StringJoiner.java"
+    },
+    "StringTokenizer": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/StringTokenizer.java"
+    },
+    "TaskQueue": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/Timer.java"
+    },
+    "TimSort": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/TimSort.java"
+    },
+    "TimeZone": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/TimeZone.java"
+    },
+    "Timer": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Timer.java"
+    },
+    "TimerTask": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/TimerTask.java"
+    },
+    "TimerThread": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/Timer.java"
+    },
+    "TooManyListenersException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/TooManyListenersException.java"
+    },
+    "TreeMap": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    "TreeSet": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/TreeSet.java"
+    },
+    "Tripwire": {
+      "kind": "class",
+      "public": false,
+      "source": "java.base/java/util/Tripwire.java"
+    },
+    "UUID": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/UUID.java"
+    },
+    "UnknownFormatConversionException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/UnknownFormatConversionException.java"
+    },
+    "UnknownFormatFlagsException": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/UnknownFormatFlagsException.java"
+    },
+    "Vector": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/Vector.java"
+    },
+    "WeakHashMap": {
+      "kind": "class",
+      "public": true,
+      "source": "java.base/java/util/WeakHashMap.java"
+    }
+  },
+  "duplicate_top_level_names": [],
+  "files": {
+    "java.base/java/util/AbstractCollection.java": {
+      "sha256": "c327100fb943f26954e19dcce322eef094a8d73ecd48cbc205ddddce21ffdfdf",
+      "top_level_declarations": [
+        "AbstractCollection"
+      ]
+    },
+    "java.base/java/util/AbstractList.java": {
+      "sha256": "c64de4d6cac1e07c740bccbb5722ed5b0f03e7ffa6aa0e6cc042187c5d7c40cb",
+      "top_level_declarations": [
+        "AbstractList"
+      ]
+    },
+    "java.base/java/util/AbstractMap.java": {
+      "sha256": "909a816643c42d67d13c598d66dc5cf9153b1a36a1f020ea584d38fc91460a98",
+      "top_level_declarations": [
+        "AbstractMap"
+      ]
+    },
+    "java.base/java/util/AbstractQueue.java": {
+      "sha256": "c4a5036250256a4ae57cc261299d05df64468ff82d503fd766c479cf40b7f8a0",
+      "top_level_declarations": [
+        "AbstractQueue"
+      ]
+    },
+    "java.base/java/util/AbstractSequentialList.java": {
+      "sha256": "0f3316ed7d68ea412c1f28e7900f3dc5b5da4be95239d6d74ccc2fec7466ff63",
+      "top_level_declarations": [
+        "AbstractSequentialList"
+      ]
+    },
+    "java.base/java/util/AbstractSet.java": {
+      "sha256": "b5b2660ff7f63d4055a7857cd1f0250b3ac8ff9724645992c791712eef775cda",
+      "top_level_declarations": [
+        "AbstractSet"
+      ]
+    },
+    "java.base/java/util/ArrayDeque.java": {
+      "sha256": "0054b52e8cace59caf06230ec1f718ead7f97d700f2e2c28d4b6217bb8120dc3",
+      "top_level_declarations": [
+        "ArrayDeque"
+      ]
+    },
+    "java.base/java/util/ArrayList.java": {
+      "sha256": "ff5dafa05874edf484dbdcf5c54709d4249e9196951c41deeea3ff0617c7e788",
+      "top_level_declarations": [
+        "ArrayList"
+      ]
+    },
+    "java.base/java/util/ArrayPrefixHelpers.java": {
+      "sha256": "db25325419f56040e0c591d5c27aecadcc0891bc44ef140a53cf6517956f73ac",
+      "top_level_declarations": [
+        "ArrayPrefixHelpers"
+      ]
+    },
+    "java.base/java/util/Arrays.java": {
+      "sha256": "451b7c1b878dfb515faedabb618a5a0b5470aceb1605be295f60b0115e8c8f0e",
+      "top_level_declarations": [
+        "Arrays"
+      ]
+    },
+    "java.base/java/util/ArraysParallelSortHelpers.java": {
+      "sha256": "c26a201d6a924206ca98db88ed4156d041d4cc365164dea37b3392bcbd4549ec",
+      "top_level_declarations": [
+        "ArraysParallelSortHelpers"
+      ]
+    },
+    "java.base/java/util/Base64.java": {
+      "sha256": "650e795827aefd12bdc08def12f7441e1e953ffa4797507af0d33b7a66aeecf2",
+      "top_level_declarations": [
+        "Base64"
+      ]
+    },
+    "java.base/java/util/BitSet.java": {
+      "sha256": "23ad29cdf110796e9345a9824eeee15efbcd601d8f14b1ebd018e21315767f3f",
+      "top_level_declarations": [
+        "BitSet"
+      ]
+    },
+    "java.base/java/util/Calendar.java": {
+      "sha256": "fa00ae2e4274a84119cca75d04bbb702fdc89261e983db537ac47e1f0b017845",
+      "top_level_declarations": [
+        "Calendar"
+      ]
+    },
+    "java.base/java/util/Collection.java": {
+      "sha256": "290d65a39df8dca61b91d3a9e6fb3d4cadb2a27b893a9bd881d7e8da37aa0ea3",
+      "top_level_declarations": [
+        "Collection"
+      ]
+    },
+    "java.base/java/util/Collections.java": {
+      "sha256": "b4b84774d20b86042b5d8bf363d5335646622caa04931f4be539bfbffe351202",
+      "top_level_declarations": [
+        "Collections"
+      ]
+    },
+    "java.base/java/util/ComparableTimSort.java": {
+      "sha256": "48cfdac912c3c05444d5f3952c79b66d4c70dd34f7de090020cd5d39fe9a5c05",
+      "top_level_declarations": [
+        "ComparableTimSort"
+      ]
+    },
+    "java.base/java/util/Comparator.java": {
+      "sha256": "f26c08d6ed6b57259b36db5b7db0f77f7724c4a808d83dc4b0dcca6e48a2f2a6",
+      "top_level_declarations": [
+        "Comparator"
+      ]
+    },
+    "java.base/java/util/Comparators.java": {
+      "sha256": "9dbe7df7385ad1318eadd40fb4f6d9a3a85ec0c7220a8df655d9ecc3337dc9ad",
+      "top_level_declarations": [
+        "Comparators"
+      ]
+    },
+    "java.base/java/util/ConcurrentModificationException.java": {
+      "sha256": "08e6ccfbe4254f92215d83e29d23b26ffc26dc473b096d549de3d09c4fa68ac6",
+      "top_level_declarations": [
+        "ConcurrentModificationException"
+      ]
+    },
+    "java.base/java/util/Currency.java": {
+      "sha256": "9c734932d60ea380114f54402d08480b915577e4e9fe820b860646fd1aaba9b9",
+      "top_level_declarations": [
+        "Currency"
+      ]
+    },
+    "java.base/java/util/Date.java": {
+      "sha256": "c79dd2d32d7fa7893493a83b90c2b7da0f679456cfcb1056b47f9ad1e95cb861",
+      "top_level_declarations": [
+        "Date"
+      ]
+    },
+    "java.base/java/util/DecimalDigits.java": {
+      "sha256": "79c093753ad0bfcd4ff76065e082728b368a650627e739e75ec905b6e62f1b7b",
+      "top_level_declarations": [
+        "DecimalDigits"
+      ]
+    },
+    "java.base/java/util/Deque.java": {
+      "sha256": "840032b0f01bd095044bda5a06bc814896b8550bd43a1fa4b70215f6657b781d",
+      "top_level_declarations": [
+        "Deque"
+      ]
+    },
+    "java.base/java/util/Dictionary.java": {
+      "sha256": "7df3c10c2a8f427937ee2cd4db464515e231cba064c0d2348bd21658f6475e9d",
+      "top_level_declarations": [
+        "Dictionary"
+      ]
+    },
+    "java.base/java/util/Digits.java": {
+      "sha256": "cd05af57ecdfd9a4ec5049dc31417db31a6de1eee769966bc6c5b4277f663683",
+      "top_level_declarations": [
+        "Digits"
+      ]
+    },
+    "java.base/java/util/DoubleSummaryStatistics.java": {
+      "sha256": "7ea527857e637ead008871fa231bfef5de8869d09b6d04b91ad18c63f523ec84",
+      "top_level_declarations": [
+        "DoubleSummaryStatistics"
+      ]
+    },
+    "java.base/java/util/DualPivotQuicksort.java": {
+      "sha256": "810986ddd51a6a3b38667a08abc73f5869f184d381c4b46b74f22d2612965c6a",
+      "top_level_declarations": [
+        "DualPivotQuicksort"
+      ]
+    },
+    "java.base/java/util/DuplicateFormatFlagsException.java": {
+      "sha256": "8afdd07f80a1dfbacad808f011d263683d896da1a26b12762a913cb15d31c930",
+      "top_level_declarations": [
+        "DuplicateFormatFlagsException"
+      ]
+    },
+    "java.base/java/util/EmptyStackException.java": {
+      "sha256": "d6c57e4996f8ae39f41518d8cd0f906405610733f01311b2f4214499bfb1c8ee",
+      "top_level_declarations": [
+        "EmptyStackException"
+      ]
+    },
+    "java.base/java/util/EnumMap.java": {
+      "sha256": "8632b7e1a971771a47ade57f25d107205c947f43b129802876e7205f3353c0c3",
+      "top_level_declarations": [
+        "EnumMap"
+      ]
+    },
+    "java.base/java/util/EnumSet.java": {
+      "sha256": "94dabf015768d135b71cf47565d955464ae4abc4fa3de988b2a67da8afdcd380",
+      "top_level_declarations": [
+        "EnumSet"
+      ]
+    },
+    "java.base/java/util/Enumeration.java": {
+      "sha256": "85405bcf0b68c8b7b6dee7570b06d55f65257595fbb2ea6fc99d91c1ccabb2af",
+      "top_level_declarations": [
+        "Enumeration"
+      ]
+    },
+    "java.base/java/util/EventListener.java": {
+      "sha256": "4595a24949c52a97b853f7e5f0da29701b5674cf1b1717372b289612a2aa42a6",
+      "top_level_declarations": [
+        "EventListener"
+      ]
+    },
+    "java.base/java/util/EventListenerProxy.java": {
+      "sha256": "2c0e5547929d7448e6d6adb42ca88ffd2bbfcec16315300702edd5784b6a0031",
+      "top_level_declarations": [
+        "EventListenerProxy"
+      ]
+    },
+    "java.base/java/util/EventObject.java": {
+      "sha256": "9c45fef4d1999f7d8ce5b1448272a3030f613edea2d3d4d782d947fb3bc56ed8",
+      "top_level_declarations": [
+        "EventObject"
+      ]
+    },
+    "java.base/java/util/FormatFlagsConversionMismatchException.java": {
+      "sha256": "8b53e4c398014a4570eb8be814f5a11f6f2c504ed33fb282cf08050fc8722078",
+      "top_level_declarations": [
+        "FormatFlagsConversionMismatchException"
+      ]
+    },
+    "java.base/java/util/FormatItem.java": {
+      "sha256": "ba7b79411a77423f1d78343365fda3eb650733f33f9d45ccdc738a1dd4fcae7c",
+      "top_level_declarations": [
+        "FormatItem"
+      ]
+    },
+    "java.base/java/util/FormatProcessor.java": {
+      "sha256": "66161996dc274c5de2d9e4b21bd7e0d3929f94e09b734abb50aad3431c9d8244",
+      "top_level_declarations": [
+        "FormatProcessor"
+      ]
+    },
+    "java.base/java/util/Formattable.java": {
+      "sha256": "038610b5b39f5369bc86ab881861339f8f080f42259b42c155f2506284fc003a",
+      "top_level_declarations": [
+        "Formattable"
+      ]
+    },
+    "java.base/java/util/FormattableFlags.java": {
+      "sha256": "d613323a7f9eb4a5e6121ddfa0eaeb0fd94a6769c63b9cd3312a20c1cfa111d4",
+      "top_level_declarations": [
+        "FormattableFlags"
+      ]
+    },
+    "java.base/java/util/Formatter.java": {
+      "sha256": "79bc8b9e1a04ee2be7c3d2fe3c19cb62d033e4bd961852e841af0c3d90bd7281",
+      "top_level_declarations": [
+        "Formatter"
+      ]
+    },
+    "java.base/java/util/FormatterBuilder.java": {
+      "sha256": "6e298f2642254b8062dacb0d35d6078a8cfb51eb5716aa1806fcfc3a485147bc",
+      "top_level_declarations": [
+        "FormatterBuilder"
+      ]
+    },
+    "java.base/java/util/FormatterClosedException.java": {
+      "sha256": "97eaf8748b4445183af231136bb154a1f92c05877796c63f5d093bf64a97d175",
+      "top_level_declarations": [
+        "FormatterClosedException"
+      ]
+    },
+    "java.base/java/util/GregorianCalendar.java": {
+      "sha256": "3f49ebe87d8297e33726a4a6e988b2d055041ed84e8c002e98d31f5816e186bc",
+      "top_level_declarations": [
+        "GregorianCalendar"
+      ]
+    },
+    "java.base/java/util/HashMap.java": {
+      "sha256": "ab6f9986b42f366303ac42cfd7d13fc9f420eff51ca6a81c09f375747442a729",
+      "top_level_declarations": [
+        "HashMap"
+      ]
+    },
+    "java.base/java/util/HashSet.java": {
+      "sha256": "802822bbbe581af5504d751e4f7ea4cb12ac4ddccef61463fa59c8a845598d89",
+      "top_level_declarations": [
+        "HashSet"
+      ]
+    },
+    "java.base/java/util/Hashtable.java": {
+      "sha256": "b1ed17a6ae5836558a66822db05742102e4e6d3296426625d90963b31387d297",
+      "top_level_declarations": [
+        "Hashtable"
+      ]
+    },
+    "java.base/java/util/HexDigits.java": {
+      "sha256": "f644f32263c65354017ac91080eb42d967493e70c5151302c52a0b02b195fa70",
+      "top_level_declarations": [
+        "HexDigits"
+      ]
+    },
+    "java.base/java/util/HexFormat.java": {
+      "sha256": "ec63faaf440c642bbfc7e0c840a654047f03b584f80903ca8587fc6b2afc23ae",
+      "top_level_declarations": [
+        "HexFormat"
+      ]
+    },
+    "java.base/java/util/IdentityHashMap.java": {
+      "sha256": "10df1f437803bb246197a79d0c300afb2aec61d34a0b8f6cbc6bd425413240b0",
+      "top_level_declarations": [
+        "IdentityHashMap"
+      ]
+    },
+    "java.base/java/util/IllegalFormatArgumentIndexException.java": {
+      "sha256": "d25d45be2a97fc8631fac93e72e32d0913a0f24b85a53aa896090caa4cc5feb1",
+      "top_level_declarations": [
+        "IllegalFormatArgumentIndexException"
+      ]
+    },
+    "java.base/java/util/IllegalFormatCodePointException.java": {
+      "sha256": "401c1e24d8dda2182a4fd1a73b59550eda1a3942006379bf6cb9ef382fd3292a",
+      "top_level_declarations": [
+        "IllegalFormatCodePointException"
+      ]
+    },
+    "java.base/java/util/IllegalFormatConversionException.java": {
+      "sha256": "601067185555ad38a0c26f2c0fd8a086b9108784e91930695ff1109801fe615f",
+      "top_level_declarations": [
+        "IllegalFormatConversionException"
+      ]
+    },
+    "java.base/java/util/IllegalFormatException.java": {
+      "sha256": "4b4478649366b93d7067885a296b59e5b7cd82eb7347a5c17bcb8095c3b5d06e",
+      "top_level_declarations": [
+        "IllegalFormatException"
+      ]
+    },
+    "java.base/java/util/IllegalFormatFlagsException.java": {
+      "sha256": "392f47cbc1db2dc4820c8cf7ee009b2adc13009bfeeb1d365be83a280c06236f",
+      "top_level_declarations": [
+        "IllegalFormatFlagsException"
+      ]
+    },
+    "java.base/java/util/IllegalFormatPrecisionException.java": {
+      "sha256": "31b958c93cfd3eac5eb751f48e4c3006403b41454caa6727339ba4b731c3fb73",
+      "top_level_declarations": [
+        "IllegalFormatPrecisionException"
+      ]
+    },
+    "java.base/java/util/IllegalFormatWidthException.java": {
+      "sha256": "e8badbbfc99377df0028be71d9aba2c468e5486c412cc5b30643666fd9e5dfb5",
+      "top_level_declarations": [
+        "IllegalFormatWidthException"
+      ]
+    },
+    "java.base/java/util/IllformedLocaleException.java": {
+      "sha256": "e5e012bd886bf2e0be75c96ea8b29c46d29bdbdb3aa7c418850ec7ad8d79a8ca",
+      "top_level_declarations": [
+        "IllformedLocaleException"
+      ]
+    },
+    "java.base/java/util/ImmutableCollections.java": {
+      "sha256": "767974f798df547fb27cbdb65a224627cbd06dbf41cb79f361c2d5f9afd5f156",
+      "top_level_declarations": [
+        "ImmutableCollections",
+        "CollSer"
+      ]
+    },
+    "java.base/java/util/InputMismatchException.java": {
+      "sha256": "905c4d908780259e2656506f9a7ec2799861a536a8954d8f3982043467b68950",
+      "top_level_declarations": [
+        "InputMismatchException"
+      ]
+    },
+    "java.base/java/util/IntSummaryStatistics.java": {
+      "sha256": "cfb43578df37e6314cbdb1cd72aa82fc0855a1c86420d46aba888026ffad3387",
+      "top_level_declarations": [
+        "IntSummaryStatistics"
+      ]
+    },
+    "java.base/java/util/InvalidPropertiesFormatException.java": {
+      "sha256": "6ffd784e7376bc2e6d06fbd79b9a3d3332368646322b568b33ad77e87e959ae9",
+      "top_level_declarations": [
+        "InvalidPropertiesFormatException"
+      ]
+    },
+    "java.base/java/util/Iterator.java": {
+      "sha256": "af02f086ac4f79e6ad5a24ca92345cb9dd7cff6a298bd19f4e7177e1d6af4f5a",
+      "top_level_declarations": [
+        "Iterator"
+      ]
+    },
+    "java.base/java/util/JapaneseImperialCalendar.java": {
+      "sha256": "3b7d1109e0c3376133b2293f6ebf3f3dfe1c32d1eb0c63b6ebc709f2b88a2b5a",
+      "top_level_declarations": [
+        "JapaneseImperialCalendar"
+      ]
+    },
+    "java.base/java/util/JumboEnumSet.java": {
+      "sha256": "ca5255ecd168bbc65b5ae7e4592a0e59f89eeb6fff410ffd3462b7049c32063f",
+      "top_level_declarations": [
+        "JumboEnumSet"
+      ]
+    },
+    "java.base/java/util/KeyValueHolder.java": {
+      "sha256": "41039f9a635e6b1b840960bd833158501cf8105bfa494fb0c076adaca1ff0fdd",
+      "top_level_declarations": [
+        "KeyValueHolder"
+      ]
+    },
+    "java.base/java/util/LinkedHashMap.java": {
+      "sha256": "063321836bbbaa34c684a6518310be2bdc9838f380fadcb5ec20f4e5e3fce023",
+      "top_level_declarations": [
+        "LinkedHashMap"
+      ]
+    },
+    "java.base/java/util/LinkedHashSet.java": {
+      "sha256": "694f0d1c1ac6afb2ee3af481770f996f3199397309a5fb17eab1d0848d71557c",
+      "top_level_declarations": [
+        "LinkedHashSet"
+      ]
+    },
+    "java.base/java/util/LinkedList.java": {
+      "sha256": "d49de87df65eabc6289219ca1b6fd718a61cea2793dd5b2da3f5795da080fa81",
+      "top_level_declarations": [
+        "LinkedList"
+      ]
+    },
+    "java.base/java/util/List.java": {
+      "sha256": "3affde31e7f4b0d12c3d89b865f437781166415d63e1d3bb044290335b49f339",
+      "top_level_declarations": [
+        "List"
+      ]
+    },
+    "java.base/java/util/ListIterator.java": {
+      "sha256": "2398e9416d78eb9b08f7db6d3479535cf57a9d9247e25f2d94bf702aebae4b9c",
+      "top_level_declarations": [
+        "ListIterator"
+      ]
+    },
+    "java.base/java/util/ListResourceBundle.java": {
+      "sha256": "e6df35716f700d6e32d65f7337a5157bcda8b3235d315d05ac5bd6cb2c6804aa",
+      "top_level_declarations": [
+        "ListResourceBundle"
+      ]
+    },
+    "java.base/java/util/Locale.java": {
+      "sha256": "4334a40fd89971a35c6eee3c22716f8d4fbd012f90cc78ea91405700cbc46f2e",
+      "top_level_declarations": [
+        "Locale"
+      ]
+    },
+    "java.base/java/util/LocaleISOData.java": {
+      "sha256": "f986dc2bf37d60895bcce3dd404ed3656cc15a99ced0121ede83e08565d537f7",
+      "top_level_declarations": [
+        "LocaleISOData"
+      ]
+    },
+    "java.base/java/util/LongSummaryStatistics.java": {
+      "sha256": "250db64cd69e0f763de871094330d9dbda2361977ea3a254d624549c5b4fd857",
+      "top_level_declarations": [
+        "LongSummaryStatistics"
+      ]
+    },
+    "java.base/java/util/Map.java": {
+      "sha256": "1e6470b81cf535d21e5ccb7efec1428a6b614cf2015102b827606b9e3fa3e251",
+      "top_level_declarations": [
+        "Map"
+      ]
+    },
+    "java.base/java/util/MissingFormatArgumentException.java": {
+      "sha256": "bb51bb5fc6158fb54c2da795eb4ff1926592d627a71beb8a0041c428dec97385",
+      "top_level_declarations": [
+        "MissingFormatArgumentException"
+      ]
+    },
+    "java.base/java/util/MissingFormatWidthException.java": {
+      "sha256": "e6f034c04d3d234d2b1871de6eead7915d13bebb48ac8208471138842d398584",
+      "top_level_declarations": [
+        "MissingFormatWidthException"
+      ]
+    },
+    "java.base/java/util/MissingResourceException.java": {
+      "sha256": "525a3debd55ec5eb0dc42b8a52a233a4b796088e7644149ae3880b3df6945d0e",
+      "top_level_declarations": [
+        "MissingResourceException"
+      ]
+    },
+    "java.base/java/util/NavigableMap.java": {
+      "sha256": "24d2848b2b740da621b4991b4c9166c132fa71a164d234fa230661e88dc174ba",
+      "top_level_declarations": [
+        "NavigableMap"
+      ]
+    },
+    "java.base/java/util/NavigableSet.java": {
+      "sha256": "0dd1f51ffe2d126ebd71c674e8c19ff4a013acdde8df43047a8e03159c0e780b",
+      "top_level_declarations": [
+        "NavigableSet"
+      ]
+    },
+    "java.base/java/util/NoSuchElementException.java": {
+      "sha256": "05d2d2b9b04e81d146e225417a951a74aee5f8082fd3ff903c1cc6dd4d3a8695",
+      "top_level_declarations": [
+        "NoSuchElementException"
+      ]
+    },
+    "java.base/java/util/Objects.java": {
+      "sha256": "46e0b89ad09d182fdc6fc4756f92056b6ff7942faf5cbc2d75238c2862de7dc0",
+      "top_level_declarations": [
+        "Objects"
+      ]
+    },
+    "java.base/java/util/Observable.java": {
+      "sha256": "71fd9bf3b8fb6a5d03a22c6309d72776fa41cf4dd35a406d8ae425d43799bc5f",
+      "top_level_declarations": [
+        "Observable"
+      ]
+    },
+    "java.base/java/util/Observer.java": {
+      "sha256": "bc77fe126f20748e22781bbbeeabd2169bb860984c1a0e9921a914fb6b5ce883",
+      "top_level_declarations": [
+        "Observer"
+      ]
+    },
+    "java.base/java/util/OctalDigits.java": {
+      "sha256": "8fe67480fcce8b3ee697b3df851d435804fb95a9d450ee47d56a021de41a0991",
+      "top_level_declarations": [
+        "OctalDigits"
+      ]
+    },
+    "java.base/java/util/Optional.java": {
+      "sha256": "97db107acfc958440399e2a6a5047ef04e746cdcbb00a3c80457028d363bf903",
+      "top_level_declarations": [
+        "Optional"
+      ]
+    },
+    "java.base/java/util/OptionalDouble.java": {
+      "sha256": "b5d85e911d1e7181116f12091cbe6851d14799acf84e26cf7bb65c63da89aa7c",
+      "top_level_declarations": [
+        "OptionalDouble"
+      ]
+    },
+    "java.base/java/util/OptionalInt.java": {
+      "sha256": "5c4f267abd6c5fc57bcac530914247aeaf24bea2a90f6f78afa01c68a0f2e37a",
+      "top_level_declarations": [
+        "OptionalInt"
+      ]
+    },
+    "java.base/java/util/OptionalLong.java": {
+      "sha256": "a5fbcb92b6234dca732408c0ec24a069efe11ffca4a664b13060d406482dbde7",
+      "top_level_declarations": [
+        "OptionalLong"
+      ]
+    },
+    "java.base/java/util/PrimitiveIterator.java": {
+      "sha256": "8cedeffaf223aa37a7105e4164eb2dc952ebd8fb95472656a6104d7012414ddf",
+      "top_level_declarations": [
+        "PrimitiveIterator"
+      ]
+    },
+    "java.base/java/util/PriorityQueue.java": {
+      "sha256": "0b6d2bf4bfc510af760991c340a0a39cfadd29611a626f2346c76fe6608c2a4e",
+      "top_level_declarations": [
+        "PriorityQueue"
+      ]
+    },
+    "java.base/java/util/Properties.java": {
+      "sha256": "8de062c7b5dc624206748ec7119a08375e0fc064654a3fb34d929f70e08543c8",
+      "top_level_declarations": [
+        "Properties"
+      ]
+    },
+    "java.base/java/util/PropertyPermission.java": {
+      "sha256": "05baeb6d0651521378998e5b24b81cad3095e5ceb20cfc8c7af7cbcad6eba5a1",
+      "top_level_declarations": [
+        "PropertyPermission",
+        "PropertyPermissionCollection"
+      ]
+    },
+    "java.base/java/util/PropertyResourceBundle.java": {
+      "sha256": "001bdaab033cb5f1bbaeb66a8e81a799faf81b7ebd5cebd53c6c3eb559278adb",
+      "top_level_declarations": [
+        "PropertyResourceBundle"
+      ]
+    },
+    "java.base/java/util/Queue.java": {
+      "sha256": "5ca44992f2bc9a32da74f0fc08b20b51d6ec6655eda784c16509c74b308829aa",
+      "top_level_declarations": [
+        "Queue"
+      ]
+    },
+    "java.base/java/util/Random.java": {
+      "sha256": "fe118db5c312bebcd34f0096d3b24104f3e7f1e0221ffcdcaa2a761720e68486",
+      "top_level_declarations": [
+        "Random"
+      ]
+    },
+    "java.base/java/util/RandomAccess.java": {
+      "sha256": "e9917296bef4aa73d3a56c2c012b70d4f3f50299093efa45c28c9bd70e173621",
+      "top_level_declarations": [
+        "RandomAccess"
+      ]
+    },
+    "java.base/java/util/RegularEnumSet.java": {
+      "sha256": "3dc11c961ae66716570af0d2d4490bb4ccfbd1817aee91c7c873451ed7e92448",
+      "top_level_declarations": [
+        "RegularEnumSet"
+      ]
+    },
+    "java.base/java/util/ResourceBundle.java": {
+      "sha256": "eb3a5c2a7861a08e27bf702a3f7c8d30e471fb4594afac6731dbf3b084647d36",
+      "top_level_declarations": [
+        "ResourceBundle"
+      ]
+    },
+    "java.base/java/util/ReverseOrderDequeView.java": {
+      "sha256": "43e445b8216caffd4292d8dc11a43f2db04b3fd2da52709abb641d4a908818c6",
+      "top_level_declarations": [
+        "ReverseOrderDequeView"
+      ]
+    },
+    "java.base/java/util/ReverseOrderListView.java": {
+      "sha256": "16f60887332b8d88e3dabad8db8e80c73a9be2653046b2d0a6b4bb96576dce30",
+      "top_level_declarations": [
+        "ReverseOrderListView"
+      ]
+    },
+    "java.base/java/util/ReverseOrderSortedMapView.java": {
+      "sha256": "d66ec10dc2d6baa2157adaa17faee1ec8fc507849506cce1dfbda77faffc9a78",
+      "top_level_declarations": [
+        "ReverseOrderSortedMapView"
+      ]
+    },
+    "java.base/java/util/ReverseOrderSortedSetView.java": {
+      "sha256": "6e42321cfa3fb1ca0a07127047f5800b31985b903cb323956530ec19b7b55de6",
+      "top_level_declarations": [
+        "ReverseOrderSortedSetView"
+      ]
+    },
+    "java.base/java/util/Scanner.java": {
+      "sha256": "cc3f199be845a00ca75403b4e45ae1f6913d7eaeb345fa0b9f77a0a8ec844ebd",
+      "top_level_declarations": [
+        "Scanner"
+      ]
+    },
+    "java.base/java/util/SequencedCollection.java": {
+      "sha256": "ac3ba77c6f52989a0dddcc315942485eaec5164aa9e91085ea2c23a58132cd4c",
+      "top_level_declarations": [
+        "SequencedCollection"
+      ]
+    },
+    "java.base/java/util/SequencedMap.java": {
+      "sha256": "2a7d4eb8a0cc799e33ef57c65909279e3e081c34ede5edbb43936a2e441c7c78",
+      "top_level_declarations": [
+        "SequencedMap"
+      ]
+    },
+    "java.base/java/util/SequencedSet.java": {
+      "sha256": "e18bc9d1865463c173dcf448cb4040f2aede92a2c18b7452212111fcd78829b4",
+      "top_level_declarations": [
+        "SequencedSet"
+      ]
+    },
+    "java.base/java/util/ServiceConfigurationError.java": {
+      "sha256": "9a75c7943d1f48a49e643767c8be40b596e19a213dc0859374992d42dca57651",
+      "top_level_declarations": [
+        "ServiceConfigurationError"
+      ]
+    },
+    "java.base/java/util/ServiceLoader.java": {
+      "sha256": "b720739cb3c0d4f899d627caeda80369be8187cd5198cdb37fd374dc9a0bd81d",
+      "top_level_declarations": [
+        "ServiceLoader"
+      ]
+    },
+    "java.base/java/util/Set.java": {
+      "sha256": "df956b42ffe751ce5866a8990393330333e02d52f47200b6eeea8b06926b119b",
+      "top_level_declarations": [
+        "Set"
+      ]
+    },
+    "java.base/java/util/SimpleTimeZone.java": {
+      "sha256": "ea1f4237a963afaa0f22a770852f4158f5428839bacc82843383b91b5a18f174",
+      "top_level_declarations": [
+        "SimpleTimeZone"
+      ]
+    },
+    "java.base/java/util/SortedMap.java": {
+      "sha256": "8eeeed5015d1309753f3ae8534e82e862dabf311f2a26a77dd22f7d61e7c7d90",
+      "top_level_declarations": [
+        "SortedMap"
+      ]
+    },
+    "java.base/java/util/SortedSet.java": {
+      "sha256": "45bf9d3c6d5f342c5432ac1add99f91080c3babbafea72347564e34c47b585ca",
+      "top_level_declarations": [
+        "SortedSet"
+      ]
+    },
+    "java.base/java/util/Spliterator.java": {
+      "sha256": "45f38d5c837400764fabb7313909ff8f2c9e9c8a326af0ac553e47132782e397",
+      "top_level_declarations": [
+        "Spliterator"
+      ]
+    },
+    "java.base/java/util/Spliterators.java": {
+      "sha256": "779cc6d97e29f4a5dfdfc7942a383ed6e1a43c9352722faf8f0b7c03a89f1f97",
+      "top_level_declarations": [
+        "Spliterators"
+      ]
+    },
+    "java.base/java/util/SplittableRandom.java": {
+      "sha256": "c9e437cb60b6ce3e6c71de3290639dcfd954282fba735426d4a737af594017ab",
+      "top_level_declarations": [
+        "SplittableRandom"
+      ]
+    },
+    "java.base/java/util/Stack.java": {
+      "sha256": "f764634c2bf896c8064ad9075ab52de3da21b881f2c1370b2063156bae6335f8",
+      "top_level_declarations": [
+        "Stack"
+      ]
+    },
+    "java.base/java/util/StringJoiner.java": {
+      "sha256": "9d2b008f90b86eaffa8a9cd186d75e487eac0c24baf5db240acb04679f153231",
+      "top_level_declarations": [
+        "StringJoiner"
+      ]
+    },
+    "java.base/java/util/StringTokenizer.java": {
+      "sha256": "cf58ca9384df1e88cb368c004da8c8dcc68d0a774913cf332338294fbb40c00f",
+      "top_level_declarations": [
+        "StringTokenizer"
+      ]
+    },
+    "java.base/java/util/TimSort.java": {
+      "sha256": "34050ea3d5b31f92a289f966db066eecfeffc382788cfbeed096042a34d27151",
+      "top_level_declarations": [
+        "TimSort"
+      ]
+    },
+    "java.base/java/util/TimeZone.java": {
+      "sha256": "23bd9c07b784a5dd28d5182825bbdd809aeef102a9d00f21671159e296f1a5aa",
+      "top_level_declarations": [
+        "TimeZone"
+      ]
+    },
+    "java.base/java/util/Timer.java": {
+      "sha256": "35b0a7519bb00e0de8643d5ca4fe137832f85c6e424ba56a5c4cbf809867357b",
+      "top_level_declarations": [
+        "Timer",
+        "TimerThread",
+        "TaskQueue"
+      ]
+    },
+    "java.base/java/util/TimerTask.java": {
+      "sha256": "042cffc747fd00474b6e10ad95c309196a6defea780deebcc130548b34c398e1",
+      "top_level_declarations": [
+        "TimerTask"
+      ]
+    },
+    "java.base/java/util/TooManyListenersException.java": {
+      "sha256": "d74e00bf7358e8d9818367f0da2d11d45367ca4e68fba186885c30fd112fc2c8",
+      "top_level_declarations": [
+        "TooManyListenersException"
+      ]
+    },
+    "java.base/java/util/TreeMap.java": {
+      "sha256": "0d60c84079467174f9001c81ecf81165fdaeb57eb80ad0f7f46a4bf9c6d6bf55",
+      "top_level_declarations": [
+        "TreeMap"
+      ]
+    },
+    "java.base/java/util/TreeSet.java": {
+      "sha256": "c0b969692e009cecaca9487f5006fa03b027b15b4d55b9ee3090857b2c54c35a",
+      "top_level_declarations": [
+        "TreeSet"
+      ]
+    },
+    "java.base/java/util/Tripwire.java": {
+      "sha256": "714117f6583165f9cd38c85ca648ae61e4e7baf426246c45d54e53cef5d6193e",
+      "top_level_declarations": [
+        "Tripwire"
+      ]
+    },
+    "java.base/java/util/UUID.java": {
+      "sha256": "5c593ce7fcfe53774dd3cb5102162fd47970881b5c00730decef7eca2745d878",
+      "top_level_declarations": [
+        "UUID"
+      ]
+    },
+    "java.base/java/util/UnknownFormatConversionException.java": {
+      "sha256": "2fc122522984b0cb05ce8b22948f6dc068587b8f74ca36126ef3d12236644af8",
+      "top_level_declarations": [
+        "UnknownFormatConversionException"
+      ]
+    },
+    "java.base/java/util/UnknownFormatFlagsException.java": {
+      "sha256": "d01cb0a75bfe5782d59338e3c773a9f74fa68e95713aec8339b2ab0d3002195b",
+      "top_level_declarations": [
+        "UnknownFormatFlagsException"
+      ]
+    },
+    "java.base/java/util/Vector.java": {
+      "sha256": "e5e44181bb6661f1051dde284f3830867aedfa2fa591d033e0cfb03c342f7bac",
+      "top_level_declarations": [
+        "Vector"
+      ]
+    },
+    "java.base/java/util/WeakHashMap.java": {
+      "sha256": "316dcaec8d7e2604b31c6d1be070c68f33b46be061f6b6de05bedebb02b9d98b",
+      "top_level_declarations": [
+        "WeakHashMap"
+      ]
+    },
+    "java.base/java/util/package-info.java": {
+      "sha256": "1d65fcececd3e69bbce14520380d0318b45dd7d937638d347af55b4d5ba7cae5",
+      "top_level_declarations": []
+    }
+  },
+  "jdk_release": "21.0.6+8",
+  "membership_counts": {
+    "public_top_level": 110,
+    "source_members": 135,
+    "top_level": 138
+  },
+  "module": "java.base",
+  "nested_declarations_excluded": [
+    {
+      "name": "Itr",
+      "source": "java.base/java/util/AbstractList.java"
+    },
+    {
+      "name": "ListItr",
+      "source": "java.base/java/util/AbstractList.java"
+    },
+    {
+      "name": "RandomAccessSpliterator",
+      "source": "java.base/java/util/AbstractList.java"
+    },
+    {
+      "name": "SubList",
+      "source": "java.base/java/util/AbstractList.java"
+    },
+    {
+      "name": "RandomAccessSubList",
+      "source": "java.base/java/util/AbstractList.java"
+    },
+    {
+      "name": "SimpleEntry",
+      "source": "java.base/java/util/AbstractMap.java"
+    },
+    {
+      "name": "SimpleImmutableEntry",
+      "source": "java.base/java/util/AbstractMap.java"
+    },
+    {
+      "name": "ViewCollection",
+      "source": "java.base/java/util/AbstractMap.java"
+    },
+    {
+      "name": "DeqIterator",
+      "source": "java.base/java/util/ArrayDeque.java"
+    },
+    {
+      "name": "DescendingIterator",
+      "source": "java.base/java/util/ArrayDeque.java"
+    },
+    {
+      "name": "DeqSpliterator",
+      "source": "java.base/java/util/ArrayDeque.java"
+    },
+    {
+      "name": "size",
+      "source": "java.base/java/util/ArrayDeque.java"
+    },
+    {
+      "name": "equalsArrayList",
+      "source": "java.base/java/util/ArrayList.java"
+    },
+    {
+      "name": "size",
+      "source": "java.base/java/util/ArrayList.java"
+    },
+    {
+      "name": "Itr",
+      "source": "java.base/java/util/ArrayList.java"
+    },
+    {
+      "name": "ListItr",
+      "source": "java.base/java/util/ArrayList.java"
+    },
+    {
+      "name": "SubList",
+      "source": "java.base/java/util/ArrayList.java"
+    },
+    {
+      "name": "ArrayListSpliterator",
+      "source": "java.base/java/util/ArrayList.java"
+    },
+    {
+      "name": "CumulateTask",
+      "source": "java.base/java/util/ArrayPrefixHelpers.java"
+    },
+    {
+      "name": "LongCumulateTask",
+      "source": "java.base/java/util/ArrayPrefixHelpers.java"
+    },
+    {
+      "name": "DoubleCumulateTask",
+      "source": "java.base/java/util/ArrayPrefixHelpers.java"
+    },
+    {
+      "name": "IntCumulateTask",
+      "source": "java.base/java/util/ArrayPrefixHelpers.java"
+    },
+    {
+      "name": "NaturalOrder",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "LegacyMergeSort",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "T",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "T",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "ArrayList",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "ArrayItr",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "hashCode",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "hashCode",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "hashCode",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "hashCode",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "hashCode",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "hashCode",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "hashCode",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "buf",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "buf",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "buf",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "buf",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "buf",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "buf",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "buf",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "buf",
+      "source": "java.base/java/util/Arrays.java"
+    },
+    {
+      "name": "EmptyCompleter",
+      "source": "java.base/java/util/ArraysParallelSortHelpers.java"
+    },
+    {
+      "name": "Relay",
+      "source": "java.base/java/util/ArraysParallelSortHelpers.java"
+    },
+    {
+      "name": "FJObject",
+      "source": "java.base/java/util/ArraysParallelSortHelpers.java"
+    },
+    {
+      "name": "Sorter",
+      "source": "java.base/java/util/ArraysParallelSortHelpers.java"
+    },
+    {
+      "name": "Merger",
+      "source": "java.base/java/util/ArraysParallelSortHelpers.java"
+    },
+    {
+      "name": "Encoder",
+      "source": "java.base/java/util/Base64.java"
+    },
+    {
+      "name": "Decoder",
+      "source": "java.base/java/util/Base64.java"
+    },
+    {
+      "name": "EncOutputStream",
+      "source": "java.base/java/util/Base64.java"
+    },
+    {
+      "name": "DecInputStream",
+      "source": "java.base/java/util/Base64.java"
+    },
+    {
+      "name": "BitSetSpliterator",
+      "source": "java.base/java/util/BitSet.java"
+    },
+    {
+      "name": "Builder",
+      "source": "java.base/java/util/Calendar.java"
+    },
+    {
+      "name": "aLocale",
+      "source": "java.base/java/util/Calendar.java"
+    },
+    {
+      "name": "AvailableCalendarTypes",
+      "source": "java.base/java/util/Calendar.java"
+    },
+    {
+      "name": "CalendarAccessControlContext",
+      "source": "java.base/java/util/Calendar.java"
+    },
+    {
+      "name": "UnmodifiableCollection",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableSequencedCollection",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableSequencedSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableSortedSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableNavigableSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "EmptyNavigableSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "list",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableRandomAccessList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableEntrySet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableEntrySetSpliterator",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableEntry",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableSequencedMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableSortedMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "UnmodifiableNavigableMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "EmptyNavigableMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedCollection",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedSortedSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedNavigableSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedRandomAccessList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedSortedMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SynchronizedNavigableMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedCollection",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedQueue",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedSortedSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedNavigableSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedRandomAccessList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedEntrySet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "source",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedEntry",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedSortedMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CheckedNavigableMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "EmptyIterator",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "EmptyListIterator",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "EmptyEnumeration",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "EmptySet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "EmptyList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "EmptyMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SingletonSet",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SingletonList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SingletonMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "CopiesList",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "n",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "ReverseComparator",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "ReverseComparator2",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SetFromMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "SequencedSetFromMap",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "AsLIFOQueue",
+      "source": "java.base/java/util/Collections.java"
+    },
+    {
+      "name": "NaturalOrderComparator",
+      "source": "java.base/java/util/Comparators.java"
+    },
+    {
+      "name": "NullComparator",
+      "source": "java.base/java/util/Comparators.java"
+    },
+    {
+      "name": "CurrencyNameGetter",
+      "source": "java.base/java/util/Currency.java"
+    },
+    {
+      "name": "SpecialCaseEntry",
+      "source": "java.base/java/util/Currency.java"
+    },
+    {
+      "name": "OtherCurrencyEntry",
+      "source": "java.base/java/util/Currency.java"
+    },
+    {
+      "name": "CurrencyProperty",
+      "source": "java.base/java/util/Currency.java"
+    },
+    {
+      "name": "Sorter",
+      "source": "java.base/java/util/DualPivotQuicksort.java"
+    },
+    {
+      "name": "Merger",
+      "source": "java.base/java/util/DualPivotQuicksort.java"
+    },
+    {
+      "name": "RunMerger",
+      "source": "java.base/java/util/DualPivotQuicksort.java"
+    },
+    {
+      "name": "KeySet",
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    {
+      "name": "Values",
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    {
+      "name": "EntrySet",
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    {
+      "name": "EnumMapIterator",
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    {
+      "name": "KeyIterator",
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    {
+      "name": "ValueIterator",
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    {
+      "name": "EntryIterator",
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    {
+      "name": "Entry",
+      "source": "java.base/java/util/EnumMap.java"
+    },
+    {
+      "name": "SerializationProxy",
+      "source": "java.base/java/util/EnumSet.java"
+    },
+    {
+      "name": "long",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "char",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "long",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "byte",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "String",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "String",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "long",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "long",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "MethodType",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "byte",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemDecimal",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemHexadecimal",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemOctal",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemBoolean",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemCharacter",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemString",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemFormatSpecifier",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemModifier",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemFillLeft",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemFillRight",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatItemNull",
+      "source": "java.base/java/util/FormatItem.java"
+    },
+    {
+      "name": "FormatString",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "FixedString",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "BigDecimalLayoutForm",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "FormatSpecifier",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "BigDecimalLayout",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "l",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "Flags",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "Conversion",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "DateTime",
+      "source": "java.base/java/util/Formatter.java"
+    },
+    {
+      "name": "type",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "ptypes",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "DecimalFormatSymbols",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "char",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "boolean",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "long",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "boolean",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "long",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "boolean",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "long",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "boolean",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "char",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "String",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "FormatSpecifier",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Locale",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Object",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Locale",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Formattable",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "FormatConcatItem",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "FormatConcatItem",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "boolean",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Object",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "boolean",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Object",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "long",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "String",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Object",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "int",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Object",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "isAssignableFrom",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "locale",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "precision",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "precision",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "itype",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "precision",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "itype",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "precision",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "itype",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "precision",
+      "source": "java.base/java/util/FormatterBuilder.java"
+    },
+    {
+      "name": "Node",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "return",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "as",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "KeySet",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "Values",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "EntrySet",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "cap",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "UnsafeHolder",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "HashIterator",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "KeyIterator",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "ValueIterator",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "EntryIterator",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "HashMapSpliterator",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "KeySpliterator",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "ValueSpliterator",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "EntrySpliterator",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "TreeNode",
+      "source": "java.base/java/util/HashMap.java"
+    },
+    {
+      "name": "HashMap",
+      "source": "java.base/java/util/HashSet.java"
+    },
+    {
+      "name": "KeySet",
+      "source": "java.base/java/util/Hashtable.java"
+    },
+    {
+      "name": "EntrySet",
+      "source": "java.base/java/util/Hashtable.java"
+    },
+    {
+      "name": "ValueCollection",
+      "source": "java.base/java/util/Hashtable.java"
+    },
+    {
+      "name": "length",
+      "source": "java.base/java/util/Hashtable.java"
+    },
+    {
+      "name": "UnsafeHolder",
+      "source": "java.base/java/util/Hashtable.java"
+    },
+    {
+      "name": "Entry",
+      "source": "java.base/java/util/Hashtable.java"
+    },
+    {
+      "name": "Enumerator",
+      "source": "java.base/java/util/Hashtable.java"
+    },
+    {
+      "name": "IdentityHashMapIterator",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "KeyIterator",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "ValueIterator",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "EntryIterator",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "Entry",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "KeySet",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "Values",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "EntrySet",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "cap",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "IdentityHashMapSpliterator",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "KeySpliterator",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "ValueSpliterator",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "EntrySpliterator",
+      "source": "java.base/java/util/IdentityHashMap.java"
+    },
+    {
+      "name": "Access",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "AbstractImmutableCollection",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "AbstractImmutableList",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "ListItr",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "SubList",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "List12",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "ListN",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "AbstractImmutableSet",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "Set12",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "SetN",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "SetNIterator",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "AbstractImmutableMap",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "Map1",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "MapN",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "MapNIterator",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "len",
+      "source": "java.base/java/util/ImmutableCollections.java"
+    },
+    {
+      "name": "EnumSetIterator",
+      "source": "java.base/java/util/JumboEnumSet.java"
+    },
+    {
+      "name": "Entry",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "LinkedKeySet",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "LinkedValues",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "LinkedEntrySet",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "LinkedHashIterator",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "LinkedKeyIterator",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "LinkedValueIterator",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "LinkedEntryIterator",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "ReversedLinkedHashMapView",
+      "source": "java.base/java/util/LinkedHashMap.java"
+    },
+    {
+      "name": "ReverseLinkedHashSetView",
+      "source": "java.base/java/util/LinkedHashSet.java"
+    },
+    {
+      "name": "ListItr",
+      "source": "java.base/java/util/LinkedList.java"
+    },
+    {
+      "name": "Node",
+      "source": "java.base/java/util/LinkedList.java"
+    },
+    {
+      "name": "DescendingIterator",
+      "source": "java.base/java/util/LinkedList.java"
+    },
+    {
+      "name": "LLSpliterator",
+      "source": "java.base/java/util/LinkedList.java"
+    },
+    {
+      "name": "ReverseOrderLinkedListView",
+      "source": "java.base/java/util/LinkedList.java"
+    },
+    {
+      "name": "IsoCountryCode",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "Cache",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "LocaleKey",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "new",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "new",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "new",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "new",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "new",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "LocaleNameGetter",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "Category",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "Builder",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "FilteringMode",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "LanguageRange",
+      "source": "java.base/java/util/Locale.java"
+    },
+    {
+      "name": "Entry",
+      "source": "java.base/java/util/Map.java"
+    },
+    {
+      "name": "OfInt",
+      "source": "java.base/java/util/PrimitiveIterator.java"
+    },
+    {
+      "name": "OfLong",
+      "source": "java.base/java/util/PrimitiveIterator.java"
+    },
+    {
+      "name": "OfDouble",
+      "source": "java.base/java/util/PrimitiveIterator.java"
+    },
+    {
+      "name": "es",
+      "source": "java.base/java/util/PriorityQueue.java"
+    },
+    {
+      "name": "Itr",
+      "source": "java.base/java/util/PriorityQueue.java"
+    },
+    {
+      "name": "size",
+      "source": "java.base/java/util/PriorityQueue.java"
+    },
+    {
+      "name": "PriorityQueueSpliterator",
+      "source": "java.base/java/util/PriorityQueue.java"
+    },
+    {
+      "name": "LineReader",
+      "source": "java.base/java/util/Properties.java"
+    },
+    {
+      "name": "EntrySet",
+      "source": "java.base/java/util/Properties.java"
+    },
+    {
+      "name": "HashMap",
+      "source": "java.base/java/util/Properties.java"
+    },
+    {
+      "name": "new",
+      "source": "java.base/java/util/PropertyPermission.java"
+    },
+    {
+      "name": "RandomWrapper",
+      "source": "java.base/java/util/Random.java"
+    },
+    {
+      "name": "this",
+      "source": "java.base/java/util/Random.java"
+    },
+    {
+      "name": "getDeclaredField",
+      "source": "java.base/java/util/Random.java"
+    },
+    {
+      "name": "EnumSetIterator",
+      "source": "java.base/java/util/RegularEnumSet.java"
+    },
+    {
+      "name": "CacheKey",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "CacheKeyReference",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "KeyElementReference",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "BundleReference",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "ResourceBundleControlProviderHolder",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "ClassLoader",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "isAssignableFrom",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "Control",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "CandidateListCache",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "isAssignableFrom",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "SingleFormatControl",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "NoFallbackControl",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "ResourceBundleProviderHelper",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "isAssignableFrom",
+      "source": "java.base/java/util/ResourceBundle.java"
+    },
+    {
+      "name": "Rand",
+      "source": "java.base/java/util/ReverseOrderListView.java"
+    },
+    {
+      "name": "DescendingIterator",
+      "source": "java.base/java/util/ReverseOrderListView.java"
+    },
+    {
+      "name": "DescendingListIterator",
+      "source": "java.base/java/util/ReverseOrderListView.java"
+    },
+    {
+      "name": "ViewEntry",
+      "source": "java.base/java/util/ReverseOrderSortedMapView.java"
+    },
+    {
+      "name": "Submap",
+      "source": "java.base/java/util/ReverseOrderSortedMapView.java"
+    },
+    {
+      "name": "Subset",
+      "source": "java.base/java/util/ReverseOrderSortedSetView.java"
+    },
+    {
+      "name": "locale",
+      "source": "java.base/java/util/Scanner.java"
+    },
+    {
+      "name": "TokenSpliterator",
+      "source": "java.base/java/util/Scanner.java"
+    },
+    {
+      "name": "FindSpliterator",
+      "source": "java.base/java/util/Scanner.java"
+    },
+    {
+      "name": "PatternLRUCache",
+      "source": "java.base/java/util/Scanner.java"
+    },
+    {
+      "name": "SeqKeySet",
+      "source": "java.base/java/util/SequencedMap.java"
+    },
+    {
+      "name": "SeqValues",
+      "source": "java.base/java/util/SequencedMap.java"
+    },
+    {
+      "name": "SeqEntrySet",
+      "source": "java.base/java/util/SequencedMap.java"
+    },
+    {
+      "name": "Provider",
+      "source": "java.base/java/util/ServiceLoader.java"
+    },
+    {
+      "name": "getModule",
+      "source": "java.base/java/util/ServiceLoader.java"
+    },
+    {
+      "name": "ProviderImpl",
+      "source": "java.base/java/util/ServiceLoader.java"
+    },
+    {
+      "name": "LayerLookupIterator",
+      "source": "java.base/java/util/ServiceLoader.java"
+    },
+    {
+      "name": "ModuleServicesLookupIterator",
+      "source": "java.base/java/util/ServiceLoader.java"
+    },
+    {
+      "name": "LazyClassPathLookupIterator",
+      "source": "java.base/java/util/ServiceLoader.java"
+    },
+    {
+      "name": "ProviderSpliterator",
+      "source": "java.base/java/util/ServiceLoader.java"
+    },
+    {
+      "name": "Cache",
+      "source": "java.base/java/util/SimpleTimeZone.java"
+    },
+    {
+      "name": "OfPrimitive",
+      "source": "java.base/java/util/Spliterator.java"
+    },
+    {
+      "name": "OfInt",
+      "source": "java.base/java/util/Spliterator.java"
+    },
+    {
+      "name": "OfLong",
+      "source": "java.base/java/util/Spliterator.java"
+    },
+    {
+      "name": "OfDouble",
+      "source": "java.base/java/util/Spliterator.java"
+    },
+    {
+      "name": "Adapter",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "Adapter",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "Adapter",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "Adapter",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "EmptySpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "OfRef",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "OfInt",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "OfLong",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "OfDouble",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "ArraySpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "IntArraySpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "LongArraySpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "DoubleArraySpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "AbstractSpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "HoldingConsumer",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "AbstractIntSpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "HoldingIntConsumer",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "AbstractLongSpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "HoldingLongConsumer",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "AbstractDoubleSpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "HoldingDoubleConsumer",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "IteratorSpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "IntIteratorSpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "LongIteratorSpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "DoubleIteratorSpliterator",
+      "source": "java.base/java/util/Spliterators.java"
+    },
+    {
+      "name": "AbstractSplittableGeneratorProxy",
+      "source": "java.base/java/util/SplittableRandom.java"
+    },
+    {
+      "name": "ThreadReaper",
+      "source": "java.base/java/util/Timer.java"
+    },
+    {
+      "name": "Values",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "EntrySet",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "KeySet",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "PrivateEntryIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "EntryIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "ValueIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "KeyIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "DescendingKeyIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "NavigableSubMap",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "EntrySetView",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "SubMapIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "SubMapEntryIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "DescendingSubMapEntryIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "SubMapKeyIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "DescendingSubMapKeyIterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "AscendingSubMap",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "AscendingEntrySetView",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "DescendingSubMap",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "DescendingEntrySetView",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "SubMap",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "Entry",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "TreeMapSpliterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "KeySpliterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "DescendingKeySpliterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "ValueSpliterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "EntrySpliterator",
+      "source": "java.base/java/util/TreeMap.java"
+    },
+    {
+      "name": "Holder",
+      "source": "java.base/java/util/UUID.java"
+    },
+    {
+      "name": "return",
+      "source": "java.base/java/util/UUID.java"
+    },
+    {
+      "name": "Itr",
+      "source": "java.base/java/util/Vector.java"
+    },
+    {
+      "name": "ListItr",
+      "source": "java.base/java/util/Vector.java"
+    },
+    {
+      "name": "VectorSpliterator",
+      "source": "java.base/java/util/Vector.java"
+    },
+    {
+      "name": "Entry",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "HashIterator",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "ValueIterator",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "KeyIterator",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "EntryIterator",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "KeySet",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "Values",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "EntrySet",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "WeakHashMapSpliterator",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "KeySpliterator",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "ValueSpliterator",
+      "source": "java.base/java/util/WeakHashMap.java"
+    },
+    {
+      "name": "EntrySpliterator",
+      "source": "java.base/java/util/WeakHashMap.java"
+    }
+  ],
+  "package": "java.util",
+  "source_module": "java.base",
+  "source_zip_sha256": "d887da897fc0065a2532500ee92320ce3bc633ccd6c4e637304045ce5d90de43"
+}

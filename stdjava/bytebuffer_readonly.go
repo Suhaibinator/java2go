@@ -12,6 +12,7 @@ func (b *ByteBuffer) IsReadOnly() bool { ReferenceRequireNonNull(b); return b.re
 func (b *ByteBuffer) AsReadOnlyBuffer() *ByteBuffer {
 	view := b.Duplicate()
 	view.readOnly = true
+	view.allocationKind = view.allocationKind.readOnlyKind()
 	return view
 }
 func (b *ByteBuffer) PutArrayAt(index int32, source *PrimitiveArray[int8], offset, length int32) *ByteBuffer {

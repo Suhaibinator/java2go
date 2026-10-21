@@ -37,6 +37,9 @@ var concurrencyRuntimeTypes = map[string]bool{
 // the same name. Generic args are themselves lowered through
 // javaTypeStringToGoTypeExpr.
 func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx Ctx) (ast.Expr, bool) {
+	if expression, ok := uriRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
+		return expression, true
+	}
 	if expression, ok := arraysUtilityRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
 		return expression, true
 	}
@@ -67,11 +70,17 @@ func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx 
 	if expression, ok := dateTimeRuntimeTypeExpr(javaType, ctx); ok {
 		return expression, true
 	}
+	if canonicalMapReferenceOwner(javaType, ctx) == "java.util.concurrent.ConcurrentMap" {
+		return stdjavaQualifiedExpr("JavaConcurrentMap", ctx), true
+	}
 	baseName := stripJavaQualifier(javaType)
 	if owner, admitted := canonicalIntrinsicOwner(javaType, ctx); admitted && owner == "java.nio.ByteOrder" {
 		return &ast.StarExpr{X: stdjavaQualifiedExpr("ByteOrder", ctx)}, true
 	}
 	if expression, ok := reflectRuntimeTypeExpr(javaType, ctx); ok {
+		return expression, true
+	}
+	if expression, ok := stringReaderReferenceRuntimeTypeExpr(javaType, typeArgs, typeParams, ctx); ok {
 		return expression, true
 	}
 	if expression, ok := digestIORuntimeTypeExpr(javaType, ctx); ok {
@@ -104,6 +113,14 @@ func stdjavaRuntimeTypeExpr(javaType string, typeArgs, typeParams []string, ctx 
 			typeArgs = []string{"Object"}
 		}
 		return applyTypeArguments(stdjavaQualifiedExpr(baseName, ctx), []ast.Expr{javaTypeStringToGoTypeExpr(typeArgs[0], typeParams, ctx)}), true
+	}
+	if baseName == "ConcurrentHashMap" {
+		if canonicalMapReferenceOwner(javaType, ctx) != "java.util.concurrent.ConcurrentHashMap" {
+			return nil, false
+		}
+		if len(typeArgs) == 0 {
+			typeArgs = []string{"java.lang.Object", "java.lang.Object"}
+		}
 	}
 	if (baseName == "Future" || baseName == "ThreadLocal") && len(typeArgs) == 0 {
 		typeArgs = []string{"Object"}
@@ -192,55 +209,23 @@ func extendsBuiltinThread(ctx Ctx) bool {
 // classScopeExtendsThread reports whether scope transitively extends
 // java.lang.Thread.
 func classScopeExtendsThread(ctx Ctx, scope *symbol.ClassScope) bool {
-	for scope != nil {
-		super, _ := parseJavaTypeString(strings.TrimSpace(scope.Superclass))
-		base := stripJavaQualifier(super)
-		if base == "" {
-			return false
-		}
-		parent := resolveClassScopeByQualifiedName(ctx, super)
-		if base == "Thread" && parent == nil {
-			return true
-		}
-		scope = parent
-	}
-	return false
+	return threadSourceRoot(scope, ctx) != nil
 }
 
 // threadSubclassMethod maps a zero-arg Thread method called on a receiver whose
 // Java type extends Thread onto the exported method promoted from the embedded
 // *stdjava.Thread (start->Start, join->Join, run->Run). It returns ("", false)
 // when the receiver is not a Thread subclass or the method is not one of these.
-func threadSubclassMethod(objectNode *sitter.Node, methodName string, ctx Ctx, source []byte) (string, bool) {
-	goMethod, ok := map[string]string{"start": "Start", "join": "Join", "run": "Run"}[methodName]
-	if !ok {
-		return "", false
-	}
-	javaType, ok := inferExprJavaType(objectNode, ctx, source)
-	if !ok {
-		return "", false
-	}
-	base, _ := parseJavaTypeString(javaType)
-	scope := resolveClassScopeByQualifiedName(ctx, base)
-	if scope == nil || !classScopeExtendsThread(ctx, scope) {
-		return "", false
-	}
-	return goMethod, true
-}
 
 // threadBaseWiringStmt builds `self.Thread = stdjava.NewThreadBase(self)` for a
 // Thread subclass constructor, so the embedded runtime Thread dispatches Start()
 // to this instance's Run() override. Returns nil for non-Thread classes.
 func threadBaseWiringStmt(ctx Ctx) ast.Stmt {
-	if !extendsBuiltinThread(ctx) {
-		return nil
-	}
-	recv := ShortName(ctx.className)
-	return &ast.AssignStmt{
-		Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recv}, Sel: &ast.Ident{Name: "Thread"}}},
-		Tok: token.ASSIGN,
-		Rhs: []ast.Expr{stdjavaCall(ctx, "NewThreadBase", &ast.Ident{Name: recv})},
-	}
+	return threadBaseWiringStmtForReceiver(ctx, ShortName(ctx.className))
+}
+
+func threadBaseWiringStmtForReceiver(ctx Ctx, recv string) ast.Stmt {
+	return threadSourceBindStmt(ctx.currentClass, recv, ctx)
 }
 
 // synchronizedMethodPrologue builds the statements that acquire and defer the
@@ -267,7 +252,7 @@ func synchronizedMethodPrologue(ctx Ctx, static bool, node *sitter.Node, source 
 		enter = stdjavaCall(ctx, "ClassMonitorEnterExecution", execution,
 			&ast.BasicLit{Kind: token.STRING, Value: strconv.Quote(javaBinaryClassName(ctx))})
 	} else {
-		enter = stdjavaCall(ctx, "MonitorEnterExecution", execution, &ast.Ident{Name: ShortName(ctx.className)})
+		enter = stdjavaCall(ctx, "MonitorEnterExecution", execution, &ast.Ident{Name: sourceInstanceReceiverName(ctx)})
 	}
 	return append(setup,
 		&ast.AssignStmt{
@@ -448,6 +433,9 @@ func registerThreadIntrinsics() {
 			if len(args) != 0 {
 				return nil
 			}
+			if goMethod == "Start" {
+				return stdjavaCall(ctx, "ThreadStartExecution", intrinsicExecutionExpr(ctx), recv)
+			}
 			return selectorCall(recv, goMethod, nil)
 		})
 	}
@@ -497,15 +485,19 @@ func registerExecutorIntrinsics() {
 }
 
 func registerConcurrentMapIntrinsics() {
-	registerConstructorIntrinsic("ConcurrentHashMap", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
+	registerConstructorIntrinsic("JavaConcurrentHashMap", func(typeArgs, args []ast.Expr, ctx Ctx) ast.Expr {
 		if len(args) != 0 {
 			return nil
 		}
 		// Go cannot infer the type parameters of a no-arg generic constructor, so
 		// pass them explicitly: stdjava.NewConcurrentHashMap[K, V]().
+		if len(typeArgs) == 0 {
+			typeArgs = []ast.Expr{ast.NewIdent("any"), ast.NewIdent("any")}
+		}
 		return stdjavaGenericCall(ctx, "NewConcurrentHashMap", typeArgs, nil)
 	})
 
+	constructorIntrinsics["ConcurrentHashMap"] = constructorIntrinsics["JavaConcurrentHashMap"]
 	for javaMethod, goMethod := range map[string]string{
 		"put":           "Put",
 		"get":           "Get",

@@ -33,3 +33,9 @@ func nativeJavaInterfaceAssignable(value any, expected TypeID) bool {
 func (*List[T]) nativeJavaInterfaces() []TypeID {
 	return []TypeID{nativeListTypeID}
 }
+
+// Both native set backends prove the Set interface; their shared Go type does
+// not prove a concrete HashSet or TreeSet class descriptor.
+func (*Set[T]) nativeJavaInterfaces() []TypeID {
+	return []TypeID{nativeSetTypeID}
+}

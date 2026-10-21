@@ -797,54 +797,269 @@ public class Box<T> {
 `
 	helper := setupParseHelper(t, src)
 
-	invocationNode := findNode(helper.File.Ast, "method_invocation")
-	if invocationNode == nil {
-		t.Fatal("Could not find method_invocation node")
+	owner := helper.File.Symbols.FindClassScope("Box")
+	if owner == nil || len(owner.TypeParameters) != 1 {
+		t.Fatal("original Box owner lost")
 	}
-
-	methodDefs := helper.Ctx.currentClass.FindMethod().ByName("CallIdentity")
-	if len(methodDefs) == 0 {
-		t.Fatal("Could not find CallIdentity definition")
+	identity := owner.FindMethodByName("identity", nil)
+	if identity == nil || identity.IsPrivate || identity.IsStatic || !identity.RequiresHelper || len(identity.TypeParameters) != 1 || len(identity.Parameters) != 1 {
+		t.Fatal("original public instance identity declaration lost")
 	}
-
-	ctx := helper.Ctx
-	ctx.localScope = methodDefs[0]
-
-	expr := ParseExpr(invocationNode, helper.File.Source, ctx)
-	call, ok := expr.(*ast.CallExpr)
-	if !ok {
-		t.Fatalf("Expected *ast.CallExpr, got %T", expr)
+	ownerParameter := owner.TypeParameters[0]
+	if ownerParameter.Name != "T" || ownerParameter.Declaration == nil || len(ownerParameter.Bounds) != 0 || identity.OriginalType != "R" || identity.Parameters[0].OriginalType != "R" {
+		t.Fatal("original logical owner T or method R signature lost")
 	}
-
-	sel, ok := call.Fun.(*ast.SelectorExpr)
-	if !ok {
-		t.Fatalf("Expected call fun to be SelectorExpr, got %T", call.Fun)
+	r := identity.TypeParameters[0].Declaration
+	if r == nil || r == owner.TypeParameters[0].Declaration || definitionDeclaredJavaType(identity).TypeParameterBindings["R"] != r || identity.Parameters[0].TypeParameterBindings["R"] != r {
+		t.Fatal("method-owned R declaration identity lost")
 	}
-
-	helperCall, ok := sel.X.(*ast.CallExpr)
-	if !ok {
-		t.Fatalf("Expected selector receiver to be CallExpr (helper constructor), got %T", sel.X)
-	}
-
-	var constructorName string
-	switch fun := helperCall.Fun.(type) {
-	case *ast.Ident:
-		constructorName = fun.Name
-	case *ast.IndexExpr:
-		if ident, ok := fun.X.(*ast.Ident); ok {
-			constructorName = ident.Name
+	assertIdent := func(expr ast.Expr, name string) {
+		t.Helper()
+		id, ok := expr.(*ast.Ident)
+		if !ok || id.Name != name {
+			t.Fatalf("expected %s identifier, got %#v", name, expr)
 		}
-	case *ast.IndexListExpr:
-		if ident, ok := fun.X.(*ast.Ident); ok {
-			constructorName = ident.Name
+	}
+	assertRuntime := func(expr ast.Expr, name string) {
+		t.Helper()
+		selector, ok := expr.(*ast.SelectorExpr)
+		if !ok || selector.Sel.Name != name {
+			t.Fatalf("expected runtime %s selector, got %#v", name, expr)
 		}
-	default:
-		t.Fatalf("Expected helper constructor to be Ident or indexed generic call, got %T", helperCall.Fun)
+		assertIdent(selector.X, "stdjava")
 	}
+	ownerCtx := helper.Ctx.Clone()
+	ownerCtx.currentClass = owner
+	family := canonicalGenericFamily(owner, ownerCtx)
+	if family == nil || !canonicalGenericClass(owner, ownerCtx) {
+		t.Fatal("original generic-X demand lost its completed physical family")
+	}
+	if _, member := family.members[owner]; !member {
+		t.Fatal("physical family lost actual source owner membership")
+	}
+	if _, binder := family.binders[ownerParameter.Declaration]; !binder {
+		t.Fatal("physical family lost original owner T declaration")
+	}
+	ownerRepresentation, represented := family.representations[ownerParameter.Declaration]
+	if !represented || ownerRepresentation.erasure != "java.lang.Object" || ownerRepresentation.goName != "any" {
+		t.Fatal("owner T lost independent Object physical representation")
+	}
+	assertIdent(genericFamilyBinderGoType(ownerParameter, ownerCtx), "any")
+	rawName := availableCanonicalGenericName(owner.Class.Name + "Java2goErased")
+	check := func(callerName string, foo bool) {
+		t.Helper()
+		caller := owner.FindMethodByName(callerName, nil)
+		if caller == nil {
+			t.Fatal("original caller lost")
+		}
+		ctx := helper.Ctx.Clone()
+		ctx.localScope = caller
+		ctx.expectedType, ctx.expectedTypeRoot = "", nil
+		invocation := findNode(caller.DeclarationNode, "method_invocation")
+		if invocation == nil || invocation.ChildByFieldName("object").Content(helper.File.Source) != "box" || invocation.ChildByFieldName("arguments").NamedChildCount() != 1 || invocation.ChildByFieldName("arguments").NamedChild(0).Content(helper.File.Source) != "value" {
+			t.Fatal("original invocation nodes changed")
+		}
+		assertLogical := func(expr ast.Expr) {
+			t.Helper()
+			if foo {
+				p, ok := expr.(*ast.StarExpr)
+				if !ok {
+					t.Fatalf("Foo lost pointer: %T", expr)
+				}
+				assertIdent(p.X, "Foo")
+				return
+			}
+			if len(caller.TypeParameters) != 1 || caller.TypeParameters[0].Name != "X" || caller.TypeParameters[0].Declaration == nil || caller.TypeParameters[0].Declaration == r || caller.Parameters[1].TypeParameterBindings["X"] != caller.TypeParameters[0].Declaration {
+				t.Fatal("caller-owned X lost its declaration identity")
+			}
+			assertIdent(expr, caller.TypeParameters[0].EmittedName())
+		}
+		target := resolveInvocationTarget(invocation.ChildByFieldName("object"), ctx, helper.File.Source)
+		resolved, selected := findBestMethodForInvocationTarget(target, "identity", invocation.ChildByFieldName("arguments"), true, false, ctx, helper.File.Source)
+		if target == nil || selected == nil || resolved == nil || resolved.def != identity || resolved.owner != owner || target.classScope != owner || len(target.classTypeArgs) != 1 {
+			t.Fatal("actual selected owner/method declaration lost")
+		}
+		assertLogical(target.classTypeArgs[0])
+		bindings := genericJavaInvocationTypeBindings(resolved.def, invocation, ctx, helper.File.Source)
+		if len(bindings) != 1 || bindings["R"] == "" {
+			t.Fatalf("actual no-target R inference lost: %v", bindings)
+		}
+		assertLogical(javaTypeStringToGoTypeExpr(bindings["R"], inScopeTypeParameters(ctx), ctx))
+		logical := inferMethodTypeArguments(resolved.def, invocation, ctx, helper.File.Source)
+		if len(logical) != 1 {
+			t.Fatal("logical R arity changed")
+		}
+		assertLogical(logical[0])
+		plan := planGenericMethodEntryABI(owner, identity, ctx)
+		if plan == nil || plan.owner != owner || plan.method != identity || len(plan.methodDeclarations) != 1 || plan.methodDeclarations[0] != r || len(plan.parameterTypes) != 1 || plan.resultJavaType != "java.lang.Object" {
+			t.Fatal("actual declaration-owned erased entry lost")
+		}
+		assertIdent(plan.parameterTypes[0], "any")
+		assertIdent(plan.resultType, "any")
+		physical, javaTypes, known := genericMethodPhysicalTypeArguments(identity, ctx)
+		if !known || len(physical) != 1 || len(javaTypes) != 1 || javaTypes[0] != "java.lang.Object" {
+			t.Fatal("helper physical R first-bound slot changed")
+		}
+		assertIdent(physical[0], "any")
+		verifyExpression := func(expr ast.Expr, execution string) {
+			t.Helper()
+			view, ok := expr.(*ast.CallExpr)
+			if !ok || len(view.Args) != 2 {
+				t.Fatalf("one typed consumer view required: %#v", expr)
+			}
+			indexed, ok := view.Fun.(*ast.IndexExpr)
+			if !ok {
+				t.Fatal("consumer type argument lost")
+			}
+			assertRuntime(indexed.X, "ObjectView")
+			assertLogical(indexed.Index)
+			if foo {
+				if reflectCoreTypeID(t, view.Args[1]) != "Foo" {
+					t.Fatal("original synthetic Foo nominal descriptor changed")
+				}
+			} else {
+				assertRuntime(view.Args[1], "ObjectTypeID")
+			}
+			invoke, ok := view.Args[0].(*ast.CallExpr)
+			if !ok {
+				t.Fatal("consumer no longer encloses one call")
+			}
+			selector, ok := invoke.Fun.(*ast.SelectorExpr)
+			if !ok {
+				t.Fatal("instance selector lost")
+			}
+			assertIdent(selector.X, "box")
+			if execution == "" {
+				if selector.Sel.Name != identity.Name || len(invoke.Args) != 1 {
+					t.Fatal("original no-Execution parse context changed")
+				}
+				assertIdent(invoke.Args[0], "value")
+			} else {
+				if selector.Sel.Name != executionImplementationName(identity, owner, ctx) || len(invoke.Args) != 2 {
+					t.Fatal("Execution forwarding changed")
+				}
+				assertIdent(invoke.Args[0], execution)
+				assertIdent(invoke.Args[1], "value")
+			}
+		}
+		verifyExpression(ParseExpr(invocation, helper.File.Source, ctx), "")
+		withExecution := ctx.Clone()
+		withExecution.executionContextName = "unitExecution"
+		verifyExpression(ParseExpr(invocation, helper.File.Source, withExecution), "unitExecution")
+	}
+	check("callIdentity", false)
 
-	if constructorName != "NewBoxIdentityHelper" {
-		t.Errorf("Expected helper constructor 'NewBoxIdentityHelper', got '%s'", constructorName)
+	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
+	file, ok := node.(*ast.File)
+	if !ok {
+		t.Fatalf("expected complete file AST: %T", node)
 	}
+	var logicalAlias, physicalLayout *ast.TypeSpec
+	for _, declaration := range file.Decls {
+		general, ok := declaration.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		for _, specification := range general.Specs {
+			typ, ok := specification.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+			if typ.Name.Name == owner.Class.Name {
+				if logicalAlias != nil {
+					t.Fatal("duplicate logical owner alias")
+				}
+				logicalAlias = typ
+			}
+			if typ.Name.Name == rawName {
+				if physicalLayout != nil {
+					t.Fatal("duplicate physical owner layout")
+				}
+				physicalLayout = typ
+			}
+		}
+	}
+	if logicalAlias == nil || !logicalAlias.Assign.IsValid() || logicalAlias.TypeParams == nil || len(logicalAlias.TypeParams.List) != 1 || len(logicalAlias.TypeParams.List[0].Names) != 1 || physicalLayout == nil || physicalLayout.TypeParams != nil {
+		t.Fatal("logical owner T alias and non-generic physical class layout lost")
+	}
+	assertIdent(logicalAlias.Type, rawName)
+	assertIdent(logicalAlias.TypeParams.List[0].Type, "any")
+	if logicalAlias.TypeParams.List[0].Names[0].Name != ownerParameter.EmittedName() {
+		t.Fatal("logical owner T declaration alias renamed")
+	}
+	if _, ok := physicalLayout.Type.(*ast.StructType); !ok {
+		t.Fatal("physical class layout stopped being a shared struct")
+	}
+	var entry, body *ast.FuncDecl
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "IdentityJava2goExecution" || fn.Recv == nil || len(fn.Recv.List) != 1 {
+			continue
+		}
+		p, ok := fn.Recv.List[0].Type.(*ast.StarExpr)
+		if !ok {
+			t.Fatal("instance receiver pointer lost")
+		}
+		switch x := p.X.(type) {
+		case *ast.Ident:
+			if x.Name == rawName {
+				if entry != nil || fn.Type.TypeParams != nil {
+					t.Fatal("non-generic physical entry duplicated or regained owner T")
+				}
+				entry = fn
+			}
+		case *ast.IndexListExpr:
+			if id, ok := x.X.(*ast.Ident); ok && id.Name == identity.HelperName {
+				if body != nil || len(x.Indices) != 2 {
+					t.Fatal("typed body slot count changed")
+				}
+				assertIdent(x.Indices[0], "T")
+				assertIdent(x.Indices[1], "R")
+				body = fn
+			}
+		}
+	}
+	if entry == nil || body == nil || len(entry.Type.Params.List) != 2 || entry.Type.Results == nil || len(entry.Type.Results.List) != 1 || len(entry.Body.List) != 1 {
+		t.Fatal("exact erased entry/typed helper body lost")
+	}
+	assertIdent(entry.Type.Params.List[1].Type, "any")
+	assertIdent(entry.Type.Results.List[0].Type, "any")
+	returned, ok := entry.Body.List[0].(*ast.ReturnStmt)
+	if !ok || len(returned.Results) != 1 {
+		t.Fatal("one bridge return required")
+	}
+	call, ok := returned.Results[0].(*ast.CallExpr)
+	if !ok || len(call.Args) != 2 {
+		t.Fatal("one original body execution required")
+	}
+	selector, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok || selector.Sel.Name != body.Name.Name {
+		t.Fatal("bridge original body lost")
+	}
+	constructor, ok := selector.X.(*ast.CallExpr)
+	if !ok || len(constructor.Args) != 1 {
+		t.Fatal("one helper receiver required")
+	}
+	indexed, ok := constructor.Fun.(*ast.IndexListExpr)
+	if !ok || len(indexed.Indices) != 2 {
+		t.Fatal("helper T/physical-R slots lost")
+	}
+	assertIdent(indexed.X, "New"+identity.HelperName)
+	assertIdent(indexed.Indices[0], "any")
+	assertIdent(indexed.Indices[1], "any")
+	assertIdent(constructor.Args[0], entry.Recv.List[0].Names[0].Name)
+	assertIdent(call.Args[0], entry.Type.Params.List[0].Names[0].Name)
+	assertIdent(call.Args[1], "value")
+	if len(body.Type.Params.List) != 2 || body.Type.Results == nil || len(body.Type.Results.List) != 1 || len(body.Body.List) == 0 {
+		t.Fatal("original typed implementation lost")
+	}
+	assertIdent(body.Type.Params.List[1].Type, "R")
+	assertIdent(body.Type.Results.List[0].Type, "R")
+	last, ok := body.Body.List[len(body.Body.List)-1].(*ast.ReturnStmt)
+	if !ok || len(last.Results) != 1 {
+		t.Fatal("identity return lost")
+	}
+	assertIdent(last.Results[0], "value")
 }
 
 func TestInstanceGenericMethodHelper_InfersPointerTypeArgs(t *testing.T) {
@@ -861,6 +1076,85 @@ public class Box<T> {
 }
 `
 	helper := setupParseHelper(t, src)
+	// Inference is a logical declaration-owned contract. Do not infer it from
+	// the consuming return type or require a physical helper specialization.
+	owner := helper.File.Symbols.FindClassScope("Box")
+	if owner == nil || len(owner.TypeParameters) != 1 {
+		t.Fatal("original Box owner binder lost")
+	}
+	identity := owner.FindMethodByName("identity", nil)
+	caller := owner.FindMethodByName("call", nil)
+	if identity == nil || caller == nil || len(identity.TypeParameters) != 1 || len(identity.Parameters) != 1 || !identity.RequiresHelper {
+		t.Fatal("original generic method declarations lost")
+	}
+	ownerParameter := owner.TypeParameters[0]
+	if ownerParameter.Name != "T" || ownerParameter.Declaration == nil || len(ownerParameter.Bounds) != 0 || identity.OriginalType != "R" || identity.Parameters[0].OriginalType != "R" {
+		t.Fatal("original logical owner T or method R signature lost")
+	}
+	r := identity.TypeParameters[0].Declaration
+	if r == nil || r == owner.TypeParameters[0].Declaration || identity.TypeParameters[0].Name != "R" || definitionDeclaredJavaType(identity).TypeParameterBindings["R"] != r || identity.Parameters[0].TypeParameterBindings["R"] != r {
+		t.Fatal("method-owned R lost its declaration identity")
+	}
+	ctx := helper.Ctx.Clone()
+	ctx.localScope = caller
+	ctx.expectedType, ctx.expectedTypeRoot = "", nil
+	if canonicalGenericClass(owner, ctx) || canonicalGenericFamily(owner, ctx) != nil {
+		t.Fatal("original ordinary pointer-only owner unexpectedly acquired an erased class family")
+	}
+	invocation := findNode(caller.DeclarationNode, "method_invocation")
+	if invocation == nil || invocation.ChildByFieldName("object").Content(helper.File.Source) != "box" || invocation.ChildByFieldName("arguments").NamedChildCount() != 1 || invocation.ChildByFieldName("arguments").NamedChild(0).Content(helper.File.Source) != "value" {
+		t.Fatal("original receiver or value argument changed")
+	}
+	assertIdent := func(expr ast.Expr, name string) {
+		t.Helper()
+		ident, ok := expr.(*ast.Ident)
+		if !ok || ident.Name != name {
+			t.Fatalf("expected exact identifier %s, got %#v", name, expr)
+		}
+	}
+	assertRuntime := func(expr ast.Expr, name string) {
+		t.Helper()
+		selector, ok := expr.(*ast.SelectorExpr)
+		if !ok || selector.Sel.Name != name {
+			t.Fatalf("expected runtime selector %s, got %#v", name, expr)
+		}
+		assertIdent(selector.X, "stdjava")
+	}
+	assertFoo := func(expr ast.Expr) {
+		t.Helper()
+		pointer, ok := expr.(*ast.StarExpr)
+		if !ok {
+			t.Fatalf("Foo lost its reference pointer: %T", expr)
+		}
+		assertIdent(pointer.X, "Foo")
+	}
+	target := resolveInvocationTarget(invocation.ChildByFieldName("object"), ctx, helper.File.Source)
+	resolved, selected := findBestMethodForInvocationTarget(target, "identity", invocation.ChildByFieldName("arguments"), true, false, ctx, helper.File.Source)
+	if target == nil || selected == nil || resolved == nil || resolved.owner != owner || resolved.def != identity || target.classScope != owner || len(target.classTypeArgs) != 1 {
+		t.Fatal("original invocation no longer resolves the exact owner/method declaration")
+	}
+	assertFoo(target.classTypeArgs[0])
+	bindings := genericJavaInvocationTypeBindings(resolved.def, invocation, ctx, helper.File.Source)
+	if len(bindings) != 1 || bindings["R"] == "" {
+		t.Fatalf("missing actual method R inference: %v", bindings)
+	}
+	assertFoo(javaTypeStringToGoTypeExpr(bindings["R"], inScopeTypeParameters(ctx), ctx))
+	logical := inferMethodTypeArguments(resolved.def, invocation, ctx, helper.File.Source)
+	if len(logical) != 1 {
+		t.Fatalf("logical R argument count=%d", len(logical))
+	}
+	assertFoo(logical[0])
+	plan := planGenericMethodEntryABI(owner, identity, ctx)
+	if plan == nil || plan.owner != owner || plan.method != identity || len(plan.methodDeclarations) != 1 || plan.methodDeclarations[0] != r || len(plan.parameterTypes) != 1 || plan.resultJavaType != "java.lang.Object" {
+		t.Fatal("physical ABI lost the admitted declaration-owned Object slot")
+	}
+	assertIdent(plan.parameterTypes[0], "any")
+	assertIdent(plan.resultType, "any")
+	physical, javaTypes, known := genericMethodPhysicalTypeArguments(identity, ctx)
+	if !known || len(physical) != 1 || len(javaTypes) != 1 || javaTypes[0] != "java.lang.Object" {
+		t.Fatal("physical helper R slot is not its declared Object erasure")
+	}
+	assertIdent(physical[0], "any")
 	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
 	file, ok := node.(*ast.File)
 	if !ok {
@@ -873,11 +1167,142 @@ public class Box<T> {
 	}
 	output := buf.String()
 
-	// Foo is a Java reference type; the generator represents it as *Foo, so the
-	// helper invocation needs to pass *Foo as a type argument (not Foo).
-	if !strings.Contains(output, "NewBoxIdentityHelper[*Foo, *Foo]") && !strings.Contains(output, "NewBoxIdentityHelper[*Foo,*Foo]") {
-		t.Errorf("Expected helper invocation to use pointer type args for Foo, got:\n%s", output)
+	// Inspect the emitted AST: the typed reference view belongs to the consumer,
+	// while the virtual entry executes the same method body with physical any.
+	var call, entry, implementation *ast.FuncDecl
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+		if fn.Name.Name == "CallJava2goExecution" && fn.Recv == nil {
+			if call != nil {
+				t.Fatal("duplicate typed call declaration")
+			}
+			call = fn
+		}
+		if fn.Name.Name != "IdentityJava2goExecution" || fn.Recv == nil || len(fn.Recv.List) != 1 {
+			continue
+		}
+		pointer, ok := fn.Recv.List[0].Type.(*ast.StarExpr)
+		if !ok {
+			t.Fatal("generic method receiver lost pointer")
+		}
+		switch receiver := pointer.X.(type) {
+		case *ast.IndexExpr:
+			if name, ok := receiver.X.(*ast.Ident); ok && name.Name == "Box" {
+				assertIdent(receiver.Index, "T")
+				if entry != nil {
+					t.Fatal("duplicate erased instance entry")
+				}
+				entry = fn
+			}
+		case *ast.IndexListExpr:
+			if name, ok := receiver.X.(*ast.Ident); ok && name.Name == identity.HelperName {
+				if len(receiver.Indices) != 2 {
+					t.Fatal("typed helper lost T/R slots")
+				}
+				assertIdent(receiver.Indices[0], "T")
+				assertIdent(receiver.Indices[1], "R")
+				if implementation != nil {
+					t.Fatal("duplicate typed helper body")
+				}
+				implementation = fn
+			}
+		}
 	}
+	if call == nil || entry == nil || implementation == nil {
+		t.Fatalf("typed consumer, erased entry or typed implementation missing:\n%s", output)
+	}
+	if len(call.Type.Params.List) != 3 || call.Type.Results == nil || len(call.Type.Results.List) != 1 || len(call.Body.List) != 1 {
+		t.Fatal("typed consumer signature/body changed")
+	}
+	execution, ok := call.Type.Params.List[0].Type.(*ast.StarExpr)
+	if !ok {
+		t.Fatal("caller Execution lost pointer")
+	}
+	assertRuntime(execution.X, "Execution")
+	box, ok := call.Type.Params.List[1].Type.(*ast.StarExpr)
+	if !ok {
+		t.Fatal("Box receiver parameter lost pointer")
+	}
+	boxed, ok := box.X.(*ast.IndexExpr)
+	if !ok {
+		t.Fatal("Box receiver lost owner instantiation")
+	}
+	assertIdent(boxed.X, "Box")
+	assertFoo(boxed.Index)
+	assertFoo(call.Type.Params.List[2].Type)
+	assertFoo(call.Type.Results.List[0].Type)
+	returned, ok := call.Body.List[0].(*ast.ReturnStmt)
+	if !ok || len(returned.Results) != 1 {
+		t.Fatal("typed result return changed")
+	}
+	view, ok := returned.Results[0].(*ast.CallExpr)
+	if !ok || len(view.Args) != 2 {
+		t.Fatal("expected one consumer projection")
+	}
+	indexed, ok := view.Fun.(*ast.IndexExpr)
+	if !ok {
+		t.Fatal("consumer projection lost type argument")
+	}
+	assertRuntime(indexed.X, "ObjectView")
+	assertFoo(indexed.Index)
+	if reflectCoreTypeID(t, view.Args[1]) != "Foo" {
+		t.Fatal("consumer lost original synthetic Foo descriptor")
+	}
+	invoke, ok := view.Args[0].(*ast.CallExpr)
+	if !ok || len(invoke.Args) != 2 {
+		t.Fatal("projection must enclose one instance invocation")
+	}
+	selector, ok := invoke.Fun.(*ast.SelectorExpr)
+	if !ok || selector.Sel.Name != entry.Name.Name {
+		t.Fatal("consumer bypassed erased virtual entry")
+	}
+	assertIdent(selector.X, "box")
+	assertIdent(invoke.Args[0], call.Type.Params.List[0].Names[0].Name)
+	assertIdent(invoke.Args[1], "value")
+	if len(entry.Type.Params.List) != 2 || entry.Type.Results == nil || len(entry.Type.Results.List) != 1 || len(entry.Body.List) != 1 {
+		t.Fatal("erased entry signature or bridge body changed")
+	}
+	assertIdent(entry.Type.Params.List[1].Type, "any")
+	assertIdent(entry.Type.Results.List[0].Type, "any")
+	bridgeReturn, ok := entry.Body.List[0].(*ast.ReturnStmt)
+	if !ok || len(bridgeReturn.Results) != 1 {
+		t.Fatal("erased bridge return changed")
+	}
+	bridge, ok := bridgeReturn.Results[0].(*ast.CallExpr)
+	if !ok || len(bridge.Args) != 2 {
+		t.Fatal("erased bridge must execute body once")
+	}
+	bridgeSelector, ok := bridge.Fun.(*ast.SelectorExpr)
+	if !ok || bridgeSelector.Sel.Name != implementation.Name.Name {
+		t.Fatal("erased entry lost existing implementation")
+	}
+	constructor, ok := bridgeSelector.X.(*ast.CallExpr)
+	if !ok || len(constructor.Args) != 1 {
+		t.Fatal("typed body must retain one receiver")
+	}
+	constructorType, ok := constructor.Fun.(*ast.IndexListExpr)
+	if !ok || len(constructorType.Indices) != 2 {
+		t.Fatal("physical helper lost owner/method slots")
+	}
+	assertIdent(constructorType.X, "New"+identity.HelperName)
+	assertIdent(constructorType.Indices[0], "T")
+	assertIdent(constructorType.Indices[1], "any")
+	assertIdent(constructor.Args[0], entry.Recv.List[0].Names[0].Name)
+	assertIdent(bridge.Args[0], entry.Type.Params.List[0].Names[0].Name)
+	assertIdent(bridge.Args[1], "value")
+	if len(implementation.Type.Params.List) != 2 || implementation.Type.Results == nil || len(implementation.Type.Results.List) != 1 || len(implementation.Body.List) == 0 {
+		t.Fatal("original typed identity implementation lost")
+	}
+	assertIdent(implementation.Type.Params.List[1].Type, "R")
+	assertIdent(implementation.Type.Results.List[0].Type, "R")
+	bodyReturn, ok := implementation.Body.List[len(implementation.Body.List)-1].(*ast.ReturnStmt)
+	if !ok || len(bodyReturn.Results) != 1 {
+		t.Fatal("identity body stopped returning its original value")
+	}
+	assertIdent(bodyReturn.Results[0], "value")
 }
 
 func TestInstanceGenericMethodHelper_InfersNestedGenericTypeArgs(t *testing.T) {
@@ -894,6 +1319,87 @@ public class Box<T> {
 }
 `
 	helper := setupParseHelper(t, src)
+	// Inference is a logical declaration-owned contract. Do not infer it from
+	// the consuming return type or require a physical helper specialization.
+	owner := helper.File.Symbols.FindClassScope("Box")
+	if owner == nil || len(owner.TypeParameters) != 1 {
+		t.Fatal("original Box owner binder lost")
+	}
+	identity := owner.FindMethodByName("identity", nil)
+	caller := owner.FindMethodByName("call", nil)
+	if identity == nil || caller == nil || len(identity.TypeParameters) != 1 || len(identity.Parameters) != 1 || !identity.RequiresHelper {
+		t.Fatal("original generic method declarations lost")
+	}
+	r := identity.TypeParameters[0].Declaration
+	if r == nil || r == owner.TypeParameters[0].Declaration || identity.TypeParameters[0].Name != "R" || definitionDeclaredJavaType(identity).TypeParameterBindings["R"] != r || identity.Parameters[0].TypeParameterBindings["R"] != r {
+		t.Fatal("method-owned R lost its declaration identity")
+	}
+	ctx := helper.Ctx.Clone()
+	ctx.localScope = caller
+	ctx.expectedType, ctx.expectedTypeRoot = "", nil
+	invocation := findNode(caller.DeclarationNode, "method_invocation")
+	if invocation == nil || invocation.ChildByFieldName("object").Content(helper.File.Source) != "box" || invocation.ChildByFieldName("arguments").NamedChildCount() != 1 || invocation.ChildByFieldName("arguments").NamedChild(0).Content(helper.File.Source) != "value" {
+		t.Fatal("original receiver or value argument changed")
+	}
+	assertIdent := func(expr ast.Expr, name string) {
+		t.Helper()
+		ident, ok := expr.(*ast.Ident)
+		if !ok || ident.Name != name {
+			t.Fatalf("expected exact identifier %s, got %#v", name, expr)
+		}
+	}
+	assertRuntime := func(expr ast.Expr, name string) {
+		t.Helper()
+		selector, ok := expr.(*ast.SelectorExpr)
+		if !ok || selector.Sel.Name != name {
+			t.Fatalf("expected runtime selector %s, got %#v", name, expr)
+		}
+		assertIdent(selector.X, "stdjava")
+	}
+	assertNestedList := func(expr ast.Expr) {
+		t.Helper()
+		pointer, ok := expr.(*ast.StarExpr)
+		if !ok {
+			t.Fatalf("nested List lost reference pointer: %T", expr)
+		}
+		indexed, ok := pointer.X.(*ast.IndexExpr)
+		if !ok {
+			t.Fatalf("nested List lost one exact type argument: %T", pointer.X)
+		}
+		assertRuntime(indexed.X, "List")
+		foo, ok := indexed.Index.(*ast.StarExpr)
+		if !ok {
+			t.Fatalf("nested Foo lost reference pointer: %T", indexed.Index)
+		}
+		assertIdent(foo.X, "Foo")
+	}
+	target := resolveInvocationTarget(invocation.ChildByFieldName("object"), ctx, helper.File.Source)
+	resolved, selected := findBestMethodForInvocationTarget(target, "identity", invocation.ChildByFieldName("arguments"), true, false, ctx, helper.File.Source)
+	if target == nil || selected == nil || resolved == nil || resolved.owner != owner || resolved.def != identity || target.classScope != owner || len(target.classTypeArgs) != 1 {
+		t.Fatal("original invocation no longer resolves the exact owner/method declaration")
+	}
+	assertNestedList(target.classTypeArgs[0])
+	bindings := genericJavaInvocationTypeBindings(resolved.def, invocation, ctx, helper.File.Source)
+	if len(bindings) != 1 || bindings["R"] == "" {
+		t.Fatalf("missing actual method R inference: %v", bindings)
+	}
+	assertNestedList(javaTypeStringToGoTypeExpr(bindings["R"], inScopeTypeParameters(ctx), ctx))
+	logical := inferMethodTypeArguments(resolved.def, invocation, ctx, helper.File.Source)
+	if len(logical) != 1 {
+		t.Fatalf("logical R argument count=%d", len(logical))
+	}
+	assertNestedList(logical[0])
+	plan := planGenericMethodEntryABI(owner, identity, ctx)
+	if plan == nil || plan.owner != owner || plan.method != identity || len(plan.methodDeclarations) != 1 || plan.methodDeclarations[0] != r || len(plan.parameterTypes) != 1 || plan.resultJavaType != "java.lang.Object" {
+		t.Fatal("physical ABI lost the admitted declaration-owned Object slot")
+	}
+	assertIdent(plan.parameterTypes[0], "any")
+	assertIdent(plan.resultType, "any")
+	physical, javaTypes, known := genericMethodPhysicalTypeArguments(identity, ctx)
+	if !known || len(physical) != 1 || len(javaTypes) != 1 || javaTypes[0] != "java.lang.Object" {
+		t.Fatal("physical helper R slot is not its declared Object erasure")
+	}
+	assertIdent(physical[0], "any")
 	node := ParseNode(helper.File.Ast, helper.File.Source, helper.Ctx)
 	file, ok := node.(*ast.File)
 	if !ok {
@@ -906,11 +1412,102 @@ public class Box<T> {
 	}
 	output := buf.String()
 
-	// Nested type args should be converted to Go's indexed generic form and keep
-	// pointer semantics for reference types. java.util.List maps to stdjava.List.
-	if !strings.Contains(output, "NewBoxIdentityHelper[*stdjava.List[*Foo], *stdjava.List[*Foo]]") && !strings.Contains(output, "NewBoxIdentityHelper[*stdjava.List[*Foo],*stdjava.List[*Foo]]") {
-		t.Errorf("Expected helper invocation to use nested generic type args, got:\n%s", output)
+	// Inspect the emitted AST: the typed nested view belongs to the consumer,
+	// while the virtual entry executes the same method body with physical any.
+	var call, entry, implementation *ast.FuncDecl
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+		if fn.Name.Name == "CallJava2goExecution" && fn.Recv == nil {
+			if call != nil { t.Fatal("duplicate typed call declaration") }
+			call = fn
+		}
+		if fn.Name.Name != "IdentityJava2goExecution" || fn.Recv == nil || len(fn.Recv.List) != 1 {
+			continue
+		}
+		pointer, ok := fn.Recv.List[0].Type.(*ast.StarExpr)
+		if !ok { t.Fatal("generic method receiver lost pointer") }
+		switch receiver := pointer.X.(type) {
+		case *ast.IndexExpr:
+			if name, ok := receiver.X.(*ast.Ident); ok && name.Name == "Box" {
+				assertIdent(receiver.Index, "T")
+				if entry != nil { t.Fatal("duplicate erased instance entry") }
+				entry = fn
+			}
+		case *ast.IndexListExpr:
+			if name, ok := receiver.X.(*ast.Ident); ok && name.Name == identity.HelperName {
+				if len(receiver.Indices) != 2 { t.Fatal("typed helper lost T/R slots") }
+				assertIdent(receiver.Indices[0], "T")
+				assertIdent(receiver.Indices[1], "R")
+				if implementation != nil { t.Fatal("duplicate typed helper body") }
+				implementation = fn
+			}
+		}
 	}
+	if call == nil || entry == nil || implementation == nil {
+		t.Fatalf("typed consumer, erased entry or typed implementation missing:\n%s", output)
+	}
+	if len(call.Type.Params.List) != 3 || call.Type.Results == nil || len(call.Type.Results.List) != 1 || len(call.Body.List) != 1 {
+		t.Fatal("typed consumer signature/body changed")
+	}
+	execution, ok := call.Type.Params.List[0].Type.(*ast.StarExpr)
+	if !ok { t.Fatal("caller Execution lost pointer") }
+	assertRuntime(execution.X, "Execution")
+	box, ok := call.Type.Params.List[1].Type.(*ast.StarExpr)
+	if !ok { t.Fatal("Box receiver parameter lost pointer") }
+	boxed, ok := box.X.(*ast.IndexExpr)
+	if !ok { t.Fatal("Box receiver lost owner instantiation") }
+	assertIdent(boxed.X, "Box")
+	assertNestedList(boxed.Index)
+	assertNestedList(call.Type.Params.List[2].Type)
+	assertNestedList(call.Type.Results.List[0].Type)
+	returned, ok := call.Body.List[0].(*ast.ReturnStmt)
+	if !ok || len(returned.Results) != 1 { t.Fatal("typed result return changed") }
+	view, ok := returned.Results[0].(*ast.CallExpr)
+	if !ok || len(view.Args) != 2 { t.Fatal("expected one consumer projection") }
+	indexed, ok := view.Fun.(*ast.IndexExpr)
+	if !ok { t.Fatal("consumer projection lost type argument") }
+	assertRuntime(indexed.X, "ObjectView")
+	assertNestedList(indexed.Index)
+	if reflectCoreTypeID(t, view.Args[1]) != "java.util.List" { t.Fatal("consumer lost canonical List descriptor") }
+	invoke, ok := view.Args[0].(*ast.CallExpr)
+	if !ok || len(invoke.Args) != 2 { t.Fatal("projection must enclose one instance invocation") }
+	selector, ok := invoke.Fun.(*ast.SelectorExpr)
+	if !ok || selector.Sel.Name != entry.Name.Name { t.Fatal("consumer bypassed erased virtual entry") }
+	assertIdent(selector.X, "box")
+	assertIdent(invoke.Args[0], call.Type.Params.List[0].Names[0].Name)
+	assertIdent(invoke.Args[1], "value")
+	if len(entry.Type.Params.List) != 2 || entry.Type.Results == nil || len(entry.Type.Results.List) != 1 || len(entry.Body.List) != 1 {
+		t.Fatal("erased entry signature or bridge body changed")
+	}
+	assertIdent(entry.Type.Params.List[1].Type, "any")
+	assertIdent(entry.Type.Results.List[0].Type, "any")
+	bridgeReturn, ok := entry.Body.List[0].(*ast.ReturnStmt)
+	if !ok || len(bridgeReturn.Results) != 1 { t.Fatal("erased bridge return changed") }
+	bridge, ok := bridgeReturn.Results[0].(*ast.CallExpr)
+	if !ok || len(bridge.Args) != 2 { t.Fatal("erased bridge must execute body once") }
+	bridgeSelector, ok := bridge.Fun.(*ast.SelectorExpr)
+	if !ok || bridgeSelector.Sel.Name != implementation.Name.Name { t.Fatal("erased entry lost existing implementation") }
+	constructor, ok := bridgeSelector.X.(*ast.CallExpr)
+	if !ok || len(constructor.Args) != 1 { t.Fatal("typed body must retain one receiver") }
+	constructorType, ok := constructor.Fun.(*ast.IndexListExpr)
+	if !ok || len(constructorType.Indices) != 2 { t.Fatal("physical helper lost owner/method slots") }
+	assertIdent(constructorType.X, "New"+identity.HelperName)
+	assertIdent(constructorType.Indices[0], "T")
+	assertIdent(constructorType.Indices[1], "any")
+	assertIdent(constructor.Args[0], entry.Recv.List[0].Names[0].Name)
+	assertIdent(bridge.Args[0], entry.Type.Params.List[0].Names[0].Name)
+	assertIdent(bridge.Args[1], "value")
+	if len(implementation.Type.Params.List) != 2 || implementation.Type.Results == nil || len(implementation.Type.Results.List) != 1 || len(implementation.Body.List) == 0 {
+		t.Fatal("original typed identity implementation lost")
+	}
+	assertIdent(implementation.Type.Params.List[1].Type, "R")
+	assertIdent(implementation.Type.Results.List[0].Type, "R")
+	bodyReturn, ok := implementation.Body.List[len(implementation.Body.List)-1].(*ast.ReturnStmt)
+	if !ok || len(bodyReturn.Results) != 1 { t.Fatal("identity body stopped returning its original value") }
+	assertIdent(bodyReturn.Results[0], "value")
 }
 
 // TestInnerClass_ParentTypeParameterReuse tests that inner class constructors
