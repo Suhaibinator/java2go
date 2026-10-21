@@ -36,7 +36,9 @@ func TestCollectionsEmptySetNativeDiagnosticIdentityJDK21(t *testing.T) {
 			canonical := InternJavaString(text) == InternJavaString(other)
 			fmt.Printf("%s=%t:%t:%t:%t:%t\n", probe.name, cached, distinct, equal, firstInternDiffers, canonical)
 		}
-		return
+		// This direct-binary child owns only the observation protocol. Exit after
+		// its assertions so testing.M.Run cannot append PASS or coverage output.
+		os.Exit(0)
 	}
 	// The JDK oracle starts with a fresh process intern pool. Run this one
 	// same-race-binary control in a bounded child to preserve that initial state
@@ -52,12 +54,13 @@ func TestCollectionsEmptySetNativeDiagnosticIdentityJDK21(t *testing.T) {
 	context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	command := exec.CommandContext(context, executable, "-test.run=^TestCollectionsEmptySetNativeDiagnosticIdentityJDK21$", "-test.timeout=5s")
-	command.Env = append(os.Environ(), childFlag+"=1")
+	// Early-exit coverage hooks still need a destination in covered binaries.
+	command.Env = append(os.Environ(), childFlag+"=1", "GOCOVERDIR="+t.TempDir())
 	output, err := command.CombinedOutput()
 	if err != nil {
 		t.Fatalf("bounded native identity control: %v\n%s", err, output)
 	}
-	expected := string(oracle) + "PASS\n"
+	expected := string(oracle)
 	if string(output) != expected {
 		t.Fatalf("fresh-process JDK identity parity\nJVM=%q\nGo=%q", expected, output)
 	}

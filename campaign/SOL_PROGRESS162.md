@@ -1,0 +1,9 @@
+# Sol checkpoint 162: covered child observation protocol
+
+CI161 exposed an EmptySet native diagnostic identity harness failure: the observation child reused the instrumented test executable, so testing.M.Run appended a coverage summary to otherwise exact JDK-derived output. The harness now exits its observation child after all existing assertions and writes coverage data into a private child directory. The parent compares the unchanged oracle bytes alone. No stdout filtering, Java/oracle/runtime changes or skipped assertions are included.
+
+Sol reproduced the failure with covered binaries while the plain control passed. An intermediate explicit-exit candidate correctly failed because Go warned that GOCOVERDIR was unset; that red receipt is retained. Supplying a private child coverage directory fixes the protocol. A new regression executes the actual parent and grandchild protocol rather than mirroring implementation details.
+
+The coordinator independently reconstructed the exact patch and inverse against public161. All nine EmptySet parents pass in plain, covered and actual f1_os_profile covered race binaries. In all three profiles, a direct observation child emits exact unchanged oracle stdout and empty stderr. Default/F1 runtime lint passes. Fourteen independent receipts, source hashes and cleanup evidence were audited; no timeout or skip was accepted. The Sol packet additionally retains both baseline failures and the intermediate warning failure. An incidental wrong F1 tag in the first agent run was corrected and is not credited as actual F1 coverage.
+
+The patch SHA256 is f673059059f29e20579fdd3c2b1b955d9a591119973c6c29934236e441157891. Evidence is under empty-set-covered-harness-public161 and root-emptyset-covered/run. Full CI, the dependency failures in Hex/Gson and full Netty remain unaccepted. This is a test harness maintenance milestone.

@@ -26327,5 +26327,16 @@
       "fullCI",
       "Netty"
     ]
+  },
+  "sol_progress162": {
+    "status": "COVERED_CHILD_OBSERVATION_PROTOCOL_FIXED",
+    "base": "2c6d39c2a2f816b7bd084956178147b418b1cb59",
+    "root_source_manifest_sha256": "5384792eb0b473b199ff946712c54c14c950d0334c5a400e14939cdf2a12b3e8",
+    "root_raw_audit_sha256": "4f3454ec6f1d26d7e4d275b3d1fe6f647b9ecb647d9fdbe2d557410855497145",
+    "Sol_delivery_sha256": "663a67527ac2a475f5a2b1e181e707be15220f7867b3e1cb30cbc577d86dcb6a",
+    "parents_each_profile": 9,
+    "root_receipts": 14,
+    "production_Java_oracle_changes": false,
+    "fullCI": "UNACCEPTED"
   }
 }
