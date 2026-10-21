@@ -26393,5 +26393,39 @@
       "sol_writer_dispatch_v6": "Final native publication preparation and fresh CI gates"
     },
     "updated_at": "2026-09-30T15:48:30.979530+00:00"
+  },
+  "sol_progress166": {
+    "status": "VARARGS_PARAMETER_ORIGIN_RANK_FINITE_PASS_FULL_NETTY_UNACCEPTED",
+    "base": "b45c3dee10b39e6502e221ba3e4bcdcf0950ee9f",
+    "root_source_manifest_sha256": "1f5168ad4fb6dbf75800f1bce211206e250325056b66202c9d1b3289243f3ae6",
+    "root_audit_sha256": "9add4635c12ea40204b22e9cfd2b1483146fbec4ce2a6c5224a6eae5af981eba",
+    "portable_delivery_sha256": "0d952bfb29ea3000f9011717857ac31ca5dd46e7bfb1672e066ae82aa838c466",
+    "finite_positive_receipts": 29,
+    "new_race20_parent_passes": 180,
+    "whole_reader_JDK3Go3": 2,
+    "fullNetty": {
+      "actual_exit": -15,
+      "application_execution": "NOT_RUN",
+      "binary_sha256": "c53f8dd82ed66d04460762a1186c0a625b2252c8b5412bd372728748ca0ed7d1",
+      "duration_seconds": 300.03283,
+      "file_starts_not_completions": 21,
+      "generated_Go_build": "NOT_RUN",
+      "last_file_start": "time=\"2026-10-21T23:19:09Z\" level=info msg=\"Converting file \\\"/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/perf_netty_ownership/dependencies/netty-buffer/src/main/java/io/netty/buffer/ByteBufUtil.java\\\"\"",
+      "partial_outputs_unaccepted": true,
+      "raw_receipt_sha256": "2c13d847b40cf975e79505cd72848c16ef7f71ef1fc26505b5fc92338f73d9f3",
+      "runner_exit": 124,
+      "source_inputs_post_exact": {
+        "all1220_java_members_exact": true,
+        "all1226_pins_exact": true,
+        "current_historical_locks_exact": true,
+        "source4059_exact": true,
+        "source_manifest_sha256": "d3af7cae23da3611a606893f4e6cfb0e0dca7a0b2e264a7fb01438adf1350b18"
+      },
+      "source_manifest_sha256": "1f5168ad4fb6dbf75800f1bce211206e250325056b66202c9d1b3289243f3ae6",
+      "status": "TIMEOUT_FAILURE",
+      "timed_out": true
+    },
+    "fullCI": "UNACCEPTED",
+    "fullRound": "UNACCEPTED"
   }
 }

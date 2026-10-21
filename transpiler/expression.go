@@ -10251,13 +10251,18 @@ func inferIdentifierJavaType(name string, ctx Ctx, origins ...*inferredJavaTypeO
 	if ctx.localScope != nil {
 		if param := ctx.localScope.ParameterByName(name); param != nil && param.OriginalType != "" {
 			javaType := definitionJavaType(param)
+			variadic := false
 			for index, candidate := range ctx.localScope.Parameters {
 				if candidate == param && executionParameterIsVariadic(ctx.localScope, index) {
 					javaType += "[]"
+					variadic = true
 					break
 				}
 			}
 			recordDefinitionTypeOrigin(origins, param, nil, ctx, nil, javaType)
+			if variadic && len(origins) > 0 && origins[0] != nil {
+				origins[0].arrayRank++
+			}
 			return javaType, true
 		}
 		if local := ctx.localScope.FindVariable(name); local != nil && local.OriginalType != "" {
