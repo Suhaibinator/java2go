@@ -334,6 +334,9 @@ func declaredOriginConversion(actual, formal inferredJavaTypeOrigin, ctx Ctx) (c
 			}
 			return 0, true, true, true
 		}
+		if canonicalThrowableOriginAssignable(actual, formal) {
+			return 1, false, true, true
+		}
 		if threadSourceCanonicalOriginAssignable(actual, formal) {
 			return 1, false, true, true
 		}

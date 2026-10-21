@@ -1725,6 +1725,43 @@
     "next": "Integrate accepted private components and rerun compiler gates; continue wrapper constants, Class.cast, source FileChannel, Throwable stack contracts and dependency-source closure.",
     "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
   },
+  "active_resume_current153": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "next": "Integrate accepted source components with restored suppression/identity; continue Class.cast prerequisites, FileChannel callbacks, Throwable frames and pinned Netty source/JVM validation.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "active_resume_current154": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "next": "Finish Write1/Write2 native and source dispatch, independently verify cast/static-field join and accumulated compiler gates, retain new genuine Netty partial-write controls.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "active_resume_current155": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "next": "Finish native/source channel writes and resource/RAF prerequisites, preserve genuine Netty partial-write oracle, integrate compiler components and continue original full Netty attempts.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "active_resume_current156": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "next": "Repair coherent compiler declaration-origin gap, reverify all applications, rerun full Netty under declared1GiB/300s profile, and continue exception stack/source Thread compatibility.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "active_resume_current157": {
+    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
+    "goal_status": "ACTIVE",
+    "next": "Join canonical JDK nominal inventory, repair actual native ByteBuffer identities, verify full channel matrix and rerun original Netty graph; continue source Thread and Throwable identity work.",
+    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json"
+  },
+  "active_resume_current160": {
+    "checkpoint": "campaign/SOL_PROGRESS160.md",
+    "next": "Finish profiled compiler scan optimization and full Netty rerun; finish Reader/T2 integration and CI repairs. Full round acceptance remains unproven.",
+    "public_base": "31f2c903d2b7b62487fc0640616245f4fb405adc",
+    "status": "ACTIVE Sol-only continuous adversarial campaign",
+    "updated_utc": "2026-10-21T21:48:16.305229+00:00"
+  },
   "active_resume_current99": {
     "agent_policy": "GPT-6.1 Sol/high only; no Astra; explicit file ownership and independent review; coordinator sole public/Git writer",
     "branch": "origin/codex/adversarial-campaign",
@@ -21242,6 +21279,371 @@
       "verifier_sha256": "a026be252e8eab8da0b379c83ec92506e4cd66fb10189ccc050eac7d1c757bd7"
     }
   },
+  "sol_progress153": {
+    "accepted_full_checkpoint": 18,
+    "checkpoint": 153,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public153/run/ROOT_RAW_AUDIT.json",
+    "goal_status": "ACTIVE",
+    "held": [
+      "Normal full1220 Netty CLI still300s TIMEOUT",
+      "FullCI/round and coherent private union",
+      "SourceFileChannel/Class.cast/Throwable stack and callback contracts",
+      "Dependency-source closure/fullNetty parity"
+    ],
+    "parent_revision": "389249ce588938831adab26d4969744ad1b7efad",
+    "performance_claim": false,
+    "scope": "One canonical numeric-wrapper static producer table; BYTES/SIZE emit typed Java int and register int inference. Boolean/source/binder/import/value shields retained.",
+    "status": "SCOPED_NUMERIC_WRAPPER_WIDTH_CONSTANTS_GREEN",
+    "tdd": "Compiled baseline inference and compound-assignment regressions fail, strict CLI consumer fails; exact candidate passes.",
+    "validation": {
+      "adjacent_compiler_parents": 15,
+      "candidate_manifest_sha256": "ec44a350c1efcdf59a1e64eda745fe40cab61323f05d5b1e49086023bd9d2bc6",
+      "default_f1_race_build_testcompile_lint215": "PASS",
+      "expected_semantic_REDs": [
+        "baseline-DeclaredIntAndEmission-RED",
+        "baseline-CompoundAssignmentProof-RED",
+        "baseline-strict-cli-RED"
+      ],
+      "fresh_Go": 6,
+      "fresh_JDK": 9,
+      "fullNetty_CI_round_accepted": false,
+      "new_compiler_parents": 7,
+      "positive_records": 41,
+      "records": 44,
+      "result_sha256": "247613ce842374e9d264da6dfa4811dad42d77b532ea073a7ff9f85ef5eb9114",
+      "runtime_parents": 672,
+      "status": "ROOT_PUBLIC153_FINITE_CONSTANTS_AUDIT_PASS",
+      "symbol_parents": 17
+    }
+  },
+  "sol_progress154": {
+    "accepted_full_checkpoint": 18,
+    "checkpoint": 154,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public154/run/ROOT_RAW_AUDIT.json",
+    "generated_application_performance_claim": false,
+    "goal_status": "ACTIVE",
+    "held": [
+      "Full CI and accumulated coherent integration/round",
+      "Source channel writes and callback stacks",
+      "Full original Netty strict/allpackages/JVM-Go parity"
+    ],
+    "parent_revision": "a5b5e0d80de632f21651339eb4e34720a6c9d5a4",
+    "raw_audit": {
+      "candidate_manifest_sha256": "f7fd92f98f742643eda7b040dd530d69112cbb7af8ab7490282f887abed3d406",
+      "exit_counts": {
+        "0": 18,
+        "1": 1
+      },
+      "expected_actual_RED": "baseline-allocation-RED",
+      "no_full_CI_round_Netty_or_generated_application_performance_claim": true,
+      "records": 19,
+      "result_sha256": "0e06c83732a2e2d4e5758e605e285ff08d8a18861d0fef7849337bf1fabeab51",
+      "source_unchanged": true,
+      "status": "ROOT_PUBLIC154_RAW_AUDIT_PASS",
+      "verifier_sha256": "095fbb7b4b6776db388db9b46be1a220c1e71debab446069788e334bb992a7cc"
+    },
+    "scope": "One declaredFileType producer function plus suffix walker and tests; ordered declaration lookup and identity retained.",
+    "status": "SCOPED_DECLARED_SOURCE_NAME_ALLOCATION_GREEN",
+    "tdd": "Compiled actual153 baseline semantic controls pass but eight zero-allocation cases RED; candidate eight zero-allocation cases each repeated3 green.",
+    "validation": {
+      "baseline_actual_allocation_RED_cases": 8,
+      "baseline_semantic_parents": 2,
+      "candidate_allocation_measurements": 24,
+      "candidate_allocations_per_query": 0,
+      "candidate_manifest_sha256": "f7fd92f98f742643eda7b040dd530d69112cbb7af8ab7490282f887abed3d406",
+      "compiler_controls": 21,
+      "default_f1_race_build_testcompile_lint215": "PASS",
+      "fresh_existing_JDK_Go_projects": 3,
+      "full_CI_round_Netty_pass": false,
+      "generated_program_performance_claim": false,
+      "records": 19,
+      "runtime_parents": 672,
+      "source_unchanged": true,
+      "status": "ROOT_PUBLIC154_DECLARED_NAME_ALLOCATION_FINITE_PASS",
+      "symbol_parents": 17
+    }
+  },
+  "sol_progress155": {
+    "accepted_full_checkpoint": 18,
+    "checkpoint": 155,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public155/run/ROOT_RAW_AUDIT.json",
+    "goal_status": "ACTIVE",
+    "held": [
+      "Other compiler/dependency CI failures",
+      "Full coherent accumulated round",
+      "Full Netty translation/build/JVM-Go parity"
+    ],
+    "parent_revision": "f06860a0726689474640ac38717e9b2f28478dfb",
+    "performance_claim": false,
+    "raw_audit": {
+      "actual_expected_nonzero": [
+        "baseline-original6-RED",
+        "jdk-invalid-array-1",
+        "jdk-invalid-array-2",
+        "jdk-invalid-array-3"
+      ],
+      "candidate_manifest_sha256": "690ce39c5bfe6620e0dafaa997867ca04e20c15fc664cc8407ec67e1e9d9b6bb",
+      "exit_counts": {
+        "0": 15,
+        "1": 4
+      },
+      "full_CI_round_Netty_claim": false,
+      "production_unchanged": true,
+      "records": 19,
+      "result_sha256": "a5d94b064aff32b2e3961da93ab4a4f20e2ceb851fc9afdbeb48f3f7eea31ba2",
+      "source_unchanged": true,
+      "status": "ROOT_PUBLIC155_RAW_AUDIT_PASS",
+      "verifier_sha256": "e81e06ab9748795268da42d9d714e77d726c51c7acd51b0151b300a08bdbfd01"
+    },
+    "scope": "Exactly one NegativeShield test function; only three invalid array rows change behavior to require expression rejection. All20 Java literals and17 other contracts retained; production unchanged.",
+    "status": "SCOPED_INVALID_ARRAY_METHOD_TEST_EXPECTATIONS_GREEN",
+    "validation": {
+      "JDK_invalid_array_rejections": 3,
+      "Java_literals_unchanged": 20,
+      "actual_baseline_mode_failures": 6,
+      "array_thread_parents": 10,
+      "candidate_modes": 40,
+      "companion_parents": 4,
+      "default_f1_race_build_testcompile_lint215": "PASS",
+      "full_CI_round_Netty_accepted": false,
+      "nonarray_contracts_unchanged": 17,
+      "only_test_function_changed": true,
+      "production_unchanged": true,
+      "records": 19,
+      "source_manifest_sha256": "690ce39c5bfe6620e0dafaa997867ca04e20c15fc664cc8407ec67e1e9d9b6bb",
+      "status": "ROOT_PUBLIC155_TEST_EXPECTATION_FINITE_PASS",
+      "valid_array_Object_clone_parents": 4
+    }
+  },
+  "sol_progress156": {
+    "accepted_full_checkpoint": 18,
+    "baseline": "Published155 runtime672 PASS; newAPI test-only overlay compile gap retained, not called a semantic runtime failure.",
+    "checkpoint": 156,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public156/run/ROOT_RAW_AUDIT.json",
+    "goal_status": "ACTIVE",
+    "held": [
+      "Compiler source/lowering integration",
+      "Full coherent accumulated CI/round",
+      "Full source Netty translation/build/behavioral parity",
+      "Active native-write cancellation and broader platform behavior"
+    ],
+    "parent_revision": "f395419b584342bb263fe419e7f2e8cdf9d9e4ef",
+    "performance_claim": false,
+    "raw_audit": {
+      "FreeBSD": "compile-only",
+      "all_raw_streams_cleanup_sources_rehashed": true,
+      "compiler_unchanged": true,
+      "exit0": 21,
+      "full_CI_round_Netty_claim": false,
+      "partial_profile_runs": 6,
+      "records": 21,
+      "result_sha256": "5bcd12cb7015f3a0572a382e7e2b1dbfe90feba8993acdf2d75401c1eb582d73",
+      "runtime": 678,
+      "source_manifest_sha256": "0d3a6b881f1dafaff3b8d8c0a22cfb4c6bca9383bb052394b2883013a6631b2d",
+      "source_native_lease_count": 20,
+      "status": "ROOT_PUBLIC156_INDEPENDENT_RAW_AUDIT_PASS",
+      "symbol": 17
+    },
+    "scope": "Two declaration regions in file_channel_reference.go; three new runtime implementation files and three new runtime test files. Compiler and all other public runtime files unchanged.",
+    "status": "SCOPED_FILECHANNEL_WRITE_RUNTIME_GREEN",
+    "validation": {
+      "FreeBSD": "compile-only CGO0",
+      "all_sources_unchanged": true,
+      "default_f1_racebuild_testcompile_lint215": "PASS",
+      "full_compiler_CI_round_Netty_accepted": false,
+      "new_actual_RLIMIT_partial_runs": 3,
+      "old_actual_RLIMIT_partial_seeds": [
+        17,
+        41,
+        97
+      ],
+      "records": 21,
+      "runtime_registries": {
+        "stdjava": 678,
+        "symbol": 17
+      },
+      "source_manifest_sha256": "0d3a6b881f1dafaff3b8d8c0a22cfb4c6bca9383bb052394b2883013a6631b2d",
+      "source_native_lease_stress_count": 20,
+      "status": "ROOT_PUBLIC156_RUNTIME_FINITE_PASS"
+    }
+  },
+  "sol_progress157": {
+    "accepted_full_checkpoint": 18,
+    "checkpoint": 157,
+    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public157/run/ROOT_RAW_AUDIT.json",
+    "goal_status": "ACTIVE",
+    "held": [
+      "Physical diagnostic rows after Unicode-escaped line terminators",
+      "General escaped identifiers and full Unicode lexical preprocessing",
+      "Full class-facts adapter/Throwable integration",
+      "Full compiler campaign/CI and original source Netty parity"
+    ],
+    "parent_revision": "042196192b357c894edb836020cc84839eacf21a",
+    "performance_claim": false,
+    "raw_audit": {
+      "JDK_compilations": 11,
+      "all_source_inputs_raw_streams_cleanup_rehashed": true,
+      "baseline_semantic_RED": "compiled old ParseAST with same new tests: exit1, valid declarations missing",
+      "candidate_manifest_sha256": "41d609bc9f77520073d9c15f10f0f95fc09f561f98b630cb3843a586cc8031f3",
+      "exit_counts": {
+        "0": 30,
+        "1": 1
+      },
+      "full_CI_Netty_T2": false,
+      "held_diagnostic_rows": "reportUnsupported still uses parser rows; escaped-line physical-row calibration is a separate open issue",
+      "records": 31,
+      "registries": {
+        "parsing": 5,
+        "stdjava": 678,
+        "symbol": 17
+      },
+      "result_sha256": "1e93868d2ace4c45c02ea4ebfb7c5c49f2ce7f97f7f52d971eb20dff4d10d38e",
+      "status": "ROOT_PUBLIC157_INDEPENDENT_RAW_AUDIT_PASS",
+      "stress_repetitions": 20
+    },
+    "scope": "SourceFile.ParseAST only, equal-width private parser source helper, and two regression parents. Original source bytes and byte maps preserved; no private ParseSymbols/SourceFilename or metadata consumer import.",
+    "status": "SCOPED_UNICODE_LINE_TERMINATOR_PARSER_GREEN",
+    "validation": {
+      "JDK_compilations": 11,
+      "all_sources_inputs_unchanged": true,
+      "baseline_semantic_RED": true,
+      "candidate_manifest_sha256": "41d609bc9f77520073d9c15f10f0f95fc09f561f98b630cb3843a586cc8031f3",
+      "compiler_unicode_mapping": "PASS",
+      "default_f1_build_testcompile_lint215": "PASS",
+      "full_CI_Netty_T2_accepted": false,
+      "new_parent_stress_repetitions": 20,
+      "records": 31,
+      "registries": {
+        "parsing": 5,
+        "stdjava": 678,
+        "symbol": 17
+      },
+      "status": "ROOT_PUBLIC157_PARSER_FINITE_PASS"
+    }
+  },
+  "sol_progress160": {
+    "additional_Go_race_stress": 120,
+    "applications": 46,
+    "default_f1_build_testcompile_lint": "PASS",
+    "evidence": {
+      "root4075-original39-replay:root4075-original39-replay/ROOT_RAW_AUDIT.json": "3716c2bb47ca1c4ebccd39e5bfa67cd5d84aae71e317ad7ea8c2b265ef8ca410",
+      "root4075-rawgeneric-replay:root4075-rawgeneric-replay/ROOT_RAW_AUDIT.json": "973b7d1e396ece9548a9398a5a3e8b070648642d5fb105a70a97e2080eeb40f4",
+      "run:root-coherent4075/run/ROOT_RAW_AUDIT.json": "5adba9fc0fca7eca05617cc495d13fbbdf436b9b865c01550e8c04d48c1cd4a3",
+      "run:root4075-thread6-replay/run/ROOT_RAW_AUDIT.json": "e033efc8d650797c919d8ee11e1d6b3fd7e3e5c10f8e5df41570ba1eda93d565"
+    },
+    "fresh_Go": 258,
+    "fresh_JDK": 258,
+    "held": [
+      "full compiler CI",
+      "full Gson/dependency campaign acceptance",
+      "Reader clone successor",
+      "T2 frame and default-metadata successor",
+      "Netty full strict transpilation/build/execution",
+      "performance advantage over Java"
+    ],
+    "implementation_source_manifest_sha256": "d26aab772ff47f66ce1587ed7945ea4a8e873bc39b8ef27bbcb3d3c7aa7ff60e",
+    "old_test_audit_sha256": "805c67137974e3c534ca6ce9365194605317a522f52bcb77871d9d2fbba95b2d",
+    "publication_whitespace_only": {
+      "after_sha256": "95ff620fb08df761f8ac5ad77a46946a86e3ece2be2691f9ad533f94ad7570eb",
+      "before_sha256": "7f067154abbf88f151042234a2abe7a03adc83f992e50dbdf032bce8a25b17a4",
+      "canonical_sha256": "95ff620fb08df761f8ac5ad77a46946a86e3ece2be2691f9ad533f94ad7570eb",
+      "change": "Remove one empty EOF line only; all Go tokens and gofmt canonical output unchanged.",
+      "gofmt_sha256": "49f6b08b2a6f0ea1746a6ab647f73af598e14371250f8ec61ce232b17e83b7aa",
+      "original_publish160_driver_exit": 1,
+      "original_script_sha256": "46ca56abc987b93c62bd6ed46df10d65a63b31d953b837e7fe696b4561590a8f",
+      "path": "transpiler/generic_method_dispatch.go",
+      "reason": "git diff --check found new blank line at EOF"
+    },
+    "raw_receipts": 879,
+    "runtime_symbol_parsing": [
+      786,
+      17,
+      10
+    ],
+    "source_members": 4075,
+    "status": "WIP_INTEGRATION_INDEPENDENT_FINITE_PASS_NOT_FULLROUND"
+  },
+  "sol_progress161": {
+    "Sol_delivery_sha256": "c51dafc620499181a20964423adb950c602cf451169a1687e2706e224009a068",
+    "base": "b7a842bf54d75a071e3c462c4b4b9a69c4fe821b",
+    "generated_child_race": false,
+    "original_Java_expected_production_unchanged": true,
+    "remaining": [
+      "ExceptionTypes constructor selection",
+      "RandomAccessFile(File,mode)",
+      "fullCI",
+      "Netty"
+    ],
+    "root_raw_audit_sha256": "ee9ea1362d59ca2c4305d27a77e5b876e61024a2e5812f20d5b62ec0b5100e4a",
+    "source_manifest_sha256": "f2be812292e3d3c5f1c74c9606c50524be9e57162344d2434379f029da934ae4",
+    "status": "TEST_HARNESS_ABI_MAINTENANCE_TWO_PARENTS_GREEN_TWO_BEHAVIOR_FAILURES_RETAINED"
+  },
+  "sol_progress162": {
+    "Sol_delivery_sha256": "663a67527ac2a475f5a2b1e181e707be15220f7867b3e1cb30cbc577d86dcb6a",
+    "base": "2c6d39c2a2f816b7bd084956178147b418b1cb59",
+    "fullCI": "UNACCEPTED",
+    "parents_each_profile": 9,
+    "production_Java_oracle_changes": false,
+    "root_raw_audit_sha256": "4f3454ec6f1d26d7e4d275b3d1fe6f647b9ecb647d9fdbe2d557410855497145",
+    "root_receipts": 14,
+    "root_source_manifest_sha256": "5384792eb0b473b199ff946712c54c14c950d0334c5a400e14939cdf2a12b3e8",
+    "status": "COVERED_CHILD_OBSERVATION_PROTOCOL_FIXED"
+  },
+  "sol_progress163": {
+    "base": "e2139c13dc945270bbcc0facb59b4998919ed413",
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "RETRY_IN_PROGRESS_NOT_ACCEPTED",
+    "owner_accepted_apps_exact_generatedGo": 45,
+    "owner_delivery_sha256": "a6a7467d87554d43cb5fbd333a3a3950b2835c90bb542c6c744c93cb2df062a6",
+    "owner_raw_receipts": 974,
+    "owner_selected_compiler_parents": 93,
+    "performance_vsJava": "NOT_MEASURED",
+    "root_focused_raw_audit_sha256": "0b776b4486d2ad7e7f546595b32b8e4c3d3354edf5ec975823c3efcb9401ade4",
+    "root_normal_parents": 7,
+    "root_semantic_race20_parents": 5,
+    "root_source_manifest_sha256": "feb3b854d48e8fcd8856adebe12875f70ef4fd9f758e868b6bdcfc5af698ed97",
+    "status": "SCANNER_NEGATIVE_PREDICATE_FOCUSED_AND_FINITE_COMPATIBILITY_PASS"
+  },
+  "sol_progress164": {
+    "Sol_delivery_sha256": "b32364db6d7ce03b44f9b1b1a0b4c73c3e8355d0925d7894d4d7828534e84751",
+    "base": "bde455c62a9ddcbcc40eb4c4b8623edb87070dbf",
+    "existing_provenance_parents": 22,
+    "focused_race20": 7,
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "CompositeByteBuf.java236 strictfailure, no timeout, build/app not reached",
+    "full_race_registry": {
+      "parsing": 10,
+      "stdjava": 787,
+      "symbol": 21
+    },
+    "root_audit_sha256": "d92812fd3d2df0716d09f73bb8ee53cd7102493698aa9372a8d4222c457c24c5",
+    "root_receipts": 48,
+    "root_source_manifest_sha256": "dcb4a0eafd871f014499896ae471c2685779052d21ca43905296b243f4b2042a",
+    "status": "READER_ACCESSOR_AND_LEXICAL_SOURCE_RESOLUTION_FINITE_PASS",
+    "whole_applications_JDK3_Go3": 2
+  },
+  "sol_progress165": {
+    "Codec_full_applications": "UNACCEPTED File(File,String) blocks Go build",
+    "Sol_delivery_sha256": "631d11195bd3f144a10f8a7fce6c77172bf4f62ab1e425d1d5b3d7e1ec9d685c",
+    "base": "eedbff5df684d69b43f222d1f7e8fae8dfa13cd2",
+    "exception_application_parents": 3,
+    "existing_native_parents": 23,
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED",
+    "full_race_registry": {
+      "stdjava": 787,
+      "symbol": 21
+    },
+    "new_native_parents": 4,
+    "new_race20_parent_passes": 80,
+    "original_CI_exception": "ACTUAL_RUNTIME_FAILURE canonical JavaString constructor conversion",
+    "positive_receipts": 28,
+    "receipts": 30,
+    "retained_File_build_failures": 2,
+    "root_audit_sha256": "c176b8431e9baa8d0acb6526008e278a5a7c840bdb697fd53253a29ddd43468f",
+    "root_source_manifest_sha256": "6a2164695ff1eac22434713640f3cccc966fe6d456927232fda15217649d4bb1",
+    "status": "MINIMAL_INTRINSIC_AND_THROWABLE_ORIGIN_REPAIR_FINITE_PASS"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
@@ -25991,385 +26393,5 @@
       "sol_writer_dispatch_v6": "Final native publication preparation and fresh CI gates"
     },
     "updated_at": "2026-09-30T15:48:30.979530+00:00"
-  },
-  "sol_progress153": {
-    "checkpoint": 153,
-    "status": "SCOPED_NUMERIC_WRAPPER_WIDTH_CONSTANTS_GREEN",
-    "goal_status": "ACTIVE",
-    "parent_revision": "389249ce588938831adab26d4969744ad1b7efad",
-    "scope": "One canonical numeric-wrapper static producer table; BYTES/SIZE emit typed Java int and register int inference. Boolean/source/binder/import/value shields retained.",
-    "tdd": "Compiled baseline inference and compound-assignment regressions fail, strict CLI consumer fails; exact candidate passes.",
-    "validation": {
-      "fresh_JDK": 9,
-      "fresh_Go": 6,
-      "new_compiler_parents": 7,
-      "adjacent_compiler_parents": 15,
-      "runtime_parents": 672,
-      "symbol_parents": 17,
-      "default_f1_race_build_testcompile_lint215": "PASS",
-      "candidate_manifest_sha256": "ec44a350c1efcdf59a1e64eda745fe40cab61323f05d5b1e49086023bd9d2bc6",
-      "expected_semantic_REDs": [
-        "baseline-DeclaredIntAndEmission-RED",
-        "baseline-CompoundAssignmentProof-RED",
-        "baseline-strict-cli-RED"
-      ],
-      "fullNetty_CI_round_accepted": false,
-      "positive_records": 41,
-      "records": 44,
-      "result_sha256": "247613ce842374e9d264da6dfa4811dad42d77b532ea073a7ff9f85ef5eb9114",
-      "status": "ROOT_PUBLIC153_FINITE_CONSTANTS_AUDIT_PASS"
-    },
-    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public153/run/ROOT_RAW_AUDIT.json",
-    "held": [
-      "Normal full1220 Netty CLI still300s TIMEOUT",
-      "FullCI/round and coherent private union",
-      "SourceFileChannel/Class.cast/Throwable stack and callback contracts",
-      "Dependency-source closure/fullNetty parity"
-    ],
-    "accepted_full_checkpoint": 18,
-    "performance_claim": false
-  },
-  "active_resume_current153": {
-    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
-    "goal_status": "ACTIVE",
-    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
-    "next": "Integrate accepted source components with restored suppression/identity; continue Class.cast prerequisites, FileChannel callbacks, Throwable frames and pinned Netty source/JVM validation."
-  },
-  "sol_progress154": {
-    "checkpoint": 154,
-    "status": "SCOPED_DECLARED_SOURCE_NAME_ALLOCATION_GREEN",
-    "goal_status": "ACTIVE",
-    "parent_revision": "a5b5e0d80de632f21651339eb4e34720a6c9d5a4",
-    "scope": "One declaredFileType producer function plus suffix walker and tests; ordered declaration lookup and identity retained.",
-    "tdd": "Compiled actual153 baseline semantic controls pass but eight zero-allocation cases RED; candidate eight zero-allocation cases each repeated3 green.",
-    "validation": {
-      "baseline_actual_allocation_RED_cases": 8,
-      "baseline_semantic_parents": 2,
-      "candidate_allocation_measurements": 24,
-      "candidate_allocations_per_query": 0,
-      "candidate_manifest_sha256": "f7fd92f98f742643eda7b040dd530d69112cbb7af8ab7490282f887abed3d406",
-      "compiler_controls": 21,
-      "default_f1_race_build_testcompile_lint215": "PASS",
-      "fresh_existing_JDK_Go_projects": 3,
-      "full_CI_round_Netty_pass": false,
-      "generated_program_performance_claim": false,
-      "records": 19,
-      "runtime_parents": 672,
-      "source_unchanged": true,
-      "status": "ROOT_PUBLIC154_DECLARED_NAME_ALLOCATION_FINITE_PASS",
-      "symbol_parents": 17
-    },
-    "raw_audit": {
-      "status": "ROOT_PUBLIC154_RAW_AUDIT_PASS",
-      "records": 19,
-      "exit_counts": {
-        "0": 18,
-        "1": 1
-      },
-      "expected_actual_RED": "baseline-allocation-RED",
-      "result_sha256": "0e06c83732a2e2d4e5758e605e285ff08d8a18861d0fef7849337bf1fabeab51",
-      "candidate_manifest_sha256": "f7fd92f98f742643eda7b040dd530d69112cbb7af8ab7490282f887abed3d406",
-      "verifier_sha256": "095fbb7b4b6776db388db9b46be1a220c1e71debab446069788e334bb992a7cc",
-      "source_unchanged": true,
-      "no_full_CI_round_Netty_or_generated_application_performance_claim": true
-    },
-    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public154/run/ROOT_RAW_AUDIT.json",
-    "held": [
-      "Full CI and accumulated coherent integration/round",
-      "Source channel writes and callback stacks",
-      "Full original Netty strict/allpackages/JVM-Go parity"
-    ],
-    "accepted_full_checkpoint": 18,
-    "generated_application_performance_claim": false
-  },
-  "active_resume_current154": {
-    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
-    "goal_status": "ACTIVE",
-    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
-    "next": "Finish Write1/Write2 native and source dispatch, independently verify cast/static-field join and accumulated compiler gates, retain new genuine Netty partial-write controls."
-  },
-  "sol_progress155": {
-    "checkpoint": 155,
-    "status": "SCOPED_INVALID_ARRAY_METHOD_TEST_EXPECTATIONS_GREEN",
-    "goal_status": "ACTIVE",
-    "parent_revision": "f06860a0726689474640ac38717e9b2f28478dfb",
-    "scope": "Exactly one NegativeShield test function; only three invalid array rows change behavior to require expression rejection. All20 Java literals and17 other contracts retained; production unchanged.",
-    "validation": {
-      "JDK_invalid_array_rejections": 3,
-      "Java_literals_unchanged": 20,
-      "actual_baseline_mode_failures": 6,
-      "array_thread_parents": 10,
-      "candidate_modes": 40,
-      "companion_parents": 4,
-      "default_f1_race_build_testcompile_lint215": "PASS",
-      "full_CI_round_Netty_accepted": false,
-      "nonarray_contracts_unchanged": 17,
-      "only_test_function_changed": true,
-      "production_unchanged": true,
-      "records": 19,
-      "source_manifest_sha256": "690ce39c5bfe6620e0dafaa997867ca04e20c15fc664cc8407ec67e1e9d9b6bb",
-      "status": "ROOT_PUBLIC155_TEST_EXPECTATION_FINITE_PASS",
-      "valid_array_Object_clone_parents": 4
-    },
-    "raw_audit": {
-      "status": "ROOT_PUBLIC155_RAW_AUDIT_PASS",
-      "records": 19,
-      "exit_counts": {
-        "0": 15,
-        "1": 4
-      },
-      "actual_expected_nonzero": [
-        "baseline-original6-RED",
-        "jdk-invalid-array-1",
-        "jdk-invalid-array-2",
-        "jdk-invalid-array-3"
-      ],
-      "result_sha256": "a5d94b064aff32b2e3961da93ab4a4f20e2ceb851fc9afdbeb48f3f7eea31ba2",
-      "candidate_manifest_sha256": "690ce39c5bfe6620e0dafaa997867ca04e20c15fc664cc8407ec67e1e9d9b6bb",
-      "verifier_sha256": "e81e06ab9748795268da42d9d714e77d726c51c7acd51b0151b300a08bdbfd01",
-      "source_unchanged": true,
-      "production_unchanged": true,
-      "full_CI_round_Netty_claim": false
-    },
-    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public155/run/ROOT_RAW_AUDIT.json",
-    "held": [
-      "Other compiler/dependency CI failures",
-      "Full coherent accumulated round",
-      "Full Netty translation/build/JVM-Go parity"
-    ],
-    "accepted_full_checkpoint": 18,
-    "performance_claim": false
-  },
-  "active_resume_current155": {
-    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
-    "goal_status": "ACTIVE",
-    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
-    "next": "Finish native/source channel writes and resource/RAF prerequisites, preserve genuine Netty partial-write oracle, integrate compiler components and continue original full Netty attempts."
-  },
-  "sol_progress156": {
-    "checkpoint": 156,
-    "status": "SCOPED_FILECHANNEL_WRITE_RUNTIME_GREEN",
-    "goal_status": "ACTIVE",
-    "parent_revision": "f395419b584342bb263fe419e7f2e8cdf9d9e4ef",
-    "scope": "Two declaration regions in file_channel_reference.go; three new runtime implementation files and three new runtime test files. Compiler and all other public runtime files unchanged.",
-    "validation": {
-      "FreeBSD": "compile-only CGO0",
-      "all_sources_unchanged": true,
-      "default_f1_racebuild_testcompile_lint215": "PASS",
-      "full_compiler_CI_round_Netty_accepted": false,
-      "new_actual_RLIMIT_partial_runs": 3,
-      "old_actual_RLIMIT_partial_seeds": [
-        17,
-        41,
-        97
-      ],
-      "records": 21,
-      "runtime_registries": {
-        "stdjava": 678,
-        "symbol": 17
-      },
-      "source_manifest_sha256": "0d3a6b881f1dafaff3b8d8c0a22cfb4c6bca9383bb052394b2883013a6631b2d",
-      "source_native_lease_stress_count": 20,
-      "status": "ROOT_PUBLIC156_RUNTIME_FINITE_PASS"
-    },
-    "raw_audit": {
-      "status": "ROOT_PUBLIC156_INDEPENDENT_RAW_AUDIT_PASS",
-      "records": 21,
-      "exit0": 21,
-      "result_sha256": "5bcd12cb7015f3a0572a382e7e2b1dbfe90feba8993acdf2d75401c1eb582d73",
-      "source_manifest_sha256": "0d3a6b881f1dafaff3b8d8c0a22cfb4c6bca9383bb052394b2883013a6631b2d",
-      "all_raw_streams_cleanup_sources_rehashed": true,
-      "runtime": 678,
-      "symbol": 17,
-      "partial_profile_runs": 6,
-      "source_native_lease_count": 20,
-      "FreeBSD": "compile-only",
-      "compiler_unchanged": true,
-      "full_CI_round_Netty_claim": false
-    },
-    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public156/run/ROOT_RAW_AUDIT.json",
-    "baseline": "Published155 runtime672 PASS; newAPI test-only overlay compile gap retained, not called a semantic runtime failure.",
-    "held": [
-      "Compiler source/lowering integration",
-      "Full coherent accumulated CI/round",
-      "Full source Netty translation/build/behavioral parity",
-      "Active native-write cancellation and broader platform behavior"
-    ],
-    "accepted_full_checkpoint": 18,
-    "performance_claim": false
-  },
-  "active_resume_current156": {
-    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
-    "goal_status": "ACTIVE",
-    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
-    "next": "Repair coherent compiler declaration-origin gap, reverify all applications, rerun full Netty under declared1GiB/300s profile, and continue exception stack/source Thread compatibility."
-  },
-  "sol_progress157": {
-    "checkpoint": 157,
-    "status": "SCOPED_UNICODE_LINE_TERMINATOR_PARSER_GREEN",
-    "goal_status": "ACTIVE",
-    "parent_revision": "042196192b357c894edb836020cc84839eacf21a",
-    "scope": "SourceFile.ParseAST only, equal-width private parser source helper, and two regression parents. Original source bytes and byte maps preserved; no private ParseSymbols/SourceFilename or metadata consumer import.",
-    "validation": {
-      "JDK_compilations": 11,
-      "all_sources_inputs_unchanged": true,
-      "baseline_semantic_RED": true,
-      "candidate_manifest_sha256": "41d609bc9f77520073d9c15f10f0f95fc09f561f98b630cb3843a586cc8031f3",
-      "compiler_unicode_mapping": "PASS",
-      "default_f1_build_testcompile_lint215": "PASS",
-      "full_CI_Netty_T2_accepted": false,
-      "new_parent_stress_repetitions": 20,
-      "records": 31,
-      "registries": {
-        "parsing": 5,
-        "stdjava": 678,
-        "symbol": 17
-      },
-      "status": "ROOT_PUBLIC157_PARSER_FINITE_PASS"
-    },
-    "raw_audit": {
-      "status": "ROOT_PUBLIC157_INDEPENDENT_RAW_AUDIT_PASS",
-      "records": 31,
-      "exit_counts": {
-        "0": 30,
-        "1": 1
-      },
-      "result_sha256": "1e93868d2ace4c45c02ea4ebfb7c5c49f2ce7f97f7f52d971eb20dff4d10d38e",
-      "candidate_manifest_sha256": "41d609bc9f77520073d9c15f10f0f95fc09f561f98b630cb3843a586cc8031f3",
-      "baseline_semantic_RED": "compiled old ParseAST with same new tests: exit1, valid declarations missing",
-      "JDK_compilations": 11,
-      "stress_repetitions": 20,
-      "registries": {
-        "parsing": 5,
-        "stdjava": 678,
-        "symbol": 17
-      },
-      "all_source_inputs_raw_streams_cleanup_rehashed": true,
-      "full_CI_Netty_T2": false,
-      "held_diagnostic_rows": "reportUnsupported still uses parser rows; escaped-line physical-row calibration is a separate open issue"
-    },
-    "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public157/run/ROOT_RAW_AUDIT.json",
-    "accepted_full_checkpoint": 18,
-    "held": [
-      "Physical diagnostic rows after Unicode-escaped line terminators",
-      "General escaped identifiers and full Unicode lexical preprocessing",
-      "Full class-facts adapter/Throwable integration",
-      "Full compiler campaign/CI and original source Netty parity"
-    ],
-    "performance_claim": false
-  },
-  "active_resume_current157": {
-    "agent_policy": "GPT-6.1 Sol/high only; two challenge authors and up to five implementers",
-    "goal_status": "ACTIVE",
-    "resume": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root/RESUME.json",
-    "next": "Join canonical JDK nominal inventory, repair actual native ByteBuffer identities, verify full channel matrix and rerun original Netty graph; continue source Thread and Throwable identity work."
-  },
-  "sol_progress160": {
-    "status": "WIP_INTEGRATION_INDEPENDENT_FINITE_PASS_NOT_FULLROUND",
-    "implementation_source_manifest_sha256": "d26aab772ff47f66ce1587ed7945ea4a8e873bc39b8ef27bbcb3d3c7aa7ff60e",
-    "source_members": 4075,
-    "applications": 46,
-    "fresh_JDK": 258,
-    "fresh_Go": 258,
-    "additional_Go_race_stress": 120,
-    "raw_receipts": 879,
-    "runtime_symbol_parsing": [
-      786,
-      17,
-      10
-    ],
-    "default_f1_build_testcompile_lint": "PASS",
-    "old_test_audit_sha256": "805c67137974e3c534ca6ce9365194605317a522f52bcb77871d9d2fbba95b2d",
-    "evidence": {
-      "run:root-coherent4075/run/ROOT_RAW_AUDIT.json": "5adba9fc0fca7eca05617cc495d13fbbdf436b9b865c01550e8c04d48c1cd4a3",
-      "root4075-original39-replay:root4075-original39-replay/ROOT_RAW_AUDIT.json": "3716c2bb47ca1c4ebccd39e5bfa67cd5d84aae71e317ad7ea8c2b265ef8ca410",
-      "root4075-rawgeneric-replay:root4075-rawgeneric-replay/ROOT_RAW_AUDIT.json": "973b7d1e396ece9548a9398a5a3e8b070648642d5fb105a70a97e2080eeb40f4",
-      "run:root4075-thread6-replay/run/ROOT_RAW_AUDIT.json": "e033efc8d650797c919d8ee11e1d6b3fd7e3e5c10f8e5df41570ba1eda93d565"
-    },
-    "held": [
-      "full compiler CI",
-      "full Gson/dependency campaign acceptance",
-      "Reader clone successor",
-      "T2 frame and default-metadata successor",
-      "Netty full strict transpilation/build/execution",
-      "performance advantage over Java"
-    ],
-    "publication_whitespace_only": {
-      "path": "transpiler/generic_method_dispatch.go",
-      "before_sha256": "7f067154abbf88f151042234a2abe7a03adc83f992e50dbdf032bce8a25b17a4",
-      "after_sha256": "95ff620fb08df761f8ac5ad77a46946a86e3ece2be2691f9ad533f94ad7570eb",
-      "change": "Remove one empty EOF line only; all Go tokens and gofmt canonical output unchanged.",
-      "canonical_sha256": "95ff620fb08df761f8ac5ad77a46946a86e3ece2be2691f9ad533f94ad7570eb",
-      "gofmt_sha256": "49f6b08b2a6f0ea1746a6ab647f73af598e14371250f8ec61ce232b17e83b7aa",
-      "original_publish160_driver_exit": 1,
-      "reason": "git diff --check found new blank line at EOF",
-      "original_script_sha256": "46ca56abc987b93c62bd6ed46df10d65a63b31d953b837e7fe696b4561590a8f"
-    }
-  },
-  "active_resume_current160": {
-    "updated_utc": "2026-10-21T21:48:16.305229+00:00",
-    "status": "ACTIVE Sol-only continuous adversarial campaign",
-    "checkpoint": "campaign/SOL_PROGRESS160.md",
-    "public_base": "31f2c903d2b7b62487fc0640616245f4fb405adc",
-    "next": "Finish profiled compiler scan optimization and full Netty rerun; finish Reader/T2 integration and CI repairs. Full round acceptance remains unproven."
-  },
-  "sol_progress161": {
-    "status": "TEST_HARNESS_ABI_MAINTENANCE_TWO_PARENTS_GREEN_TWO_BEHAVIOR_FAILURES_RETAINED",
-    "base": "b7a842bf54d75a071e3c462c4b4b9a69c4fe821b",
-    "source_manifest_sha256": "f2be812292e3d3c5f1c74c9606c50524be9e57162344d2434379f029da934ae4",
-    "root_raw_audit_sha256": "ee9ea1362d59ca2c4305d27a77e5b876e61024a2e5812f20d5b62ec0b5100e4a",
-    "Sol_delivery_sha256": "c51dafc620499181a20964423adb950c602cf451169a1687e2706e224009a068",
-    "original_Java_expected_production_unchanged": true,
-    "generated_child_race": false,
-    "remaining": [
-      "ExceptionTypes constructor selection",
-      "RandomAccessFile(File,mode)",
-      "fullCI",
-      "Netty"
-    ]
-  },
-  "sol_progress162": {
-    "status": "COVERED_CHILD_OBSERVATION_PROTOCOL_FIXED",
-    "base": "2c6d39c2a2f816b7bd084956178147b418b1cb59",
-    "root_source_manifest_sha256": "5384792eb0b473b199ff946712c54c14c950d0334c5a400e14939cdf2a12b3e8",
-    "root_raw_audit_sha256": "4f3454ec6f1d26d7e4d275b3d1fe6f647b9ecb647d9fdbe2d557410855497145",
-    "Sol_delivery_sha256": "663a67527ac2a475f5a2b1e181e707be15220f7867b3e1cb30cbc577d86dcb6a",
-    "parents_each_profile": 9,
-    "root_receipts": 14,
-    "production_Java_oracle_changes": false,
-    "fullCI": "UNACCEPTED"
-  },
-  "sol_progress163": {
-    "status": "SCANNER_NEGATIVE_PREDICATE_FOCUSED_AND_FINITE_COMPATIBILITY_PASS",
-    "base": "e2139c13dc945270bbcc0facb59b4998919ed413",
-    "root_source_manifest_sha256": "feb3b854d48e8fcd8856adebe12875f70ef4fd9f758e868b6bdcfc5af698ed97",
-    "root_focused_raw_audit_sha256": "0b776b4486d2ad7e7f546595b32b8e4c3d3354edf5ec975823c3efcb9401ade4",
-    "owner_delivery_sha256": "a6a7467d87554d43cb5fbd333a3a3950b2835c90bb542c6c744c93cb2df062a6",
-    "owner_raw_receipts": 974,
-    "owner_accepted_apps_exact_generatedGo": 45,
-    "owner_selected_compiler_parents": 93,
-    "root_normal_parents": 7,
-    "root_semantic_race20_parents": 5,
-    "fullNetty": "RETRY_IN_PROGRESS_NOT_ACCEPTED",
-    "performance_vsJava": "NOT_MEASURED",
-    "fullCI": "UNACCEPTED"
-  },
-  "sol_progress164": {
-    "status": "READER_ACCESSOR_AND_LEXICAL_SOURCE_RESOLUTION_FINITE_PASS",
-    "base": "bde455c62a9ddcbcc40eb4c4b8623edb87070dbf",
-    "root_source_manifest_sha256": "dcb4a0eafd871f014499896ae471c2685779052d21ca43905296b243f4b2042a",
-    "root_audit_sha256": "d92812fd3d2df0716d09f73bb8ee53cd7102493698aa9372a8d4222c457c24c5",
-    "Sol_delivery_sha256": "b32364db6d7ce03b44f9b1b1a0b4c73c3e8355d0925d7894d4d7828534e84751",
-    "root_receipts": 48,
-    "whole_applications_JDK3_Go3": 2,
-    "focused_race20": 7,
-    "existing_provenance_parents": 22,
-    "full_race_registry": {
-      "parsing": 10,
-      "stdjava": 787,
-      "symbol": 21
-    },
-    "fullCI": "UNACCEPTED",
-    "fullNetty": "CompositeByteBuf.java236 strictfailure, no timeout, build/app not reached"
   }
 }

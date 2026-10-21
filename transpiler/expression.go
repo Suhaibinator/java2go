@@ -11119,6 +11119,7 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 			return "String", true
 		}
 		if resultType, ok := inferIntrinsicMethodResultType(node, ctx, source); ok {
+			recordIntrinsicPrimitiveResultOrigin(origins, resultType)
 			return resultType, true
 		}
 		// Source declarations own their return types before any library-name
