@@ -177,6 +177,12 @@ func intrinsicJavaTypeOrigin(owner string) inferredJavaTypeOrigin {
 
 func methodFormalOrigins(def *symbol.Definition, owner *symbol.ClassScope, bindings map[*symbol.TypeParamDeclaration]inferredJavaTypeOrigin, ctx Ctx) []inferredJavaTypeOrigin {
 	declaring, _ := invocationMethodDeclarationContext(def, ctx)
+	native := false
+	if owner == nil {
+		if intrinsic, ok := registeredStaticIntrinsicDeclarationContext(def); ok {
+			declaring, native = intrinsic, true
+		}
+	}
 	if owner != nil {
 		declaring = classScopeCtx(owner, ctx)
 		declaring.localScope = def
@@ -185,7 +191,11 @@ func methodFormalOrigins(def *symbol.Definition, owner *symbol.ClassScope, bindi
 	result := make([]inferredJavaTypeOrigin, len(def.Parameters))
 	for i, p := range def.Parameters {
 		if p != nil {
-			result[i] = substituteJavaTypeOrigin(declaredJavaTypeOrigin(definitionDeclaredJavaType(p), declaring), bindings)
+			typ := definitionDeclaredJavaType(p)
+			if native {
+				typ.TypeParameterBindings = symbol.VisibleTypeParamBindings(def.TypeParameters)
+			}
+			result[i] = substituteJavaTypeOrigin(declaredJavaTypeOrigin(typ, declaring), bindings)
 		}
 	}
 	return result

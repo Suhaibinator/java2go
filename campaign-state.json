@@ -22047,6 +22047,32 @@
     "status": "COORDINATOR_AUDITED_SUPPLIER_AND_ORIGINAL_COMMONS_APPLICATION_PASS",
     "translated_real_Codec_java": 16
   },
+  "sol_progress178": {
+    "Supplier_compiler_race": 140,
+    "base": "919c8d3fae47d5a7a94f6118d217703d8e6fc43a",
+    "bounds": 56,
+    "bounds_race": 340,
+    "coordinator_audit_sha256": "3e7c5af7bb5613f67d79251d1700666c641e7d8187be21c68af3e3f9d635cdf9",
+    "delivery_sha256": "0ab4b28d1cfc3627771e0006f8be9ba9c9139ed53befc9c8a791ece00afa236c",
+    "focused_parents": 5,
+    "focused_receipts": 50,
+    "full_CI": false,
+    "full_Netty": false,
+    "full_application_execution_receipts": 27,
+    "full_application_stage_receipts": 7,
+    "full_native": {
+      "parsing": 10,
+      "stdjava": 816,
+      "symbol": 23
+    },
+    "full_round": false,
+    "original_Gson_required_failure": "after this repair GsonTypes.java518 requiresOwnerType(rawType); no full Gson parity",
+    "performance_claim": false,
+    "source_function_exteriors_and_all_other_files_exact": true,
+    "source_manifest_sha256": "07e02f5ae08fdc0c4cf66af51841a2528b047b965de33799afb9052e4433e79f",
+    "status": "ROOT_AUDITED_REGISTERED_INTRINSIC_FORMAL_CONTEXT_AND_COMBINED_COMMONS_PARITY",
+    "whole_outputs_and_resources_equal": true
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
