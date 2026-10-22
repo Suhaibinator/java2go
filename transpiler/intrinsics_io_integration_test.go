@@ -46,8 +46,8 @@ public class ReaderProgram {
 	out := renderGoFileFromJava(t, src)
 	// The nested new FileReader(path) is unwrapped to its path.
 	assertContains(t, out, "stdjava.NewBufferedReaderReference(path)")
-	assertContains(t, out, "r.ReadLineReference()")
-	assertContains(t, out, "r.Close()")
+	assertContains(t, out, "stdjava.BufferedStringReaderReadLineExecution(__java2goExecution, r)")
+	assertContains(t, out, "stdjava.BufferedStringReaderCloseExecution(__java2goExecution, r)")
 }
 
 func TestIO_ScannerStdinAndFile(t *testing.T) {
@@ -168,7 +168,7 @@ public class StreamProgram {
 	assertContains(t, out, "stdjava.NewFileInputStream(path)")
 	assertContains(t, out, "in.ReadByteValue()")
 	assertContains(t, out, "stdjava.NewBufferedReaderReference(stdjava.NewInputStreamReaderStdin())")
-	assertContains(t, out, "console.ReadLineReference()")
+	assertContains(t, out, "stdjava.BufferedStringReaderReadLineExecution(__java2goExecution, console)")
 }
 
 func TestIO_BufferedReaderLinesIsAStream(t *testing.T) {

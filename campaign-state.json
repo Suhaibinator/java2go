@@ -21995,6 +21995,19 @@
     "source_manifest_sha256": "b7c2366afcfaebadc94264a27d46d1c06d18f899d8f9609920abef95a89b19c2",
     "status": "ROOT_AUDITED_INDEPENDENT_BOUND_PROOF_CHECKPOINT"
   },
+  "sol_progress176": {
+    "Java_inputs_unchanged": true,
+    "agent_delivery_sha256": "cc8f9d03a5bf4510824a4db1791e1c217630103c98fc82f5c07e10078552b765",
+    "agent_raw_receipts": 13,
+    "all_other_assertions_unchanged": true,
+    "assertions_changed": 4,
+    "base": "cef85c2217c1e9a3dbadbead36a3b686dcccb822",
+    "production_unchanged": true,
+    "root_current175_parents": 19,
+    "root_fresh_receipts": 3,
+    "status": "ROOT_EXACT_READER_ASSERTION_MIGRATION_VERIFIED",
+    "whole_CI_claim": false
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

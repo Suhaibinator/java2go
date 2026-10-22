@@ -25,7 +25,7 @@ public class ReadLoopProgram {
 	if !strings.Contains(flat, normalizeSpaces(`for !stdjava.JavaReferenceEqual((func(dst **stdjava.JavaString, value *stdjava.JavaString) *stdjava.JavaString {
         *dst = value
         return value
-    }(&line, reader.ReadLineReference())), nil) {`)) {
+    }(&line, stdjava.BufferedStringReaderReadLineExecution(__java2goExecution, reader))), nil) {`)) {
 		t.Fatalf("expected nullable BufferedReader loop bridge, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "var line *stdjava.JavaString") ||
