@@ -148,7 +148,7 @@ func StreamAveragingOf[T any, N JavaPrimitiveNumber](s Stream[T], value func(T) 
 // StreamGroupingByDownstreamWith retains the supplied map's ordering and key
 // comparison semantics while applying the downstream collector to each group.
 func StreamGroupingByDownstreamWith[T, K, D any](s Stream[T], classifier func(T) K, factory any, downstream func(Stream[T]) D, execution ...*Execution) *Map[K, D] {
-	out := CallSupplierExecution[*Map[K, D]](optionalComparisonExecution(execution), factory)
+	out := CallSupplierProjectedExecution[*Map[K, D]](optionalComparisonExecution(execution), factory, SupplierNativeMapProduct[K, D])
 	ReferenceRequireNonNull(out)
 	grouped := NewMap[K, *List[T]]()
 	// Group using the result map's comparator: TreeMap groups keys for which

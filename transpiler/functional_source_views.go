@@ -20,7 +20,7 @@ func nativeFunctionalFamily(javaType string, ctx Ctx) string {
 	if !ok {
 		return ""
 	}
-	for _, name := range []string{"Function", "BiFunction", "Consumer", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator"} {
+	for _, name := range []string{"Supplier", "Function", "BiFunction", "Consumer", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator"} {
 		if owner == "java.util.function."+name {
 			return name
 		}
@@ -35,7 +35,7 @@ func nativeFunctionalContract(family string, args []string) (sourceNativeFunctio
 		count = 2
 	case "BiFunction":
 		count = 3
-	case "Consumer", "UnaryOperator", "BinaryOperator":
+	case "Supplier", "Consumer", "UnaryOperator", "BinaryOperator":
 		count = 1
 	}
 	if len(c.arguments) == 0 && count > 0 {
@@ -47,6 +47,9 @@ func nativeFunctionalContract(family string, args []string) (sourceNativeFunctio
 		return c, false
 	}
 	switch family {
+	case "Supplier":
+		c.method = "get"
+		c.result = c.arguments[0]
 	case "Function":
 		c.parameters = []string{c.arguments[0]}
 		c.result = c.arguments[1]
@@ -149,6 +152,9 @@ func sourceNativeFunctionalContracts(scope *symbol.ClassScope, ctx Ctx) []source
 	sort.Strings(names)
 	result := []sourceNativeFunctionalContract{}
 	for _, name := range names {
+		if name == "Supplier" && !supplierSourceContractOwned(scope, collected[name], ctx) {
+			continue
+		}
 		result = append(result, collected[name])
 	}
 	return result
@@ -184,7 +190,7 @@ func resolveSourceNativeSAM(scope *symbol.ClassScope, c sourceNativeFunctionalCo
 }
 func sourceNativeFunctionalViewExpr(scope *symbol.ClassScope, c sourceNativeFunctionalContract, receiver ast.Expr, ctx Ctx) ast.Expr {
 	method, owner, result := resolveSourceNativeSAM(scope, c, ctx)
-	if method == nil {
+	if method == nil || c.family == "Supplier" && !supplierSourceSelectedMethodOwned(scope, owner, method, c, ctx) {
 		return nil
 	}
 	params := &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}

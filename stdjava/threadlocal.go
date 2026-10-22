@@ -49,7 +49,6 @@ func (l *ThreadLocal[T]) Remove(execution *Execution) {
 }
 func init() {
 	RegisterJavaType("ThreadLocal", ObjectTypeID)
-	RegisterJavaType("Supplier", ObjectTypeID)
 }
 
 // SupplierFuncAdapter propagates the initializer caller's execution without

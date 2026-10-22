@@ -89,7 +89,7 @@ func init() {
 
 func isNativeFunctionalTypeID(id TypeID) bool {
 	switch id {
-	case "java.util.function.Function", "java.util.function.BiFunction", "java.util.function.Consumer", "java.util.function.UnaryOperator", "java.util.function.BinaryOperator", "java.util.function.IntUnaryOperator", "java.util.function.IntBinaryOperator", "java.util.function.LongUnaryOperator", "java.util.function.LongBinaryOperator":
+	case SupplierTypeID, "java.util.function.Function", "java.util.function.BiFunction", "java.util.function.Consumer", "java.util.function.UnaryOperator", "java.util.function.BinaryOperator", "java.util.function.IntUnaryOperator", "java.util.function.IntBinaryOperator", "java.util.function.LongUnaryOperator", "java.util.function.LongBinaryOperator":
 		return true
 	}
 	return false

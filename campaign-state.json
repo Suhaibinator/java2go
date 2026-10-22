@@ -22008,6 +22008,45 @@
     "status": "ROOT_EXACT_READER_ASSERTION_MIGRATION_VERIFIED",
     "whole_CI_claim": false
   },
+  "sol_progress177": {
+    "Phase2_author_control_still_held": true,
+    "all_whole_outputs_equal": true,
+    "base": "0627cea9d99e981028a801dd4cf6867352b569cd",
+    "compiler_race_repetitions": 140,
+    "coordinator_audit_sha256": "486dd75b8043e495d3a560e6703f48c32d2102e04efe6ee1312605d48b341482",
+    "delivery_sha256": "db3ba1456a6d48871549b7961b1cf399884125f0889e70096b8527106ef73205",
+    "focused_clean_receipts": 107,
+    "full_CI": false,
+    "full_Netty": false,
+    "full_native": {
+      "parsing": 10,
+      "stdjava": 816,
+      "symbol": 23
+    },
+    "full_original_execution_receipts": 27,
+    "full_original_stage_receipts": 7,
+    "full_round": false,
+    "generic_finite_parents": 56,
+    "native_race_repetitions": 200,
+    "original_app_java": 9,
+    "original_output_files": [
+      "out/accounts.tsv",
+      "out/summary.txt",
+      "out/rejects.tsv"
+    ],
+    "performance_claim": false,
+    "related_compiler_parents": 20,
+    "repeats": 3,
+    "seeds": [
+      17,
+      41,
+      97
+    ],
+    "source_and_generated_Go_exact": true,
+    "source_manifest_sha256": "6b86cdfa7e86726749df8628d2494eb7503d4b42d40c72c289a5fcf296cb341e",
+    "status": "COORDINATOR_AUDITED_SUPPLIER_AND_ORIGINAL_COMMONS_APPLICATION_PASS",
+    "translated_real_Codec_java": 16
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

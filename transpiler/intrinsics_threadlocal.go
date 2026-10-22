@@ -67,6 +67,6 @@ func init() {
 }
 
 func isExternalSupplierType(javaType string, ctx Ctx) bool {
-	base, _ := parseJavaTypeString(javaType)
-	return stripJavaQualifier(base) == "Supplier" && resolveClassScopeByQualifiedName(ctx, base) == nil
+	owner, known := canonicalIntrinsicOwner(javaType, ctx)
+	return known && owner == "java.util.function.Supplier"
 }
