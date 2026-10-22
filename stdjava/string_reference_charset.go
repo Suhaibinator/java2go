@@ -89,6 +89,12 @@ func JavaStringGetBytes(value *JavaString, charset *Charset) *PrimitiveArray[int
 func JavaStringFromBytes(data *PrimitiveArray[int8], charset *Charset) *JavaString {
 	ReferenceRequireNonNull(data)
 	ReferenceRequireNonNull(charset)
+	switch charset {
+	case US_ASCII:
+		return decodeJavaSingleByteOwned(data.Elements, true)
+	case ISO_8859_1:
+		return decodeJavaSingleByteOwned(data.Elements, false)
+	}
 	decoded := decodeCharset(unsignedBytes(data.Elements), charset)
 	return NewJavaStringUTF16(utf16.Encode([]rune(decoded)))
 }

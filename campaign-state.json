@@ -22343,6 +22343,54 @@
     "whole_declared_output_files": 18,
     "whole_pairs": 12
   },
+  "sol_progress187": {
+    "AbstractMap": "Synthesized default signatures retain actual owner declaration bindings/direct origins, including emitted aliases; preparation is idempotent",
+    "allocation_evidence": "4096-byte nonempty escaping result: baseline9 to candidate2 allocations/call for each charset; independently2 across20 repeats each on joint source",
+    "campaign": "Ongoing Sol-only adversarial TDD",
+    "coordinator_audit": "fec655211b5147d7ce16d0929d922e5d3a41d1a37b7a5eee3d48297c04bd35a8",
+    "coordinator_audited_raw_children": 149,
+    "decode": "Canonical ASCII/Latin1 decode directly into exclusively owned UTF16 storage with fresh String identity; old null checks and other codecs unchanged",
+    "held": [
+      "Full Netty build/application parity",
+      "Full Gson112/113/114",
+      "Supplier28 multi-statement classifier result proof",
+      "Enum explicit-null/default initialization semantics",
+      "Full CI and adversarial round acceptance"
+    ],
+    "independent_JDK9_Go9_Map_whole_exact": true,
+    "independent_fixedcorpus_audit": "ae32a859b5a8b08c2a7e01fcd5341e97e408662e0f700123cb0b139c191a4c3f",
+    "independent_native_and_Map_children": 91,
+    "independent_parent_passes": 681,
+    "joint_default_F1_six": "PASS",
+    "last_CI186": "Terminal7success8failure; all27 focusedPASS, same38 recurring failed compiler parents as185, no added skips; original collection and full parityPASS",
+    "new_leaves": 3,
+    "old_functions": [
+      "prepareAbstractMapDefaultsForScope",
+      "JavaStringFromBytes"
+    ],
+    "only_ignored_warm_fields": [
+      "api_ns",
+      "validated_ns"
+    ],
+    "owner_registry_scope": "Executed on exact runtime patch predecessor; distinct from independent joint-source focused gates",
+    "owner_runtime_symbol_parser": [
+      834,
+      23,
+      10
+    ],
+    "same26_Java_dependency_sources": 26,
+    "same26_fresh_JDK_and_Go_forks": [
+      24,
+      24
+    ],
+    "same26_raw_generated_Go_files_unchanged": 28,
+    "same26_resources": 2,
+    "same26_semantic_pairs": 24,
+    "status": "INDEPENDENT_JOINT_ABSTRACT_MAP_ORIGIN_AND_SINGLEBYTE_ALLOCATION_REPAIR_VERIFIED",
+    "tested_source_manifest": "ecaffcf37e987f1aae686716b86e9834e09565b6f990532a96c0006471418a02",
+    "tested_source_members": 4364,
+    "whole_Java_speed_claim": false
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

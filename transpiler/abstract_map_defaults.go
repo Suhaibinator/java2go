@@ -109,11 +109,44 @@ func prepareAbstractMapDefaultsForScope(scope *symbol.ClassScope, ctx Ctx) {
 	if scope == nil {
 		return
 	}
-	for _, spec := range abstractMapSpecs(scope, ctx) {
-		if method, _ := sourceCollectionMethod(scope, spec.java, spec.parameters, ctx); method != nil {
+	declaring := classScopeCtx(scope, ctx)
+	declaring.syntheticTypeParameters = nil
+	parameters := visibleTypeParameterDeclarations(declaring)
+	bindings := symbol.VisibleTypeParamBindings(parameters)
+	for _, parameter := range parameters {
+		if parameter.Declaration != nil && bindings[parameter.EmittedName()] == nil {
+			bindings[parameter.EmittedName()] = parameter.Declaration
+		}
+	}
+	directParameter := func(javaType string) *symbol.TypeParamDeclaration {
+		component, _ := javaArrayTypeParts(javaType)
+		binding, found := resolveReferenceTypeParameter(symbol.JavaType{Original: component, TypeParameterBindings: bindings}, declaring)
+		if found {
+			return binding.parameter.Declaration
+		}
+		return nil
+	}
+	for _, spec := range abstractMapSpecs(scope, declaring) {
+		existing := false
+		for _, method := range scope.Methods {
+			if !method.RuntimeDefault || method.OriginalName != spec.java || len(method.Parameters) != len(spec.parameters) {
+				continue
+			}
+			matching := true
+			for index, formal := range spec.parameters {
+				actual := qualifyDeclaredReferenceType(definitionDeclaredJavaType(method.Parameters[index]), declaring)
+				expected := qualifyDeclaredReferenceType(symbol.JavaType{Original: formal, TypeParameterBindings: bindings}, declaring)
+				matching = matching && javaInferenceSameType(actual, expected, declaring)
+			}
+			existing = existing || matching
+		}
+		if existing {
 			continue
 		}
-		method := &symbol.Definition{OriginalName: spec.java, Name: symbol.Uppercase(spec.java), OriginalType: spec.result, HasBody: true, RuntimeDefault: true}
+		if method, _ := sourceCollectionMethod(scope, spec.java, spec.parameters, declaring); method != nil {
+			continue
+		}
+		method := &symbol.Definition{OriginalName: spec.java, Name: symbol.Uppercase(spec.java), OriginalType: spec.result, DirectTypeParameter: directParameter(spec.result), TypeParameterBindings: bindings, HasBody: true, RuntimeDefault: true}
 		used := map[string]struct{}{}
 		for _, name := range scope.GoTypeParameterNames() {
 			used[name] = struct{}{}
@@ -121,7 +154,7 @@ func prepareAbstractMapDefaultsForScope(scope *symbol.ClassScope, ctx Ctx) {
 		for _, formal := range spec.parameters {
 			name := synchronizedUniqueLocalName("__java2goMapArgument", used)
 			used[name] = struct{}{}
-			method.Parameters = append(method.Parameters, &symbol.Definition{OriginalName: name, Name: name, OriginalType: formal})
+			method.Parameters = append(method.Parameters, &symbol.Definition{OriginalName: name, Name: name, OriginalType: formal, DirectTypeParameter: directParameter(formal), TypeParameterBindings: bindings})
 		}
 		scope.Methods = append(scope.Methods, method)
 	}
