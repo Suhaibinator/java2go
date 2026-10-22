@@ -22154,6 +22154,24 @@
     "verified_manifest_sha256": "5b2605b0258b72a8edfce375e477e5fd057d82012dfa1eaf6ed5584c3e6cbe8e",
     "work_budget_subcases": 12
   },
+  "sol_progress181": {
+    "all_unowned_production_Java_measurements_budgets_oracles_exact": true,
+    "base_head": "54b26ac97f0d9956db8e938ffa5a2dab0a9fe671",
+    "child_results": 199,
+    "coordinator_audit_sha256": "52b576988ecf3a1c7d50c1f3e41b6becc10f39da148e24d02ea0735c1ab12d2e",
+    "default_F1_build_testcompile_lint": "PASS",
+    "forward_inverse_exact": true,
+    "full_CI_and_Netty_acceptance": false,
+    "fullwork_runs": 4,
+    "independent_delivery_sha256": "b56f6df5dd3f5b762a7bfa514815f92ff5ca8c55a3edc4ef0165e5c9392e366f",
+    "native_outer_parent_PASS_entries": 181,
+    "owner_delivery_sha256": "e4df8759d7bd886a412e49e6f4e19e2c857390606ed45c535eaf84ad83ab8e4e",
+    "receipts": 29,
+    "rows_each_fullwork": 16,
+    "source_manifest": "bf3e92b18d065de79c2a2bb9479665fb0bf52df066f2a62d37dc01abe4dda2f5",
+    "status": "ROOT_INDEPENDENT_RAW_SOURCE_AND_PATCH_AUDIT_PASS",
+    "streams": 58
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

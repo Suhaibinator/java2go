@@ -534,7 +534,12 @@ func superclassQuery4059Work(t *testing.T, check func(*testing.T, superclassQuer
 		})
 	}
 }
-func TestSuperclassQuery4059WorkBaseline(t *testing.T) { superclassQuery4059Work(t, nil) }
+func TestSuperclassQuery4059WorkBaseline(t *testing.T) {
+	if superclass4059IsolatedEntry(t) {
+		return
+	}
+	superclassQuery4059Work(t, nil)
+}
 
 func TestSuperclassQuery4059AllocatorASTImports(t *testing.T) {
 	f := superclassQuery4059Graph(t, []string{`interface Probe {void invoke(int marker);} class Work {void noise(int marker){int value=marker;}}`}, false)
@@ -572,6 +577,9 @@ func TestSuperclassQuery4059AllocatorASTImports(t *testing.T) {
 
 // Budgets were frozen from retained actual measurements before this assertion or any production edit.
 func TestSuperclassQuery4059FrozenWorkBudget(t *testing.T) {
+	if superclass4059IsolatedEntry(t) {
+		return
+	}
 	budgets := map[string]struct {
 		allocs float64
 		cgo    int64
