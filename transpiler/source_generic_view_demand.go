@@ -31,7 +31,7 @@ func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
 			if node == nil {
 				return
 			}
-			if !node.Equal(root) && sourceGenericViewTypeDeclaration(node, ctx) {
+			if sourceGenericViewTypeDeclaration(node, ctx) && !node.Equal(root) {
 				// Named classes are visited in their own declaration context. Local
 				// class scopes are not in the resolved graph; do not resolve their
 				// private binders or nested type names as enclosing declarations.

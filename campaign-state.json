@@ -21904,6 +21904,62 @@
       ]
     }
   },
+  "sol_progress174": {
+    "base": "71f219ffbd88bf9804ca534b7662c26155b58dd1",
+    "complexity_actual_exit": 0,
+    "complexity_native_cap": "55s unchanged",
+    "complexity_repetitions": 1,
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED pending current normal300 macro",
+    "fullRound": "UNACCEPTED",
+    "positive_receipts": 60,
+    "root_audit_sha256": "efe0401bb99b6caedc4407a80eec7d4f134c0f2c424c3f14085faaa7eaa3c7a1",
+    "root_source_manifest_sha256": "c3c512063b83972485ad06febdb23933177ea2c1f31f645c1a3546cd09f23bdd",
+    "status": "INDEPENDENT_CURRENT_COMPOSED_FINITE_PASS",
+    "verification": {
+      "BitSet_JDK_repetitions": 3,
+      "Reader_Go_runs": 6,
+      "Reader_JDK_runs": 6,
+      "application_speedup_claim": false,
+      "complexity_observation_actual_exit": 0,
+      "complexity_timeout_pass_credit": false,
+      "composed_normal_budget_parents": 1,
+      "default_F1": "race build/testcompile/lint PASS",
+      "fullCI_fullNetty_fullRound": "UNACCEPTED",
+      "full_race_registries": {
+        "parsing": 10,
+        "stdjava": 806,
+        "symbol": 23
+      },
+      "normal_owned_parents": 7,
+      "original_exception_CI_parents": 2,
+      "original_scorer_Go_runs": 3,
+      "original_scorer_JDK_runs": 3,
+      "owned_semantic_race20_passes": 100,
+      "preceding_gson_parents": 39,
+      "preceding_name_path_race20_passes": 140,
+      "preceding_scorer_race20_passes": 60,
+      "records": 60,
+      "related_positive": 30,
+      "status": "ROOT_CURRENT_DEMAND_PREDICATE_FINITE_CHECKS_TERMINAL",
+      "work_observations": [
+        {
+          "Allocs": 82,
+          "Bytes": 6080,
+          "Cgo": 113,
+          "Name": "live-four-class-getter-and-noisy-body",
+          "Scopes": 4
+        },
+        {
+          "Allocs": 82,
+          "Bytes": 6080,
+          "Cgo": 114,
+          "Name": "live-four-class-getter-and-noisy-body",
+          "Scopes": 4
+        }
+      ]
+    }
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
