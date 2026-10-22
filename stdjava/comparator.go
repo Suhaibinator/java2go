@@ -501,7 +501,7 @@ func DoubleIsNaN(value float64) bool { return math.IsNaN(value) }
 
 // The floating-point special values. They are functions rather than constants
 // because Go has no constant expression for a NaN or an infinity.
-func DoubleNaN() float64              { return math.NaN() }
+func DoubleNaN() float64              { return math.Float64frombits(0x7ff8000000000000) }
 func DoublePositiveInfinity() float64 { return math.Inf(1) }
 func DoubleNegativeInfinity() float64 { return math.Inf(-1) }
 func FloatNaN() float32               { return float32(math.NaN()) }

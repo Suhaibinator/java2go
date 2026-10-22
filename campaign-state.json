@@ -22195,6 +22195,27 @@
     "successful_stages": 54,
     "whole60_JDK3_Go3_exact": true
   },
+  "sol_progress183": {
+    "CI182": "39 recurring compiler failures; both measurement isolation parents pass",
+    "Codec_fresh_source_JDK9_normal_Go9_exact": true,
+    "Math8_Go9_original_JDK9_exact": true,
+    "all_four_old_function_exteriors_and_4330_unowned_leaves_exact": true,
+    "coordinator_raw_audit_sha256": "3984fd19ed8914de0d0b07ca40a3216d30c04071c23635a2489dbc9af8b27a04",
+    "coordinator_source_audit_sha256": "3100b933fde78dca007bbf3869c15a77453cd11a814c09d04ccfd1eb3c84884c",
+    "default_F1_build_testcompile_lint": "PASS",
+    "full_CI_round_Netty_and_Java_relative_speed_accepted": false,
+    "goal": "ACTIVE Sol-only continuous adversarial campaign",
+    "independent_delivery_sha256": "b822555724200e10b1089919ebe39615a71c7d52529d262fc309fbc23e11591c",
+    "last_full_netty_macro": "TIMEOUT_FAILURE300; 29 nonempty partial outputs, no all-Go/app",
+    "performance_claim": "lower measured Go allocations only; no Java-relative timing claim",
+    "receipts": 90,
+    "retained_unaccepted_native_batch_timeout": 1,
+    "source_manifest": "b5f3900962b867dda48e559c039204c23ae1f8576ca7e15f3d1e4ed17842a96a",
+    "source_members": 4351,
+    "status": "COORDINATOR_COHERENT_COMPONENT_AUDIT_PASS_WITH_PRESERVED_HARNESS_ERRATA",
+    "successful_payload_stages": 89,
+    "whole_observations": 27
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

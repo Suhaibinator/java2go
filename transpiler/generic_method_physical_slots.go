@@ -73,8 +73,21 @@ func genericMethodPhysicalTypeArguments(def *symbol.Definition, ctx Ctx) ([]ast.
 			continue
 		}
 		physical := javaTypeStringToGoTypeExpr(slot.javaType, inScopeTypeParameters(declaring), declaring)
-		if scope := resolveClassScopeByQualifiedName(declaring, slot.javaType); scope != nil && scope.Class != nil && !scope.IsInterface {
-			if pointer, ok := physical.(*ast.StarExpr); ok {
+		if scope := resolveClassScopeByQualifiedName(declaring, slot.javaType); scope != nil && scope.Class != nil {
+			if scope.IsInterface {
+				// The slot belongs to the declaration, but its named Go type is
+				// consumed in the caller's package. Preserve any existing physical
+				// type arguments while qualifying that same owned interface.
+				head := qualifiedNameExpr(scope.Class.Name, findJavaPackageForClassScope(scope), ctx)
+				switch expression := physical.(type) {
+				case *ast.Ident, *ast.SelectorExpr:
+					physical = head
+				case *ast.IndexExpr:
+					physical = &ast.IndexExpr{X: head, Index: expression.Index}
+				case *ast.IndexListExpr:
+					physical = &ast.IndexListExpr{X: head, Indices: expression.Indices}
+				}
+			} else if pointer, ok := physical.(*ast.StarExpr); ok {
 				var parameters []ast.Expr
 				switch head := pointer.X.(type) {
 				case *ast.IndexExpr:

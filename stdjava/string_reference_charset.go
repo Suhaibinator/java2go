@@ -13,6 +13,11 @@ import (
 func JavaStringGetBytes(value *JavaString, charset *Charset) *PrimitiveArray[int8] {
 	ReferenceRequireNonNull(value)
 	ReferenceRequireNonNull(charset)
+	if charset == UTF_8 {
+		if owned, ok := encodeJavaUTF8OwnedSigned(value.units); ok {
+			return PrimitiveArrayLiteral(PrimitiveByteTypeID, owned...)
+		}
+	}
 	var encoded []byte
 	var order binary.AppendByteOrder
 	switch charset {
