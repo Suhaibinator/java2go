@@ -22491,6 +22491,68 @@
     "tested_source_manifest": "905f0a9c43caa6d1acca3bfe19c388578efea4cdcea930ba64f42218dbddab91",
     "tested_source_members": 4373
   },
+  "sol_progress190": {
+    "allocation": {
+      "baseline": 7,
+      "candidate": 2,
+      "corpora": [
+        "ASCII",
+        "supplementary",
+        "malformed"
+      ],
+      "escaping_result": true,
+      "preallocated_input_bytes": 4096
+    },
+    "behavior": "Canonical UTF8 decoding counts and fills fresh owned UTF16 storage using the existing malformed-input policy. Null order, other codecs and fallback remain unchanged.",
+    "campaign": "Ongoing Sol-only adversarial TDD",
+    "coordinator_dependency_CI_audit": "72eed70982a105a310b7a83867e216adbf30335bd516b763c9a4052129e9f0f1",
+    "coordinator_finite_audit": "bb46d74467cb83b844b9710901cd0a168a5ff75dfa4b7115dd6f575bca2c67c8",
+    "coordinator_source_audit": "45e42eba492fffb34f6e2905660da1524308e3385397232722d62160d233134d",
+    "default_F1_build_testcompile_lint": "All six PASS",
+    "fresh_JDK_and_generatedGo_semantic_pairs": 24,
+    "full_default_race_registries": {
+      "parsing": 10,
+      "stdjava": 841,
+      "symbol": 23
+    },
+    "generated_Go_implementation_files_preserved": 28,
+    "held": [
+      "Full Netty translation and application parity",
+      "Full Gson application",
+      "Supplier28 and generic collector body erasure",
+      "Full CI and accumulated round acceptance"
+    ],
+    "independent_dependency_stages": 58,
+    "independent_fixedcorpus_audit": "d0b434083c14c0ba0c583c6b9affe83a85a81aeeb309c8fd47b51dae89e40733",
+    "only_old_function": "JavaStringFromBytes",
+    "only_warm_ignored_fields": [
+      "api_ns",
+      "validated_ns"
+    ],
+    "owner_expected_allocation_RED": 1,
+    "owner_raw_receipts": 67,
+    "previous_CI189": {
+      "application_parity": "PASS",
+      "failed_compiler_parents": 37,
+      "focused_PASS": 44,
+      "job_metadata_anomalies": 2,
+      "new_failed_or_skip_names": [],
+      "overall": "FAILURE"
+    },
+    "related_charset_compiler_parents": 16,
+    "runtime_API_comparison": "Complete stdout, stderr, status and UTF16 observations equal",
+    "runtime_API_forks": {
+      "JDK21": 9,
+      "baselineGo": 9,
+      "candidateGo": 9
+    },
+    "status": "UTF8_DECODE_ALLOCATION_REPAIR_INDEPENDENTLY_VERIFIED",
+    "tested_source_manifest": "51405c4234c6c78484ebc505a39ae72d40bdc4efcc64d5b2bdce88fbba9d7f1a",
+    "tested_source_members": 4377,
+    "unchanged_Java_sources_including_real_Commons_Codec": 26,
+    "unchanged_resources": 2,
+    "whole_Java_speed_claim": false
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

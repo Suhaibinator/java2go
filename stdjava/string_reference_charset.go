@@ -95,6 +95,10 @@ func JavaStringFromBytes(data *PrimitiveArray[int8], charset *Charset) *JavaStri
 	ReferenceRequireNonNull(data)
 	ReferenceRequireNonNull(charset)
 	switch charset {
+	case UTF_8:
+		if decoded, ok := decodeJavaUTF8OwnedSigned(data.Elements); ok {
+			return decoded
+		}
 	case US_ASCII:
 		return decodeJavaSingleByteOwned(data.Elements, true)
 	case ISO_8859_1:
