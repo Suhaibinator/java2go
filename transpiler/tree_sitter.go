@@ -57,6 +57,8 @@ type Ctx struct {
 	genericFamilies *genericFamilyAnalysis
 	// Structural source facts shared only within a resolved conversion batch.
 	callableSubclasses *callableSubclassSourceInventory
+	// Opt-in syntax ownership; never inferred by public render helpers.
+	syntaxInvocation *syntaxInvocation
 	// Declaration-to-file facts can cross fresh lookup contexts without caller semantics.
 	sourceOwnership *resolutionFileIndex
 	// Active member-type hierarchy lookups; extended immutably per lookup.
@@ -436,6 +438,7 @@ func (c Ctx) Clone() Ctx {
 		runtimeLocationProfile:              c.runtimeLocationProfile,
 		genericFamilies:                     c.genericFamilies,
 		callableSubclasses:                  c.callableSubclasses,
+		syntaxInvocation:                    c.syntaxInvocation,
 		sourceOwnership:                     c.sourceOwnership,
 		memberTypeLookupPath:                c.memberTypeLookupPath,
 		memberTypeLookupFrame:               c.memberTypeLookupFrame,

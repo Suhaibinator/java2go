@@ -121,6 +121,18 @@ func superclassEmbeddingAliasName(scope *symbol.ClassScope, ctx Ctx) string {
 // additionally covers local/anonymous declarations before they are hoisted,
 // helper spellings derived from those methods, and possible import aliases.
 func superclassEmbeddingSourceIdentifierExists(name string, ctx Ctx) bool {
+	if bodies, ready := ctx.syntaxInvocation.queryBodies(name); ready {
+		for _, body := range bodies {
+			if body.entry.bodyContains(name, body.root, body.file.Source) {
+				return true
+			}
+		}
+		return false
+	}
+	return superclassEmbeddingSourceIdentifierExistsDynamic(name, ctx)
+}
+
+func superclassEmbeddingSourceIdentifierExistsDynamic(name string, ctx Ctx) bool {
 	for _, pkg := range symbol.GlobalScope.Packages {
 		if pkg == nil {
 			continue

@@ -22100,6 +22100,60 @@
     "status": "ROOT_AUDITED_PROPER_EXTERNAL_REFERENCE_TO_NONGENERIC_JDK_SUPERTYPE_AND_COMBINED_COMMONS_PARITY",
     "whole_outputs_and_resources_equal": true
   },
+  "sol_progress180": {
+    "Java_relative_performance": false,
+    "Supplier_race": 140,
+    "all_unowned_public179_files_exact": true,
+    "base_HEAD": "6292ce8900d8de24d4c42f639961c987bba3f31d",
+    "coordinator_finite_audit_sha256": "9b25a26df1a06c78dffef71c05814cd50468c58ae6f76cd41680918c7a7f585f",
+    "coordinator_macro_audit_sha256": "720142b480997502ac2cb8807c638a42471191fe9b230ff36fefb8164b309938",
+    "delivery_sha256": "8b2f30050ffba69695061d80d9a27e0aed3300777203be0da86036ffbd667fd3",
+    "full_CI": false,
+    "full_Netty": false,
+    "full_round": false,
+    "independent_inverse_forward_exact": true,
+    "macro": {
+      "allGo_entry_application_run": false,
+      "all_partial_outputs_unaccepted": true,
+      "compiler_exit": 1,
+      "duration_seconds": 246.425057,
+      "file_STARTS_not_completions": 30,
+      "first_failure": "PoolArena.java472 max(val,0)",
+      "generated_artifact_count": 30,
+      "macro_delivery_sha256": "43076333233d1ec6682e3ff75a13b9e9fc4aeebe0977ef91d8c647e179d2574d",
+      "no_causal_speedup_or_no_regression_claim": true,
+      "receipt_sha256": "2a9c47f3044699f1ef1c448546f610cb6401c19234ce7f42b243cecb3b6c3295",
+      "runner_exit": 1,
+      "source_manifest_sha256": "05ef05ecec878f9dc9062873cc449be020ba6e4f6876e3dd057d17b7fc41f86a",
+      "status": "ROOT_RAW_NETTY_MACRO_AUDIT_COMPILER_FAILURE_RETAINED",
+      "timed_out": false
+    },
+    "metadata_only_join_exact": true,
+    "native_parent_pass_lines": 429,
+    "new_leaves": [
+      "internal/cliownership/session.go",
+      "transpiler/source_identifier_syntax_inventory.go",
+      "transpiler/standalone_syntax_session.go",
+      "transpiler/syntax_inventory175_baseline_test.go",
+      "transpiler/syntax_inventory175_frozen_budget_test.go",
+      "transpiler/syntax_inventory175_old_oracle_test.go",
+      "transpiler/syntax_inventory175_semantics_test.go"
+    ],
+    "next_gate": "Original1220 strict300 normalCLI macro needs separate sealed preflight review",
+    "old_leaves": [
+      "cmd/java2go/main.go",
+      "transpiler/java2go.go",
+      "transpiler/maven_project.go",
+      "transpiler/superclass_embedding.go",
+      "transpiler/tree_sitter.go"
+    ],
+    "owned_race": 180,
+    "raw_receipts": 120,
+    "source_manifest_sha256": "05ef05ecec878f9dc9062873cc449be020ba6e4f6876e3dd057d17b7fc41f86a",
+    "status": "ROOT_INDEPENDENT_RAW_SOURCE_AND_PATCH_AUDIT_PASS",
+    "verified_manifest_sha256": "5b2605b0258b72a8edfce375e477e5fd057d82012dfa1eaf6ed5584c3e6cbe8e",
+    "work_budget_subcases": 12
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

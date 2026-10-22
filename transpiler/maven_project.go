@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/NickyBoy89/java2go/internal/cliownership"
 	"github.com/NickyBoy89/java2go/parsing"
 	"github.com/NickyBoy89/java2go/project"
 	"github.com/NickyBoy89/java2go/symbol"
@@ -24,6 +25,10 @@ func (f *repeatedFlag) Set(value string) error { *f = append(*f, value); return 
 // Project conversion stages a complete module before publishing it. Failed
 // dependency resolution, conversion, or cycle checks leave the output untouched.
 func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, output, module, excluded string, stdout io.Writer) (resultErr error) {
+	return runMavenProjectWithOwnership(root, mappings, mainClass, runtimeRoot, output, module, excluded, stdout, nil)
+}
+
+func runMavenProjectWithOwnership(root string, mappings []string, mainClass, runtimeRoot, output, module, excluded string, stdout io.Writer, session *cliownership.Session) (resultErr error) {
 	if mainClass == "" || runtimeRoot == "" {
 		return fmt.Errorf("-maven requires -main-class Class (qualified for named packages) and -runtime /path/to/java2go")
 	}
@@ -167,7 +172,7 @@ func runMavenProject(root string, mappings []string, mainClass, runtimeRoot, out
 	symbol.GlobalScope = &symbol.GlobalSymbols{Packages: map[string]*symbol.PackageScope{}}
 	defer func() { symbol.GlobalScope = previous }()
 	args := []string{"-w", "-strict", "-sync", "-output", generated, "-module", "", "-exclude-annotations", excluded, inputs}
-	if err = runInternal(args, stdout, true); err != nil {
+	if err = runInternalWithOwnership(args, stdout, true, session); err != nil {
 		return err
 	}
 	mainPackage, mainType := "", mainClass

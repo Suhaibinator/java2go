@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/NickyBoy89/java2go/internal/cliownership"
 	"github.com/NickyBoy89/java2go/parsing"
 	"github.com/NickyBoy89/java2go/symbol"
 	log "github.com/sirupsen/logrus"
@@ -31,6 +32,13 @@ func run(args []string, stdout io.Writer) error {
 }
 
 func runInternal(args []string, stdout io.Writer, projectMode bool) error {
+	return runInternalWithOwnership(args, stdout, projectMode, nil)
+}
+
+func runInternalWithOwnership(args []string, stdout io.Writer, projectMode bool, session *cliownership.Session) error {
+	if !session.Active() || !standaloneSyntaxConfigurationOK(stdout) {
+		session = nil
+	}
 	var writeFiles bool
 	var dryRun bool
 	var displayAST bool
@@ -72,7 +80,10 @@ or to fix crashes with the symbol handling`,
 		if len(flagSet.Args()) != 0 || dryRun || displayAST || !symbolAware {
 			return fmt.Errorf("-maven requires symbol conversion and cannot combine with positional inputs, -q, -ast or -symbols=false")
 		}
-		return runMavenProject(mavenRoot, dependencySources, mainClass, runtimeRoot, outputDirectory, modulePath, ignoredAnnotations, stdout)
+		if session == nil {
+			return runMavenProject(mavenRoot, dependencySources, mainClass, runtimeRoot, outputDirectory, modulePath, ignoredAnnotations, stdout)
+		}
+		return runMavenProjectWithOwnership(mavenRoot, dependencySources, mainClass, runtimeRoot, outputDirectory, modulePath, ignoredAnnotations, stdout, session)
 	}
 	if mainClass != "" || runtimeRoot != "" || len(dependencySources) > 0 {
 		return fmt.Errorf("-main-class, -runtime and -dependency-source require -maven")
@@ -190,6 +201,8 @@ or to fix crashes with the symbol handling`,
 	// Resolution is complete. This conversion batch owns source syntax facts;
 	// per-file contexts still own their binders, target lookup and family audit.
 	sourceInventory := &callableSubclassSourceInventory{}
+	syntax := newSyntaxInvocation(session, files)
+	defer syntax.close()
 	for _, file := range files {
 		if dryRun {
 			log.Infof("Not converting file \"%s\"", file.Name)
@@ -217,7 +230,7 @@ or to fix crashes with the symbol handling`,
 		}
 
 		// The converted AST, in Go's AST representation
-		initialContext := Ctx{projectMode: projectMode, runtimeLocationProfile: sourceRuntimeLocationClasspath, genericFamilies: &genericFamilyAnalysis{}, callableSubclasses: sourceInventory}
+		initialContext := Ctx{projectMode: projectMode, runtimeLocationProfile: sourceRuntimeLocationClasspath, genericFamilies: &genericFamilyAnalysis{}, callableSubclasses: sourceInventory, syntaxInvocation: syntax}
 		if symbolAware {
 			initialContext.currentFile = file.Symbols
 			initialContext.currentClass = file.Symbols.BaseClass
