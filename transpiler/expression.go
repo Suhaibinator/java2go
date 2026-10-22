@@ -816,6 +816,17 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if instanceResolution == nil && staticResolution == nil && knownArrayMethodIsAbsent(node, ctx, source) {
 				break
 			}
+			if helpfulSourceInvocationPlan(node, objectNode, instanceResolution, ctx, source) != nil {
+				build := func(receiver ast.Expr, stagedArgs []ast.Expr) ast.Expr {
+					return markDirectVarargsExpansion(&ast.CallExpr{
+						Fun: &ast.SelectorExpr{X: receiver, Sel: methodIdent},
+						Args: prependExecutionMethodArgument(ctx, instanceResolution.def, stagedArgs),
+					}, expandVarargsArray)
+				}
+				if staged := stageVirtualDispatchInvocation(node, objectNode, objectExpr, instanceResolution, args, build, ctx, source); staged != nil {
+					return staged
+				}
+			}
 			return markDirectVarargsExpansion(&ast.CallExpr{
 				Fun:  &ast.SelectorExpr{X: objectExpr, Sel: methodIdent},
 				Args: callArgs,
@@ -4090,6 +4101,7 @@ func stageVirtualDispatchInvocation(
 	}
 
 	receiverIdent := &ast.Ident{Name: receiverName}
+	body = appendHelpfulInvocationReceiverCheck(body, invocationNode, receiverNode, receiverIdent, resolution, ctx, source)
 	call := buildCall(receiverIdent, stagedArgs)
 	if call == nil {
 		return nil
@@ -4155,6 +4167,7 @@ func executionCompanionDispatchInvocation(
 		stagedArgs[index] = &ast.Ident{Name: name}
 	}
 
+	body = appendHelpfulInvocationReceiverCheck(body, invocationNode, receiverNode, ast.NewIdent(receiverName), resolution, ctx, source)
 	virtualPlan := planSourceInterfaceVirtualEntry(resolution.owner, resolution.def, ctx)
 	body = append(body, sourceInterfaceVirtualCallBranch(virtualPlan, ast.NewIdent(receiverName), stagedArgs, executionExpr(ctx), results, usedNames, nil)...)
 
@@ -6575,9 +6588,11 @@ func buildSwitchExpressionIIFE(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 		bodyCtx.expectedType = ""
 		bodyCtx.expectedTypeRoot = nil
 	}
-	switchBody := buildSwitchExpressionBody(bodyNode, source, bodyCtx)
+	evidence := newEnumSwitchLoweringEvidence(condNode, bodyNode, ctx)
+	switchBody := buildSwitchExpressionBody(bodyNode, source, bodyCtx, evidence)
 	tag = canonicalStringSwitch(tag, condNode, switchBody, source, ctx)
-	switchStmt := &ast.SwitchStmt{Tag: tag, Body: switchBody}
+	tag = canonicalSourceEnumSwitchSelector(tag, condNode, bodyNode, source, ctx)
+	switchStmt := canonicalSourceEnumNullSwitch(&ast.SwitchStmt{Tag: tag, Body: switchBody}, condNode, bodyNode, source, ctx, evidence)
 
 	body := &ast.BlockStmt{List: []ast.Stmt{
 		switchStmt,
@@ -6602,13 +6617,13 @@ func buildSwitchExpressionIIFE(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 // buildSwitchExpressionBody builds the case clauses for a switch expression,
 // turning each arm's produced value into a `return`. Handles both arrow-form
 // (`case X -> expr` / `case X -> { yield V; }`) and colon-form arms with yield.
-func buildSwitchExpressionBody(bodyNode *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+func buildSwitchExpressionBody(bodyNode *sitter.Node, source []byte, ctx Ctx, evidence *enumSwitchLoweringEvidence) *ast.BlockStmt {
 	switchBlock := &ast.BlockStmt{}
 
 	for _, child := range nodeutil.NamedChildrenOf(bodyNode) {
 		switch child.Type() {
 		case "switch_rule":
-			caseExprs, isDefault, ruleBody := splitSwitchRule(child, source, ctx)
+			caseExprs, isDefault, ruleBody := splitSwitchRule(child, source, ctx, evidence)
 			clause := &ast.CaseClause{}
 			if !isDefault {
 				clause.List = caseExprs
@@ -6616,7 +6631,7 @@ func buildSwitchExpressionBody(bodyNode *sitter.Node, source []byte, ctx Ctx) *a
 			clause.Body = switchArmReturnStmts(ruleBody, source, ctx)
 			switchBlock.List = append(switchBlock.List, clause)
 		case "switch_block_statement_group":
-			caseExprs, isDefault, groupBody := splitSwitchGroup(child, source, ctx)
+			caseExprs, isDefault, groupBody := splitSwitchGroup(child, source, ctx, evidence)
 			clause := &ast.CaseClause{}
 			if !isDefault {
 				clause.List = caseExprs

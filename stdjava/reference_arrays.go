@@ -609,7 +609,7 @@ func primitiveArrayIndex[T any, I javaArrayLength](array *PrimitiveArray[T], ind
 	}
 	index64 := int64(index)
 	if index64 < 0 || index64 >= int64(len(array.Elements)) {
-		panic(NewArrayIndexOutOfBoundsException("array index out of bounds"))
+		panic(NewArrayIndexOutOfBoundsException(arrayIndexOutOfBoundsMessage(index64, len(array.Elements))))
 	}
 	return int(index64)
 }
@@ -822,7 +822,7 @@ func referenceArrayIndex[I javaArrayLength](array *ReferenceArray, index I) int 
 	}
 	index64 := int64(index)
 	if index64 < 0 || index64 >= int64(len(array.elements)) {
-		panic(NewArrayIndexOutOfBoundsException("array index out of bounds"))
+		panic(NewArrayIndexOutOfBoundsException(arrayIndexOutOfBoundsMessage(index64, len(array.elements))))
 	}
 	return int(index64)
 }

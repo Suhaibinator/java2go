@@ -148,6 +148,9 @@ func projectDirectOwnerErasedExpressionForExpected(
 	if !ok || javaInferenceTypeAssignable(erasure, target, ctx) {
 		return expr
 	}
+	if projected, ok := projectDirectOwnerErasedExpectedArray(expr, target, ctx); ok {
+		return projected
+	}
 	return projectDirectOwnerErasedView(expr, target, erasure, ctx)
 }
 

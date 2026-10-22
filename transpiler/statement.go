@@ -1129,11 +1129,13 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		if javaType, known := inferExprJavaType(tagNode, ctx, source); known {
 			tag = javaUnboxExpr(tag, javaType, ctx)
 		}
-		body := parseSwitchBlock(blockNode, source, ctx)
+		evidence := newEnumSwitchLoweringEvidence(tagNode, blockNode, ctx)
+		body := parseSwitchBlock(blockNode, source, ctx, evidence)
 		tag = canonicalStringSwitch(tag, tagNode, body, source, ctx)
-		return &ast.SwitchStmt{Tag: tag, Body: body}
+		tag = canonicalSourceEnumSwitchSelector(tag, tagNode, blockNode, source, ctx)
+		return canonicalSourceEnumNullSwitch(&ast.SwitchStmt{Tag: tag, Body: body}, tagNode, blockNode, source, ctx, evidence)
 	case "switch_block":
-		return parseSwitchBlock(node, source, ctx)
+		return parseSwitchBlock(node, source, ctx, nil)
 	}
 	return nil
 }
@@ -1305,7 +1307,7 @@ func javaIdentifierIsRead(node *sitter.Node, source []byte) bool {
 // non-terminal group that does not break gets an explicit `fallthrough`. Empty
 // groups (a label with no statements) are merged into the next group's case
 // list, matching Java's stacked `case` labels.
-func parseSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+func parseSwitchBlock(node *sitter.Node, source []byte, ctx Ctx, evidence *enumSwitchLoweringEvidence) *ast.BlockStmt {
 	switchBlock := &ast.BlockStmt{}
 
 	// Arrow-form switches (Java 14+) use `switch_rule` children, each of which is
@@ -1313,7 +1315,7 @@ func parseSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt 
 	// colon-form `switch_block_statement_group`s.
 	for _, c := range nodeutil.NamedChildrenOf(node) {
 		if c.Type() == "switch_rule" {
-			return parseArrowSwitchBlock(node, source, ctx)
+			return parseArrowSwitchBlock(node, source, ctx, evidence)
 		}
 	}
 
@@ -1329,7 +1331,7 @@ func parseSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt 
 	var pendingDefault bool
 
 	for index, group := range groups {
-		caseExprs, isDefault, bodyNodes := splitSwitchGroup(group, source, ctx)
+		caseExprs, isDefault, bodyNodes := splitSwitchGroup(group, source, ctx, evidence)
 
 		caseExprs = append(pendingExprs, caseExprs...)
 		isDefault = isDefault || pendingDefault
@@ -1429,14 +1431,14 @@ func lowerInstanceofPattern(node *sitter.Node, source []byte, ctx Ctx) (ast.Stmt
 // switch_rule maps to a single Go case clause with no fallthrough. A `default ->`
 // rule becomes the default clause. The rule body is an expression statement, a
 // block, or a throw, all converted as ordinary statements.
-func parseArrowSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.BlockStmt {
+func parseArrowSwitchBlock(node *sitter.Node, source []byte, ctx Ctx, evidence *enumSwitchLoweringEvidence) *ast.BlockStmt {
 	switchBlock := &ast.BlockStmt{}
 
 	for _, rule := range nodeutil.NamedChildrenOf(node) {
 		if rule.Type() != "switch_rule" {
 			continue
 		}
-		caseExprs, isDefault, bodyNodes := splitSwitchRule(rule, source, ctx)
+		caseExprs, isDefault, bodyNodes := splitSwitchRule(rule, source, ctx, evidence)
 
 		clause := &ast.CaseClause{}
 		if !isDefault {
@@ -1458,14 +1460,16 @@ func parseArrowSwitchBlock(node *sitter.Node, source []byte, ctx Ctx) *ast.Block
 // splitSwitchRule separates a switch_rule into its case label expressions (empty
 // for default), whether it is the default rule, and the body nodes after the
 // arrow.
-func splitSwitchRule(rule *sitter.Node, source []byte, ctx Ctx) (caseExprs []ast.Expr, isDefault bool, bodyNodes []*sitter.Node) {
+func splitSwitchRule(rule *sitter.Node, source []byte, ctx Ctx, evidence *enumSwitchLoweringEvidence) (caseExprs []ast.Expr, isDefault bool, bodyNodes []*sitter.Node) {
 	for _, child := range nodeutil.NamedChildrenOf(rule) {
 		if child.Type() == "switch_label" {
-			if nodeutil.SemanticNamedChildCount(child) == 0 {
+			if combinedNullDefaultSwitchLabel(child, source, ctx) {
+				isDefault = true
+			} else if nodeutil.SemanticNamedChildCount(child) == 0 {
 				isDefault = true
 			} else {
-				for _, labelExpr := range nodeutil.NamedChildrenOf(child) {
-					caseExprs = append(caseExprs, ParseExpr(labelExpr, source, ctx))
+				for _, labelExpr := range nodeutil.SemanticNamedChildrenOf(child) {
+					caseExprs = append(caseExprs, parseSwitchLabelExpression(labelExpr, source, ctx, evidence))
 				}
 			}
 			continue
@@ -1478,14 +1482,18 @@ func splitSwitchRule(rule *sitter.Node, source []byte, ctx Ctx) (caseExprs []ast
 // splitSwitchGroup separates a switch_block_statement_group into its case label
 // expressions (empty when the group is `default`), whether it is the default
 // group, and the statement nodes that make up its body.
-func splitSwitchGroup(group *sitter.Node, source []byte, ctx Ctx) (caseExprs []ast.Expr, isDefault bool, bodyNodes []*sitter.Node) {
+func splitSwitchGroup(group *sitter.Node, source []byte, ctx Ctx, evidence *enumSwitchLoweringEvidence) (caseExprs []ast.Expr, isDefault bool, bodyNodes []*sitter.Node) {
 	for _, child := range nodeutil.NamedChildrenOf(group) {
 		if child.Type() == "switch_label" {
-			if nodeutil.SemanticNamedChildCount(child) == 0 {
+			if combinedNullDefaultSwitchLabel(child, source, ctx) {
+				isDefault = true
+			} else if nodeutil.SemanticNamedChildCount(child) == 0 {
 				// A `default` label has no child expression.
 				isDefault = true
 			} else {
-				caseExprs = append(caseExprs, ParseExpr(nodeutil.SemanticNamedChild(child, 0), source, ctx))
+				for _, labelExpr := range nodeutil.SemanticNamedChildrenOf(child) {
+					caseExprs = append(caseExprs, parseSwitchLabelExpression(labelExpr, source, ctx, evidence))
+				}
 			}
 			continue
 		}

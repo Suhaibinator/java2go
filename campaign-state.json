@@ -22653,6 +22653,63 @@
     "status": "STALE_ENUM_ASSERTIONS_REPLACED_WITH_EXECUTED_JAVA_CONTRACTS",
     "tested_source_manifest": "cc05d35cf1d1bd115323c6d9e8e1c1ffe55caced4c55e250e5ec7bbd247fbe19"
   },
+  "sol_progress193": {
+    "CI192": {
+      "Root_audit": "57002d4ea4d6afddf7bfde726758fe331ec97ab34383fefd6f4694ee286b9df2",
+      "artifacts_rehashed": 124,
+      "compiler_failed_parents": 36,
+      "enum_parent": "PASS",
+      "focused_PASS": 55,
+      "new_failure_or_skip_names": [],
+      "overall": "FAILURE",
+      "prior_failed_parents": 37
+    },
+    "actual_raw_receipts": 221,
+    "application_scope": "Unchanged five-source cache reducer and array-control reducer; full Netty remains mandatory",
+    "campaign": "Ongoing Sol-only adversarial TDD; full round remains unaccepted",
+    "contracts": [
+      "Owned generic-array overload selection and erased-array expected-result projections",
+      "Enum null/default switch lowering with invocation-local typed ownership evidence",
+      "JDK array bounds and exercised helpful null-invocation exception messages"
+    ],
+    "coordinator_source_and_raw_audit": "bd889238045f34ad2225fadbdd632602621ae225d4fd07472922893acd307d21",
+    "current192_rebase_manifest": "bd447e614866ab8d72559aef50569144e38fddee099c06cef2b74fe810806c8e",
+    "fresh_Go_observations": 18,
+    "fresh_JDK_observations": 18,
+    "generated_implementations_byteexact_before_after_typed_evidence_repair": true,
+    "held": [
+      "Full Netty1220 strict translation/build/parity",
+      "Gson112 project build/parity",
+      "Supplier28 and original20 runtime parity",
+      "Full CI and accumulated round acceptance",
+      "Java/Go speed or universal compatibility claim"
+    ],
+    "independent_typed_evidence_source_review": "fab432c9a68808283b60dfcd4a0740a9802fb7e307e14616e3a0b9b1237f3eb3",
+    "native_parent_PASS_occurrences": 2409,
+    "new_leaves": 16,
+    "next": "Retry original1220 on matching normal compiler, continue original Supplier/Gson cases, and commit/push verified milestones.",
+    "old_leaves": 6,
+    "owner_delivery": "bed01e23692d340c935845d701646753d08e50a50ca37ecb9a38d92d4b993b6a",
+    "parser_race_parents": 10,
+    "preserved_infrastructure_errata": [
+      "Initial external inverse-patch removal premise corrected in fresh roundtrip",
+      "Embedded generated-test name was incorrectly inventoried as a native parent; registered integration parent retained and executed"
+    ],
+    "private_progress_not_published_in_this_change": {
+      "Gson112": "All112 raw strict conversion PASS206.017624; genuine project packaging/build/parity pending",
+      "ReaderCore": "Independent native/runtime/sixprofiles green; full source protocol adoption not accepted",
+      "Supplier20": "Ground implicit SAM repair removes six of nine diagnostics; inherited get/firstKey/size remain before runtime",
+      "array_null_optimization": "R2 Cache5 JDK9Go9 parity; separate integration/performance measurements pending"
+    },
+    "publication_parent": "a50429d81f4feadf0eff9f05b28e36f5fd6750c2",
+    "qualified_code_tests_resources_and_modules_byteexact": true,
+    "regional_functions": 15,
+    "runtime_race_parents": 849,
+    "six_default_F1_profiles": "PASS",
+    "status": "NETTY_GENERIC_ARRAY_ENUM_AND_EXCEPTION_PREREQUISITES_VERIFIED",
+    "symbol_race_parents": 23,
+    "tested_source_manifest": "f9f657d774566f828e55773649ed8f0caab5406b767b98df461d0dcf7fd2d88d"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

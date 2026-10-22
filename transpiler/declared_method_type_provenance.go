@@ -573,6 +573,15 @@ func scoreDeclaredMethodCandidate(def *symbol.Definition, owner *symbol.ClassSco
 			}
 			cost, exact, applies = javaInvocationConversionCost(node, expected, candidateTypeParams, ctx, source)
 			if !applies {
+				// A unique declaration-owned substitution can prove an exact strict
+				// conversion even when the spelling-based fallback cannot infer it.
+				if projected, proved := declaredMethodArgumentInferredOrigin(formal, def, formals, argNodes, fixed, ctx, source); proved {
+					if projectedCost, projectedExact, projectedApplies, projectedHandled := declaredOriginConversion(actual, projected, ctx); projectedHandled && projectedApplies && projectedExact {
+						cost, exact, applies = projectedCost, projectedExact, projectedApplies
+					}
+				}
+			}
+			if !applies {
 				cost, exact, applies = javaLooseInvocationConversionCost(node, expected, candidateTypeParams, ctx, source)
 				if applies && score.phase < 1 {
 					score.phase = 1
