@@ -156,12 +156,9 @@ public class A {
 	if !strings.Contains(flat, `stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 1, 2, 3)`) {
 		t.Errorf("expected an int32 primitive array literal with the exact Java int descriptor, got:\n%s", out)
 	}
-	if !strings.Contains(flat, `stdjava.ReferenceArrayLiteralOf[string](stdjava.StringTypeID, "x", "y")`) {
-		t.Errorf("expected a String[] literal with the exact Java String descriptor, got:\n%s", out)
-	}
-	if !strings.Contains(flat, `stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID, stdjava.BoxInteger(int32(1)), "z")`) {
-		t.Errorf("expected an Object[] literal with its descriptor and boxed Integer object, got:\n%s", out)
-	}
+	method := ciABI193Function(t, ciABI193Parse(t, out), "RunJava2goExecution")
+	ciABI193RequireExpr(t, ciABI193Local(t, method, "s"), `stdjava.ReferenceArrayLiteralOf[*stdjava.JavaString](stdjava.StringTypeID, stdjava.JavaStringLiteralUTF16([]uint16{120}), stdjava.JavaStringLiteralUTF16([]uint16{121}))`)
+	ciABI193RequireExpr(t, ciABI193Local(t, method, "o"), `stdjava.ReferenceArrayLiteralOf[any](stdjava.ObjectTypeID, stdjava.BoxInteger(int32(1)), stdjava.JavaStringLiteralUTF16([]uint16{122}))`)
 }
 
 // TestCodegen_SizedArrayAllocationKeepsSliceType verifies every sized array
@@ -182,9 +179,8 @@ public class Alloc {
 	if !strings.Contains(out, `stdjava.NewPrimitiveArray[int32](n, stdjava.PrimitiveIntTypeID)`) {
 		t.Errorf("expected a reified int[] allocation with the exact primitive descriptor, got:\n%s", out)
 	}
-	if !strings.Contains(out, `stdjava.NewReferenceArrayOf[string](n, stdjava.StringTypeID)`) {
-		t.Errorf("expected a reified String[] allocation with the exact Java String descriptor, got:\n%s", out)
-	}
+	method := ciABI193Function(t, ciABI193Parse(t, out), "RunJava2goExecution")
+	ciABI193RequireExpr(t, ciABI193Local(t, method, "s"), `stdjava.NewReferenceArrayOf[*stdjava.JavaString](n, stdjava.StringTypeID)`)
 	// Worker is package-private, so its struct is lowercased to `worker`; the
 	// element type must match.
 	if !strings.Contains(out, `stdjava.NewReferenceArrayOf[*worker](n, stdjava.TypeID("Worker"))`) {

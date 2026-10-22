@@ -22747,6 +22747,29 @@
     "symbol_race_parents": 23,
     "zero_exit": 402
   },
+  "sol_progress195": {
+    "Root_raw_audit": "412089090ed1e1e929711755f3a51ee0820928afcb44d922e5c4a6be3bd5c8c9",
+    "actual_normal_and_race_registry": 2312,
+    "default_F1_whole_race_testcompile_and_lint": "PASS",
+    "held": [
+      "Full hosted CI acceptance",
+      "Known Gson adversarial requireNonNullField frontier",
+      "Full Netty1220/Supplier28/Gson112 and round acceptance",
+      "Measured performance gains"
+    ],
+    "native_parent_PASS": 132,
+    "new_test_helper_leaves": 1,
+    "old_test_functions": 6,
+    "old_test_leaves": 4,
+    "original193_six_assertion_RED_retained": true,
+    "owner_delivery": "80e4124505d1504689227fb34d66e002f2425ac3034d27ce1b18c0a6675640b5",
+    "parent_race_does_not_imply_generated_child_race": true,
+    "production_Java_fixtures_oracles_unchanged": true,
+    "publication_parent": "17f9de9897940eb8a9fef97fef905aa68994aea5",
+    "qualified_source_manifest": "ca8c5fa7cd6205a635047b58fa609bd106b3a88dc74f1058c7a2c1f53df21c13",
+    "receipts_all_zero": 25,
+    "status": "SIX_STALE_REFERENCE_ABI_ASSERTIONS_UPDATED_AND_QUALIFIED"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

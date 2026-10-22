@@ -44,7 +44,8 @@ public class StreamOfProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, `stdjava.NewStream[string]("a", "b", "c")`)
+	method := ciABI193Function(t, ciABI193Parse(t, out), "RunJava2goExecution")
+	ciABI193RequireReturn(t, method, `stdjava.NewStream[*stdjava.JavaString](stdjava.JavaStringLiteralUTF16([]uint16{97}), stdjava.JavaStringLiteralUTF16([]uint16{98}), stdjava.JavaStringLiteralUTF16([]uint16{99})).Count()`)
 	assertContains(t, out, ".Count()")
 }
 
