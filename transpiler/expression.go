@@ -6820,7 +6820,11 @@ func lowerAnonymousClass(node, objectType, classBody *sitter.Node, source []byte
 			entry := planGenericMethodEntryABI(declaring.currentClass, method, declaring)
 			methodCtx.genericInterfaceMethodBody = planGenericInterfaceMethodBodyABI(entry, implScope, implMethod, methodCtx)
 		}
+	} else if plan := canonicalAnonymousGenericClassBody(node, objectType, classBody, implMethod, implScope, method, ctx); plan != nil {
+		methodCtx.erasedGenericMethodBody = implScope
+		methodCtx.genericInterfaceMethodBody = plan
 	}
+
 	executionName := executionParameterName(implMethod, source, methodCtx)
 	methodCtx.executionContextName = executionName
 

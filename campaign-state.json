@@ -22299,6 +22299,50 @@
     "tested_source_manifest": "82b18254300e0a1755df5ea317d8b964b79f7a786544f2d28a17bc296036180e",
     "tested_source_members": 4357
   },
+  "sol_progress186": {
+    "campaign": "Ongoing Sol-only adversarial TDD",
+    "complete_streams_status_files_exact": true,
+    "coordinator_raw_whole_audit": "b985f4a4418bef229c43a069781f65fa309344e686c0fa6af8ac22106f656ffb",
+    "default_F1_build_testcompile_lint": "PASS six fresh stages",
+    "exact_old_regions": 2,
+    "fresh_Class3_JDK_and_Go_runs": [
+      3,
+      3
+    ],
+    "fresh_original_ABI5_JDK_and_Go_runs": [
+      9,
+      9
+    ],
+    "genuine_RED_history_retained": true,
+    "held": [
+      "Full Gson112/113/114",
+      "TypeToken constructor Class cast audit",
+      "Date-bound generic family representation",
+      "Generic anonymous target and lexical captures outside proved admission",
+      "Full Netty/CI/round/performance acceptance"
+    ],
+    "hosted185_observation": "Unchanged TestCollectionContractsApplication and CollectionValues PASS in compiler4 actual raw119872295310; full run not yet accepted",
+    "independent_delivery": "c5cf2db6cc0e55536cd6b331911e5b66f96ee740647029a61d36f5295c859c4c",
+    "independent_fresh_children": 125,
+    "independent_native_normal": 16,
+    "independent_native_race20": 320,
+    "independent_related_parents": 49,
+    "last_full_Netty": "Strict failure PoolThreadCache.java276 after294.012469s without timeout; no complete generated build/application parity",
+    "new_leaves": 2,
+    "owner_registry_evidence": "Previously executed on exact final owner snapshot; not represented as fresh current185 registry execution",
+    "owner_runtime_symbol_parser": [
+      830,
+      23,
+      10
+    ],
+    "production": "Declaration-owned canonical Class<T> method slots and anonymous implementation body reuse of existing registered EntryABI; no global erasure/ABI/runtime relaxation",
+    "source_review": "762cd636515abd21aabb0731fef487dd9d51edd3f8f16144e847038a6893a5d6",
+    "status": "INDEPENDENT_CLASS_METHOD_SLOT_AND_ANONYMOUS_ENTRY_REPAIR_VERIFIED",
+    "tested_source_manifest": "ae7938f146f00cd9208665f516c4c568ad9b48b0c506cb37791b226345c1a50c",
+    "tested_source_members": 4360,
+    "whole_declared_output_files": 18,
+    "whole_pairs": 12
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

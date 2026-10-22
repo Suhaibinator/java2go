@@ -185,11 +185,11 @@ func canonicalGenericMethodSignature(def *symbol.Definition, ctx Ctx) bool {
 			return false
 		}
 	}
-	if !canonicalGenericMethodType(def.OriginalType, def, ctx) {
+	if !canonicalGenericMethodType(def.OriginalType, def, ctx) && !canonicalGenericMethodClassSlot(def, -1, ctx) {
 		return false
 	}
-	for _, parameter := range def.Parameters {
-		if !canonicalGenericMethodType(parameter.OriginalType, def, ctx) {
+	for index, parameter := range def.Parameters {
+		if !canonicalGenericMethodType(parameter.OriginalType, def, ctx) && !canonicalGenericMethodClassSlot(def, index, ctx) {
 			return false
 		}
 	}
