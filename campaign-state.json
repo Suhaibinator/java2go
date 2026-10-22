@@ -22770,6 +22770,45 @@
     "receipts_all_zero": 25,
     "status": "SIX_STALE_REFERENCE_ABI_ASSERTIONS_UPDATED_AND_QUALIFIED"
   },
+  "sol_progress196": {
+    "Root_final_audit": "898dcbf9b41d1f22ffb62e64997644114a3e577845732fd3f4eac564c93f0e78",
+    "baseline_allocations_per_plain_query": [
+      2,
+      3,
+      3,
+      2,
+      2,
+      2
+    ],
+    "candidate_allocations_per_plain_query": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "compiler_native_receipts_superseded_by_package_cwd_runs": true,
+    "existing_shields_per_mode": 7,
+    "focused_new_parents_normal20_race20": true,
+    "full_race_Test_parents": {
+      "parsing": 10,
+      "stdjava": 849,
+      "symbol": 23
+    },
+    "held": [
+      "Full Supplier28/Gson112/Netty1220 parity",
+      "Whole hosted CI acceptance",
+      "Application or Java-relative speed claims"
+    ],
+    "old_overlapping_race_receipts_excluded": 2,
+    "owner_delivery": "e1016959a28e1df9ab58099478dafb96d8040fcf2ac26487009c918c55941dbc",
+    "publication_parent": "3be0b5bbbfd62e160c0bafaa6f03d5d4a70b5d09",
+    "qualified_source_manifest": "a50f5a14e3de301b5282e2643747af8956bd2ac2690ceba1d2b2cd12c0532c5a",
+    "semantic_cases": 32,
+    "six_default_F1_profiles": "PASS",
+    "status": "PLAIN_MEMBER_TYPE_PARSER_ZERO_ALLOCATION_FASTPATH_QUALIFIED"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

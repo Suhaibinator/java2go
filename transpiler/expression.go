@@ -20,6 +20,9 @@ import (
 // pkg.Outer.Child plus [String, List<Integer>].
 func splitJavaMemberType(typeStr string) (string, []string, bool) {
 	typeStr = strings.TrimSpace(typeStr)
+	if !strings.ContainsAny(typeStr, "<>") {
+		return typeStr, nil, true
+	}
 	var base strings.Builder
 	var arguments []string
 
