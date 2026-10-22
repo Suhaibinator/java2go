@@ -22710,6 +22710,43 @@
     "symbol_race_parents": 23,
     "tested_source_manifest": "f9f657d774566f828e55773649ed8f0caab5406b767b98df461d0dcf7fd2d88d"
   },
+  "sol_progress194": {
+    "JDK21_Go_observations": {
+      "Netty_reducers_Go": 18,
+      "Netty_reducers_JDK": 18,
+      "valid_CI_apps_Go": 24,
+      "valid_CI_apps_JDK": 24
+    },
+    "Root_raw_audit": "eecdef372b9e2e1ef0dfa3d2cb93b790dad1d3d0d8fccfc6c21945c404fb26a6",
+    "campaign": "Ongoing Sol-only adversarial TDD; no universal compatibility claim",
+    "contracts": [
+      "Source invocation return storage retains declaring-package origin",
+      "Primitive argument staging rejects actual lexical Go type-name collisions",
+      "Affine and workflow assertions verify complete ordinary-or-staged AST dataflow",
+      "Only certified physical array pointer null checks use direct Go comparison"
+    ],
+    "direct_whole_observations": 84,
+    "held": [
+      "Two baseline NestedSignature assertion failures",
+      "Overall hosted CI acceptance pending new head",
+      "Full Netty1220 strict conversion remains a300-second timeout",
+      "Full Gson112 and Supplier28 parity",
+      "Performance gains and round acceptance"
+    ],
+    "native_parent_PASS": 3189,
+    "no_generated_implementation_or_JVM_expectation_edits": true,
+    "owner_delivery": "a21a30c1d498f50859c1eb44fc98e8cb46ad54532ebb3f4bb8e00c8283e42852",
+    "parser_race_parents": 10,
+    "preserved_baseline_exit1": 2,
+    "publication_parent": "8db3ba144a0461bff26f0d9514f477feaf55bcd7",
+    "qualified_source_manifest": "7fefaa0ba0e71631eed07360dcf6a251d0a641c60f559c9decc1d5fa8dbb046e",
+    "receipts": 404,
+    "runtime_race_parents": 849,
+    "six_default_F1_profiles": "PASS",
+    "status": "CI193_REGRESSION_REPAIRS_AND_CANONICAL_ARRAY_NULL_CHECKS_VERIFIED",
+    "symbol_race_parents": 23,
+    "zero_exit": 402
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

@@ -32,9 +32,7 @@ public class Planner {
 
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["parity/chain/engine/Planner.go"]
-	if !strings.Contains(out, "task.GetPriorityJava2goExecution(__java2goExecution).GetWeightJava2goExecution(__java2goExecution)") {
-		t.Fatalf("expected a chained return type to resolve in the declaring method's package, got:\n%s", out)
-	}
+	ci193AssertOrdinaryCall(t, out, "WeightJava2goExecution", "task.GetPriorityJava2goExecution(__java2goExecution).GetWeightJava2goExecution(__java2goExecution)", nil, "*model.Priority")
 }
 
 func TestWorkflowResolution_ListGetPreservesElementTypeForChainedCall(t *testing.T) {

@@ -485,9 +485,11 @@ public class LabeledBodyLoopProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if strings.Contains(flat, ":= grid.Java2goAffineView") || !strings.Contains(flat, "grid.getJava2goExecution(__java2goExecution, 0, 0)") {
+	if strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("loop containing an unrelated label was duplicated instead of retaining ordinary dispatch:\n%s", out)
 	}
+	ci193AssertOrdinaryCall(t, out, "RunJava2goExecution", "grid.getJava2goExecution(__java2goExecution, 0, 0)", []string{"int32", "int32"}, "")
+
 	runGoTestInTempModule(t, out, `
 package main
 import "testing"
@@ -529,23 +531,29 @@ public class DiagnosticVersionLoopProgram {
 }
 
 func TestAffineArrayLoopFastPath_ConservativeFallbackShape(t *testing.T) {
-	out := normalizeSpaces(renderGoFileFromJava(t, affineLoopProgramSource))
+	generated := renderGoFileFromJava(t, affineLoopProgramSource)
+	out := normalizeSpaces(generated)
 	for _, fragment := range []string{
 		"current = replacement return current.getJava2goExecution(__java2goExecution, 0, 0)",
-		"stdjava.EvaluationValue(grid).setJava2goExecution(__java2goExecution, nextJava2goExecution(__java2goExecution), nextJava2goExecution(__java2goExecution), 1.0)",
-		"stdjava.EvaluationValue(grid).setJava2goExecution(__java2goExecution, markIndexJava2goExecution(__java2goExecution, 1), markIndexJava2goExecution(__java2goExecution, 2), markValueJava2goExecution(__java2goExecution, 3))",
-		"return stdjava.EvaluationValue(grid).getJava2goExecution(__java2goExecution, 1/func() int32 { AffineLoopProgramJava2goEnsureInitialized(__java2goExecution) return zero }(), 0)",
 		"for once := int32(0); once < 1; once++ { func(dst *float64)",
-		"(&total)(grid.getJava2goExecution(__java2goExecution, 0, 0)) continue __java2goLabel_",
-		"for once := int32(0); once < 1; once++ { total = grid.getJava2goExecution(__java2goExecution, 0, 0) break __java2goLabel_",
 	} {
 		if !strings.Contains(out, fragment) {
 			t.Fatalf("expected conservative fallback fragment %q:\n%s", fragment, out)
 		}
 	}
+
+	ci193AssertOrdinaryCall(t, generated, "EffectfulFallbackJava2goExecution", "stdjava.EvaluationValue(grid).setJava2goExecution(__java2goExecution, nextJava2goExecution(__java2goExecution), nextJava2goExecution(__java2goExecution), 1.0)", []string{"int32", "int32", "float64"}, "")
+	ci193AssertOrdinaryCall(t, generated, "OrderedEffectfulFallbackJava2goExecution", "stdjava.EvaluationValue(grid).setJava2goExecution(__java2goExecution, markIndexJava2goExecution(__java2goExecution, 1), markIndexJava2goExecution(__java2goExecution, 2), markValueJava2goExecution(__java2goExecution, 3))", []string{"int32", "int32", "float64"}, "")
+	ci193AssertOrdinaryCall(t, generated, "PanickingArgumentFallbackJava2goExecution", "stdjava.EvaluationValue(grid).getJava2goExecution(__java2goExecution, 1/func() int32 { AffineLoopProgramJava2goEnsureInitialized(__java2goExecution); return zero }(), 0)", []string{"int32", "int32"}, "")
+	ci193AssertOrdinaryCall(t, generated, "LabeledFallbackJava2goExecution", "grid.getJava2goExecution(__java2goExecution, 0, 0)", []string{"int32", "int32"}, "")
+	ci193AssertOrdinaryCall(t, generated, "NestedLabeledFallbackJava2goExecution", "grid.getJava2goExecution(__java2goExecution, 0, 0)", []string{"int32", "int32"}, "")
+	ci193AssertFallbackBranch(t, generated, "LabeledFallbackJava2goExecution", "continue")
+	ci193AssertFallbackBranch(t, generated, "NestedLabeledFallbackJava2goExecution", "break")
 }
 
 func TestAffineArrayLoopFastPath_ScopeAndHeaderFallback(t *testing.T) {
+	// Parser adversary: the nested local redeclares a formal, which JDK21 rejects.
+	// Preserve this original source as refusal coverage; legal field shadowing has a separate oracle.
 	src := `
 interface GridReader { double read(); }
 final class ScopedGrid {
@@ -608,19 +616,20 @@ public class ScopedLoopProgram {
     }
 }
 `
-	out := normalizeSpaces(renderGoFileFromJava(t, src))
+	generated := renderGoFileFromJava(t, src)
+	out := normalizeSpaces(generated)
 	if strings.Contains(out, ":= grid.Java2goAffineView") || strings.Contains(out, ":= current.Java2goAffineView") {
 		t.Fatalf("header/captured/shadowed/field receiver unexpectedly received a loop cache:\n%s", out)
 	}
 	for _, ordinary := range []string{
 		"grid.getJava2goExecution(__java2goExecution, 0, 0)",
-		"stdjava.EvaluationValue(grid).getJava2goExecution(__java2goExecution, func() int32 { ScopedLoopProgramJava2goEnsureInitialized(__java2goExecution) return index }(), 0)",
 		"func() *scopedGrid { ScopedLoopProgramJava2goEnsureInitialized(__java2goExecution) return current }().getJava2goExecution(__java2goExecution, 0, 0)",
 	} {
 		if !strings.Contains(out, ordinary) {
 			t.Fatalf("expected ordinary fallback call %q:\n%s", ordinary, out)
 		}
 	}
+	ci193AssertOrdinaryCall(t, generated, "FieldArgumentJava2goExecution", "stdjava.EvaluationValue(grid).getJava2goExecution(__java2goExecution, func() int32 { ScopedLoopProgramJava2goEnsureInitialized(__java2goExecution); return index }(), 0)", []string{"int32", "int32"}, "")
 }
 
 func TestAffineArrayLoopFastPath_NonFinalDispatchFallback(t *testing.T) {
@@ -715,9 +724,7 @@ public class CollisionLoopProgram {
 	if strings.Contains(flat, ":= grid.Java2goAffineView") || strings.Contains(flat, "NewNullPointerException") {
 		t.Fatalf("shadowed injected runtime identifiers unexpectedly used the fast path:\n%s", out)
 	}
-	if !strings.Contains(flat, "return grid.getJava2goExecution(__java2goExecution, panic+nil+stdjava, 0)") {
-		t.Fatalf("runtime-name collision did not retain ordinary dispatch:\n%s", out)
-	}
+	ci193AssertOrdinaryCall(t, out, "RunJava2goExecution", "grid.getJava2goExecution(__java2goExecution, panic+nil+stdjava, 0)", []string{"int32", "int32"}, "")
 	runGoTestInTempModule(t, out, `
 package main
 import "testing"
@@ -793,9 +800,7 @@ public class BinderLoopProgram {
 	if strings.Contains(flat, "NewNullPointerException") || strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("nested binder shadowing nil unexpectedly used the fast path:\n%s", out)
 	}
-	if !strings.Contains(flat, "grid.getJava2goExecution(__java2goExecution, 0, 0)") {
-		t.Fatalf("nested binder collision did not retain ordinary dispatch:\n%s", out)
-	}
+	ci193AssertOrdinaryCall(t, out, "RunJava2goExecution", "grid.getJava2goExecution(__java2goExecution, 0, 0)", []string{"int32", "int32"}, "")
 	runGoTestInTempModule(t, out, `
 package main
 import (
@@ -844,9 +849,11 @@ public class App {
 	if strings.Contains(flat, "NewNullPointerException") || strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("cross-package alias shadowed by nested binder unexpectedly used the fast path:\n%s", appOut)
 	}
-	if !strings.Contains(flat, "for _, p := range stdjava.PrimitiveArrayIterationElements(source)") || !strings.Contains(flat, "grid.GetJava2goExecution(__java2goExecution, 0, 0)") {
+	if !strings.Contains(flat, "for _, p := range stdjava.PrimitiveArrayIterationElements(source)") {
 		t.Fatalf("cross-package alias collision did not retain ordinary dispatch:\n%s", appOut)
 	}
+
+	ci193AssertOrdinaryCall(t, appOut, "RunJava2goExecution", "grid.GetJava2goExecution(__java2goExecution, 0, 0)", []string{"int32", "int32"}, "")
 
 	moduleRoot := t.TempDir()
 	goMod := "module affinecross\n\ngo 1.27.0\n\nrequire github.com/NickyBoy89/java2go v0.0.0\n\nreplace github.com/NickyBoy89/java2go => " + repoRootDir(t) + "\n"
@@ -935,10 +942,9 @@ public class TypeParameterLoopProgram<panic> {
 	if strings.Contains(flat, "NewNullPointerException") || strings.Contains(flat, ":= grid.Java2goAffineView") {
 		t.Fatalf("type-parameter identifier collision unexpectedly used the fast path:\n%s", out)
 	}
-	if strings.Count(flat, "grid.getJava2goExecution(__java2goExecution, 0, 0)") != 2 ||
-		!strings.Contains(flat, "grid.setJava2goExecution(__java2goExecution, 0, 0, 1.0)") {
-		t.Fatalf("type-parameter collisions did not retain all ordinary calls:\n%s", out)
-	}
+	ci193AssertOrdinaryCall(t, out, "ClassRuntimeJava2goExecution", "grid.getJava2goExecution(__java2goExecution, 0, 0)", []string{"int32", "int32"}, "")
+	ci193AssertOrdinaryCall(t, out, "MethodRuntimeJava2goExecution", "grid.getJava2goExecution(__java2goExecution, 0, 0)", []string{"int32", "int32"}, "")
+	ci193AssertOrdinaryCall(t, out, "MethodTypeJava2goExecution", "grid.setJava2goExecution(__java2goExecution, 0, 0, 1.0)", []string{"int32", "int32", "float64"}, "")
 	runGoTestInTempModule(t, out, `
 package main
 import (

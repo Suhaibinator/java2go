@@ -816,7 +816,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if instanceResolution == nil && staticResolution == nil && knownArrayMethodIsAbsent(node, ctx, source) {
 				break
 			}
-			if helpfulSourceInvocationPlan(node, objectNode, instanceResolution, ctx, source) != nil {
+			if helpfulSourceInvocationStagingPlan(node, objectNode, instanceResolution, ctx, source) != nil {
 				build := func(receiver ast.Expr, stagedArgs []ast.Expr) ast.Expr {
 					return markDirectVarargsExpansion(&ast.CallExpr{
 						Fun: &ast.SelectorExpr{X: receiver, Sel: methodIdent},
@@ -1542,6 +1542,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			otherNode := rightNode
 			if rightNull {
 				otherNode = leftNode
+			}
+			if canonicalArrayNullOperand(otherNode, source, ctx) {
+				return &ast.BinaryExpr{X: ParseExpr(otherNode, source, ctx), Op: StrToToken(operator), Y: ast.NewIdent("nil")}
 			}
 			javaType, known := inferExprJavaType(otherNode, ctx, source)
 			_, primitive := javaPrimitiveType(javaType)
@@ -4425,8 +4428,38 @@ func invocationClosureResults(invocationNode *sitter.Node, resolution *methodRes
 		javaType = genericMethodErasedJavaType(resolution.def, declared)
 	} else if erasure, erased := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx); erased {
 		javaType = erasure
-	} else if inferred, ok := inferExprJavaType(invocationNode, ctx, source); ok && inferred != ternaryNullJavaType {
-		javaType = inferred
+	} else {
+		var origin inferredJavaTypeOrigin
+		if inferred, ok := inferExprJavaType(invocationNode, ctx, source, &origin); ok && inferred != ternaryNullJavaType {
+			javaType = inferred
+			// The selected declaration owns the result's nominal identity. Its
+			// spelling can denote an unrelated binder in the caller's namespace.
+			declaring, owner := invocationMethodDeclarationContext(resolution.def, ctx)
+			if owner == resolution.owner && owner != nil && completeJavaTypeOrigin(origin) {
+				emission := ctx.Clone()
+				emission.importAliases = make(map[string]string, len(ctx.importAliases))
+				for key, value := range ctx.importAliases {
+					emission.importAliases[key] = value
+				}
+				emission.usedImports = make(map[string]bool, len(ctx.usedImports))
+				for key, value := range ctx.usedImports {
+					emission.usedImports[key] = value
+				}
+				if physical, proved := staticFieldOriginStorageType(origin, declaring, emission); proved {
+					for key, value := range emission.importAliases {
+						if ctx.importAliases != nil {
+							ctx.importAliases[key] = value
+						}
+					}
+					for key, value := range emission.usedImports {
+						if ctx.usedImports != nil {
+							ctx.usedImports[key] = value
+						}
+					}
+					return &ast.FieldList{List: []*ast.Field{{Type: physical}}}, true
+				}
+			}
+		}
 	}
 	if invocationTypeUsesMethodParameter(javaType, resolution) {
 		return nil, false

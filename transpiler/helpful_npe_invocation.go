@@ -401,3 +401,127 @@ func appendHelpfulInvocationReceiverCheck(body []ast.Stmt, invocation, receiverN
 	}
 	return append(body, &ast.ExprStmt{X: stdjavaCall(ctx, "RequireInvocationReceiver", receiver, metadataString(plan.message))})
 }
+
+// This admission applies only to the new ordinary-call staging path. Existing
+// virtual/companion staging continues to query the metadata plan directly.
+func helpfulSourceInvocationStagingPlan(invocation, receiver *sitter.Node, resolution *methodResolution, ctx Ctx, source []byte) *helpfulInvocationPlan {
+	plan := helpfulSourceInvocationPlan(invocation, receiver, resolution, ctx, source)
+	if plan == nil || helpfulInvocationPrimitiveTypesShadowed(invocation, resolution, ctx, source) {
+		return nil
+	}
+	return plan
+}
+
+// Capture/result projections can introduce predeclared primitive identifiers
+// into an IIFE. Test their actual emitted binders at this lexical position;
+// declarations in other methods, later statements or disjoint blocks do not
+// shadow this use. This query promises no import/alias/diagnostic mutations,
+// rather than claiming purity of all existing generic-family query caches.
+func helpfulInvocationPrimitiveTypesShadowed(invocation *sitter.Node, resolution *methodResolution, ctx Ctx, source []byte) bool {
+	names := map[string]struct{}{}
+	reserve := func(javaType string) {
+		primitive, ok := javaPrimitiveType(javaType)
+		if !ok {
+			primitive, ok = javaPrimitiveArrayComponent(javaType)
+		}
+		if !ok {
+			return
+		}
+		name := affinePrimitiveGoTypeName(primitive)
+		if primitive == "boolean" {
+			name = "bool"
+		}
+		if name != "" {
+			names[name] = struct{}{}
+		}
+	}
+	reserve(resolution.def.OriginalType)
+	for index, argument := range nodeutil.SemanticNamedChildrenOf(invocation.ChildByFieldName("arguments")) {
+		physical := invocationPhysicalParameterJavaType(resolution, index, ctx)
+		// Non-contextual array values use :=; a null capture names the array type.
+		if invocationArgumentHasPrimitiveFormal(physical) || invocationArgumentNeedsContextualType(nil, argument) {
+			reserve(physical)
+		}
+	}
+	if len(names) == 0 {
+		return false
+	}
+	for _, parameter := range visibleTypeParameterDeclarations(ctx) {
+		if _, shadowed := names[parameter.EmittedName()]; shadowed {
+			return true
+		}
+	}
+	for _, parameter := range ctx.localScope.Parameters {
+		if parameter != nil {
+			if _, shadowed := names[sanitizeGoIdent(parameter.Name)]; shadowed {
+				return true
+			}
+		}
+	}
+	emits := func(identifier *sitter.Node) bool {
+		if identifier == nil || identifier.Type() != "identifier" {
+			return false
+		}
+		_, shadowed := names[localBindingName(identifier.Content(source), ctx)]
+		return shadowed
+	}
+	declaration := func(node *sitter.Node) bool {
+		if node == nil || node.Type() != "local_variable_declaration" {
+			return false
+		}
+		for _, variable := range nodeutil.VariableDeclarators(node) {
+			identifier := variable.ChildByFieldName("name")
+			if identifier != nil && variable.EndByte() <= invocation.StartByte() && emits(identifier) {
+				return true
+			}
+		}
+		return false
+	}
+	for child, parent := invocation, invocation.Parent(); parent != nil; child, parent = parent, parent.Parent() {
+		if parent.Equal(ctx.localScope.DeclarationNode) {
+			break
+		}
+		switch parent.Type() {
+		case "block", "constructor_body":
+			for _, sibling := range nodeutil.NamedChildrenOf(parent) {
+				if sibling.StartByte() >= child.StartByte() {
+					break
+				}
+				if declaration(sibling) {
+					return true
+				}
+			}
+		case "local_variable_declaration":
+			if declaration(parent) {
+				return true
+			}
+		case "for_statement":
+			if declaration(parent.ChildByFieldName("init")) {
+				return true
+			}
+		case "enhanced_for_statement":
+			if receiverNodeWithin(invocation, parent.ChildByFieldName("body")) && emits(parent.ChildByFieldName("name")) {
+				return true
+			}
+		case "catch_clause":
+			if receiverNodeWithin(invocation, parent.ChildByFieldName("body")) {
+				for _, parameter := range nodeutil.NamedChildrenOf(parent) {
+					if parameter.Type() == "catch_formal_parameter" && emits(parameter.ChildByFieldName("name")) {
+						return true
+					}
+				}
+			}
+		case "try_with_resources_statement":
+			resources := parent.ChildByFieldName("resources")
+			if receiverNodeWithin(invocation, resources) || receiverNodeWithin(invocation, parent.ChildByFieldName("body")) {
+				for _, resource := range nodeutil.NamedChildrenOf(resources) {
+					identifier := resource.ChildByFieldName("name")
+					if identifier != nil && identifier.EndByte() <= invocation.StartByte() && emits(identifier) {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
