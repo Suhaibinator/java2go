@@ -22553,6 +22553,67 @@
     "unchanged_resources": 2,
     "whole_Java_speed_claim": false
   },
+  "sol_progress191": {
+    "CI190": {
+      "application_parity": "PASS",
+      "failed_compiler_parents": 37,
+      "focused_PASS": 47,
+      "jobs_failure": 8,
+      "jobs_success": 7,
+      "new_failed_or_skip_names": [],
+      "overall": "FAILURE"
+    },
+    "UTF8_parent_PASS": {
+      "normal": 3,
+      "race": 60
+    },
+    "actual_parent_PASS_executions": 1285,
+    "baseline_work": [
+      1600,
+      3200,
+      6400
+    ],
+    "behavior": "Invocation-owned syntax routes replay against current semantic state; complete fallback and lifecycle retirement retained",
+    "campaign": "Ongoing Sol-only adversarial TDD",
+    "candidate_work": [
+      32,
+      64,
+      128
+    ],
+    "compiler_parent_PASS": 348,
+    "coordinator_source_raw_CI_audit": "40690ecd97e35830624048abd7dc47352ba5b7050a7b349f3a01b2c4b2e4d232",
+    "default_F1_build_testcompile_lint": "All six PASS",
+    "full_default_race_registries": {
+      "parsing": 10,
+      "stdjava": 841,
+      "symbol": 23
+    },
+    "held": [
+      "Full Netty translation and application parity",
+      "Full Gson application",
+      "Supplier28 and generic collector body erasure",
+      "Full CI and accumulated round acceptance"
+    ],
+    "independent_receipts": 69,
+    "scope": "Three regions in two old compiler leaves; one pure syntax-route helper and three test leaves",
+    "status": "SOURCE_GENERIC_DEMAND_SYNTAX_INVENTORY_INDEPENDENTLY_VERIFIED",
+    "tested_source_manifest": "5b90cbeebfc740106f0bdf02013949455624310ef682456878a92deea53b28d3",
+    "tested_source_members": 4382,
+    "warm16queries_Cgo_calls": {
+      "baseline": 20960,
+      "candidate": 13072
+    },
+    "warm16queries_allocations": {
+      "baseline": 9392,
+      "candidate": 8496
+    },
+    "whole_application_speed_claim": false,
+    "work_growth_files": [
+      4,
+      8,
+      16
+    ]
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

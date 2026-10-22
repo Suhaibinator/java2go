@@ -15,6 +15,9 @@ import (
 // type mapper or canonical-family discovery here would recurse into itself.
 // A demand is only a seed; the unchanged complete-family audit must still pass.
 func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
+	if seeds, known := sourceGenericViewDemandSeedsFromSyntax(ctx); known {
+		return seeds
+	}
 	seen := map[*symbol.ClassScope]bool{}
 	var seeds []*symbol.ClassScope
 	for _, owner := range allSourceClassScopes() {

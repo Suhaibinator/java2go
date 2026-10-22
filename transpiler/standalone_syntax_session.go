@@ -46,12 +46,13 @@ func standaloneSyntaxConfigurationOK(stdout io.Writer) bool {
 // syntaxInvocation belongs to one emission batch, including a nested project
 // batch. The process session never makes an arbitrary SourceFile immutable.
 type syntaxInvocation struct {
-	session     *cliownership.Session
-	graph       *symbol.GlobalSymbols
-	files       map[*symbol.FileScope]parsing.SourceFile
-	active      bool
-	identifiers map[*symbol.FileScope]*syntaxIdentifierFile
-	indexable   bool
+	session      *cliownership.Session
+	graph        *symbol.GlobalSymbols
+	files        map[*symbol.FileScope]parsing.SourceFile
+	active       bool
+	identifiers  map[*symbol.FileScope]*syntaxIdentifierFile
+	indexable    bool
+	demandSyntax *sourceGenericDemandSyntax
 }
 
 func newSyntaxInvocation(session *cliownership.Session, files []parsing.SourceFile) *syntaxInvocation {
@@ -93,5 +94,6 @@ func newSyntaxInvocation(session *cliownership.Session, files []parsing.SourceFi
 func (invocation *syntaxInvocation) close() {
 	if invocation != nil {
 		invocation.active = false
+		invocation.demandSyntax = nil
 	}
 }
