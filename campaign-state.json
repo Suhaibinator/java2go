@@ -22172,6 +22172,29 @@
     "status": "ROOT_INDEPENDENT_RAW_SOURCE_AND_PATCH_AUDIT_PASS",
     "streams": 58
   },
+  "sol_progress182": {
+    "all_unowned_public181_bytes_preserved": true,
+    "base_head": "cd294d9667e73377ed3e69609c4aaac339f29da4",
+    "coordinator_audit_sha256": "8f80c939bc0ebe936fe53fa028f7cc548b3b5330d26e328f87ab61bfd24a942a",
+    "default_F1_build_testcompile_lint": "PASS",
+    "existing_runtime_parents": 3,
+    "expected_retained_baseline_render_RED": 1,
+    "fresh_inverse_forward_zero_fuzz_offset": true,
+    "independent_delivery_sha256": "39f02fe06ebad40777da201d817fe4f656b8e911ee491fff98e444d942cd5ccd",
+    "native_outer_PASS_entries": 113,
+    "old_related_parents": 28,
+    "original_Math8_full_CI_round_Netty_acceptance": false,
+    "receipts": 55,
+    "registration_race_parents": 60,
+    "runtime_race_parent_passes": 20,
+    "runtime_race_subcase_passes": 360,
+    "source_manifest": "d7ea2bb4fabea6e62d32dd35c260203e8bca98f6c55dbfe584a6cae189fc068c",
+    "source_members": 4333,
+    "status": "COORDINATOR_MATH_COMPONENT_RAW_AND_SOURCE_AUDIT_PASS",
+    "streams": 110,
+    "successful_stages": 54,
+    "whole60_JDK3_Go3_exact": true
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

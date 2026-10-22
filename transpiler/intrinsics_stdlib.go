@@ -253,11 +253,17 @@ func registerMathIntrinsics() {
 		if !expectArgs(args, 2) {
 			return nil
 		}
+		if len(ctx.intrinsicTypeArgs) == 1 {
+			return stdjavaGenericCall(ctx, "MathMax", ctx.intrinsicTypeArgs, args)
+		}
 		return stdjavaCall(ctx, "MathMax", args[0], args[1])
 	})
 	registerStaticIntrinsic("Math", "min", func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 		if !expectArgs(args, 2) {
 			return nil
+		}
+		if len(ctx.intrinsicTypeArgs) == 1 {
+			return stdjavaGenericCall(ctx, "MathMin", ctx.intrinsicTypeArgs, args)
 		}
 		return stdjavaCall(ctx, "MathMin", args[0], args[1])
 	})

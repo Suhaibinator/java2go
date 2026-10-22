@@ -174,8 +174,8 @@ func TestIntrinsics_Math(t *testing.T) {
 		want string
 	}{
 		{"abs", "Math.abs(x)", "stdjava.MathAbs(x)"},
-		{"max", "Math.max(x, 1)", "stdjava.MathMax(x, 1)"},
-		{"min", "Math.min(x, 1)", "stdjava.MathMin(x, 1)"},
+		{"max", "Math.max(x, 1)", "stdjava.MathMax[int32](x, 1)"},
+		{"min", "Math.min(x, 1)", "stdjava.MathMin[int32](x, 1)"},
 		{"pow", "Math.pow(2.0, 3.0)", "math.Pow(2.0, 3.0)"},
 		{"sqrt", "Math.sqrt(9.0)", "math.Sqrt(9.0)"},
 		{"floor", "Math.floor(1.5)", "math.Floor(1.5)"},
