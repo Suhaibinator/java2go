@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 	"strconv"
+	"strings"
 
 	"github.com/NickyBoy89/java2go/symbol"
 	sitter "github.com/smacker/go-tree-sitter"
@@ -83,6 +84,12 @@ func collisionSafeExecutionIdentifier(base string, owner *symbol.ClassScope) str
 }
 
 func generatedIdentifierExists(name string, owner *symbol.ClassScope) bool {
+	dispatchTypeMayMatch := name == "" || strings.HasSuffix(name, classDispatchSuffix)
+	dispatchFieldMayMatch := name == "" || (strings.HasSuffix(name, "Self") &&
+		(strings.HasPrefix(name, "__java2go") || strings.HasPrefix(name, "Java2go")))
+	selfSetterMayMatch := name == "" || (strings.HasSuffix(name, "Self") &&
+		(strings.HasPrefix(name, "java2goSet") || strings.HasPrefix(name, "Java2goSet")))
+	defaultCarrierMayMatch := name == "" || strings.HasSuffix(name, interfaceDefaultsSuffix)
 	matchesScope := func(scope *symbol.ClassScope) bool {
 		if scope == nil {
 			return false
@@ -105,10 +112,10 @@ func generatedIdentifierExists(name string, owner *symbol.ClassScope) bool {
 				return true
 			}
 		}
-		return name == classDispatchTypeName(scope) ||
-			name == classDispatchFieldName(scope) ||
-			name == classSelfSetterName(scope) ||
-			name == interfaceDefaultCarrierName(scope)
+		return (dispatchTypeMayMatch && name == classDispatchTypeName(scope)) ||
+			(dispatchFieldMayMatch && name == classDispatchFieldName(scope)) ||
+			(selfSetterMayMatch && name == classSelfSetterName(scope)) ||
+			(defaultCarrierMayMatch && name == interfaceDefaultCarrierName(scope))
 	}
 	if matchesScope(owner) {
 		return true

@@ -11,7 +11,10 @@ import (
 // Member types are resolved in the nearest enclosing declaration, not by a
 // recursive search through unrelated member declarations in source-file order.
 func lexicalMemberType(name string, ctx Ctx) *symbol.ClassScope {
-	parts := strings.Split(name, ".")
+	parts := []string{name}
+	if strings.Contains(name, ".") {
+		parts = strings.Split(name, ".")
+	}
 	for owner := ctx.currentClass; owner != nil; owner = owner.Enclosing {
 		if owner.Class != nil && owner.Class.OriginalName == parts[0] {
 			if found := directMemberTypePath(owner, parts[1:], ctx); found != nil {
@@ -28,6 +31,22 @@ func lexicalMemberType(name string, ctx Ctx) *symbol.ClassScope {
 	return nil
 }
 
+// Each frame is immutable and belongs to one active recursive lookup. Retained
+// contexts can share ancestors without observing a sibling's later traversal.
+type memberTypeLookupFrame struct {
+	owner  *symbol.ClassScope
+	parent *memberTypeLookupFrame
+}
+
+func memberTypeLookupFrameActive(frame *memberTypeLookupFrame, owner *symbol.ClassScope) bool {
+	for ; frame != nil; frame = frame.parent {
+		if frame.owner == owner {
+			return true
+		}
+	}
+	return false
+}
+
 // A member declared in the nearest class hides inherited members. Otherwise
 // lookup follows only that class's declared supertypes, never sibling bodies.
 func memberTypeInHierarchy(owner *symbol.ClassScope, name string, ctx Ctx) *symbol.ClassScope {
@@ -39,18 +58,22 @@ func memberTypeInHierarchy(owner *symbol.ClassScope, name string, ctx Ctx) *symb
 			return child
 		}
 	}
-	if ctx.memberTypeLookupPath[owner] || (owner.Superclass == "" && len(owner.ImplementedInterfaces) == 0) {
+	if ctx.memberTypeLookupPath[owner] || memberTypeLookupFrameActive(ctx.memberTypeLookupFrame, owner) || (owner.Superclass == "" && len(owner.ImplementedInterfaces) == 0) {
 		return nil
 	}
 	// Resolving an extends clause itself performs lexical lookup. A fresh path
 	// prevents that lookup from rediscovering the hierarchy currently being
 	// resolved, without mutating the caller or poisoning subsequent lookups.
 	lookup := ctx.Clone()
-	lookup.memberTypeLookupPath = make(map[*symbol.ClassScope]bool, len(ctx.memberTypeLookupPath)+1)
-	for active := range ctx.memberTypeLookupPath {
-		lookup.memberTypeLookupPath[active] = true
+	if ctx.memberTypeLookupPath != nil {
+		lookup.memberTypeLookupPath = make(map[*symbol.ClassScope]bool, len(ctx.memberTypeLookupPath)+1)
+		for active := range ctx.memberTypeLookupPath {
+			lookup.memberTypeLookupPath[active] = true
+		}
+		lookup.memberTypeLookupPath[owner] = true
+	} else {
+		lookup.memberTypeLookupFrame = &memberTypeLookupFrame{owner: owner, parent: ctx.memberTypeLookupFrame}
 	}
-	lookup.memberTypeLookupPath[owner] = true
 	parents := []*symbol.ClassScope{resolveSuperclassScopeInDeclaringContext(lookup, owner)}
 	parents = append(parents, resolveImplementedInterfaceScopesInDeclaringContext(lookup, owner)...)
 	var found *symbol.ClassScope

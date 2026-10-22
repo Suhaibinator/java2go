@@ -21833,6 +21833,77 @@
       "unmodified_original_EventLoader_initializer": "actualPASS with matching current runtime; separate observer, no generated edits"
     }
   },
+  "sol_progress173": {
+    "base": "114cfe2481dbd3b53640baafbaa0c285f824e2f6",
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED",
+    "native_timeout_failure_receipts": 1,
+    "positive_receipts": 88,
+    "root_audit_sha256": "1b0f85814fe82716925730caad190d04ca3ccd8712ef86715f9fb3fa3ece4b6d",
+    "root_source_manifest_sha256": "a6d9bcddd386db3cdf77cd9a3851dd4ea13826b51707f1411330582c937d895a",
+    "status": "INDEPENDENT_FINITE_PASS_WITH_RETAINED_NATIVE55_FAILURE",
+    "verification": {
+      "BitSet_JDK_repetitions": 3,
+      "Reader_Go_runs": 6,
+      "Reader_JDK_runs": 6,
+      "application_speedup_claim": false,
+      "complexity_observation_actual_exit": 2,
+      "complexity_timeout_pass_credit": false,
+      "default_F1": "race build/testcompile/lint PASS",
+      "fullCI_fullNetty_fullRound": "UNACCEPTED",
+      "full_race_registries": {
+        "parsing": 10,
+        "stdjava": 806,
+        "symbol": 23
+      },
+      "normal_owned_parents": 10,
+      "original_exception_CI_parents": 2,
+      "original_scorer_Go_runs": 3,
+      "original_scorer_JDK_runs": 3,
+      "owned_semantic_race20_passes": 140,
+      "preceding_gson_parents": 39,
+      "preceding_scorer_race20_passes": 60,
+      "records": 89,
+      "related_positive": 59,
+      "related_total": 60,
+      "status": "ROOT_CURRENT_NAME_PATH_FINITE_CHECKS_TERMINAL",
+      "work_observations": [
+        {
+          "Allocs": 16,
+          "Bytes": 512,
+          "Calls": 5,
+          "Cgo": 0,
+          "Mallocs": 16,
+          "Name": "derived-negative-128x16"
+        },
+        {
+          "Allocs": 256,
+          "Bytes": 4096,
+          "Calls": 5,
+          "Cgo": 64,
+          "Mallocs": 256,
+          "Name": "hierarchy-depth8x8"
+        },
+        {
+          "Allocs": 16,
+          "Bytes": 512,
+          "Calls": 5,
+          "Cgo": 0,
+          "Mallocs": 16,
+          "Name": "derived-negative-128x16"
+        },
+        {
+          "Allocs": 256,
+          "Bytes": 4096,
+          "Calls": 5,
+          "Cgo": 64,
+          "Mallocs": 256,
+          "Name": "hierarchy-depth8x8"
+        }
+      ]
+    }
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

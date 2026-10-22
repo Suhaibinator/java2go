@@ -60,7 +60,8 @@ type Ctx struct {
 	// Declaration-to-file facts can cross fresh lookup contexts without caller semantics.
 	sourceOwnership *resolutionFileIndex
 	// Active member-type hierarchy lookups; extended immutably per lookup.
-	memberTypeLookupPath map[*symbol.ClassScope]bool
+	memberTypeLookupPath  map[*symbol.ClassScope]bool
+	memberTypeLookupFrame *memberTypeLookupFrame
 	// Header lookup keeps the declaration and its binders, but excludes body-only members.
 	memberTypeHeaderOwner *symbol.ClassScope
 	localBindingBody      *sitter.Node
@@ -437,6 +438,7 @@ func (c Ctx) Clone() Ctx {
 		callableSubclasses:                  c.callableSubclasses,
 		sourceOwnership:                     c.sourceOwnership,
 		memberTypeLookupPath:                c.memberTypeLookupPath,
+		memberTypeLookupFrame:               c.memberTypeLookupFrame,
 		memberTypeHeaderOwner:               c.memberTypeHeaderOwner,
 		localBindingBody:                    c.localBindingBody,
 		className:                           c.className,
