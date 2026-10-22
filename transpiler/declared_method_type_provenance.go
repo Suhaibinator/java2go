@@ -561,7 +561,7 @@ func scoreDeclaredMethodCandidate(def *symbol.Definition, owner *symbol.ClassSco
 			}
 			if applies {
 				if projected, proved := declaredMethodArgumentInferredOrigin(formal, def, formals, argNodes, fixed, ctx, source); proved {
-					if projectedCost, projectedExact, projectedApplies, projectedHandled := declaredOriginConversion(actual, projected, ctx); projectedHandled && projectedApplies && projectedExact {
+					if projectedCost, projectedExact, projectedApplies, projectedHandled := declaredOriginConversion(actual, projected, ctx); projectedHandled && projectedApplies && (projectedExact || projectedCost < cost) {
 						cost, exact = projectedCost, projectedExact
 					}
 				}

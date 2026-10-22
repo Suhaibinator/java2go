@@ -21644,6 +21644,164 @@
     "root_source_manifest_sha256": "6a2164695ff1eac22434713640f3cccc966fe6d456927232fda15217649d4bb1",
     "status": "MINIMAL_INTRINSIC_AND_THROWABLE_ORIGIN_REPAIR_FINITE_PASS"
   },
+  "sol_progress166": {
+    "base": "b45c3dee10b39e6502e221ba3e4bcdcf0950ee9f",
+    "finite_positive_receipts": 29,
+    "fullCI": "UNACCEPTED",
+    "fullNetty": {
+      "actual_exit": -15,
+      "application_execution": "NOT_RUN",
+      "binary_sha256": "c53f8dd82ed66d04460762a1186c0a625b2252c8b5412bd372728748ca0ed7d1",
+      "duration_seconds": 300.03283,
+      "file_starts_not_completions": 21,
+      "generated_Go_build": "NOT_RUN",
+      "last_file_start": "time=\"2026-10-21T23:19:09Z\" level=info msg=\"Converting file \\\"/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/perf_netty_ownership/dependencies/netty-buffer/src/main/java/io/netty/buffer/ByteBufUtil.java\\\"\"",
+      "partial_outputs_unaccepted": true,
+      "raw_receipt_sha256": "2c13d847b40cf975e79505cd72848c16ef7f71ef1fc26505b5fc92338f73d9f3",
+      "runner_exit": 124,
+      "source_inputs_post_exact": {
+        "all1220_java_members_exact": true,
+        "all1226_pins_exact": true,
+        "current_historical_locks_exact": true,
+        "source4059_exact": true,
+        "source_manifest_sha256": "d3af7cae23da3611a606893f4e6cfb0e0dca7a0b2e264a7fb01438adf1350b18"
+      },
+      "source_manifest_sha256": "1f5168ad4fb6dbf75800f1bce211206e250325056b66202c9d1b3289243f3ae6",
+      "status": "TIMEOUT_FAILURE",
+      "timed_out": true
+    },
+    "fullRound": "UNACCEPTED",
+    "new_race20_parent_passes": 180,
+    "portable_delivery_sha256": "0d952bfb29ea3000f9011717857ac31ca5dd46e7bfb1672e066ae82aa838c466",
+    "root_audit_sha256": "9add4635c12ea40204b22e9cfd2b1483146fbec4ce2a6c5224a6eae5af981eba",
+    "root_source_manifest_sha256": "1f5168ad4fb6dbf75800f1bce211206e250325056b66202c9d1b3289243f3ae6",
+    "status": "VARARGS_PARAMETER_ORIGIN_RANK_FINITE_PASS_FULL_NETTY_UNACCEPTED",
+    "whole_reader_JDK3Go3": 2
+  },
+  "sol_progress167": {
+    "Sol_delivery_sha256": "f85fdc564d7e220fbb51fbf0b5f7fdd0a24a263d6e9504afc64052507a83b1e4",
+    "base": "3b89d1f097c2fdb73c3d917ac0c00ac2559b968c",
+    "default_F1": "race build/testcompile/lint PASS",
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED actual normal300s timeout retained",
+    "fullRound": "UNACCEPTED",
+    "full_race_registries": {
+      "parsing": 10,
+      "stdjava": 794,
+      "symbol": 21
+    },
+    "owned_race20_parent_passes": 140,
+    "positive_receipts": 24,
+    "primary_original_CI_parents": [
+      "TestCampaignExceptionTypesAndFinalCatchJVMParity",
+      "TestCampaignExceptionCauseConstructorsJVMParity"
+    ],
+    "root_audit_sha256": "f2223773dbc391c71fb80417a3e59d98a629b396dad5ddb02e6918ca3e17731a",
+    "root_source_manifest_sha256": "c6dc83cfa1b4533ef0de5c201a151a2a00405c25b2e5052e8bec42f4c3d7a4bf",
+    "status": "CANONICAL_EXCEPTION_CONSTRUCTOR_REFERENCE_FINITE_PASS"
+  },
+  "sol_progress168": {
+    "all_positive_receipts": 104,
+    "base": "97e80bda439192b540571b3a01f4d9db59c6abd5",
+    "compiler_proof_race20_parent_passes": 40,
+    "cumulative_delivery_sha256": "ede54307ac0f84717be919a68c87676bdb7c9a14d99e6c6d34d0d1b29cd3a81a",
+    "default_F1": "race build/testcompile/lint PASS",
+    "fresh_Go_runs": 39,
+    "fresh_JDK_runs": 39,
+    "fullCI": "UNACCEPTED generic origin stack overflow active",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED",
+    "full_race_registries": {
+      "parsing": 10,
+      "stdjava": 801,
+      "symbol": 23
+    },
+    "generic_storage_bridge_clone_parents": 48,
+    "namespace_subcases": 6,
+    "original_exception_CI_parents": 2,
+    "original_matrix_cases": 11,
+    "owned_runtime_race20_parent_passes": 100,
+    "related_reader_resource_parents": 16,
+    "root_audit_sha256": "db79bf380aa5e00f9331c471bda8ab93245e9cc15945f980cb6fe15a645970ef",
+    "root_source_manifest_sha256": "1e5ab1bfeb55f8ea9a17bbd68f57c9f57d168abb60dd307040a50e6b7e2a3426",
+    "status": "CUMULATIVE_READER_CLONE_GENERIC_SIGNATURE_AND_VIRTUAL_DISPATCH_FINITE_PASS"
+  },
+  "sol_progress169": {
+    "base": "2556c1b212a11c97d4fb5e787a1433786c4a1811",
+    "default_F1": "race build/testcompile/lint PASS",
+    "default_input_override_actually_absent": true,
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED",
+    "native_parents": 39,
+    "original114": "strict actual1 at GsonTypes343; Go build/execution NOT_RUN",
+    "original_exception_CI_parents": 2,
+    "positive_receipts": 15,
+    "race20_parent_passes": 100,
+    "retained_strict_red_receipts": 1,
+    "root_audit_sha256": "bd6b03f80fdaef744fb17370726ca8aaed2c38a3838ec1535e88538195782fb0",
+    "root_source_manifest_sha256": "a74bba7f7a8157d28a1931bbc1a2515039382cf64d1b009c1097139329b3d63e",
+    "status": "TYPED_JDK_PARENT_AND_RAW_NATIVE_ORIGIN_FINITE_PASS_ORIGINAL114_RED",
+    "whole_Reader_Go_runs": 6,
+    "whole_Reader_JDK_runs": 6
+  },
+  "sol_progress170": {
+    "Reader_Go_runs": 6,
+    "Reader_JDK_runs": 6,
+    "base": "97ce1cc7be6263a580fe768df9eaac1fb49e24e9",
+    "baseline_and_candidate_red_receipts": 4,
+    "default_F1": "race build/testcompile/lint PASS",
+    "distinct_related_and_owned_parents": 156,
+    "distinct_related_and_owned_pass": 154,
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED",
+    "full_race_registries": {
+      "parsing": 10,
+      "stdjava": 801,
+      "symbol": 23
+    },
+    "original_and_owned_race20_passes": 180,
+    "original_exception_CI_parents": 2,
+    "positive_receipts": 170,
+    "preceding_gson_parents": 39,
+    "retained_current_baseline_red": 2,
+    "root_audit_sha256": "755d14f8c0a0122304f3b9dd9c22ee2e383a185d600d303d0ee81cf06a269a86",
+    "root_source_manifest_sha256": "092c98e8e02ba877198b44073a1b3b0b3eab631a7bf190c21bca57f435aedb6d",
+    "status": "SOURCE_ANCESTRY_FATAL_REPAIR_FINITE_PASS_TWO_CURRENT_BASELINE_REDS"
+  },
+  "sol_progress171": {
+    "base": "4c7bff2fcd4c22f6e97af55a9ec3ac28fbb2e98c",
+    "comparative_red_receipts": 2,
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED",
+    "positive_receipts": 88,
+    "root_audit_sha256": "3ed626560564d799facee5eec77761d0e8f548eebe26e37ecfb2d0b029e25272",
+    "root_source_manifest_sha256": "20057e4b69a94d4490fe5c8b0f020ea7860fe3c1ebe1985f5aff03725069e298",
+    "status": "ROOT_CURRENT_PROJECTED_WIDENING_SCORE_FINITE_PASS_WITH_IDENTICAL_BASELINE_VARARGS_RED",
+    "verification": {
+      "Reader_Go_runs": 6,
+      "Reader_JDK_runs": 6,
+      "default_F1": "race build/testcompile/lint PASS",
+      "fullCI_fullNetty_fullRound": "UNACCEPTED",
+      "full_race_registries": {
+        "parsing": 10,
+        "stdjava": 801,
+        "symbol": 23
+      },
+      "original_exception_CI_parents": 2,
+      "original_whole_Go_runs": 3,
+      "original_whole_JDK_runs": 3,
+      "owned_race20_passes": 60,
+      "preceding_gson_parents": 39,
+      "records": 90,
+      "related_baseline_identical_red": "TestDirectVarargsArrayCalls_PreserveJavaInvocationSemantics",
+      "related_positive": 65,
+      "related_registered_parents": 66,
+      "status": "ROOT_CURRENT_PROJECTED_WIDENING_SCORE_FINITE_PASS_WITH_IDENTICAL_BASELINE_VARARGS_RED"
+    }
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
@@ -26393,131 +26551,5 @@
       "sol_writer_dispatch_v6": "Final native publication preparation and fresh CI gates"
     },
     "updated_at": "2026-09-30T15:48:30.979530+00:00"
-  },
-  "sol_progress166": {
-    "status": "VARARGS_PARAMETER_ORIGIN_RANK_FINITE_PASS_FULL_NETTY_UNACCEPTED",
-    "base": "b45c3dee10b39e6502e221ba3e4bcdcf0950ee9f",
-    "root_source_manifest_sha256": "1f5168ad4fb6dbf75800f1bce211206e250325056b66202c9d1b3289243f3ae6",
-    "root_audit_sha256": "9add4635c12ea40204b22e9cfd2b1483146fbec4ce2a6c5224a6eae5af981eba",
-    "portable_delivery_sha256": "0d952bfb29ea3000f9011717857ac31ca5dd46e7bfb1672e066ae82aa838c466",
-    "finite_positive_receipts": 29,
-    "new_race20_parent_passes": 180,
-    "whole_reader_JDK3Go3": 2,
-    "fullNetty": {
-      "actual_exit": -15,
-      "application_execution": "NOT_RUN",
-      "binary_sha256": "c53f8dd82ed66d04460762a1186c0a625b2252c8b5412bd372728748ca0ed7d1",
-      "duration_seconds": 300.03283,
-      "file_starts_not_completions": 21,
-      "generated_Go_build": "NOT_RUN",
-      "last_file_start": "time=\"2026-10-21T23:19:09Z\" level=info msg=\"Converting file \\\"/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/perf_netty_ownership/dependencies/netty-buffer/src/main/java/io/netty/buffer/ByteBufUtil.java\\\"\"",
-      "partial_outputs_unaccepted": true,
-      "raw_receipt_sha256": "2c13d847b40cf975e79505cd72848c16ef7f71ef1fc26505b5fc92338f73d9f3",
-      "runner_exit": 124,
-      "source_inputs_post_exact": {
-        "all1220_java_members_exact": true,
-        "all1226_pins_exact": true,
-        "current_historical_locks_exact": true,
-        "source4059_exact": true,
-        "source_manifest_sha256": "d3af7cae23da3611a606893f4e6cfb0e0dca7a0b2e264a7fb01438adf1350b18"
-      },
-      "source_manifest_sha256": "1f5168ad4fb6dbf75800f1bce211206e250325056b66202c9d1b3289243f3ae6",
-      "status": "TIMEOUT_FAILURE",
-      "timed_out": true
-    },
-    "fullCI": "UNACCEPTED",
-    "fullRound": "UNACCEPTED"
-  },
-  "sol_progress167": {
-    "status": "CANONICAL_EXCEPTION_CONSTRUCTOR_REFERENCE_FINITE_PASS",
-    "base": "3b89d1f097c2fdb73c3d917ac0c00ac2559b968c",
-    "root_source_manifest_sha256": "c6dc83cfa1b4533ef0de5c201a151a2a00405c25b2e5052e8bec42f4c3d7a4bf",
-    "root_audit_sha256": "f2223773dbc391c71fb80417a3e59d98a629b396dad5ddb02e6918ca3e17731a",
-    "Sol_delivery_sha256": "f85fdc564d7e220fbb51fbf0b5f7fdd0a24a263d6e9504afc64052507a83b1e4",
-    "positive_receipts": 24,
-    "owned_race20_parent_passes": 140,
-    "full_race_registries": {
-      "parsing": 10,
-      "stdjava": 794,
-      "symbol": 21
-    },
-    "primary_original_CI_parents": [
-      "TestCampaignExceptionTypesAndFinalCatchJVMParity",
-      "TestCampaignExceptionCauseConstructorsJVMParity"
-    ],
-    "default_F1": "race build/testcompile/lint PASS",
-    "fullCI": "UNACCEPTED",
-    "fullNetty": "UNACCEPTED actual normal300s timeout retained",
-    "fullRound": "UNACCEPTED"
-  },
-  "sol_progress168": {
-    "status": "CUMULATIVE_READER_CLONE_GENERIC_SIGNATURE_AND_VIRTUAL_DISPATCH_FINITE_PASS",
-    "base": "97e80bda439192b540571b3a01f4d9db59c6abd5",
-    "root_source_manifest_sha256": "1e5ab1bfeb55f8ea9a17bbd68f57c9f57d168abb60dd307040a50e6b7e2a3426",
-    "root_audit_sha256": "db79bf380aa5e00f9331c471bda8ab93245e9cc15945f980cb6fe15a645970ef",
-    "cumulative_delivery_sha256": "ede54307ac0f84717be919a68c87676bdb7c9a14d99e6c6d34d0d1b29cd3a81a",
-    "all_positive_receipts": 104,
-    "fresh_JDK_runs": 39,
-    "fresh_Go_runs": 39,
-    "full_race_registries": {
-      "parsing": 10,
-      "stdjava": 801,
-      "symbol": 23
-    },
-    "owned_runtime_race20_parent_passes": 100,
-    "compiler_proof_race20_parent_passes": 40,
-    "original_matrix_cases": 11,
-    "generic_storage_bridge_clone_parents": 48,
-    "related_reader_resource_parents": 16,
-    "namespace_subcases": 6,
-    "original_exception_CI_parents": 2,
-    "default_F1": "race build/testcompile/lint PASS",
-    "fullCI": "UNACCEPTED generic origin stack overflow active",
-    "fullNetty": "UNACCEPTED normal300timeout retained",
-    "fullRound": "UNACCEPTED"
-  },
-  "sol_progress169": {
-    "status": "TYPED_JDK_PARENT_AND_RAW_NATIVE_ORIGIN_FINITE_PASS_ORIGINAL114_RED",
-    "base": "2556c1b212a11c97d4fb5e787a1433786c4a1811",
-    "root_source_manifest_sha256": "a74bba7f7a8157d28a1931bbc1a2515039382cf64d1b009c1097139329b3d63e",
-    "root_audit_sha256": "bd6b03f80fdaef744fb17370726ca8aaed2c38a3838ec1535e88538195782fb0",
-    "positive_receipts": 15,
-    "retained_strict_red_receipts": 1,
-    "native_parents": 39,
-    "race20_parent_passes": 100,
-    "whole_Reader_JDK_runs": 6,
-    "whole_Reader_Go_runs": 6,
-    "original_exception_CI_parents": 2,
-    "default_input_override_actually_absent": true,
-    "default_F1": "race build/testcompile/lint PASS",
-    "original114": "strict actual1 at GsonTypes343; Go build/execution NOT_RUN",
-    "fullCI": "UNACCEPTED",
-    "fullNetty": "UNACCEPTED normal300timeout retained",
-    "fullRound": "UNACCEPTED"
-  },
-  "sol_progress170": {
-    "status": "SOURCE_ANCESTRY_FATAL_REPAIR_FINITE_PASS_TWO_CURRENT_BASELINE_REDS",
-    "base": "97ce1cc7be6263a580fe768df9eaac1fb49e24e9",
-    "root_source_manifest_sha256": "092c98e8e02ba877198b44073a1b3b0b3eab631a7bf190c21bca57f435aedb6d",
-    "root_audit_sha256": "755d14f8c0a0122304f3b9dd9c22ee2e383a185d600d303d0ee81cf06a269a86",
-    "positive_receipts": 170,
-    "baseline_and_candidate_red_receipts": 4,
-    "distinct_related_and_owned_parents": 156,
-    "distinct_related_and_owned_pass": 154,
-    "retained_current_baseline_red": 2,
-    "original_and_owned_race20_passes": 180,
-    "preceding_gson_parents": 39,
-    "Reader_JDK_runs": 6,
-    "Reader_Go_runs": 6,
-    "original_exception_CI_parents": 2,
-    "full_race_registries": {
-      "parsing": 10,
-      "stdjava": 801,
-      "symbol": 23
-    },
-    "default_F1": "race build/testcompile/lint PASS",
-    "fullCI": "UNACCEPTED",
-    "fullNetty": "UNACCEPTED normal300timeout retained",
-    "fullRound": "UNACCEPTED"
   }
 }
