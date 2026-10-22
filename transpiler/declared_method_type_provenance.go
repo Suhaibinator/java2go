@@ -217,6 +217,9 @@ func declaredOriginConversion(actual, formal inferredJavaTypeOrigin, ctx Ctx) (c
 		if sameJavaTypeOrigin(actual, formal) {
 			return 0, true, true, true
 		}
+		if declaredUnboundedCallerParameterRefusal(actual, formal, ctx) {
+			return 0, false, false, true
+		}
 		return 0, false, false, false
 	}
 	null := actual.javaType == "null" || actual.javaType == ternaryNullJavaType
@@ -320,6 +323,9 @@ func declaredOriginConversion(actual, formal inferredJavaTypeOrigin, ctx Ctx) (c
 		if actual.externalName == formal.externalName {
 			if len(actual.arguments) == 0 || len(formal.arguments) == 0 {
 				return 0, true, true, true // Existing raw reference conversion.
+			}
+			if declaredInvariantArgumentDisagreement(actual, formal, ctx) {
+				return 0, false, false, true
 			}
 			if !closedDeclaredAncestryOrigin(actual) || !closedDeclaredAncestryOrigin(formal) {
 				return 0, false, false, false

@@ -1,19 +1,26 @@
 {
+  "class_parent_producer_sha256": "2ca7e3a4bf9b45f35a864997f1bfe3a45a04ec4d1f68ed21723800dbb71e26a7",
   "distribution_license_sha256": "4d156eecbf6ca462d8cf772552fff874b167f87def9566837fb8e4fb347f29a5",
   "extractor_java_sha256": "d8a4762aef984b51264d256e9ff73ea5e766e63123db65c5779c2f4c50fe2282",
   "facts_sha256": "017786c68ea2280fad78ae2683a8899022b5ac7e445fec504099a27f41b9a0bb",
-  "generator_sha256": "ef4bd7e1ab6155b0cecf33bb95efbc7ebfea3e6293a0363909a38cacab830273",
+  "generator_sha256": "d8bce405ab1862a1c97b94d87d94e7730bd8ef3bcfcab8236da97a2dd5f72682",
   "jdk_pins": {
     "bin/java": "9c994a3170832e121a9bd7fb78f53a84e59fac1b269af59881433ce6c639ff60",
     "bin/javac": "5d4eb06daaf4319f7c58bc63737b2b332b48a583a6f8618c9c7e93709325aa02",
     "jmods/java.base.jmod": "0da0a7f5720bcdae901d45b8904ab1e7d3eb6fdd9729dcc88be19f6e94e24684",
+    "lib/ct.sym": "92f865ec1bd9fc03cb96700c13cace8140e7b96905611d65199d80903fd84892",
+    "lib/modules": "3925b48b275376ecc135eea32d50638d162d130d2149aa712875bcdcbad2d335",
     "lib/src.zip": "d887da897fc0065a2532500ee92320ce3bc633ccd6c4e637304045ce5d90de43",
     "release": "f61d466aaef05ecd3e431d2cced84792613ee2ef2e20bd7168f4c8d1960c2273"
   },
   "license": "facts and minimal declaration headers, no JDK implementation bodies vendored; original pinned JDK distribution license retained separately",
   "limits": "metadata certifies nominal parent substitution, not runtime API/method implementation or application parity",
-  "method": "three identical public reflection TypeVariable/ParameterizedType exports; every generic owner/index mapping checked independently against pinned classfile Signature and src.zip declaration; raw terminals independently verified classfile header/signature",
-  "profile": "pinned JDK21 java.base only;8generic owners+3 nongeneric traversal terminals",
-  "schema": "java2go.jdk21.generic-parents.v1",
+  "method": "Byte-only checked java.base classfile extraction; actual Signature grammar/header-erasure verification, declaration-owned parameter tokens; unchanged old8 independent reflection/classfile/src.zip calibration",
+  "nominal_inventory_sha256": "5f329951b1f92dc75c7ebabd67898608e9d075f868cd6aa49b9a49eaa23e958a",
+  "nominal_reader_sha256": "d9c81bf160383aa6bb2fb652110737d3ddf76aab3c95bd8c45ba8a12c4e030a1",
+  "profile": "pinned JDK21 java.base current nominal profile; systematic representable closed graph; endpoint visibility unchanged",
+  "schema": "java2go.jdk21.generic-parents.v2",
+  "signature_parser_sha256": "59f9d22cee02ccb32b81019f64af508b51c2f20a1c3a7d78014c3db7da458690",
+  "systematic_facts_sha256": "7471903406af37811c46788cadc8ea0b3bc0e3c1d28be0161a3a791e2367b478",
   "terminal_sha256": "173b2d80b1849534e1f7b11692bd272fe2976037b715034b907c86b58633e778"
 }

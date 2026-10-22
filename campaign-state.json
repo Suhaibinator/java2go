@@ -21960,6 +21960,41 @@
       ]
     }
   },
+  "sol_progress175": {
+    "T2_metadata_frame_candidate": "UNPUBLISHED Reader clone regression relative public174; independent repair in progress",
+    "actual_zero_receipts": 55,
+    "all_original_assertions_retained": true,
+    "all_raw_hashes_cleanup_and_exit_codes_verified": true,
+    "base": "61cffe16e3426258b13e94b8212fd328c382f553",
+    "expected_JDK_compile_rejections": 7,
+    "finite_parents": 56,
+    "full_CI": false,
+    "full_Netty": false,
+    "full_native": {
+      "parsing": 10,
+      "stdjava": 806,
+      "symbol": 23
+    },
+    "full_round": false,
+    "independent_delivery_sha256": "cdba5c78a0bd47cb4d4ca3cc2d008a7a2e7288891fa5ea37234e2a63aa7b5bda",
+    "publication_whitespace_delta": {
+      "after_sha256": "59f9d22cee02ccb32b81019f64af508b51c2f20a1c3a7d78014c3db7da458690",
+      "before_sha256": "2f05d778939f87bcc3b28e7882e0e11dcc85b5e4ef49c865c7f7303cce41d756",
+      "bound_provenance_after_sha256": "68dec94260246d7e340b1369373b61ed42a02eb1eba0679cc5f8b6853182d8ad",
+      "bound_provenance_before_sha256": "fef63720590a40d4cfdd2b13cff0a75584d3a1307fcd546d6cd8a9fb5dd9ecea",
+      "path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/transpiler/testdata/jdk_generic_parent_origin/class_signature.py",
+      "provenance_after_sha256": "b56eb3bab3680ded74a9a9e36fa1c794e11e1de048c3bed3786784d83344fee4",
+      "provenance_before_sha256": "645ad600b5bcbad5bd224d6bf7ae975ae92fc67c80d1d55e6cd65e60edb23640",
+      "reason": "git diff --cached --check exposed one new blank line at EOF after tracked-only precheck; removed that whitespace only",
+      "semantic_change": false
+    },
+    "race_repetitions": 340,
+    "receipts": 63,
+    "required_original114_frontier": "GsonTypes.java516 requireNonNull(rawType); strict failure retained; no Go build/run",
+    "required_original114_strict_failure": 1,
+    "source_manifest_sha256": "b7c2366afcfaebadc94264a27d46d1c06d18f899d8f9609920abef95a89b19c2",
+    "status": "ROOT_AUDITED_INDEPENDENT_BOUND_PROOF_CHECKPOINT"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

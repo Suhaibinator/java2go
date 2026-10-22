@@ -1,0 +1,15 @@
+{
+  "inputs": {
+    "PROVENANCE.json": "b56eb3bab3680ded74a9a9e36fa1c794e11e1de048c3bed3786784d83344fee4",
+    "SYSTEMATIC-CLASSFILES.json": "7471903406af37811c46788cadc8ea0b3bc0e3c1d28be0161a3a791e2367b478",
+    "class_bound_producer.py": "2afe3e6b2c2db6b89f266701dbc2e3c29d027029895c1122c279822871c01fc3",
+    "class_parent_producer.py": "2ca7e3a4bf9b45f35a864997f1bfe3a45a04ec4d1f68ed21723800dbb71e26a7",
+    "class_signature.py": "59f9d22cee02ccb32b81019f64af508b51c2f20a1c3a7d78014c3db7da458690"
+  },
+  "outputs": {
+    "DECLARATION-BOUNDS.json": "4bfbecaae1ff783fba444679a088becb92f09fec845f5ba95239256a7c36b40e",
+    "jdk21_generic_declaration_bounds_data.go": "ae77bf6a90c55b595954f6043f2b529b9712d57e8eb6a877ea7f29fe669c8ae0"
+  },
+  "policy": "Proof-only declaration facts; no parent, nominal or API admission.",
+  "schema": "java2go.jdk21.generic-bound-provenance.v1"
+}

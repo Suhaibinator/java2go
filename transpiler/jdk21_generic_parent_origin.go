@@ -39,7 +39,7 @@ func projectJDK21GenericParentWithRecords(actual inferredJavaTypeOrigin, request
 			}
 			owned[parameter] = true
 		}
-		raw := len(view.arguments) == 0
+		raw := len(record.parameters) > 0 && len(view.arguments) == 0
 		if !raw && len(view.arguments) != len(record.parameters) {
 			return false
 		}
