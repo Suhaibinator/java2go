@@ -50,17 +50,7 @@ public class EnumText {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	flat := normalizeSpaces(out)
-
-	if !strings.Contains(flat, "func (dy *Day) String() string") {
-		t.Fatalf("expected Day to implement fmt.Stringer, got:\n%s", out)
-	}
-	if !strings.Contains(flat, "return dy.enumName") {
-		t.Fatalf("expected enum String method to return its Java name, got:\n%s", out)
-	}
-	if !strings.Contains(flat, "stdjava.StringValueOf(selected.StringJava2goExecution(__java2goExecution))") {
-		t.Fatalf("expected String.valueOf(enum) to use Java conversion semantics, got:\n%s", out)
-	}
+	enumNameOriginal191AssertSemantics(t, out)
 }
 
 func TestEnumIntegration_StringConversionHonorsToStringOverride(t *testing.T) {

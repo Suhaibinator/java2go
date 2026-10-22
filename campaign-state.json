@@ -22614,6 +22614,45 @@
       16
     ]
   },
+  "sol_progress192": {
+    "CI191": {
+      "artifacts_audited": 121,
+      "failed_compiler_parents": 37,
+      "focused_PASS": 54,
+      "new_failure_or_skip_names": [],
+      "overall": "FAILURE",
+      "skips": 8
+    },
+    "actual_raw_receipts": 42,
+    "campaign": "Ongoing Sol-only adversarial TDD",
+    "contracts": [
+      "Compiled fmt.Stringer ABI",
+      "Exact UTF16 names and reference-preserving conversions",
+      "Original print/concatenation/String.valueOf stdout",
+      "Null host conversion and canonical Java null exceptions"
+    ],
+    "coordinator_audit": "8851b5ea2a304680aa247975891367a191263ae577137d07c79a03b00018e6eb",
+    "emitted_native_behavior_normal_repetitions": 20,
+    "emitted_native_behavior_race_repetitions": 20,
+    "fresh_Go_runs": 3,
+    "fresh_JDK_runs": 3,
+    "held": [
+      "Full CI",
+      "Full Netty1220 translation and parity",
+      "Gson112",
+      "Supplier28 and accumulated round acceptance"
+    ],
+    "historical_baseline_failure": "Identical obsolete return dy.enumName assertion independently reproduced on public191 and private Netty candidate",
+    "native_parent_PASS_occurrences": 86,
+    "new_hosted_CI": "PENDING",
+    "original_Java_declarations_unchanged": true,
+    "production_changed": false,
+    "retained_helper_premise_failure": 1,
+    "scope": "One existing test parent and one test-only helper",
+    "six_default_F1_profiles": "PASS",
+    "status": "STALE_ENUM_ASSERTIONS_REPLACED_WITH_EXECUTED_JAVA_CONTRACTS",
+    "tested_source_manifest": "cc05d35cf1d1bd115323c6d9e8e1c1ffe55caced4c55e250e5ec7bbd247fbe19"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
