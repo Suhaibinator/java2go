@@ -19,6 +19,7 @@ package stdjava
 // Stream is an eager, slice-backed stream of elements.
 type Stream[T any] struct {
 	elements []T
+	pipeline *streamNode[T]
 }
 
 // NewStream returns a Stream over a copy of the given elements, matching

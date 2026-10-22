@@ -1,0 +1,399 @@
+{
+  "oracle_sha256": "820038f0c82da0039f884ee55b86955c90faae3c1b4ed2d59cfbf1d902a4c559",
+  "projection": "Exact source peek/accumulate/actual-A/result/backing state and CME/reuse class; comparator microtrace retained raw but separately outstanding, not asserted by this source-helper test; no original oracle weakening.",
+  "seeds": {
+    "0": {
+      "root-remove": {
+        "events": [
+          "actual-A",
+          "peek:2",
+          "accumulate:2",
+          "peek:1",
+          "accumulate:1",
+          "peek:9",
+          "accumulate:9",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[2, 1, 9]",
+        "fails": true,
+        "jdk_raw_line": "root-remove=ConcurrentModificationException:null|events=[actual-A, peek:2, accumulate:2, peek:1, accumulate:1, peek:9, accumulate:9, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "root-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-clear": {
+        "events": [
+          "actual-A",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[]",
+        "fails": true,
+        "jdk_raw_line": "root-clear=ConcurrentModificationException:null|events=[actual-A, peek:null, accumulate:null, peek:null, accumulate:null, peek:null, accumulate:null, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "root-clear-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-remove-limit": {
+        "events": [
+          "actual-A",
+          "peek:2",
+          "accumulate:2"
+        ],
+        "root": "[2, 1, 9]",
+        "fails": true,
+        "jdk_raw_line": "root-remove-limit=ConcurrentModificationException:null|events=[actual-A, peek:2, accumulate:2]",
+        "jdk_raw_reuse_line": "root-remove-limit-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-clear-sorted": {
+        "events": [
+          "peek:0",
+          "peek:2",
+          "peek:1",
+          "peek:9",
+          "actual-A",
+          "accumulate:0",
+          "accumulate:1",
+          "accumulate:2",
+          "accumulate:9",
+          "result:[0, 1, 2, 9]"
+        ],
+        "root": "[]",
+        "fails": false,
+        "jdk_raw_line": "root-clear-sorted=ok|events=[peek:0, peek:2, peek:1, peek:9, compare:2:0, compare:1:2, compare:1:2, compare:1:0, compare:9:1, compare:9:2, actual-A, accumulate:0, accumulate:1, accumulate:2, accumulate:9, result:[0, 1, 2, 9]]",
+        "jdk_raw_reuse_line": "root-clear-sorted-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-root-add": {
+        "events": [
+          "actual-A",
+          "peek:2",
+          "accumulate:2",
+          "peek:1",
+          "accumulate:1"
+        ],
+        "root": "[0, 2, 1, 9, 7]",
+        "fails": true,
+        "jdk_raw_line": "sub-root-add=ConcurrentModificationException:null|events=[actual-A, peek:2, accumulate:2, peek:1, accumulate:1]",
+        "jdk_raw_reuse_line": "sub-root-add-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-root-remove": {
+        "events": [
+          "actual-A",
+          "peek:1",
+          "accumulate:1",
+          "peek:9",
+          "accumulate:9"
+        ],
+        "root": "[2, 1, 9]",
+        "fails": true,
+        "jdk_raw_line": "sub-root-remove=ConcurrentModificationException:null|events=[actual-A, peek:1, accumulate:1, peek:9, accumulate:9]",
+        "jdk_raw_reuse_line": "sub-root-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-clear": {
+        "events": [
+          "actual-A",
+          "peek:9",
+          "accumulate:9",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[0, 9]",
+        "fails": true,
+        "jdk_raw_line": "sub-clear=ConcurrentModificationException:null|events=[actual-A, peek:9, accumulate:9, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "sub-clear-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-remove": {
+        "events": [
+          "actual-A",
+          "peek:1",
+          "accumulate:1",
+          "peek:9",
+          "accumulate:9"
+        ],
+        "root": "[0, 1, 9]",
+        "fails": true,
+        "jdk_raw_line": "sub-remove=ConcurrentModificationException:null|events=[actual-A, peek:1, accumulate:1, peek:9, accumulate:9]",
+        "jdk_raw_reuse_line": "sub-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-set": {
+        "events": [
+          "actual-A",
+          "peek:8",
+          "accumulate:8",
+          "peek:1",
+          "accumulate:1",
+          "result:[8, 1]"
+        ],
+        "root": "[0, 8, 1, 9]",
+        "fails": false,
+        "jdk_raw_line": "sub-set=ok|events=[actual-A, peek:8, accumulate:8, peek:1, accumulate:1, result:[8, 1]]",
+        "jdk_raw_reuse_line": "sub-set-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      }
+    },
+    "7": {
+      "root-remove": {
+        "events": [
+          "actual-A",
+          "peek:9",
+          "accumulate:9",
+          "peek:8",
+          "accumulate:8",
+          "peek:16",
+          "accumulate:16",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[9, 8, 16]",
+        "fails": true,
+        "jdk_raw_line": "root-remove=ConcurrentModificationException:null|events=[actual-A, peek:9, accumulate:9, peek:8, accumulate:8, peek:16, accumulate:16, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "root-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-clear": {
+        "events": [
+          "actual-A",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[]",
+        "fails": true,
+        "jdk_raw_line": "root-clear=ConcurrentModificationException:null|events=[actual-A, peek:null, accumulate:null, peek:null, accumulate:null, peek:null, accumulate:null, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "root-clear-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-remove-limit": {
+        "events": [
+          "actual-A",
+          "peek:9",
+          "accumulate:9"
+        ],
+        "root": "[9, 8, 16]",
+        "fails": true,
+        "jdk_raw_line": "root-remove-limit=ConcurrentModificationException:null|events=[actual-A, peek:9, accumulate:9]",
+        "jdk_raw_reuse_line": "root-remove-limit-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-clear-sorted": {
+        "events": [
+          "peek:7",
+          "peek:9",
+          "peek:8",
+          "peek:16",
+          "actual-A",
+          "accumulate:7",
+          "accumulate:8",
+          "accumulate:9",
+          "accumulate:16",
+          "result:[7, 8, 9, 16]"
+        ],
+        "root": "[]",
+        "fails": false,
+        "jdk_raw_line": "root-clear-sorted=ok|events=[peek:7, peek:9, peek:8, peek:16, compare:9:7, compare:8:9, compare:8:9, compare:8:7, compare:16:8, compare:16:9, actual-A, accumulate:7, accumulate:8, accumulate:9, accumulate:16, result:[7, 8, 9, 16]]",
+        "jdk_raw_reuse_line": "root-clear-sorted-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-root-add": {
+        "events": [
+          "actual-A",
+          "peek:9",
+          "accumulate:9",
+          "peek:8",
+          "accumulate:8"
+        ],
+        "root": "[7, 9, 8, 16, 14]",
+        "fails": true,
+        "jdk_raw_line": "sub-root-add=ConcurrentModificationException:null|events=[actual-A, peek:9, accumulate:9, peek:8, accumulate:8]",
+        "jdk_raw_reuse_line": "sub-root-add-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-root-remove": {
+        "events": [
+          "actual-A",
+          "peek:8",
+          "accumulate:8",
+          "peek:16",
+          "accumulate:16"
+        ],
+        "root": "[9, 8, 16]",
+        "fails": true,
+        "jdk_raw_line": "sub-root-remove=ConcurrentModificationException:null|events=[actual-A, peek:8, accumulate:8, peek:16, accumulate:16]",
+        "jdk_raw_reuse_line": "sub-root-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-clear": {
+        "events": [
+          "actual-A",
+          "peek:16",
+          "accumulate:16",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[7, 16]",
+        "fails": true,
+        "jdk_raw_line": "sub-clear=ConcurrentModificationException:null|events=[actual-A, peek:16, accumulate:16, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "sub-clear-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-remove": {
+        "events": [
+          "actual-A",
+          "peek:8",
+          "accumulate:8",
+          "peek:16",
+          "accumulate:16"
+        ],
+        "root": "[7, 8, 16]",
+        "fails": true,
+        "jdk_raw_line": "sub-remove=ConcurrentModificationException:null|events=[actual-A, peek:8, accumulate:8, peek:16, accumulate:16]",
+        "jdk_raw_reuse_line": "sub-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-set": {
+        "events": [
+          "actual-A",
+          "peek:15",
+          "accumulate:15",
+          "peek:8",
+          "accumulate:8",
+          "result:[15, 8]"
+        ],
+        "root": "[7, 15, 8, 16]",
+        "fails": false,
+        "jdk_raw_line": "sub-set=ok|events=[actual-A, peek:15, accumulate:15, peek:8, accumulate:8, result:[15, 8]]",
+        "jdk_raw_reuse_line": "sub-set-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      }
+    },
+    "28": {
+      "root-remove": {
+        "events": [
+          "actual-A",
+          "peek:30",
+          "accumulate:30",
+          "peek:29",
+          "accumulate:29",
+          "peek:37",
+          "accumulate:37",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[30, 29, 37]",
+        "fails": true,
+        "jdk_raw_line": "root-remove=ConcurrentModificationException:null|events=[actual-A, peek:30, accumulate:30, peek:29, accumulate:29, peek:37, accumulate:37, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "root-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-clear": {
+        "events": [
+          "actual-A",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[]",
+        "fails": true,
+        "jdk_raw_line": "root-clear=ConcurrentModificationException:null|events=[actual-A, peek:null, accumulate:null, peek:null, accumulate:null, peek:null, accumulate:null, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "root-clear-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-remove-limit": {
+        "events": [
+          "actual-A",
+          "peek:30",
+          "accumulate:30"
+        ],
+        "root": "[30, 29, 37]",
+        "fails": true,
+        "jdk_raw_line": "root-remove-limit=ConcurrentModificationException:null|events=[actual-A, peek:30, accumulate:30]",
+        "jdk_raw_reuse_line": "root-remove-limit-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "root-clear-sorted": {
+        "events": [
+          "peek:28",
+          "peek:30",
+          "peek:29",
+          "peek:37",
+          "actual-A",
+          "accumulate:28",
+          "accumulate:29",
+          "accumulate:30",
+          "accumulate:37",
+          "result:[28, 29, 30, 37]"
+        ],
+        "root": "[]",
+        "fails": false,
+        "jdk_raw_line": "root-clear-sorted=ok|events=[peek:28, peek:30, peek:29, peek:37, compare:30:28, compare:29:30, compare:29:30, compare:29:28, compare:37:29, compare:37:30, actual-A, accumulate:28, accumulate:29, accumulate:30, accumulate:37, result:[28, 29, 30, 37]]",
+        "jdk_raw_reuse_line": "root-clear-sorted-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-root-add": {
+        "events": [
+          "actual-A",
+          "peek:30",
+          "accumulate:30",
+          "peek:29",
+          "accumulate:29"
+        ],
+        "root": "[28, 30, 29, 37, 35]",
+        "fails": true,
+        "jdk_raw_line": "sub-root-add=ConcurrentModificationException:null|events=[actual-A, peek:30, accumulate:30, peek:29, accumulate:29]",
+        "jdk_raw_reuse_line": "sub-root-add-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-root-remove": {
+        "events": [
+          "actual-A",
+          "peek:29",
+          "accumulate:29",
+          "peek:37",
+          "accumulate:37"
+        ],
+        "root": "[30, 29, 37]",
+        "fails": true,
+        "jdk_raw_line": "sub-root-remove=ConcurrentModificationException:null|events=[actual-A, peek:29, accumulate:29, peek:37, accumulate:37]",
+        "jdk_raw_reuse_line": "sub-root-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-clear": {
+        "events": [
+          "actual-A",
+          "peek:37",
+          "accumulate:37",
+          "peek:null",
+          "accumulate:null"
+        ],
+        "root": "[28, 37]",
+        "fails": true,
+        "jdk_raw_line": "sub-clear=ConcurrentModificationException:null|events=[actual-A, peek:37, accumulate:37, peek:null, accumulate:null]",
+        "jdk_raw_reuse_line": "sub-clear-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-remove": {
+        "events": [
+          "actual-A",
+          "peek:29",
+          "accumulate:29",
+          "peek:37",
+          "accumulate:37"
+        ],
+        "root": "[28, 29, 37]",
+        "fails": true,
+        "jdk_raw_line": "sub-remove=ConcurrentModificationException:null|events=[actual-A, peek:29, accumulate:29, peek:37, accumulate:37]",
+        "jdk_raw_reuse_line": "sub-remove-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      },
+      "sub-set": {
+        "events": [
+          "actual-A",
+          "peek:36",
+          "accumulate:36",
+          "peek:29",
+          "accumulate:29",
+          "result:[36, 29]"
+        ],
+        "root": "[28, 36, 29, 37]",
+        "fails": false,
+        "jdk_raw_line": "sub-set=ok|events=[actual-A, peek:36, accumulate:36, peek:29, accumulate:29, result:[36, 29]]",
+        "jdk_raw_reuse_line": "sub-set-reuse=IllegalStateException:stream has already been operated upon or closed|events=[]"
+      }
+    }
+  }
+}

@@ -107,6 +107,8 @@ func (l *List[T]) Clear() {
 	if !l.fixed {
 		l.modCount++
 	}
+	clear(l.elements)
+	clear(l.erasedElements)
 	l.elements = nil
 	l.erasedElements = nil
 }

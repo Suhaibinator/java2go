@@ -22809,6 +22809,40 @@
     "six_default_F1_profiles": "PASS",
     "status": "PLAIN_MEMBER_TYPE_PARSER_ZERO_ALLOCATION_FASTPATH_QUALIFIED"
   },
+  "sol_progress197": {
+    "F1_runtime_registry": 880,
+    "Root_raw_audit": "917657c77dbe39890652bbef3ae4a1341c6182161483931e2bdadad5bc9a3cef",
+    "compiler_and_existing_tests_unchanged": true,
+    "default_F1_six_profiles": "PASS",
+    "five_partial_write4096_and_uncapped_lease_close": "PASS",
+    "full_race_Test_parents": {
+      "parsing": 10,
+      "stdjava": 876,
+      "symbol": 23
+    },
+    "held": [
+      "Java adoption of deferred pipeline",
+      "Exact sorted comparator callback trace",
+      "Clear+Add capacity/backing contracts",
+      "Original Supplier28 wildcard Supplier view runtime failure",
+      "Full Gson112/Netty1220 and round acceptance",
+      "Measured application speed gains"
+    ],
+    "independent_review": "698bb38570c2d2d74e6a54286213ea338d2f34f926fa64bd3f17d14a05e02743",
+    "native_parent_PASS": 1482,
+    "new_portable_Test_parents": 27,
+    "no_skips_timeouts_or_payload_retries": true,
+    "old_regions": [
+      "stdjava.Stream pipeline field",
+      "stdjava.List.Clear backing zeroing"
+    ],
+    "owner_delivery": "e5118dcb2d15e89b4a2968c131ab1797e47a8253f59719e16248492d6c178067",
+    "publication_parent": "11977819db91470a19c96817a91e1ed6edec920c",
+    "qualified_source_manifest": "687cfe0d677ec0217d50324f967079cae09c0ee81fc56bbcf7e8b12d6db52109",
+    "receipts_all_zero": 31,
+    "scope_leaves": 13,
+    "status": "DEFERRED_STREAM_PIPELINE_CORE_QUALIFIED"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
