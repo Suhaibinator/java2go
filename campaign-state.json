@@ -22073,6 +22073,33 @@
     "status": "ROOT_AUDITED_REGISTERED_INTRINSIC_FORMAL_CONTEXT_AND_COMBINED_COMMONS_PARITY",
     "whole_outputs_and_resources_equal": true
   },
+  "sol_progress179": {
+    "Supplier_compiler_race": 140,
+    "base": "f7d39b491af6cb730a169aa1ba72ed4130360cfe",
+    "bounds": 56,
+    "bounds_race": 340,
+    "coordinator_audit_sha256": "edec1d8aa8ae9625656e8042edfd6007daa55e26c2c3ae8511f8d1ccf737c4cc",
+    "delivery_sha256": "65bbff285d5594ffecd570cc80c97731103459bdb379643c790d2c2ce64bd30a",
+    "focused_parents": 4,
+    "focused_receipts": 50,
+    "full_CI": false,
+    "full_Netty": false,
+    "full_application_execution_receipts": 27,
+    "full_application_stage_receipts": 7,
+    "full_native": {
+      "parsing": 10,
+      "stdjava": 816,
+      "symbol": 23
+    },
+    "full_round": false,
+    "original_Gson_required_failure": "JavaTimeTypeAdapters.java138 requireNonNullField; no full Gson parity",
+    "original_Supplier_regression": "Unchanged LocalIdentifierHygiene baseline178=1 candidate518=1; generated Go identical; mandatory failed original not waived",
+    "performance_claim": false,
+    "source_function_exteriors_and_all_other_files_exact": true,
+    "source_manifest_sha256": "2f2711f55a69959b7c1c887a6a52100d45f7370b28b72d88ec20ce295bf4ce49",
+    "status": "ROOT_AUDITED_PROPER_EXTERNAL_REFERENCE_TO_NONGENERIC_JDK_SUPERTYPE_AND_COMBINED_COMMONS_PARITY",
+    "whole_outputs_and_resources_equal": true
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

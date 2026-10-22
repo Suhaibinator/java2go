@@ -357,6 +357,9 @@ func declaredOriginConversion(actual, formal inferredJavaTypeOrigin, ctx Ctx) (c
 			}
 			return cost, false, applies, handled
 		}
+		if declaredJDKNonGenericParentOriginAssignable(actual, formal, ctx) {
+			return 1, false, true, true
+		}
 		if canonicalThrowableOriginAssignable(actual, formal) {
 			return 1, false, true, true
 		}
