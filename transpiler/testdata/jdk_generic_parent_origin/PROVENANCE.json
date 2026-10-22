@@ -1,0 +1,19 @@
+{
+  "distribution_license_sha256": "4d156eecbf6ca462d8cf772552fff874b167f87def9566837fb8e4fb347f29a5",
+  "extractor_java_sha256": "d8a4762aef984b51264d256e9ff73ea5e766e63123db65c5779c2f4c50fe2282",
+  "facts_sha256": "017786c68ea2280fad78ae2683a8899022b5ac7e445fec504099a27f41b9a0bb",
+  "generator_sha256": "ef4bd7e1ab6155b0cecf33bb95efbc7ebfea3e6293a0363909a38cacab830273",
+  "jdk_pins": {
+    "bin/java": "9c994a3170832e121a9bd7fb78f53a84e59fac1b269af59881433ce6c639ff60",
+    "bin/javac": "5d4eb06daaf4319f7c58bc63737b2b332b48a583a6f8618c9c7e93709325aa02",
+    "jmods/java.base.jmod": "0da0a7f5720bcdae901d45b8904ab1e7d3eb6fdd9729dcc88be19f6e94e24684",
+    "lib/src.zip": "d887da897fc0065a2532500ee92320ce3bc633ccd6c4e637304045ce5d90de43",
+    "release": "f61d466aaef05ecd3e431d2cced84792613ee2ef2e20bd7168f4c8d1960c2273"
+  },
+  "license": "facts and minimal declaration headers, no JDK implementation bodies vendored; original pinned JDK distribution license retained separately",
+  "limits": "metadata certifies nominal parent substitution, not runtime API/method implementation or application parity",
+  "method": "three identical public reflection TypeVariable/ParameterizedType exports; every generic owner/index mapping checked independently against pinned classfile Signature and src.zip declaration; raw terminals independently verified classfile header/signature",
+  "profile": "pinned JDK21 java.base only;8generic owners+3 nongeneric traversal terminals",
+  "schema": "java2go.jdk21.generic-parents.v1",
+  "terminal_sha256": "173b2d80b1849534e1f7b11692bd272fe2976037b715034b907c86b58633e778"
+}

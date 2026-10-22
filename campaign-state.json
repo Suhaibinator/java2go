@@ -26475,5 +26475,24 @@
     "fullCI": "UNACCEPTED generic origin stack overflow active",
     "fullNetty": "UNACCEPTED normal300timeout retained",
     "fullRound": "UNACCEPTED"
+  },
+  "sol_progress169": {
+    "status": "TYPED_JDK_PARENT_AND_RAW_NATIVE_ORIGIN_FINITE_PASS_ORIGINAL114_RED",
+    "base": "2556c1b212a11c97d4fb5e787a1433786c4a1811",
+    "root_source_manifest_sha256": "a74bba7f7a8157d28a1931bbc1a2515039382cf64d1b009c1097139329b3d63e",
+    "root_audit_sha256": "bd6b03f80fdaef744fb17370726ca8aaed2c38a3838ec1535e88538195782fb0",
+    "positive_receipts": 15,
+    "retained_strict_red_receipts": 1,
+    "native_parents": 39,
+    "race20_parent_passes": 100,
+    "whole_Reader_JDK_runs": 6,
+    "whole_Reader_Go_runs": 6,
+    "original_exception_CI_parents": 2,
+    "default_input_override_actually_absent": true,
+    "default_F1": "race build/testcompile/lint PASS",
+    "original114": "strict actual1 at GsonTypes343; Go build/execution NOT_RUN",
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED"
   }
 }

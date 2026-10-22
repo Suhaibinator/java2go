@@ -1,0 +1,268 @@
+{
+  "no_application_classes_loaded": true,
+  "no_argument_mapping_assumed": true,
+  "owners": [
+    {
+      "class_sha256": "827b50987a91d74bed72757bfd2b2d5af88ab95d860f429953695f2db172267f",
+      "class_signature": "<T:Ljava/lang/Object;>Ljava/lang/Object;",
+      "owner": "java.lang.Iterable",
+      "parameters": [
+        {
+          "index": 0,
+          "kind": "parameter",
+          "name": "T",
+          "owner": "java.lang.Iterable"
+        }
+      ],
+      "parents": [],
+      "source_header": "public interface Iterable<T> {",
+      "source_sha256": "6c1714d64f72a55abca3f3405704acdb955378c5fa8b781e690b048ae278646a"
+    },
+    {
+      "class_sha256": "b93c4cb722381e978a48c97aad6e2e3ef2e4e75e527313d23c30faf769aa3235",
+      "class_signature": "<E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Collection<TE;>;",
+      "owner": "java.util.AbstractCollection",
+      "parameters": [
+        {
+          "index": 0,
+          "kind": "parameter",
+          "name": "E",
+          "owner": "java.util.AbstractCollection"
+        }
+      ],
+      "parents": [
+        {
+          "arguments": [],
+          "kind": "nominal",
+          "owner": "java.lang.Object"
+        },
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.AbstractCollection"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.util.Collection"
+        }
+      ],
+      "source_header": "public abstract class AbstractCollection<E> implements Collection<E> {",
+      "source_sha256": "c327100fb943f26954e19dcce322eef094a8d73ecd48cbc205ddddce21ffdfdf"
+    },
+    {
+      "class_sha256": "5a60b800c442734624acb4d657fa9ea6719bfceb2d27a53286d80ef467f9bad6",
+      "class_signature": "<E:Ljava/lang/Object;>Ljava/util/AbstractCollection<TE;>;Ljava/util/Deque<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;",
+      "owner": "java.util.ArrayDeque",
+      "parameters": [
+        {
+          "index": 0,
+          "kind": "parameter",
+          "name": "E",
+          "owner": "java.util.ArrayDeque"
+        }
+      ],
+      "parents": [
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.ArrayDeque"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.util.AbstractCollection"
+        },
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.ArrayDeque"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.util.Deque"
+        },
+        {
+          "arguments": [],
+          "kind": "nominal",
+          "owner": "java.lang.Cloneable"
+        },
+        {
+          "arguments": [],
+          "kind": "nominal",
+          "owner": "java.io.Serializable"
+        }
+      ],
+      "source_header": "public class ArrayDeque<E> extends AbstractCollection<E>\n                           implements Deque<E>, Cloneable, Serializable\n{",
+      "source_sha256": "0054b52e8cace59caf06230ec1f718ead7f97d700f2e2c28d4b6217bb8120dc3"
+    },
+    {
+      "class_sha256": "d611f6da30630117675181c93c9870cd8fdf1258fa8549be17fe6f46a6badd16",
+      "class_signature": "<E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Iterable<TE;>;",
+      "owner": "java.util.Collection",
+      "parameters": [
+        {
+          "index": 0,
+          "kind": "parameter",
+          "name": "E",
+          "owner": "java.util.Collection"
+        }
+      ],
+      "parents": [
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.Collection"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.lang.Iterable"
+        }
+      ],
+      "source_header": "public interface Collection<E> extends Iterable<E> {",
+      "source_sha256": "290d65a39df8dca61b91d3a9e6fb3d4cadb2a27b893a9bd881d7e8da37aa0ea3"
+    },
+    {
+      "class_sha256": "fb776dc45a5a822ca78b7a4e0e8558c0649377e03d807336e48c28dfd43e2afb",
+      "class_signature": "<E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Queue<TE;>;Ljava/util/SequencedCollection<TE;>;",
+      "owner": "java.util.Deque",
+      "parameters": [
+        {
+          "index": 0,
+          "kind": "parameter",
+          "name": "E",
+          "owner": "java.util.Deque"
+        }
+      ],
+      "parents": [
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.Deque"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.util.Queue"
+        },
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.Deque"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.util.SequencedCollection"
+        }
+      ],
+      "source_header": "public interface Deque<E> extends Queue<E>, SequencedCollection<E> {",
+      "source_sha256": "840032b0f01bd095044bda5a06bc814896b8550bd43a1fa4b70215f6657b781d"
+    },
+    {
+      "class_sha256": "7809c1e0817a9adc7d994c6b2586963077c5155c40ea9532a741287269807b47",
+      "class_signature": "<E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/SequencedCollection<TE;>;",
+      "owner": "java.util.List",
+      "parameters": [
+        {
+          "index": 0,
+          "kind": "parameter",
+          "name": "E",
+          "owner": "java.util.List"
+        }
+      ],
+      "parents": [
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.List"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.util.SequencedCollection"
+        }
+      ],
+      "source_header": "public interface List<E> extends SequencedCollection<E> {",
+      "source_sha256": "3affde31e7f4b0d12c3d89b865f437781166415d63e1d3bb044290335b49f339"
+    },
+    {
+      "class_sha256": "6e8e39a174d0aab0dbe666da53ba2b07e7e18498428b407f10893f0e7c84e24d",
+      "class_signature": "<E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Collection<TE;>;",
+      "owner": "java.util.Queue",
+      "parameters": [
+        {
+          "index": 0,
+          "kind": "parameter",
+          "name": "E",
+          "owner": "java.util.Queue"
+        }
+      ],
+      "parents": [
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.Queue"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.util.Collection"
+        }
+      ],
+      "source_header": "public interface Queue<E> extends Collection<E> {",
+      "source_sha256": "5ca44992f2bc9a32da74f0fc08b20b51d6ec6655eda784c16509c74b308829aa"
+    },
+    {
+      "class_sha256": "fedfd3427e6937d75928fa94130ff66d0efc61fc2991dcd6d066062f3bc7bb12",
+      "class_signature": "<E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Collection<TE;>;",
+      "owner": "java.util.SequencedCollection",
+      "parameters": [
+        {
+          "index": 0,
+          "kind": "parameter",
+          "name": "E",
+          "owner": "java.util.SequencedCollection"
+        }
+      ],
+      "parents": [
+        {
+          "arguments": [
+            {
+              "index": 0,
+              "kind": "parameter",
+              "name": "E",
+              "owner": "java.util.SequencedCollection"
+            }
+          ],
+          "kind": "nominal",
+          "owner": "java.util.Collection"
+        }
+      ],
+      "source_header": "public interface SequencedCollection<E> extends Collection<E> {",
+      "source_sha256": "ac3ba77c6f52989a0dddcc315942485eaec5164aa9e91085ea2c23a58132cd4c"
+    }
+  ],
+  "status": "8 actual JDK declarations; 3 exports identical; classfile Signature and source header crosschecked",
+  "tool_binary": {
+    "tool/classes/GenericParents.class": "b02635fb998dc9aaa5cd0e1378071671ee512173b98b1e495329f18eba8695dd"
+  }
+}

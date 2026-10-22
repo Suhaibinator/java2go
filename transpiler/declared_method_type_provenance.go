@@ -334,6 +334,13 @@ func declaredOriginConversion(actual, formal inferredJavaTypeOrigin, ctx Ctx) (c
 			}
 			return 0, true, true, true
 		}
+		if projected, proved := projectJDK21GenericParentOrigin(actual, formal.externalName); proved {
+			cost, _, applies, handled := declaredOriginConversion(projected, formal, ctx)
+			if applies && cost < 1 {
+				cost = 1
+			}
+			return cost, false, applies, handled
+		}
 		if canonicalThrowableOriginAssignable(actual, formal) {
 			return 1, false, true, true
 		}
@@ -349,6 +356,9 @@ func declaredOriginConversion(actual, formal inferredJavaTypeOrigin, ctx Ctx) (c
 			}
 		}
 		if (actual.externalName == "java.lang.String" && (formal.externalName == "java.lang.CharSequence" || formal.externalName == "java.io.Serializable" || formal.externalName == "java.lang.Comparable")) || (actual.externalName == "java.lang.Class" && formal.externalName == "java.io.Serializable") {
+			return 1, false, true, true
+		}
+		if jdk21RawReferenceOriginAssignable(actual, formal) {
 			return 1, false, true, true
 		}
 	}

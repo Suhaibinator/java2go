@@ -198,6 +198,14 @@ func gatherMethodTypeOriginBindings(formal, actual inferredJavaTypeOrigin, metho
 		candidates[formal.parameter] = append(candidates[formal.parameter], actual)
 		return
 	}
+	if formal.nominalScope == nil && formal.parameter == nil && formal.externalName != "" && actual.externalName != formal.externalName && formal.arrayRank == actual.arrayRank {
+		component := actual
+		component.arrayRank = 0
+		if projected, proved := projectJDK21GenericParentOrigin(component, formal.externalName); proved {
+			projected.arrayRank = actual.arrayRank
+			actual = projected
+		}
+	}
 	if formal.nominalScope != actual.nominalScope || formal.externalName != actual.externalName || formal.arrayRank != actual.arrayRank {
 		return
 	}
