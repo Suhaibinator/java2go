@@ -22447,6 +22447,50 @@
     "tested_source_members": 4368,
     "whole_Java_speed_claim": false
   },
+  "sol_progress189": {
+    "Date_D0": "Actual Date origins complete; unsupported family representation remains refused",
+    "behavior": "Owned canonical Class casts may omit only their argument-independent type subtree from generic body audit; operand and remaining body still require existing proofs",
+    "campaign": "Ongoing Sol-only adversarial TDD",
+    "constructor_physical_bare_uses": false,
+    "coordinator_audit": "506018031dc89dcf4c25f0f1bfb36af9402e1b8e1eeefa20ac01cb6f06fdf83f",
+    "default_F1_six": "PASS",
+    "finite_gates_exit0": 89,
+    "focused_related_parent_PASS": 226,
+    "genuine_counter_baselines": [
+      "paired different class names",
+      "same-name nested owner under another class",
+      "wrong metadata enclosing pointer",
+      "enum constant anonymous body",
+      "instance initializer local class"
+    ],
+    "held": [
+      "Full Gson112/113/114",
+      "Full Netty translation/build/application parity",
+      "Original Supplier28 generatedGo generic type and runtime contracts",
+      "Full CI and accumulated round acceptance"
+    ],
+    "independent_current_source_raw_children": 90,
+    "independent_source_review": "91da240d043d174c8d727928268eedccae8c5a751c29c76e6b936744ea9ca06d",
+    "last_CI188": "Failed overall7success8failure; all36focusedPASS, same37failedcompilerparents/no newskipnames; original collection/Map47/applicationparityPASS",
+    "new_helper": "callable_body_class_cast.go",
+    "new_portable_test_leaves": 3,
+    "only_old_function": "methodBodyTypeSyntaxSupportsCallableErasure",
+    "original112_true_normal_strict": {
+      "allGo_or_app_acceptance": false,
+      "exit": 1,
+      "frontier": "JavaTimeTypeAdapters.java138 requireNonNullField(localDate,\"date\",in)",
+      "seconds": 122.920972,
+      "timeout": false
+    },
+    "ownership": "Actual registered owner/method/root, class names, binder declarations and roles, exact enclosing type edges through closed named-type-body containers; reject counterfeit/executable/anonymous ownership",
+    "performance_claim": false,
+    "previous_published_encoding_preserved": true,
+    "private_dependency_loader_excluded_publication": true,
+    "real_Gson_TypeToken_two_constructors": "Body audit and full TypeToken family plan green in private exact112-source probes on normal/race binaries",
+    "status": "INDEPENDENT_CURRENT188_CANONICAL_CLASS_CAST_BODY_AUDIT_VERIFIED",
+    "tested_source_manifest": "905f0a9c43caa6d1acca3bfe19c388578efea4cdcea930ba64f42218dbddab91",
+    "tested_source_members": 4373
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

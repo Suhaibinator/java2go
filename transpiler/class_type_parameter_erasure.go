@@ -664,7 +664,9 @@ func methodBodyTypeSyntaxSupportsCallableErasure(
 				}
 			}
 		case "cast_expression":
-			if allowPhysicalBareUses && node.NamedChildCount() > 0 {
+			if callableBodyCanonicalClassCast(owner, method, node, declaration, methodCtx) {
+				skip = node.ChildByFieldName("type")
+			} else if allowPhysicalBareUses && node.NamedChildCount() > 0 {
 				typeNode := node.NamedChild(0)
 				if visibleTypeParameterDeclarationForJavaType(typeNode.Content(source), methodCtx) == declaration {
 					// ParseExpr lowers this exact cast target to the JVM erasure.

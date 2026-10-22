@@ -1,0 +1,11 @@
+# Sol checkpoint 189: canonical Class casts in generic bodies
+
+Generic body auditing now recognizes the argument-independent physical representation of an owned canonical java.lang.Class cast. Only the proved cast-type subtree is exempted; its operand and every other body node still undergo the existing audit. Constructor bare-type use remains disabled. The change enables the two original Gson TypeToken constructor bodies and their family plan in exact-source native probes.
+
+The new proof checks the actual registered method and declaring class, parsed source root, declaration names, generic binder identities and formal bindings. Enclosing metadata must follow actual named type ancestry through a closed set of type-body containers. It refuses local and anonymous ownership, stale declarations and borrowed binders. Independent review found five counterfeit ownership cases before publication; genuine failing API regressions now pass without changing the original positive cases.
+
+Independent verification used the exact current checkpoint 188 compiler/runtime plus this component: eight portable parents in normal and twenty race repetitions, two private real-source Gson probes in normal and race binaries, and 54 related regressions produced 226 parent passes. All six default/F1 build, test-compilation and lint checks passed. The coordinator audited all 90 raw receipts and both exact 4,373-file source snapshots. The dependency-specific probe loader remains outside tracked source.
+
+The single fresh normal-compiler attempt on the unchanged 112-source Gson application still stops at JavaTimeTypeAdapters.java:138 requireNonNullField after 122.92 seconds, without timeout. No generated-Go build or application parity is claimed. Date bounds remain correctly identified but their unsupported representation remains refused. The subsequent private T2 and URL work is separate from this checkpoint.
+
+Hosted checkpoint 188 CI finished with seven successful jobs and eight failures. All 36 focused parents passed, the same 37 compiler failure names remained, and no skip names were added. Original collection, inherited Map and application parity checks passed. Full Gson, Netty, CI and round acceptance remain open; the Sol campaign continues.
