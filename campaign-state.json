@@ -22264,6 +22264,41 @@
     "whole_observations": 36,
     "whole_output_files": 72
   },
+  "sol_progress185": {
+    "complete_runtime_symbol_parser_parents": [
+      830,
+      23,
+      10
+    ],
+    "coordinator_independent_raw_audit": "c50bf6663e17ad7b4f251aaeb81f8c240dc589e7460f7c08ae1af46fe59a9505",
+    "coordinator_owner_raw_audit": "d249bf566ad931f87650fdc7a6298b3cde000cb3733d9c40db63e453cfa53820",
+    "default_F1_build_testcompile_lint": "PASS",
+    "full_CI_round_Netty_or_Java_speed_accepted": false,
+    "genuine_native_assertion_RED": true,
+    "goal": "ACTIVE Sol-only continuous adversarial campaign",
+    "independent_delivery": "6d73c840aaef3fe153ba87bc1eec9714f73d44dbfa36088cd17d850b227fcb5e",
+    "independent_fresh_clean_stages": 35,
+    "independent_normal5_and_race100": true,
+    "independent_whole_observations": 12,
+    "last_full_Netty": "Public184 strict1 at PoolThreadCache.java276 after294.012469s, no timeout; allGo/app not run",
+    "last_hosted_CI184": "Same39 recurring compiler failures as183; all6 new collection-demand parents passed. CI185 not yet run.",
+    "original_fresh_JDK3_and_Go3_exact": true,
+    "original_unchanged_CollectionContractsApplication": "PASS",
+    "owner_accepted_final_parent_passes": 1348,
+    "owner_race20_parent_passes": 480,
+    "owner_receipts": {
+      "genuine_baseline_RED": 1,
+      "successful": 60,
+      "total": 62,
+      "unaccepted_native_timeout": 1
+    },
+    "production": "Two equals:boolean/hashCode:int result registrations for existing canonical Map dispatch keys; runtime, concat, ownership and arity unchanged",
+    "retained_native_timeout": "Original19-parent race20 batch hit Go native55s alarm;280 partial passes excluded. Fresh disjoint9+10 groups each completed20 at unchanged caps,380 accepted passes.",
+    "stateful_v2_fresh_JDK9_and_Go9_exact": true,
+    "status": "INDEPENDENT_MAP_PRIMITIVE_RESULT_REPAIR_VERIFIED_RETAINED_TIMEOUT_EXPLICIT",
+    "tested_source_manifest": "82b18254300e0a1755df5ea317d8b964b79f7a786544f2d28a17bc296036180e",
+    "tested_source_members": 4357
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

@@ -42,6 +42,8 @@ func registerCanonicalMapPutIntrinsic() {
 				return mapErasedResultProjection(call, invocation, logical, ctx, source)
 			})
 		}
+		registerInstanceIntrinsicResultType(owner, "equals", "boolean")
+		registerInstanceIntrinsicResultType(owner, "hashCode", "int")
 		registerInstanceNodeIntrinsic(owner, "computeIfAbsent", func(receiver ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr {
 			if invocationArgumentCount(invocation) != 2 {
 				return nil
