@@ -514,15 +514,24 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 		result, _ := executorSubmitType(invocation, ctx, source)
 		return "Future<" + result + ">", true
 	}
-	elements := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
+	var elements []string
+	elementsLoaded := false
+	elementTypes := func() []string {
+		if !elementsLoaded {
+			elements = receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
+			elementsLoaded = true
+		}
+		return elements
+	}
 	if intrinsicFunctionalMethodNames[receiver] == name {
-		if sam, bindings, known := builtinFunctionalInterfaceMethod(receiver, elements); known {
+		if sam, bindings, known := builtinFunctionalInterfaceMethod(receiver, elementTypes()); known {
 			return substituteJavaTypeParams(sam.OriginalType, bindings), true
 		}
 	}
 	element := func(index int) string {
-		if index < len(elements) {
-			return elements[index]
+		types := elementTypes()
+		if index < len(types) {
+			return types[index]
 		}
 		return "Object"
 	}
@@ -558,7 +567,7 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 		case "filter":
 			return "Optional<" + element(0) + ">", true
 		case "map", "flatMap":
-			result, ok := inferLambdaResultJavaType(invocationArgumentNode(invocation, 0), elements, ctx, source)
+			result, ok := inferLambdaResultJavaType(invocationArgumentNode(invocation, 0), elementTypes(), ctx, source)
 			if !ok {
 				result = element(0)
 			}

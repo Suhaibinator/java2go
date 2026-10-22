@@ -22216,6 +22216,54 @@
     "successful_payload_stages": 89,
     "whole_observations": 27
   },
+  "sol_progress184": {
+    "CI183": "39 recurring compiler parent failures; all29 focused parents and measurement isolation controls passed; no full CI acceptance",
+    "JDK_pin_timing_erratum": "Supplementary JDK hashes recorded after javac began; no prelaunch hashguard claim. Explicit pinned JDK21 paths, fresh source oracle and actual observations retained.",
+    "baseline_candidate_failed_generated_Go_byte_exact": true,
+    "compiler_change": "Demand-only per-call receiver element inference; one old function, no cross-query cache",
+    "coordinator_independent_raw_whole_audit": "c43092f961eea1409611e697c28011eacde0e1a5ecfa9a660f622b16da22e0c2",
+    "coordinator_owner_raw_audit": "32887c1de1a7262920609c0df5b17491b6440e50c9edace73b5f39fd4631e284",
+    "default_F1_build_testcompile_lint": "PASS",
+    "fresh_strict_allGo_entry": [
+      "Math8",
+      "ABI5",
+      "Codec25"
+    ],
+    "full_round_Netty_CI_or_Java_speed_accepted": false,
+    "goal": "ACTIVE Sol-only continuous adversarial campaign",
+    "independent_delivery_sha256": "e35744e4a29c56c250cb7c2d5219229034fa35f9179dff3c01ac6e9fdbf99162",
+    "independent_fresh_clean_stages": 66,
+    "independent_native_normal": 6,
+    "independent_native_race_repetitions": 120,
+    "known_retained_failure_tests_not_pass": [
+      "TestCampaignFunctionalObjectIdentityJVM",
+      "TestCampaignFunctionalReceiverStagingJVM"
+    ],
+    "last_full_Netty": {
+      "allGo_or_application_run": false,
+      "file_starts_not_completions": 38,
+      "last_file_start": "time=\"2026-10-22T06:39:35Z\" level=info msg=\"Converting file \\\"/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_performance_ci_review/perf_netty_ownership/dependencies/netty-buffer/src/main/java/io/netty/buffer/PoolThreadCache.java\\\"\"",
+      "raw_receipt_sha256": "f7164a9e47bd9330d086201be5faae75cfba599a2f4a8178bcb9140fc188a5ab",
+      "seconds": 294.012469,
+      "status": "STRICT_COMPILER_FAILURE"
+    },
+    "native_work_example_before_after": [
+      38311,
+      5
+    ],
+    "native_work_is_not_wall_time_or_Java_speedup": true,
+    "owner_receipts": {
+      "retained_failed": 4,
+      "successful": 39,
+      "total": 43
+    },
+    "related_cases_pass": 31,
+    "status": "INDEPENDENT_COMPONENT_VERIFIED_WITH_TWO_LOCAL_BASELINE_FAILURES_RETAINED",
+    "tested_source_manifest": "c632360ff5ba024bb1f0aeec91610b9db50a53819720c826530cfe062fa3b68e",
+    "tested_source_members": 4354,
+    "whole_observations": 36,
+    "whole_output_files": 72
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
