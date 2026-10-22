@@ -18,6 +18,11 @@ func JavaStringGetBytes(value *JavaString, charset *Charset) *PrimitiveArray[int
 			return PrimitiveArrayLiteral(PrimitiveByteTypeID, owned...)
 		}
 	}
+	if charset == US_ASCII || charset == ISO_8859_1 {
+		if owned, ok := encodeJavaSingleByteOwnedSigned(value.units, charset == US_ASCII); ok {
+			return PrimitiveArrayLiteral(PrimitiveByteTypeID, owned...)
+		}
+	}
 	var encoded []byte
 	var order binary.AppendByteOrder
 	switch charset {

@@ -22391,6 +22391,62 @@
     "tested_source_members": 4364,
     "whole_Java_speed_claim": false
   },
+  "sol_progress188": {
+    "JDK21_runtime_API_forks": [
+      9,
+      9,
+      9
+    ],
+    "allocation_guard": "4096 preallocated input units, escaping result: genuine baseline14 to candidate2 allocations/call for both charsets",
+    "behavior": "Canonical ASCII/Latin1 encode directly into fresh owned signed-byte storage; valid surrogate pairs replace once, isolated units separately; null order, UTF8, other codecs and CharsetEncoder paths preserved",
+    "campaign": "Ongoing Sol-only adversarial TDD",
+    "coordinator_dependency_audit": "6e1d58741c92e6175073e623b18779d179f28ca8083fc31c681233fa8710ea38",
+    "coordinator_native_audit": "cd17612b5b2c7b0f25b8ad204b517683bb3e91619ae4d6de65a5d549b346677c",
+    "default_F1_six": "PASS",
+    "dependency_raw_generated_implementation_Go_exact": 28,
+    "dependency_semantic_pairs": 24,
+    "fresh_JDK_and_generatedGo_forks": [
+      24,
+      24
+    ],
+    "full_race_registries": [
+      838,
+      23,
+      10
+    ],
+    "held": [
+      "Full Netty translation/build/application parity",
+      "Full Gson112/113/114",
+      "Supplier28 generatedGo generic Map/emptyList/Comparator compatibility",
+      "Full CI and accumulated round acceptance"
+    ],
+    "independent_dependency_build_and_semantic_children": 58,
+    "independent_fixedcorpus_audit": "274f6cc1545496ef7c27df86afa0f080d61887bf32f6fdc68775cdaf0c74af7f",
+    "last_CI187": "Terminal7success8failure; compiler38to37, all32focusedPASS, no newfailed/skip names; full applicationparityPASS",
+    "new_runtime_helpers": 1,
+    "new_test_leaves": 2,
+    "only_excluded_warm_fields": [
+      "api_ns",
+      "validated_ns"
+    ],
+    "only_old_function": "JavaStringGetBytes",
+    "owner_expected_allocation_RED": 1,
+    "owner_raw_children": 68,
+    "qualifier_lane_metadata_erratum": "Raw null lane attribution retained; supplement ties all handles to authorized lane3",
+    "related_JDK_compiler_parents": 16,
+    "runtime_API_arms": [
+      "JDK21",
+      "unchanged baselineGo",
+      "candidateGo"
+    ],
+    "runtime_API_observations": "Complete stdout/stderr/status equal, no ignored fields",
+    "same_frozen_Java_dependency_sources": 26,
+    "same_frozen_resources": 2,
+    "status": "INDEPENDENT_SINGLEBYTE_ENCODING_ALLOCATION_REPAIR_VERIFIED",
+    "tested_source_manifest": "9b3a62ad7e70b37454e2c7ecc174db3f9b4e6bf6e76419f5b650ff5512842a52",
+    "tested_source_members": 4368,
+    "whole_Java_speed_claim": false
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
