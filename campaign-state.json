@@ -26494,5 +26494,30 @@
     "fullCI": "UNACCEPTED",
     "fullNetty": "UNACCEPTED normal300timeout retained",
     "fullRound": "UNACCEPTED"
+  },
+  "sol_progress170": {
+    "status": "SOURCE_ANCESTRY_FATAL_REPAIR_FINITE_PASS_TWO_CURRENT_BASELINE_REDS",
+    "base": "97ce1cc7be6263a580fe768df9eaac1fb49e24e9",
+    "root_source_manifest_sha256": "092c98e8e02ba877198b44073a1b3b0b3eab631a7bf190c21bca57f435aedb6d",
+    "root_audit_sha256": "755d14f8c0a0122304f3b9dd9c22ee2e383a185d600d303d0ee81cf06a269a86",
+    "positive_receipts": 170,
+    "baseline_and_candidate_red_receipts": 4,
+    "distinct_related_and_owned_parents": 156,
+    "distinct_related_and_owned_pass": 154,
+    "retained_current_baseline_red": 2,
+    "original_and_owned_race20_passes": 180,
+    "preceding_gson_parents": 39,
+    "Reader_JDK_runs": 6,
+    "Reader_Go_runs": 6,
+    "original_exception_CI_parents": 2,
+    "full_race_registries": {
+      "parsing": 10,
+      "stdjava": 801,
+      "symbol": 23
+    },
+    "default_F1": "race build/testcompile/lint PASS",
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED"
   }
 }

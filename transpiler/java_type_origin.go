@@ -121,6 +121,10 @@ func classParameterTypeOrigins(scope *symbol.ClassScope) []inferredJavaTypeOrigi
 }
 
 func sourceClassOriginBindings(start *symbol.ClassScope, arguments []inferredJavaTypeOrigin, owner *symbol.ClassScope, ctx Ctx) map[*symbol.TypeParamDeclaration]inferredJavaTypeOrigin {
+	paths, reachable := sourceOriginAncestryPaths(start, owner, ctx)
+	if !reachable {
+		return nil
+	}
 	type originView struct {
 		scope     *symbol.ClassScope
 		arguments []inferredJavaTypeOrigin
@@ -147,17 +151,17 @@ func sourceClassOriginBindings(start *symbol.ClassScope, arguments []inferredJav
 		if current == owner {
 			return bindings
 		}
-		parents := make([]string, 0, 1+len(current.ImplementedInterfaces))
-		if superclass := strings.TrimSpace(current.Superclass); superclass != "" {
-			parents = append(parents, superclass)
-		}
-		parents = append(parents, current.ImplementedInterfaces...)
-		for _, parentType := range parents {
-			edge := declaredJavaTypeOrigin(symbol.JavaType{Original: parentType, TypeParameterBindings: symbol.VisibleTypeParamBindings(current.TypeParameters)}, declaring)
-			edge = substituteJavaTypeOrigin(edge, bindings)
-			if edge.nominalScope != nil {
-				queue = append(queue, originView{scope: edge.nominalScope, arguments: edge.arguments})
+		for _, parent := range paths[current] {
+			if seen[parent.scope] {
+				continue
 			}
+			edge := declaredJavaTypeOrigin(symbol.JavaType{Original: parent.javaType, TypeParameterBindings: symbol.VisibleTypeParamBindings(current.TypeParameters)}, declaring)
+			edge = substituteJavaTypeOrigin(edge, bindings)
+			if edge.nominalScope != parent.scope || !sourceOriginAncestryComplete(edge) ||
+				len(edge.arguments) != 0 && len(edge.arguments) != len(parent.scope.TypeParameters) {
+				continue
+			}
+			queue = append(queue, originView{scope: edge.nominalScope, arguments: edge.arguments})
 		}
 	}
 	return nil
