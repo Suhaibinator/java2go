@@ -2,6 +2,8 @@ package stdjava
 
 import "math/bits"
 
+const BitSetTypeID TypeID = "java.util.BitSet"
+
 // BitSet stores independently mutable bit vectors for the supported Java
 // constructor, single-bit operations, size queries and clone surface.
 type BitSet struct {
@@ -71,5 +73,5 @@ func (b *BitSet) Cardinality() int32 {
 	}
 	return count
 }
-func (*BitSet) JavaDynamicTypeID() TypeID { return "BitSet" }
-func init()                               { RegisterJavaType("BitSet", ObjectTypeID, CloneableTypeID, SerializableTypeID) }
+func (*BitSet) JavaDynamicTypeID() TypeID { return BitSetTypeID }
+func init()                               { RegisterJavaType(BitSetTypeID, ObjectTypeID, CloneableTypeID, SerializableTypeID) }

@@ -21802,6 +21802,37 @@
       "status": "ROOT_CURRENT_PROJECTED_WIDENING_SCORE_FINITE_PASS_WITH_IDENTICAL_BASELINE_VARARGS_RED"
     }
   },
+  "sol_progress172": {
+    "base": "59416318a5a248b76feed98267ebc2faf0caf641",
+    "comparative_red_receipts": 0,
+    "fullCI": "UNACCEPTED",
+    "fullNetty": "UNACCEPTED normal300timeout retained",
+    "fullRound": "UNACCEPTED",
+    "positive_receipts": 27,
+    "root_audit_sha256": "09bd241c98620d5367bebd3de467a6099432d27b7e9ef4862d2b2ccc98f7c1b7",
+    "root_source_manifest_sha256": "06b9c0c8cdbef4fcda441698e0c8cc41d030167b817208ebea638f48ddee8340",
+    "status": "ROOT_CURRENT_BITSET_CANONICAL_IDENTITY_FINITE_PASS_ORIGINAL_INITIALIZER_PASS",
+    "verification": {
+      "Reader_Go_runs": 6,
+      "Reader_JDK_runs": 6,
+      "default_F1": "race build/testcompile/lint PASS",
+      "existing_BitSet_JDK_parent_repetitions": 3,
+      "fullCI_fullNetty_fullRound": "UNACCEPTED",
+      "full_original_application": "owner actual18JDKstrict/allGoPASS firstGo2 Supplier frontier; not rerun or claimed here",
+      "full_race_registries": {
+        "parsing": 10,
+        "stdjava": 806,
+        "symbol": 23
+      },
+      "original_exception_CI_parents": 2,
+      "owned_race20_passes": 100,
+      "preceding_gson_parents": 39,
+      "preceding_scorer_race20_passes": 60,
+      "records": 27,
+      "status": "ROOT_CURRENT_BITSET_CANONICAL_IDENTITY_FINITE_PASS_ORIGINAL_INITIALIZER_PASS",
+      "unmodified_original_EventLoader_initializer": "actualPASS with matching current runtime; separate observer, no generated edits"
+    }
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
