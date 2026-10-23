@@ -318,9 +318,8 @@ public class E {
 	if !strings.Contains(flat, "return "+access) {
 		t.Errorf("expected return of the initialized WED singleton, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "return d == "+access) {
-		t.Errorf("expected comparison with the initialized WED singleton, got:\n%s", out)
-	}
+	ci196AssertQualifiedEnumIdentity(t, out)
+	runGoTestInTempModule(t, out, ci196QualifiedEnumOriginalGoChild)
 }
 
 // TestCodegen_LongShiftMaskWidth verifies long shifts mask the count to 6 bits

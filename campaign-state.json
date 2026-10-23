@@ -22843,6 +22843,47 @@
     "scope_leaves": 13,
     "status": "DEFERRED_STREAM_PIPELINE_CORE_QUALIFIED"
   },
+  "sol_progress198": {
+    "CI197_terminal": "30 unchanged compiler failures, all15 earlier repaired parents PASS; known Gson adversarial failure",
+    "Cgo_calls_per_query": [
+      5,
+      5
+    ],
+    "F1_runtime_registry": 880,
+    "Root_raw_audit": "d7c7ab8ed05a3f806009225133f5cb88f8e6dc18e85cceeeecff883b7bc88c45",
+    "accepted_zero_exit_gates": 90,
+    "baseline_bytes_per_import_lookup": [
+      2688,
+      21760
+    ],
+    "candidate_bytes_per_import_lookup": [
+      0,
+      0
+    ],
+    "default_F1_six_profiles": "PASS",
+    "full_race_parents": {
+      "parsing": 10,
+      "stdjava": 876,
+      "symbol": 23
+    },
+    "held": [
+      "Hosted198 results",
+      "Full Supplier28/Gson112/Netty1220 and round acceptance",
+      "Application/Java-relative speed claims"
+    ],
+    "historical_native_timeout_retained_not_pass": true,
+    "historical_partial_parent_PASS_credit": 0,
+    "native_parent_PASS": 1451,
+    "nested_Go_test_normal_and_race_explicitly_verified": true,
+    "owner_delivery": "8071cfaae9ee5ca25aeaf5e9d1aca5fc2fd59c440ee9448bbce29c690d209f94",
+    "public_copying_API_and_namespace_checks_unchanged": true,
+    "publication_parent": "2d0f9f192b3730bb469f5c1b869c51b05805effd",
+    "qualified_source_manifest": "4d24a9c8644de4cd397ae66125c4ed4ab87f256d29979ae0d7b2f1aa24de0fe0",
+    "same20_inventory_race_repetitions_separate_invocations_caps_55_65_unchanged": true,
+    "source_review_CI2": "b1bc05b4a89be7d5b3d8b18f5cf2ebac1e7e107f5ce4fac6b0c773c40b0b7ef3",
+    "source_review_import": "355bc0a4c2d031051b51221e61dbb13f333423385b00dc1a81f3ddbc8671a65a",
+    "status": "READONLY_IMPORT_LOOKUP_AND_TWO_IDENTITY_ASSERTIONS_QUALIFIED"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

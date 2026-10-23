@@ -7,7 +7,7 @@ import "github.com/NickyBoy89/java2go/symbol"
 // owner declares a field and member type with the same name.
 func staticImportedSourceType(name string, wildcard bool, ctx Ctx) (*symbol.ClassScope, bool) {
 	var found *symbol.ClassScope
-	for _, imported := range staticMethodImports(ctx) {
+	for _, imported := range readOnlyStaticMethodImports(ctx) {
 		if imported.wildcard != wildcard || !wildcard && imported.member != name {
 			continue
 		}
