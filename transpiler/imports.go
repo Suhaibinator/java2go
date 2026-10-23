@@ -441,6 +441,9 @@ func resolveJavaPackageForType(ctx Ctx, javaTypeBase string, scope *symbol.Class
 // than treating every dot as a package separator or finding an unrelated
 // nested class with the same simple name elsewhere in the package.
 func findQualifiedSourceClass(name string) *symbol.ClassScope {
+	if candidate, known := indexedQualifiedDeclaration(name); known {
+		return candidate
+	}
 	parts := strings.Split(strings.TrimSpace(name), ".")
 	for split := len(parts) - 1; split > 0; split-- {
 		pkg := symbol.GlobalScope.FindPackage(strings.Join(parts[:split], "."))

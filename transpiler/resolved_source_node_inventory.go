@@ -20,6 +20,10 @@ func resolvedSourceInventory(ctx Ctx) *callableSubclassSourceInventory {
 	inventory := ctx.callableSubclasses
 	if inventory != nil && inventory.graph != symbol.GlobalScope {
 		// All facts have the same graph lifetime, including negative/empty syntax.
+		retireStaleDeclarationInvocation(ctx)
+		if inventory.ownership != nil {
+			inventory.ownership.declarations.retire()
+		}
 		*inventory = callableSubclassSourceInventory{graph: symbol.GlobalScope}
 	}
 	return inventory

@@ -20,6 +20,7 @@ type syntaxIdentifierFile struct {
 	methods       map[int]*sitter.Node
 	exactMethods  map[string][]int
 	prefixMethods map[string][]int
+	declarations  map[*sitter.Node]string
 }
 
 // Build only copied syntax facts. Definitions, resolved owners and allocated
@@ -31,7 +32,8 @@ func buildSyntaxIdentifierFile(file *symbol.FileScope) *syntaxIdentifierFile {
 	}
 	entry := &syntaxIdentifierFile{anchor: root, source: append([]byte(nil), file.Source...),
 		bodies: map[*sitter.Node]syntaxIdentifierInterval{}, raw: map[string][]int{},
-		methods: map[int]*sitter.Node{}, exactMethods: map[string][]int{}, prefixMethods: map[string][]int{}}
+		methods: map[int]*sitter.Node{}, exactMethods: map[string][]int{}, prefixMethods: map[string][]int{},
+		declarations: map[*sitter.Node]string{}}
 	targets := map[*sitter.Node]bool{}
 	for _, top := range file.TopLevelClasses {
 		if top != nil && top.Class != nil && top.Class.DeclarationNode != nil {
@@ -46,6 +48,10 @@ func buildSyntaxIdentifierFile(file *symbol.FileScope) *syntaxIdentifierFile {
 		}
 		first := ordinal
 		kind := node.Type()
+		switch kind {
+		case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
+			entry.declarations[node] = kind
+		}
 		if kind == "identifier" || kind == "type_identifier" {
 			start, end := node.StartByte(), node.EndByte()
 			if start > end || uint64(end) > uint64(len(file.Source)) {

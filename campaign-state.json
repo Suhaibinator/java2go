@@ -22884,6 +22884,47 @@
     "source_review_import": "355bc0a4c2d031051b51221e61dbb13f333423385b00dc1a81f3ddbc8671a65a",
     "status": "READONLY_IMPORT_LOOKUP_AND_TWO_IDENTITY_ASSERTIONS_QUALIFIED"
   },
+  "sol_progress199": {
+    "F1_runtime_registry": 880,
+    "Root_raw_audit": "7abce171b2c89ca8d018c352c409a38c9cf689ef5928dd48e5950afeb564af48",
+    "accepted_zero_exit_gates": 61,
+    "application_or_Java_relative_speed_claim": false,
+    "batch_cgo_unchanged": [
+      666300,
+      674550,
+      707550
+    ],
+    "candidate_allocations": [
+      309897,
+      317863,
+      349685
+    ],
+    "default_F1_six_profiles": "PASS",
+    "full_race_parents": {
+      "parsing": 10,
+      "stdjava": 876,
+      "symbol": 23
+    },
+    "held": [
+      "Original Supplier28/Gson112/Netty1220 application acceptance",
+      "Current hosted CI failures",
+      "Generated-program performance measurement"
+    ],
+    "hosted198": "28 compiler failures; two identity assertions now PASS; no new failed names vs checkpoint197",
+    "independent_source_review": "b95ac7575552dff63a85e8023413218ebaddc8114fb851512f9caad21f4dd4b0",
+    "matched_no_index_allocations": [
+      395531,
+      402435,
+      430042
+    ],
+    "mutable_public_API_uses_original_fallback": true,
+    "native_parent_PASS": 1321,
+    "owner_delivery": "3443c58db410c4ff0dfa720caaf6ddca9ec1215d7f2c6013deb08454853d9af9",
+    "publication_parent": "f8147da47f633f5ec548c75b52d737a716a5bb8b",
+    "qualified_source_manifest": "4dab1c77a0607dabd93fa567ce093c972c5c9bacc732e89847ed4b3f38e4ae1e",
+    "resolved_owners_binders_imports_and_access_checks_live": true,
+    "status": "QUALIFIED_OWNED_DECLARATION_CANDIDATE_INDEX"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

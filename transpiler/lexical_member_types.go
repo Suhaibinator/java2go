@@ -53,9 +53,15 @@ func memberTypeInHierarchy(owner *symbol.ClassScope, name string, ctx Ctx) *symb
 	if owner == nil {
 		return nil
 	}
-	for _, child := range owner.Subclasses {
-		if child.Class != nil && child.Class.OriginalName == name {
+	if child, known := indexedDirectDeclaration(owner, name, ctx); known {
+		if child != nil {
 			return child
+		}
+	} else {
+		for _, child := range owner.Subclasses {
+			if child.Class != nil && child.Class.OriginalName == name {
+				return child
+			}
 		}
 	}
 	if ctx.memberTypeLookupPath[owner] || memberTypeLookupFrameActive(ctx.memberTypeLookupFrame, owner) || (owner.Superclass == "" && len(owner.ImplementedInterfaces) == 0) {
@@ -140,6 +146,12 @@ func declaredFileType(name string, file *symbol.FileScope, ctx Ctx) *symbol.Clas
 		return nil
 	}
 	root, suffix, nested := strings.Cut(name, ".")
+	if top, known := indexedFileDeclaration(file, root, ctx); known {
+		if top == nil || !nested {
+			return top
+		}
+		return directMemberTypeSuffixPath(top, suffix, ctx)
+	}
 	for _, top := range file.TopLevelClasses {
 		if top.Class != nil && top.Class.OriginalName == root {
 			if !nested {

@@ -7,8 +7,10 @@ import "github.com/NickyBoy89/java2go/symbol"
 // own another index for its batch. Unindexed synthesized classes retain ordinary
 // ownership fallback, and no index crosses a conversion's graph identity.
 type resolutionFileIndex struct {
-	graph *symbol.GlobalSymbols
-	files map[*symbol.ClassScope]*symbol.FileScope
+	graph        *symbol.GlobalSymbols
+	files        map[*symbol.ClassScope]*symbol.FileScope
+	declarations *namedDeclarationCandidates
+	renderFile   *symbol.FileScope
 }
 
 var activeResolutionFiles *resolutionFileIndex
@@ -46,11 +48,13 @@ func newResolutionFileIndex() *resolutionFileIndex {
 // graph replacement resets this shared facts holder; late synthesized classes
 // remain unindexed and use the ordinary ownership search.
 func sourceOwnershipIndex(ctx Ctx) *resolutionFileIndex {
+	retireStaleDeclarationInvocation(ctx)
 	if index := ctx.sourceOwnership; index != nil {
 		if index.graph != symbol.GlobalScope {
+			index.declarations.retire()
 			*index = *newResolutionFileIndex()
 		}
-		return index
+		return declarationOwnershipHolder(index, ctx)
 	}
 	inventory := resolvedSourceInventory(ctx)
 	if inventory == nil {
@@ -59,5 +63,22 @@ func sourceOwnershipIndex(ctx Ctx) *resolutionFileIndex {
 	if inventory.ownership == nil {
 		inventory.ownership = newResolutionFileIndex()
 	}
+	inventory.ownership = declarationOwnershipHolder(inventory.ownership, ctx)
 	return inventory.ownership
+}
+
+// A nested public render or another owned invocation must not overwrite the
+// outer render's authority. Its holder is restored by convertFileNode's defer.
+func declarationOwnershipHolder(index *resolutionFileIndex, ctx Ctx) *resolutionFileIndex {
+	var facts *namedDeclarationCandidates
+	if ctx.syntaxInvocation != nil {
+		facts = ctx.syntaxInvocation.declarations
+	}
+	if index.declarations != facts || index.renderFile != ctx.currentFile {
+		copy := *index
+		index = &copy
+	}
+	index.renderFile = ctx.currentFile
+	index.declarations = facts
+	return index
 }

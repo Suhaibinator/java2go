@@ -12,8 +12,12 @@ import (
 )
 
 // RunStandalone is reserved for the built CLI's internal ownership capability.
-// Source slices and parser trees must not be edited during this closed emission
-// phase. Public Run and all extensible writer APIs retain the dynamic path.
+// Source slices, parser trees and registered declaration-candidate topology
+// must not be edited during this closed emission phase. The GlobalScope graph,
+// package/file membership, named member order, ClassScope and Class definition
+// identities, parsed declaration/root identities, OriginalName and Enclosing
+// links are frozen; lookup decisions, imports, binders and generated names stay
+// live. Public Run and all extensible writer APIs retain the dynamic path.
 func RunStandalone(args []string, session *cliownership.Session) error {
 	defer session.Close()
 	if !session.Active() || !standaloneSyntaxConfigurationOK(os.Stdout) {
@@ -53,6 +57,7 @@ type syntaxInvocation struct {
 	identifiers  map[*symbol.FileScope]*syntaxIdentifierFile
 	indexable    bool
 	demandSyntax *sourceGenericDemandSyntax
+	declarations *namedDeclarationCandidates
 }
 
 func newSyntaxInvocation(session *cliownership.Session, files []parsing.SourceFile) *syntaxInvocation {
@@ -88,12 +93,15 @@ func newSyntaxInvocation(session *cliownership.Session, files []parsing.SourceFi
 			invocation.indexable = false
 		}
 	}
+	invocation.declarations = newNamedDeclarationCandidates(invocation)
 	return invocation
 }
 
 func (invocation *syntaxInvocation) close() {
 	if invocation != nil {
 		invocation.active = false
+		invocation.declarations.retire()
+		invocation.declarations = nil
 		invocation.demandSyntax = nil
 	}
 }

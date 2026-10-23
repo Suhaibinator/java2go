@@ -3943,9 +3943,15 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 
 	// Current package (other files).
 	if pkg := symbol.GlobalScope.FindPackage(ctx.currentFile.Package); pkg != nil {
-		for _, file := range pkg.Files {
-			if scope := declaredFileType(name, file, ctx); scope != nil {
+		if scope, known := indexedPackageDeclaration(pkg, name, ctx); known {
+			if scope != nil {
 				return scope
+			}
+		} else {
+			for _, file := range pkg.Files {
+				if scope := declaredFileType(name, file, ctx); scope != nil {
+					return scope
+				}
 			}
 		}
 	}
