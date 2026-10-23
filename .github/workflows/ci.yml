@@ -15,7 +15,9 @@ concurrency:
 
 env:
   GO_VERSION: "1.27.0"
-  JAVA_VERSION: "21"
+  # Pin Temurin release 21.0.6+7 using its published Adoptium SemVer.
+  # Parity uses locked currency.data revision 177; qualify updates separately.
+  JAVA_VERSION: "21.0.6+7.0.LTS"
 
 jobs:
   # The test suite is split across parallel jobs rather than run as a single

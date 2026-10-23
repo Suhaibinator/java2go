@@ -23431,6 +23431,38 @@
     "strict_projects": 3,
     "unfiltered_public_parity_program_PASS": 6
   },
+  "sol_progress212": {
+    "RED": "CI209 fresh JVM accepted233 currency codes includingXAD vs frozen232 before compiler/Go execution",
+    "Root_static_audit": "e19b930824839e5ceff05b5cec3c032ba1a99de97ce2f97276e3edfdd398b18e",
+    "actual_Temurin_execution_pending_normal_new_CI": true,
+    "currency_data_format": 3,
+    "currency_data_revision": 177,
+    "delivery": "2bd6dcaa702a42dcab3c704cd091a3b5d3d68a484e2afc130cfe0486fd9d9c88",
+    "held": [
+      "hosted full regression confirmation",
+      "Supplier28",
+      "Gson112",
+      "Netty1220 application parity"
+    ],
+    "independent_reviewer": "sol61_recover_index",
+    "no_runtime_oracle_Java_test_assertion_skip_changes": true,
+    "not_claimed": [
+      "current hosted GREEN",
+      "latest JDK21 currency data compatibility",
+      "compiler/runtime algorithm repair"
+    ],
+    "publication_parent": "d8e114be4aa9f0c882da505d52ba7ab9aa39bea7",
+    "release": "jdk-21.0.6+7",
+    "status": "CI_JDK_DATA_BASELINE_PINNED_HOSTED_EXECUTION_PENDING",
+    "validation": [
+      "officialGA metadata and current action exact-selector code",
+      "exact action-locked SemVer7.7.1 offline full-build/near-mismatch checks",
+      "full YAML parse and six shared Temurin consumers",
+      "deterministic existing currency generator --check",
+      "exact forward/inverse and otherwise unchanged workflow"
+    ],
+    "workflow_only_change": "JAVA_VERSION21 to exact published Adoptium SemVer21.0.6+7.0.LTS with explanatory comments"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
