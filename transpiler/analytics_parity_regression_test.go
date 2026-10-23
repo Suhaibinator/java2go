@@ -53,7 +53,7 @@ public class FieldBackedCalls {
 		".values.Get(0)",
 		".values.Size()",
 		"stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey), stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}), fs.worker.NameJava2goExecution(__java2goExecution))",
-		"stdjava.ObjectView[*stdjava.JavaString](fs.byKey.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}), __java2goExecution), stdjava.StringTypeID)",
+		"stdjava.ObjectView[*stdjava.JavaString](stdjava.MapGetExecution(__java2goExecution, fs.byKey, stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114})), stdjava.StringTypeID)",
 	}
 	for _, check := range checks {
 		if !strings.Contains(out, check) {
@@ -63,7 +63,7 @@ public class FieldBackedCalls {
 	add := strings.Index(out, "stdjava.EvaluationValue(fs.values).Add(")
 	put := strings.Index(out, "stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey),")
 	getList := strings.Index(out, "fs.values.Get(0)")
-	getMap := strings.Index(out, "fs.byKey.GetObject(stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}), __java2goExecution)")
+	getMap := strings.Index(out, "stdjava.MapGetExecution(__java2goExecution, fs.byKey, stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}))")
 	size := strings.Index(out, "fs.values.Size()")
 	if add < 0 || put <= add || getList <= put || getMap <= getList || size <= getMap {
 		t.Errorf("generated calls changed Java statement or return-expression evaluation order:\n%s", out)

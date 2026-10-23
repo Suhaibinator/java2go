@@ -23382,6 +23382,55 @@
     ],
     "status": "QUALIFIED_INPUT_ONLY_SOURCE_SNAPSHOT_FOUNDATION"
   },
+  "sol_progress211": {
+    "Root_cleanup_audit": "d7449b1d967765bbcd425130089a2185c21f30e26aad0c3329b79f1b0481aafc",
+    "Root_finite_audit": "2a2d613ad0d77656337747d2c52a7ca3f24033854e3ace4ecb6ac20a00394f9b",
+    "Root_source_precheck": "be81b411780d3e11f3b2c014ece13739f47dc85b933603c09c71f4b18a28c07e",
+    "all_generated_package_builds": 6,
+    "canonical_direct_traces": 9,
+    "canonical_profiles": 6,
+    "delivery": "d893d2bf5204db3345460328c6b6bb4bf5e22e64cb2d9696c5aa6c2bf41b81f4",
+    "expected_old_RED": 2,
+    "fresh_stages": 68,
+    "held": [
+      "current hosted CI",
+      "public collector integration",
+      "Supplier28",
+      "Gson112",
+      "Netty1220 application parity"
+    ],
+    "independent_actual_clear": "d4ba081a991c49dd64f73c69ce83cff4773a7e3ff5e6db642442362ba4b02300",
+    "latest_hosted210": {
+      "adversarial_Gson": "FAILED_requireNonNullField",
+      "application_parity": "SUCCESS",
+      "compiler_FAIL": 21,
+      "compiler_PASS": 2352,
+      "new_failure_names": 0,
+      "new_source_snapshot_parents_PASS": 13
+    },
+    "limitations": [
+      "UNCHANGED Receiver and Factory public parity helpers have nested javac/java without explicit CPU/heap flags. Their whole trees are subordinate to owned native test55s/outer65s caps; no nested JDK CPU/heap adoption is claimed. Existing build300 and Receiver execution60/Factory execution55 subtimers remain subordinate to those parents, with WaitDelay5. Root explicitly authorized this narrowly limited resource attribution; no semantic or timeout waiver.",
+      "Nested helper Go entries always build with race, including normal test parents. They receive no independent binary-metadata or race credit. Canonical direct normal/race claims require actual separately built binary metadata and traces.",
+      "Both unfiltered parity parents must PASS in both modes. Factory must exercise both existing siblings, one actual compiler build and one exact same-path reuse. No filtered-parent aggregation substitutes; any timeout leaves this required gate incomplete.",
+      "Fresh direct external preflights may warm immutable caches before native tests, but provide no leaf PASS credit. All68 stages are fresh; prior Receiver29 and Factory40 stages transfer no qualification credit.",
+      "Factory probe observes custom Factory laziness/call count and Box/String identities; execution/thread identity is AST evidence only. Receiver null probes observe NPE class and counter only, not message, cause, or hidden post-failure state.",
+      "Canonical six profiles are build/test-compile/lint for default and F1; testcompile -run ^$ is not runtime or leaf coverage. Public210 unowned/runtime/S0/209/SAM bytes must remain identical.",
+      "Direct JVM and generated Go stdout/status/stderr must equal unchanged separately frozen author oracle bytes. Factory empty filesystem observations are also checked; Receiver makes no independent filesystem claim.",
+      "Only generated go.mod/go.sum runtime wiring is prepared after strict conversion; generated Go remains byte-exact. No Java edits, generated Go patches, source-name hacks, process/JVM delegation, assertion changes, helper edits, skips, shims, or after-failure limits changes."
+    ],
+    "mutation_controls_PASS": 60,
+    "next": "Pin CI to the verified JDK data baseline; finish ArrayList formal-rank, collector, wildcard, source Map and RAF repairs with their original application gates.",
+    "owned_test_fixture_files": 20,
+    "parent_PASS": 16,
+    "production_compiler_runtime_and_original_Java_unchanged": true,
+    "publication_parent": "f2f9f1b5bb13884aa608d6a9d97fadacaff9df6a",
+    "pure_guard_PASS": 2,
+    "qualified_source_manifest": "62522efa2bf8dc400dfccb4aadb90d245d623923200a7bbb4d1317611ced5868",
+    "same_parent_compiler_build_reuse_PASS": 2,
+    "status": "QUALIFIED_RECEIVER_AND_GENERIC_FACTORY_TEST_MIGRATION",
+    "strict_projects": 3,
+    "unfiltered_public_parity_program_PASS": 6
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

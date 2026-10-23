@@ -137,17 +137,5 @@ public class FactoryApp {
 `
 
 	out := renderGoFileFromJava(t, src)
-	flat := normalizeSpaces(out)
-
-	if !strings.Contains(flat, "func Build(factory Factory[*Box[string]]) *Box[string]") {
-		t.Fatalf("expected nested generic interface + return types in build(), got:\n%s", out)
-	}
-	if !strings.Contains(flat, "BuildJava2goExecution(__java2goExecution, NewFactoryFuncAdapterJava2goExecution[*Box[string]](func(__java2goExecution *stdjava.Execution, seed string) *Box[string]") {
-		t.Fatalf("expected lambda to infer generic return type and use adapter, got:\n%s", out)
-	}
-	if !strings.Contains(flat, "NewBoxJava2goExecution[string](__java2goExecution, seed)") &&
-		!strings.Contains(flat, "NewBoxJava2goExecution[*Box[string]](__java2goExecution, seed)") &&
-		!strings.Contains(flat, "ConstructBoxJava2goExecution[*Box[string]](__java2goExecution, seed)") {
-		t.Fatalf("expected constructor call with inferred generic type inside lambda body, got:\n%s", out)
-	}
+	assertComplexFactoryContract(t, out)
 }
