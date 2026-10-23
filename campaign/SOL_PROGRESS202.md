@@ -1,0 +1,11 @@
+# Sol checkpoint 202: bound declaration attestation cost
+
+Checkpoint 199 introduced a serious lookup slowdown when exact source-byte checks repeatedly scanned large source files. The optional declaration index now admits only invocations whose registered files each contain at most 256 bytes. Any larger file permanently retires the index for that invocation and uses the original live lookup paths. A later over-cap source replacement retires before comparison; restoring old source cannot reactivate it. Callback-free accessors also check pointer-identical active/context/queried files once within that accessor. Source, parse-root, namespace, session and lifetime guards remain intact.
+
+TDD retained the original budget regression and all existing guards. All 65 qualification stages passed, including 567 parent test executions, full symbol/parser race suites, default/F1 build, test compilation and lint. Runtime bytes are unchanged. Original 50/200/800-file allocation and native-call gates passed without changing their limits.
+
+A separate quiet matched diagnostic ran 20 native jobs in fixed ABBA order, retaining all 24 rows. Corrected binaries passed every frozen loose CPU cap; six old-index CPU failures remain actual failures, not passes. On the actual 105,458-byte Netty source, warm basic lookups fell from 68.106–68.820 ms to 1.213–1.285 ms; direct member lookups fell from 89.987–90.593 ms to 0.591–0.630 ms. All four real-source cases met the bounds. The original small-source 800-file warm workload was roughly level (75.129–75.587 ms before, 76.859–78.412 ms after); no improvement is claimed there.
+
+The conservative fallback restores the original lookup allocations for larger sources. This exchanges the allocation-only index benefit for measured lower CPU cost on these inputs. The coordinator independently verified source hashes, raw streams, actual exit statuses, test registries, caps and process cleanup. These are isolated resolver measurements, not full-compiler or Java/Go application speed results.
+
+Original Supplier28, Gson112 and Netty1220 application gates remain open. The previous full Netty timeout remains retained; a clean corrected full-source retry is the next compiler gate. Private ThreadLocal, ArrayList and Gson components continue through qualification and regional integration. Hosted CI remains failing.

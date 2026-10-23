@@ -10,6 +10,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Exact source attestation must be cheaper than the live scans it replaces.
+// Larger files conservatively retire this optional optimization for the entire
+// invocation; the original lookup tiers remain the authority on that path.
+const declarationSourceAttestationLimit = 256
+
 // These tables contain direct, ordered declaration candidates only. They never
 // answer lexical binding, ancestry, accessibility, imports or admission.
 type namedDeclarationRegion struct {
@@ -71,29 +76,60 @@ func (facts *namedDeclarationCandidates) usable() bool {
 	return true
 }
 
+// Checked files live only for this callback-free accessor. Reusing one exact
+// check for pointer-identical active/context/queried files never crosses a call,
+// render, invocation or session boundary.
+type namedDeclarationAccess struct {
+	facts   *namedDeclarationCandidates
+	checked [3]*symbol.FileScope
+}
+
+func (access *namedDeclarationAccess) currentFile(file *symbol.FileScope) bool {
+	if file == nil || access.facts == nil {
+		return false
+	}
+	for _, checked := range access.checked {
+		if checked == file {
+			return true
+		}
+	}
+	if !access.facts.currentFile(file) {
+		return false
+	}
+	for index, checked := range access.checked {
+		if checked == nil {
+			access.checked[index] = file
+			break
+		}
+	}
+	return true
+}
+
 func declarationCandidates(ctx ...Ctx) *namedDeclarationCandidates {
+	return declarationAccess(ctx...).facts
+}
+
+func declarationAccess(ctx ...Ctx) namedDeclarationAccess {
 	// The currently executing render owns authority. A retained outer context
 	// cannot bypass a nested public render or another owned invocation.
 	if activeResolutionFiles == nil {
-		return nil
+		return namedDeclarationAccess{}
 	}
 	facts := activeResolutionFiles.declarations
-	if facts == nil {
-		return nil
+	if facts == nil || !facts.usable() {
+		return namedDeclarationAccess{}
 	}
-	if !facts.usable() {
-		return nil
-	}
-	if file := activeResolutionFiles.renderFile; file != nil && !facts.currentFile(file) {
-		return nil
+	access := namedDeclarationAccess{facts: facts}
+	if file := activeResolutionFiles.renderFile; file != nil && !access.currentFile(file) {
+		return namedDeclarationAccess{}
 	}
 	if len(ctx) > 0 && ctx[0].syntaxInvocation != nil && ctx[0].syntaxInvocation != facts.invocation {
-		return nil
+		return namedDeclarationAccess{}
 	}
-	if len(ctx) > 0 && ctx[0].currentFile != nil && !facts.currentFile(ctx[0].currentFile) {
-		return nil
+	if len(ctx) > 0 && ctx[0].currentFile != nil && !access.currentFile(ctx[0].currentFile) {
+		return namedDeclarationAccess{}
 	}
-	return facts
+	return access
 }
 
 // Observe the exact original parse anchor and copied source before using a
@@ -101,6 +137,10 @@ func declarationCandidates(ctx ...Ctx) *namedDeclarationCandidates {
 // the entire batch permanently; restoring the old source cannot revive it.
 func (facts *namedDeclarationCandidates) currentFile(file *symbol.FileScope) bool {
 	if file == nil {
+		return false
+	}
+	if len(file.Source) > declarationSourceAttestationLimit {
+		facts.retire()
 		return false
 	}
 	syntax := facts.invocation.identifiers[file]
@@ -122,9 +162,18 @@ func newNamedDeclarationCandidates(invocation *syntaxInvocation) *namedDeclarati
 		return nil
 	}
 	facts := &namedDeclarationCandidates{invocation: invocation, session: invocation.session, graph: invocation.graph,
-		stdout: os.Stdout, stderr: os.Stderr, logger: log.StandardLogger(), formatter: log.StandardLogger().Formatter,
-		files: make(map[*symbol.FileScope]namedDeclarationRegion), owners: make(map[*symbol.ClassScope]namedDeclarationRegion),
-		packages: make(map[string]namedDeclarationPackage)}
+		stdout: os.Stdout, stderr: os.Stderr, logger: log.StandardLogger(), formatter: log.StandardLogger().Formatter}
+	// Inspect live registered source lengths before creating or reading any
+	// declaration table. Admission never retries within this invocation.
+	for file := range invocation.files {
+		if file != nil && len(file.Source) > declarationSourceAttestationLimit {
+			facts.retire()
+			return facts
+		}
+	}
+	facts.files = make(map[*symbol.FileScope]namedDeclarationRegion)
+	facts.owners = make(map[*symbol.ClassScope]namedDeclarationRegion)
+	facts.packages = make(map[string]namedDeclarationPackage)
 	for packageName, pkg := range facts.graph.Packages {
 		entry := namedDeclarationPackage{scope: pkg, first: make(map[string]*symbol.ClassScope), duplicate: make(map[string]bool), complete: pkg != nil}
 		if pkg != nil {
@@ -203,31 +252,34 @@ func (facts *namedDeclarationCandidates) buildOwner(owner, enclosing *symbol.Cla
 }
 
 func indexedDirectDeclaration(owner *symbol.ClassScope, name string, ctx Ctx) (*symbol.ClassScope, bool) {
-	facts := declarationCandidates(ctx)
+	access := declarationAccess(ctx)
+	facts := access.facts
 	if facts == nil {
 		return nil, false
 	}
 	region, known := facts.owners[owner]
-	if !known || !facts.currentFile(region.file) || !region.complete {
+	if !known || !access.currentFile(region.file) || !region.complete {
 		return nil, false
 	}
 	return region.first[name], true
 }
 
 func indexedFileDeclaration(file *symbol.FileScope, name string, ctx Ctx) (*symbol.ClassScope, bool) {
-	facts := declarationCandidates(ctx)
+	access := declarationAccess(ctx)
+	facts := access.facts
 	if facts == nil {
 		return nil, false
 	}
 	region, known := facts.files[file]
-	if !known || !facts.currentFile(region.file) || !region.complete {
+	if !known || !access.currentFile(region.file) || !region.complete {
 		return nil, false
 	}
 	return region.first[name], true
 }
 
 func indexedPackageDeclaration(pkg *symbol.PackageScope, name string, ctx Ctx) (*symbol.ClassScope, bool) {
-	facts := declarationCandidates(ctx)
+	access := declarationAccess(ctx)
+	facts := access.facts
 	if facts == nil || ctx.currentFile == nil {
 		return nil, false
 	}
@@ -240,14 +292,15 @@ func indexedPackageDeclaration(pkg *symbol.PackageScope, name string, ctx Ctx) (
 		return nil, false
 	}
 	owner := entry.first[name]
-	if owner != nil && !facts.currentFile(facts.owners[owner].file) {
+	if owner != nil && !access.currentFile(facts.owners[owner].file) {
 		return nil, false
 	}
 	return owner, true
 }
 
 func indexedQualifiedDeclaration(name string) (*symbol.ClassScope, bool) {
-	facts := declarationCandidates()
+	access := declarationAccess()
+	facts := access.facts
 	if facts == nil {
 		return nil, false
 	}
@@ -278,7 +331,7 @@ func indexedQualifiedDeclaration(name string) (*symbol.ClassScope, bool) {
 		if owner == nil {
 			continue
 		}
-		if !facts.currentFile(facts.owners[owner].file) {
+		if !access.currentFile(facts.owners[owner].file) {
 			return nil, false
 		}
 		for nested {

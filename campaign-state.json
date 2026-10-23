@@ -23010,6 +23010,64 @@
     "two_original_JVM_Go_programs_repeated_three_times": "PASS",
     "workload_allocations": 0
   },
+  "sol_progress202": {
+    "Root_CPU_audit": "086da1a7646721e6a2b7a9fb955d443bcd83a8c52d9226df57d04cfd999fb05d",
+    "Root_finite_audit": "3638b460d8a37132f1993f0730e9c7218ad6234dbc5fdac3258761ded51ad6b0",
+    "accessor_local_file_check_dedup": true,
+    "canonical_six_profiles": "PASS",
+    "corrected_all10_native_jobs_actual0": true,
+    "finite_actual0": 65,
+    "held": [
+      "Original Supplier28/Gson112/Netty1220 parity",
+      "Normal full1220 macro retry",
+      "Hosted CI still failing;201 terminal count not yet verified",
+      "Private component publication"
+    ],
+    "native_parent_PASS": 567,
+    "no_whole_compiler_or_application_speed_claim": true,
+    "old_index_actual_exit1_CPU_controls": 6,
+    "over_cap_file_retires_optional_index_for_entire_invocation": true,
+    "publication_parent": "f205c127126d9fcd095e10f4d3bbb6428715036d",
+    "qualified_source_manifest": "7ec26d52efe7b12c8d9dd687c1a965cb07f264789dc30ecbddefca481c5dd87c",
+    "quiet_CPU_stages": 26,
+    "quiet_native_jobs": 20,
+    "quiet_rows_all_retained": 24,
+    "restored_source_cannot_revive_observed_retirement": true,
+    "runtime_exact201": true,
+    "small800_warm_ms_after": [
+      76.859,
+      78.412
+    ],
+    "small800_warm_ms_before": [
+      75.129,
+      75.587
+    ],
+    "source_byte_admission_cap": 256,
+    "source_review": "c2a69cae681273d724ee3c1fd77d1afaf4269dae4493ad623470ff29eb0a03f2",
+    "source_root_namespace_session_lifetime_guards_unchanged": true,
+    "status": "QUALIFIED_DECLARATION_SOURCE_ATTESTATION_COST_FALLBACK",
+    "symbol_parser_full_race": [
+      23,
+      10
+    ],
+    "tradeoff": "Over-cap fallback restores legacy lookup allocations; small-source original allocation and Cgo gates remain unchanged and pass.",
+    "warm_Adaptive_basic_ms_after": [
+      1.213,
+      1.285
+    ],
+    "warm_Adaptive_basic_ms_before": [
+      68.106,
+      68.82
+    ],
+    "warm_Adaptive_direct_ms_after": [
+      0.591,
+      0.63
+    ],
+    "warm_Adaptive_direct_ms_before": [
+      89.987,
+      90.593
+    ]
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
