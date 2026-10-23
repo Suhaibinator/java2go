@@ -23280,6 +23280,59 @@
     "qualified_source_manifest": "45355c6f78e1e43cffc7c9a5f5ebe70cb1812e2b9f282af63a38d3a3dd48c6bc",
     "status": "QUALIFIED_DECLARATION_OWNED_SOURCE_SAM_IDENTITY_AND_SELECTOR_COLLISIONS"
   },
+  "sol_progress209": {
+    "Enum_mutant_PASS": 38,
+    "Netty_application_parity": false,
+    "Root_audit": "eb303b36a97411ad1d4b6bb1cab01bbcb0bc5029b8e7946fca115250a0f8fbe9",
+    "actual_exit0": 32,
+    "baseline_native_cost": {
+      "ceiling": 54838,
+      "large": 1721980,
+      "small": 23355
+    },
+    "candidate_native_cost": {
+      "ceiling": 24708,
+      "large": 14767,
+      "small": 8290
+    },
+    "canonical_profiles": 6,
+    "delivery": "119ffec7eeb06f1a5096cbdc8a88825063270551ef775b3295ab5db4127c7c02",
+    "expected_RED": 4,
+    "fresh_stages": 36,
+    "graph_durable_phases_per_mode": 43,
+    "graph_inputs": 1220,
+    "graph_queries_per_row": 128,
+    "graph_registered_units": 1161,
+    "graph_rows_per_mode": 15,
+    "graph_saved_allocations": 0,
+    "held": [
+      "Supplier28",
+      "Gson112",
+      "Netty1220 application parity",
+      "full hosted CI"
+    ],
+    "latest_hosted_checkpoint208": {
+      "application_parity": "PASS",
+      "compiler_FAIL": 22,
+      "compiler_PASS": 2346,
+      "new_failures": 0,
+      "run": 39986883526,
+      "separate_Gson_Java_time": "FAIL"
+    },
+    "native_cost_samples_per_mode_and_arm": 3,
+    "next": "Source-input snapshot foundation, public collector-stack integration, CI receiver/factory repairs, SortedMap compiler qualification, and precise Netty metadata-unit ownership diagnosis.",
+    "original_Netty_graph_gates": [
+      "normal",
+      "race"
+    ],
+    "parent_PASS": 74,
+    "private_A4_P2_full154": "GREEN_NOT_PUBLIC_INTEGRATION",
+    "publication_parent": "edbbb64b5cee67ce05d9bfbe4ef8b7a1b90444b2",
+    "qualified_source_manifest": "ddd390ba2266618d8bd8987004e816ae3eb311fffbd5d66d13f0ad93224a97da",
+    "status": "QUALIFIED_RESOLVEFILES_SYNTAX_INVENTORY_LIFETIME_AND_TYPED_ENUM_ASSERTIONS",
+    "subcase_PASS": 310,
+    "wallclock_or_application_performance_claim": false
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

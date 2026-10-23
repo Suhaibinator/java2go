@@ -137,9 +137,7 @@ func TestEnumDeclaration(t *testing.T) {
 		t.Errorf("Expected values slice to include all constants:\n%s", output)
 	}
 
-	if !strings.Contains(output, "func compassValues() []*compass") {
-		t.Errorf("Expected values helper to return []*compass:\n%s", output)
-	}
+	ci206AssertCompassValues(t, generated.String())
 }
 
 func TestEnumWithConstructorsAndFields(t *testing.T) {

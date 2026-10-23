@@ -58,9 +58,12 @@ func ResolveFiles(files []parsing.SourceFile) {
 	if len(files) == 0 {
 		return
 	}
-	previousIndex := activeResolutionFiles
+	previousIndex, previousImports := activeResolutionFiles, activeImportSourceInventory
 	activeResolutionFiles = newResolutionFileIndex()
-	defer func() { activeResolutionFiles = previousIndex }()
+	activeImportSourceInventory = &callableSubclassSourceInventory{graph: symbol.GlobalScope}
+	defer func() {
+		activeResolutionFiles, activeImportSourceInventory = previousIndex, previousImports
+	}()
 
 	prepareBuiltinInterfaceMethods()
 	prepareAbstractCollectionDefaults()
