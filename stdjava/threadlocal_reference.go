@@ -7,6 +7,7 @@ type threadLocalReferenceInitializer struct{ supplier any }
 func ThreadLocalWithInitialReference(supplier any) *ThreadLocal[any] {
 	ReferenceRequireNonNull(supplier)
 	local := NewThreadLocal[any]()
+	local.referenceKind = threadLocalReferenceSupplied
 	local.initial = threadLocalReferenceInitializer{supplier: supplier}
 	return local
 }

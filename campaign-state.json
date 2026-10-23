@@ -23138,6 +23138,39 @@
     "qualified_source_manifest": "80894462f5721d32c73b47868b94d8d785dd44f1f2b6b99353f2f63717f6569f",
     "status": "QUALIFIED_CI_INTERFACE_BOUND_STRING_ASSERTION"
   },
+  "sol_progress205": {
+    "Root_audit": "c34ba83efc4da2bb731b2eeda104e0c5f8a43c4f91f327a44b0192fee0146750",
+    "accepted_stages": 65,
+    "actual_zero_stages": 64,
+    "canonical_profiles": 6,
+    "compiler_adoption": false,
+    "default_runtime_parents_each_normal_and_race": 886,
+    "fresh_JDK21": 9,
+    "genuine_existing_API_baseline_RED": 1,
+    "held": [
+      "full hosted CI",
+      "Supplier28",
+      "Gson112",
+      "Netty1220",
+      "compiler ThreadLocal adoption",
+      "source aliases",
+      "borrowed-import race benchmark timeout"
+    ],
+    "hosted_CI": "203 run39903584313 and204 run39905519800 completed failure; exact parent-set triage pending",
+    "native_runtime_whole_matches_normal_and_race": 18,
+    "negative_controls": 24,
+    "old_classifier_failure_preserved_and_uncredited": true,
+    "parentPASS": 2178,
+    "performance": "Unchanged generated-program source/frame assignability7allocations measured; ceiling6 genuine RED. FIFO-only repair under independent source review; no Java speed claim.",
+    "private_ArrayList": "P1/P2 finite private parity retained; A4 Stream.collect(toCollection) strict unsupported RED; isolation baseline pending. Public Snapshot/carrier prerequisites under review.",
+    "private_Gson": "Constructor Enum demand discovery repaired early foreign-value cast; focused79normal/1580race plus5actual112 guards each; portable7row freshJDK and Go whole parity. Full112 and collection carrier held.",
+    "private_TreeMap": "Map-copy runtime full959normal/race qualified; compiler26focus42green; coherent27 original6/copy11/full28 ordered gate pending.",
+    "private_toArray": "Native reference ArrayList toArray(T[]) focused34normal/race and full884normal pass; fullrace883pass/1monitor observation failure retained. Untouched baseline control pending. No compiler activation.",
+    "publication_parent": "6a2055fa472be0dba034354a49ba0fbd44c39d7c",
+    "qualified_delivery": "bc4895fd45f0a0e1734af0e48cb69096a6a7346d3aaf1f4350e19ed915c0af92",
+    "qualified_source_manifest": "09e4e9109758794cdb32ac1265264fc90db460df8ebb47984c11c034f46be497",
+    "status": "QUALIFIED_RUNTIME_THREADLOCAL_REFERENCE_METADATA_AND_MODIFIERS"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

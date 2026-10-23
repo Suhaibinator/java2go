@@ -6,8 +6,9 @@ import "sync/atomic"
 // values between jobs and terminated executions release their entire store.
 // Numeric keys avoid retaining ThreadLocal objects through the store itself.
 type ThreadLocal[T any] struct {
-	key     uint64
-	initial any
+	key           uint64
+	initial       any
+	referenceKind threadLocalReferenceKind
 }
 type threadLocalValue struct{ value any }
 
@@ -20,7 +21,17 @@ func ThreadLocalWithInitial[T any](supplier any) *ThreadLocal[T] {
 	local.initial = supplier
 	return local
 }
-func (*ThreadLocal[T]) JavaDynamicTypeID() TypeID { return "ThreadLocal" }
+func (local *ThreadLocal[T]) JavaDynamicTypeID() TypeID {
+	if local != nil {
+		switch local.referenceKind {
+		case threadLocalReferencePlain:
+			return ThreadLocalTypeID
+		case threadLocalReferenceSupplied:
+			return threadLocalSuppliedTypeID
+		}
+	}
+	return "ThreadLocal"
+}
 func (l *ThreadLocal[T]) Get(execution *Execution) T {
 	return collectionElementView[T](l.GetObject(execution))
 }
