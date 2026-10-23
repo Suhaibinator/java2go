@@ -23195,6 +23195,51 @@
     "qualified_source_manifest": "234d723b94b13cad8d6f72a4459f008edb18d087e2e733736528facb2786bac8",
     "status": "QUALIFIED_BOXED_COMPARABLE_DECLARED_ORIGIN_CONVERSION"
   },
+  "sol_progress207": {
+    "Root_audit": "4b6cd195df0bbc9ba51b6de42dd5483cb0b73aeef0d246230283882c1caa418b",
+    "allocation_samples": 12,
+    "allocations_per_call": 3.0,
+    "canonical_profiles": 6,
+    "delivery": "17fd84bb01431323668f162db7bc78c7a7c9f310a34480d5089c98f04e43ae78",
+    "earlier_failures_preserved": [
+      "public206 FIFO original28 monitor assertion failure",
+      "monitor-join41 QF1001 lint failure"
+    ],
+    "fresh_full_runtime_parents": {
+      "normal": 888,
+      "race": 888
+    },
+    "fresh_monitor_repeat_parentPASS": 80,
+    "fresh_parentPASS": 1856,
+    "fresh_stages_actual0": 16,
+    "held": [
+      "full hosted CI",
+      "Supplier28",
+      "Gson112",
+      "Netty1220 application parity"
+    ],
+    "hosted_CI206": {
+      "PR_merge_checkout": true,
+      "compilerFAIL": 23,
+      "compilerPASS": 2342,
+      "separate_GsonJavaTimeTypeAdapters_failure": true
+    },
+    "matched_baseline_allocations": {
+      "normal": 7,
+      "race": [
+        8,
+        9
+      ]
+    },
+    "next": "Rebase and qualify source SAM identity repair, Netty syntax inventory lifetime, and collection runtime contracts on this checkpoint.",
+    "prior_boxed_compiler_parentPASS": 8,
+    "prior_compiler_not_fresh_final16": true,
+    "prior_compiler_source": "89639cf6aa4dec2307027e56da6027f56d2e0a28822510a8538543bb93dca6f4",
+    "publication_parent": "e2eb63332bc77c58e428bb34e04d2d2e07064cbe",
+    "qualified_source_manifest": "3e73ac7bfd6f9eadfd467d4173cab9ed59607a7622e43286bbbd6ad62d24c950",
+    "status": "QUALIFIED_RUNTIME_ASSIGNABILITY_FIFO_AND_MONITOR_TEST_PRECISION",
+    "unchanged_allocation_ceiling": 6.0
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

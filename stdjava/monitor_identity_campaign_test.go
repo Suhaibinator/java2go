@@ -1,6 +1,10 @@
 package stdjava
 
-import "testing"
+import (
+	"runtime"
+	"testing"
+	"weak"
+)
 
 type campaignMonitorBase struct{ *ObjectInfo }
 type campaignMonitorDerived struct{ *campaignMonitorBase }
@@ -57,28 +61,90 @@ func TestCampaignMonitorJavaNull(t *testing.T) {
 
 func TestCampaignMonitorObservationDoesNotRegister(t *testing.T) {
 	const runs = 32
-	objects := make([]any, runs+1)
-	for i := range objects {
-		objects[i] = NewObject()
-	}
-	execution := NewExecution()
-	monitorsMu.Lock()
-	before := len(monitors)
-	monitorsMu.Unlock()
-	index := 0
-	allocations := testing.AllocsPerRun(runs, func() {
-		if ThreadHoldsLockExecution(execution, objects[index]) {
-			t.Fatal("fresh object reported owned")
+	for _, tombstones := range []bool{false, true} {
+		name := "absent"
+		if tombstones {
+			name = "empty-weak-entry"
 		}
-		index++
-	})
-	monitorsMu.Lock()
-	after := len(monitors)
-	monitorsMu.Unlock()
-	if after != before {
-		t.Errorf("observation registered %d monitors", after-before)
-	}
-	if allocations != 0 {
-		t.Errorf("fresh observation allocated %g times, want zero", allocations)
+		t.Run(name, func(t *testing.T) {
+			objects := make([]any, runs+1)
+			keys := make([]monitorIdentity, len(objects))
+			unique := make(map[monitorIdentity]bool, len(objects))
+			for i := range objects {
+				objects[i] = NewObject()
+				keys[i] = monitorIdentityFor(objects[i])
+				if keys[i].data == 0 || keys[i].reference == nil || keys[i].comparable != nil || unique[keys[i]] {
+					t.Fatal("fresh retained object identity is not unique/nonretaining")
+				}
+				unique[keys[i]] = true
+			}
+			defer runtime.KeepAlive(objects)
+			var empty weak.Pointer[monitor]
+			monitorsMu.Lock()
+			liveBaseline := -1
+			for i, key := range keys {
+				if old, present := monitors[key]; present && old.Value() != nil {
+					liveBaseline = i
+					break
+				}
+			}
+			if liveBaseline < 0 {
+				// A recycled scalar address may still have an expired old epoch pending
+				// cleanup. Clear only that expired premise; never erase a live monitor.
+				for _, key := range keys {
+					delete(monitors, key)
+					if tombstones {
+						monitors[key] = empty
+					}
+				}
+			}
+			monitorsMu.Unlock()
+			if liveBaseline >= 0 {
+				t.Fatalf("fresh retained object %d already has a live monitor", liveBaseline)
+			}
+			t.Cleanup(func() {
+				monitorsMu.Lock()
+				for _, key := range keys {
+					delete(monitors, key)
+				}
+				monitorsMu.Unlock()
+				runtime.KeepAlive(objects)
+			})
+			execution := NewExecution()
+			var changed, owned, identityChanged [runs + 1]bool
+			index := 0
+			allocations := testing.AllocsPerRun(runs, func() {
+				object := objects[index]
+				owned[index] = ThreadHoldsLockExecution(execution, object)
+				identityChanged[index] = monitorIdentityFor(object) != keys[index]
+				monitorsMu.Lock()
+				changed[index] = campaignMonitorObservationChangedLocked(keys[index], tombstones)
+				monitorsMu.Unlock()
+				index++
+			})
+			runtime.KeepAlive(objects)
+			monitorsMu.Lock()
+			for i, key := range keys {
+				changed[i] = changed[i] || campaignMonitorObservationChangedLocked(key, tombstones)
+			}
+			monitorsMu.Unlock()
+			if index != len(objects) {
+				t.Fatalf("observation count=%d want=%d", index, len(objects))
+			}
+			for i := range objects {
+				if owned[i] {
+					t.Errorf("fresh object %d reported owned", i)
+				}
+				if identityChanged[i] {
+					t.Errorf("retained object %d changed identity", i)
+				}
+				if changed[i] {
+					t.Errorf("observation changed watched monitor identity %d", i)
+				}
+			}
+			if allocations != 0 {
+				t.Errorf("fresh observation allocated %g times, want zero", allocations)
+			}
+		})
 	}
 }

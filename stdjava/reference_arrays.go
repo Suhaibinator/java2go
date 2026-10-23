@@ -234,10 +234,13 @@ func JavaTypeAssignable(actual, expected TypeID) bool {
 	javaTypeRegistry.RLock()
 	defer javaTypeRegistry.RUnlock()
 	seen := map[TypeID]struct{}{}
-	queue := []TypeID{actual}
-	for len(queue) > 0 {
-		current := queue[0]
-		queue = queue[1:]
+	var queueStorage [16]TypeID
+	queue := append(queueStorage[:0], actual)
+	head := 0
+	for head < len(queue) {
+		current := queue[head]
+		queue[head] = ""
+		head++
 		if current == expected {
 			return true
 		}
@@ -257,6 +260,18 @@ func JavaTypeAssignable(actual, expected TypeID) bool {
 			if implemented == expected {
 				return true
 			}
+		}
+		needed := len(info.interfaces)
+		if info.super != "" {
+			needed++
+		}
+		// Reclaim a consumed prefix only after at least half the queue was
+		// consumed, avoiding repeated copies of a wide live frontier.
+		if needed > cap(queue)-len(queue) && head >= len(queue)-head {
+			remaining := copy(queue, queue[head:])
+			clear(queue[remaining:])
+			queue = queue[:remaining]
+			head = 0
 		}
 		if info.super != "" {
 			queue = append(queue, info.super)
