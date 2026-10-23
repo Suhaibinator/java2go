@@ -3789,6 +3789,9 @@ func objectCreationDiamondTargetArguments(
 	if !expectedTypeTargetsExpression(ctx, invocation) {
 		return nil, false
 	}
+	if projected, ok := nativeCollectionDiamondTargetArguments(expectedType, targetBase, ctx, invocation); ok {
+		return projected, true
+	}
 	mapTarget := canonicalMapReferenceOwner(base, ctx)
 	mapConstructed := canonicalMapReferenceOwner(targetBase, ctx)
 	if mapTarget != "" && mapConstructed != "" {
@@ -3886,16 +3889,16 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 		}
 	}
 
-	if parts := strings.Split(name, "."); len(parts) > 1 {
+	if prefix, suffix, qualified := strings.Cut(name, "."); qualified {
 		// A captured Java type-variable declaration is not a source package. This
 		// source-class lookup cannot invent a member owner for that binder.
-		if visibleTypeParameterDeclarationForJavaType(parts[0], ctx) != nil {
+		if visibleTypeParameterDeclarationForJavaType(prefix, ctx) != nil {
 			return nil
 		}
 		// A bound type prefix owns the entire member path. A missing member cannot
 		// reinterpret that prefix as a package with the same spelling.
-		if owner := resolveClassScopeByQualifiedName(ctx, parts[0]); owner != nil {
-			return directMemberTypePath(owner, parts[1:], ctx)
+		if owner := resolveClassScopeByQualifiedName(ctx, prefix); owner != nil {
+			return directMemberTypeSuffixPath(owner, suffix, ctx)
 		}
 	}
 	if scope := lexicalMemberType(name, ctx); scope != nil {

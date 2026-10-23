@@ -23068,6 +23068,48 @@
       90.593
     ]
   },
+  "sol_progress203": {
+    "F1_runtime_registry": 885,
+    "Root_independent_audit": "a5d01f6fd702024a8401063764fc1a71752a39955e5a58c2c0083eba87eba168",
+    "actual_parent_PASS": 2369,
+    "default_runtime_registry": 881,
+    "diamond_whole_stdout_stderr_exit_files_match": true,
+    "fresh_diamond_Go": 9,
+    "fresh_diamond_JDK": 9,
+    "fresh_generated_all_packages_and_entry_race": true,
+    "held": [
+      "original Supplier28",
+      "Gson112",
+      "Netty1220 parity",
+      "full CI acceptance",
+      "generic source ArrayList P2/native aliases",
+      "Gson Constructor Enum body/List erased storage",
+      "ThreadLocal metadata/modifiers/source aliases"
+    ],
+    "hosted202CI": "26compilerFAIL2324PASS0compilerSKIP;same26namesvs201;noadditionalfailure",
+    "joint_actual_exit0_stages": 109,
+    "joint_delivery": "ebc6a0ac22f2998f9392019384db64de4d2e5d18a803e6fbfd2eb8591c5268f2",
+    "joint_plan": "99db0cee4f876bedd40f75fae40335f925b5db58ee841e6f72174387a8feafa7",
+    "latest_original_Netty1220": "public202 strict TIMEOUT300.027981,24starts/23nonempty generated;noGoBuild/app/parity",
+    "nested_existing_plain_Go_children_not_race_credited": true,
+    "no_whole_compiler_or_application_speed_claim": true,
+    "original_runtime_existing_tests_and_Java_challenges_not_weakened": true,
+    "private_metric_test_leaf_excluded_from_public_patch": true,
+    "private_netty_query_Cgo_unchanged": 448,
+    "private_netty_query_allocations_after": 192,
+    "private_netty_query_allocations_before": 360,
+    "production_changes": [
+      "ThreadLocal raw cell before typed consumer cast; lazy sealed Supplier reference factory and current Execution",
+      "Bounded original-target collection diamond inference",
+      "Qualified member path Cut loops avoid temporary Split slices"
+    ],
+    "publication_parent": "a81dad4243b63fa9140f699494a6b4d8f59a80ec",
+    "qualified_source_manifest": "bb8a57bbc4d37957091c14625a2e238fb71d96d6807135e42ee7734957286ec9",
+    "runtime_core_compiler_ThreadLocal_adoption_and_metadata": "HELD_PRIVATE",
+    "six_profiles": "PASS",
+    "status": "QUALIFIED_FOUR_COMPONENT_JOINT_CHECKPOINT",
+    "test_only_change": "Affine nested signature assertion follows actual typed receiver/formal AST identity and evaluation order"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

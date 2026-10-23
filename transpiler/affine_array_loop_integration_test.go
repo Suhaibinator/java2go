@@ -758,11 +758,7 @@ public class TypeShadowLoopProgram {
 	if strings.Contains(flat, "Java2goAffineView0Values() for") || strings.Contains(flat, "NewNullPointerException") {
 		t.Fatalf("shadowed nested-signature type unexpectedly used the fast path:\n%s", out)
 	}
-	for _, ordinary := range []string{"typeShadowGrid.getJava2goExecution(__java2goExecution, 0, 0)"} {
-		if !strings.Contains(flat, ordinary) {
-			t.Fatalf("type-name collision did not retain ordinary call %q:\n%s", ordinary, out)
-		}
-	}
+	ci203AssertAffineNestedSignature(t, out)
 	runGoTestInTempModule(t, out, `
 package main
 import "testing"

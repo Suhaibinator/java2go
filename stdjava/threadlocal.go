@@ -9,7 +9,7 @@ type ThreadLocal[T any] struct {
 	key     uint64
 	initial any
 }
-type threadLocalValue[T any] struct{ value T }
+type threadLocalValue struct{ value any }
 
 var nextThreadLocalKey atomic.Uint64
 
@@ -22,25 +22,10 @@ func ThreadLocalWithInitial[T any](supplier any) *ThreadLocal[T] {
 }
 func (*ThreadLocal[T]) JavaDynamicTypeID() TypeID { return "ThreadLocal" }
 func (l *ThreadLocal[T]) Get(execution *Execution) T {
-	ReferenceRequireNonNull(l)
-	requireExecution(execution)
-	if stored, ok := execution.threadLocals[l.key]; ok {
-		return stored.(threadLocalValue[T]).value
-	}
-	value := collectionZero[T]()
-	if l.initial != nil {
-		value = CallSupplierExecution[T](execution, l.initial)
-	}
-	l.Set(execution, value)
-	return value
+	return collectionElementView[T](l.GetObject(execution))
 }
 func (l *ThreadLocal[T]) Set(execution *Execution, value T) {
-	ReferenceRequireNonNull(l)
-	requireExecution(execution)
-	if execution.threadLocals == nil {
-		execution.threadLocals = make(map[uint64]any)
-	}
-	execution.threadLocals[l.key] = threadLocalValue[T]{value}
+	l.SetObject(execution, value)
 }
 func (l *ThreadLocal[T]) Remove(execution *Execution) {
 	ReferenceRequireNonNull(l)

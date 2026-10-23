@@ -167,15 +167,15 @@ func declaredFileType(name string, file *symbol.FileScope, ctx Ctx) *symbol.Clas
 // units: an imported or same-package Outer owns Outer.Inner. Resolve the root
 // normally, then walk only that declaration's member hierarchy.
 func relativeMemberType(name string, ctx Ctx) *symbol.ClassScope {
-	parts := strings.Split(name, ".")
-	if len(parts) < 2 {
+	prefix, suffix, qualified := strings.Cut(name, ".")
+	if !qualified {
 		return nil
 	}
-	owner := resolveClassScopeByQualifiedName(ctx, parts[0])
+	owner := resolveClassScopeByQualifiedName(ctx, prefix)
 	if owner == nil {
 		return nil
 	}
-	return directMemberTypePath(owner, parts[1:], ctx)
+	return directMemberTypeSuffixPath(owner, suffix, ctx)
 }
 
 // Class and interface members begin at the body; record members also include
