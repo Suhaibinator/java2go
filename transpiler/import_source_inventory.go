@@ -51,8 +51,12 @@ func importSourceFacts(ctx Ctx) (*callableSubclassSourceInventory, staticMethodI
 		return nil, staticMethodImportSourceFacts{}, false
 	}
 	root := declaration
-	for root.Parent() != nil {
-		root = root.Parent()
+	for {
+		parent := root.Parent()
+		if parent == nil {
+			break
+		}
+		root = parent
 	}
 	if facts, ok := inventory.staticImports[file]; ok &&
 		facts.declaration == declaration && facts.root == root &&

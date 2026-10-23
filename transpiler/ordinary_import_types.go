@@ -28,8 +28,12 @@ func ordinaryTypeOnDemandImportsFromFile(ctx Ctx) []string {
 	if root == nil {
 		return nil
 	}
-	for root.Parent() != nil {
-		root = root.Parent()
+	for {
+		parent := root.Parent()
+		if parent == nil {
+			break
+		}
+		root = parent
 	}
 	seen := map[string]bool{}
 	var result []string

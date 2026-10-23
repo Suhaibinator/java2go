@@ -46,8 +46,12 @@ func staticMethodImportsFromFile(ctx Ctx) []staticMethodImport {
 		return nil
 	}
 	root := scope.Class.DeclarationNode
-	for root.Parent() != nil {
-		root = root.Parent()
+	for {
+		parent := root.Parent()
+		if parent == nil {
+			break
+		}
+		root = parent
 	}
 	var result []staticMethodImport
 	seen := map[staticMethodImport]bool{}

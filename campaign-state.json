@@ -22957,6 +22957,59 @@
     "performance_scope": "public191 versus isolated null4398 repair, fixed-input internal loop; not whole current application",
     "status": "MEASURED_PERFORMANCE_AND_NETTY_TIMEOUT_CHECKPOINT"
   },
+  "sol_progress201": {
+    "Root_CI_focused_audit": "4f19e9d48bc09059c6c2683d0002c1adf4978a9b6a1f816c31cf07e51c54b182",
+    "Root_raw_audit": "8b3306400ec555b84c0a719233d4f6fea03e39e49048fa4ec0276d14372ef96c",
+    "accepted_zero_exit_gates": 42,
+    "canonical_six_profiles": "PASS",
+    "held": [
+      "Declaration index large-source regression correction",
+      "Original Supplier28/Gson112/Netty1220 acceptance",
+      "Hosted CI",
+      "Private ArrayList/ThreadLocal/Gson cohort publication"
+    ],
+    "hosted_results": "PENDING; last independently verified checkpoint198 has28 failures",
+    "known_declaration_index_large_source_CPU_regression": {
+      "corrective_work": "Generic bounded attestation admission/live fallback; preserve all safety guards",
+      "indexed_warm_CPU_ms_range": [
+        92.175,
+        97.738
+      ],
+      "introduced_checkpoint": 199,
+      "measured_file_bytes": 105458,
+      "old_warm_CPU_ms_range": [
+        0.311,
+        0.356
+      ],
+      "queries": 16384,
+      "raw_audit": "37d467a1146ec2e2c77d165f5d20cbeaaf054a90e27384e1695db4f27eb497f3",
+      "scope": "matched isolated direct lookup accessor, not full compiler attribution"
+    },
+    "native_calls_per_1024_nested_before_after": [
+      9216,
+      6144
+    ],
+    "native_calls_per_1024_top_before_after": [
+      5120,
+      4096
+    ],
+    "native_parent_PASS": 255,
+    "native_work_rows": 18,
+    "negative_control_subPASS": 52,
+    "original_Java_behavior_and_Go_child_oracles_unchanged": true,
+    "owner_delivery": "c84f2290e845bfdeacd01cc821277f5f9baad01a0e75bf19b9fe15fec5971337",
+    "publication_parent": "bc2285a3cf29b1f758d48842fe59b15b015e58d9",
+    "qualified_source_manifest": "8edc21c8bad36fe3aad8c49d5540c4dc3ae32da236dbf0c757cc0ddf9e4638c9",
+    "root_control_native_calls_per_1024_unchanged": 3072,
+    "runtime_bytes_exact200": true,
+    "status": "QUALIFIED_IMPORT_PARENT_TRAVERSAL_AND_TWO_STRING_ASSERTIONS",
+    "symbol_parser_full_race": [
+      23,
+      10
+    ],
+    "two_original_JVM_Go_programs_repeated_three_times": "PASS",
+    "workload_allocations": 0
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

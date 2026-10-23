@@ -91,7 +91,7 @@ public class BuiltinReferenceArrays {
 		`stdjava.SuppressedArray(stdjava.GetSuppressed(primary))`,
 		`range stdjava.ReferenceArrayIterationElements(suppressed)`,
 		`stdjava.ObjectView[stdjava.Throwable]`,
-		`firstJava2goExecution[string]`,
+		ci199RequireStringArrayContract(t, out),
 	} {
 		if !strings.Contains(flat, fragment) {
 			t.Fatalf("built-in reference-array lowering is missing %q:\n%s", fragment, out)

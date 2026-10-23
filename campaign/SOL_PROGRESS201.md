@@ -1,0 +1,11 @@
+# Sol checkpoint 201: import traversal and String assertions
+
+Three import-root walks now obtain each tree-sitter parent once per iteration. Existing source, root, namespace and lifetime checks remain unchanged. In the isolated existing-API workload, native calls per 1,024 lookups fell from 5,120 to 4,096 for the top-level case and from 9,216 to 6,144 for nested declarations; root controls stayed at 3,072, with zero allocations. This measures native work in these accessors, not whole-compiler speed.
+
+Two stale String assertions now verify full canonical JavaString expression structure and typed-null behavior. Original Java programs, expected observations and Go child oracles remain unchanged. Fresh JVM/Go comparisons passed three repetitions for each program before either assertion migrated. The coordinator independently verified raw receipts, complete streams, actual nested normal/race commands and owned process cleanup.
+
+Combined qualification passed all 42 gates, 255 test-parent executions, 52 negative-control subtests and 18 native-work rows. Default/F1 build, test compilation and lint passed, as did full symbol (23) and parser (10) race suites. Runtime bytes are unchanged from checkpoint 200. Hosted results remain pending; the last independently verified hosted checkpoint, 198, has 28 failures.
+
+A separate matched diagnostic exposed a serious regression in checkpoint 199's declaration index on large source files. For a 105,458-byte source and 16,384 direct lookups, warm process CPU increased from 0.311–0.356 ms to 92.175–97.738 ms, despite zero allocations in both cases. Repeated source-byte checks are consistent with this isolated cost; this does not establish full-compiler causation. All diagnostic rows remain retained. The original small-source, many-file benefit also remains measured. A generic admission budget and original-scan fallback are now being developed without weakening source or lifetime guards. This blocker remains open in the published branch; no compiler or application speed improvement is claimed here.
+
+The original Supplier, Gson and Netty application gates remain open. Private ArrayList, Optional, ThreadLocal and Gson prerequisites continue through independent qualification before publication.
