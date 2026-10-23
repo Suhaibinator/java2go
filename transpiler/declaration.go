@@ -3416,22 +3416,22 @@ func genFunctionalInterfaceAdapterDecls(interfaceName string, methods *ast.Field
 		executionName,
 		ctx,
 	)
-	if classNeedsReferenceIdentity(scope, ctx) {
-		identityReceiver := &ast.FieldList{List: []*ast.Field{{
-			Names: []*ast.Ident{{Name: receiverName}},
-			Type:  &ast.StarExpr{X: instantiateGenericType(adapterName, typeArgs)},
-		}}}
-		implMethods = append(implMethods, &ast.FuncDecl{
-			Name: &ast.Ident{Name: "JavaDynamicTypeID"},
-			Recv: identityReceiver,
-			Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{
-				Type: stdjavaQualifiedExpr("TypeID", ctx),
-			}}}},
-			Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
-				javaTypeIDLiteral(javaClassBinaryName(scope), ctx),
-			}}}},
-		})
-	}
+	// A source SAM allocation retains its declared interface identity through
+	// Object casts independently of array or reflection demand. The constant
+	// metadata method needs no receiver name, which could shadow a Java binder.
+	identityReceiver := &ast.FieldList{List: []*ast.Field{{
+		Type: &ast.StarExpr{X: instantiateGenericType(adapterName, typeArgs)},
+	}}}
+	implMethods = append(implMethods, &ast.FuncDecl{
+		Name: &ast.Ident{Name: "JavaDynamicTypeID"},
+		Recv: identityReceiver,
+		Type: &ast.FuncType{Results: &ast.FieldList{List: []*ast.Field{{
+			Type: stdjavaQualifiedExpr("TypeID", ctx),
+		}}}},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{
+			javaTypeIDLiteral(javaClassBinaryName(scope), ctx),
+		}}}},
+	})
 
 	constructorName := "New" + adapterName
 	constructorParams := &ast.FieldList{

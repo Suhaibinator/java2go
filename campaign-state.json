@@ -23240,6 +23240,46 @@
     "status": "QUALIFIED_RUNTIME_ASSIGNABILITY_FIFO_AND_MONITOR_TEST_PRECISION",
     "unchanged_allocation_ceiling": 6.0
   },
+  "sol_progress208": {
+    "Root_audit": "1d6d080a2dbc788a419c5ec389c3627f979c2004c67865d92f53544e926db443",
+    "all_generated_packages_race_build": true,
+    "canonical_profiles": 6,
+    "delivery": "6cdbf58af6e21f8028a8d3a3da559e981d9751e219b315abc0bcb4a7d52a9898",
+    "earlier_invalid_count_controls_preserved_uncredited": true,
+    "fresh_CLI_compiler_runtime_and_generated_binaries": true,
+    "fresh_JDK_oracles": 0,
+    "fresh_generated_trace_profiles": [
+      "original-normal",
+      "original-race",
+      "collision-normal",
+      "collision-race"
+    ],
+    "fresh_parentPASS": 7,
+    "fresh_stages_actual0": 36,
+    "fresh_strict_programs": 2,
+    "fresh_subtestPASS": 12,
+    "full_runtime_rerun": false,
+    "held": [
+      "full hosted CI",
+      "native anonymous Function/Supplier cohorts",
+      "Supplier28",
+      "Gson112",
+      "Netty1220 application parity"
+    ],
+    "historical_Root_audit": "49721117f45b44182121aaca939b4b6c2003a25bebddd58b678931a2e866aab6",
+    "nested_plain_Go_race_credit": false,
+    "next": "Netty ResolveFiles syntax inventory lifetime and qualified enum assertion migration; independent collection runtime/compiler joins remain active.",
+    "opaque_unknown_provider_race_shield_PASS": true,
+    "prior_JDK_oracles": 2,
+    "prior_class_artifacts": 11,
+    "production_scope": [
+      "source SAM metadata emitted independently of identity demand, unnamed constant receiver",
+      "reserve JavaDynamicTypeID consistently for source interface/class method families; clone remains class-only"
+    ],
+    "publication_parent": "03cd1c1a88f2c7bb5426b985e49340b4662a710f",
+    "qualified_source_manifest": "45355c6f78e1e43cffc7c9a5f5ebe70cb1812e2b9f282af63a38d3a3dd48c6bc",
+    "status": "QUALIFIED_DECLARATION_OWNED_SOURCE_SAM_IDENTITY_AND_SELECTOR_COLLISIONS"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

@@ -31,7 +31,7 @@ func sourceReferenceReservedSelector(scope *symbol.ClassScope, name string, ctx 
 	if scope != nil && scope.IsEnum && name == "JavaEnumMetadata" {
 		return true
 	}
-	if scope != nil && !scope.IsInterface && (name == "JavaDynamicTypeID" || name == generatedObjectCloneMethod) {
+	if scope != nil && (name == "JavaDynamicTypeID" || !scope.IsInterface && name == generatedObjectCloneMethod) {
 		return true
 	}
 	return referenceIdentityReservedSelector(name) && classNeedsReferenceIdentity(scope, ctx)
