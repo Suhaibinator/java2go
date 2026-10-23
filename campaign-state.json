@@ -22925,6 +22925,38 @@
     "resolved_owners_binders_imports_and_access_checks_live": true,
     "status": "QUALIFIED_OWNED_DECLARATION_CANDIDATE_INDEX"
   },
+  "sol_progress200": {
+    "Root_measurement_audit": "ff3d2fcdc75e0239a1f27fbd20998482dfb7d6a7bed10799642f71220607d31b",
+    "all_90_owned_groups_absent_and_quiet_window_released": true,
+    "all_semantic_traces_and_whole_outputs_verified": true,
+    "candidateGo_over_JDK_loop_elapsed_ratio_median": 11.135913050140338,
+    "candidate_Go_faster_than_baseline_pairs": 15,
+    "candidate_Go_paired_loop_elapsed_reduction_median_percent": 8.358434632400458,
+    "compiler_runtime_tests_and_fixture_bytes_exact199": true,
+    "excluded_observations": 0,
+    "full_Netty_macro_delivery": "28fec7f6e5db37631b1014a349ee1e507f408e3477ca3637af8300cab76d33b1",
+    "full_Netty_normal_strict_seconds": 300.03219,
+    "full_Netty_sources": 1220,
+    "full_Netty_started_files_not_completed": 11,
+    "full_Netty_status": "TIMEOUT_NOT_PASS",
+    "held": [
+      "Original Supplier28/Gson112/Netty1220 acceptance",
+      "ThreadLocal/Optional covariance and raw result timing",
+      "ArrayList final broad qualification and generic descendants",
+      "Gson Constructor nominal origin and storage",
+      "Matched large-Netty compiler cost diagnosis"
+    ],
+    "internal_loop_median_ms": {
+      "JDK21": 6.803959,
+      "baselineGo": 83.234292,
+      "candidateGo": 76.337709
+    },
+    "measurement_forks": 45,
+    "measurement_raw_sha256": "61fd2fea169d94ec1c3ea50eb9b408236c9c7f48ddb9242db3d097ef2f69588c",
+    "paired_observations": 15,
+    "performance_scope": "public191 versus isolated null4398 repair, fixed-input internal loop; not whole current application",
+    "status": "MEASURED_PERFORMANCE_AND_NETTY_TIMEOUT_CHECKPOINT"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
