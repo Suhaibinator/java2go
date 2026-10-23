@@ -23516,6 +23516,71 @@
     "status": "ARRAYLIST_COLLECTOR_RUNTIME_FOUNDATION_VERIFIED_COMPILER_ACTIVATION_PENDING",
     "transport": "bcedf51c1efb46b29d5e980073832dca5f9b9e5bff7005ccea786b16b9919594"
   },
+  "sol_progress214": {
+    "CI213": {
+      "application_parity": "PASS",
+      "compiler_fail": 18,
+      "compiler_pass": 2361,
+      "compiler_skip": 0,
+      "new_compiler_failures": 0,
+      "new_runtime_pass": 32,
+      "run": 40034066999,
+      "runtime_race_pass": 920,
+      "separate_Gson": "UNCHANGED_FAIL"
+    },
+    "Root_actual_audit": "ee41fd1e299ef0a8745119e98b4a27e55af16e7b7fb4baf38abc0660998c4694",
+    "cleanup": {
+      "all_fresh_absent": true,
+      "fast_child_lifecycle_identity_unobserved": 8,
+      "raw_identities_and_absence_verified": true,
+      "recorded_PIDs": 81,
+      "recorded_groups": 41
+    },
+    "fresh_gates": {
+      "JVM_confirmations": 2,
+      "all_generated_package_builds": 4,
+      "canonical_build_testcompile_lint_profiles": 6,
+      "parents": 28,
+      "selected_registry_per_mode": 14,
+      "subcases": 304,
+      "total": 40,
+      "whole_Go_matches": 4
+    },
+    "grammar_regression": "Named super is a direction token, not a second TYPE bound; extends is unnamed. Original twelve direct assertions plus eight parsed grammar cases retained.",
+    "held": [
+      "Supplier28",
+      "Gson112",
+      "Netty1220",
+      "broader wildcard/generic overload support",
+      "full accumulated round acceptance",
+      "performance gains"
+    ],
+    "independent_actual_audit": "2ac0e76515a24985460555b9c78d65d369a443caa78412ed7fba2a0d770a6a71",
+    "no_full_CI_or_round_or_any_Java_claim": true,
+    "observed_behavior": {
+      "lower_bound": {
+        "JVM_and_fixed_Go": "1:1:11:retained:true",
+        "old_Go": "2:2:22:retained:true"
+      },
+      "upper_capture": {
+        "JVM_and_fixed_Go": "1",
+        "old_Go": "2"
+      }
+    },
+    "preserved": [
+      "capture identity",
+      "generic inference and complete bound checks",
+      "exact and loose conversions",
+      "legacy strict costs8/2/1/1",
+      "original Java and independent expectations",
+      "strict-mode behavior"
+    ],
+    "provenance": "Existing input-only source snapshot validation plus separate retained AST, registered declaring owner, binder and namespace checks; no semantic authority cache",
+    "publication_parent": "54623c8040d479d234887fba75e04f62423f0466",
+    "qualified_source": "cf347581525255da86de1f1de98cde4f8dfbe03375d5493376dfc2ae7f21c9ec",
+    "scope": "Refine cost only for an already-applicable strict phase0 invocation above cost1, one scalar argument/formal/method binder, canonical different JDK generic parent preserving one slot, certified upper capture or original lower-bounded formal",
+    "status": "SUPPORTED_STRICT_WILDCARD_OVERLOAD_CASES_JVM_GO_PARITY_VERIFIED"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [

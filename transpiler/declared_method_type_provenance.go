@@ -578,6 +578,9 @@ func scoreDeclaredMethodCandidate(def *symbol.Definition, owner *symbol.ClassSco
 				expected += "[]"
 			}
 			cost, exact, applies = javaInvocationConversionCost(node, expected, candidateTypeParams, ctx, source)
+			if applies && score.phase == 0 && cost > 1 && declaredMethodWildcardStrictWidening(def, owner, argNodes, actual, formal, ctx, source) {
+				cost, exact = 1, false
+			}
 			if !applies {
 				// A unique declaration-owned substitution can prove an exact strict
 				// conversion even when the spelling-based fallback cannot infer it.
