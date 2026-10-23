@@ -23110,6 +23110,34 @@
     "status": "QUALIFIED_FOUR_COMPONENT_JOINT_CHECKPOINT",
     "test_only_change": "Affine nested signature assertion follows actual typed receiver/formal AST identity and evaluation order"
   },
+  "sol_progress204": {
+    "Root_audit": "ca5638eb2306d22fef0020064d70fce7751d41efc537ab8d3cd74a790fa3eee2",
+    "all18actualexit0": true,
+    "borrowed_import_candidate": "Unpublished: race full1220 benchmark timedout65.035s, raw-15/runner124/noemittedrows. Normal15rows andrace8semantic+allocationtestsPASS; phaseunknown; originaltimeoutretained.",
+    "canonical_profiles": 6,
+    "fresh_JDK_Go_behavior_comparisons": 2,
+    "guard_subPASS": 252,
+    "held": [
+      "fullCI",
+      "Supplier28",
+      "Gson112",
+      "Netty1220",
+      "borrowed-import qualification race benchmark",
+      "ThreadLocalmetadata public qualification"
+    ],
+    "hosted203": "run39903584313 lastobservedinprogress; fullCIunknown",
+    "nested_plain_Go_children_not_race_credited": true,
+    "old_positive_assertion_actual_RED_retained": true,
+    "originalJava_and_negativeassertions_unchanged": true,
+    "parentPASS": 25,
+    "private_ArrayList": "equality52290500 focused2040 and95applicationstagesGREEN/36JDK36Go; notpublic/fullABI/A4",
+    "private_Gson": "Enum67889058 focusGREEN; portableforeignBeta constructorCCEearly vsJDKlatecallerCCE remainsactualRED",
+    "production_unchanged": true,
+    "publication_parent": "cdd13fdbf5a9689c6f69bbf49f9da838d8b11d4b",
+    "qualification_report": "ef3c92b2ad5a50abc115ac683e88a21c588e529f78497e0d4a185d9ba7940c30",
+    "qualified_source_manifest": "80894462f5721d32c73b47868b94d8d785dd44f1f2b6b99353f2f63717f6569f",
+    "status": "QUALIFIED_CI_INTERFACE_BOUND_STRING_ASSERTION"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
