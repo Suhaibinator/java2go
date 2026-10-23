@@ -15,6 +15,8 @@ import "strings"
 // used by transpiled code.
 type List[T any] struct {
 	allocationKind listAllocationKind
+	sourceInfo     *ObjectInfo
+	sourceMethods  ArrayListSourceMethods
 	elements       []T
 	erasedElements []any
 	erasedStorage  bool

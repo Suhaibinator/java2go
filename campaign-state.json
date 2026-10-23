@@ -23463,6 +23463,59 @@
     ],
     "workflow_only_change": "JAVA_VERSION21 to exact published Adoptium SemVer21.0.6+7.0.LTS with explanatory comments"
   },
+  "sol_progress213": {
+    "CI212": {
+      "compiler_fail": 18,
+      "compiler_pass": 2361,
+      "compiler_skip": 0,
+      "new_failures": 0,
+      "run": 40029658470
+    },
+    "Root_fresh28_audit": "3b5ab8b9d39606d0aac113a7d1b98bb463e07e95c77d8b18de3de2a7023bb353",
+    "fresh_joined_gates": {
+      "canonical_build_testcompile_lint_profiles": 6,
+      "compiler_parents_normal_race": 16,
+      "mutants": 60,
+      "pure_controls": 2,
+      "same_parent_compiler_reuse": 2,
+      "total": 28,
+      "whole_program_parity_observations": 6
+    },
+    "held": [
+      "Supplier28",
+      "Gson112",
+      "Netty1220",
+      "wildcard overload repair",
+      "source Map provider closure",
+      "RandomAccessFile File overload"
+    ],
+    "independent_actual_review": "6adf318a19a57707f91af68155aca5eed69ce3edcca41059d223997d18d5154b",
+    "joined_source": "1d7f8de2d06eadb41ab983ccc47ed027fd298c7a9901c8272017db513cbef955",
+    "library_evidence_adoption": {
+      "exact_runtime_package_import_module_closure": "52fd2a1727f4eee4f10bb858d922b0f0e3040d788e019a898af52275d4827d60",
+      "focused_count": 20,
+      "focused_parents_per_mode": 36,
+      "full_suite_parents_per_mode": 920,
+      "qualification_delivery": "712448a4020caabd21a54e47d4696d3cbe1231d2b94473a62896795614183a96"
+    },
+    "limitations": [
+      "source ArrayList compiler lowering remains private and separately qualified",
+      "parallel collector combiner unavailable",
+      "two optional List fields have unbenchmarked memory cost",
+      "no performance gain measured"
+    ],
+    "no_compiler_activation_or_application_compatibility_claim": true,
+    "publication_parent": "5cbedf269e652f3a827d6ebf1dc72b0544db17d4",
+    "runtime_changes": [
+      "source ArrayList allocation identity and current-Execution virtual add binding",
+      "nonvirtual ArrayList base add/get/size operations",
+      "sequential collector recipes with lazy suppliers and identity finish",
+      "fresh stream sources from value slices"
+    ],
+    "runtime_donor": "421eb00a29552bbf7dfc5082650885ad912073a4fdcb6a80de2e63a1c29a3293",
+    "status": "ARRAYLIST_COLLECTOR_RUNTIME_FOUNDATION_VERIFIED_COMPILER_ACTIVATION_PENDING",
+    "transport": "bcedf51c1efb46b29d5e980073832dca5f9b9e5bff7005ccea786b16b9919594"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
