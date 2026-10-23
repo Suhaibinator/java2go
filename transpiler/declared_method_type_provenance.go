@@ -243,14 +243,20 @@ func declaredOriginConversion(actual, formal inferredJavaTypeOrigin, ctx Ctx) (c
 		if ap && fp {
 			return 0, false, false, false
 		} // Existing primitive widening costs.
-		// Loose boxing/unboxing may only target a proved java.lang wrapper.
 		if ap {
-			primitive, _ := javaPrimitiveType(actual.javaType)
+			primitive, known := javaPrimitiveType(actual.javaType)
 			wrapper := ternaryBoxedJavaType(primitive)
-			if formal.externalName == "java.lang."+wrapper && wrapper != "" {
-				return 2, false, true, true
+			if !known || wrapper == "" {
+				return 0, false, false, true
 			}
-			if formal.externalName == "java.lang.Object" || formal.externalName == "java.lang.Number" && primitive != "boolean" && primitive != "char" {
+			// Boxing creates the canonical wrapper before reference widening.
+			// Preserve the formal's declaration and generic argument origins.
+			boxed := intrinsicJavaTypeOrigin("java.lang." + wrapper)
+			_, boxedExact, applies, handled := declaredOriginConversion(boxed, formal, ctx)
+			if handled && applies {
+				if boxedExact {
+					return 2, false, true, true
+				}
 				return 3, false, true, true
 			}
 			return 0, false, false, true

@@ -23171,6 +23171,30 @@
     "qualified_source_manifest": "09e4e9109758794cdb32ac1265264fc90db460df8ebb47984c11c034f46be497",
     "status": "QUALIFIED_RUNTIME_THREADLOCAL_REFERENCE_METADATA_AND_MODIFIERS"
   },
+  "sol_progress206": {
+    "Root_audit": "f11217a42d3b9a6980f76b5a85cc1ba14a9544bcc4a7fb59c390ecc6e43f5b19",
+    "canonical_profiles": 6,
+    "formatted_fresh_parentPASS": 8,
+    "formatted_fresh_stages": 20,
+    "formatted_fresh_subcasePASS": 34,
+    "full_runtime_rerun": false,
+    "held": [
+      "full hosted CI",
+      "Supplier28",
+      "Gson112",
+      "Netty1220 application parity"
+    ],
+    "hosted_CI": "Not inferred from local qualification; checkpoint204 had24compilerfailures",
+    "nested_plain_Go_race_credit": false,
+    "next": "Qualified Netty resolution scope and runtime assignability FIFO have separate exact-source gates; integration pending.",
+    "original_runtime_fixture_unchanged": true,
+    "prior_Root_regional_audit": "5dc08eeb4a892c7b79792dd2f75c41875d8099bd8547aa2b76d1349b238ba39e",
+    "prior_qualified_fresh_JDK_stages": 2,
+    "prior_regional_parentPASS": 36,
+    "publication_parent": "7ef1ab899c16f169ee7168dffbb655de2ec66118",
+    "qualified_source_manifest": "234d723b94b13cad8d6f72a4459f008edb18d087e2e733736528facb2786bac8",
+    "status": "QUALIFIED_BOXED_COMPARABLE_DECLARED_ORIGIN_CONVERSION"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
