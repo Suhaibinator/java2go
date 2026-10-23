@@ -10,6 +10,9 @@ import (
 )
 
 type SourceFile struct {
+	// InputKind defaults to an explicitly supplied in-memory source.
+	InputKind symbol.SourceInputKind
+
 	Name   string
 	Source []byte
 	// UnicodeSource maps parser byte offsets back to the unchanged input when
@@ -48,10 +51,14 @@ func (file *SourceFile) ParseAST() error {
 
 func (file *SourceFile) ParseSymbols() *symbol.FileScope {
 	symbols := symbol.ParseSymbols(file.Ast, file.Source)
+	symbols.SourceFilename = file.Name
 	if file.UnicodeSource != nil {
 		symbols.OriginalSource = file.UnicodeSource.Original
 		symbols.SourceOffsets = append([]uint32(nil), file.UnicodeSource.offsets...)
 	}
+	symbols.AttachSourceInputSnapshot(symbol.NewSourceInputSnapshot(
+		symbols, file.Name, file.InputKind, file.Source, symbols.OriginalSource, symbols.SourceOffsets,
+	))
 	file.Symbols = symbols
 	return symbols
 }

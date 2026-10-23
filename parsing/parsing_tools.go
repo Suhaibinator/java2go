@@ -4,6 +4,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/NickyBoy89/java2go/symbol"
 )
 
 const JavaExt = ".java"
@@ -26,8 +28,9 @@ func ReadSourcesInDir(directoryName string) ([]SourceFile, error) {
 				}
 
 				sources = append(sources, SourceFile{
-					Name:   path,
-					Source: sourceCode,
+					InputKind: symbol.PhysicalSourceInput,
+					Name:      path,
+					Source:    sourceCode,
 				})
 			}
 

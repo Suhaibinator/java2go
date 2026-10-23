@@ -8,6 +8,10 @@ type FileScope struct {
 	// parsedRoot is the original tree passed to ParseSymbols. Keep it independent
 	// of mutable class/definition aliases; only the parsing owner initializes it.
 	parsedRoot *sitter.Node
+	// sourceInput is bound once to this exact file and its retained parse anchor.
+	sourceInput *SourceInputSnapshot
+	// SourceFilename records the name associated with the retained source input.
+	SourceFilename string
 	// Source retains the parsed Java bytes so later whole-program symbol passes
 	// can classify declarations that refer to members in another source file.
 	Source []byte

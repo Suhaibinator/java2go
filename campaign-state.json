@@ -23333,6 +23333,55 @@
     "subcase_PASS": 310,
     "wallclock_or_application_performance_claim": false
   },
+  "sol_progress210": {
+    "ABBA_rows": [
+      42,
+      77,
+      77,
+      42
+    ],
+    "F1_registry": 892,
+    "Root_cost_audit": "f28bb6f67628d279a15c20408db978af37bd0526cdf5cd52768c6256cc376cfe",
+    "Root_finite_audit": "e39db67252da325e036d3ccd007fe1d18e17753b67f3f10e72a8975684ced58d",
+    "all_cost_rows_retained": 238,
+    "canonical_profiles": 6,
+    "consumer_wiring": false,
+    "cost_build_stages_actual0": 6,
+    "cost_delivery": "c450f5d6d23f4d63c9a11249677cdb1203394ebf25bb813963ccab1f812fe9a7",
+    "cost_measurement_jobs_actual0": 4,
+    "finite_delivery": "ac99b4d979d66e00d9da40f05cce00c4d58d5c6e29eabf1f83a7cd458d3a8782",
+    "fresh_finite_stages_actual0": 87,
+    "held": [
+      "full hosted CI",
+      "public collector-stack integration",
+      "Supplier28",
+      "Gson112",
+      "Netty1220 application parity"
+    ],
+    "independent_claims_clear": "fa6370099405a80806c0217f97f3a0fb66da138d55a539d47a7e5e9e24137dd6",
+    "integration_packet": "375941d4886078b4be117fdb2b0d5370bf83ab1ed25ea9fa22a036b56d2774c3",
+    "native_jobs": 48,
+    "next": "Integrate independently qualified receiver/factory test migrations on the new source; retain collector BaseSize/formal-rank REDs and other active semantic repairs.",
+    "no_historical_SHA_ratio_or_JavaGo_speed_claim": true,
+    "not_authority": [
+      "AST content provenance",
+      "graph membership",
+      "providers",
+      "semantic results",
+      "consumer admission"
+    ],
+    "parentPASS": 1168,
+    "publication_parent": "16e4a9c6c291db91a02c81258349358f930c596b",
+    "qualified_source_manifest": "33fe1575bf944f376ea3710fdaba7f01f122deb6465bc8703f0c4d6fc2caa544",
+    "raw_generated_source_pairs": 4,
+    "source_input_boundary": [
+      "owner and root identity",
+      "current input byte equality",
+      "UTF8 and offset metadata",
+      "defensive copies and one-time attachment"
+    ],
+    "status": "QUALIFIED_INPUT_ONLY_SOURCE_SNAPSHOT_FOUNDATION"
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
