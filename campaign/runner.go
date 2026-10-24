@@ -207,16 +207,25 @@ func Run(ctx context.Context, c Config) (report Report, err error) {
 	if e = writeJSON(filepath.Join(runDir, "frozen/source-hashes.json"), report.SourceHashes); e != nil {
 		return fail("freeze", e.Error())
 	}
+	stageArtifactErrors := map[string]error{}
 	stage := func(name, dir string, command []string) bool {
 		r := execute(ctx, c.BuildTimeout, dir, command)
 		report.Stages[name] = r
-		_ = writeJSON(filepath.Join(runDir, "stages", name+".json"), r)
-		_ = write(filepath.Join(runDir, "stages", name+".stdout"), []byte(r.Stdout))
-		_ = write(filepath.Join(runDir, "stages", name+".stderr"), []byte(r.Stderr))
+		if e := errors.Join(
+			writeJSON(filepath.Join(runDir, "stages", name+".json"), r),
+			write(filepath.Join(runDir, "stages", name+".stdout"), []byte(r.Stdout)),
+			write(filepath.Join(runDir, "stages", name+".stderr"), []byte(r.Stderr)),
+		); e != nil {
+			stageArtifactErrors[name] = e
+			return false
+		}
 		return r.ExitCode == 0 && !r.TimedOut && r.Error == ""
 	}
 	stageDetail := func(name string) string {
 		r := report.Stages[name]
+		if e := stageArtifactErrors[name]; e != nil {
+			return fmt.Sprintf("stage artifact write failed: %v; exit=%d timed_out=%v error=%s\n%s\n%s", e, r.ExitCode, r.TimedOut, r.Error, r.Stdout, r.Stderr)
+		}
 		if r.TimedOut {
 			return "build timed out"
 		}
