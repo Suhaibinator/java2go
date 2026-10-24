@@ -1,0 +1,378 @@
+package transpiler
+
+import (
+	"crypto/sha256"
+	"fmt"
+	"os"
+	"runtime"
+	"strings"
+	"testing"
+
+	"github.com/NickyBoy89/java2go/internal/cliownership"
+	"github.com/NickyBoy89/java2go/symbol"
+	sitter "github.com/smacker/go-tree-sitter"
+)
+
+type raw215Query func(*symbol.ClassScope, Ctx) bool
+
+func raw215Owned(t *testing.T, sources []string) (*qualifiedLookup195Fixture, *syntaxInvocation) {
+	t.Helper()
+	withCleanDiagnostics(t)
+	f := qualifiedLookup195Parsed(t, sources)
+	session := cliownership.New()
+	inv := newSyntaxInvocation(session, f.files)
+	if inv == nil || !inv.active || !inv.indexable || !standaloneSyntaxConfigurationOK(os.Stdout) {
+		t.Fatal("actual owned invocation premise")
+	}
+	t.Cleanup(func() { inv.close(); session.Close() })
+	f.ctx.syntaxInvocation = inv
+	f.ctx.callableSubclasses = &callableSubclassSourceInventory{}
+	activeResolutionFiles = sourceOwnershipIndex(f.ctx)
+	return f, inv
+}
+
+const raw215Target = "package rawindex; class Target<T> { int read(int value) { return value; } } "
+const raw215Reference = "class Use { interface Ref { int apply(Target receiver, int value); } static Ref ref = Target::read; }"
+
+func raw215Method(t *testing.T, scope *symbol.ClassScope) *symbol.Definition {
+	t.Helper()
+	for _, method := range scope.Methods {
+		if method != nil && method.OriginalName == "read" {
+			return method
+		}
+	}
+	t.Fatal("actual read method absent")
+	return nil
+}
+
+func raw215Compare(t *testing.T, target *symbol.ClassScope, ctx Ctx, want bool) {
+	t.Helper()
+	before := len(collectedDiagnostics())
+	for _, query := range []raw215Query{rawReference215OldHasSourceReference, rawUnboundReceiverHasSourceReference} {
+		if got := query(target, ctx); got != want {
+			t.Fatalf("actual/reference bool got=%t want=%t", got, want)
+		}
+	}
+	if len(collectedDiagnostics()) != before {
+		t.Fatal("query introduced a diagnostic")
+	}
+}
+
+func TestRawUnboundReference215Semantics(t *testing.T) {
+	for _, row := range []struct {
+		name, source string
+		want         bool
+	}{
+		{"missing", raw215Target + "class Use {}", false},
+		{"type_reference", raw215Target + raw215Reference, true},
+		{"qualified", raw215Target + strings.ReplaceAll(raw215Reference, "Target::read", "rawindex.Target::read"), true},
+		{"parameterized", raw215Target + strings.ReplaceAll(raw215Reference, "Target::read", "Target<String>::read"), false},
+		{"bound", raw215Target + "class Use { interface Ref { int apply(int value); } static Target receiver = new Target(); static Ref ref = receiver::read; }", false},
+		{"static", strings.ReplaceAll(raw215Target, "int read", "static int read") + raw215Reference, false},
+		{"nested", raw215Target + "class Use { static class Nested { interface Ref { int apply(Target receiver, int value); } static Ref ref = Target::read; } }", true},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			f, _ := raw215Owned(t, []string{row.source})
+			raw215Compare(t, f.files[0].Symbols.BaseClass, f.ctx, row.want)
+			runtime.KeepAlive(f)
+		})
+	}
+	t.Run("live_method_mutations", func(t *testing.T) {
+		f, _ := raw215Owned(t, []string{raw215Target + raw215Reference})
+		target := f.files[0].Symbols.BaseClass
+		method := raw215Method(t, target)
+		raw215Compare(t, target, f.ctx, true)
+		method.OriginalName = "changed"
+		raw215Compare(t, target, f.ctx, false)
+		method.OriginalName = "read"
+		raw215Compare(t, target, f.ctx, true)
+		method.IsStatic = true
+		raw215Compare(t, target, f.ctx, false)
+		method.IsStatic = false
+		raw215Compare(t, target, f.ctx, true)
+		node := method.DeclarationNode
+		method.DeclarationNode = nil
+		raw215Compare(t, target, f.ctx, false)
+		method.DeclarationNode = node
+		raw215Compare(t, target, f.ctx, true)
+		parameters := target.TypeParameters
+		target.TypeParameters = nil
+		raw215Compare(t, target, f.ctx, false)
+		target.TypeParameters = parameters
+		raw215Compare(t, target, f.ctx, true)
+	})
+	t.Run("live_top_order_duplicates", func(t *testing.T) {
+		f, _ := raw215Owned(t, []string{raw215Target + raw215Reference})
+		file := f.files[0].Symbols
+		target := file.BaseClass
+		tops := append([]*symbol.ClassScope(nil), file.TopLevelClasses...)
+		if len(tops) != 2 {
+			t.Fatal("two live tops premise")
+		}
+		file.TopLevelClasses = []*symbol.ClassScope{nil, tops[1], tops[0], tops[1]}
+		raw215Compare(t, target, f.ctx, true)
+		file.TopLevelClasses = []*symbol.ClassScope{tops[0], nil}
+		raw215Compare(t, target, f.ctx, false)
+		file.TopLevelClasses = tops
+		raw215Compare(t, target, f.ctx, true)
+	})
+}
+
+func TestRawUnboundReference215Lifetime(t *testing.T) {
+	for _, arm := range []struct {
+		name  string
+		query raw215Query
+	}{{"D", rawReference215OldHasSourceReference}, {"O", rawUnboundReceiverHasSourceReference}} {
+		for _, mode := range []string{"nil_target", "no_eligible_top", "eligible_zero_refs", "graph_restore", "closed_invocation", "public_nested", "source_edit", "root_replace", "nil_package"} {
+			t.Run(arm.name+"_"+mode, func(t *testing.T) {
+				f, inv := raw215Owned(t, []string{raw215Target + raw215Reference})
+				file, graph := f.files[0].Symbols, symbol.GlobalScope
+				target, holder, facts := file.BaseClass, f.ctx.callableSubclasses, inv.declarations
+				switch mode {
+				case "nil_target", "no_eligible_top", "eligible_zero_refs", "graph_restore":
+					foreign := &symbol.GlobalSymbols{Packages: map[string]*symbol.PackageScope{}}
+					if mode == "eligible_zero_refs" || mode == "graph_restore" {
+						foreign.Packages["rawindex"] = &symbol.PackageScope{Files: map[string]*symbol.FileScope{"fixture": file}}
+						file.TopLevelClasses = []*symbol.ClassScope{target}
+					}
+					symbol.GlobalScope = foreign
+					queryTarget := target
+					if mode == "nil_target" {
+						queryTarget = nil
+					}
+					if arm.query(queryTarget, f.ctx) {
+						t.Fatal("negative graph query became true")
+					}
+					eligible := mode == "eligible_zero_refs" || mode == "graph_restore"
+					if facts.retired != eligible || (holder.graph == foreign) != eligible {
+						t.Fatal("first eligible node reset/retirement boundary changed")
+					}
+					symbol.GlobalScope = graph
+					if eligible && !facts.retired {
+						t.Fatal("restored graph revived declaration facts")
+					}
+					if mode == "graph_restore" {
+						if arm.query(target, f.ctx) || !facts.retired {
+							t.Fatal("restore query changed negative or retirement")
+						}
+					}
+				case "closed_invocation":
+					inv.close()
+					if !arm.query(target, f.ctx) {
+						t.Fatal("closed invocation lost dynamic fallback")
+					}
+				case "public_nested":
+					public := f.ctx.Clone()
+					public.syntaxInvocation = nil
+					activeResolutionFiles = sourceOwnershipIndex(public)
+					if !arm.query(target, f.ctx) {
+						t.Fatal("nested public render lost live scan")
+					}
+				case "source_edit":
+					if !arm.query(target, f.ctx) {
+						t.Fatal("source edit positive premise")
+					}
+					at := strings.Index(string(file.Source), "Target::read")
+					if at < 0 {
+						t.Fatal("qualifier bytes premise")
+					}
+					file.Source[at] = 'X'
+					if arm.query(target, f.ctx) {
+						t.Fatal("same-size source edit retained positive")
+					}
+					file.Source[at] = 'T'
+					if !arm.query(target, f.ctx) {
+						t.Fatal("source restore lost live scan")
+					}
+				case "root_replace":
+					other := qualifiedLookup195Parsed(t, []string{raw215Target + "class Use {}"})
+					*file = *other.files[0].Symbols
+					symbol.GlobalScope = graph
+					if arm.query(target, f.ctx) {
+						t.Fatal("replacement root retained old positive")
+					}
+				case "nil_package":
+					symbol.GlobalScope = &symbol.GlobalSymbols{Packages: map[string]*symbol.PackageScope{"nil": nil}}
+					panicked := false
+					func() { defer func() { panicked = recover() != nil }(); arm.query(target, f.ctx) }()
+					if !panicked {
+						t.Fatal("nil package behavior changed")
+					}
+				}
+				runtime.KeepAlive(f)
+			})
+		}
+	}
+}
+
+func raw215FixedSources(width int) []string {
+	var sources []string
+	for i := 0; i < 4; i++ {
+		sources = append(sources, fmt.Sprintf("package rawindex; class Cell%d { int fold(int value) { ", i)+strings.Repeat("value = value + 1; ", width)+"return value; } }\n")
+	}
+	return append(sources, "package rawindex; class Target<T> { T identity(T value) { return value; } }\n")
+}
+
+type raw215Window struct {
+	cgo   int64
+	nodes [8]int
+}
+
+func raw215Cold(t *testing.T, f *qualifiedLookup195Fixture, query raw215Query) raw215Window {
+	t.Helper()
+	var result raw215Window
+	var contexts [8]Ctx
+	var returns [8]bool
+	for i := range contexts {
+		contexts[i] = f.ctx.Clone()
+		contexts[i].callableSubclasses = &callableSubclassSourceInventory{}
+	}
+	target := f.files[4].Symbols.BaseClass
+	before := runtime.NumCgoCall()
+	session := cliownership.New()
+	inv := newSyntaxInvocation(session, f.files)
+	for i := range contexts {
+		contexts[i].syntaxInvocation = inv
+	}
+	activeResolutionFiles = sourceOwnershipIndex(contexts[0])
+	for i := range contexts {
+		returns[i] = query(target, contexts[i])
+	}
+	result.cgo = runtime.NumCgoCall() - before
+	if inv == nil || !inv.active || !inv.indexable || len(inv.files) != 5 || target == nil || result.cgo <= 0 {
+		t.Fatal("cold actual invocation/counter premise")
+	}
+	for i := range contexts {
+		holder := contexts[i].callableSubclasses
+		if returns[i] || holder == nil || holder.graph != symbol.GlobalScope || len(holder.nodes) == 0 {
+			t.Fatal("cold actual false-return/fresh-holder premise")
+		}
+		for j := 0; j < i; j++ {
+			if holder == contexts[j].callableSubclasses {
+				t.Fatal("cold holder borrowed")
+			}
+		}
+		result.nodes[i] = len(holder.nodes)
+	}
+	inv.close()
+	session.Close()
+	runtime.KeepAlive(contexts)
+	runtime.KeepAlive(f)
+	return result
+}
+
+func raw215Warm(t *testing.T, f *qualifiedLookup195Fixture, query raw215Query) (int64, int) {
+	t.Helper()
+	session := cliownership.New()
+	inv := newSyntaxInvocation(session, f.files)
+	ctx := f.ctx.Clone()
+	ctx.syntaxInvocation = inv
+	ctx.callableSubclasses = &callableSubclassSourceInventory{}
+	activeResolutionFiles = sourceOwnershipIndex(ctx)
+	graph, holder, target := symbol.GlobalScope, ctx.callableSubclasses, f.files[4].Symbols.BaseClass
+	if inv == nil || !inv.indexable || target == nil || query(target, ctx) {
+		t.Fatal("warm owned false premise")
+	}
+	keys := make(map[*sitter.Node]bool)
+	for node := range holder.nodes {
+		keys[node] = true
+	}
+	roots := make([]*sitter.Node, len(f.files))
+	for i, file := range f.files {
+		roots[i] = file.Symbols.ParsedRoot()
+	}
+	before := runtime.NumCgoCall()
+	var returns [8]bool
+	for i := range returns {
+		returns[i] = query(target, ctx)
+	}
+	count := runtime.NumCgoCall() - before
+	if symbol.GlobalScope != graph || ctx.callableSubclasses != holder || ctx.syntaxInvocation != inv || holder.graph != graph || !inv.active || len(keys) == 0 || len(keys) != len(holder.nodes) {
+		t.Fatal("warm graph/holder/invocation/key cardinality changed")
+	}
+	for node := range holder.nodes {
+		if !keys[node] {
+			t.Fatal("warm node key set changed")
+		}
+	}
+	for i, file := range f.files {
+		if roots[i] != file.Symbols.ParsedRoot() {
+			t.Fatal("warm root changed")
+		}
+	}
+	for _, got := range returns {
+		if got {
+			t.Fatal("warm query became true")
+		}
+	}
+	inv.close()
+	session.Close()
+	runtime.KeepAlive(f)
+	runtime.KeepAlive(keys)
+	return count, len(keys)
+}
+
+func TestRawUnboundReference215FixedColdWorkRED(t *testing.T) {
+	withCleanDiagnostics(t)
+	var fixtures [2]*qualifiedLookup195Fixture
+	var graphs [2]*symbol.GlobalSymbols
+	widths := [2]int{64, 256}
+	// SHA table is frozen from the reviewed ten fixture byte files.
+	sha := [2][5]string{
+		{"80a02ae3fb9b7b10f50c27827e1f5f43db8ab41c81b83552c62a4bd7e87f1a9c", "9e9feb8a6dc57159244f98b4a3a82d7a29afa70f9f7d1c30835ef022aee00a21", "e50628105dbe68f2757954697a3169191b418b7b9b12b94b5c969a4978ae2396", "bee93647343c91b831feeaaf58143369e3403dc2929ab7d8dabdff85d41204aa", "3a753d227fb32b91df1d70b99473001cae010cdb183b76db5ef081bb17ffe9e5"},
+		{"503f342828ae5250766aa995c457b9c1f80e2d23840d7ff92dc4c8b5390189f5", "d60b3b719484f59f96cd2478ec6ee0ac8e5179bc1d316def89a1ae96c1596a02", "b9d07e4f67aa7ab661773321b0899e9522dbade2de68be039f8972e47f66ee33", "ddad2939a98807397c886af11d6a37cbb4fb47116211432992d40ac94ec0a20a", "3a753d227fb32b91df1d70b99473001cae010cdb183b76db5ef081bb17ffe9e5"},
+	}
+	for w, width := range widths {
+		sources := raw215FixedSources(width)
+		for i, source := range sources {
+			if fmt.Sprintf("%x", sha256.Sum256([]byte(source))) != sha[w][i] {
+				t.Fatal("fixed fixture bytes changed")
+			}
+		}
+		fixtures[w] = qualifiedLookup195Parsed(t, sources)
+		graphs[w] = symbol.GlobalScope
+		if len(fixtures[w].files) != 5 || fixtures[w].files[4].Symbols.BaseClass == nil {
+			t.Fatal("fixed parsed target premise")
+		}
+	}
+	arms := map[byte]raw215Query{'D': rawReference215OldHasSourceReference, 'O': rawUnboundReceiverHasSourceReference}
+	for sample := 1; sample <= 3; sample++ {
+		for w, width := range widths {
+			symbol.GlobalScope = graphs[w]
+			order := "DOOD"
+			if (sample == 2) != (width == 256) {
+				order = "ODDO"
+			}
+			var d, o int64
+			for slot := 0; slot < len(order); slot++ {
+				arm := order[slot]
+				row := raw215Cold(t, fixtures[w], arms[arm])
+				total := 0
+				for _, count := range row.nodes {
+					total += count
+				}
+				t.Logf("RAW215_COLD sample=%d width=%d order=%s slot=%d arm=%c native=%d nodes=%d,%d,%d,%d,%d,%d,%d,%d total=%d queries=8", sample, width, order, slot+1, arm, row.cgo, row.nodes[0], row.nodes[1], row.nodes[2], row.nodes[3], row.nodes[4], row.nodes[5], row.nodes[6], row.nodes[7], total)
+				if arm == 'D' {
+					d += row.cgo
+					if total <= 256 {
+						t.Fatal("reference cold node budget RED premise absent")
+					}
+				} else {
+					o += row.cgo
+					if total > 256 {
+						t.Errorf("RAW215_NODE_BUDGET_RED sample=%d width=%d slot=%d total=%d ceiling=256", sample, width, slot+1, total)
+					}
+				}
+			}
+			t.Logf("RAW215_AGG sample=%d width=%d reference=%d current=%d windows_per_arm=2", sample, width, d, o)
+			if 4*o > 3*d {
+				t.Errorf("RAW215_NATIVE_BUDGET_RED sample=%d width=%d current=%d reference=%d ratio=4O_le_3D", sample, width, o, d)
+			}
+			for _, arm := range []byte{'D', 'O'} {
+				count, keys := raw215Warm(t, fixtures[w], arms[arm])
+				t.Logf("RAW215_WARM sample=%d width=%d arm=%c native=%d keys=%d queries=8 warmups=1 unchanged=true", sample, width, arm, count, keys)
+			}
+		}
+	}
+	runtime.KeepAlive(fixtures)
+}

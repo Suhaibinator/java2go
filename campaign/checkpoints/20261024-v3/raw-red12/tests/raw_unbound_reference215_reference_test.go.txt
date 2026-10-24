@@ -1,0 +1,64 @@
+package transpiler
+
+import (
+	"github.com/NickyBoy89/java2go/symbol"
+	sitter "github.com/smacker/go-tree-sitter"
+)
+
+func rawReference215OldHasSourceReference(target *symbol.ClassScope, ctx Ctx) bool {
+	if target == nil {
+		return false
+	}
+	for _, pkg := range symbol.GlobalScope.Packages {
+		for _, file := range pkg.Files {
+			if file == nil {
+				continue
+			}
+			for _, top := range file.TopLevelClasses {
+				if top == nil || top.Class == nil || top.Class.DeclarationNode == nil {
+					continue
+				}
+				declarationCtx := ctx.Clone()
+				declarationCtx.currentFile = file
+				declarationCtx.currentClass = top
+				var visit func(*sitter.Node) bool
+				visit = func(node *sitter.Node) bool {
+					if node == nil {
+						return false
+					}
+					if resolvedSourceNodeType(node, ctx) == "method_reference" && node.NamedChildCount() >= 2 {
+						qualifier := node.NamedChild(0)
+						methodNode := node.NamedChild(1)
+						if qualifier != nil && methodNode != nil &&
+							resolveClassScopeByTypeQualifier(declarationCtx, qualifier.Content(file.Source)) == target &&
+							javaTypeOmitsGenericArguments(qualifier.Content(file.Source), declarationCtx) {
+							methodName := methodNode.Content(file.Source)
+							// ParseExpr classifies a type-qualified method reference as
+							// static first. Its first SAM parameter is then an ordinary
+							// explicit argument, not an unbound receiver, and must retain
+							// the established raw-parameter representation.
+							if findStaticMethodByName(target, methodName) == nil {
+								for _, candidate := range rawUnboundReceiverMethods(target, declarationCtx) {
+									if candidate.method != nil && candidate.method.DeclarationNode != nil &&
+										candidate.method.OriginalName == methodName {
+										return true
+									}
+								}
+							}
+						}
+					}
+					for _, child := range resolvedSourceNamedChildren(node, ctx) {
+						if visit(child) {
+							return true
+						}
+					}
+					return false
+				}
+				if visit(top.Class.DeclarationNode) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}

@@ -1,0 +1,557 @@
+{
+  "actual_runs": [
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 356,
+          "included_path": "author-oracles/gson/seed-17/files/out/events.json",
+          "sha256": "cb33fcfb5a5da3c1cddabb2bc804d5cb6ce85d11b7387c66aa01f01bb6346bed"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-17/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-17/files/out/state.json",
+          "sha256": "36a5bf71f856c27bab26088348eb7cc745a829f90c454e2dba691f57d17aa6d5"
+        }
+      },
+      "lifecycle_sha256": "e0f9be3dede35b36331a73b6efef476c45ec31c827f362b31e9328cea0a7187c",
+      "raw_receipt": {
+        "bytes": 3829,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed17-repeat1/result.json",
+        "sha256": "ef973a87377217d15c764053d997d1beeebee3266b5b5e43bc7d4bdaa35e1a95"
+      },
+      "repeat": 1,
+      "seed": 17,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-17/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 306,
+        "included_path": "author-oracles/gson/seed-17/stdout.txt",
+        "sha256": "385fc66cd790370a821755565e52976ca5a203ef9854724d8d47896032b03c54"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 356,
+          "included_path": "author-oracles/gson/seed-17/files/out/events.json",
+          "sha256": "cb33fcfb5a5da3c1cddabb2bc804d5cb6ce85d11b7387c66aa01f01bb6346bed"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-17/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-17/files/out/state.json",
+          "sha256": "36a5bf71f856c27bab26088348eb7cc745a829f90c454e2dba691f57d17aa6d5"
+        }
+      },
+      "lifecycle_sha256": "c12ba2832f15c25ecc22aa7897fa2f5064adb0ba5aed441282ae0832f39d0d0c",
+      "raw_receipt": {
+        "bytes": 3829,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed17-repeat2/result.json",
+        "sha256": "2d2db718f11423a7065494ef6ff134670e19eba0b09c9cc871314603414f0ceb"
+      },
+      "repeat": 2,
+      "seed": 17,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-17/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 306,
+        "included_path": "author-oracles/gson/seed-17/stdout.txt",
+        "sha256": "385fc66cd790370a821755565e52976ca5a203ef9854724d8d47896032b03c54"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 356,
+          "included_path": "author-oracles/gson/seed-17/files/out/events.json",
+          "sha256": "cb33fcfb5a5da3c1cddabb2bc804d5cb6ce85d11b7387c66aa01f01bb6346bed"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-17/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-17/files/out/state.json",
+          "sha256": "36a5bf71f856c27bab26088348eb7cc745a829f90c454e2dba691f57d17aa6d5"
+        }
+      },
+      "lifecycle_sha256": "6a93f8fc7fcece06e73c5b782e97c2824412520a735dcdc4732af0a422f34d30",
+      "raw_receipt": {
+        "bytes": 3829,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed17-repeat3/result.json",
+        "sha256": "fe48f4b508ffd56fa4eebf1541ee321dd21c71ddc5d058773b11e6e87f0f461c"
+      },
+      "repeat": 3,
+      "seed": 17,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-17/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 306,
+        "included_path": "author-oracles/gson/seed-17/stdout.txt",
+        "sha256": "385fc66cd790370a821755565e52976ca5a203ef9854724d8d47896032b03c54"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 378,
+          "included_path": "author-oracles/gson/seed-41/files/out/events.json",
+          "sha256": "2a996a7227870ab3eda3c364e973658d5104ec3dc5a63dd70dc96a393769d2e1"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-41/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-41/files/out/state.json",
+          "sha256": "76c459d1eadc118faa4fad462c4dd2859fb45413b817452611328bccf5b417ea"
+        }
+      },
+      "lifecycle_sha256": "1096a6c8829b25e097b3aa502bf6a98e0ba51f462d5a6a504cc86f7420f00fc7",
+      "raw_receipt": {
+        "bytes": 3829,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed41-repeat1/result.json",
+        "sha256": "0d165958b3adae601a8a154b7763387795d3742f0cfe91c4da0dd7346ff989be"
+      },
+      "repeat": 1,
+      "seed": 41,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-41/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 327,
+        "included_path": "author-oracles/gson/seed-41/stdout.txt",
+        "sha256": "2aeee3f74665037f850629b9180a8302a7f3f6a88a9ebe9ff5d363ebb17eb6c3"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 378,
+          "included_path": "author-oracles/gson/seed-41/files/out/events.json",
+          "sha256": "2a996a7227870ab3eda3c364e973658d5104ec3dc5a63dd70dc96a393769d2e1"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-41/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-41/files/out/state.json",
+          "sha256": "76c459d1eadc118faa4fad462c4dd2859fb45413b817452611328bccf5b417ea"
+        }
+      },
+      "lifecycle_sha256": "543a1658860c7e3e423ea4c8f3e904fc19aaf78b07eb97d7698bdb33a2e6b081",
+      "raw_receipt": {
+        "bytes": 3829,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed41-repeat2/result.json",
+        "sha256": "155b5f684c4d3c3a58a0925fa0e71d38d7d09923d40125ccde4d006de866ab9c"
+      },
+      "repeat": 2,
+      "seed": 41,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-41/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 327,
+        "included_path": "author-oracles/gson/seed-41/stdout.txt",
+        "sha256": "2aeee3f74665037f850629b9180a8302a7f3f6a88a9ebe9ff5d363ebb17eb6c3"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 378,
+          "included_path": "author-oracles/gson/seed-41/files/out/events.json",
+          "sha256": "2a996a7227870ab3eda3c364e973658d5104ec3dc5a63dd70dc96a393769d2e1"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-41/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-41/files/out/state.json",
+          "sha256": "76c459d1eadc118faa4fad462c4dd2859fb45413b817452611328bccf5b417ea"
+        }
+      },
+      "lifecycle_sha256": "c83d100b93133e0e9a35b5e01d3c831af143a1df173bc31eb610c2f77899717d",
+      "raw_receipt": {
+        "bytes": 3829,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed41-repeat3/result.json",
+        "sha256": "0dc67a1b9bf985520916eb47c4ff3c467e92f1af08171367b20623b36d9bc58e"
+      },
+      "repeat": 3,
+      "seed": 41,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-41/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 327,
+        "included_path": "author-oracles/gson/seed-41/stdout.txt",
+        "sha256": "2aeee3f74665037f850629b9180a8302a7f3f6a88a9ebe9ff5d363ebb17eb6c3"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 356,
+          "included_path": "author-oracles/gson/seed-97/files/out/events.json",
+          "sha256": "cb33fcfb5a5da3c1cddabb2bc804d5cb6ce85d11b7387c66aa01f01bb6346bed"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-97/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-97/files/out/state.json",
+          "sha256": "f4eb404b2363cd45206bc0b0321195ab0be313c20ebbe66c6f9d4c0987940d00"
+        }
+      },
+      "lifecycle_sha256": "84b80dd1173b0e77a55f7295c7f65ceda8d727ae771cb30b9cad136d1b5a4b69",
+      "raw_receipt": {
+        "bytes": 3829,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed97-repeat1/result.json",
+        "sha256": "26f70ebc8bac35b7f89b9d19be08016dc021a95db77390075bd79f4d84b4b022"
+      },
+      "repeat": 1,
+      "seed": 97,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-97/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 306,
+        "included_path": "author-oracles/gson/seed-97/stdout.txt",
+        "sha256": "add88172219c11330681021e4a22b29785ab2eb94f2f8b43dac8bb3d5b50b7d4"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 356,
+          "included_path": "author-oracles/gson/seed-97/files/out/events.json",
+          "sha256": "cb33fcfb5a5da3c1cddabb2bc804d5cb6ce85d11b7387c66aa01f01bb6346bed"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-97/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-97/files/out/state.json",
+          "sha256": "f4eb404b2363cd45206bc0b0321195ab0be313c20ebbe66c6f9d4c0987940d00"
+        }
+      },
+      "lifecycle_sha256": "62a537eb4722b224ed59fd78677032eb99fbf3e2402ee2b735fb533fff56d84f",
+      "raw_receipt": {
+        "bytes": 3829,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed97-repeat2/result.json",
+        "sha256": "1ac6d8920f6624a7f35772b5526c1729f5c6ce6409e8277af86d5ce7b68cd771"
+      },
+      "repeat": 2,
+      "seed": 97,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-97/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 306,
+        "included_path": "author-oracles/gson/seed-97/stdout.txt",
+        "sha256": "add88172219c11330681021e4a22b29785ab2eb94f2f8b43dac8bb3d5b50b7d4"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [
+        "out"
+      ],
+      "exit": 0,
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "included_path": "apps/gson/resources/batch-east.json",
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "included_path": "apps/gson/resources/batch-invalid.json",
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "included_path": "apps/gson/resources/batch-west.json",
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 356,
+          "included_path": "author-oracles/gson/seed-97/files/out/events.json",
+          "sha256": "cb33fcfb5a5da3c1cddabb2bc804d5cb6ce85d11b7387c66aa01f01bb6346bed"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "included_path": "author-oracles/gson/seed-97/files/out/metadata.json",
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "included_path": "author-oracles/gson/seed-97/files/out/state.json",
+          "sha256": "f4eb404b2363cd45206bc0b0321195ab0be313c20ebbe66c6f9d4c0987940d00"
+        }
+      },
+      "lifecycle_sha256": "6c7a3fb8aeab27effef798ff1df90ebacb313bb06836076fbad402513e4db2c9",
+      "raw_receipt": {
+        "bytes": 3828,
+        "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/execution/evidence/author-seed97-repeat3/result.json",
+        "sha256": "f792308af195e2f985dbcf6d5e88e6708ad931cca89718e4424792375f038cb9"
+      },
+      "repeat": 3,
+      "seed": 97,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/gson/seed-97/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 306,
+        "included_path": "author-oracles/gson/seed-97/stdout.txt",
+        "sha256": "add88172219c11330681021e4a22b29785ab2eb94f2f8b43dac8bb3d5b50b7d4"
+      }
+    }
+  ],
+  "full_observation_stability_per_seed": true,
+  "no_Go_or_application_parity_claim": true,
+  "source_changes_invalidate_all_nine": true,
+  "status": "ARCHIVED_FRESH_AUTHOR_JVM_BYTES_ONLY_INACTIVE_NOT_CAMPAIGN_ORACLE"
+}

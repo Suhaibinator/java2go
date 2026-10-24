@@ -1,0 +1,9 @@
+{
+  "branch_intent": "Separate codex checkpoint branch; no active campaign branch/index/worktree mutations by packager.",
+  "canonical_checkpoint": "public217",
+  "commit": "ab41edb28767a421ff328190c72c60c1ceb0ed9a",
+  "snapshot_manifest_algorithm": "SHA256 of UTF8 json.dumps(full_path_to_sha256,sort_keys=True,indent=2)+LF, from an exact source-only snapshot with no Git metadata or untracked additions.",
+  "source_manifest_sha256": "84ffd4368cf9e995ecdf26ec6b4f646e899e715cb2bf1aa5f2a9323359227178",
+  "source_members": 4532,
+  "tracked_prefix": "campaign/checkpoints/20261024-v3/"
+}

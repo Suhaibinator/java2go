@@ -1,0 +1,9 @@
+first=3:ccc=5;2:aa=-2;2:bb=11;
+first-effects=4:4:4:4:4:4:4:4:factory=2:same=true:compute=4:replace=1
+second=4:bb-r=7;2:aa=-2;
+snapshot=3:ccc=5;2:aa=-2;2:bb=11;
+second-effects=2:2:2:2:2:2:2:2:factory=3:same=true:compute=6:replace=2
+empty=0:0:0:0:0:0:0:0:0:factory=4:same=true:compute=6:replace=3
+abort=mapper-stop:same=true:2:2:2:2:2:2:2:2:factory=1:compute=2:replace=0
+partial=bb-r:7
+partial=aa:0

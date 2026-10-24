@@ -1,0 +1,53 @@
+{
+  "argv_after_main": [
+    "41",
+    "a||0",
+    "b|aa|8",
+    "c||-3",
+    "d|ββ|2",
+    "e|aa|-5"
+  ],
+  "mutation": "After first collect, row0 label += -r, balance += seed%7, revision++; clear same supplier product; collect first ceil(n/2) Account aliases; clear and collect empty.",
+  "purpose": "Empty String key and UTF16 non-ASCII key remain legal references; repeated empty and aa groups distinguish null coercion and cached classifications.",
+  "rows": [
+    {
+      "balance": 0,
+      "id": "a",
+      "label": ""
+    },
+    {
+      "balance": 8,
+      "id": "b",
+      "label": "aa"
+    },
+    {
+      "balance": -3,
+      "id": "c",
+      "label": ""
+    },
+    {
+      "balance": 2,
+      "id": "d",
+      "label": "ββ"
+    },
+    {
+      "balance": -5,
+      "id": "e",
+      "label": "aa"
+    }
+  ],
+  "seed": 41,
+  "source_predicted_counters_not_measured": {
+    "aborted_computeCalls": 2,
+    "aborted_each_before_throw": 2,
+    "aborted_replaceCalls": 0,
+    "empty_each": 0,
+    "first_each_classifier_mapper_real_lambda_local_sourceRoute_objectRoute_canonicalBodyDonor": 5,
+    "reused_product_computeCalls_after_second_and_empty": 8,
+    "reused_product_replaceCalls_after_empty": 3,
+    "second_each": 3,
+    "supplier_get_calls_after_alias_first_second_empty": 4
+  },
+  "status": "DETERMINISTIC_INPUT_DEFINITION_UNRUN_NO_MEASURED_EXPECTATION",
+  "throw_on_mapper_call": 2
+}

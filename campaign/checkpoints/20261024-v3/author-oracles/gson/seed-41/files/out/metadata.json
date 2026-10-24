@@ -1,0 +1,1 @@
+{"batch":"campaign.gsonvariation.domain.Batch<java.time.LocalDate>","state":"java.util.Map<java.lang.String, java.util.List<campaign.gsonvariation.domain.Entry<java.time.LocalDate>>>","raw":"campaign.gsonvariation.domain.Batch","argument":"java.time.LocalDate","equalAnonymousType":true,"cacheIdentity":true}

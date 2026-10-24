@@ -1,0 +1,133 @@
+{
+  "JVM_flags_template": [
+    "-XX:ActiveProcessorCount=2",
+    "-Xmx1g",
+    "-cp",
+    "@CLASSES@"
+  ],
+  "all_raw_output_hashes": "author-oracles/gson/INDEX.json",
+  "compile": {
+    "CPU": 2,
+    "JDK_release": 21,
+    "annotation_processors": false,
+    "cap_seconds": 300,
+    "classpath": "fresh empty; no binary dependency delegation",
+    "encoding": "UTF-8",
+    "heap": "1g",
+    "implicit_compilation": false,
+    "source_order": "dependencies/SOURCE-GROUPS.json preserves complete actual compile order",
+    "sourcepath": "fresh empty"
+  },
+  "compile_diagnostics": "Exact retained javac.stdout.txt/stderr.txt; successful Gson javac has deprecation notes, JVM stderr streams are empty.",
+  "declared_created_files": [
+    "out/state.json",
+    "out/metadata.json",
+    "out/events.json"
+  ],
+  "historical_locale_environment": {
+    "LANG": "en_US.UTF-8",
+    "LC_ALL": "en_US.UTF-8",
+    "TZ": "UTC"
+  },
+  "input_resources": {
+    "batch-east.json": {
+      "bundle_path": "apps/gson/resources/batch-east.json",
+      "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+    },
+    "batch-invalid.json": {
+      "bundle_path": "apps/gson/resources/batch-invalid.json",
+      "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+    },
+    "batch-west.json": {
+      "bundle_path": "apps/gson/resources/batch-west.json",
+      "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+    }
+  },
+  "javac_flags_template": [
+    "-J-XX:ActiveProcessorCount=2",
+    "-J-Xmx1g",
+    "--release",
+    "21",
+    "-encoding",
+    "UTF-8",
+    "-proc:none",
+    "-implicit:none",
+    "-classpath",
+    "@EMPTY@",
+    "--source-path",
+    "@EMPTY@",
+    "-d",
+    "@CLASSES@"
+  ],
+  "lifecycle": "Pinned LC866 requested-before-Popen census, bounded run.py, actual launcher/controller wait/reap, raw streams/status/cwd files and fresh final owned PID/group absence.",
+  "main": "campaign.gsonvariation.app.Main",
+  "no_source_or_expected_edits_during_validation": true,
+  "repeats_each": 3,
+  "resources_placement": "Each fresh run cwd before JVM",
+  "run": {
+    "CPU": 2,
+    "cap_seconds": 60,
+    "classpath": "fresh compiled classes only",
+    "cwd": "fresh per seed/repeat",
+    "disk_floor_bytes": 10737418240,
+    "encoding": "UTF-8",
+    "heap": "1g",
+    "locale": "en_US",
+    "timezone": "UTC"
+  },
+  "seed_argv": {
+    "17": [
+      "17"
+    ],
+    "41": [
+      "41"
+    ],
+    "97": [
+      "97"
+    ]
+  },
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "source_count": 119,
+  "source_or_dependency_or_input_change_invalidates_all_nine_oracles": true,
+  "status": "AUTHOR_VALIDITY_AND_STABILITY_ONLY_NO_EXECUTION_AUTHORITY",
+  "template_note": "Flags retain actual author argv; only JDK/work/classes/empty paths are rebound. Historical full environment is bound by original PLAN/tool-pin refs; a future exact execution environment requires Root repinning.",
+  "unset_env": [
+    "CGO_CFLAGS",
+    "CGO_CPPFLAGS",
+    "CGO_CXXFLAGS",
+    "CGO_LDFLAGS",
+    "CLASSPATH",
+    "F1_SEED",
+    "F1_WORKFILE",
+    "GOAMD64",
+    "GOARCH",
+    "GOARM64",
+    "GODEBUG",
+    "GOEXPERIMENT",
+    "GOLANGCI_LINT_CACHE",
+    "GOOS",
+    "JAVA2GO_ABI183_REAL_SOURCE_LIST",
+    "JAVA2GO_CAMPAIGN_CACHE",
+    "JAVA2GO_CAMPAIGN_MAVEN_REPO",
+    "JAVA2GO_GSON_ORIGIN_INPUT",
+    "JAVA_OPTIONS",
+    "JAVA_OPTS",
+    "JAVA_TOOL_OPTIONS",
+    "JDK_JAVAC_OPTIONS",
+    "JDK_JAVA_OPTIONS",
+    "MAVEN_OPTS",
+    "PYTHONOPTIMIZE",
+    "RAF_WRITE_PARTIAL_FILE",
+    "WRITE_PARTIAL_FILE",
+    "_JAVA_OPTIONS"
+  ],
+  "unset_prefixes": [
+    "JAVA",
+    "JDK",
+    "CGO"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "POM_licenses": [
+    {
+      "artifact": "gson-2.14.0.pom",
+      "declared_licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "inherited_parent": null,
+      "pom_sha256": "1fa0122c0e3733192642861c36be4c6f799a795327a23bdd2922691b6e9ba480"
+    },
+    {
+      "artifact": "error_prone_annotations-2.48.0.pom",
+      "declared_licenses": [
+        {
+          "name": "Apache 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "inherited_parent": null,
+      "pom_sha256": "189e09ad0489c325e90daaa9d5c8f406330602fa366609bca07cbcdad03ab9da"
+    },
+    {
+      "artifact": "commons-codec-1.22.1.pom",
+      "declared_licenses": [],
+      "inherited_parent": {
+        "artifact": "commons-parent",
+        "group": "org.apache.commons",
+        "version": "103"
+      },
+      "pom_sha256": "4cfc5aa20112d131c6949f80bb1e8adce39ffea9a5a935b4c9a37b7c9aab1c91"
+    }
+  ],
+  "authored_app_and_existing_control_support": "Exact campaign author source bytes preserved, with original provenance hashes; no new relicensing claim.",
+  "commons_codec_license_and_notice": "Exact original source-dependency metadata copied in this directory; Commons Codec POM inherits commons-parent103 rather than repeating licenses.",
+  "gson_and_annotations_license_authority": "Exact locked POM license declarations above; retained source headers are checked upon recovery.",
+  "gson_and_annotations_license_files_in_six_archives": [],
+  "no_third_party_implementation_redistributed_in_checkpoint": true
+}

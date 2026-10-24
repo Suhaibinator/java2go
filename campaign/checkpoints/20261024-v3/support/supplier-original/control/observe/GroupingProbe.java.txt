@@ -1,0 +1,114 @@
+package control.observe;
+
+import campaign.data.model.Account;
+import control.factory.MapFactories;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import org.apache.commons.codec.binary.Hex;
+
+public final class GroupingProbe {
+    public static final class Effects { public int classifiers, values; }
+    private final StringBuilder groups = new StringBuilder("case\tposition\tlabel-utf8-hex\ttotal\n");
+    private final StringBuilder effects = new StringBuilder("case\tobservation\n");
+    private final StringBuilder source = new StringBuilder("case\tobservation\n");
+    private static <M extends Map<String,Integer>> M collect(List<Account> rows, Supplier<M> factory, Effects calls) {
+        return rows.stream().collect(Collectors.groupingBy(
+            (Account row) -> { calls.classifiers++; return row.label; }, factory,
+            Collectors.summingInt((Account row) -> { calls.values++; return row.balance; })));
+    }
+    private void map(String label, Map<String,Integer> value) {
+        int position = 0;
+        for (Map.Entry<String,Integer> entry : value.entrySet()) {
+            groups.append(label).append('\t').append(position++).append('\t');
+            groups.append(Hex.encodeHexString(entry.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            groups.append('\t').append(entry.getValue()).append('\n');
+        }
+    }
+    private void effect(String label, String value) { effects.append(label).append('\t').append(value).append('\n'); }
+    public void run(List<Account> rows, int seed) {
+        MapFactories.Named named = new MapFactories.Named(seed);
+        Supplier<?> erasedNamed = named;
+        Object namedAlias = erasedNamed.get();
+        Effects first = new Effects();
+        TreeMap<String,Integer> namedResult = collect(rows, named, first);
+        TreeMap<String,Integer> snapshot = new TreeMap<>(namedResult);
+        map("named-first", namedResult);
+        effect("named-first", "calls=" + named.calls + ":alias=" + (namedAlias == namedResult) + ":product=" + (namedResult == named.product) + ":classifiers=" + first.classifiers + ":values=" + first.values);
+        List<Account> prefix = new ArrayList<>(rows.subList(0, (rows.size() + 1) / 2));
+        named.product.clear();
+        Effects second = new Effects();
+        TreeMap<String,Integer> reused = collect(prefix, named, second);
+        map("named-reused", reused);
+        map("named-old-snapshot", snapshot);
+        effect("named-reused", "calls=" + named.calls + ":same-map=" + (reused == namedResult) + ":snapshot-distinct=" + (snapshot != reused) + ":classifiers=" + second.classifiers + ":values=" + second.values);
+
+        Supplier<TreeMap<String,Integer>> constructor = TreeMap::new;
+        MapFactories.Counting<TreeMap<String,Integer>> nativeFactory = new MapFactories.Counting<>(constructor);
+        Supplier<?> erasedNative = nativeFactory;
+        Object earlierNative = erasedNative.get();
+        Effects nativeCalls = new Effects();
+        TreeMap<String,Integer> nativeResult = collect(rows, nativeFactory, nativeCalls);
+        map("native-factory", nativeResult);
+        effect("native-factory", "calls=" + nativeFactory.calls + ":last-alias=" + (nativeResult == nativeFactory.last) + ":fresh=" + (earlierNative != nativeResult) + ":classifiers=" + nativeCalls.classifiers + ":values=" + nativeCalls.values);
+        MapFactories.Counting<TreeMap<String,Integer>> emptyFactory = new MapFactories.Counting<>(constructor);
+        Effects emptyCalls = new Effects();
+        TreeMap<String,Integer> empty = collect(Collections.emptyList(), emptyFactory, emptyCalls);
+        effect("empty", "calls=" + emptyFactory.calls + ":alias=" + (empty == emptyFactory.last) + ":size=" + empty.size() + ":classifiers=" + emptyCalls.classifiers + ":values=" + emptyCalls.values);
+
+        MapFactories.Throwing throwing = new MapFactories.Throwing();
+        Effects throwCalls = new Effects();
+        try { collect(rows, throwing, throwCalls); effect("throwing", "returned"); }
+        catch (IllegalStateException ex) { effect("throwing", "same=" + (ex == throwing.failure) + ":calls=" + throwing.calls + ":classifiers=" + throwCalls.classifiers + ":values=" + throwCalls.values); }
+        MapFactories.NullProduct missing = new MapFactories.NullProduct();
+        Effects nullCalls = new Effects();
+        try { collect(rows, missing, nullCalls); effect("null-product", "returned"); }
+        catch (NullPointerException ex) { effect("null-product", "NPE:calls=" + missing.calls + ":classifiers=" + nullCalls.classifiers + ":values=" + nullCalls.values); }
+        MapFactories.NullProduct missingEmpty = new MapFactories.NullProduct();
+        Effects nullEmptyCalls = new Effects();
+        try { collect(Collections.emptyList(), missingEmpty, nullEmptyCalls); effect("null-empty", "returned"); }
+        catch (NullPointerException ex) { effect("null-empty", "NPE:calls=" + missingEmpty.calls + ":classifiers=" + nullEmptyCalls.classifiers + ":values=" + nullEmptyCalls.values); }
+        MapFactories.Named nullKeyFactory = new MapFactories.Named(seed);
+        Effects nullKeyCalls = new Effects();
+        try {
+            rows.stream().collect(Collectors.groupingBy((Account row) -> { nullKeyCalls.classifiers++; return (String)null; }, nullKeyFactory,
+                Collectors.summingInt((Account row) -> { nullKeyCalls.values++; return row.balance; })));
+            effect("null-key", "returned");
+        } catch (NullPointerException ex) {
+            effect("null-key", "NPE:calls=" + nullKeyFactory.calls + ":size=" + nullKeyFactory.product.size() + ":classifiers=" + nullKeyCalls.classifiers + ":values=" + nullKeyCalls.values);
+        }
+
+        MapFactories.SourceProduct aborted = new MapFactories.SourceProduct(seed);
+        Effects abortedCalls = new Effects();
+        IllegalArgumentException downstreamStop = new IllegalArgumentException("downstream-stop");
+        try {
+            rows.stream().collect(Collectors.groupingBy((Account row) -> { abortedCalls.classifiers++; return row.label; }, aborted,
+                Collectors.summingInt((Account row) -> { abortedCalls.values++; if (abortedCalls.values == 2) throw downstreamStop; return row.balance; })));
+            effect("downstream-throw", "returned");
+        } catch (IllegalArgumentException ex) {
+            effect("downstream-throw", "same=" + (ex == downstreamStop) + ":calls=" + aborted.calls + ":compute=" + aborted.product.computeCalls + ":replace=" + aborted.product.replaceCalls + ":classifiers=" + abortedCalls.classifiers + ":values=" + abortedCalls.values);
+            Map<?,?> partial = aborted.product;
+            for (Map.Entry<?,?> entry : partial.entrySet()) {
+                int[] accumulator = (int[])entry.getValue();
+                effect("partial-accumulator", Hex.encodeHexString(((String)entry.getKey()).getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ":" + accumulator[0]);
+            }
+        }
+
+        MapFactories.SourceProduct sourceFactory = new MapFactories.SourceProduct(seed);
+        Supplier<?> erasedSource = sourceFactory;
+        Object sourceAlias = erasedSource.get();
+        Effects sourceCalls = new Effects();
+        MapFactories.SourceMap<String,Integer> sourceResult = collect(rows, sourceFactory, sourceCalls);
+        map("source-map-product", sourceResult);
+        source.append("source-map-product\tcalls=").append(sourceFactory.calls).append(":alias=").append(sourceAlias == sourceResult);
+        source.append(":product=").append(sourceResult == sourceFactory.product).append(":compute=").append(sourceResult.computeCalls);
+        source.append(":replace=").append(sourceResult.replaceCalls).append(":classifiers=").append(sourceCalls.classifiers).append(":values=").append(sourceCalls.values).append('\n');
+    }
+    public String groups() { return groups.toString(); }
+    public String effects() { return effects.toString(); }
+    public String source() { return source.toString(); }
+}

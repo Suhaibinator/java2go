@@ -1,0 +1,59 @@
+{
+  "argv_after_main": [
+    "97",
+    "a|bb|9",
+    "b|aa|1",
+    "c|bb|-4",
+    "d|ccc|0",
+    "e|aa|6",
+    "f|ββ|-2"
+  ],
+  "mutation": "After first collect, row0 label += -r, balance += seed%7, revision++; clear same supplier product; collect first ceil(n/2) Account aliases; clear and collect empty.",
+  "purpose": "Comparator direction reverses equal-length keys (seed%3==1), duplicate groups survive the method-T/receiver-T boundary; Unicode peer key included.",
+  "rows": [
+    {
+      "balance": 9,
+      "id": "a",
+      "label": "bb"
+    },
+    {
+      "balance": 1,
+      "id": "b",
+      "label": "aa"
+    },
+    {
+      "balance": -4,
+      "id": "c",
+      "label": "bb"
+    },
+    {
+      "balance": 0,
+      "id": "d",
+      "label": "ccc"
+    },
+    {
+      "balance": 6,
+      "id": "e",
+      "label": "aa"
+    },
+    {
+      "balance": -2,
+      "id": "f",
+      "label": "ββ"
+    }
+  ],
+  "seed": 97,
+  "source_predicted_counters_not_measured": {
+    "aborted_computeCalls": 2,
+    "aborted_each_before_throw": 2,
+    "aborted_replaceCalls": 0,
+    "empty_each": 0,
+    "first_each_classifier_mapper_real_lambda_local_sourceRoute_objectRoute_canonicalBodyDonor": 6,
+    "reused_product_computeCalls_after_second_and_empty": 9,
+    "reused_product_replaceCalls_after_empty": 3,
+    "second_each": 3,
+    "supplier_get_calls_after_alias_first_second_empty": 4
+  },
+  "status": "DETERMINISTIC_INPUT_DEFINITION_UNRUN_NO_MEASURED_EXPECTATION",
+  "throw_on_mapper_call": 2
+}

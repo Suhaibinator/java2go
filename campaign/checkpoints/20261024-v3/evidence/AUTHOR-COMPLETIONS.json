@@ -1,0 +1,72 @@
+{
+  "gson": {
+    "author_only_not_future_execution_authority": true,
+    "cleanup": {
+      "all_recorded_ids_fresh_absent_at_author_seal": true,
+      "group_count": 12,
+      "pid_count": 22,
+      "ps_exit": 0,
+      "ps_matching_rows": [],
+      "sha256": "cf0102569fcff5fb7c72ebde9b62db66f740ebb7439022a4361750c60eca8701"
+    },
+    "launcher_completion": {
+      "actual_retained_record": {
+        "controller_exit": 0,
+        "controller_group_absence_independent_audit_required": true,
+        "controller_pid": 51223,
+        "controller_wait_reaped": true,
+        "signals": [],
+        "terminal_exists": true
+      },
+      "sha256": "8313fd3259ff711caf4eab0d23ea9d8ccf8747986f074ee7fc8e9720bc47248e"
+    },
+    "tool_completion": {
+      "actual_retained_record": {
+        "actual_exit_code": 0,
+        "actual_stdout_final_stages": "author-119-javac and all9seed/repeat stages VALIDATED",
+        "completion_observed_tool_chunk": "dad328",
+        "initial_exec_chunk": "729683",
+        "not_inferred_from_terminal": true,
+        "session": 35811,
+        "wait_stdin_returned_completion": true
+      },
+      "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/TOOL-SESSION-COMPLETION.json",
+      "sha256": "4985ca52f3dbd1015e9cbf34d1c27540ec1f4e1d2969a347afa3a030dd82c0b2"
+    }
+  },
+  "supplier": {
+    "author_only_not_future_execution_authority": true,
+    "cleanup": {
+      "all_recorded_ids_fresh_absent_at_author_seal": true,
+      "group_count": 12,
+      "pid_count": 22,
+      "ps_exit": 0,
+      "ps_matching_rows": [],
+      "sha256": "7d58d90b3166ca6d7959c4c2c1f048fb2cea845748bba959831308b2a2977e9d"
+    },
+    "launcher_completion": {
+      "actual_retained_record": {
+        "controller_exit": 0,
+        "controller_group_absence_independent_audit_required": true,
+        "controller_pid": 50893,
+        "controller_wait_reaped": true,
+        "signals": [],
+        "terminal_exists": true
+      },
+      "sha256": "9563e6b2b7342021f7d0b5176f73dab961dce701f35825c8dff43d6d4029de04"
+    },
+    "tool_completion": {
+      "actual_retained_record": {
+        "UTC": "2026-10-24T05:01:58.769056+00:00",
+        "actual_wait_returned_completed": true,
+        "completion_chunk": "fda1bb",
+        "not_inferred_from_files": true,
+        "observed_exit_code": 0,
+        "session_id": 65885,
+        "tool": "functions.write_stdin"
+      },
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/TOOL-SESSION-COMPLETION.json",
+      "sha256": "b7936cef54665949a45d43826470e96b3fe471c0703ed15e01373e014ca9a713"
+    }
+  }
+}

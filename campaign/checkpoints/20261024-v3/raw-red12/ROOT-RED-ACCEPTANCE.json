@@ -1,0 +1,30 @@
+{
+  "actual_delivery": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/raw-unbound-reference215-existing-api-red-v2/ACTUAL-RED12-DELIVERY.json",
+  "actual_delivery_sha256": "1197b77febc09fe912b6edd0b264120d90d132149cba07c8b1178b64c2d83a8d",
+  "additional_tests": "Add pure inventory projection/source-copy/refusal tests only; preserve old RED test bodies and all old expected semantics. New fields/accessor assertions GREEN phase only.",
+  "all_source_changes_invalidate_prior_execution_results": true,
+  "expected_actual": "all12 stages;10zero2genuineRED/4semantic-lifetimeparentPASS54subPASS/36onlybudgetfailures;all26PID14groupclosed",
+  "implementation_scope": "Exact structural-index proposal TWO files FOUR frozen regions: rawUnboundReceiverHasSourceReference enumeration/fallback, syntaxIdentifierFile two nil-default syntax fields, existing DFS collection with existingkindread, new pure per-body accessor. Fresh private unique candidate only.",
+  "independent_report": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/raw-unbound-reference215-existing-api-red-actual-independent-review-v1/REPORT.json",
+  "independent_report_sha256": "7e9f49eda2cd3d3a215397d8f4ba3dd1a21715861c0e9344bf0b7890a5dc082b",
+  "next": "Freeze implementedsource/inverse/scope/newfocusedGREEN+fullgatecontrollers; independent source/controllerreview then newRoot executionlease. No workload underthisgrant.",
+  "no_acceptance_claims": [
+    "Netty transpilation",
+    "JVM-Go application parity",
+    "CPU speedup",
+    "warm native reduction",
+    "currentpublic integration"
+  ],
+  "required_preservation": [
+    "all actual existing semantic predicates live in exactorder",
+    "targetnil and live outerlooporder; firstresolvedkind originalctx evenzerorefs",
+    "same fallback once perrefusedbody; no prevalidation oflaterbodies",
+    "all source/graph/lifetime/refusal/retirement guards; no semanticresultcache",
+    "fixedREDfixtures and36budgets;84actualparents7embedded;alloldJavaandoracles",
+    "all42integration/original1220Q4native55/strict300unwaived"
+  ],
+  "source_proposal": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-raw-unbound215-structural-index-proposal-v1/PROPOSED-REGIONS.json",
+  "source_proposal_sha256": "011d75c7b4e2921c73117a1737e929351f3f47d94a7912ef7747318de9a249aa",
+  "status": "GENUINE_RED_ACCEPTED_IMPLEMENTATION_SCOPE_GRANTED_NOT_EXECUTION_LEASE",
+  "utc": "2026-10-24T05:04:32.599307+00:00"
+}

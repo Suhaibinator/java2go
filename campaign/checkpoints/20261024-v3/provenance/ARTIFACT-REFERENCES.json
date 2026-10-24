@@ -1,0 +1,168 @@
+{
+  "canonical_original28_authority": {
+    "bytes": 4935,
+    "campaign_store_relative": "supplier28-future-joined-full28-sourceonly/PRIVATE-INPUT-PINS.json",
+    "sha256": "ac6ac56565ec2946b2542593b79e11068fc72b406f7774ba28aad334708bf37c"
+  },
+  "large_metadata_not_copied": true,
+  "new_authored_source_origins": {
+    "apps/gson/src/main/java/campaign/gsonvariation/app/Main.java": {
+      "bytes": 385,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/app/Main.java",
+      "sha256": "cacfc34682f1df7e79cce45aec6651e407e3813207606566be0dd2d5e398de64"
+    },
+    "apps/gson/src/main/java/campaign/gsonvariation/domain/Batch.java": {
+      "bytes": 225,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/domain/Batch.java",
+      "sha256": "11dc9d33dc6102b33a5daa2b210791bed30e345e815b028bc50e9860ee8fb903"
+    },
+    "apps/gson/src/main/java/campaign/gsonvariation/domain/DomainTypes.java": {
+      "bytes": 356,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/domain/DomainTypes.java",
+      "sha256": "3015b2e6e99d967eaf54646c99efc20e67a8ee681c86979b91998839e5043cf4"
+    },
+    "apps/gson/src/main/java/campaign/gsonvariation/domain/Entry.java": {
+      "bytes": 233,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/domain/Entry.java",
+      "sha256": "3d69b806c1a87f01cee719300fce3064a2f807d24910bd6a08518a22ebc65d9a"
+    },
+    "apps/gson/src/main/java/campaign/gsonvariation/io/Journal.java": {
+      "bytes": 304,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/io/Journal.java",
+      "sha256": "3012670ef119f8397874f6fbfa15495f5d1531a6455051fbf0c45c841c9205fd"
+    },
+    "apps/gson/src/main/java/campaign/gsonvariation/io/TrackedReader.java": {
+      "bytes": 1246,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/io/TrackedReader.java",
+      "sha256": "fbc01a24ee952732313c5a29e4b20808d7f120ec72e91a693bbf863396fd56ae"
+    },
+    "apps/gson/src/main/java/campaign/gsonvariation/json/DateFactory.java": {
+      "bytes": 3193,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/json/DateFactory.java",
+      "sha256": "a4469d8bd6e6abdcc0c5cbd52650f6130eb89c1ff1412b72a0cdf7aab31f4a49"
+    },
+    "apps/gson/src/main/java/campaign/gsonvariation/state/Ledger.java": {
+      "bytes": 1320,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/state/Ledger.java",
+      "sha256": "c885e569f273f744c188516cbd18af8ad39d30ecb95d4ecef041c4fb7a14513b"
+    },
+    "apps/gson/src/main/java/campaign/gsonvariation/workflow/Pipeline.java": {
+      "bytes": 5706,
+      "campaign_store_relative": "sol61-gson112-anonymous-stateful-variation-draft-v1/project/src/main/java/campaign/gsonvariation/workflow/Pipeline.java",
+      "sha256": "079d7120c7c896c217aa7e475bc349ac1fd1a31808042e6c544f1f514e14da10"
+    },
+    "apps/supplier/src/main/java/challenge/app/OwnerProbe.java": {
+      "bytes": 6453,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2/project/src/main/java/challenge/app/OwnerProbe.java",
+      "sha256": "b88b3f53ed902c6682ef614f180e939cfd8c224276414b33c60433fc3e35e72b"
+    },
+    "apps/supplier/src/main/java/challenge/decoy/LookalikeKeys.java": {
+      "bytes": 1097,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2/dependency-source/challenge/decoy/LookalikeKeys.java",
+      "sha256": "4400787fdbfbbfc4d6b6027f42b36876f972fd9ba3e8cd114a7fae305b138bc7"
+    },
+    "apps/supplier/src/main/java/challenge/real/RealKeys.java": {
+      "bytes": 719,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2/dependency-source/challenge/real/RealKeys.java",
+      "sha256": "c69e7c6c9d5d63f001f77cf98729bd48e102e973ba7d7c1911bd764ce6f73cbd"
+    },
+    "apps/supplier/src/main/java/challenge/shadow/Map.java": {
+      "bytes": 398,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2/dependency-source/challenge/shadow/Map.java",
+      "sha256": "4796b98f977f8967f00cad3b8024f14ff61eff7accf1055b9c0de8cfcf45989b"
+    },
+    "apps/supplier/src/main/java/challenge/state/Audit.java": {
+      "bytes": 378,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2/dependency-source/challenge/state/Audit.java",
+      "sha256": "ebdc270b1c57cb1a316ca05709110ccc04bdad7ad838cfabdc145846734ec34b"
+    }
+  },
+  "original157_authority": {
+    "bytes": 32082,
+    "campaign_store_relative": "supplier_grouping_author_control/FROZEN-MANIFEST.json",
+    "sha256": "edfca827054ce0f9bedb368b61458863f8723ca622aeb2735a0a1c41d0df21c4"
+  },
+  "reference_root": "Historical campaign store. campaign_store_relative+SHA256 identifies optional original artifacts; portable recovery uses bundled source/support, exact base217 snapshot and locked Maven URLs instead.",
+  "refs": {
+    "gson:ACTUAL-ARTIFACT-MANIFEST.json": {
+      "bytes": 56195,
+      "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/ACTUAL-ARTIFACT-MANIFEST.json",
+      "sha256": "245c6763cfdd27266a8a6d89c5db2d525701cf67ff010dcf59c732c67a76e02c"
+    },
+    "gson:CLEANUP.json": {
+      "bytes": 3672,
+      "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/CLEANUP.json",
+      "sha256": "cf0102569fcff5fb7c72ebde9b62db66f740ebb7439022a4361750c60eca8701"
+    },
+    "gson:FINAL-DELIVERY.json": {
+      "bytes": 2557,
+      "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/FINAL-DELIVERY.json",
+      "sha256": "26d05dd96b9b7315e809f39c12fa9902c662d4d7fa0eb9b04ceb1cfa5124b97e"
+    },
+    "gson:LAUNCHER-COMPLETION.json": {
+      "bytes": 195,
+      "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/LAUNCHER-COMPLETION.json",
+      "sha256": "8313fd3259ff711caf4eab0d23ea9d8ccf8747986f074ee7fc8e9720bc47248e"
+    },
+    "gson:PLAN.json": {
+      "bytes": 36128,
+      "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/PLAN.json",
+      "sha256": "444e045d920546ec004039943f3e2a4a3dabd91da18c78ad0476458b021b6bd1"
+    },
+    "gson:TOOL-PINS.json": {
+      "bytes": 39071,
+      "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/TOOL-PINS.json",
+      "sha256": "b1175735302a710a6c13b5532e1ccc5f688744f569994cf3979b09553c30753c"
+    },
+    "gson:TOOL-SESSION-COMPLETION.json": {
+      "bytes": 297,
+      "campaign_store_relative": "sol61-gson-variation-author-jvm-validation-v1/TOOL-SESSION-COMPLETION.json",
+      "sha256": "4985ca52f3dbd1015e9cbf34d1c27540ec1f4e1d2969a347afa3a030dd82c0b2"
+    },
+    "gson:independent_author_review": {
+      "bytes": 9173,
+      "campaign_store_relative": "sol61-gson-author-jvm-independent-review-v1/REPORT.json",
+      "sha256": "9491e470d280b95e5a54fdfdf9978d481069b95cfe7cd851405be782b9e07f41"
+    },
+    "supplier:ACTUAL-ARTIFACT-MANIFEST.json": {
+      "bytes": 18197,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/ACTUAL-ARTIFACT-MANIFEST.json",
+      "sha256": "7ead1cc6800fc4c4edbe78507cf44aa156d6bf5153dae9893327470addb41db0"
+    },
+    "supplier:CLEANUP.json": {
+      "bytes": 4312,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/CLEANUP.json",
+      "sha256": "7d58d90b3166ca6d7959c4c2c1f048fb2cea845748bba959831308b2a2977e9d"
+    },
+    "supplier:FINAL-AUTHOR-VALIDATION.json": {
+      "bytes": 2768,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/FINAL-AUTHOR-VALIDATION.json",
+      "sha256": "1dabf170f185839ad8856b3631ba8b4c464eaac8ea64757a351faea9ffcf9e6b"
+    },
+    "supplier:LAUNCHER-COMPLETION.json": {
+      "bytes": 195,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/LAUNCHER-COMPLETION.json",
+      "sha256": "9563e6b2b7342021f7d0b5176f73dab961dce701f35825c8dff43d6d4029de04"
+    },
+    "supplier:PLAN.json": {
+      "bytes": 25249,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/PLAN.json",
+      "sha256": "2dcc7f11b9541371a17b09ffae4607b1f4179f4953da784777ed9a4cf3e04eaf"
+    },
+    "supplier:TOOL-PINS.json": {
+      "bytes": 49062,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/TOOL-PINS.json",
+      "sha256": "acdff8a922e09c9bc77cb643f17e960b2e664db0808f917a8d910c9a98995e51"
+    },
+    "supplier:TOOL-SESSION-COMPLETION.json": {
+      "bytes": 242,
+      "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/TOOL-SESSION-COMPLETION.json",
+      "sha256": "b7936cef54665949a45d43826470e96b3fe471c0703ed15e01373e014ca9a713"
+    },
+    "supplier:independent_author_review": {
+      "bytes": 11914,
+      "campaign_store_relative": "sol61-supplier-author-jvm-independent-review-20261023/REPORT.json",
+      "sha256": "593676d607cecda5c9fb9744167edefcee48081caaa74811c28f29c8807fe464"
+    }
+  }
+}

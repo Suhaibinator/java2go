@@ -1,0 +1,40 @@
+if not __debug__:
+    raise RuntimeError('OPTIMIZED_LAUNCHER_FORBIDDEN')
+from pathlib import Path
+import hashlib,json,os,signal,subprocess,time
+C=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest();load=lambda p:json.loads(Path(p).read_text())
+def save(path,value):
+    temp=Path(str(path)+'.pending');temp.write_text(json.dumps(value,sort_keys=True,indent=2)+'\n');temp.replace(path)
+T=load(C/'TOOL-PINS.json');grant=load(C/'ROOT-GRANT.json');assert grant['lane']==5 and grant['plan']==sha(C/'PLAN.json')and grant['controller']==sha(C/'controller.py')and grant['pins']==sha(C/'TOOL-PINS.json')and grant['launcher']==sha(__file__)
+assert not(C/'execution').exists()and not(C/'LAUNCHER-HANDLE.json').exists(),'SINGLE_FRESH_LAUNCH'
+proc=None;signals=[];draining=False
+save(C/'LAUNCH-REQUESTED.json',{'launcher_pid':os.getpid(),'launcher_group':os.getpgrp(),'plan':sha(C/'PLAN.json'),'state':'BEFORE_POPEN_NO_CONTROLLER_PID_ASSUMED'})
+def interrupt(signum,_frame):
+    global draining
+    signals.append(signum)
+    if draining:return
+    draining=True
+    if proc is not None and proc.poll()is None:
+        try:proc.send_signal(signum)
+        except ProcessLookupError:pass
+    raise InterruptedError('launcher interrupted '+str(signum))
+old={s:signal.getsignal(s)for s in [signal.SIGTERM,signal.SIGINT]}
+for s in old:signal.signal(s,interrupt)
+try:
+    draining=True;proc=subprocess.Popen([T['python'],'-B',str(C/'controller.py')],start_new_session=True);draining=False
+    save(C/'LAUNCHER-HANDLE.json',{'launcher_pid':os.getpid(),'launcher_group':os.getpgrp(),'controller_pid':proc.pid,'controller_group':proc.pid,'launcher':sha(__file__)})
+    if signals:interrupt(signals[0],None)
+    while proc.poll()is None:
+        try:proc.wait(timeout=.25)
+        except subprocess.TimeoutExpired:pass
+finally:
+    draining=True
+    if proc is not None:
+        if proc.poll()is None:
+            proc.terminate()
+            try:proc.wait(timeout=12)
+            except subprocess.TimeoutExpired:proc.kill();proc.wait(timeout=3)
+        save(C/'LAUNCHER-COMPLETION.json',{'controller_pid':proc.pid,'controller_exit':proc.returncode,'controller_wait_reaped':True,'signals':signals,'terminal_exists':(C/'execution/TERMINAL.json').exists(),'controller_group_absence_independent_audit_required':True})
+    for s,h in old.items():signal.signal(s,h)
+if proc is None:raise RuntimeError('NO_CONTROLLER_CREATED')
+raise SystemExit(proc.returncode)

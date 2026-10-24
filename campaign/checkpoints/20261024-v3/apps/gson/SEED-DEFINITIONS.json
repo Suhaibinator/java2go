@@ -1,0 +1,30 @@
+{
+  "17": {
+    "date_shift_expression": "seed % 5",
+    "invalid_reader_close_fault": false,
+    "owner_and_tag_seed": 17,
+    "resource_order": [
+      "batch-east.json",
+      "batch-west.json"
+    ]
+  },
+  "41": {
+    "date_shift_expression": "seed % 5",
+    "invalid_reader_close_fault": true,
+    "owner_and_tag_seed": 41,
+    "resource_order": [
+      "batch-west.json",
+      "batch-east.json"
+    ]
+  },
+  "97": {
+    "date_shift_expression": "seed % 5",
+    "invalid_reader_close_fault": false,
+    "owner_and_tag_seed": 97,
+    "resource_order": [
+      "batch-east.json",
+      "batch-west.json"
+    ]
+  },
+  "authority": "Input definitions, not computed observations or expected bytes."
+}

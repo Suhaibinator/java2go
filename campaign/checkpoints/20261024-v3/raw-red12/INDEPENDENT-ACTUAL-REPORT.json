@@ -1,0 +1,152 @@
+{
+  "artifacts": {
+    "ARTIFACT-CLOSURE.json": "f8de821e28f176b422f83c7dfc283defa143eb4dbcc63bc673b66933d4c18308",
+    "FRESH-ABSENCE.json": "c6d9e0cf60ef4a881743b75e68218c2cef0ceb2ff501b26df32d7e960e350aaa",
+    "REPLAY.json": "5f67db70db72fc8a5245be8bb62b5a69198fe5c77e8cea7b39a858466ffdc1ce",
+    "audit.py": "47d362834773c63c30274f15428d08423980dfde33f828aa4e137d1e39ed3e0e"
+  },
+  "clear_actual_evidence": true,
+  "cold_schedule_and_accounting": {
+    "all12_native_aggregates_evaluated_no_bestrow_median_selection": true,
+    "baseline_current_equals_exactold_reference_every_window_pair_sample_width_mode": true,
+    "coldqueries_bothmodes": 384,
+    "coldwindows_bothmodes": 48,
+    "eight_distinct_freshholders_per_own_invocation_render_and_all_false_returns_checked_by_actual_frozen_test": true,
+    "sample1": [
+      "64:DOOD",
+      "256:ODDO"
+    ],
+    "sample2": [
+      "64:ODDO",
+      "256:DOOD"
+    ],
+    "sample3": [
+      "64:DOOD",
+      "256:ODDO"
+    ],
+    "samples_each_mode": 3,
+    "whole_constructor_render_and_query_native_cost_counted": true,
+    "widths": [
+      64,
+      256
+    ]
+  },
+  "counter_actuals": [
+    {
+      "all6_aggregate_pairs_bothmodes": {
+        "D": 89036,
+        "O": 89036
+      },
+      "all_O_node_ceilings_failed": true,
+      "all_native_ratio_gates_4O_le_3D_failed": true,
+      "coldwindows_bothmodes": 24,
+      "each_of8_node_cardinalities": 1604,
+      "native_calls_per_coldwindow": 44518,
+      "node_budget_ceiling": 256,
+      "total_nodes_per_coldwindow": 12832,
+      "width": 64
+    },
+    {
+      "all6_aggregate_pairs_bothmodes": {
+        "D": 344012,
+        "O": 344012
+      },
+      "all_O_node_ceilings_failed": true,
+      "all_native_ratio_gates_4O_le_3D_failed": true,
+      "coldwindows_bothmodes": 24,
+      "each_of8_node_cardinalities": 6212,
+      "native_calls_per_coldwindow": 172006,
+      "node_budget_ceiling": 256,
+      "total_nodes_per_coldwindow": 49696,
+      "width": 256
+    }
+  ],
+  "fast_identity_limitation": {
+    "closure": "Raw child PID/group plus retained supervisor identity are covered by clean raw/lifecycle cleanup, complete all-created/postflight union, actual wait/reap and fresh full26PID14group absence. No continuous live identity sample claim.",
+    "count": 4,
+    "null_optional_verified_live_child_identity_stages": [
+      "normal-buildinfo",
+      "normal-semantics",
+      "normal-lifetime",
+      "race-buildinfo"
+    ]
+  },
+  "input_bindings": {
+    "ACTUAL-ARTIFACT-MANIFEST.json": "98d1a8be9299167c038365f44b6a48d94faf53864ee6ce87d4079d55cb720827",
+    "ACTUAL-RED12-DELIVERY.json": "1197b77febc09fe912b6edd0b264120d90d132149cba07c8b1178b64c2d83a8d",
+    "EXECUTION-BINDING.json": "e09bb9394d5545b0d03a569608148a055da10d08b1510c94af4cb3c41cc6689c",
+    "OWNED-CLEANUP-RELEASE.json": "1e914b2d952c49a4958420886257cb5eff038b388754a98510e1b1481b6cfd7a",
+    "PLAN.json": "78ae4d4e4a3e459aba7e5606c48923db90096637dc693520f93a8eb059bbe181",
+    "REVIEW-HANDOFF.json": "c8accc81f1f5d65b955213cb7e3104c2ff9e961635462721f154795c1b25c60e",
+    "SOURCE-MANIFEST.json": "19ca4540995577e0bd6cb4b04f9f50a746eb989c3a82849c1ad72d32f210d989",
+    "TOOL-ACTUAL-WAIT.json": "018f9f0b52c7df5abaf19db37cc16ea188ba161c2edd158679597a214d754276",
+    "TOOL-PINS.json": "9b513a76a0bccf0a01c6f6fd4a58674dbab9073c672b0d468ad95e2245f6a1c8",
+    "controller.py": "f9f6224f79555b484f70863d3403f19982fa178ecbc714ab2dabe64c423b7f5d"
+  },
+  "limits": [
+    "This validates genuine budget RED on the unchanged public215 implementation, not a passing optimization, performance improvement, production repair or application acceptance. Root acceptance and any GREEN production scope remain separate.",
+    "The node ceiling and all native ratio gates intentionally fail; absolute observations are retained for every sample/width/window. Warm native zero is diagnostic only.",
+    "Original34/raw receiver protected parents, actual1220, AST59/Q0, old20/Q4/Netty/strict300 are neither executed nor accepted by this RED12; existing failures and gates are mandatory/unwaived.",
+    "No new index fields/accessors/OrderedCandidates tests or production patch applied; those remain future GREEN scope.",
+    "Public216/public217 or later test-only migration/transport is outside this frozen public215 baseline and gains no source or execution credit.",
+    "Actual tool completion is verified from the pinned owner tool-wait receipt and matching actual launcher wait/reap, not inferred from process absence."
+  ],
+  "observed": {
+    "GOMAXPROCS2_p1_GOMEMLIMIT512MiB_diskfloor10GiB_offline_readonly": true,
+    "actual12_stages": 12,
+    "actual_exit0": 10,
+    "all128_executionfiles_exact_coverage_no_additions_or_omissions": true,
+    "all12_allcreated_census_and_postflight_union_exact": true,
+    "all12_chronology_serial_Rootgrant_before_start_deadline_timing_exact": true,
+    "all12_complete_physical_child_supervisor_controller_streams": true,
+    "all12_lifecycle_errors_actions_signals_empty": true,
+    "all12_requested_actual_supervisor_argv_environment_resources_caps_floor": true,
+    "all177_frozen_metadata_raw_codeartifactpins_exact": true,
+    "all2456_toolpins_exact": true,
+    "all26PIDs14groups_fresh_signal0_ESRCH": true,
+    "all4530public215_basebytes_exact_plus_only2existingAPI_testleaves": true,
+    "both_native_binary_digests_exact": {
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/raw-unbound-reference215-existing-api-red-v2/execution/bin/raw215-normal.test": "7a8f5faf02ee9d24a8e91bc8bb738de1dc0e829395c63eac8a8ec1f7bfd083b0",
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/raw-unbound-reference215-existing-api-red-v2/execution/bin/raw215-race.test": "ef6a0c8018ed31ddb24a575c41353f63b380b66e8068d2590553953c8a6f1899"
+    },
+    "counter_RED_parents": 2,
+    "each_mode_actual_registry_exact3parents_in_source_order": true,
+    "fresh_ps_owned_matches": 0,
+    "fresh_signal0_ESRCH_count": 40,
+    "full_JSON_metadata_prior_validated_build_binary_path_digest_cwd_go_mod_sum_provenance": true,
+    "genuine_budget_RED_exit1": 2,
+    "launcher43706_actualwait_reap_controller43720_exit0_finally_wait_attempted": true,
+    "native55_runner55_outer65_build300_outer310_exec60_outer70": true,
+    "normal_and_race_real_build_typechecking_pass": true,
+    "only_declared_budget_failure_rows": 36,
+    "semantic_lifetime_parentPASS": 4,
+    "semantic_lifetime_subPASS": 54,
+    "source4532_fullinventory_exact": true,
+    "successful_controller24_START_END_records_and_empty_stderr": true,
+    "tool28025_actual_completed_exit0_from_sealed_waitreceipt": true
+  },
+  "packet": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/raw-unbound-reference215-existing-api-red-v2",
+  "production_implementation_approved": false,
+  "root_RED_acceptance_pending": true,
+  "scope": "Read-only sealed actual receipt replay and independent signal-zero/ps terminal absence. No workload, build, native query, cleanup signal, retry, source/test/controller mutation, gate, lease or production change by reviewer.",
+  "source_conservation": {
+    "base_manifest_sha256": "13955a13a89a5589053ae84cf55a9e7266b9b427d606af24967023ec9b6a658a",
+    "new_fields_accessors_stubs": 0,
+    "production_files_changed": 0,
+    "protected84_packageparents_plus7_embedded_in23files_conserved_but_not_executed": true,
+    "source_manifest_sha256": "19ca4540995577e0bd6cb4b04f9f50a746eb989c3a82849c1ad72d32f210d989",
+    "two_original_test_leaves_byteexact_from_frozen_source_review": true
+  },
+  "source_controller_CLEAR_sha256": "2cf0d5f824902a3adad1c3450e7f8d40af6d4ef3360465496bf321b79b92a63c",
+  "status": "CLEAR_GENUINE_EXISTING_API_RED12_ACTUAL_EVIDENCE_ONLY",
+  "utc": "2026-10-24T05:03:34.241112+00:00",
+  "warm_diagnostic_only": {
+    "all_identities_and_full_node_keyset_unchanged": true,
+    "each_control_own_invocation_own_single_holder": true,
+    "every_measured_native_count": 0,
+    "measured_queries": 192,
+    "no_native_ratio_or_CPU_gain_claim": true,
+    "warmups": 24,
+    "windows_bothmodes": 24
+  }
+}

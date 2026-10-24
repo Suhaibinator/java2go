@@ -1,0 +1,224 @@
+{
+  "actual_exit0": 10,
+  "actual_stages": 12,
+  "all_cold_pairs_O_equals_old_reference_D": true,
+  "artifact_refs": {
+    "TDD_plan": {
+      "bytes": 5891,
+      "campaign_store_relative": "sol61-raw-unbound215-structural-index-proposal-v1/TDD-PLAN.json",
+      "sha256": "eaa9d1a7512ab48aa7bd47b354b43f6b6512c1b0eb4f13c1318576de4f5af598"
+    },
+    "actual_delivery": {
+      "bytes": 32804,
+      "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/ACTUAL-RED12-DELIVERY.json",
+      "sha256": "1197b77febc09fe912b6edd0b264120d90d132149cba07c8b1178b64c2d83a8d"
+    },
+    "actual_manifest": {
+      "bytes": 22162,
+      "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/ACTUAL-ARTIFACT-MANIFEST.json",
+      "sha256": "98d1a8be9299167c038365f44b6a48d94faf53864ee6ce87d4079d55cb720827"
+    },
+    "independent_actual_audit": {
+      "bytes": 8089,
+      "campaign_store_relative": "raw-unbound-reference215-existing-api-red-actual-independent-review-v1/REPORT.json",
+      "sha256": "7e9f49eda2cd3d3a215397d8f4ba3dd1a21715861c0e9344bf0b7890a5dc082b"
+    },
+    "proposal_delivery": {
+      "bytes": 2736,
+      "campaign_store_relative": "sol61-raw-unbound215-structural-index-proposal-v1/DELIVERY.json",
+      "sha256": "1e26514831b747e08fcf1898baac8fb482400d31953aabfa37f1eaedf6c012dd"
+    },
+    "proposal_text": {
+      "bytes": 11255,
+      "campaign_store_relative": "sol61-raw-unbound215-structural-index-proposal-v1/PROPOSAL.md",
+      "sha256": "a00b94c3441f0a817f198bbd59e2a624e3998396639b2e23286bb0eea0c0f29a"
+    },
+    "proposed_regions": {
+      "bytes": 1714,
+      "campaign_store_relative": "sol61-raw-unbound215-structural-index-proposal-v1/PROPOSED-REGIONS.json",
+      "sha256": "011d75c7b4e2921c73117a1737e929351f3f47d94a7912ef7747318de9a249aa"
+    },
+    "root_scope": {
+      "bytes": 2489,
+      "campaign_store_relative": "ROOT-RAW215-RED12-ACCEPTANCE-IMPLEMENTATION-GRANT.json",
+      "sha256": "0460c895c652ad6701c681de6789204842bb1c930f5a212d63a4348b42fa2e29"
+    }
+  },
+  "cold_queries_both_modes": 384,
+  "cold_windows_both_modes": 48,
+  "genuine_budget_RED_exit1": 2,
+  "historical_base": "public2154530 MAN13955a13a89a5589053ae84cf55a9e7266b9b427d606af24967023ec9b6a658a",
+  "historical_testonly_source_manifest": "19ca4540995577e0bd6cb4b04f9f50a746eb989c3a82849c1ad72d32f210d989",
+  "new_index_fields_accessors_or_compiler_runtime_implementation_included": false,
+  "no_native_reduction_CPU_gain_application_parity_or_Netty_claim": true,
+  "node_ceilings_and_4O_le_3D_all_failed": true,
+  "only_budget_failure_rows": 36,
+  "raw_output_hashes": [
+    {
+      "exit": 0,
+      "label": "normal-build",
+      "raw_receipt": {
+        "bytes": 3890,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/normal-build/result.json",
+        "sha256": "c3de7bb9ced455fa06c172f30328e271b003406158633222544469be5a1fe639"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exit": 0,
+      "label": "normal-buildinfo",
+      "raw_receipt": {
+        "bytes": 3800,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/normal-buildinfo/result.json",
+        "sha256": "a8ba9b0248762407a75cfda2d5c27df7f6b106eba65d1aef7c56538e57c6df13"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 1336,
+      "stdout_sha256": "45236dfaa6a3af6a56f4df2a342fe791430ea5754942001306b62dcd0978dbd5"
+    },
+    {
+      "exit": 0,
+      "label": "normal-registry",
+      "raw_receipt": {
+        "bytes": 3924,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/normal-registry/result.json",
+        "sha256": "895a426d0423e3ff6b3c1eb670378acbb728b6d47a5a594f3fbbe298da4de4b9"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 114,
+      "stdout_sha256": "2cc7ef738a8b7d0ae93c94df6659ee0ec1c7802f4ace73607f10baa25660e937"
+    },
+    {
+      "exit": 0,
+      "label": "normal-semantics",
+      "raw_receipt": {
+        "bytes": 3959,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/normal-semantics/result.json",
+        "sha256": "1e4ce7ce06f12f016f947550931246f2dd1fbb4095da68b98422c963b33ebb7c"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 1271,
+      "stdout_sha256": "902f4b75b744323b3cf7a065b154dc0fa2ff9ab6349f5155aacd519971131f88"
+    },
+    {
+      "exit": 0,
+      "label": "normal-lifetime",
+      "raw_receipt": {
+        "bytes": 3957,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/normal-lifetime/result.json",
+        "sha256": "60288d76cabd85125a7cb46180bd0c2238a7de124492b9a364f9ca67231307c7"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 2527,
+      "stdout_sha256": "64d2ca13b2fa3ee5efecf5ce7ef856c21783952b1bd4091843c3a555ad95c254"
+    },
+    {
+      "exit": 1,
+      "label": "normal-counter",
+      "raw_receipt": {
+        "bytes": 3972,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/normal-counter/result.json",
+        "sha256": "23e37662e494fbfc5448b4f66a48699fc14c87af4f140ddc6107be105692b04f"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 8867,
+      "stdout_sha256": "2adf78cbccc74a0699eedd9d672279bb2528b9cb02829ee34cbcad59f957eb81"
+    },
+    {
+      "exit": 0,
+      "label": "race-build",
+      "raw_receipt": {
+        "bytes": 3910,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/race-build/result.json",
+        "sha256": "a65b8af81bb6bdf6f6d060a647ad6de5b2e60ebb022d23201e1b796c51cb32e9"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exit": 0,
+      "label": "race-buildinfo",
+      "raw_receipt": {
+        "bytes": 3794,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/race-buildinfo/result.json",
+        "sha256": "5d22807b135a3ea1ffd42e47b9fde6afee409022261e15b0dfb9d57950ca0a56"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 1383,
+      "stdout_sha256": "f522896a195d036dd53420350ee309d7a06aceb04718753c596fa94fab33efd7"
+    },
+    {
+      "exit": 0,
+      "label": "race-registry",
+      "raw_receipt": {
+        "bytes": 3918,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/race-registry/result.json",
+        "sha256": "285bf90a469003810c0f7d2a2c1778245aeab3a325eefd8790f6bf7ee5474c5c"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 114,
+      "stdout_sha256": "2cc7ef738a8b7d0ae93c94df6659ee0ec1c7802f4ace73607f10baa25660e937"
+    },
+    {
+      "exit": 0,
+      "label": "race-semantics",
+      "raw_receipt": {
+        "bytes": 3954,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/race-semantics/result.json",
+        "sha256": "7c094bf0e38293f14eb07ccba1243859c34832f3af94d006e291a8c269bb0030"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 1271,
+      "stdout_sha256": "c3d69d52ca80db38f47d573010092f9d86c0fef3f9695ef317b7b2b8c3a6527b"
+    },
+    {
+      "exit": 0,
+      "label": "race-lifetime",
+      "raw_receipt": {
+        "bytes": 3950,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/race-lifetime/result.json",
+        "sha256": "c75aaebd2957b53f8e9a460ccc5d6eb87fd572652789fafc737130089fb3c4e5"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 2527,
+      "stdout_sha256": "0040bf3451b5902bce7e188c636d197c57fb8436b9eaade1f6f758e0b0d48989"
+    },
+    {
+      "exit": 1,
+      "label": "race-counter",
+      "raw_receipt": {
+        "bytes": 3966,
+        "campaign_store_relative": "raw-unbound-reference215-existing-api-red-v2/execution/evidence/race-counter/result.json",
+        "sha256": "b7ee4bccbbb4574d928b64bad8c52e452bae6754c9de8fb582fbef03f7d3e12a"
+      },
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 8867,
+      "stdout_sha256": "cd9497f45a006c353c63fb410b3b15d76aba65eb62b4d916e72ca9510cad64b6"
+    }
+  ],
+  "semantic_lifetime_parentPASS": 4,
+  "semantic_lifetime_subPASS": 54,
+  "source_change_requires_fresh_qualification_not215_to217_credit": true,
+  "status": "GENUINE_EXISTING_API_RED_EVIDENCE_ONLY_PRODUCTION_INDEX_UNIMPLEMENTED_IN_THIS_CHECKPOINT",
+  "tests_are_text_only_never_added_to_Go_package": true,
+  "two_test_leaves": {
+    "transpiler/raw_unbound_reference215_reference_test.go": "24adc61f21cb21722ed10a63dd6d7658022f2a56cf88a146f7e5c46bd8e62471",
+    "transpiler/raw_unbound_reference215_test.go": "4a838d0062b9d0fc05b10806ffad2ec5f287a942f95236f09fe5f1b28936a72a"
+  },
+  "warm_native_zero_diagnostic_only": true
+}

@@ -1,0 +1,364 @@
+{
+  "UTC": "2026-10-24T05:09:04.837341+00:00",
+  "checks": {
+    "actual10stages_all_exit0": true,
+    "actual_tool65885_exit0_chunk_fda1bb_wait_completed": true,
+    "all157_original_author_members_and_external_inputs_unchanged": true,
+    "all220pins_and_support_exact": true,
+    "all_caps_CPU2_Xmx1g_build300_exec60": true,
+    "all_raw_streams_argv_env_and_LC866_exact": true,
+    "canonical28_Java_byteexact": true,
+    "classes43_plus2_classpath_resources_exact": true,
+    "controller_exit0_wait_reaped": true,
+    "five_additive_Java_exact": true,
+    "fresh_independent_absence": {
+      "groups": 12,
+      "no_signal_sent": true,
+      "pids": 22,
+      "ps_exit": 0,
+      "ps_matching_rows": [],
+      "ps_sha256": "03bcaab8d63e4a5bfa13291437a59c17983bb70f550227fe279adce2cc7f4a71",
+      "signal0_checks": [
+        {
+          "id": 50888,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50893,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50896,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50898,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50920,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50921,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50938,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50939,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50945,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50946,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50950,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50953,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50956,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50960,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50965,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50967,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50983,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50984,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50992,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50993,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 51009,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 51010,
+          "kind": "pid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50888,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50893,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50898,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50921,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50939,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50946,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50953,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50960,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50967,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50984,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 50993,
+          "kind": "pgid",
+          "state": "ESRCH"
+        },
+        {
+          "id": 51010,
+          "kind": "pgid",
+          "state": "ESRCH"
+        }
+      ]
+    },
+    "frozen50_and_actual143_artifacts_exact": true,
+    "input_snapshot42_exact": true,
+    "javac_explicit33_JDK_only_empty_classpath_sourcepath_no_processor_implicit_source": true,
+    "null_child_identity_stages": [],
+    "seed_stability": {
+      "17": {
+        "cwd_and_tmp_empty": true,
+        "exit": 0,
+        "full_three_observations_byte_stable": true,
+        "stderr_bytes": 0,
+        "stdout_bytes": 397,
+        "three_actual_stdout_sha256": "30d2ac4a42c8cae42b4b75a7b8e48cee3750b7be8288c5379e1ff71f6e3be8da"
+      },
+      "41": {
+        "cwd_and_tmp_empty": true,
+        "exit": 0,
+        "full_three_observations_byte_stable": true,
+        "stderr_bytes": 0,
+        "stdout_bytes": 394,
+        "three_actual_stdout_sha256": "768454069eaa2090abbdc6e258c3c28de3596796f7791b03b0636f7428fb70b4"
+      },
+      "97": {
+        "cwd_and_tmp_empty": true,
+        "exit": 0,
+        "full_three_observations_byte_stable": true,
+        "stderr_bytes": 0,
+        "stdout_bytes": 422,
+        "three_actual_stdout_sha256": "0b9e49872a07a44996b17eaf33bd3c66fe3a8b012eabb30b61f332654b3f4960"
+      }
+    },
+    "serial_UTC_chronology": true
+  },
+  "clear": true,
+  "identity": {
+    "ACTUAL-ARTIFACT-MANIFEST.json": "7ead1cc6800fc4c4edbe78507cf44aa156d6bf5153dae9893327470addb41db0",
+    "CLEANUP.json": "7d58d90b3166ca6d7959c4c2c1f048fb2cea845748bba959831308b2a2977e9d",
+    "FINAL-AUTHOR-VALIDATION.json": "1dabf170f185839ad8856b3631ba8b4c464eaac8ea64757a351faea9ffcf9e6b",
+    "FROZEN-ARTIFACT-MANIFEST.json": "2ba877ce70217293b9b58425b1e83d776e08c09a073122cece7c204d2d45ed77",
+    "LAUNCHER-COMPLETION.json": "9563e6b2b7342021f7d0b5176f73dab961dce701f35825c8dff43d6d4029de04",
+    "MEASURED-JVM-ORACLES.json": "00a1774c8400c4ae785bedded0f5995cbd39b6f506713e410a7ee9b69d99619d",
+    "PLAN.json": "2dcc7f11b9541371a17b09ffae4607b1f4179f4953da784777ed9a4cf3e04eaf",
+    "TOOL-PINS.json": "acdff8a922e09c9bc77cb643f17e960b2e664db0808f917a8d910c9a98995e51",
+    "TOOL-SESSION-COMPLETION.json": "b7936cef54665949a45d43826470e96b3fe471c0703ed15e01373e014ca9a713"
+  },
+  "limits": [
+    "Author JVM validity and nine-run stability only; no generated-Go, runtime/compiler repair, complete Supplier28 application parity, remote checkpoint acceptance, or new active application admission.",
+    "Original157 authority and canonical28 remain unchanged mandatory independent gates; additive main is a separate inactive author variation.",
+    "Two original resources are copied unchanged to classpath; this additive main declares no run output files and does not establish original application file-output coverage.",
+    "No JVM, javac, Go, transpiler or compiler workload was launched by this reviewer. Only additive review files and read-only fresh process checks were performed."
+  ],
+  "review_only": true,
+  "source_API_review": [
+    "RealKeys<T> method-owned <T> formal imports genuine java.util.Map.Entry; local Map and Runnable lambda are body-local and do not own that signature. Return exact key identity and independent receiver token are observable.",
+    "LookalikeKeys generic formal imports unrelated challenge.shadow.Map.Entry; canonical JDK Entry in its lambda body must not donate ownership. Actual Java overload resolution selects Object7 for JDK entry and generic11 for source entry, with donor effect only on source route.",
+    "OwnerProbe exercises real JDK Stream.collect/groupingBy/summingInt and unchanged source Supplier/Map classes, reuse after Account mutation, empty reuse, abrupt mapper failure identity and partial accumulator state. No source/runtime implementation or generated output is substituted.",
+    "All33 original+additive Java compile as real source under pinned JDK21; subsequent runs invoke only source-built challenge.app.OwnerProbe on classes directory, with frozen seed argv. No JVM binary dependency classpath or process delegation."
+  ],
+  "stage_summary": [
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:34.592583+00:00",
+      "index": 1,
+      "label": "author-javac-full33",
+      "pgid": 50898,
+      "pid": 50898,
+      "raw": "2cd015d5b09feb9514c4e8b20c729c63dd1966c650d1afc2e66d1ef4654c6b4a",
+      "start": "2026-10-24T05:01:33.862874+00:00",
+      "supervisor_pid": 50896
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:34.887451+00:00",
+      "index": 2,
+      "label": "author-JVM-seed17-repeat1",
+      "pgid": 50921,
+      "pid": 50921,
+      "raw": "d70385b47c772de082a50c430971cde5cc936e90f6816fd3ecdd210b4ff99792",
+      "start": "2026-10-24T05:01:34.795959+00:00",
+      "supervisor_pid": 50920
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:35.169053+00:00",
+      "index": 3,
+      "label": "author-JVM-seed17-repeat2",
+      "pgid": 50939,
+      "pid": 50939,
+      "raw": "0c7b8d284d51e3d8a4e7fca9185a2e7fb10c8cec8a7a73bcba20e5b5a41ed560",
+      "start": "2026-10-24T05:01:35.091549+00:00",
+      "supervisor_pid": 50938
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:35.453344+00:00",
+      "index": 4,
+      "label": "author-JVM-seed17-repeat3",
+      "pgid": 50946,
+      "pid": 50946,
+      "raw": "e62eb3112f6de735bfba92ebf61dd4dc9aabdbb684b0dceefd13cd93298e92ae",
+      "start": "2026-10-24T05:01:35.369681+00:00",
+      "supervisor_pid": 50945
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:35.734626+00:00",
+      "index": 5,
+      "label": "author-JVM-seed41-repeat1",
+      "pgid": 50953,
+      "pid": 50953,
+      "raw": "1ecfdb3143e5346735afcb74038ce3943b3bde6235ae06c9a2015524afd6f15a",
+      "start": "2026-10-24T05:01:35.653943+00:00",
+      "supervisor_pid": 50950
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:36.016799+00:00",
+      "index": 6,
+      "label": "author-JVM-seed41-repeat2",
+      "pgid": 50960,
+      "pid": 50960,
+      "raw": "8e14218fa553c2cec9d6cb0d78053bb02a0aec53db6d543363bcfcb29e9d3bd2",
+      "start": "2026-10-24T05:01:35.935854+00:00",
+      "supervisor_pid": 50956
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:36.301817+00:00",
+      "index": 7,
+      "label": "author-JVM-seed41-repeat3",
+      "pgid": 50967,
+      "pid": 50967,
+      "raw": "e6e1d1580ca8e425ae2274e71a4ad6867316d84fa45eecd5c7df8f7c5fcac17f",
+      "start": "2026-10-24T05:01:36.220084+00:00",
+      "supervisor_pid": 50965
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:36.581728+00:00",
+      "index": 8,
+      "label": "author-JVM-seed97-repeat1",
+      "pgid": 50984,
+      "pid": 50984,
+      "raw": "263a3a43ae8c0ef5e920aca19ffb7f2a040a070d8f145374cc83ffe5558651d0",
+      "start": "2026-10-24T05:01:36.501258+00:00",
+      "supervisor_pid": 50983
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:36.874066+00:00",
+      "index": 9,
+      "label": "author-JVM-seed97-repeat2",
+      "pgid": 50993,
+      "pid": 50993,
+      "raw": "d4ec0b0c274f6d5bec250086bba9cd6dad03e79e4642f4ad88e1a4c8563c6b89",
+      "start": "2026-10-24T05:01:36.790351+00:00",
+      "supervisor_pid": 50992
+    },
+    {
+      "argv_env_caps_streams_cleanup_exact": true,
+      "finish": "2026-10-24T05:01:37.154312+00:00",
+      "index": 10,
+      "label": "author-JVM-seed97-repeat3",
+      "pgid": 51010,
+      "pid": 51010,
+      "raw": "5562a875aeee09898682913433402295c0c610d850b322b6db763172ad5d9581",
+      "start": "2026-10-24T05:01:37.077682+00:00",
+      "supervisor_pid": 51009
+    }
+  ],
+  "status": "CLEAR_SUPPLIER33_AUTHOR_JVM_VALIDITY_AND_STABILITY_ONLY"
+}

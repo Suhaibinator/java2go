@@ -1,0 +1,1 @@
+{"seed":97,"regions":2,"rows":4,"aliases":true,"stateUnchangedAfterFailure":true,"pendingAbsent":true,"error":{"class":"com.google.gson.JsonSyntaxException","message":"Missing day; at $.entries[1].value","suppressed":[]},"factory":{"owner":"owner-東京-97","creates":9,"declines":8,"reads":5,"writes":9}}

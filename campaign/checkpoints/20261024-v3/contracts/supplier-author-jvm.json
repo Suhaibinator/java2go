@@ -1,0 +1,164 @@
+{
+  "JVM_flags_template": [
+    "-XX:ActiveProcessorCount=2",
+    "-Xmx1g",
+    "-Dfile.encoding=UTF-8",
+    "-Duser.language=en",
+    "-Duser.country=US",
+    "-Duser.timezone=UTC",
+    "-Djava.io.tmpdir=@WORK@/tmp",
+    "-cp",
+    "@CLASSES@"
+  ],
+  "all_raw_output_hashes": "author-oracles/supplier/INDEX.json",
+  "compile": {
+    "CPU": 2,
+    "JDK_release": 21,
+    "annotation_processors": false,
+    "cap_seconds": 300,
+    "classpath": "fresh empty; no binary dependency delegation",
+    "encoding": "UTF-8",
+    "heap": "1g",
+    "implicit_compilation": false,
+    "source_order": "dependencies/SOURCE-GROUPS.json preserves complete actual compile order",
+    "sourcepath": "fresh empty"
+  },
+  "compile_diagnostics": "Exact retained javac.stdout.txt/stderr.txt; successful Gson javac has deprecation notes, JVM stderr streams are empty.",
+  "declared_created_files": [],
+  "historical_locale_environment": {
+    "LANG": "en_US.UTF-8",
+    "LC_ALL": "en_US.UTF-8",
+    "TZ": "UTC"
+  },
+  "input_resources": {
+    "events-east.tsv": {
+      "bundle_path": "apps/supplier/resources/events-east.tsv",
+      "sha256": "ce0aa7aedfa9afac57172e90666c9aec748bc7fb14a8145e8bf437c092e4ebd2"
+    },
+    "events-west.tsv": {
+      "bundle_path": "apps/supplier/resources/events-west.tsv",
+      "sha256": "db7dc551445feb1c8be6291d7f49f7b9559e2bafc1fb3b45383bc71f6132af51"
+    }
+  },
+  "javac_flags_template": [
+    "-J-XX:ActiveProcessorCount=2",
+    "-J-Xmx1g",
+    "--release",
+    "21",
+    "-encoding",
+    "UTF-8",
+    "-proc:none",
+    "-implicit:none",
+    "-classpath",
+    "@EMPTY@",
+    "-sourcepath",
+    "@EMPTY@",
+    "-d",
+    "@CLASSES@"
+  ],
+  "lifecycle": "Pinned LC866 requested-before-Popen census, bounded run.py, actual launcher/controller wait/reap, raw streams/status/cwd files and fresh final owned PID/group absence.",
+  "main": "challenge.app.OwnerProbe",
+  "no_source_or_expected_edits_during_validation": true,
+  "repeats_each": 3,
+  "resources_placement": "Compiled classpath root after javac",
+  "run": {
+    "CPU": 2,
+    "cap_seconds": 60,
+    "classpath": "fresh compiled classes only",
+    "cwd": "fresh per seed/repeat",
+    "disk_floor_bytes": 10737418240,
+    "encoding": "UTF-8",
+    "heap": "1g",
+    "locale": "en_US",
+    "timezone": "UTC"
+  },
+  "seed_argv": {
+    "17": [
+      "17",
+      "a|bb|4",
+      "b|aa|-2",
+      "c|bb|7",
+      "d|ccc|5"
+    ],
+    "41": [
+      "41",
+      "a||0",
+      "b|aa|8",
+      "c||-3",
+      "d|ββ|2",
+      "e|aa|-5"
+    ],
+    "97": [
+      "97",
+      "a|bb|9",
+      "b|aa|1",
+      "c|bb|-4",
+      "d|ccc|0",
+      "e|aa|6",
+      "f|ββ|-2"
+    ]
+  },
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "source_count": 33,
+  "source_or_dependency_or_input_change_invalidates_all_nine_oracles": true,
+  "status": "AUTHOR_VALIDITY_AND_STABILITY_ONLY_NO_EXECUTION_AUTHORITY",
+  "template_note": "Flags retain actual author argv; only JDK/work/classes/empty paths are rebound. Historical full environment is bound by original PLAN/tool-pin refs; a future exact execution environment requires Root repinning.",
+  "unset_env": [
+    "AR",
+    "CC",
+    "CGO_CFLAGS",
+    "CGO_CPPFLAGS",
+    "CGO_CXXFLAGS",
+    "CGO_LDFLAGS",
+    "CLASSPATH",
+    "CPATH",
+    "CXX",
+    "DYLD_INSERT_LIBRARIES",
+    "DYLD_LIBRARY_PATH",
+    "F1_SEED",
+    "F1_WORKFILE",
+    "GO111MODULE",
+    "GOAMD64",
+    "GOARCH",
+    "GOARM64",
+    "GOCOVERDIR",
+    "GODEBUG",
+    "GOEXPERIMENT",
+    "GOINSECURE",
+    "GOLANGCI_LINT_CACHE",
+    "GONOPROXY",
+    "GONOSUMDB",
+    "GOOS",
+    "GOPRIVATE",
+    "GOTMPDIR",
+    "GOTRACEBACK",
+    "JAVA2GO_ABI183_REAL_SOURCE_LIST",
+    "JAVA2GO_CAMPAIGN_CACHE",
+    "JAVA2GO_CAMPAIGN_MAVEN_REPO",
+    "JAVA2GO_GSON_ORIGIN_INPUT",
+    "JAVA_OPTIONS",
+    "JAVA_OPTS",
+    "JAVA_TOOL_OPTIONS",
+    "JDK_JAVAC_OPTIONS",
+    "JDK_JAVA_OPTIONS",
+    "LD_PRELOAD",
+    "LIBRARY_PATH",
+    "MACOSX_DEPLOYMENT_TARGET",
+    "MAVEN_OPTS",
+    "PKG_CONFIG",
+    "PYTHONOPTIMIZE",
+    "RAF_WRITE_PARTIAL_FILE",
+    "SDKROOT",
+    "WRITE_PARTIAL_FILE",
+    "_JAVA_OPTIONS"
+  ],
+  "unset_prefixes": [
+    "JAVA",
+    "JDK",
+    "CGO"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "support/supplier-original/control/app/Main.java.txt": {
+    "origin": {
+      "bytes": 2011,
+      "campaign_store_relative": "supplier28-future-joined-full28-sourceonly/project/src/main/java/control/app/Main.java",
+      "sha256": "643fc9c819a8d79ed99c4c43f0acf031ef4cba9fbfffafc9d1a5248032a5c978"
+    },
+    "restore_as": "supplier/original/control/app/Main.java",
+    "role": "Existing original Supplier control support, not newly authored variation or active source.",
+    "sha256": "643fc9c819a8d79ed99c4c43f0acf031ef4cba9fbfffafc9d1a5248032a5c978"
+  },
+  "support/supplier-original/control/factory/MapFactories.java.txt": {
+    "origin": {
+      "bytes": 2699,
+      "campaign_store_relative": "supplier28-future-joined-full28-sourceonly/project/src/main/java/control/factory/MapFactories.java",
+      "sha256": "e1ec4c780f69bcca6dc28e85e0916f0005e5c65c2789c4628af21b1da3e0f0cc"
+    },
+    "restore_as": "supplier/original/control/factory/MapFactories.java",
+    "role": "Existing original Supplier control support, not newly authored variation or active source.",
+    "sha256": "e1ec4c780f69bcca6dc28e85e0916f0005e5c65c2789c4628af21b1da3e0f0cc"
+  },
+  "support/supplier-original/control/observe/GroupingProbe.java.txt": {
+    "origin": {
+      "bytes": 8153,
+      "campaign_store_relative": "supplier28-future-joined-full28-sourceonly/project/src/main/java/control/observe/GroupingProbe.java",
+      "sha256": "60da70df1b8dfb1beebd83de39f57d3ae57e875b53535b26a2020b5826ec9b7d"
+    },
+    "restore_as": "supplier/original/control/observe/GroupingProbe.java",
+    "role": "Existing original Supplier control support, not newly authored variation or active source.",
+    "sha256": "60da70df1b8dfb1beebd83de39f57d3ae57e875b53535b26a2020b5826ec9b7d"
+  }
+}

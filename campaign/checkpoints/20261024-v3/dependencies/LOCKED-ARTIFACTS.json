@@ -1,0 +1,88 @@
+{
+  "artifacts": [
+    {
+      "file": "gson-2.14.0.jar",
+      "group": "com.google.code.gson",
+      "id": "gson",
+      "kind": "binary",
+      "sha256": "2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f",
+      "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.14.0/gson-2.14.0.jar",
+      "version": "2.14.0"
+    },
+    {
+      "file": "gson-2.14.0-sources.jar",
+      "group": "com.google.code.gson",
+      "id": "gson",
+      "kind": "sources",
+      "sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.14.0/gson-2.14.0-sources.jar",
+      "version": "2.14.0"
+    },
+    {
+      "file": "gson-2.14.0.pom",
+      "group": "com.google.code.gson",
+      "id": "gson",
+      "kind": "pom",
+      "sha256": "1fa0122c0e3733192642861c36be4c6f799a795327a23bdd2922691b6e9ba480",
+      "url": "https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.14.0/gson-2.14.0.pom",
+      "version": "2.14.0"
+    },
+    {
+      "file": "error_prone_annotations-2.48.0.jar",
+      "group": "com.google.errorprone",
+      "id": "error_prone_annotations",
+      "kind": "binary",
+      "sha256": "b49c5c958316ed67a09c699dda9aa749caf434d51d863dea599ef36a49b9c855",
+      "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.48.0/error_prone_annotations-2.48.0.jar",
+      "version": "2.48.0"
+    },
+    {
+      "file": "error_prone_annotations-2.48.0-sources.jar",
+      "group": "com.google.errorprone",
+      "id": "error_prone_annotations",
+      "kind": "sources",
+      "sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.48.0/error_prone_annotations-2.48.0-sources.jar",
+      "version": "2.48.0"
+    },
+    {
+      "file": "error_prone_annotations-2.48.0.pom",
+      "group": "com.google.errorprone",
+      "id": "error_prone_annotations",
+      "kind": "pom",
+      "sha256": "189e09ad0489c325e90daaa9d5c8f406330602fa366609bca07cbcdad03ab9da",
+      "url": "https://repo.maven.apache.org/maven2/com/google/errorprone/error_prone_annotations/2.48.0/error_prone_annotations-2.48.0.pom",
+      "version": "2.48.0"
+    },
+    {
+      "file": "commons-codec-1.22.1.jar",
+      "group": "commons-codec",
+      "id": "commons-codec",
+      "kind": "binary",
+      "sha256": "78a5d732fbd715e2d10bd7150d2f8030bae57267f8aacc5c88f642cb6c2e5d3f",
+      "url": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.22.1/commons-codec-1.22.1.jar",
+      "version": "1.22.1"
+    },
+    {
+      "file": "commons-codec-1.22.1-sources.jar",
+      "group": "commons-codec",
+      "id": "commons-codec",
+      "kind": "sources",
+      "sha256": "96444ee2fa5a41dc4d3b7b95f46b67495795d458e2050fc08bb88ab7f87ac021",
+      "url": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.22.1/commons-codec-1.22.1-sources.jar",
+      "version": "1.22.1"
+    },
+    {
+      "file": "commons-codec-1.22.1.pom",
+      "group": "commons-codec",
+      "id": "commons-codec",
+      "kind": "pom",
+      "sha256": "4cfc5aa20112d131c6949f80bb1e8adce39ffea9a5a935b4c9a37b7c9aab1c91",
+      "url": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.22.1/commons-codec-1.22.1.pom",
+      "version": "1.22.1"
+    }
+  ],
+  "retrieval": "Fetch listed URLs separately into --artifact-dir; recover_sources.py checks every exact SHA256 before source extraction. Binary jars/POMs are provenance pins and never classpath delegation.",
+  "source_archive_selection": "Exactly the 81 Gson +29 annotation +16 Commons Codec Java implementation units in SOURCE-GROUPS.json. No substituted library or compiler/runtime patch.",
+  "status": "REQUIRED_PINNED_RETRIEVALS_NO_BINARY_OR_LIBRARY_IMPLEMENTATION_IN_BUNDLE"
+}

@@ -1,0 +1,47 @@
+{
+  "argv_after_main": [
+    "17",
+    "a|bb|4",
+    "b|aa|-2",
+    "c|bb|7",
+    "d|ccc|5"
+  ],
+  "mutation": "After first collect, row0 label += -r, balance += seed%7, revision++; clear same supplier product; collect first ceil(n/2) Account aliases; clear and collect empty.",
+  "purpose": "Repeated labels with cancelling signs, a longer key, reused source map and mutated row alias.",
+  "rows": [
+    {
+      "balance": 4,
+      "id": "a",
+      "label": "bb"
+    },
+    {
+      "balance": -2,
+      "id": "b",
+      "label": "aa"
+    },
+    {
+      "balance": 7,
+      "id": "c",
+      "label": "bb"
+    },
+    {
+      "balance": 5,
+      "id": "d",
+      "label": "ccc"
+    }
+  ],
+  "seed": 17,
+  "source_predicted_counters_not_measured": {
+    "aborted_computeCalls": 2,
+    "aborted_each_before_throw": 2,
+    "aborted_replaceCalls": 0,
+    "empty_each": 0,
+    "first_each_classifier_mapper_real_lambda_local_sourceRoute_objectRoute_canonicalBodyDonor": 4,
+    "reused_product_computeCalls_after_second_and_empty": 6,
+    "reused_product_replaceCalls_after_empty": 3,
+    "second_each": 2,
+    "supplier_get_calls_after_alias_first_second_empty": 4
+  },
+  "status": "DETERMINISTIC_INPUT_DEFINITION_UNRUN_NO_MEASURED_EXPECTATION",
+  "throw_on_mapper_call": 2
+}

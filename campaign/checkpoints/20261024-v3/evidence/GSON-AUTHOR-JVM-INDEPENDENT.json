@@ -1,0 +1,258 @@
+{
+  "UTC": "2026-10-24T05:09:54.937767+00:00",
+  "actual_artifact_manifest": "245c6763cfdd27266a8a6d89c5db2d525701cf67ff010dcf59c732c67a76e02c",
+  "actual_artifact_members": 413,
+  "actual_controller0_wait_reaped": true,
+  "all10_raw_exit0_full_argv_env_caps_streams_lifecycle_chronology_verified": true,
+  "all_original_and_draft_inputs_exact": true,
+  "all_pins_rehashed": 156,
+  "application_sources": 9,
+  "clear_author_JVM_validity_and_evidence": true,
+  "compiled_classes_rehashed": 251,
+  "final_delivery": "26d05dd96b9b7315e809f39c12fa9902c662d4d7fa0eb9b04ceb1cfa5124b97e",
+  "fresh22PID12group_absence": "0e87c0197e83b961ab20297ec21077ad830e781039ef5a2f195b63875ca7336d",
+  "full9_exit_stdout_stderr_files_directories_resources_pending_cleanup_byte_stable": true,
+  "javac_diagnostics_retained_exact_not_claimed_empty": {
+    "bytes": 286,
+    "sha256": "678e87eec7e0d1d254f8c3a6e77a08c9c9d76f93dd65733570a814753b40b32a"
+  },
+  "limits": [
+    "Author Java validity and repeated observation stability only. No Go, binary-vs-source equivalence, full original Gson/Supplier, Netty, CI or acceptance claim.",
+    "Any source/dependency/input change invalidates all nine measured oracles.",
+    "No automatic activation or future execution authority."
+  ],
+  "locked_dependency_implementation_sources": 110,
+  "no_JVM_Go_or_transpiler_payload_run_by_reviewer": true,
+  "no_other_author_artifact_source_expected_or_corpus_write": true,
+  "null_child_identity_disclosed_and_raw_ids_covered": [
+    "author-seed17-repeat3"
+  ],
+  "retained_tool_actual_session": 35811,
+  "retained_tool_exit0_completion_chunk": "dad328",
+  "seed_summary": {
+    "17": {
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 356,
+          "sha256": "cb33fcfb5a5da3c1cddabb2bc804d5cb6ce85d11b7387c66aa01f01bb6346bed"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "sha256": "36a5bf71f856c27bab26088348eb7cc745a829f90c454e2dba691f57d17aa6d5"
+        }
+      },
+      "full_bytes_stable": true,
+      "observed_structural_relations": true,
+      "repeats": 3,
+      "stderr_bytes": 0,
+      "stdout_sha256": "385fc66cd790370a821755565e52976ca5a203ef9854724d8d47896032b03c54"
+    },
+    "41": {
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 378,
+          "sha256": "2a996a7227870ab3eda3c364e973658d5104ec3dc5a63dd70dc96a393769d2e1"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "sha256": "76c459d1eadc118faa4fad462c4dd2859fb45413b817452611328bccf5b417ea"
+        }
+      },
+      "full_bytes_stable": true,
+      "observed_structural_relations": true,
+      "repeats": 3,
+      "stderr_bytes": 0,
+      "stdout_sha256": "2aeee3f74665037f850629b9180a8302a7f3f6a88a9ebe9ff5d363ebb17eb6c3"
+    },
+    "97": {
+      "files": {
+        "batch-east.json": {
+          "bytes": 191,
+          "sha256": "d6bf0450daef2d27c3db81ac50821b9ee829655358afa11e752ce49fae2646bc"
+        },
+        "batch-invalid.json": {
+          "bytes": 179,
+          "sha256": "3b67666e874e7633a1b942322844aaf10f7ec2e89b35b3aa635b9e1850a776a8"
+        },
+        "batch-west.json": {
+          "bytes": 181,
+          "sha256": "aa93c53b9719a5760be887b943ab4620a7b4f4bd5bd15a7eafb45f1fd37c56bb"
+        },
+        "out/events.json": {
+          "bytes": 356,
+          "sha256": "cb33fcfb5a5da3c1cddabb2bc804d5cb6ce85d11b7387c66aa01f01bb6346bed"
+        },
+        "out/metadata.json": {
+          "bytes": 308,
+          "sha256": "c2d5e6bce9afd231d5d15c4df318f03dee3eca3f8389224e64fa87744d633ea6"
+        },
+        "out/state.json": {
+          "bytes": 318,
+          "sha256": "f4eb404b2363cd45206bc0b0321195ab0be313c20ebbe66c6f9d4c0987940d00"
+        }
+      },
+      "full_bytes_stable": true,
+      "observed_structural_relations": true,
+      "repeats": 3,
+      "stderr_bytes": 0,
+      "stdout_sha256": "add88172219c11330681021e4a22b29785ab2eb94f2f8b43dac8bb3d5b50b7d4"
+    }
+  },
+  "six_locked_artifacts_rehashed": true,
+  "source119": "4f008bfacc070ecd1541b2bc79dcb570163661fe12130f95a4e2ae30ba3a79f8",
+  "source_count": 119,
+  "source_packet": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-gson-variation-author-jvm-validation-v1",
+  "source_semantics_read": [
+    "Pipeline.java",
+    "DateFactory.java",
+    "Ledger.java",
+    "TrackedReader.java",
+    "DomainTypes.java",
+    "Main.java"
+  ],
+  "stages": [
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:42.260890+00:00",
+      "index": 1,
+      "label": "author-119-javac",
+      "pgid": 51230,
+      "pid": 51230,
+      "raw_sha256": "a70b6426ee24f34becbaa22a2ff0ca3ab03a9cccd97dade1a0493373d7ff069e",
+      "start": "2026-10-24T05:01:41.373028+00:00",
+      "supervisor": 51229
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:42.589872+00:00",
+      "index": 2,
+      "label": "author-seed17-repeat1",
+      "pgid": 51255,
+      "pid": 51255,
+      "raw_sha256": "ef973a87377217d15c764053d997d1beeebee3266b5b5e43bc7d4bdaa35e1a95",
+      "start": "2026-10-24T05:01:42.506327+00:00",
+      "supervisor": 51254
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:42.891707+00:00",
+      "index": 3,
+      "label": "author-seed17-repeat2",
+      "pgid": 51262,
+      "pid": 51262,
+      "raw_sha256": "2d2db718f11423a7065494ef6ff134670e19eba0b09c9cc871314603414f0ceb",
+      "start": "2026-10-24T05:01:42.808163+00:00",
+      "supervisor": 51261
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:43.180294+00:00",
+      "index": 4,
+      "label": "author-seed17-repeat3",
+      "pgid": 51279,
+      "pid": 51279,
+      "raw_sha256": "fe48f4b508ffd56fa4eebf1541ee321dd21c71ddc5d058773b11e6e87f0f461c",
+      "start": "2026-10-24T05:01:43.103771+00:00",
+      "supervisor": 51268
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:43.549559+00:00",
+      "index": 5,
+      "label": "author-seed41-repeat1",
+      "pgid": 51355,
+      "pid": 51355,
+      "raw_sha256": "0d165958b3adae601a8a154b7763387795d3742f0cfe91c4da0dd7346ff989be",
+      "start": "2026-10-24T05:01:43.403932+00:00",
+      "supervisor": 51350
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:43.913006+00:00",
+      "index": 6,
+      "label": "author-seed41-repeat2",
+      "pgid": 51379,
+      "pid": 51379,
+      "raw_sha256": "155b5f684c4d3c3a58a0925fa0e71d38d7d09923d40125ccde4d006de866ab9c",
+      "start": "2026-10-24T05:01:43.774543+00:00",
+      "supervisor": 51378
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:44.228172+00:00",
+      "index": 7,
+      "label": "author-seed41-repeat3",
+      "pgid": 51387,
+      "pid": 51387,
+      "raw_sha256": "0dc67a1b9bf985520916eb47c4ff3c467e92f1af08171367b20623b36d9bc58e",
+      "start": "2026-10-24T05:01:44.138214+00:00",
+      "supervisor": 51385
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:44.534769+00:00",
+      "index": 8,
+      "label": "author-seed97-repeat1",
+      "pgid": 51404,
+      "pid": 51404,
+      "raw_sha256": "26f70ebc8bac35b7f89b9d19be08016dc021a95db77390075bd79f4d84b4b022",
+      "start": "2026-10-24T05:01:44.445369+00:00",
+      "supervisor": 51393
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:44.828863+00:00",
+      "index": 9,
+      "label": "author-seed97-repeat2",
+      "pgid": 51411,
+      "pid": 51411,
+      "raw_sha256": "1ac6d8920f6624a7f35772b5526c1729f5c6ce6409e8277af86d5ce7b68cd771",
+      "start": "2026-10-24T05:01:44.746040+00:00",
+      "supervisor": 51410
+    },
+    {
+      "exit": 0,
+      "finish": "2026-10-24T05:01:45.142837+00:00",
+      "index": 10,
+      "label": "author-seed97-repeat3",
+      "pgid": 51418,
+      "pid": 51418,
+      "raw_sha256": "f792308af195e2f985dbcf6d5e88e6708ad931cca89718e4424792375f038cb9",
+      "start": "2026-10-24T05:01:45.051843+00:00",
+      "supervisor": 51417
+    }
+  ],
+  "status": "CLEAR_AUTHOR_JDK21_FULL119_SOURCE_NINE_JVM_STABILITY_ONLY_INACTIVE_NO_GO_OR_ACCEPTANCE"
+}

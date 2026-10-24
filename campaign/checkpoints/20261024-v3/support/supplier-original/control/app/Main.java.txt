@@ -1,0 +1,36 @@
+package control.app;
+
+import campaign.data.ingest.EventLoader;
+import campaign.data.ingest.Loaded;
+import campaign.data.model.Account;
+import campaign.data.model.Ledger;
+import control.observe.GroupingProbe;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+public final class Main {
+    public static void main(String[] args) throws Exception {
+        int seed = Integer.parseInt(args[0]);
+        Path output = Path.of(args[1]);
+        Loaded loaded = new EventLoader().load();
+        Ledger ledger = new Ledger(loaded.rejects);
+        ledger.replay(loaded.events, seed);
+        List<Account> accounts = new ArrayList<>(ledger.accounts().values());
+        accounts.sort(Comparator.comparing((Account row) -> row.id));
+        StringBuilder workflow = new StringBuilder("seed\taccepted\tapplied\trejected\tclosed\tbytes\n");
+        workflow.append(seed).append('\t').append(loaded.events.size()).append('\t').append(ledger.applied()).append('\t');
+        workflow.append(ledger.rejects().size()).append('\t').append(loaded.resourcesClosed).append('\t').append(loaded.bytesRead).append('\n');
+        for (Account row : accounts) workflow.append(row.id).append('\t').append(row.balance).append('\t').append(row.revision).append('\n');
+        GroupingProbe probe = new GroupingProbe();
+        probe.run(accounts, seed);
+        Files.writeString(output.resolve("groups.tsv"), probe.groups(), StandardCharsets.UTF_8);
+        Files.writeString(output.resolve("effects.tsv"), probe.effects(), StandardCharsets.UTF_8);
+        Files.writeString(output.resolve("source-map.tsv"), probe.source(), StandardCharsets.UTF_8);
+        Files.writeString(output.resolve("workflow.tsv"), workflow, StandardCharsets.UTF_8);
+        System.out.println("seed=" + seed + " accounts=" + accounts.size() + " accepted=" + loaded.events.size() + " rejected=" + ledger.rejects().size());
+    }
+}

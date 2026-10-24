@@ -1,0 +1,59 @@
+package control.factory;
+
+import java.util.Comparator;
+import java.util.TreeMap;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+public final class MapFactories {
+    public static final class LabelOrder implements Comparator<String> {
+        private final int direction;
+        public LabelOrder(int seed) { direction = seed % 3 == 1 ? -1 : 1; }
+        public int compare(String left, String right) {
+            int byLength = Integer.compare(right.length(), left.length());
+            return byLength != 0 ? byLength : direction * left.compareTo(right);
+        }
+    }
+    public static final class Named implements Supplier<TreeMap<String, Integer>> {
+        public int calls;
+        public final TreeMap<String, Integer> product;
+        public Named(int seed) { product = new TreeMap<>(new LabelOrder(seed)); }
+        public TreeMap<String, Integer> get() { calls++; return product; }
+    }
+    public static final class Counting<T> implements Supplier<T> {
+        private final Supplier<T> delegate;
+        public int calls;
+        public T last;
+        public Counting(Supplier<T> delegate) { this.delegate = delegate; }
+        public T get() { calls++; last = delegate.get(); return last; }
+    }
+    public static final class Throwing implements Supplier<TreeMap<String, Integer>> {
+        public final IllegalStateException failure = new IllegalStateException("factory-stop");
+        public int calls;
+        public TreeMap<String, Integer> get() { calls++; throw failure; }
+    }
+    public static final class NullProduct implements Supplier<TreeMap<String, Integer>> {
+        public int calls;
+        public TreeMap<String, Integer> get() { calls++; return null; }
+    }
+    public static final class SourceMap<K,V> extends TreeMap<K,V> {
+        public int computeCalls;
+        public int replaceCalls;
+        public SourceMap(Comparator<? super K> ordering) { super(ordering); }
+        @Override public V computeIfAbsent(K key, Function<? super K, ? extends V> factory) {
+            computeCalls++;
+            return super.computeIfAbsent(key, factory);
+        }
+        @Override public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+            replaceCalls++;
+            super.replaceAll(function);
+        }
+    }
+    public static final class SourceProduct implements Supplier<SourceMap<String,Integer>> {
+        public int calls;
+        public final SourceMap<String,Integer> product;
+        public SourceProduct(int seed) { product = new SourceMap<>(new LabelOrder(seed)); }
+        public SourceMap<String,Integer> get() { calls++; return product; }
+    }
+}

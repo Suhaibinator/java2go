@@ -1,0 +1,260 @@
+{
+  "actual_runs": [
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "de2ba25200435fbf1bbb5db3a1fbeb6ebcd6a245805db1e3c26534cbd929d695",
+      "raw_receipt": {
+        "bytes": 5080,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed17-repeat1/result.json",
+        "sha256": "d70385b47c772de082a50c430971cde5cc936e90f6816fd3ecdd210b4ff99792"
+      },
+      "repeat": 1,
+      "seed": 17,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-17/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 397,
+        "included_path": "author-oracles/supplier/seed-17/stdout.txt",
+        "sha256": "30d2ac4a42c8cae42b4b75a7b8e48cee3750b7be8288c5379e1ff71f6e3be8da"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "465d81a2e4a91f3716de47138cae38be2bb01036601a70dd74152f504ef89187",
+      "raw_receipt": {
+        "bytes": 5080,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed17-repeat2/result.json",
+        "sha256": "0c7b8d284d51e3d8a4e7fca9185a2e7fb10c8cec8a7a73bcba20e5b5a41ed560"
+      },
+      "repeat": 2,
+      "seed": 17,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-17/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 397,
+        "included_path": "author-oracles/supplier/seed-17/stdout.txt",
+        "sha256": "30d2ac4a42c8cae42b4b75a7b8e48cee3750b7be8288c5379e1ff71f6e3be8da"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "2c5df9d8e430c23c288f0623c1cf11b6306c3aad3516ed714f29ec39c36b509a",
+      "raw_receipt": {
+        "bytes": 5080,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed17-repeat3/result.json",
+        "sha256": "e62eb3112f6de735bfba92ebf61dd4dc9aabdbb684b0dceefd13cd93298e92ae"
+      },
+      "repeat": 3,
+      "seed": 17,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-17/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 397,
+        "included_path": "author-oracles/supplier/seed-17/stdout.txt",
+        "sha256": "30d2ac4a42c8cae42b4b75a7b8e48cee3750b7be8288c5379e1ff71f6e3be8da"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "68d5b3a1a151ca0d9e08478d09faaa599ebf263510a4d835fdcc7751d784cac8",
+      "raw_receipt": {
+        "bytes": 5120,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed41-repeat1/result.json",
+        "sha256": "1ecfdb3143e5346735afcb74038ce3943b3bde6235ae06c9a2015524afd6f15a"
+      },
+      "repeat": 1,
+      "seed": 41,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-41/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 394,
+        "included_path": "author-oracles/supplier/seed-41/stdout.txt",
+        "sha256": "768454069eaa2090abbdc6e258c3c28de3596796f7791b03b0636f7428fb70b4"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "5bd16fa347f367298a46978054c372d1996500b7defdca7c2dd5ec4ee3459427",
+      "raw_receipt": {
+        "bytes": 5120,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed41-repeat2/result.json",
+        "sha256": "8e14218fa553c2cec9d6cb0d78053bb02a0aec53db6d543363bcfcb29e9d3bd2"
+      },
+      "repeat": 2,
+      "seed": 41,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-41/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 394,
+        "included_path": "author-oracles/supplier/seed-41/stdout.txt",
+        "sha256": "768454069eaa2090abbdc6e258c3c28de3596796f7791b03b0636f7428fb70b4"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "35fc062fb7cdaf80259729dcfd7a39a7b542904c68e97bd1427701c617973eb3",
+      "raw_receipt": {
+        "bytes": 5120,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed41-repeat3/result.json",
+        "sha256": "e6e1d1580ca8e425ae2274e71a4ad6867316d84fa45eecd5c7df8f7c5fcac17f"
+      },
+      "repeat": 3,
+      "seed": 41,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-41/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 394,
+        "included_path": "author-oracles/supplier/seed-41/stdout.txt",
+        "sha256": "768454069eaa2090abbdc6e258c3c28de3596796f7791b03b0636f7428fb70b4"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "f05e0a601bd290b888f3e0781c4754927b66870f7d07e0939c022f366244a7be",
+      "raw_receipt": {
+        "bytes": 5158,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed97-repeat1/result.json",
+        "sha256": "263a3a43ae8c0ef5e920aca19ffb7f2a040a070d8f145374cc83ffe5558651d0"
+      },
+      "repeat": 1,
+      "seed": 97,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-97/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 422,
+        "included_path": "author-oracles/supplier/seed-97/stdout.txt",
+        "sha256": "0b9e49872a07a44996b17eaf33bd3c66fe3a8b012eabb30b61f332654b3f4960"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "377f70c6531bbe5dc6c9d49ba6479978b6884a0cbf09e990ad8fce962db30c56",
+      "raw_receipt": {
+        "bytes": 5158,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed97-repeat2/result.json",
+        "sha256": "d4ec0b0c274f6d5bec250086bba9cd6dad03e79e4642f4ad88e1a4c8563c6b89"
+      },
+      "repeat": 2,
+      "seed": 97,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-97/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 422,
+        "included_path": "author-oracles/supplier/seed-97/stdout.txt",
+        "sha256": "0b9e49872a07a44996b17eaf33bd3c66fe3a8b012eabb30b61f332654b3f4960"
+      }
+    },
+    {
+      "cleanup": {
+        "group_absent": true,
+        "leader_reaped": true,
+        "signals": []
+      },
+      "directories": [],
+      "exit": 0,
+      "files": {},
+      "lifecycle_sha256": "049efa55386da365cf660c85bdd3717961b5b796e36aa2e0e16f70bb29ed4dc7",
+      "raw_receipt": {
+        "bytes": 5158,
+        "campaign_store_relative": "sol61-supplier-owned-formal-challenge-v2-author-jvm-v1/execution/evidence/author-JVM-seed97-repeat3/result.json",
+        "sha256": "5562a875aeee09898682913433402295c0c610d850b322b6db763172ad5d9581"
+      },
+      "repeat": 3,
+      "seed": 97,
+      "stderr": {
+        "bytes": 0,
+        "included_path": "author-oracles/supplier/seed-97/stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 422,
+        "included_path": "author-oracles/supplier/seed-97/stdout.txt",
+        "sha256": "0b9e49872a07a44996b17eaf33bd3c66fe3a8b012eabb30b61f332654b3f4960"
+      }
+    }
+  ],
+  "full_observation_stability_per_seed": true,
+  "no_Go_or_application_parity_claim": true,
+  "source_changes_invalidate_all_nine": true,
+  "status": "ARCHIVED_FRESH_AUTHOR_JVM_BYTES_ONLY_INACTIVE_NOT_CAMPAIGN_ORACLE"
+}

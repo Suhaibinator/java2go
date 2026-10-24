@@ -1,0 +1,97 @@
+if not __debug__:raise RuntimeError('OPTIMIZED_AUTHOR_CONTROLLER_FORBIDDEN')
+from pathlib import Path
+import datetime,hashlib,json,os,re,shutil,subprocess
+from lifecycle import OwnedSupervisor,typed_receipt
+C=Path(__file__).resolve().parent;W=C/'execution';load=lambda p:json.loads(Path(p).read_text());sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+P=load(C/'PLAN.json');T=load(C/'TOOL-PINS.json');started=[];records=[];observations=[];active=None
+
+def save(path,value):
+ path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);pending=Path(str(path)+'.pending');pending.write_text(json.dumps(value,sort_keys=True,indent=2)+'\n');pending.replace(path)
+def inventory(root):
+ root=Path(root);values={}
+ for path in sorted(root.rglob('*')):
+  assert not path.is_symlink(),'SYMLINK '+str(path)
+  if path.is_file():values[str(path.relative_to(root))]=sha(path)
+ return values
+
+def check():
+ assert shutil.disk_usage(C).free>=P['disk_floor_bytes'],'FLOOR10GIB'
+ for path,digest in T['pins'].items():assert sha(path)==digest,'PIN_DRIFT '+path
+ assert inventory(C/'inputs')==load(C/'SNAPSHOT-MANIFEST.json'),'INPUT_SNAPSHOT_DRIFT'
+ for path,row in load(P['author157_manifest'])['members'].items():
+  actual=Path(P['author157_root'])/path;assert sha(actual)==row['sha256']and actual.stat().st_size==row['bytes'],'ORIGINAL157_DRIFT '+path
+ if(W/'CLASS-RESOURCE-MANIFEST.json').exists():assert inventory(W/'classes')==load(W/'CLASS-RESOURCE-MANIFEST.json'),'CLASS_RESOURCE_DRIFT'
+ if(W/'RAW-PINS.json').exists():
+  for path,digest in load(W/'RAW-PINS.json').items():assert sha(path)==digest,'RAW_DRIFT '+path
+
+def pin(paths):
+ values=load(W/'RAW-PINS.json')if(W/'RAW-PINS.json').exists()else{}
+ for path in paths:values[str(path)]=sha(path)
+ save(W/'RAW-PINS.json',values)
+
+def run(step):
+ global active
+ check();active=label=step['label'];expected_env=P['environment'];env=os.environ.copy();removed=set(P['unset_env'])|{key for key in env if key.startswith(tuple(P['unset_prefixes']))}
+ for key in removed:env.pop(key,None)
+ env.update(expected_env);keys=set(expected_env)|removed|set(P['record_env']);e=W/'evidence'/label
+ cwd=Path(step['cwd']);cwd.mkdir(parents=True,exist_ok=True)
+ if step['role']=='java':assert inventory(cwd)=={},'RUN_CWD_NOT_FRESH_EMPTY'
+ command=[T['python'],T['runner'],'--evidence',str(e),'--cwd',str(cwd),'--kind',step['kind'],'--timeout',str(step['cap']),'--native-timeout','55s']
+ for key,value in sorted(expected_env.items()):command+=['--env',key+'='+value]
+ for key in sorted(keys):command+=['--record-env',key]
+ command+=['--',*step['argv']]
+ save(W/(label+'-COMMAND.json'),{'step':step,'argv':command,'expected_env':{key:expected_env.get(key,env.get(key))for key in sorted(keys)}})
+ started.append({'index':step['index'],'label':label,'state':'REQUESTED_BEFORE_POPEN'});save(W/'STARTED.json',started)
+ owned=OwnedSupervisor(command,env,e/'result.json',lambda row:save(W/(label+'-LIFECYCLE.json'),row));print('START '+label,flush=True)
+ with(W/(label+'-supervisor.stdout')).open('xb')as out,(W/(label+'-supervisor.stderr')).open('xb')as err:
+  with owned.running(out,err):
+   started[-1].update(state='SUPERVISOR_CREATED',supervisor_pid=owned.proc.pid);save(W/'STARTED.json',started)
+   save(C/'ACTIVE-HANDLE.json',{'lane':5,'label':label,'driver':os.getpid(),'group':os.getpgrp(),'supervisor':owned.proc.pid})
+   while owned.proc.poll()is None:
+    owned.learn_child()
+    try:owned.proc.wait(timeout=.1)
+    except subprocess.TimeoutExpired:pass
+ raw=typed_receipt(load(e/'result.json'));life=load(W/(label+'-LIFECYCLE.json'))
+ records.append({'label':label,'raw':str(e/'result.json'),'sha256':sha(e/'result.json'),'exit':raw['exit_code'],'runner_exit':raw['runner_exit'],'timed_out':raw['timed_out']});save(W/'RECORDS.json',records)
+ assert raw['argv']==raw['requested_argv']==step['argv']and raw['cwd']==str(cwd)and raw['kind']==step['kind']and raw['timeout_seconds']==step['cap']and raw['native_timeout']=='55s'and raw['disk_floor_bytes']==P['disk_floor_bytes'],'EXACT_ARGV_CWD_CAP'
+ assert raw['env']=={key:expected_env.get(key,env.get(key))for key in sorted(keys)},'EXACT_ENV'
+ assert owned.proc.returncode==raw['runner_exit']and raw['cleanup']=={'group_absent':True,'leader_reaped':True,'signals':[]},'RAW_CLEANUP'
+ assert life['supervisor_reaped']and life['child_absent']and life['group_absent']and life['cleanup_state']=='VERIFIED_ABSENT'and not life['errors']and not life['actions']and not life['forwarded_or_drained_signals'],'LC866_CLEANUP'
+ assert(W/(label+'-supervisor.stdout')).read_bytes()==(str(e/'result.json')+'\n').encode()and not(W/(label+'-supervisor.stderr')).read_bytes(),'SUPERVISOR_STREAMS'
+ for stream in['stdout','stderr']:
+  path=e/stream;assert sha(path)==raw['output'][stream]['sha256']and path.stat().st_size==raw['output'][stream]['bytes'],'RAW_BYTES'
+ assert not raw['timed_out']and raw['exit_code']==raw['runner_exit']==0,'AUTHOR_COMPILE_OR_RUN_FAILURE_NOT_TRANSPILER_FAILURE'
+ assert min(raw['free_disk_bytes'].values())>=P['disk_floor_bytes'],'FLOOR10GIB'
+ out=(e/'stdout').read_bytes();err=(e/'stderr').read_bytes();assert not err,'AUTHOR_STDERR_REQUIRES_SOURCE_REVIEW'
+ value={'label':label,'raw':sha(e/'result.json'),'exit':0,'stderr_sha256':sha(e/'stderr'),'stderr_bytes':len(err),'declared_files':{},'cleanup_strict':True}
+ if step['role']=='javac':
+  assert not out,'JAVAC_STDOUT';classes=inventory(W/'classes');assert sorted(classes)==P['expected_classes'],'CLASS_INVENTORY'
+  for src,name in P['resources'].items():shutil.copyfile(src,W/'classes'/name)
+  manifest=inventory(W/'classes');assert sorted(manifest)==sorted(P['expected_classes']+list(P['resources'].values())),'EXACT_CLASSES_AND_RESOURCES'
+  save(W/'CLASS-RESOURCE-MANIFEST.json',manifest);value['classes']=len(classes);value['resources']=len(P['resources'])
+ else:
+  assert inventory(cwd)=={},'UNDECLARED_RUN_FILE';assert out,'AUTHOR_EMPTY_STDOUT'
+  same=[x for x in observations if x.get('seed')==step['seed']]
+  if same:
+   first=Path(same[0]['stdout']);assert out==first.read_bytes(),'AUTHOR_UNSTABLE_FULL_STDOUT'
+  value.update(seed=step['seed'],repeat=step['repeat'],stdout=str(e/'stdout'),stdout_sha256=sha(e/'stdout'),stdout_bytes=len(out),cwd_file_inventory={},measured_oracle_only_not_acceptance=True)
+  assert len(same)==step['repeat']-1,'REPEAT_ORDER'
+ check();save(W/(label+'-OBSERVATION.json'),value);observations.append(value);save(W/'OBSERVATIONS.json',observations)
+ pin([e/'result.json',e/'stdout',e/'stderr',W/(label+'-COMMAND.json'),W/(label+'-LIFECYCLE.json'),W/(label+'-supervisor.stdout'),W/(label+'-supervisor.stderr'),W/(label+'-OBSERVATION.json')]);started[-1]['state']='VALIDATED';save(W/'STARTED.json',started);print('END '+label+' VALIDATED',flush=True)
+
+def main():
+ assert not W.exists(),'ONE_FRESH_AUTHOR_ATTEMPT_ONLY';check();grant=load(C/'ROOT-GRANT.json')
+ assert grant['plan']==sha(C/'PLAN.json')and grant['controller']==sha(__file__)and grant['pins']==sha(C/'TOOL-PINS.json')and grant['launcher']==sha(C/'launcher.py')and grant['lane']==5,'EXACT_ROOT_AUTHOR_GRANT'
+ try:os.setsid()
+ except PermissionError:assert os.getpgrp()==os.getpid()
+ save(C/'DRIVER-HANDLE.json',{'pid':os.getpid(),'group':os.getpgrp(),'controller':sha(__file__)})
+ for name in['classes','tmp','empty']:(W/name).mkdir(parents=True,exist_ok=True)
+ for step in P['stages']:run(step)
+ assert len(started)==len(records)==len(observations)==10 and all(x['exit']==0 for x in records)
+ rows=[x for x in observations if'seed'in x];assert len(rows)==9
+ for seed in P['seeds']:
+  runs=[x for x in rows if x['seed']==seed];assert len(runs)==3 and len({x['stdout_sha256']for x in runs})==1
+ check();save(W/'TERMINAL.json',{'status':'AUTHOR_JDK21_COMPILE_AND_NINE_JVM_RUNS_STABLE_NO_TRANSLATION_OR_ACCEPTANCE_CREDIT','records':records,'observations':observations,'started':started,'postabsence_external_audit_pending':True,'no_original_or_corpus_changes':True})
+try:main()
+except BaseException as failure:
+ save(C/'CONTROLLER-STOP.json',{'status':'AUTHOR_VALIDATION_STOP_RETAIN_FAILURE_NOT_TRANSPILER_FAILURE','active':active,'error':repr(failure),'started':started,'records':records,'observations':observations,'no_retry_no_following_payload':True});raise
