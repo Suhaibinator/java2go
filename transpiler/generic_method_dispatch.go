@@ -15,6 +15,10 @@ import (
 // Limit this entrypoint to bare method parameters: nested invariant Go
 // instantiations need a separate representation plan.
 func genericMethodHasErasedEntry(def *symbol.Definition) bool {
+	return genericMethodHasErasedEntryInContext(def, Ctx{})
+}
+
+func genericMethodHasErasedEntryInContext(def *symbol.Definition, sourceCtx Ctx) bool {
 	if def == nil || !def.RequiresHelper || def.IsPrivate || executionParameterIsVariadic(def, len(def.Parameters)-1) {
 		return false
 	}
@@ -30,14 +34,41 @@ func genericMethodHasErasedEntry(def *symbol.Definition) bool {
 	for _, typ := range types {
 		for _, tp := range def.TypeParameters {
 			if strings.TrimSpace(typ) != tp.Name && strings.TrimSpace(typ) != tp.EmittedName() && javaTypeContainsParameter(typ, tp.Name) {
-				if ctx, found := genericMethodOwnerContext(def); found && canonicalGenericMethodSignature(def, ctx) {
-					return true
+				if ctx, found := genericMethodOwnerContext(def); found {
+					ctx = genericMethodDeclaringSyntaxContext(ctx, sourceCtx)
+					if canonicalGenericMethodSignature(def, ctx) {
+						return true
+					}
 				}
 				return false
 			}
 		}
 	}
 	return true
+}
+
+// The selected definition owns lexical meaning. Only an independently
+// admitted invocation may supply syntax routes to its fresh declaring context.
+func genericMethodDeclaringSyntaxContext(declaring, sourceCtx Ctx) Ctx {
+	invocation := sourceCtx.syntaxInvocation
+	if declaring.currentClass == nil || declaring.currentFile == nil || !sourceGenericDemandOwnedCompilationUnits(invocation) {
+		return declaring
+	}
+	proof, known := sourceGenericDemandOwnershipContext()
+	if !known || proof.sourceOwnership.files[declaring.currentClass] != declaring.currentFile {
+		return declaring
+	}
+	owners := allSourceClassScopes()
+	inventory := invocation.demandSyntax
+	if inventory == nil {
+		inventory = buildSourceGenericDemandSyntax(invocation, owners, proof)
+	}
+	if inventory == nil || !inventory.matches(invocation, owners, proof) {
+		return declaring
+	}
+	invocation.demandSyntax = inventory
+	declaring.syntaxInvocation = invocation
+	return declaring
 }
 
 func javaTypeContainsParameter(typ, name string) bool {

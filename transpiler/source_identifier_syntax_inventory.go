@@ -57,7 +57,7 @@ func buildSyntaxIdentifierFile(file *symbol.FileScope) *syntaxIdentifierFile {
 			if start > end || uint64(end) > uint64(len(file.Source)) {
 				return false
 			}
-			identifier := sanitizeGoIdent(node.Content(file.Source))
+			identifier := sanitizeGoIdent(string(file.Source[start:end]))
 			names := [3]string{identifier, symbol.Uppercase(identifier), symbol.Lowercase(identifier)}
 			for n, name := range names {
 				duplicate := false
@@ -127,7 +127,7 @@ func syntaxIdentifierMethodNames(method *sitter.Node, source []byte) ([2]string,
 	if nameStart < start || nameStart > nameEnd || nameEnd > end || typeStart < start || typeStart > typeEnd || typeEnd > end {
 		return [2]string{}, false
 	}
-	raw := nameNode.Content(source)
+	raw := string(source[nameStart:nameEnd])
 	if raw == "" {
 		return [2]string{}, false
 	}

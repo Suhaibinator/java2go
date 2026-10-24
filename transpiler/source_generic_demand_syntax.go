@@ -28,19 +28,23 @@ type sourceGenericDemandRoute struct {
 
 func sourceGenericViewDemandSeedsFromSyntax(ctx Ctx) ([]*symbol.ClassScope, bool) {
 	invocation := ctx.syntaxInvocation
-	if !sourceGenericDemandOwnedFiles(invocation) {
+	if !sourceGenericDemandOwnedCompilationUnits(invocation) {
+		return nil, false
+	}
+	proof, known := sourceGenericDemandOwnershipContext()
+	if !known {
 		return nil, false
 	}
 	owners := allSourceClassScopes()
 	inventory := invocation.demandSyntax
 	if inventory == nil {
-		inventory = buildSourceGenericDemandSyntax(invocation, owners, ctx)
+		inventory = buildSourceGenericDemandSyntax(invocation, owners, proof)
 		if inventory == nil {
 			return nil, false
 		}
 		invocation.demandSyntax = inventory
 	}
-	if !inventory.matches(invocation, owners, ctx) {
+	if !inventory.matches(invocation, owners, proof) {
 		return nil, false
 	}
 	seen := map[*symbol.ClassScope]bool{}
@@ -105,6 +109,95 @@ func sourceGenericDemandOwnedFiles(invocation *syntaxInvocation) bool {
 		}
 	}
 	return len(seen) == len(invocation.files)
+}
+
+// A closed batch may also own inert package compilation units that deliberately
+// have no FileScope registration. Prove each omitted unit from its current
+// owned parse anchor; the legacy exact-membership predicate stays unchanged.
+func sourceGenericDemandOwnedCompilationUnits(invocation *syntaxInvocation) bool {
+	if invocation == nil || !invocation.active || !invocation.indexable || !invocation.session.Active() || invocation.graph != symbol.GlobalScope || !standaloneSyntaxConfigurationOK(os.Stdout) {
+		return false
+	}
+	seen := make(map[*symbol.FileScope]bool, len(invocation.files))
+	for _, pkg := range symbol.GlobalScope.Packages {
+		if pkg == nil {
+			continue
+		}
+		for _, file := range pkg.Files {
+			if file == nil {
+				continue
+			}
+			entry := invocation.identifiers[file]
+			if _, owned := invocation.files[file]; !owned {
+				return false
+			}
+			if seen[file] || entry == nil || entry.anchor == nil || entry.anchor != file.ParsedRoot() || entry.anchor.HasChanges() || !bytes.Equal(entry.source, file.Source) {
+				return false
+			}
+			seen[file] = true
+		}
+	}
+	for file, owned := range invocation.files {
+		entry := invocation.identifiers[file]
+		if file == nil || owned.Symbols != file || entry == nil || entry.anchor == nil || owned.Ast == nil || entry.anchor != file.ParsedRoot() || !owned.Ast.Equal(entry.anchor) || entry.anchor.HasChanges() || !bytes.Equal(entry.source, file.Source) || !bytes.Equal(owned.Source, entry.source) {
+			return false
+		}
+		if seen[file] {
+			continue
+		}
+		if file.BaseClass != nil || len(file.TopLevelClasses) != 0 {
+			return false
+		}
+		// Classify the current certified root, never a filename or a missing count.
+		current := owned
+		current.Ast, current.Source = entry.anchor, file.Source
+		unit, err := classifyCompilationUnit(current)
+		if err != nil || !unit.packageMetadata || unit.packageName == "" || unit.packageName != file.Package || !sourceGenericDemandInertCompilationUnit(entry.anchor) {
+			return false
+		}
+	}
+	return true
+}
+
+// Only the syntax forms needed by inert package statements, marker package
+// annotations and imports are known here. Class literals, type demands,
+// declarations and every unknown form fall back to ordinary discovery.
+func sourceGenericDemandInertCompilationUnit(root *sitter.Node) bool {
+	var visit func(*sitter.Node) bool
+	visit = func(node *sitter.Node) bool {
+		if node == nil || node.IsMissing() || node.HasError() || node.HasChanges() {
+			return false
+		}
+		switch node.Type() {
+		case "program", "package_declaration", "import_declaration", "marker_annotation", "identifier", "scoped_identifier", "line_comment", "block_comment":
+		default:
+			return false
+		}
+		for i := 0; i < int(node.NamedChildCount()); i++ {
+			if !visit(node.NamedChild(i)) {
+				return false
+			}
+		}
+		return true
+	}
+	return root != nil && root.Type() == "program" && visit(root)
+}
+
+// Ownership must come from current graph topology, independently of caller
+// inventories. The proof context is temporary and supplies no lexical state.
+func sourceGenericDemandOwnershipContext() (Ctx, bool) {
+	ownership := newResolutionFileIndex()
+	if active := activeResolutionFiles; active != nil && active.graph == symbol.GlobalScope {
+		if len(active.files) != len(ownership.files) {
+			return Ctx{}, false
+		}
+		for owner, file := range ownership.files {
+			if active.files[owner] != file {
+				return Ctx{}, false
+			}
+		}
+	}
+	return Ctx{sourceOwnership: ownership}, true
 }
 
 func (inventory *sourceGenericDemandSyntax) matches(invocation *syntaxInvocation, owners []*symbol.ClassScope, ctx Ctx) bool {

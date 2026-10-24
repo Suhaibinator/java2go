@@ -4354,7 +4354,7 @@ func invocationPhysicalParameterJavaType(resolution *methodResolution, argumentI
 	); ok {
 		return erasure
 	}
-	if genericMethodHasErasedEntry(resolution.def) {
+	if genericMethodHasErasedEntryInContext(resolution.def, ctx) {
 		return genericMethodErasedJavaType(resolution.def, definitionParameterJavaSignatureType(resolution.def, parameterIndex))
 	}
 	return definitionParameterJavaSignatureType(resolution.def, parameterIndex)

@@ -23581,6 +23581,124 @@
     "scope": "Refine cost only for an already-applicable strict phase0 invocation above cost1, one scalar argument/formal/method binder, canonical different JDK generic parent preserving one slot, certified upper capture or original lower-bounded formal",
     "status": "SUPPORTED_STRICT_WILDCARD_OVERLOAD_CASES_JVM_GO_PARITY_VERIFIED"
   },
+  "sol_progress215": {
+    "CI214": {
+      "application_parity": "PASS",
+      "compiler_fail": 16,
+      "compiler_pass": 2370,
+      "compiler_skip": 0,
+      "head": "6586fdea6a69384390021bc99f628d33082407e9",
+      "report_sha256": "1132fee09dcec3ba5d7f07f96dc3887c67462465b5175e516878e71e1fd01937",
+      "run": 40039237233,
+      "runtime_Linux_race_pass": 920,
+      "scope": "Exact parent214 only; no current215 CI credit",
+      "separate_Gson_JavaTime": "UNCHANGED_FAIL"
+    },
+    "CI215": "PENDING_PUBLICATION_AND_NEW_CI_EXECUTION",
+    "actual1220_AST_only": {
+      "bytes": 9291799,
+      "declaration_free_metadata_units": 59,
+      "legacy_guard_false": true,
+      "metadata_certificate_admitted": true,
+      "normal_and_race_native55_outer65": true,
+      "not_original_query_or_application_acceptance": true,
+      "original_input_units": 1220,
+      "post_graph_semantic_query_calls": 0,
+      "resolving": 1161
+    },
+    "actual_delivery": "2bb7f2b822f3a5438dfd34cfcf7f719b4371b6c91a10eac785c454763d018a04",
+    "cleanup": {
+      "all_started_old_and_new_PIDs": 88,
+      "all_started_old_and_new_groups": 46,
+      "audit": "f1c2efe1c7fcb25392bd4ae6393021794e16d2dd389f3f03a52cc028c5148f2f",
+      "cleanup_signals": 0,
+      "fresh_absence_verified": true
+    },
+    "closure": {
+      "canonical_profiles": 6,
+      "current_public_contract_parent_PASS": 16,
+      "existing_inventory_parent_PASS": 22,
+      "existing_inventory_sub_PASS": 28,
+      "fresh_JVM_whole_Go_parity": 6,
+      "fresh_parent_PASS": 121,
+      "fresh_stages": 36,
+      "fresh_sub_PASS": 409,
+      "mutants": 60,
+      "parent_PASS": 134,
+      "pure_controls": 2,
+      "registry_each_mode": 67,
+      "retained_parent_PASS": 13,
+      "retained_stages": 6,
+      "retained_sub_PASS": 25,
+      "same_parent_compiler_reuse": 2,
+      "six_retained_never_claimed_fresh": true,
+      "sub_PASS": 434,
+      "total_stages": 42
+    },
+    "diagnostic_overlay_source": "8894ae2628888a9904fd282e0bc5c411f6db245f305ee6afa05e53855a552fe4",
+    "held": {
+      "CPU_or_application_performance_gain": "NOT_CLAIMED",
+      "Gson112": "UNACCEPTED_MANDATORY",
+      "Netty_full_application_compatibility": "UNACCEPTED_MANDATORY",
+      "Supplier28": "UNACCEPTED_MANDATORY",
+      "full_accumulated_round": "UNACCEPTED",
+      "original_Netty_Q4_realquery": "FAILED_MANDATORY_UNWAIVED",
+      "original_Netty_strict300": "FAILED_MANDATORY_UNWAIVED"
+    },
+    "independent_actual_audit": "826fecf448ea9d1269f32988a564e0faa85e57a833e92d1f16afb631c5c8a6db",
+    "legacy_nested_helper_resource_and_race_limits_preserved": true,
+    "native_call_counter": {
+      "balanced_samples_per_mode": 3,
+      "builds_per_arm": 4,
+      "fixed_parsed_widths": [
+        64,
+        256
+      ],
+      "large_current": 41408,
+      "large_reference": 51720,
+      "normal_and_race": true,
+      "scope": "about20percent fewer native crossings in fixed fixtures only; no CPU or application performance gain",
+      "small_current": 10688,
+      "small_reference": 13320,
+      "unchanged_large_ceiling": 46548
+    },
+    "no_kind_join_or_full_round_acceptance": true,
+    "operative_GOMEMLIMIT": "512MiB",
+    "owned_metadata_admission": "Separate current-root/source/package/symbol-closure and inert-syntax certificate admits declaration-free owned metadata; legacy registered-file cardinality guard unchanged; unknown/declaration/demand forms fall back.",
+    "production_scope": [
+      "transpiler/expression.go",
+      "transpiler/generic_method_dispatch.go",
+      "transpiler/source_generic_demand_syntax.go",
+      "transpiler/source_identifier_syntax_inventory.go"
+    ],
+    "protected_user_files": {
+      "performance/runtime/bignumbers/equal_scale/README.md": "c39a78225c4fc6434068c114cd4e694b1c2a3ef2eeb3c06489e246359cf19ace",
+      "performance/runtime/bignumbers/equal_scale/VALIDATE_AFTER_RELEASE.sh": "3dbaa71b850c16c552780d535a488696bfd43b2dbc6c4fa4252e62a2394ae92f",
+      "performance/runtime/bignumbers/equal_scale/equal-scale.patch": "a168cd860e01f3f3545bc5c71975626dbf0b161ada7f13abc72a6d66ac17a9be",
+      "performance/runtime/bignumbers/equal_scale/harness/DecimalCompareDriver.java": "f8a5eb31d40dfe5f6fc336dc91f137b2aeb850ed55529f12cee2f013d8619916",
+      "performance/runtime/bignumbers/equal_scale/harness/allocation_test.go.txt": "b677f7efd09cb71283d45ed4893163948f0d6bcdfa565e186d1aa587182a8ec9",
+      "performance/runtime/bignumbers/equal_scale/harness/driver.go.txt": "2e733639022fcbf6aff2cc26151cd5023f7cc127b5b20016efd86b44a77e57f0",
+      "performance/runtime/bignumbers/equal_scale/harness/regression_test.go.txt": "cccf16f4b88c71a07e60ceb7c709518eb2545e5a5976105d1fd06fdbf5c574c0",
+      "performance/runtime/bignumbers/equal_scale/prepare.py": "0ffd8b7bf383e4ad7cc5a86620fdeff1f139d0d3c2073528391c29bc7f39f360",
+      "performance/runtime/bignumbers/equal_scale/prepared.json": "b6fbc6cb19c1f9b767d4e92d8c70d5d0bfaafe90a2b6a8d6b3f253b0241d204f",
+      "performance/runtime/bignumbers/equal_scale/source/DecimalCompareProbe.java": "54658040c6ba6a9d4b24b7f0545f4c299845b5f550960fccb4735cbeefd1675a"
+    },
+    "publication_parent": "6586fdea6a69384390021bc99f628d33082407e9",
+    "qualified_public_members": 4529,
+    "qualified_public_source": "b3715b6a6ef838e894338a38118504f1f879fc61ed9401dba76a2a68a08e5456",
+    "retained_failure_history": {
+      "corrected_contract": "exact38stderr rows:36INFO plus2originalWARN at31/38; Mavenj_app; ASCII UTCtime only normalized",
+      "normal_build_and_registry_not_repeated": true,
+      "v1_diagnostic_frontier_controller_exit": 1,
+      "v1_original_validated_stages": 5,
+      "v1_stage6_raw_exit": 0,
+      "v2_registry_dependency_HOLD_preserved": true
+    },
+    "snapshot_contract": "Input identity/bytes only; no semantic authority cache or query result cache.",
+    "status": "BOUNDED_OWNED_METADATA_SYNTAX_AND_VALIDATED_SPAN_REUSE_VERIFIED_NETTY_APPLICATION_GATES_UNACCEPTED",
+    "validated_span_reuse": "Exactly two Content calls replaced with strings from already-validated bounds; guards, traversal/order, map writes, copied source timing and live-query freshness unchanged.",
+    "wildcard214_six_paths_byteexact": true
+  },
   "sol_progress70": {
     "acceptance_limits": "No full Gson, full coherent CI, full Netty, universal Java compatibility or speedup claimed. Private evidence does not establish compatibility of unpublished or differently composed source.",
     "actual_remaining_failures": [
