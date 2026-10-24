@@ -22,7 +22,47 @@ func declaredExternalNominalOwner(base string, bindings map[string]*symbol.TypeP
 		}
 		return ""
 	}
+	knownReflectionClass := func(owner string) bool {
+		// Admit only existing runtime carriers, backed by their canonical class
+		// declaration and this source use's TYPE namespace and declaring file.
+		switch owner {
+		case "java.lang.reflect.Method", "java.lang.reflect.Field", "java.lang.reflect.Constructor":
+		default:
+			return false
+		}
+		name := strings.TrimPrefix(owner, "java.lang.reflect.")
+		declaration, present := declaredJavaLangReflectTypes[name]
+		if !present || !declaration.public || declaration.isInterface {
+			return false
+		}
+		// Ordinary imports do not prove a competing static TYPE absent.
+		for _, imported := range staticMethodImports(ctx) {
+			if !imported.wildcard && imported.member != first {
+				continue
+			}
+			staticOwner, proved := jdk21QualifiedMemberPath(imported.owner)
+			if !proved {
+				return false
+			}
+			if _, presence := lookupJDK21Member(staticOwner, first); presence != jdk21NominalAbsentCertified {
+				return false
+			}
+		}
+		resolved, proved := jdk21MemberUseOwner(base, bindings, ctx)
+		if !proved || resolved != owner {
+			return false
+		}
+		nominal, presence := jdk21NominalQualified(owner)
+		return presence == jdk21NominalPresent && jdk21NominalEligible(nominal) &&
+			nominal.binaryName == owner && !nominal.isInterface && jdk21NominalDeclaringUseOwned(ctx, first)
+	}
 	if owner, proved := declaredJDK21MemberNominalOwner(base, bindings, ctx); proved {
+		switch owner {
+		case "java.lang.reflect.Method", "java.lang.reflect.Field", "java.lang.reflect.Constructor":
+			if !knownReflectionClass(owner) {
+				return ""
+			}
+		}
 		return owner
 	}
 	known := func(owner string) bool {
@@ -32,6 +72,9 @@ func declaredExternalNominalOwner(base string, bindings map[string]*symbol.TypeP
 		if strings.HasPrefix(owner, "java.lang.reflect.") {
 			name := strings.TrimPrefix(owner, "java.lang.reflect.")
 			declaration, present := declaredJavaLangReflectTypes[name]
+			if present && declaration.public && !declaration.isInterface {
+				return knownReflectionClass(owner)
+			}
 			_, supported := reflectProtocolConstants[name]
 			return present && declaration.public && declaration.isInterface && supported
 		}
