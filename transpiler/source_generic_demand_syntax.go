@@ -47,6 +47,7 @@ func sourceGenericViewDemandSeedsFromSyntax(ctx Ctx) ([]*symbol.ClassScope, bool
 	if !inventory.matches(invocation, owners, proof) {
 		return nil, false
 	}
+	names := sourceGenericDemandSourceNames(owners, ctx, proof.sourceOwnership)
 	seen := map[*symbol.ClassScope]bool{}
 	var seeds []*symbol.ClassScope
 	for _, owner := range owners {
@@ -75,7 +76,7 @@ func sourceGenericViewDemandSeedsFromSyntax(ctx Ctx) ([]*symbol.ClassScope, bool
 				}
 			}
 			for _, node := range route.nodes {
-				if seed := sourceGenericViewDemandType(node, lexical, entry.file.Source); seed != nil && !seen[seed] {
+				if seed := sourceGenericViewDemandTypeFromNames(node, lexical, entry.file.Source, names); seed != nil && !seen[seed] {
 					seen[seed] = true
 					seeds = append(seeds, seed)
 				}

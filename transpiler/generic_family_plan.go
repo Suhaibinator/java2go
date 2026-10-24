@@ -319,7 +319,7 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 					return nil, fmt.Errorf("generic family specialization needs shared storage: %s", parent)
 				}
 			}
-			file := findFileScopeForClassScope(scope)
+			file := findFileScopeForClassScope(scope, ctx)
 			if file == nil {
 				return nil, fmt.Errorf("missing generic family declaration source")
 			}
@@ -375,7 +375,7 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 	declaration := visibleTypeParameterDeclarationForJavaType(base, ctx)
 	_, owned := plan.binders[declaration]
 	if len(args) == 0 {
-		return !owned || rank == 0
+		return !owned || rank == 0 || plan.sourceBoundReferenceArray(declaration, rank)
 	}
 	containsOwned := false
 	for binder := range plan.binders {
@@ -499,7 +499,7 @@ func genericFamilyLocalInterfaceEdges(scopes []*symbol.ClassScope, ctx Ctx) [][]
 		if owner.Class == nil || owner.Class.DeclarationNode == nil {
 			continue
 		}
-		file := findFileScopeForClassScope(owner)
+		file := findFileScopeForClassScope(owner, ctx)
 		if file == nil {
 			continue
 		}

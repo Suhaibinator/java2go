@@ -19,7 +19,7 @@ type genericFamilySourceBoundCertificate struct {
 }
 
 func genericFamilyConcreteSourceBound(parameter symbol.TypeParam, ctx Ctx, visiting map[*symbol.TypeParamDeclaration]bool) (*symbol.ClassScope, *symbol.FileScope, bool) {
-	if parameter.Declaration == nil || visiting[parameter.Declaration] || len(parameter.Bounds) != 1 {
+	if parameter.Declaration == nil || visiting[parameter.Declaration] || len(parameter.Bounds) == 0 {
 		return nil, nil, false
 	}
 	visiting[parameter.Declaration] = true
@@ -40,12 +40,20 @@ func genericFamilyConcreteSourceBound(parameter symbol.TypeParam, ctx Ctx, visit
 	}
 	origin := declaredJavaTypeOrigin(bound, ctx)
 	scope := origin.nominalScope
-	if origin.parameter != nil || origin.unresolved || scope == nil || scope.Class == nil || scope.Class.DeclarationNode == nil || scope.IsInterface || scope.IsAbstract || scope.IsEnum || len(scope.TypeParameters) != 0 {
+	if origin.parameter != nil || origin.unresolved || scope == nil || scope.Class == nil || scope.Class.DeclarationNode == nil || scope.IsAbstract && !scope.IsInterface || scope.IsEnum || len(scope.TypeParameters) != 0 {
 		return nil, nil, false
 	}
 	file := findFileScopeForClassScope(scope, ctx)
-	if file == nil || scope.Class.DeclarationNode.Type() != "class_declaration" {
+	if file == nil || (scope.Class.DeclarationNode.Type() != "class_declaration" && scope.Class.DeclarationNode.Type() != "interface_declaration") {
 		return nil, nil, false
+	}
+	// Secondary intersection bounds remain nominal obligations of the Java
+	// declaration. They cannot replace the first bound's physical storage view.
+	for _, secondary := range parameter.Bounds[1:] {
+		origin := declaredJavaTypeOrigin(secondary, ctx)
+		if origin.unresolved || origin.parameter != nil || origin.arrayRank != 0 || len(origin.arguments) != 0 || origin.nominalScope == nil || !origin.nominalScope.IsInterface || origin.nominalScope.Class == nil || origin.nominalScope.Class.DeclarationNode == nil || findFileScopeForClassScope(origin.nominalScope, ctx) == nil {
+			return nil, nil, false
+		}
 	}
 	return scope, file, true
 }
@@ -121,8 +129,20 @@ func certifyGenericFamilySourceBounds(plan *genericFamilyPlan, ctx Ctx) error {
 		representation, ok := plan.representations[declaration]
 		anchored = anchored || (ok && representation.sourceBound != nil)
 	}
+	// A source-interface first bound is newly supported only when actual raw
+	// aliases demand the shared layout. Comparable alone retains its existing
+	// concrete-source-bound certificate and its refusal behavior.
+	for _, representation := range plan.representations {
+		if representation.sourceBound != nil && representation.sourceBound.IsInterface {
+			anchored = false
+			break
+		}
+	}
 	if !anchored {
-		return fmt.Errorf("source-bound family has no declaration-owned Comparable header")
+		anchored = genericFamilySourceBoundRawDemand(plan, ctx)
+	}
+	if !anchored {
+		return fmt.Errorf("source-bound family has no declaration-owned Comparable or raw-view demand")
 	}
 	if len(plan.locals) != 0 || len(plan.anonymous) != 0 {
 		return fmt.Errorf("source-bound local layout requires a closed slot proof")
@@ -143,6 +163,9 @@ func certifyGenericFamilySourceBounds(plan *genericFamilyPlan, ctx Ctx) error {
 			}
 			use, ok := directOwnerTypeParameterForDefinition(owner, definition)
 			if !ok || use.parameter.Declaration != declaration {
+				if genericFamilySourceBoundConstructorArray(owner, definition, declaration) {
+					continue
+				}
 				return fmt.Errorf("source-bound value slot requires scalar declaration proof")
 			}
 			certificate.definitions[definition] = declaration
@@ -165,7 +188,7 @@ func certifyGenericFamilySourceBounds(plan *genericFamilyPlan, ctx Ctx) error {
 		return nil
 	}
 	for owner := range plan.members {
-		if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil || owner.IsInner || findFileScopeForClassScope(owner, ctx) == nil {
+		if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil || findFileScopeForClassScope(owner, ctx) == nil {
 			return fmt.Errorf("source-bound family has no named closed owner")
 		}
 		for _, field := range owner.Fields {
@@ -239,6 +262,9 @@ func genericFamilySourceBoundDefinition(owner *symbol.ClassScope, definition *sy
 func genericFamilySourceBoundGoType(representation genericFamilyBinderRepresentation, ctx Ctx) ast.Expr {
 	if representation.sourceBound == nil || representation.sourceFile == nil || representation.sourceCertificate == nil {
 		return nil
+	}
+	if representation.sourceBound.IsInterface {
+		return qualifiedNameExpr(representation.sourceBound.Class.Name, findJavaPackageForClassScope(representation.sourceBound), ctx)
 	}
 	return &ast.StarExpr{X: qualifiedNameExpr(representation.sourceBound.Class.Name, findJavaPackageForClassScope(representation.sourceBound), ctx)}
 }

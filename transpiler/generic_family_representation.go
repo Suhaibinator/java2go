@@ -28,6 +28,9 @@ func genericFamilyBinderErasure(parameter symbol.TypeParam, ctx Ctx, visiting ma
 		return "java.lang.Object", nil
 	}
 	if len(parameter.Bounds) != 1 {
+		if source, _, ok := genericFamilyConcreteSourceBound(parameter, ctx, map[*symbol.TypeParamDeclaration]bool{}); ok {
+			return javaInferenceTypeName(source), nil
+		}
 		return "", fmt.Errorf("generic family intersection bound requires a representation proof")
 	}
 	visiting[key] = true

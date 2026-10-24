@@ -552,6 +552,7 @@ func TryParseStmt(node *sitter.Node, source []byte, ctx Ctx) ast.Stmt {
 		assignVal := ParseExpr(rhsNode, source, rhsCtx)
 		if lhsJavaType := strings.TrimSpace(rhsCtx.expectedType); lhsJavaType != "" {
 			assignVal = coerceArgumentToExpectedType(assignVal, rhsNode, lhsJavaType, ctx, source)
+			assignVal = genericFamilySourceBoundFieldStore(assignVal, lhsNode, lhsJavaType, ctx, source)
 		}
 
 		return &ast.AssignStmt{

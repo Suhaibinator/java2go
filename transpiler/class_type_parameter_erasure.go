@@ -392,7 +392,7 @@ func classHasUnmodeledCallableSubclass(target *symbol.ClassScope, ctx Ctx) bool 
 	if inventory == nil {
 		// Standalone callers retain the original early exit and do not retain
 		// source data beyond this query.
-		return visitCallableSubclassSources(matches)
+		return visitCallableSubclassSources(matches, ctx)
 	}
 	if !inventory.ready {
 		visitCallableSubclassSources(func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
@@ -421,7 +421,7 @@ func visitCallableSubclassSources(visit func(*symbol.ClassScope, *symbol.FileSco
 		if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil {
 			continue
 		}
-		file := findFileScopeForClassScope(owner)
+		file := findFileScopeForClassScope(owner, ctx)
 		if file == nil {
 			continue
 		}

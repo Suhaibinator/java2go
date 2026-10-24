@@ -14,7 +14,7 @@ import (
 // and the predeclared operations used by lowering. Keep Java lookup metadata
 // intact and change only the emitted binding spelling.
 func resolveLocalIdentifierHygiene() {
-	reserved := localIdentifierReservedGlobals()
+	reserved := buildLocalIdentifierReservations(true)
 	for _, owner := range allSourceClassScopes() {
 		for _, method := range owner.Methods {
 			ctx := classScopeCtx(owner, Ctx{})
@@ -44,11 +44,28 @@ func hygienizeLocalScopeWithReserved(ctx Ctx, reserved localIdentifierReservatio
 type localIdentifierReservations struct {
 	globals      map[string]bool
 	nominalTypes map[string]bool
+	// Only the callback-free resolution pass owns this candidate-name table.
+	// Standalone callers leave it nil and keep current whole-graph lookup.
+	callCandidates map[string]map[string]bool
 }
 
 func localIdentifierReservedGlobals() localIdentifierReservations {
+	return buildLocalIdentifierReservations(false)
+}
+
+func buildLocalIdentifierReservations(includeCallCandidates bool) localIdentifierReservations {
 	reserved := map[string]bool{}
 	nominalTypes := map[string]bool{}
+	var callCandidates map[string]map[string]bool
+	if includeCallCandidates {
+		callCandidates = make(map[string]map[string]bool)
+	}
+	addCall := func(selector, original string) {
+		if callCandidates[selector] == nil {
+			callCandidates[selector] = make(map[string]bool)
+		}
+		callCandidates[selector][original] = true
+	}
 	for _, name := range types.Universe.Names() {
 		reserved[name] = true
 	}
@@ -71,6 +88,16 @@ func localIdentifierReservedGlobals() localIdentifierReservations {
 			if method == nil {
 				continue
 			}
+			if callCandidates != nil {
+				if method.IsStatic {
+					addCall(method.Name, method.OriginalName)
+					addCall(method.Name+executionMethodSuffix, method.OriginalName)
+				}
+				if method.RequiresHelper {
+					addCall(method.HelperName, method.OriginalName)
+					addCall("New"+method.HelperName, method.OriginalName)
+				}
+			}
 			if method.IsStatic || method.Constructor {
 				reserved[method.Name] = true
 			}
@@ -80,7 +107,7 @@ func localIdentifierReservedGlobals() localIdentifierReservations {
 			}
 		}
 	}
-	return localIdentifierReservations{globals: reserved, nominalTypes: nominalTypes}
+	return localIdentifierReservations{globals: reserved, nominalTypes: nominalTypes, callCandidates: callCandidates}
 }
 
 func localIdentifierIsReserved(name string, ctx Ctx, reserved localIdentifierReservations) bool {
@@ -90,16 +117,16 @@ func localIdentifierIsReserved(name string, ctx Ctx, reserved localIdentifierRes
 	if reserved.nominalTypes[name] {
 		return true
 	}
-	if reserved.globals[name] && localIdentifierRequiredByBody(name, ctx) {
+	if reserved.globals[name] && localIdentifierRequiredByBodyWithCalls(name, ctx, reserved.callCandidates) {
 		return true
 	}
 	for _, alias := range ctx.importAliases {
-		if alias == name && localIdentifierRequiredByBody(name, ctx) {
+		if alias == name && localIdentifierRequiredByBodyWithCalls(name, ctx, reserved.callCandidates) {
 			return true
 		}
 	}
 	for _, parameter := range visibleTypeParameterDeclarations(ctx) {
-		if parameter.EmittedName() == name && localIdentifierRequiredByBody(name, ctx) {
+		if parameter.EmittedName() == name && localIdentifierRequiredByBodyWithCalls(name, ctx, reserved.callCandidates) {
 			return true
 		}
 	}

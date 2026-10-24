@@ -3069,7 +3069,7 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 		rhsCtx.expectedTypeRoot = rhsNode
 		rhs := ParseExpr(rhsNode, source, rhsCtx)
 		rhs = coerceArgumentToExpectedType(rhs, rhsNode, lhsJavaType, ctx, source)
-		return assignmentValueCall(targetStorageType, targetValueType, targetAddress, rhs)
+		return assignmentValueCall(targetStorageType, targetValueType, targetAddress, rhs, genericFamilySourceBoundFieldStore(ast.NewIdent("value"), lhsNode, lhsJavaType, ctx, source))
 	}
 
 	rhsJavaType, rhsTypeKnown := inferExprJavaType(rhsNode, ctx, source)
@@ -3159,7 +3159,11 @@ func lowerAssignmentExpression(node *sitter.Node, source []byte, ctx Ctx) ast.Ex
 	}
 }
 
-func assignmentValueCall(storageType, valueType ast.Expr, targetAddress, rhs ast.Expr) ast.Expr {
+func assignmentValueCall(storageType, valueType ast.Expr, targetAddress, rhs ast.Expr, storedValues ...ast.Expr) ast.Expr {
+	stored := ast.Expr(ast.NewIdent("value"))
+	if len(storedValues) != 0 {
+		stored = storedValues[0]
+	}
 	return &ast.CallExpr{
 		Fun: &ast.FuncLit{
 			Type: &ast.FuncType{
@@ -3173,7 +3177,7 @@ func assignmentValueCall(storageType, valueType ast.Expr, targetAddress, rhs ast
 				&ast.AssignStmt{
 					Lhs: []ast.Expr{&ast.StarExpr{X: &ast.Ident{Name: "dst"}}},
 					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{&ast.Ident{Name: "value"}},
+					Rhs: []ast.Expr{stored},
 				},
 				&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "value"}}},
 			}},

@@ -37,7 +37,7 @@ func canonicalGenericFamily(scope *symbol.ClassScope, ctx Ctx) *genericFamilyPla
 			return plan
 		}
 		if scope.Class != nil && scope.Class.DeclarationNode != nil {
-			file := findFileScopeForClassScope(scope.Enclosing)
+			file := findFileScopeForClassScope(scope.Enclosing, ctx)
 			if file == nil {
 				file = ctx.currentFile
 			}
@@ -70,6 +70,13 @@ func canonicalGenericFamily(scope *symbol.ClassScope, ctx Ctx) *genericFamilyPla
 }
 
 func discoverCanonicalGenericFamilies(ctx Ctx) []*genericFamilyPlan {
+	// Reconstruct ownership once from this discovery's current ordinary graph.
+	// The temporary index carries no plans or caller-owned syntax inventories.
+	if proof, known := sourceGenericDemandOwnershipContext(); known && genericFamilyOwnershipUnique(proof.sourceOwnership) {
+		ctx = ctx.Clone()
+		ctx.sourceOwnership = proof.sourceOwnership
+		ctx.callableSubclasses = &callableSubclassSourceInventory{graph: symbol.GlobalScope, ownership: proof.sourceOwnership}
+	}
 	seen := map[*symbol.ClassScope]bool{}
 	var plans []*genericFamilyPlan
 	var inventory *genericFamilyInventory
@@ -364,4 +371,43 @@ func genericFamilyPublicBridgeWrapper(declaration *ast.FuncDecl, bridge *ast.Fun
 
 func genericFamilyIsObjectErasure(owner *symbol.ClassScope, erasure string, ctx Ctx) bool {
 	return (strings.TrimSpace(erasure) == "Object" || strings.TrimSpace(erasure) == "java.lang.Object") && canonicalGenericFamily(owner, ctx) != nil
+}
+
+func genericFamilyOwnershipUnique(index *resolutionFileIndex) bool {
+	if index == nil || index.graph != symbol.GlobalScope {
+		return false
+	}
+	seen := make(map[*symbol.ClassScope]bool, len(index.files))
+	var visit func(*symbol.ClassScope, *symbol.FileScope) bool
+	visit = func(scope *symbol.ClassScope, file *symbol.FileScope) bool {
+		if scope == nil {
+			return true
+		}
+		if seen[scope] || index.files[scope] != file {
+			return false
+		}
+		seen[scope] = true
+		for _, nested := range scope.Subclasses {
+			if !visit(nested, file) {
+				return false
+			}
+		}
+		return true
+	}
+	for _, pkg := range index.graph.Packages {
+		if pkg == nil {
+			continue
+		}
+		for _, file := range pkg.Files {
+			if file == nil {
+				continue
+			}
+			for _, top := range file.TopLevelClasses {
+				if !visit(top, file) {
+					return false
+				}
+			}
+		}
+	}
+	return len(seen) == len(index.files)
 }

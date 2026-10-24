@@ -12,6 +12,10 @@ import (
 // does not require changing that parameter. Only uses in its generated body
 // need protection; optimizations retain their existing collision fallbacks.
 func localIdentifierRequiredByBody(name string, ctx Ctx) bool {
+	return localIdentifierRequiredByBodyWithCalls(name, ctx, nil)
+}
+
+func localIdentifierRequiredByBodyWithCalls(name string, ctx Ctx, callCandidates map[string]map[string]bool) bool {
 	body := ctx.localBindingBody
 	if ctx.localScope != nil && ctx.localScope.DeclarationNode != nil {
 		body = ctx.localScope.DeclarationNode.ChildByFieldName("body")
@@ -26,11 +30,14 @@ func localIdentifierRequiredByBody(name string, ctx Ctx) bool {
 	if name == "nil" && ctx.localScope != nil && !ctx.localScope.IsStatic {
 		return true
 	}
-	calledNames := map[string]bool{}
-	for _, owner := range allSourceClassScopes() {
-		for _, method := range owner.Methods {
-			if method.IsStatic && (name == method.Name || name == method.Name+executionMethodSuffix) || method.RequiresHelper && (name == method.HelperName || name == "New"+method.HelperName) {
-				calledNames[method.OriginalName] = true
+	calledNames := callCandidates[name]
+	if callCandidates == nil {
+		calledNames = map[string]bool{}
+		for _, owner := range allSourceClassScopes() {
+			for _, method := range owner.Methods {
+				if method.IsStatic && (name == method.Name || name == method.Name+executionMethodSuffix) || method.RequiresHelper && (name == method.HelperName || name == "New"+method.HelperName) {
+					calledNames[method.OriginalName] = true
+				}
 			}
 		}
 	}

@@ -18,9 +18,16 @@ func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
 	if seeds, known := sourceGenericViewDemandSeedsFromSyntax(ctx); known {
 		return seeds
 	}
+	return sourceGenericViewDemandSeedsFromTree(ctx, false)
+}
+
+// Raw-only consumers exclude generic syntax while preserving the same lexical inventory.
+func sourceGenericViewDemandSeedsFromTree(ctx Ctx, rawOnly bool) []*symbol.ClassScope {
 	seen := map[*symbol.ClassScope]bool{}
 	var seeds []*symbol.ClassScope
-	for _, owner := range allSourceClassScopes() {
+	owners := allSourceClassScopes()
+	names := sourceGenericDemandSourceNames(owners, ctx, ctx.sourceOwnership)
+	for _, owner := range owners {
 		if owner.Class == nil || owner.Class.DeclarationNode == nil {
 			continue
 		}
@@ -59,7 +66,7 @@ func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
 					}
 				}
 			}
-			if seed := sourceGenericViewDemandType(node, lexical, file.Source); seed != nil && !seen[seed] {
+			if seed := sourceGenericViewDemandTypeFromNames(node, lexical, file.Source, names); seed != nil && !seen[seed] && (!rawOnly || resolvedSourceNodeType(node, lexical) != "generic_type") {
 				seen[seed] = true
 				seeds = append(seeds, seed)
 			}
@@ -84,6 +91,10 @@ func sourceGenericViewDemandSeeds(ctx Ctx) []*symbol.ClassScope {
 }
 
 func sourceGenericViewDemandType(node *sitter.Node, ctx Ctx, source []byte) *symbol.ClassScope {
+	return sourceGenericViewDemandTypeFromNames(node, ctx, source, nil)
+}
+
+func sourceGenericViewDemandTypeFromNames(node *sitter.Node, ctx Ctx, source []byte, names map[string]struct{}) *symbol.ClassScope {
 	switch resolvedSourceNodeType(node, ctx) {
 	case "generic_type", "type_identifier", "scoped_type_identifier":
 	default:
@@ -118,6 +129,14 @@ func sourceGenericViewDemandType(node *sitter.Node, ctx Ctx, source []byte) *sym
 	}
 	if !demanded {
 		return nil
+	}
+	// An unqualified binding can only select an ordinary declaration with the
+	// same original name. Absence avoids inherited lookup; every possible source
+	// name, including nongeneric members and shadows, keeps full resolution.
+	if names != nil && !strings.Contains(base, ".") {
+		if _, possible := names[base]; !possible {
+			return nil
+		}
 	}
 	seed := resolveClassScopeByQualifiedName(ctx, base)
 	if seed == nil || seed.Class == nil || seed.Class.DeclarationNode == nil || len(seed.TypeParameters) == 0 {
@@ -183,4 +202,36 @@ func sourceGenericViewLocalTypeShadowed(node *sitter.Node, base string, source [
 		}
 	}
 	return false
+}
+
+// A discovery owns this complete, temporary declaration-name inventory. It is
+// rebuilt for every query and stores no bindings, inheritance, or family plans.
+// Qualified paths and synthesized namespaces continue ordinary resolution.
+func sourceGenericDemandSourceNames(owners []*symbol.ClassScope, ctx Ctx, ownership *resolutionFileIndex) map[string]struct{} {
+	if len(ctx.localClasses) != 0 || len(ctx.anonymousClasses) != 0 {
+		return nil
+	}
+	if ownership == nil {
+		proof, known := sourceGenericDemandOwnershipContext()
+		if !known {
+			return nil
+		}
+		ownership = proof.sourceOwnership
+	}
+	if !genericFamilyOwnershipUnique(ownership) || len(owners) != len(ownership.files) {
+		return nil
+	}
+	names := make(map[string]struct{}, len(owners))
+	for _, owner := range owners {
+		if owner == nil || owner.Class == nil || owner.Class.OriginalName == "" || ownership.files[owner] == nil {
+			return nil
+		}
+		// Lexical lookup also follows enclosing pointers. A synthesized enclosing
+		// declaration outside the ordinary graph makes name absence unknown.
+		if owner.Enclosing != nil && ownership.files[owner.Enclosing] == nil {
+			return nil
+		}
+		names[owner.Class.OriginalName] = struct{}{}
+	}
+	return names
 }

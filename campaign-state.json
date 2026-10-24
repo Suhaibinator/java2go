@@ -29172,5 +29172,58 @@
     },
     "independent_repair_review_sha256": "cd118742ae30e85402e8db6aaacb135465b03ca66cfa4b784f74ccc280f9ef61",
     "limitations": "Finite focused milestone. Full published-head CI, Supplier28, Gson112, Netty strict conversion and round-boundary regressions remain required."
+  },
+  "sol_progress233": {
+    "status": "VERIFIED_BOUND_FAMILY_AND_COMPILER_INVENTORY_INTEGRATION",
+    "production_change": true,
+    "publication_parent": "4f544674f1fdbb06d67240c4b4bf800c852dd49e",
+    "paths": [
+      "transpiler/class_type_parameter_erasure.go",
+      "transpiler/enclosing_namespace_legacy_control_test.go",
+      "transpiler/enclosing_namespace_witness_test.go",
+      "transpiler/expression.go",
+      "transpiler/generic_family_bound_reference_array.go",
+      "transpiler/generic_family_callable_work_test.go",
+      "transpiler/generic_family_codegen.go",
+      "transpiler/generic_family_demand_namespace_test.go",
+      "transpiler/generic_family_demand_work_test.go",
+      "transpiler/generic_family_owner_lifetime_test.go",
+      "transpiler/generic_family_owner_work_test.go",
+      "transpiler/generic_family_plan.go",
+      "transpiler/generic_family_query_inventory_test.go",
+      "transpiler/generic_family_representation.go",
+      "transpiler/generic_family_source_bound.go",
+      "transpiler/local_identifier_candidate_lifetime_test.go",
+      "transpiler/local_identifier_demand.go",
+      "transpiler/local_identifier_global_work_test.go",
+      "transpiler/local_identifier_hygiene.go",
+      "transpiler/raw_inner_bound_array_adversarial_test.go",
+      "transpiler/raw_inner_bound_family_author_witnesses_test.go",
+      "transpiler/source_generic_demand_syntax.go",
+      "transpiler/source_generic_view_demand.go",
+      "transpiler/statement.go"
+    ],
+    "joint_integration": {
+      "results_sha256": "bc389d604fd3828b4363780a50082862d49073dd96a9aff8ed8ee2c87944537d",
+      "review_sha256": "71101fc45136e2661c5977bb910abb88eb8bb7665317d21ccf52f76f303c7072",
+      "counts": {
+        "normal": {
+          "parents": 83,
+          "subcases": 123
+        },
+        "race": {
+          "parents": 83,
+          "subcases": 123
+        }
+      },
+      "normal_race": "PASS",
+      "lint": "golangci-lint2.15 allpackages: 0 issues, empty stderr",
+      "nominal_hygiene_subcases": "All six original cases run separately in each mode at unchanged55s, with all parent setup/leaf assertions; no aggregate execution/pass claimed; original donor aggregate timeout retained separately"
+    },
+    "independent_repair_reviews": [
+      "406c8095c456af76521ed97576eb45a2364d5cad57cade2d496eae57547c0ec7",
+      "a94281a64cb2035f79b6be5f51a07554b9d0af7467f32dccbff6f713b7f1d05f"
+    ],
+    "limitations": "Finite focused milestone. Full published-head CI, Supplier28, Gson112, Netty strict conversion and round-boundary regressions remain required."
   }
 }
