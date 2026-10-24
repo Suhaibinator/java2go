@@ -21,10 +21,22 @@ public class ListProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.NewArrayList[*stdjava.JavaString]()")
-	assertContains(t, out, "xs.Add(stdjava.JavaStringLiteralUTF16([]uint16{97}))")
+	const add = "stdjava.CollectionAddExecution(__java2goExecution, xs, stdjava.JavaStringLiteralUTF16([]uint16{97}))"
+	assertContains(t, out, add)
 	assertContains(t, out, "xs.Get(0)")
 	assertContains(t, out, "xs.Size()")
 	assertContains(t, out, "xs.Contains(stdjava.JavaStringLiteralUTF16([]uint16{97}), __java2goExecution)")
+	if strings.Contains(out, "xs.Add(") {
+		t.Fatalf("list add must use the canonical execution-aware dispatcher:\n%s", out)
+	}
+	previous := -1
+	for _, operation := range []string{"xs := stdjava.NewArrayList[*stdjava.JavaString]()", add, "xs.Get(0)", "xs.Size()", "xs.Contains(stdjava.JavaStringLiteralUTF16([]uint16{97}), __java2goExecution)"} {
+		position := strings.Index(out, operation)
+		if strings.Count(out, operation) != 1 || position <= previous {
+			t.Fatalf("list construction/add/get/size/contains changed count or Java order:\n%s", out)
+		}
+		previous = position
+	}
 }
 
 func TestCollections_DeclaredTypeMapsToStdjava(t *testing.T) {
