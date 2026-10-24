@@ -28713,5 +28713,94 @@
     "qualified_source_members": 4537,
     "scope": "Exact native java.io.File RAF constructor plus selected canonical String provenance, selected generic witnesses and captured try-with-resources initializer bridge; runtime-local Java byte-read Stream Closed hook.",
     "status": "QUALIFIED_NATIVE_RANDOM_ACCESS_FILE_FILE_AND_SELECTED_STRING_CONTRACTS"
+  },
+  "sol_progress219": {
+    "CI219": "PENDING_PUBLICATION_AND_NEW_HOSTED_CI_EXECUTION",
+    "Root_accepted_finite_actual11_scope": true,
+    "actual_owner_evidence": {
+      "actual_exit0": 10,
+      "budgets": {
+        "nested": 6144,
+        "root": 3072,
+        "top": 4096
+      },
+      "controlled_isolated_production_import_coverage_positive_blocks": 19,
+      "controlled_one_native_cleanup": {
+        "actual": 3073,
+        "budget": 3072,
+        "expected_RED_in_separate_synthetic_window": true
+      },
+      "controller_exit": 0,
+      "controller_wait_reaped": true,
+      "delivery_sha256": "c0ea189ba2459b3cb90d2b1576997a3c067c0dfba95601d918d31253c56d4dd0",
+      "duplicate_parent_mutant": {
+        "expected_RED": true,
+        "nested": 9216,
+        "nested_budget": 6144,
+        "root": 3072,
+        "root_budget": 3072,
+        "top": 5120,
+        "top_budget": 4096
+      },
+      "expected_mutant_exit1": 1,
+      "handoff_sha256": "b07940e06cbfa46d114d739651adb17e4f1ade3382bf3d96cf129fb25a22a16b",
+      "isolated_original_nine_GREEN": true,
+      "matched_baseline217_218_full_nine_rows": true,
+      "native_stages": 7,
+      "padding": [
+        0,
+        64,
+        512
+      ],
+      "queries_per_row": 1024,
+      "race_atomiccoverage_builds": 4,
+      "raw_manifest_sha256": "fa9039fa6d1628658816d66116eb7c38f44e453c1033fb8f33ee1dd63324301d",
+      "raw_members": 137,
+      "stages": 11,
+      "tool_exit_attribution": "Owner-transcribed completion; no original tool-service receipt or foreign re-wait claim.",
+      "tool_exit_owner_observed": 0,
+      "tool_session": 52763
+    },
+    "closure": {
+      "closed_observed_groups": 13,
+      "closed_recorded_membership_PIDs": 40,
+      "fresh_current_outer_only_checks": true,
+      "historical_membership_numbers_not_reprobed": true,
+      "no_all40_current_ESRCH_claim": true,
+      "outer_instances": 2,
+      "owner_certificate_sha256": "27441c974ad57a5de42585439a5cc0f46229efda388652bc26054ef3ddbf96b5",
+      "recursive_children_waited_reaped": 16,
+      "stage_leaders_and_supervisors": 22
+    },
+    "independent_actual_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-import199-ci218-independent-actual-review-v1/REPORT.json",
+    "independent_actual_review_sha256": "44727fbae05aba28ddca873a1313bb038ad9669cb5ff71581ae9a262af65c703",
+    "limitations": [
+      "Local Go1.27.3 Darwin execution differs from hosted Go1.27.0 Linux; hosted CI repair is not certified.",
+      "Only four race+atomiccoverage builds and seven native stages; no six canonical profile, full compiler/runtime, JVM or application parity credit.",
+      "CPU2, p1, GOMEMLIMIT512MiB soft target, build300s, native inner55s/outer65s; no raised budgets, retries or forced GC in original measurement body.",
+      "Controlled native finalizer RED occurs in a separate synthetic window; its expected child failure is retained, while outer controls succeed. Old generic duplicate-parent mutant is a separate private source with expected raw exit1.",
+      "A4, SAM, Gson, Map, original application and accumulated-round requirements remain separate; no acceptance or performance gain is inferred.",
+      "The controlled plus1 mechanism does not identify the exact cleanup event or owner of the hosted excess calls.",
+      "Seven stage coverage profiles retained and pinned; control-specific Go t.TempDir profiles are not retained. Exact equality/hash/positive-block proofs survive in full stdout and passed pinned source assertions."
+    ],
+    "production_change": false,
+    "protected_user_files": {
+      "performance/runtime/bignumbers/equal_scale/README.md": "c39a78225c4fc6434068c114cd4e694b1c2a3ef2eeb3c06489e246359cf19ace",
+      "performance/runtime/bignumbers/equal_scale/VALIDATE_AFTER_RELEASE.sh": "3dbaa71b850c16c552780d535a488696bfd43b2dbc6c4fa4252e62a2394ae92f",
+      "performance/runtime/bignumbers/equal_scale/equal-scale.patch": "a168cd860e01f3f3545bc5c71975626dbf0b161ada7f13abc72a6d66ac17a9be",
+      "performance/runtime/bignumbers/equal_scale/harness/DecimalCompareDriver.java": "f8a5eb31d40dfe5f6fc336dc91f137b2aeb850ed55529f12cee2f013d8619916",
+      "performance/runtime/bignumbers/equal_scale/harness/allocation_test.go.txt": "b677f7efd09cb71283d45ed4893163948f0d6bcdfa565e186d1aa587182a8ec9",
+      "performance/runtime/bignumbers/equal_scale/harness/driver.go.txt": "2e733639022fcbf6aff2cc26151cd5023f7cc127b5b20016efd86b44a77e57f0",
+      "performance/runtime/bignumbers/equal_scale/harness/regression_test.go.txt": "cccf16f4b88c71a07e60ceb7c709518eb2545e5a5976105d1fd06fdbf5c574c0",
+      "performance/runtime/bignumbers/equal_scale/prepare.py": "0ffd8b7bf383e4ad7cc5a86620fdeff1f139d0d3c2073528391c29bc7f39f360",
+      "performance/runtime/bignumbers/equal_scale/prepared.json": "b6fbc6cb19c1f9b767d4e92d8c70d5d0bfaafe90a2b6a8d6b3f253b0241d204f",
+      "performance/runtime/bignumbers/equal_scale/source/DecimalCompareProbe.java": "54658040c6ba6a9d4b24b7f0545f4c299845b5f550960fccb4735cbeefd1675a"
+    },
+    "publication_parent": "b34ea40efc89cf7e57c900894d0812a565242a13",
+    "qualified_test_candidate_manifest_sha256": "306d3a5eb40a5a3a1cf405c177afbb08bd100b30bf6f451f786cf88038ad4112",
+    "qualified_test_candidate_source_members": 4539,
+    "scope": "Test-only process isolation of ImportParentNativeWork199 from unrelated process-wide native finalizer noise; exact three-line entry guard plus new process helper, all original nine-case assertions and budgets byte-identical.",
+    "source_review_sha256": "3c956d0a19e521b4cfc58a0e367df4471cd8157d19f4468f282182e7f11a4805",
+    "status": "QUALIFIED_TEST_ONLY_IMPORT_PARENT_NATIVE_MEASUREMENT_PROCESS_ISOLATION"
   }
 }

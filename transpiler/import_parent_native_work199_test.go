@@ -67,6 +67,9 @@ func importParent199OwnedContext(t *testing.T, parser *sitter.Parser, active str
 // answer is used. Native work is bounded by one parent read per edge, one final
 // nil-parent read, and the two unchanged structural-bounds observations.
 func TestImportParentNativeWork199(t *testing.T) {
+	if importParent199IsolatedEntry(t) {
+		return
+	}
 	const queries = 1024
 	parser := sitter.NewParser()
 	parser.SetLanguage(java.GetLanguage())
