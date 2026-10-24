@@ -29225,5 +29225,37 @@
       "a94281a64cb2035f79b6be5f51a07554b9d0af7467f32dccbff6f713b7f1d05f"
     ],
     "limitations": "Finite focused milestone. Full published-head CI, Supplier28, Gson112, Netty strict conversion and round-boundary regressions remain required."
+  },
+  "sol_progress234": {
+    "status": "VERIFIED_FOCUSED_CI233_REGRESSION_REPAIR",
+    "publication_parent": "271815d1a67163623c988c166b4cb168b5b6a48d",
+    "paths": [
+      "transpiler/class_type_parameter_erasure.go",
+      "transpiler/class_type_parameter_override_bridge.go",
+      "transpiler/generic_family_ci233_budget_isolation_test.go",
+      "transpiler/generic_family_codegen.go",
+      "transpiler/source_generic_view_demand.go",
+      "transpiler/superclass_query_4059_filter_test.go",
+      "transpiler/superclass_query_4059_legacy_pipeline_test.go"
+    ],
+    "source_manifest_sha256": "0fe2eaae16318df84173bddef42cfbb3a6925b7429759976eefe16f826071bec",
+    "results_sha256": "99610dfb393b9f3709bf1ac2edde6406f51200ef506f9f34910708346de41336",
+    "review_sha256": "199dcd2d0b7532db89485fb40ef19e583d4c58d3d4f686fe8a63cd981f95677e",
+    "counts": {
+      "normal": {
+        "parents": 146,
+        "subcases": 184
+      },
+      "race": {
+        "parents": 146,
+        "subcases": 184
+      }
+    },
+    "covered_race_budget_parents": 2,
+    "lint": "golangci-lint2.15: 0 issues, empty stderr",
+    "CI233_baseline": "2590PASS7FAIL0SKIP; all20newparentsPASS; seven oldparents regressed; original report9abb208cfb5d8fcce0620ad23c65f2a75c7881ef38ab592189caa364669069f2",
+    "limits_and_expectations_unchanged": true,
+    "accepted_round": false,
+    "limitations": "Local finite compiler qualification only. New-head hosted CI and full Supplier28/Gson112/Netty application acceptance remain required."
   }
 }

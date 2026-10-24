@@ -395,11 +395,18 @@ func classHasUnmodeledCallableSubclass(target *symbol.ClassScope, ctx Ctx) bool 
 		return visitCallableSubclassSources(matches, ctx)
 	}
 	if !inventory.ready {
-		visitCallableSubclassSources(func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
-			inventory.events = append(inventory.events, callableSubclassSourceEvent{owner: owner, file: file, supertype: supertype})
-			return false
-		}, ctx)
+		var events []callableSubclassSourceEvent
+		if visitCallableSubclassSources(func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
+			events = append(events, callableSubclassSourceEvent{owner: owner, file: file, supertype: supertype})
+			return matches(owner, file, supertype)
+		}, ctx) {
+			// An early rejection has not inventoried later syntax. Do not publish
+			// a partial event list or cache the target's semantic decision.
+			return true
+		}
+		inventory.events = events
 		inventory.ready = true
+		return false
 	}
 	for _, event := range inventory.events {
 		if matches(event.owner, event.file, event.supertype) {

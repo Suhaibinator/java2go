@@ -180,7 +180,7 @@ func sourceGenericViewTypeDeclaration(node *sitter.Node, contexts ...Ctx) bool {
 // Qualified p.Cell remains usable beside a local Cell; a local p also shadows
 // the first segment of p.Cell, as Java's type-name namespace requires.
 func sourceGenericViewLocalTypeShadowed(node *sitter.Node, base string, source []byte) bool {
-	name := strings.SplitN(strings.TrimSpace(base), ".", 2)[0]
+	name, _, _ := strings.Cut(strings.TrimSpace(base), ".")
 	declaredBefore := func(child *sitter.Node) bool {
 		if child == nil || child.StartByte() >= node.StartByte() {
 			return false

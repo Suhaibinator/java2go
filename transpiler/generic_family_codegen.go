@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/NickyBoy89/java2go/symbol"
+	sitter "github.com/smacker/go-tree-sitter"
 )
 
 // This cache belongs to one file-render context, created after resolution.
@@ -75,7 +76,24 @@ func discoverCanonicalGenericFamilies(ctx Ctx) []*genericFamilyPlan {
 	if proof, known := sourceGenericDemandOwnershipContext(); known && genericFamilyOwnershipUnique(proof.sourceOwnership) {
 		ctx = ctx.Clone()
 		ctx.sourceOwnership = proof.sourceOwnership
-		ctx.callableSubclasses = &callableSubclassSourceInventory{graph: symbol.GlobalScope, ownership: proof.sourceOwnership}
+		local := &callableSubclassSourceInventory{graph: symbol.GlobalScope, ownership: proof.sourceOwnership}
+		// A caller-owned conversion batch may retain node kinds and child slices.
+		// Keep discovery events and ownership local; foreign holders stay untouched.
+		outer := ctx.callableSubclasses
+		if outer != nil && (outer.graph == symbol.GlobalScope || outer.graph == nil && outer.ownership == nil && !outer.ready && !outer.syntheticReady && !outer.selectorsReady && len(outer.events) == 0 && len(outer.syntheticEvents) == 0 && len(outer.nodes) == 0 && len(outer.selectors) == 0 && len(outer.staticImports) == 0) {
+			outer = resolvedSourceInventory(ctx)
+			if outer.nodes == nil {
+				outer.nodes = make(map[*sitter.Node]resolvedSourceNodeFacts)
+			}
+			local.nodes = outer.nodes
+		}
+		// Owned syntax callers without a conversion-batch holder keep the
+		// original early-exit event query rather than a new eager cache.
+		if outer == nil && ctx.syntaxInvocation != nil {
+			ctx.callableSubclasses = nil
+		} else {
+			ctx.callableSubclasses = local
+		}
 	}
 	seen := map[*symbol.ClassScope]bool{}
 	var plans []*genericFamilyPlan

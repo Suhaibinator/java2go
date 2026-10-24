@@ -444,16 +444,6 @@ func planDirectOwnerCallableOverrideBridgeFamilyUnchecked(
 			// erased entry and needs no synthetic bridge of its own.
 			return false
 		}
-		if directOwnerOverrideBridgeVisibility(owner, method) == directOwnerOverrideBridgeProtected &&
-			!directOwnerOverrideBridgeSamePackage(owner, descendant) {
-			// Java permits a protected override across packages, but its current
-			// generated hidden selector is unexported and therefore has a different
-			// Go package identity. Reject the entire physical family until protected
-			// execution selectors have an exported, collision-safe representation.
-			valid = false
-			return true
-		}
-
 		overridePlan, bridgeRequired, bridgeOK := planDirectOwnerSpecializedOverride(
 			owner,
 			method,
@@ -653,6 +643,14 @@ func planDirectOwnerSpecializedOverride(
 	if ancestorOwner == nil || ancestorMethod == nil || overrideOwner == nil || overrideMethod == nil ||
 		len(overrideMethod.Parameters) != len(erasedParameters) ||
 		executionParameterIsVariadic(overrideMethod, len(overrideMethod.Parameters)-1) {
+		return directOwnerOverrideBridgePlan{}, false, false
+	}
+
+	// Canonical generic-family planning and the ordinary planner share this
+	// boundary. A protected hidden selector has package identity in Go; moving
+	// it across Java packages cannot acquire a bridge through either entry path.
+	if directOwnerOverrideBridgeVisibility(ancestorOwner, ancestorMethod) == directOwnerOverrideBridgeProtected &&
+		!directOwnerOverrideBridgeSamePackage(ancestorOwner, overrideOwner) {
 		return directOwnerOverrideBridgePlan{}, false, false
 	}
 

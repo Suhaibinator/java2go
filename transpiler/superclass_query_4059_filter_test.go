@@ -79,7 +79,7 @@ func superclassQuery4059PlannerOracle(owner *symbol.ClassScope, method *symbol.D
 	if !declared {
 		return nil
 	}
-	signature := sourceInterfaceVirtualSignature(owner, method, ctx)
+	signature := superclassQuery4059LegacySourceInterfaceVirtualSignature(owner, method, ctx)
 	if signature == nil {
 		return nil
 	}
