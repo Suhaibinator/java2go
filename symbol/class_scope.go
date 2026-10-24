@@ -4,6 +4,9 @@ import sitter "github.com/smacker/go-tree-sitter"
 
 // ClassScope represents a single defined class, and the declarations in it
 type ClassScope struct {
+	// anonymousSourceOrigin is a monotonic negative routing fact. It proves no
+	// source/family/AST/binder/ABI/completion authority and survives value copies.
+	anonymousSourceOrigin bool
 	// The definition for the class defined within the class
 	Class *Definition
 	// Whether this class was declared as an interface.
@@ -53,6 +56,20 @@ type ClassScope struct {
 	// It is primarily used by hoisted anonymous/local classes, whose Java member
 	// namespaces have to be reconciled with Go's single selector namespace.
 	EnclosingField string
+}
+
+// MarkAnonymousSourceOrigin records that the anonymous lowerer allocated this
+// scope. There is intentionally no clear/reset operation: mutable declaration
+// nodes or registration caches must never convert it to a named declaration.
+func (cs *ClassScope) MarkAnonymousSourceOrigin() {
+	if cs != nil {
+		cs.anonymousSourceOrigin = true
+	}
+}
+
+// HasAnonymousSourceOrigin is only a negative routing fact, never admission.
+func (cs *ClassScope) HasAnonymousSourceOrigin() bool {
+	return cs != nil && cs.anonymousSourceOrigin
 }
 
 // EnclosingFieldName returns the name of the synthesized field that an inner

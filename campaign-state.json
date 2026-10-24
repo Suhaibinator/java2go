@@ -28863,5 +28863,105 @@
       "TestInstanceGenericIntegrationUnknownNominalRejected",
       "TestExplicitStaticGeneric472UnknownNominalRejected"
     ]
+  },
+  "sol_progress221": {
+    "status": "QUALIFIED_ANONYMOUS_FUNCTIONAL_PRODUCTION_AND_PUBLIC_TESTS_PENDING_ROOT_PUBLICATION",
+    "production_change": true,
+    "publication_parent": "546955e5d989b5dd4686432dcc4b109f6a91172c",
+    "scope": "Exactly20qualifiedSAMsourcepaths:9productionpaths/18ownedregions plus11publictestleaves; appendonlysol_progress221 andoneprogressdocument. No frame5/othercandidateimports.",
+    "behavior": [
+      "Anonymous Function/Supplier/Runnable implementations retain source-owned identity and actualnativeview proofs, including named/localfunctional declarations beneath anonymousparents; originallyanonymous role remainssticky and does not confer eligibility on ordinarylocalSupplier declarations.",
+      "Staticclass receiver lookup checks ASTrole before class-name probing, preventing method/lambda text from becoming type diagnostics.",
+      "RawFunction target eligibility refuses parameterized/array targets before qualified-prefix traversal and probes only actuallambda roots.",
+      "Nominal class lookup parses complete balanced generic member segments before dotted traversal, preserving binder/local/anonymous/import/package shields and complete malformed-input diagnostics."
+    ],
+    "source_scope": {
+      "changed_source_paths": 20,
+      "production_paths": 9,
+      "regions": 18,
+      "new_test_leaves": 11,
+      "public_normative_nominal_tests": 3,
+      "exact_normative_helpers": 3,
+      "private_logger_witness_structurally_excluded": true,
+      "no_skipped_tests_or_external_artifact_env_dependency": true
+    },
+    "private_e3de_original90": {
+      "source_manifest": "e3de65b5f41d529e60cf35429e662a8f6fc46a345d2030324f2e2ab39d232f2d",
+      "source_members": 4550,
+      "original_criteria": 90,
+      "coverage": "Explicitaccepted same-source identities:10lifecyclecriteria plus76validatedbroadercriteria plus4newfinalcanonicalcriteria; oldrefusedlintreceipt neverpromoted.",
+      "native_parent_PASS": 92,
+      "native_subtest_PASS": 1020,
+      "JDK_oracles": 6,
+      "normal_race_program_profiles": 12,
+      "canonical_profiles": 6,
+      "independent_actual_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-anonymous-functional218-full90-final4-lint-controller-actual-review-recovery-v1/REVIEW.json",
+      "independent_actual_review_sha256": "61d33ba615184c72588ba371a47beebb94e6b2840dfa7cbe889052804b4ca97a",
+      "not_a_fresh_current220_full90_run": true
+    },
+    "fresh_current220_PORTABILITY18": {
+      "base_head": "546955e5d989b5dd4686432dcc4b109f6a91172c",
+      "qualified_source_manifest": "53b7c3994be045648adc561bb8916ca78d5523d7c457aa7577c6409792140de1",
+      "qualified_source_members": 4553,
+      "stages": 18,
+      "raw_exit0": 18,
+      "protocol_validated": 18,
+      "parent_PASS": 84,
+      "subtest_PASS": 956,
+      "public_leaf_parents_per_mode": 38,
+      "public_leaf_subtests_per_mode": 478,
+      "original_repaired_CI_parents": [
+        "TestCampaignFunctionalObjectIdentityJVM",
+        "TestCampaignFunctionalReceiverStagingJVM",
+        "TestCampaignFunctionalStatelessAllocationIdentityJVM",
+        "TestCampaignLocalIdentifierHygieneJVMParity"
+      ],
+      "modes": [
+        "normal",
+        "race"
+      ],
+      "original_nested_helpers_argv_and_timeouts_unchanged": true,
+      "Go_version": "1.27.3",
+      "platform": "Darwin",
+      "JDK": "Oracle JDK21",
+      "tool_session": 72033,
+      "owner_observed_actual_tool_exit": 0,
+      "explicit_shell_wait_reaped": true
+    },
+    "evidence": {
+      "source_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-anonymous-functional220-public-ready-source-review-recovery-v1/REVIEW.json",
+      "source_review_sha256": "fd98d3e40ecb8aa60192446be22037573a6959a21d1706582d8232daaf3d7144",
+      "independent_actual_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-anonymous-functional220-portability18-actual-review-recovery-v1/REVIEW.json",
+      "independent_actual_review_sha256": "6db889d221b35c9d90542ccd9b62f593c6a3567d479c639c7e969eb321d6c2d1",
+      "actual_delivery_sha256": "63098ac92fc8af4a508fc345a98751e29cdf47884c4c875e0649917ce898f2ab",
+      "frontier_sha256": "78f879147202c69f6c500200dacb94cc0fde27b7d07682bc9308720876dd8c8c",
+      "metadata_erratum_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-anonymous-functional220-public-ready-v1/LOCALNAMES-DECLARATION-METADATA-ERRATUM.json",
+      "metadata_erratum_sha256": "fc04d731727c0eca1dde2992cca1ecf1b5b07e7dadc38acc673a4d2c01f45b1c"
+    },
+    "closure": {
+      "recorded_PID": 38,
+      "owned_groups": 20,
+      "absence_rows": 58,
+      "certificate_sha256": "d6bbea8cd694e53599d4962b99e61d2894c6e6e7d43e6faf49894be3c644dd0b",
+      "owner_observed_tool_wait_exit": 0,
+      "postflight_tool_session": 30337,
+      "owner_observed_postflight_exit": 0,
+      "all_descendants_covered_by_absent_owned_groups": true,
+      "no_cleanup_actions_signals_errors": true,
+      "certificate_UTC_only_no_forever_historical_numeric_reprobe": true
+    },
+    "preservation": {
+      "public220_Foo_List_fixture_exact": true,
+      "public219_import_native_isolation_exact": true,
+      "all_other_base_keys_files_modes_unchanged": true,
+      "protected_user10_not_accessed_or_mutated_by_owner": true
+    },
+    "limitations": [
+      "Privatee3de original90 and freshcurrent220PORTABILITY18 are distinct evidence; no current220full90/wholehostedCI/full923runtimePASS claim.",
+      "OriginalCIhelpers retain their original nestedJDK/Go arguments and limits. ParentPASS certifies their originalassertions; successfulchildstdout/stderr/classes are notall exposed, and no newwholechildstream/no-warning/JVMheapcap claim is inferred.",
+      "LocalDarwin Go1.27.3/OracleJDK21 differs from hostedLinux/Go1.27.0/Temurin. Newpublished-head CI remainsunobserved.",
+      "Round-boundary accumulatedregressions andRootintegration/publicdecision remainrequired. No application acceptance orperformance gain is inferred; unrelatedcandidate/frame5 code is excluded."
+    ],
+    "CI221": "PENDING_ROOT_COMMIT_PUSH_AND_NEW_PUBLISHED_HEAD_CI_OBSERVATION"
   }
 }

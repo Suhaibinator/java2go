@@ -1266,7 +1266,7 @@ func inferIntrinsicFieldResultType(node *sitter.Node, ctx Ctx, source []byte) (s
 }
 
 func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (string, bool) {
-	if objectNode == nil {
+	if objectNode == nil || objectNode.Type() != "identifier" && objectNode.Type() != "field_access" && objectNode.Type() != "scoped_identifier" {
 		return "", false
 	}
 	// A dotted spelling can start at a local/parameter/field rather than a
@@ -1285,7 +1285,10 @@ func intrinsicStaticClassName(objectNode *sitter.Node, ctx Ctx, source []byte) (
 		}
 		root = next
 	}
-	if root != nil && root.Type() == "identifier" {
+	if root == nil || root.Type() != "identifier" {
+		return "", false
+	}
+	if root.Type() == "identifier" {
 		if _, bound := resolveReferenceTypeParameter(symbol.JavaType{Original: root.Content(source)}, ctx); bound {
 			return "", false
 		}

@@ -13,6 +13,15 @@ func init() { registerIntrinsicOwner("java.util.function.Supplier", true) }
 // The independently retained parse root, actual registered scope and written
 // header must agree before a source declaration can donate a Supplier view.
 func supplierSourceDeclarationCtx(owner *symbol.ClassScope, ctx Ctx) (Ctx, bool) {
+	if certificate, anonymous := anonymousFunctionalLookup(owner, ctx); anonymous {
+		if !anonymousFunctionalValid(certificate, ctx, false) {
+			return Ctx{}, false
+		}
+		declaring := certificate.lexical.Clone()
+		declaring.currentClass = certificate.scope
+		declaring.localScope = nil
+		return declaring, true
+	}
 	if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil {
 		return Ctx{}, false
 	}
@@ -234,6 +243,13 @@ func supplierSourceContractOwned(scope *symbol.ClassScope, c sourceNativeFunctio
 }
 
 func supplierSourceSelectedMethodOwned(scope, owner *symbol.ClassScope, method *symbol.Definition, c sourceNativeFunctionalContract, ctx Ctx) bool {
+	if certificate, anonymous := anonymousFunctionalLookup(scope, ctx); anonymous {
+		return certificate != nil && certificate.family == "Supplier" && anonymousFunctionalValid(certificate, ctx, true) &&
+			owner == certificate.scope && method == certificate.selected && anonymousFunctionalContractEqual(certificate, c)
+	}
+	if _, anonymous := anonymousFunctionalLookup(owner, ctx); anonymous {
+		return false
+	}
 	bindings, proved := supplierSourceContractProof(scope, c, ctx)
 	declaring, owned := supplierSourceDeclarationCtx(owner, ctx)
 	if !proved || !owned || method == nil || method.DeclarationNode == nil || method.IsStatic || method.IsPrivate || !method.HasBody || method.OriginalName != "get" || len(method.Parameters) != 0 || len(method.TypeParameters) != 0 {

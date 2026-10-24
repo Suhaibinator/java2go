@@ -3875,6 +3875,11 @@ func resolveClassScopeByQualifiedName(ctx Ctx, name string) *symbol.ClassScope {
 	if name == "" {
 		return nil
 	}
+	base, _, valid := splitJavaMemberType(name)
+	if !valid || base == "" {
+		return nil
+	}
+	name = base
 	// Method-local classes are synthesized while rendering a method body rather
 	// than registered in the file's ordinary symbol tree. Keep their real scope
 	// reachable by the Java source name so type-qualified static calls and values
@@ -6958,8 +6963,31 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	if ctx.hoistedDecls == nil || ctx.anonymousClasses == nil || objectType == nil {
 		return nil
 	}
+	functional, attemptedFunctional := anonymousFunctionalStart(node, objectType, classBody, source, ctx)
+	if attemptedFunctional && functional == nil {
+		return nil
+	}
+	ordinaryFunctionalHeader := false
+	if functional == nil && !attemptedFunctional {
+		family := nativeFunctionalFamily(objectType.Content(source), ctx)
+		ordinaryFunctionalHeader = family == "Function" || family == "Supplier"
+	}
 	key, hasKey := anonymousClassSourceKey(node)
 	if hasKey {
+		if info := ctx.anonymousClasses[key]; info != nil && (attemptedFunctional || info.functional != nil) {
+			if functional == nil || info.functional == nil || !anonymousFunctionalValid(info.functional, ctx, true) ||
+				!info.emissionStampValid || info.emissionStamp != anonymousReceiverStamp(source, ctx) {
+				return nil
+			}
+			return anonymousClassConstructionExpr(node, objectType, info, nil, source, ctx)
+		}
+		if info := ctx.anonymousClasses[key]; info != nil && ordinaryFunctionalHeader {
+			ordinary, valid := anonymousFunctionalOrdinaryConstruction(info, node, objectType, source, ctx)
+			if !ordinary || !valid || info.lexicalOwner == nil || info.lexicalOwner.phase != anonymousFunctionalComplete || !info.emissionStampValid || info.emissionStamp != anonymousReceiverStamp(source, ctx) {
+				return nil
+			}
+			return anonymousClassConstructionExpr(node, objectType, info, nil, source, ctx)
+		}
 		if info := ctx.anonymousClasses[key]; info != nil && info.scope != nil &&
 			info.emissionStampValid && info.emissionStamp == anonymousReceiverStamp(source, ctx) {
 			baseType, _ := parseJavaTypeString(objectType.Content(source))
@@ -6974,8 +7002,36 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 	}
 
+	functionalSucceeded := false
+	if functional != nil {
+		if !hasKey || ctx.anonClassCounter == nil {
+			return nil
+		}
+		beforeHoists, beforeCounter := len(*ctx.hoistedDecls), *ctx.anonClassCounter
+		beforeMap := make(map[anonymousClassKey]*anonymousClassInfo, len(ctx.anonymousClasses))
+		for key, info := range ctx.anonymousClasses {
+			beforeMap[key] = info
+		}
+		defer func() {
+			if functionalSucceeded {
+				return
+			}
+			functional.phase = anonymousFunctionalFailed
+			*ctx.hoistedDecls = (*ctx.hoistedDecls)[:beforeHoists]
+			*ctx.anonClassCounter = beforeCounter
+			for key := range ctx.anonymousClasses {
+				delete(ctx.anonymousClasses, key)
+			}
+			for key, info := range beforeMap {
+				ctx.anonymousClasses[key] = info
+			}
+		}()
+	}
 	supertype := objectType.Content(source)
-	if isExternalFunctionType(supertype, ctx) {
+	if functional != nil {
+		supertype = functional.header
+	}
+	if functional == nil && !ordinaryFunctionalHeader && isExternalFunctionType(supertype, ctx) {
 		_, args := parseJavaTypeString(supertype)
 		if len(args) == 0 && isExternalFunctionType(ctx.expectedType, ctx) {
 			supertype = ctx.expectedType
@@ -6995,6 +7051,9 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	captured := collectCapturedLocals(classBody, source, ctx)
 	bodyMethods := anonymousClassMethods(classBody)
 	reservedSelectors := anonymousInheritedSelectorNames(supertype, superScope, ctx)
+	if functional != nil {
+		reservedSelectors["ObjectInfo"] = struct{}{}
+	}
 	reservedInstallerSelectors := inheritedSubobjectInstallerSelectorNames(superScope, ctx)
 	// Anonymous declaration allocation uses the same fixed source reservation
 	// as ordinary/local classes; genuine overrides are retargeted below.
@@ -7036,21 +7095,29 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		source,
 		false,
 	)
+	if node != nil && node.Type() == "object_creation_expression" {
+		syntheticScope.MarkAnonymousSourceOrigin()
+	}
 	syntheticScope.Class.DeclarationNode = node
 	syntheticScope.Enclosing = ctx.currentClass
 	syntheticScope.IsInner = isInner
 	syntheticScope.EnclosingField = enclosingFieldName
 	syntheticScope.TypeParameters = anonymousClassTypeParameters(node, captured, isInner, source, ctx)
 	externalInterfaceOwner := ""
-	if superScope == nil {
+	if superScope == nil && !ordinaryFunctionalHeader {
 		externalInterfaceOwner = anonymousExternalInterfaceOwner(node, objectType, source, ctx)
 	}
-	if superScope != nil && superScope.IsInterface || externalInterfaceOwner != "" || isExternalFunctionType(supertype, ctx) || canonicalIterationOwner(supertype, ctx) != "" {
+	if ordinaryFunctionalHeader {
+		// A source TYPE binder has no canonical runtime edge.
+	} else if functional != nil || superScope != nil && superScope.IsInterface || externalInterfaceOwner != "" || isExternalFunctionType(supertype, ctx) || canonicalIterationOwner(supertype, ctx) != "" {
 		syntheticScope.ImplementedInterfaces = append(syntheticScope.ImplementedInterfaces, supertype)
 	} else if superScope != nil || characterIOBaseTypeExpr(supertype, ctx) != nil || anonymousAbstractCollectionBase(supertype, ctx) || threadSourceCanonicalOwner(supertype, nil, ctx) == "java.lang.Thread" {
 		syntheticScope.Superclass = supertype
 	}
 	prepareAnonymousAbstractCollectionScope(syntheticScope, ctx)
+	if functional != nil {
+		reserveLocalIdentityMethodNames(syntheticScope)
+	}
 	resolveSyntheticInheritedMethodNames(syntheticScope, ctx)
 	syntheticScope.HasInstanceFieldInitializers = localClassHasInstanceFieldInitializers(classBody)
 	fieldInitializerMethod := ""
@@ -7064,6 +7131,10 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		captured:                   captured,
 		fieldInitializerMethodName: fieldInitializerMethod,
 	}
+	if functional != nil && !anonymousFunctionalAttach(functional, info, ctx) {
+		return nil
+	}
+	info.lexicalOwner = anonymousLexicalOwnerAttach(info, node, objectType, classBody, source, ctx)
 	if hasKey {
 		ctx.anonymousClasses[key] = info
 	}
@@ -7080,7 +7151,11 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 			Type:  enclosingType,
 		})
 	}
-	if superScope != nil && superScope.Class != nil {
+	if functional != nil {
+		fields.List = append(fields.List, generatedObjectInfoField(ctx))
+	} else if ordinaryFunctionalHeader {
+		// Preserve ordinary body/capture modeling without native family storage.
+	} else if superScope != nil && superScope.Class != nil {
 		if superScope.IsInterface {
 			if embedded := implementedInterfaceTypeExpr(supertype, syntheticScope.TypeParameterNames(), classScopeCtx(syntheticScope, ctx)); embedded != nil {
 				fields.List = append(fields.List, &ast.Field{Type: embedded})
@@ -7143,13 +7218,19 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	for _, declaration := range append(generateIterationBridgeDecls(installerCtx), generateMapEntryBridgeDecls(installerCtx)...) {
 		ctx.addHoistedDecl(declaration)
 	}
-	for _, declaration := range generateFunctionSAMBridgeDecls(installerCtx) {
-		ctx.addHoistedDecl(declaration)
+	if functional == nil && !ordinaryFunctionalHeader {
+		for _, declaration := range generateFunctionSAMBridgeDecls(installerCtx) {
+			ctx.addHoistedDecl(declaration)
+		}
 	}
 	for _, declaration := range generateCharacterIOBridgeDecls(installerCtx) {
 		ctx.addHoistedDecl(declaration)
 	}
-	if threadSourceDirectRoot(syntheticScope, installerCtx) {
+	if functional != nil {
+		// Its identity and native views are emitted only after source completion.
+	} else if ordinaryFunctionalHeader {
+		// A canonical-looking spelling with an actual TYPE binder grants no identity.
+	} else if threadSourceDirectRoot(syntheticScope, installerCtx) {
 		ownerID := ctx.className
 		if ctx.currentClass != nil {
 			ownerID = javaClassBinaryName(ctx.currentClass)
@@ -7307,13 +7388,44 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 	}
 
+	if functional != nil {
+		info.emissionStamp = anonymousReceiverStamp(source, ctx)
+		info.emissionStampValid = true
+		if !anonymousFunctionalFinish(functional, ctx) {
+			return nil
+		}
+		for _, declaration := range anonymousFunctionalBridges(functional, installerCtx) {
+			ctx.addHoistedDecl(declaration)
+		}
+		identity := anonymousFunctionalIdentity(functional, installerCtx)
+		if len(identity) != 3 {
+			return nil
+		}
+		for _, declaration := range identity {
+			ctx.addHoistedDecl(declaration)
+		}
+		anonymousFunctionalSeal(functional, ctx)
+	}
 	expression := anonymousClassConstructionExpr(node, objectType, info, superScope, source, ctx)
+	if functional != nil {
+		if expression == nil {
+			return nil
+		}
+		functionalSucceeded = true
+	}
 	// The class layout captures source-local names and physical types. Keep the
 	// offset index for exact-type lookup, but reuse a hoisted declaration only
 	// within the lexical and emission context that supplied those captures.
 	// Stamp after rendering because body lowering may advance local bindings.
 	info.emissionStamp = anonymousReceiverStamp(source, ctx)
 	info.emissionStampValid = true
+	if info.lexicalOwner != nil {
+		if expression == nil {
+			info.lexicalOwner.phase = anonymousFunctionalFailed
+		} else {
+			info.lexicalOwner.phase = anonymousFunctionalComplete
+		}
+	}
 	return expression
 }
 
@@ -7332,6 +7444,19 @@ func anonymousClassConstructionExpr(
 ) ast.Expr {
 	if info == nil || info.scope == nil || info.structName == "" {
 		return nil
+	}
+	ordinary, ordinaryValid := anonymousFunctionalOrdinaryConstruction(info, node, objectType, source, ctx)
+	if ordinary && !ordinaryValid {
+		return nil
+	}
+	functional, attemptedFunctional := anonymousFunctionalLookup(info.scope, ctx)
+	if !ordinary && (anonymousFunctionalConstructionAttempt(info, objectType, source, ctx) || attemptedFunctional && functional != nil) {
+		if functional == nil || info.functional != functional || functional.info != info || !anonymousFunctionalValid(functional, ctx, true) ||
+			!anonymousFunctionalEqual(node, functional.allocation) || !anonymousFunctionalEqual(objectType, functional.typ) ||
+			anonymousReceiverSourceIdentity(source) != functional.sourceIdentity || !bytesEqualAnonymousFunctionalSource(source, functional.source) ||
+			info.emissionStamp != anonymousReceiverStamp(source, ctx) {
+			return nil
+		}
 	}
 
 	declarationCtx := classScopeCtx(info.scope, ctx)
@@ -7381,7 +7506,7 @@ func anonymousClassConstructionExpr(
 		},
 	}
 	instanceName := "__java2goAnonymous"
-	if nativeReader || nativeThread {
+	if nativeReader || nativeThread || functional != nil {
 		used := affineLoopUsedNames(node, source, ctx)
 		for _, name := range append(inScopeTypeParameters(ctx), info.scope.GoTypeParameterNames()...) {
 			used[name] = struct{}{}
@@ -7402,7 +7527,7 @@ func anonymousClassConstructionExpr(
 		)
 	}
 	if !usesMostDerived && info.fieldInitializerMethodName == "" &&
-		len(defaultStringInitializers) == 0 && defaultCarrierConstructor == nil && !nativeReader && !nativeThread {
+		len(defaultStringInitializers) == 0 && defaultCarrierConstructor == nil && !nativeReader && !nativeThread && functional == nil {
 		return composite
 	}
 
@@ -7415,6 +7540,10 @@ func anonymousClassConstructionExpr(
 	// values were populated by the composite literal and deliberately remain
 	// untouched before constructor-time virtual dispatch.
 	statements = append(statements, defaultStringInitializers...)
+	if functional != nil {
+		receiver := ast.NewIdent(instanceName)
+		statements = append(statements, &ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: receiver, Sel: ast.NewIdent("ObjectInfo")}}, Tok: token.ASSIGN, Rhs: []ast.Expr{stdjavaCall(ctx, "NewGeneratedObjectInfo", receiver)}})
+	}
 	if nativeThread {
 		receiver := ast.NewIdent(instanceName)
 		if initialize := constructorObjectInfoInitStmt(info.scope, instanceName, receiver, declarationCtx); initialize != nil {

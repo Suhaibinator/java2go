@@ -20,8 +20,11 @@ type rawFunctionTargetABI struct {
 }
 
 func rawCanonicalFunctionTarget(javaType string, ctx Ctx) *rawFunctionTargetABI {
-	base, rank := javaArrayTypeParts(strings.TrimSpace(javaType))
-	_, arguments := parseJavaTypeString(base)
+	component, rank := javaArrayTypeParts(strings.TrimSpace(javaType))
+	base, arguments, valid := splitJavaMemberType(component)
+	if !valid || rank != 0 || len(arguments) != 0 {
+		return nil
+	}
 	if visibleTypeParameterDeclarationForJavaType(base, ctx) != nil {
 		return nil
 	}
@@ -32,19 +35,22 @@ func rawCanonicalFunctionTarget(javaType string, ctx Ctx) *rawFunctionTargetABI 
 			return nil
 		}
 	}
-	if rank != 0 || len(arguments) != 0 || !isExternalFunctionType(javaType, ctx) {
+	if !isExternalFunctionType(javaType, ctx) {
 		return nil
 	}
 	return &rawFunctionTargetABI{file: ctx.currentFile, owner: ctx.currentClass}
 }
 
 func rawCanonicalFunctionLambdaTarget(javaType string, ctx Ctx) *rawFunctionTargetABI {
-	plan := rawCanonicalFunctionTarget(javaType, ctx)
 	root := ctx.expectedTypeRoot
 	for root != nil && root.Type() == "parenthesized_expression" && nodeutil.SemanticNamedChildCount(root) == 1 {
 		root = nodeutil.SemanticNamedChild(root, 0)
 	}
-	if plan == nil || root == nil || root.Type() != "lambda_expression" {
+	if root == nil || root.Type() != "lambda_expression" {
+		return nil
+	}
+	plan := rawCanonicalFunctionTarget(javaType, ctx)
+	if plan == nil {
 		return nil
 	}
 	parameters := root.ChildByFieldName("parameters")

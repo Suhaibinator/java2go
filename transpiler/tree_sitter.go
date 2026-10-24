@@ -239,6 +239,8 @@ type anonymousClassKey struct {
 }
 
 type anonymousClassInfo struct {
+	lexicalOwner               *anonymousLexicalOwnerCertificate
+	functional                 *anonymousFunctionalCertificate
 	emissionStamp              anonymousReceiverEmissionStamp
 	emissionStampValid         bool
 	structName                 string

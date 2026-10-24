@@ -1135,6 +1135,17 @@ func syntheticHierarchicalReferenceIdentityDecls(
 			view = &ast.SelectorExpr{X: view, Sel: &ast.Ident{Name: superclassEmbeddedSelectorName(current, ctx)}}
 		}
 	}
+	// The generic provider owns only freshly proved named source views.
+	// Originally anonymous providers retain their dedicated case owner.
+	functionalCtx := classScopeCtx(scope, ctx)
+	if scope != nil && !scope.HasAnonymousSourceOrigin() && anonymousFunctionalActualNamed(scope, functionalCtx) {
+		for _, contract := range sourceNativeFunctionalContracts(scope, functionalCtx) {
+			if !anonymousFunctionalNamedViewEligible(scope, contract, functionalCtx) {
+				continue
+			}
+			appendCase("java.util.function."+contract.family, sourceNativeFunctionalViewExpr(scope, contract, receiverExpr, functionalCtx))
+		}
+	}
 	cases = append(cases, &ast.CaseClause{Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: "nil"}}}}})
 	viewMethod := &ast.FuncDecl{
 		Name: &ast.Ident{Name: generatedObjectViewMethod},

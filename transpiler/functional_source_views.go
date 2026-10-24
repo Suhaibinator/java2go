@@ -88,6 +88,12 @@ func nativeFunctionalContract(family string, args []string) (sourceNativeFunctio
 	return c, true
 }
 func sourceNativeFunctionalContracts(scope *symbol.ClassScope, ctx Ctx) []sourceNativeFunctionalContract {
+	if certificate, anonymous := anonymousFunctionalLookup(scope, ctx); anonymous {
+		if !anonymousFunctionalValid(certificate, ctx, false) {
+			return nil
+		}
+		return []sourceNativeFunctionalContract{anonymousFunctionalContract(certificate)}
+	}
 	if scope == nil {
 		return nil
 	}
@@ -189,6 +195,12 @@ func resolveSourceNativeSAM(scope *symbol.ClassScope, c sourceNativeFunctionalCo
 	return nil, nil, ""
 }
 func sourceNativeFunctionalViewExpr(scope *symbol.ClassScope, c sourceNativeFunctionalContract, receiver ast.Expr, ctx Ctx) ast.Expr {
+	if certificate, anonymous := anonymousFunctionalLookup(scope, ctx); anonymous {
+		if certificate == nil || !anonymousFunctionalContractEqual(certificate, c) {
+			return nil
+		}
+		return anonymousFunctionalView(certificate, receiver, ctx)
+	}
 	method, owner, result := resolveSourceNativeSAM(scope, c, ctx)
 	if method == nil || c.family == "Supplier" && !supplierSourceSelectedMethodOwned(scope, owner, method, c, ctx) {
 		return nil
