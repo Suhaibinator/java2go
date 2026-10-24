@@ -29116,5 +29116,33 @@
       "Initial obsolete-method baseline RED and the rejected existence-only validator draft remain recorded.",
       "Whole published-head CI and full Netty/Gson acceptance remain pending."
     ]
+  },
+  "sol_progress231": {
+    "status": "VERIFIED_FOCUSED_REPAIR",
+    "production_change": true,
+    "publication_parent": "f49ed46a64cf6e6d1e3d176b0f3867971d520b7b",
+    "paths": [
+      "transpiler/expression.go",
+      "transpiler/raw_inner_canonical_constructor_test.go"
+    ],
+    "joint_integration": {
+      "results_sha256": "272a73834f96c9ec5ce8384965f15d7cc673a1ab9df5728d88b70f63854a4140",
+      "review_sha256": "158f15c52892be46678e739b1d5edd2d2fcee1c925eb94deb3e04be69507edb8",
+      "counts": {
+        "normal": {
+          "parents": 22,
+          "subcases": 12
+        },
+        "race": {
+          "parents": 22,
+          "subcases": 12
+        }
+      },
+      "normal_race": "PASS",
+      "lint": "golangci-lint2.15 allpackages: 0 issues, empty stderr",
+      "retained_failed_aggregate_race": "55.198s cumulative native deadline; all9 exact parents passed individually at unchanged55s, source/binary/env; no failure credit"
+    },
+    "independent_repair_review_sha256": "7400a6d58bfc3455f3319efed0b315e3e1f84633a8a2cb1dbb882e889b7fc9a0",
+    "limitations": "Finite focused milestone. Full published-head CI, Supplier28, Gson112, Netty strict conversion and round-boundary regressions remain required."
   }
 }

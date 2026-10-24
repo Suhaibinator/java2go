@@ -1164,12 +1164,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		constructorMethodTypeArgs := methodInvocationTypeArgumentJavaTypes(constructor, node, ctx, source)
 		constructionClassTypeArgs := effectiveTypeArgs
 		inferRawQualifiedClassTypeArgs := false
-		// A statically raw qualifier is still an alias of its concrete object. For
-		// a raw member-class creation, omit the generated class arguments so Go can
-		// infer the carried enclosing instantiation from the hidden first argument.
-		// Explicitly spelling Java's erasures here would require converting the
-		// same object to an invariant, incompatible Go generic instantiation.
-		if enclosingView != nil && enclosingView.rawGenericQualifier && len(typeArgs) == 0 && !isDiamond && len(constructorMethodTypeArgs) == 0 {
+		// An invariant raw qualifier still carries its concrete Go instantiation,
+		// so infer the enclosing slots from the exact hidden object. Canonical
+		// aliases erase that inference evidence: keep their complete first-bound
+		// arguments instead, without changing the enclosing object's identity.
+		if enclosingView != nil && enclosingView.rawGenericQualifier && len(typeArgs) == 0 && !isDiamond && len(constructorMethodTypeArgs) == 0 && !canonicalGenericClass(enclosingView.scope, ctx) {
 			constructionClassTypeArgs = nil
 			inferRawQualifiedClassTypeArgs = true
 		}
