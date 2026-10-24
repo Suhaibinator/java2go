@@ -28802,5 +28802,66 @@
     "scope": "Test-only process isolation of ImportParentNativeWork199 from unrelated process-wide native finalizer noise; exact three-line entry guard plus new process helper, all original nine-case assertions and budgets byte-identical.",
     "source_review_sha256": "3c956d0a19e521b4cfc58a0e367df4471cd8157d19f4468f282182e7f11a4805",
     "status": "QUALIFIED_TEST_ONLY_IMPORT_PARENT_NATIVE_MEASUREMENT_PROCESS_ISOLATION"
+  },
+  "sol_progress220": {
+    "actual": {
+      "Go_builds": 3,
+      "JDK_compile_validity_only_no_JVM_execution": true,
+      "JDK_fixture_compiles": 2,
+      "SKIP": 0,
+      "baseline_target_RED": 2,
+      "baseline_unknown_negative_PASS": 2,
+      "candidate_normal_PASS": 4,
+      "candidate_race_PASS": 4,
+      "controller_exit": 0,
+      "native_stages": 3,
+      "raw_exit0": 7,
+      "raw_exit1_expected_baseline": 1,
+      "stages": 8,
+      "tool_exit_owner_observed": 0,
+      "tool_session": 55709
+    },
+    "actual_delivery_sha256": "ac6904446d650279b06c22ee89544a920d18a38f09b0942136d9dbbd0c9e66cf",
+    "actual_handoff_sha256": "d26d7c43996e87c3ed023367ca3d60a21fa635202fde699872827bfd5eeeb941",
+    "all_other_Java_bytes_preserved": true,
+    "all_other_inference_ABI_assertions_and_original_calls_preserved": true,
+    "closure_sha256": "9569fee1718c80d911041bdeda1bbb15f31b26c58301f01f80d968a4b6cf6791",
+    "independent_actual_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-ci219-instance-generic-fixture-independent-actual-review-v2/REPORT.json",
+    "independent_actual_review_sha256": "000d18ccd099d79cea4c903bb46772101b273575a70613603d10547b35c4f4e9",
+    "known_PGIDs": 10,
+    "limitations": [
+      "Local Go1.27.3 Darwin and OracleJDK21 compile-only qualification differ from hosted Go1.27.0 Linux/Temurin21.0.6+7.0.LTS.",
+      "This test-only change does not certify hosted CI220, full compiler/runtime/JVM behavior/application/performance or accumulated-round acceptance.",
+      "Only current outer IDs were freshly absence-checked; closed stages retain reviewed process/group closure certificates. No individual census of unrecorded transient Go compiler workers.",
+      "All other active Map/SAM/A4/Gson/Raw candidates and mandatory original application gates remain separate and unwaived."
+    ],
+    "production_change": false,
+    "protected_user10_packet_manifest": "PROTECTED-USER-FILES.json",
+    "protected_user10_unchanged": true,
+    "publication_parent": "70b146185eb4bcdbcca6ba4c353bd1772ff56c8d",
+    "qualified_test_candidate_manifest_sha256": "c32f311ef934d8f05411f1426c0ecc00b8d797393ae2ecdf4a19ad76ca44b2a8",
+    "qualified_test_candidate_members": 4540,
+    "raw_evidence_manifest_sha256": "69822df8e24cf9f4807fbc5aadb4fd212984715691929b746d3df427416895f6",
+    "raw_evidence_members": 91,
+    "recorded_membership_PIDs": 18,
+    "resources": {
+      "CPU": 2,
+      "Go_p": 1,
+      "Go_soft_memory": "512MiB",
+      "JDK_heap": "1g",
+      "build_seconds": 300,
+      "disk_floor_bytes": 10737418240,
+      "native_inner_seconds": 55,
+      "native_outer_seconds": 65
+    },
+    "scope": "Only two instance generic helper unit fixtures: existing supplemental-source API supplies genuine public com.example.Foo; pointer descriptor expectation is exactly com.example.Foo; nested fixture adds exactly ordinary java.util.List import.",
+    "source_review_sha256": "9a72bcdb9b42c5e56d8e81eea58c1fd5ae182179f73fc7f0a25b2d609f0a5e62",
+    "status": "QUALIFIED_TEST_ONLY_INSTANCE_GENERIC_FIXTURE_VALIDITY",
+    "tool_owner_provenance": "Owner-transcribed actual retained-tool exit0 and durable launcher wait/reap; no independent tool-service attestation or exact terminal UTC claim.",
+    "tool_utc_clarification_sha256": "818fdef4d14e8ffdef9886ad1f3cc4fa0925d7d619819f14e958db45f330017b",
+    "unchanged_unknown_Foo_negative_tests": [
+      "TestInstanceGenericIntegrationUnknownNominalRejected",
+      "TestExplicitStaticGeneric472UnknownNominalRejected"
+    ]
   }
 }

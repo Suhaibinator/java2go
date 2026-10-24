@@ -1075,7 +1075,7 @@ public class Box<T> {
     }
 }
 `
-	helper := setupParseHelper(t, src)
+	helper := genericsFixtureParseWithPublicFoo(t, "Box.java", src, "package com.example; public class Foo {}\n")
 	// Inference is a logical declaration-owned contract. Do not infer it from
 	// the consuming return type or require a physical helper specialization.
 	owner := helper.File.Symbols.FindClassScope("Box")
@@ -1248,7 +1248,7 @@ public class Box<T> {
 	}
 	assertRuntime(indexed.X, "ObjectView")
 	assertFoo(indexed.Index)
-	if reflectCoreTypeID(t, view.Args[1]) != "Foo" {
+	if reflectCoreTypeID(t, view.Args[1]) != "com.example.Foo" {
 		t.Fatal("consumer lost original synthetic Foo descriptor")
 	}
 	invoke, ok := view.Args[0].(*ast.CallExpr)
@@ -1308,6 +1308,7 @@ public class Box<T> {
 func TestInstanceGenericMethodHelper_InfersNestedGenericTypeArgs(t *testing.T) {
 	src := `
 package com.example;
+import java.util.List;
 public class Box<T> {
     public <R> R identity(R value) {
         return value;
@@ -1318,7 +1319,7 @@ public class Box<T> {
     }
 }
 `
-	helper := setupParseHelper(t, src)
+	helper := genericsFixtureParseWithPublicFoo(t, "Box.java", src, "package com.example; public class Foo {}\n")
 	// Inference is a logical declaration-owned contract. Do not infer it from
 	// the consuming return type or require a physical helper specialization.
 	owner := helper.File.Symbols.FindClassScope("Box")
