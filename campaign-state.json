@@ -28448,5 +28448,88 @@
       "sol_writer_dispatch_v6": "Final native publication preparation and fresh CI gates"
     },
     "updated_at": "2026-09-30T15:48:30.979530+00:00"
+  },
+  "sol_progress216": {
+    "CI215": {
+      "application_parity": "PASS",
+      "compiler_FAIL": 16,
+      "compiler_PASS": 2391,
+      "compiler_SKIP": 0,
+      "head": "a6c17697d6c017b8c259ea5f9c62b175b6efa162",
+      "report_sha256": "72b191a4acf607110e6350bcab4932191be63a41189ce7bbd73ac0173c8772c4",
+      "run": 40052417221,
+      "runtime_Linux_race_PASS": 920,
+      "scope": "Exact parent215 baseline only; publication216 hosted CI pending",
+      "separate_Gson_JavaTime": "UNCHANGED_FAIL_requireNonNullField_line138"
+    },
+    "CI216": "PENDING_PUBLICATION_AND_NEW_CI_EXECUTION",
+    "approved_test_postimage": "39125a195ee99d22b6bfa16b9c2f83e33221871e18e59c3d0e9f1f93b2a86c8a",
+    "cleanup": {
+      "all_started_PIDs": 124,
+      "all_started_groups": 63,
+      "audit": "f90564c3fbabf428d3793953555ce4ee4278efbe75a70f0541de02a3c05303ff",
+      "fresh_ESRCH_and_pszero": true,
+      "raw_PID_and_PGID_absence_covers_all": true,
+      "unobserved_fast_child_lifecycle_identities": 12
+    },
+    "fresh_current215_actual": {
+      "actual_artifact_manifest": "ed00ce72a7c1351d3192e72b520ddeeea0ad4bcc98e8d2434e871a8ba5d5d1a5",
+      "canonical_profiles": 6,
+      "controller": "3f0ed59806406dc840fef51a8ef5289dba7eb2251c3ca7c3024d9a4c11097111",
+      "controller_exit": 0,
+      "controller_wait_reaped": true,
+      "delivery": "bf30ecd585f4253cb076cb768f94cfe1d0b067ccf92761218b129ae563515b5d",
+      "exit0": 59,
+      "expected_original_parent_RED_normal_race": 2,
+      "fresh_JVM_runs": 3,
+      "independent_actual_review": "b37481a81454d5d20f8251771f17c4f2900d224ae7be603c26b531a2837a747b",
+      "no_old214_execution_credit": true,
+      "pins": "06cac5b57444999c56bbccaef7355f6988f3e475ea24c7814a778463a0fd5928",
+      "plan": "b02c9d078bac1b6d644ebc76fa98424fbc1551ec760eb5be3adaff7aa5e280df",
+      "post_parent_PASS": 22,
+      "stages": 61,
+      "subcase_PASS": 32,
+      "terminal": "cb1a39ed061a1a2eca756543dc30eb9456882aee033b60af5d39461d3a6d65d9",
+      "testcompile_source_packages_each_profile": 21,
+      "tool_exit": 0,
+      "tool_session": 54257,
+      "whole_Go_parity_runs": 6
+    },
+    "held": [
+      "new hosted216 CI",
+      "Supplier28",
+      "Gson112",
+      "full Netty application compatibility",
+      "original Netty Q4 real-query FAILED mandatory unwaived",
+      "original Netty strict300 FAILED mandatory unwaived",
+      "full accumulated round acceptance"
+    ],
+    "limitations": [
+      "Unchanged native helpers run nested go mod tidy and go test ./... without explicit inner deadlines or race instrumentation; inherited CPU/heap/readonly/p1 environment and native55/outer65 parent limits apply. No nested Go race credit or helper edits.",
+      "Six canonical profiles are default/F1 build, test-compilation and lint; -run ^$ test-compilation is not runtime leaf coverage.",
+      "Fresh normal/race native parents and independently built whole Go binaries are distinct evidence; no old214 result transfers to current215.",
+      "Docs/state additions preserve the qualified compiler, runtime, Go-module and all other source bytes; no new payload executes during packaging."
+    ],
+    "no_compiler_behavior_runtime_performance_or_application_acceptance_claim": true,
+    "only_test_change": "transpiler/direct_varargs_array_integration_test.go",
+    "original_Java_sha256": "ded2837a9e68ff9a90cdab6d43dc90b796622d38a9931d7c755f94b52f0e6c56",
+    "original_Java_transcript_and_two_sibling_parents_unchanged": true,
+    "protected_user_files": {
+      "performance/runtime/bignumbers/equal_scale/README.md": "c39a78225c4fc6434068c114cd4e694b1c2a3ef2eeb3c06489e246359cf19ace",
+      "performance/runtime/bignumbers/equal_scale/VALIDATE_AFTER_RELEASE.sh": "3dbaa71b850c16c552780d535a488696bfd43b2dbc6c4fa4252e62a2394ae92f",
+      "performance/runtime/bignumbers/equal_scale/equal-scale.patch": "a168cd860e01f3f3545bc5c71975626dbf0b161ada7f13abc72a6d66ac17a9be",
+      "performance/runtime/bignumbers/equal_scale/harness/DecimalCompareDriver.java": "f8a5eb31d40dfe5f6fc336dc91f137b2aeb850ed55529f12cee2f013d8619916",
+      "performance/runtime/bignumbers/equal_scale/harness/allocation_test.go.txt": "b677f7efd09cb71283d45ed4893163948f0d6bcdfa565e186d1aa587182a8ec9",
+      "performance/runtime/bignumbers/equal_scale/harness/driver.go.txt": "2e733639022fcbf6aff2cc26151cd5023f7cc127b5b20016efd86b44a77e57f0",
+      "performance/runtime/bignumbers/equal_scale/harness/regression_test.go.txt": "cccf16f4b88c71a07e60ceb7c709518eb2545e5a5976105d1fd06fdbf5c574c0",
+      "performance/runtime/bignumbers/equal_scale/prepare.py": "0ffd8b7bf383e4ad7cc5a86620fdeff1f139d0d3c2073528391c29bc7f39f360",
+      "performance/runtime/bignumbers/equal_scale/prepared.json": "b6fbc6cb19c1f9b767d4e92d8c70d5d0bfaafe90a2b6a8d6b3f253b0241d204f",
+      "performance/runtime/bignumbers/equal_scale/source/DecimalCompareProbe.java": "54658040c6ba6a9d4b24b7f0545f4c299845b5f550960fccb4735cbeefd1675a"
+    },
+    "publication_parent": "a6c17697d6c017b8c259ea5f9c62b175b6efa162",
+    "qualified_current215_post_source": "a79f89cab56b5ec1c01556a98fd44438b01d314f3c59abff511e4f4e65b890f2",
+    "qualified_source_members": 4530,
+    "scope": "Canonical *stdjava.JavaString reference-array literal and extraction refusal; explicit nonnull *JavaString result and exact UTF16Copy equality; existing primitive-array, fixed-array identity, fixed-arity and overload assertions retained.",
+    "status": "QUALIFIED_TEST_ONLY_DIRECT_VARARGS_JAVA_STRING_ABI_ASSERTION_MIGRATION"
   }
 }

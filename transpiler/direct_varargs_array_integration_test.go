@@ -104,7 +104,8 @@ public class DirectVarargsArrayProgram {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 	if strings.Contains(flat, "stdjava.PrimitiveArrayElements(numbers)") ||
-		strings.Contains(flat, "stdjava.ReferenceArrayElements[string](words") {
+		strings.Contains(flat, "stdjava.ReferenceArrayElements[string](words") ||
+		strings.Contains(flat, "stdjava.ReferenceArrayElements[*stdjava.JavaString](words") {
 		t.Fatalf("fixed-arity varargs call replaced the original array with its elements:\n%s", out)
 	}
 	if !strings.Contains(flat, "values *stdjava.PrimitiveArray[int32]") ||
@@ -112,19 +113,29 @@ public class DirectVarargsArrayProgram {
 		t.Fatalf("varargs declarations did not retain the Java array ABI:\n%s", out)
 	}
 	if !strings.Contains(flat, "stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 7, 8, 9)") ||
-		!strings.Contains(flat, "stdjava.ReferenceArrayLiteralOf[string](stdjava.StringTypeID, \"x\", \"yy\", \"zzz\")") {
+		!strings.Contains(flat, "stdjava.ReferenceArrayLiteralOf[*stdjava.JavaString](stdjava.StringTypeID, stdjava.JavaStringLiteralUTF16([]uint16{120}), stdjava.JavaStringLiteralUTF16([]uint16{121, 121}), stdjava.JavaStringLiteralUTF16([]uint16{122, 122, 122}))") {
 		t.Fatalf("expanded varargs calls did not allocate typed arrays:\n%s", out)
 	}
 
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+    stdjava "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestDirectVarargsArrayParity(t *testing.T) {
     const want = "1234|10,10,10,10|214,214,214,214|24,123|5,13"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    var got *stdjava.JavaString = Run()
+    if got == nil {
+        t.Fatal("Run() returned null, want original nonnull String transcript")
+    }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %v (%q)", units, utf16.Encode([]rune(want)), want)
     }
 }
 `)
