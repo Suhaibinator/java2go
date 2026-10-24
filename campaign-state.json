@@ -29090,5 +29090,31 @@
       "Targeted compiler repair; no full hosted CI, whole Gson/Netty application or campaign round acceptance.",
       "Foreign executable, missing method/body and ordinary-block negative visibility controls remain refused."
     ]
+  },
+  "sol_progress229": {
+    "status": "VERIFIED_COLLECTION_CALL_TEST_CONTRACT_MIGRATION",
+    "production_change": false,
+    "publication_parent": "bd3d54876d5ef9587ebd5e36dba88dacb53eccb2",
+    "tests": [
+      "transpiler/analytics_parity_regression_test.go",
+      "transpiler/ci_field_receiver_contract208_test.go"
+    ],
+    "behavior": "Validate canonical CollectionAddExecution with exact caller execution, staged receiver, complete parser IIFE/value returns, null check and operation order. Preserve all twelve old negative controls and add fourteen corrupt-helper/context/receiver/value-flow controls.",
+    "verification": {
+      "modes": [
+        "normal",
+        "race"
+      ],
+      "parents_each_mode": 2,
+      "negative_subcases_each_mode": 26,
+      "unchanged_field_workflow": "One actual JVM and one generated Go observation match the original oracle; generated Go race compilation passes.",
+      "qualified_source_manifest": "533594b2026fd5ae855a1ccd1c4b8bb50cb7a3bbd1d80129b704f0b24f663eac",
+      "independent_actual_review_sha256": "700fbdffd194743f71cdb690f0637eab4bdc71cbac36c6dfc3a47bbb8d9af93b"
+    },
+    "limitations": [
+      "Test-only migration for the two CI226 regressions; no compiler/runtime rollback or application fixture change.",
+      "Initial obsolete-method baseline RED and the rejected existence-only validator draft remain recorded.",
+      "Whole published-head CI and full Netty/Gson acceptance remain pending."
+    ]
   }
 }

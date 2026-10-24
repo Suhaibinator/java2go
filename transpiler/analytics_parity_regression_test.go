@@ -49,7 +49,7 @@ public class FieldBackedCalls {
 		"__java2goInvocationReceiver := fs.parser",
 		".ParseJava2goExecution(__java2goExecution)",
 		".worker.NameJava2goExecution(__java2goExecution)",
-		"stdjava.EvaluationValue(fs.values).Add(",
+		"stdjava.CollectionAddExecution(__java2goExecution, stdjava.EvaluationValue(fs.values),",
 		".values.Get(0)",
 		".values.Size()",
 		"stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey), stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}), fs.worker.NameJava2goExecution(__java2goExecution))",
@@ -60,13 +60,16 @@ public class FieldBackedCalls {
 			t.Errorf("generated field receiver is missing %q:\n%s", check, out)
 		}
 	}
-	add := strings.Index(out, "stdjava.EvaluationValue(fs.values).Add(")
+	add := strings.Index(out, "stdjava.CollectionAddExecution(__java2goExecution, stdjava.EvaluationValue(fs.values),")
 	put := strings.Index(out, "stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey),")
 	getList := strings.Index(out, "fs.values.Get(0)")
 	getMap := strings.Index(out, "stdjava.MapGetExecution(__java2goExecution, fs.byKey, stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}))")
 	size := strings.Index(out, "fs.values.Size()")
 	if add < 0 || put <= add || getList <= put || getMap <= getList || size <= getMap {
 		t.Errorf("generated calls changed Java statement or return-expression evaluation order:\n%s", out)
+	}
+	if err := ci208FieldReceiverContract(out); err != nil {
+		t.Fatalf("canonical field receiver contract: %v", err)
 	}
 	for _, stale := range []string{".parser.parse(", ".worker.name(", ".values.add(", ".values.get(", ".values.size(", ".byKey.put(", ".byKey.get("} {
 		if strings.Contains(out, stale) {
