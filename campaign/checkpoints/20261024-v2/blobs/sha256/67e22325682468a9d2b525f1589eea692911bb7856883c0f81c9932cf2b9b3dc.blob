@@ -1,0 +1,323 @@
+package transpiler
+
+import (
+	"bytes"
+	"encoding/json"
+	"runtime"
+	"sort"
+	"strings"
+	"testing"
+
+	"github.com/NickyBoy89/java2go/parsing"
+	"github.com/NickyBoy89/java2go/symbol"
+)
+
+func legacyKind211Expected(t *testing.T, names ...string) []*symbol.ClassScope {
+	t.Helper()
+	var expected []*symbol.ClassScope
+	for _, name := range names {
+		owner := findQualifiedSourceClass(name)
+		if owner == nil {
+			t.Fatalf("missing actual expected declaration %s", name)
+		}
+		expected = append(expected, owner)
+	}
+	return expected
+}
+
+func legacyKind211DefaultAgree(t *testing.T, expected []*symbol.ClassScope) {
+	t.Helper()
+	if _, known := sourceGenericViewDemandSeedsFromSyntax(Ctx{}); known {
+		t.Fatal("zero context unexpectedly acquired syntax authority")
+	}
+	actual := sourceGenericViewDemandSeeds(Ctx{})
+	demand188Same(t, actual, expected)
+	events, _ := demand188SyntaxWitness(Ctx{}, true)
+	demand188Same(t, demand188Replay(events), expected)
+}
+
+func TestLegacyDemandKind211DeclaringSemantics(t *testing.T) {
+	for _, test := range []struct {
+		name, use string
+		want      []string
+	}{
+		{"ordered-declarations", `package app;public class Use{q.Cell<?> right;p.Cell<?> left;}`, []string{"p.Cell", "q.Cell"}},
+		{"raw-formal", `package app;public class Use{void accept(p.Cell value){}}`, []string{"p.Cell"}},
+		{"concrete-cast", `package app;public class Use{Object cast(Object value){return (p.Cell<String>)value;}}`, []string{"p.Cell"}},
+		{"concrete-and-diamond", `package app;public class Use{p.Cell<String> value;Object make(){return new p.Cell<>();}}`, nil},
+		{"method-binder", `package app;import p.Cell;public class Use{<Cell>Cell id(Cell value){return value;}}`, nil},
+		{"constructor-binder", `package app;import p.Cell;public class Use{<Cell>Use(Cell value){Cell local=value;}}`, nil},
+		{"named-nested-owner", `package app;public class Use{static class Inner{q.Cell<?> value;}}`, []string{"q.Cell"}},
+		{"local-declaration-shadow", `package app;import p.Cell;public class Use{void work(){class Cell<T>{}Cell<?> local=null;}}`, nil},
+		{"local-prior-demand", `package app;import p.Cell;public class Use{void work(){Cell<?> source=null;class Cell<T>{}}}`, []string{"p.Cell"}},
+		{"anonymous-body-shadow", `package app;import p.Cell;public class Use{Object value=new Object(){class Cell<T>{}Cell<?> local;};}`, nil},
+		{"enum-constant-body-shadow", `package app;import p.Cell;enum Pick{A{class Cell<T>{}Cell<?> local;};}public class Use{}`, nil},
+		{"lexical-member-prefix", `package app;public class Use{static class p{static class Cell<T>{T value;}}p.Cell<?> value;}`, []string{"app.Use.p.Cell"}},
+		{"record-header", `package app;public class Use{record Pair(p.Cell<?> value){}}`, []string{"p.Cell"}},
+		{"binder-prefix", `package app;public class Use{<p>void work(p.Cell<?> value){}}`, nil},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			_, files, _ := demand188Fixture(t, demandSyntaxBaseSources(test.use))
+			legacyKind211DefaultAgree(t, legacyKind211Expected(t, test.want...))
+			runtime.KeepAlive(files)
+		})
+	}
+}
+
+// Return twice the median, exactly, without floating-point rounding or
+// truncating either middle observation of the four fixed paired-order samples.
+func legacyKind211Median2(values []int64) int64 {
+	if len(values) != 4 {
+		panic("legacy kind median requires exactly four observations")
+	}
+	ordered := append([]int64(nil), values...)
+	sort.Slice(ordered, func(i, j int) bool { return ordered[i] < ordered[j] })
+	return ordered[1] + ordered[2]
+}
+
+func legacyKind211WithinGrowth(actual2, witness2 int64) bool {
+	const maxInt64 = int64(1<<63 - 1)
+	return actual2 >= 0 && witness2 > 0 && actual2 <= maxInt64/4 && witness2 <= maxInt64/3 && actual2*4 <= witness2*3
+}
+
+func TestLegacyDemandKind211OwnershipAndRefusals(t *testing.T) {
+	t.Run("integer-median-boundary", func(t *testing.T) {
+		if legacyKind211Median2([]int64{0, 3, 1, 2}) != 3 || legacyKind211Median2([]int64{17, 9, 13, 11}) != 24 {
+			t.Fatal("doubled integer median changed")
+		}
+		if !legacyKind211WithinGrowth(3, 4) || legacyKind211WithinGrowth(4, 4) || legacyKind211WithinGrowth(-1, 4) || legacyKind211WithinGrowth(0, 0) || legacyKind211WithinGrowth(1<<62+1, 4) {
+			t.Fatal("strict 75 percent growth boundary changed")
+		}
+	})
+	t.Run("live-import-and-matching-holder", func(t *testing.T) {
+		ctx, files, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;import p.Cell;public class Use{Cell<?> value;}`))
+		use := findQualifiedSourceClass("app.Use")
+		file := findFileScopeForClassScope(use, ctx)
+		p := legacyKind211Expected(t, "p.Cell")
+		q := legacyKind211Expected(t, "q.Cell")
+		legacyKind211DefaultAgree(t, p)
+		public := ctx.Clone()
+		public.syntaxInvocation = nil
+		demand188Same(t, sourceGenericViewDemandSeeds(public), p)
+		if public.callableSubclasses.graph != symbol.GlobalScope || len(public.callableSubclasses.nodes) == 0 {
+			t.Fatal("matching syntax holder did not observe real nodes")
+		}
+		file.Imports["Cell"] = "q"
+		legacyKind211DefaultAgree(t, q)
+		demand188Same(t, sourceGenericViewDemandSeeds(public), q)
+		file.Imports["Cell"] = "p"
+		legacyKind211DefaultAgree(t, p)
+		runtime.KeepAlive(files)
+	})
+	t.Run("stale-graph-retirement", func(t *testing.T) {
+		ctx, oldFiles, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`))
+		oldGraph := symbol.GlobalScope
+		oldExpected := legacyKind211Expected(t, "p.Cell")
+		public := ctx.Clone()
+		public.syntaxInvocation = nil
+		demand188Same(t, sourceGenericViewDemandSeeds(public), oldExpected)
+		facts := ctx.syntaxInvocation.declarations
+		if facts == nil || facts.retired || ctx.callableSubclasses.graph != oldGraph {
+			t.Fatal("real live invocation/holder retirement premise absent")
+		}
+		_, freshFiles, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{q.Cell<?> value;}`))
+		freshGraph := symbol.GlobalScope
+		freshExpected := legacyKind211Expected(t, "q.Cell")
+		if freshGraph == oldGraph || findQualifiedSourceClass("p.Cell") == oldExpected[0] || freshExpected[0] == oldExpected[0] || facts.retired {
+			t.Fatal("distinct graph and live retained holder premise absent")
+		}
+		demand188Same(t, sourceGenericViewDemandSeeds(ctx), freshExpected)
+		if !facts.retired || ctx.callableSubclasses.graph != freshGraph {
+			t.Fatal("first stale-holder visit failed to retire declaration facts and reset graph")
+		}
+		symbol.GlobalScope = oldGraph
+		demand188Same(t, sourceGenericViewDemandSeeds(ctx), oldExpected)
+		if !facts.retired {
+			t.Fatal("restoring graph revived retired declaration facts")
+		}
+		symbol.GlobalScope = freshGraph
+		runtime.KeepAlive(oldFiles)
+		runtime.KeepAlive(freshFiles)
+	})
+	t.Run("source-byte-fallback", func(t *testing.T) {
+		ctx, files, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`))
+		file := findFileScopeForClassScope(findQualifiedSourceClass("app.Use"), ctx)
+		at := bytes.Index(file.Source, []byte("p.Cell<?>"))
+		if at < 0 {
+			t.Fatal("actual source mutation premise absent")
+		}
+		file.Source[at] = 'q'
+		if _, known := sourceGenericViewDemandSeedsFromSyntax(ctx); known {
+			t.Fatal("edited source retained owned syntax authority")
+		}
+		want := legacyKind211Expected(t, "q.Cell")
+		legacyKind211DefaultAgree(t, want)
+		demand188Same(t, sourceGenericViewDemandSeeds(ctx), want)
+		file.Source[at] = 'p'
+		legacyKind211DefaultAgree(t, legacyKind211Expected(t, "p.Cell"))
+		runtime.KeepAlive(files)
+	})
+	t.Run("foreign-root-fallback", func(t *testing.T) {
+		ctx, files, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`))
+		use := findQualifiedSourceClass("app.Use")
+		file := findFileScopeForClassScope(use, ctx)
+		twin := parsing.SourceFile{Name: "Twin.java", Source: append([]byte(nil), file.Source...)}
+		if err := twin.ParseAST(); err != nil {
+			t.Fatal(err)
+		}
+		twin.ParseSymbols()
+		original := use.Class.DeclarationNode
+		use.Class.DeclarationNode = twin.Symbols.BaseClass.Class.DeclarationNode
+		if _, known := sourceGenericViewDemandSeedsFromSyntax(ctx); known {
+			t.Fatal("foreign root retained owned syntax authority")
+		}
+		want := legacyKind211Expected(t, "p.Cell")
+		legacyKind211DefaultAgree(t, want)
+		demand188Same(t, sourceGenericViewDemandSeeds(ctx), want)
+		use.Class.DeclarationNode = original
+		legacyKind211DefaultAgree(t, want)
+		runtime.KeepAlive(twin)
+		runtime.KeepAlive(files)
+	})
+	t.Run("retired-invocation-fallback", func(t *testing.T) {
+		ctx, files, session := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`))
+		ctx.syntaxInvocation.close()
+		session.Close()
+		if ctx.syntaxInvocation.active || session.Active() {
+			t.Fatal("actual invocation/session retirement premise absent")
+		}
+		if _, known := sourceGenericViewDemandSeedsFromSyntax(ctx); known {
+			t.Fatal("retired invocation retained owned syntax authority")
+		}
+		want := legacyKind211Expected(t, "p.Cell")
+		legacyKind211DefaultAgree(t, want)
+		demand188Same(t, sourceGenericViewDemandSeeds(ctx), want)
+		runtime.KeepAlive(files)
+	})
+	t.Run("complete-family-refusals", func(t *testing.T) {
+		for _, test := range []struct{ name, declaration string }{
+			{"runtime-storage", `public class Bad<T>{java.util.List<T> values;}`},
+			{"array-storage", `public class Bad<T>{T[] values;}`},
+			{"generic-bound", `public class Bad<T extends java.util.List<String>>{T value;}`},
+			{"constructor-local", `public class Bad<T>{T value;Bad(T input){this.value=input;T copy=this.value;}}`},
+		} {
+			t.Run(test.name, func(t *testing.T) {
+				sources := demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> good;Bad<?> bad;}`)
+				sources["app/Bad.java"] = "package app;" + test.declaration
+				_, files, _ := demand188Fixture(t, sources)
+				legacyKind211DefaultAgree(t, legacyKind211Expected(t, "app.Bad", "p.Cell"))
+				bad := findQualifiedSourceClass("app.Bad")
+				local := classScopeCtx(bad, Ctx{})
+				if plan, err := planGenericFamily(bad, local); plan != nil || err == nil {
+					t.Fatal("actual unsupported family lost complete-audit refusal")
+				}
+				if canonicalGenericFamily(bad, local) != nil {
+					t.Fatal("source demand bypassed complete-family refusal")
+				}
+				good := findQualifiedSourceClass("p.Cell")
+				if canonicalGenericFamily(good, classScopeCtx(good, Ctx{})) == nil {
+					t.Fatal("positive complete-family control was not admitted")
+				}
+				runtime.KeepAlive(files)
+			})
+		}
+	})
+}
+
+type legacyKind211Sample struct {
+	Width int
+	Order string
+	Index int
+	Arm   string
+	Q     int
+	Cgo   int64
+}
+
+type legacyKind211Growth struct {
+	Width          int
+	ActualMedian2  int64
+	WitnessMedian2 int64
+	ActualGrowth2  int64
+	WitnessGrowth2 int64
+	Within         bool
+}
+
+func TestLegacyDemandKind211NativeWorkBudget(t *testing.T) {
+	const queries = 4
+	widths := []int{0, 64, 256}
+	orders := []string{"ABBA", "BAAB"}
+	var samples []legacyKind211Sample
+	var retained [][]parsing.SourceFile
+	for _, width := range widths {
+		sources := demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`)
+		sources["noise/Noise.java"] = "package noise;public class Noise{void work(){int x=0;" + strings.Repeat("x=x+1;", width) + "}}"
+		_, files, _ := demand188Fixture(t, sources)
+		retained = append(retained, files)
+		want := legacyKind211Expected(t, "p.Cell")
+		legacyKind211DefaultAgree(t, want)
+		if _, known := sourceGenericViewDemandSeedsFromSyntax(Ctx{}); known {
+			t.Fatal("measured API acquired syntax authority")
+		}
+		_, counts := demand188SyntaxWitness(Ctx{}, false)
+		if counts.Nodes <= 0 || counts.Candidates <= 0 || counts.Owners != 4 {
+			t.Fatal("actual body/declaration structural witness premise absent")
+		}
+		for _, order := range orders {
+			for index, arm := range order {
+				start := runtime.NumCgoCall()
+				for query := 0; query < queries; query++ {
+					if arm == 'A' {
+						demand188Same(t, sourceGenericViewDemandSeeds(Ctx{}), want)
+					} else {
+						_, got := demand188SyntaxWitness(Ctx{}, false)
+						if got != counts {
+							t.Fatal("measured structural witness changed")
+						}
+					}
+				}
+				stop := runtime.NumCgoCall()
+				if stop < start {
+					t.Fatal("native work counter decreased")
+				}
+				samples = append(samples, legacyKind211Sample{width, order, index, string(arm), queries, stop - start})
+			}
+		}
+	}
+	// Every native interval above has ended before JSON serialization or logging.
+	medians := map[int]map[string]int64{}
+	for _, width := range widths {
+		medians[width] = map[string]int64{}
+		for _, arm := range []string{"A", "B"} {
+			var values []int64
+			for _, sample := range samples {
+				if sample.Width == width && sample.Arm == arm {
+					values = append(values, sample.Cgo)
+				}
+			}
+			medians[width][arm] = legacyKind211Median2(values)
+		}
+	}
+	var growth []legacyKind211Growth
+	for _, width := range widths[1:] {
+		a := medians[width]["A"] - medians[0]["A"]
+		b := medians[width]["B"] - medians[0]["B"]
+		growth = append(growth, legacyKind211Growth{width, medians[width]["A"], medians[width]["B"], a, b, legacyKind211WithinGrowth(a, b)})
+	}
+	encoded, err := json.Marshal(struct {
+		Q       int
+		Widths  []int
+		Orders  []string
+		Samples []legacyKind211Sample
+		Growth  []legacyKind211Growth
+	}{queries, widths, orders, samples, growth})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("LEGACY_KIND211_COUNTERS", string(encoded))
+	for _, row := range growth {
+		if !row.Within {
+			t.Errorf("LEGACY_KIND211_COST_RED width=%d actual_growth2=%d witness_growth2=%d strict_bound=4A<=3B", row.Width, row.ActualGrowth2, row.WitnessGrowth2)
+		}
+	}
+	runtime.KeepAlive(retained)
+}

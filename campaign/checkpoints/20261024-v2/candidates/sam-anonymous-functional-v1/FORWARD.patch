@@ -1,0 +1,2283 @@
+diff --git a/transpiler/anonymous_functional209_tdd_test.go b/transpiler/anonymous_functional209_tdd_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..0053a5f07297f0fed14de6e24e16fdd1641cb5f7
+--- /dev/null
++++ b/transpiler/anonymous_functional209_tdd_test.go
+@@ -0,0 +1,334 @@
++package transpiler
++
++import (
++	"go/ast"
++	"strconv"
++	"testing"
++
++	"github.com/NickyBoy89/java2go/parsing"
++)
++
++func anonymousFunctional209Call(expression ast.Expr) string {
++	switch value := expression.(type) {
++	case *ast.IndexExpr:
++		return anonymousFunctional209Call(value.X)
++	case *ast.IndexListExpr:
++		return anonymousFunctional209Call(value.X)
++	case *ast.SelectorExpr:
++		return value.Sel.Name
++	case *ast.Ident:
++		return value.Name
++	}
++	return ""
++}
++
++func anonymousFunctional209Calls(node ast.Node, name string) int {
++	count := 0
++	ast.Inspect(node, func(node ast.Node) bool {
++		if call, ok := node.(*ast.CallExpr); ok && anonymousFunctional209Call(call.Fun) == name {
++			count++
++		}
++		return true
++	})
++	return count
++}
++
++func anonymousFunctional209Lower(t *testing.T, source, expected string) (Ctx, ast.Expr, []ast.Decl, *anonymousClassInfo) {
++	t.Helper()
++	h := setupParseHelper(t, source)
++	ctx := h.Ctx.Clone()
++	ctx.currentClass = ctx.currentFile.FindClassScope("Main")
++	if ctx.currentClass == nil {
++		t.Fatal("actual Main declaration missing")
++	}
++	methods := ctx.currentClass.FindMethod().ByOriginalName("make")
++	if len(methods) != 1 {
++		t.Fatal("actual make declaration missing")
++	}
++	ctx.localScope = methods[0]
++	ctx.className = ctx.currentClass.Class.Name
++	var declarations []ast.Decl
++	var counter int
++	ctx.hoistedDecls = &declarations
++	ctx.anonClassCounter = &counter
++	ctx.anonymousClasses = make(map[anonymousClassKey]*anonymousClassInfo)
++	ctx.localClasses = make(map[string]*localClassInfo)
++	ctx.executionContextName = "execution"
++	creation := findNode(h.File.Ast, "object_creation_expression")
++	if creation == nil {
++		t.Fatal("actual allocation missing")
++	}
++	ctx.expectedType, ctx.expectedTypeRoot = expected, creation
++	originalClass, originalMethod := ctx.currentClass, ctx.localScope
++	expression := lowerAnonymousClassToStruct(creation, creation.ChildByFieldName("type"), objectCreationClassBody(creation), h.File.Source, ctx)
++	key, _ := anonymousClassSourceKey(creation)
++	info := ctx.anonymousClasses[key]
++	if expression == nil || info == nil || info.scope == nil || info.scope.Class == nil || info.scope.Class.DeclarationNode == nil || !info.scope.Class.DeclarationNode.Equal(creation) {
++		t.Fatal("actual allocation's synthesized source scope missing")
++	}
++	if ctx.currentClass != originalClass || ctx.localScope != originalMethod {
++		t.Fatal("lowering changed lexical class or executable")
++	}
++	samIdentity205RequireAdapter(t, &ast.File{Decls: declarations}, info.structName)
++	return ctx, expression, declarations, info
++}
++
++// The allocation, its source class and its native views must share one carrier;
++// a native family TypeID or a method-shaped Go interface is insufficient.
++func TestCI209AnonymousFunctionalOwnedCarrier(t *testing.T) {
++	rows := []struct{ name, family, source, expected string }{
++		{"Function explicit", "Function", `import java.util.function.Function;class Main{static Function<String,String> make(){return new Function<String,String>(){public String apply(String value){return value;}};}}`, "Function<String,String>"},
++		{"Function diamond target", "Function", `import java.util.function.Function;class Main{static Function<String,String> make(){return new Function<>(){public String apply(String value){return value;}};}}`, "Function<String,String>"},
++		{"Function method binder", "Function", `import java.util.function.Function;class Main{static<T>Function<T,T> make(T token){return new Function<T,T>(){public T apply(T value){return token;}};}}`, "Function<T,T>"},
++		{"Supplier explicit", "Supplier", `import java.util.function.Supplier;class Main{static Supplier<String> make(){return new Supplier<String>(){public String get(){return "value";}};}}`, "Supplier<String>"},
++		{"Supplier method binder", "Supplier", `import java.util.function.Supplier;class Main{static<T>Supplier<T> make(T token){return new Supplier<T>(){public T get(){return token;}};}}`, "Supplier<T>"},
++		{"Supplier before initializer", "Supplier", `import java.util.function.Supplier;class Main{static Supplier<String> make(){return new Supplier<String>(){String initialized=((Supplier<String>)(Object)this).get();public String get(){return "ready";}};}}`, "Supplier<String>"},
++	}
++	for _, row := range rows {
++		t.Run(row.name, func(t *testing.T) {
++			ctx, expression, declarations, info := anonymousFunctional209Lower(t, row.source, row.expected)
++			objectInfos, dynamic, views, registration, sourceRegistration, nativeViews := 0, 0, 0, 0, 0, 0
++			ownerID := javaClassBinaryName(ctx.currentClass) + "$" + info.structName
++			for _, declaration := range declarations {
++				if group, ok := declaration.(*ast.GenDecl); ok {
++					for _, specification := range group.Specs {
++						typ, ok := specification.(*ast.TypeSpec)
++						if !ok || typ.Name.Name != info.structName {
++							continue
++						}
++						structure, ok := typ.Type.(*ast.StructType)
++						if !ok {
++							t.Fatal("actual adapter is not a struct")
++						}
++						for _, field := range structure.Fields.List {
++							pointer, ok := field.Type.(*ast.StarExpr)
++							if !ok {
++								continue
++							}
++							selector, ok := pointer.X.(*ast.SelectorExpr)
++							if !ok || selector.Sel.Name != "ObjectInfo" {
++								continue
++							}
++							qualifier, ok := selector.X.(*ast.Ident)
++							if !ok || qualifier.Name != markStdjavaUsage(ctx) || len(field.Names) != 0 {
++								t.Fatal("ObjectInfo must be the actual runtime carrier")
++							}
++							objectInfos++
++						}
++					}
++				}
++				if method, ok := declaration.(*ast.FuncDecl); ok && method.Recv != nil && len(method.Recv.List) == 1 && samIdentity205ReceiverBase(method.Recv.List[0].Type) == info.structName {
++					if method.Name.Name == generatedDynamicTypeMethod {
++						dynamic++
++						if method.Type.TypeParams != nil || method.Type.Params != nil && len(method.Type.Params.List) != 0 || method.Type.Results == nil || len(method.Type.Results.List) != 1 || method.Body == nil || len(method.Body.List) != 1 {
++							t.Fatal("dynamic metadata must return its constant source ID without executing a Java body")
++						}
++						resultType, ok := method.Type.Results.List[0].Type.(*ast.SelectorExpr)
++						if !ok || resultType.Sel.Name != "TypeID" {
++							t.Fatal("dynamic metadata result must be runtime TypeID")
++						}
++						resultOwner, ok := resultType.X.(*ast.Ident)
++						if !ok || resultOwner.Name != markStdjavaUsage(ctx) {
++							t.Fatal("dynamic metadata result owner changed")
++						}
++						returned, ok := method.Body.List[0].(*ast.ReturnStmt)
++						if !ok || len(returned.Results) != 1 {
++							t.Fatal("source dynamic ID return missing")
++						}
++						conversion, ok := returned.Results[0].(*ast.CallExpr)
++						if !ok || len(conversion.Args) != 1 || conversion.Ellipsis.IsValid() {
++							t.Fatal("source dynamic ID constant conversion missing")
++						}
++						selector, ok := conversion.Fun.(*ast.SelectorExpr)
++						if !ok || selector.Sel.Name != "TypeID" {
++							t.Fatal("source dynamic ID must use runtime TypeID")
++						}
++						qualifier, ok := selector.X.(*ast.Ident)
++						if !ok || qualifier.Name != markStdjavaUsage(ctx) {
++							t.Fatal("source dynamic ID runtime owner changed")
++						}
++						literal, ok := conversion.Args[0].(*ast.BasicLit)
++						if !ok {
++							t.Fatal("source dynamic ID literal missing")
++						}
++						actual, err := strconv.Unquote(literal.Value)
++						if err != nil || actual != ownerID {
++							t.Fatalf("anonymous metadata ID %q must belong to %q", actual, ownerID)
++						}
++					}
++					if method.Name.Name == generatedObjectViewMethod {
++						views++
++						nativeViews += anonymousFunctional209Calls(method, "New"+row.family+"SourceView")
++					}
++				}
++				ast.Inspect(declaration, func(node ast.Node) bool {
++					call, ok := node.(*ast.CallExpr)
++					if !ok {
++						return true
++					}
++					name := anonymousFunctional209Call(call.Fun)
++					if name != "RegisterJavaType" && name != "RegisterJavaSourceType" {
++						return true
++					}
++					ids := map[string]int{}
++					for _, argument := range call.Args {
++						ast.Inspect(argument, func(node ast.Node) bool {
++							if literal, ok := node.(*ast.BasicLit); ok {
++								if text, err := strconv.Unquote(literal.Value); err == nil {
++									ids[text]++
++								}
++							}
++							return true
++						})
++					}
++					if ids[ownerID] == 1 {
++						if name == "RegisterJavaSourceType" {
++							sourceRegistration++
++						} else {
++							registration++
++							if ids["java.util.function."+row.family] != 1 {
++								t.Fatal("source registration lacks its single canonical allocation edge")
++							}
++						}
++					}
++					return true
++				})
++			}
++			initialized := anonymousFunctional209Calls(expression, "NewGeneratedObjectInfo")
++			if info.fieldInitializerMethodName != "" && initialized == 1 {
++				call, ok := expression.(*ast.CallExpr)
++				if !ok {
++					t.Fatal("source initializers need an owned construction sequence")
++				}
++				body, ok := call.Fun.(*ast.FuncLit)
++				if !ok {
++					t.Fatal("owned construction sequence missing")
++				}
++				identityAt, javaInitializerAt := -1, -1
++				for i, statement := range body.Body.List {
++					if anonymousFunctional209Calls(statement, "NewGeneratedObjectInfo") == 1 {
++						identityAt = i
++					}
++					if anonymousFunctional209Calls(statement, info.fieldInitializerMethodName)+anonymousFunctional209Calls(statement, info.fieldInitializerMethodName+executionMethodSuffix) == 1 {
++						javaInitializerAt = i
++					}
++				}
++				if identityAt < 0 || javaInitializerAt <= identityAt {
++					t.Fatal("ObjectInfo must be initialized once before any Java field initializer")
++				}
++			}
++			if objectInfos != 1 || dynamic != 1 || views != 1 || registration != 1 || sourceRegistration != 1 || nativeViews != 1 || initialized != 1 {
++				t.Fatalf("anonymous functional allocation needs one owned carrier lifecycle: family=%s struct=%s carrier=%d dynamic=%d view=%d registration=%d source=%d nativeView=%d initialize=%d", row.family, info.structName, objectInfos, dynamic, views, registration, sourceRegistration, nativeViews, initialized)
++			}
++		})
++	}
++}
++
++func TestCI209AnonymousFunctionalRawHeaderAuthority(t *testing.T) {
++	_, _, _, info := anonymousFunctional209Lower(t, `import java.util.function.Function;class Main{static Object make(){return new Function(){public Object apply(Object value){return value;}};}}`, "Function<String,String>")
++	if len(info.scope.ImplementedInterfaces) != 1 || info.scope.ImplementedInterfaces[0] != "Function" {
++		t.Fatalf("raw allocation header must not borrow target display: interfaces=%v", info.scope.ImplementedInterfaces)
++	}
++}
++
++func TestCI209AnonymousFunctionalCanonicalOwnerGuards(t *testing.T) {
++	rows := []struct{ name, source string }{
++		{"source Function class", `class Function<A,B>{public B apply(A value){return null;}}class Main{static Object make(){return new Function<String,String>(){public String apply(String value){return value;}};}}`},
++		{"source Supplier interface", `interface Supplier<T>{T get();}class Main{static Object make(){return new Supplier<String>(){public String get(){return "value";}};}}`},
++		{"method Function binder", `class Main{static<Function>Object make(){return new Function(){public Object apply(Object value){return value;}};}}`},
++		{"qualified java binder", `class Main{static<java>Object make(){return new java.util.function.Supplier<String>(){public String get(){return "value";}};}}`},
++		{"unknown prefix", `class Main{static Object make(){return new foreign.Function<String,String>(){public String apply(String value){return value;}};}}`},
++	}
++	for _, row := range rows {
++		t.Run(row.name, func(t *testing.T) {
++			_, expression, declarations, _ := anonymousFunctional209Lower(t, row.source, "")
++			for _, name := range []string{"NewFunctionSourceView", "NewSupplierSourceView"} {
++				for _, declaration := range declarations {
++					if anonymousFunctional209Calls(declaration, name) != 0 {
++						t.Fatal("unproved source spelling acquired a native functional view")
++					}
++				}
++				if anonymousFunctional209Calls(expression, name) != 0 {
++					t.Fatal("allocation expression acquired unproved native view")
++				}
++			}
++		})
++	}
++}
++
++func TestCI209AnonymousFunctionalProtocolSelectorReservations(t *testing.T) {
++	for _, family := range []string{"Function", "Supplier"} {
++		t.Run(family, func(t *testing.T) {
++			header, implementation := "Function<String,String>", `public String apply(String value){return value;}`
++			if family == "Supplier" {
++				header, implementation = "Supplier<String>", `public String get(){return "value";}`
++			}
++			text := "import java.util.function." + family + ";class Main{static " + header + " make(){return new " + header + "(){Object ObjectInfo;public int JavaObjectInfo(){return 3;}public int JavaDynamicTypeID(){return 5;}public int Java2goReferenceDynamicType(){return 7;}public int Java2goReferenceView(int value){return value;}" + implementation + "};}}"
++			_, _, _, info := anonymousFunctional209Lower(t, text, header)
++			for _, field := range info.scope.Fields {
++				if field.OriginalName == "ObjectInfo" && field.Name == "ObjectInfo" {
++					t.Fatal("source field must not occupy the anonymous ObjectInfo carrier selector")
++				}
++			}
++			for _, name := range []string{"JavaObjectInfo", "JavaDynamicTypeID", generatedDynamicTypeMethod, generatedObjectViewMethod} {
++				methods := info.scope.FindMethod().ByOriginalName(name)
++				if len(methods) != 1 || methods[0].Name == name {
++					t.Fatalf("anonymous source method family must retain a distinct protocol selector: %s", name)
++				}
++			}
++		})
++	}
++}
++
++// These parser-level mutation controls exercise the same actual lowering entry
++// as the positive carrier cases. They are not additional legal-Java fixtures.
++// Each must refuse before constructing from an equal-span foreign allocation,
++// mutable registry donation, stale source, or a different registered root.
++func TestCI209AnonymousFunctionalAllocationOwnership(t *testing.T) {
++	for _, name := range []string{"foreign allocation", "foreign type", "foreign body", "wrong current root", "stale source", "copied cached info", "detached cached owner"} {
++		t.Run(name, func(t *testing.T) {
++			const source = `import java.util.function.Function;class Main{static Function<String,String> make(){return new Function<String,String>(){public String apply(String value){return value;}};}}`
++			ctx, _, _, info := anonymousFunctional209Lower(t, source, "Function<String,String>")
++			allocation := info.scope.Class.DeclarationNode
++			typ, body := allocation.ChildByFieldName("type"), objectCreationClassBody(allocation)
++			bytes := ctx.currentFile.Source
++			foreign := parsing.SourceFile{Name: "Other.java", Source: []byte(source)}
++			if err := foreign.ParseAST(); err != nil {
++				t.Fatal(err)
++			}
++			other := findNode(foreign.Ast, "object_creation_expression")
++			if other == nil || other.Equal(allocation) || other.StartByte() != allocation.StartByte() || other.EndByte() != allocation.EndByte() {
++				t.Fatal("equal-span independent allocation setup failed")
++			}
++			key, ok := anonymousClassSourceKey(allocation)
++			if !ok {
++				t.Fatal("actual allocation key missing")
++			}
++			switch name {
++			case "foreign allocation":
++				allocation = other
++			case "foreign type":
++				typ = other.ChildByFieldName("type")
++			case "foreign body":
++				body = objectCreationClassBody(other)
++			case "wrong current root":
++				ctx.currentFile = foreign.ParseSymbols()
++			case "stale source":
++				bytes = append([]byte(nil), bytes...)
++				bytes[0] = ' '
++			case "copied cached info":
++				copy := *info
++				ctx.anonymousClasses[key] = &copy
++			case "detached cached owner":
++				copyInfo, copyOwner, copyClass := *info, *info.scope, *info.scope.Class
++				copyOwner.Class = &copyClass
++				copyInfo.scope = &copyOwner
++				ctx.anonymousClasses[key] = &copyInfo
++			}
++			before := len(*ctx.hoistedDecls)
++			if result := lowerAnonymousClassToStruct(allocation, typ, body, bytes, ctx); result != nil || len(*ctx.hoistedDecls) != before {
++				t.Fatalf("anonymous functional ownership must refuse %s before construction or emission", name)
++			}
++		})
++	}
++}
+diff --git a/transpiler/anonymous_functional213_input_tdd_test.go b/transpiler/anonymous_functional213_input_tdd_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..73c2e53af1dab7abf863d4402b0a67a1080b738f
+--- /dev/null
++++ b/transpiler/anonymous_functional213_input_tdd_test.go
+@@ -0,0 +1,110 @@
++package transpiler
++
++import (
++	"go/ast"
++	"testing"
++)
++
++// SourceInputSnapshot validates retained input only. Successful input validation
++// cannot substitute for the independent allocation/class/executable certificate.
++func TestCI213AnonymousFunctionalInputSnapshotControls(t *testing.T) {
++	for _, name := range []string{"registered input positive", "stale filename", "stale parser source", "stale original source", "stale offset map"} {
++		t.Run(name, func(t *testing.T) {
++			const source = `import java.util.function.Function;class Main{static Function<String,String> make(){return new Function<String,String>(){public String apply(String value){return value;}};}}`
++			ctx, _, _, info := anonymousFunctional209Lower(t, source, "Function<String,String>")
++			snapshot := ctx.currentFile.SourceInputSnapshot()
++			if snapshot == nil || snapshot.Validate() != nil {
++				t.Fatal("actual registered input snapshot missing")
++			}
++			if name == "registered input positive" {
++				return
++			}
++			switch name {
++			case "stale filename":
++				ctx.currentFile.SourceFilename = "Other.java"
++			case "stale parser source":
++				ctx.currentFile.Source[0] = ' '
++			case "stale original source":
++				ctx.currentFile.OriginalSource = []byte("foreign")
++			case "stale offset map":
++				ctx.currentFile.SourceOffsets = []uint32{1}
++			}
++			if snapshot.Validate() == nil {
++				t.Fatal("input mutation was not detected by the existing snapshot API")
++			}
++			allocation := info.scope.Class.DeclarationNode
++			before := len(*ctx.hoistedDecls)
++			if result := lowerAnonymousClassToStruct(allocation, allocation.ChildByFieldName("type"), objectCreationClassBody(allocation), ctx.currentFile.Source, ctx); result != nil || len(*ctx.hoistedDecls) != before {
++				t.Fatalf("anonymous functional allocation must refuse invalid current input: %s", name)
++			}
++		})
++	}
++}
++
++// First-entry refusal must precede allocating an identity, registering a scope,
++// emitting any declaration, or constructing a receiver. These controls have no
++// prior synthesized info that could accidentally make refusal a cache property.
++func TestCI213AnonymousFunctionalFreshInputSnapshotControls(t *testing.T) {
++	for _, name := range []string{"registered input positive", "stale filename", "stale parser source", "stale original source", "stale offset map"} {
++		t.Run(name, func(t *testing.T) {
++			const source = `import java.util.function.Function;class Main{static Function<String,String> make(){return new Function<String,String>(){public String apply(String value){return value;}};}}`
++			h := setupParseHelper(t, source)
++			ctx := h.Ctx.Clone()
++			ctx.currentClass = ctx.currentFile.FindClassScope("Main")
++			if ctx.currentClass == nil {
++				t.Fatal("actual Main declaration missing")
++			}
++			methods := ctx.currentClass.FindMethod().ByOriginalName("make")
++			if len(methods) != 1 {
++				t.Fatal("actual make declaration missing")
++			}
++			ctx.localScope = methods[0]
++			ctx.className = ctx.currentClass.Class.Name
++			var declarations []ast.Decl
++			var counter int
++			ctx.hoistedDecls = &declarations
++			ctx.anonClassCounter = &counter
++			ctx.anonymousClasses = make(map[anonymousClassKey]*anonymousClassInfo)
++			ctx.localClasses = make(map[string]*localClassInfo)
++			ctx.executionContextName = "execution"
++			allocation := findNode(h.File.Ast, "object_creation_expression")
++			if allocation == nil {
++				t.Fatal("actual allocation missing")
++			}
++			typ, body := allocation.ChildByFieldName("type"), objectCreationClassBody(allocation)
++			ctx.expectedType, ctx.expectedTypeRoot = "Function<String,String>", allocation
++			snapshot := ctx.currentFile.SourceInputSnapshot()
++			if snapshot == nil || snapshot.Validate() != nil {
++				t.Fatal("actual registered input snapshot missing")
++			}
++			switch name {
++			case "stale filename":
++				ctx.currentFile.SourceFilename = "Other.java"
++			case "stale parser source":
++				ctx.currentFile.Source[0] = ' '
++			case "stale original source":
++				ctx.currentFile.OriginalSource = []byte("foreign")
++			case "stale offset map":
++				ctx.currentFile.SourceOffsets = []uint32{1}
++			}
++			if name != "registered input positive" && snapshot.Validate() == nil {
++				t.Fatal("input mutation was not detected by the existing snapshot API")
++			}
++			if len(ctx.anonymousClasses) != 0 || len(declarations) != 0 || counter != 0 {
++				t.Fatal("fresh synthesis premise mutated")
++			}
++			result := lowerAnonymousClassToStruct(allocation, typ, body, ctx.currentFile.Source, ctx)
++			if name == "registered input positive" {
++				key, ok := anonymousClassSourceKey(allocation)
++				info := ctx.anonymousClasses[key]
++				if !ok || result == nil || len(ctx.anonymousClasses) != 1 || info == nil || info.scope == nil || info.scope.Class == nil || info.scope.Class.DeclarationNode == nil || !info.scope.Class.DeclarationNode.Equal(allocation) || len(declarations) == 0 || counter != 1 {
++					t.Fatal("fresh positive must synthesize the actual allocation")
++				}
++				return
++			}
++			if result != nil || len(ctx.anonymousClasses) != 0 || len(declarations) != 0 || counter != 0 {
++				t.Fatalf("anonymous functional fresh synthesis must refuse invalid current input before map hoist counter or construction mutation: %s", name)
++			}
++		})
++	}
++}
+diff --git a/transpiler/anonymous_functional214_guard_test.go b/transpiler/anonymous_functional214_guard_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..abc0e55ee473f283b69bbbde6e68f05edf534cfd
+--- /dev/null
++++ b/transpiler/anonymous_functional214_guard_test.go
+@@ -0,0 +1,479 @@
++package transpiler
++
++import (
++	"go/ast"
++	"reflect"
++	"testing"
++
++	"github.com/NickyBoy89/java2go/parsing"
++	"github.com/NickyBoy89/java2go/symbol"
++)
++
++func anonymousFunctional214Source(family string) (string, string) {
++	header, method, initializer := "Function<T,T>", `public T apply(T value){return token;}`, `T initialized=apply(token);`
++	if family == "Supplier" {
++		header, method, initializer = "Supplier<T>", `public T get(){return token;}`, `T initialized=((java.util.function.Supplier<T>)(Object)this).get();`
++	}
++	return `import java.util.function.` + family + `;class Donor{}class Main{static<T,U>` + header + ` make(T token,U other){return new ` + header + `(){Object capturedOther=other;` + initializer + method + `};}}`, header
++}
++
++// Every mutant starts from a real completed canonical allocation; no fixture
++// fabricates a certificate, source registry, method descriptor or Go receiver.
++func TestCI214AnonymousFunctionalDirectConsumerGuards(t *testing.T) {
++	rows := []string{"registered named node", "nil declaration", "foreign equal-span node", "foreign method node", "copied info", "copied scope", "copied class", "copied certificate", "struct name", "initializer selector", "declared field", "capture AST", "capture definition", "own method table", "selected constructor", "selected helper flag", "selected helper name", "selected variadic", "selected default", "selected static", "selected private", "selected body", "selected name", "selected result", "selected formal arity", "selected formal type", "selected formal binder", "scope enclosing", "scope interfaces", "scope binder order", "scope binder declaration", "binder emitted name", "in-progress replay", "failed phase", "invalid emission stamp", "foreign hoist session", "foreign counter session", "foreign physical ABI", "same-pointer emitted method AST", "missing emitted method", "retained import table", "registered TYPE census", "source owner name", "source binder name", "current snapshot filename", "current snapshot bytes"}
++	for _, family := range []string{"Function", "Supplier"} {
++		for _, name := range rows {
++			t.Run(family+"/"+name, func(t *testing.T) {
++				source, header := anonymousFunctional214Source(family)
++				ctx, _, _, info := anonymousFunctional209Lower(t, source, header)
++				certificate := info.functional
++				if certificate == nil || certificate.phase != anonymousFunctionalComplete || !certificate.sealed {
++					t.Fatal("actual complete certificate missing")
++				}
++				contract := anonymousFunctionalContract(certificate)
++				query := ctx.Clone()
++				query.currentClass = info.scope
++				query.localScope = nil
++				query.className = info.structName
++				contracts := sourceNativeFunctionalContracts(info.scope, query)
++				if len(contracts) != 1 || !anonymousFunctionalContractEqual(certificate, contracts[0]) || sourceNativeFunctionalViewExpr(info.scope, contract, ast.NewIdent("receiver"), query) == nil {
++					t.Fatal("actual direct consumer positive premise failed")
++				}
++				if _, ok := supplierSourceDeclarationCtx(info.scope, query); !ok {
++					t.Fatal("actual declaration role premise failed")
++				}
++				if family == "Supplier" && !supplierSourceSelectedMethodOwned(info.scope, info.scope, certificate.selected, contract, query) {
++					t.Fatal("actual Supplier selected body premise failed")
++				}
++				allocation, typ, body := certificate.allocation, certificate.typ, certificate.body
++				key, _ := anonymousClassSourceKey(allocation)
++				foreign := parsing.SourceFile{Name: "Other.java", Source: []byte(source)}
++				if err := foreign.ParseAST(); err != nil {
++					t.Fatal(err)
++				}
++				foreignAllocation := findNode(foreign.Ast, "object_creation_expression")
++				if foreignAllocation == nil || foreignAllocation.Equal(allocation) || foreignAllocation.StartByte() != allocation.StartByte() || foreignAllocation.EndByte() != allocation.EndByte() {
++					t.Fatal("equal-span independent AST premise failed")
++				}
++				selected := certificate.selected
++				switch name {
++				case "registered named node":
++					info.scope.Class.DeclarationNode = ctx.currentFile.FindClassScope("Donor").Class.DeclarationNode
++				case "nil declaration":
++					info.scope.Class.DeclarationNode = nil
++				case "foreign equal-span node":
++					info.scope.Class.DeclarationNode = foreignAllocation
++				case "foreign method node":
++					selected.DeclarationNode = findNode(foreignAllocation, "method_declaration")
++				case "copied info":
++					copied := *info
++					ctx.anonymousClasses[key] = &copied
++				case "copied scope":
++					copied := *info.scope
++					info.scope = &copied
++				case "copied class":
++					copied := *info.scope.Class
++					info.scope.Class = &copied
++				case "copied certificate":
++					copied := *certificate
++					info.functional = &copied
++				case "map removal":
++					delete(ctx.anonymousClasses, key)
++				case "struct name":
++					info.structName += "Donated"
++				case "initializer selector":
++					info.fieldInitializerMethodName += "Donated"
++				case "declared field":
++					info.declaredFields[0].Name += "Donated"
++				case "capture AST":
++					info.captured[0].goType = ast.NewIdent("any")
++				case "capture definition":
++					info.captured[0].javaDef.OriginalType = "Object"
++				case "own method table":
++					copied := *selected
++					info.scope.Methods = append(info.scope.Methods, &copied)
++				case "selected constructor":
++					selected.Constructor = true
++				case "selected helper flag":
++					selected.RequiresHelper = true
++				case "selected helper name":
++					selected.HelperName = "Donated"
++				case "selected variadic":
++					selected.IsVariadic = true
++				case "selected default":
++					selected.RuntimeDefault = true
++				case "selected static":
++					selected.IsStatic = true
++				case "selected private":
++					selected.IsPrivate = true
++				case "selected body":
++					selected.HasBody = false
++				case "selected name":
++					selected.Name += "Donated"
++				case "selected result":
++					selected.OriginalType = "Object"
++				case "selected formal arity":
++					selected.Parameters = append(selected.Parameters, &symbol.Definition{OriginalName: "extra", OriginalType: "Object"})
++				case "selected formal type":
++					if len(selected.Parameters) == 0 {
++						selected.Parameters = []*symbol.Definition{{OriginalName: "extra", OriginalType: "Object"}}
++					} else {
++						selected.Parameters[0].OriginalType = "Object"
++					}
++				case "selected formal binder":
++					if len(selected.Parameters) == 0 {
++						selected.DirectTypeParameter = &symbol.TypeParamDeclaration{SourceName: "T", GoName: "T"}
++						selected.TypeParameterBindings = map[string]*symbol.TypeParamDeclaration{"T": selected.DirectTypeParameter}
++					} else {
++						selected.Parameters[0].TypeParameterBindings = map[string]*symbol.TypeParamDeclaration{"T": {SourceName: "T", GoName: "T"}}
++					}
++				case "scope enclosing":
++					info.scope.Enclosing = ctx.currentFile.FindClassScope("Donor")
++				case "scope interfaces":
++					info.scope.ImplementedInterfaces = []string{"java.util.function." + family + "<Object>"}
++				case "scope binder order":
++					if len(info.scope.TypeParameters) < 2 {
++						t.Fatal("two actual carried binders missing")
++					}
++					info.scope.TypeParameters[0], info.scope.TypeParameters[1] = info.scope.TypeParameters[1], info.scope.TypeParameters[0]
++				case "scope binder declaration":
++					info.scope.TypeParameters[0].Declaration = &symbol.TypeParamDeclaration{SourceName: info.scope.TypeParameters[0].Name, GoName: info.scope.TypeParameters[0].EmittedName()}
++				case "binder emitted name":
++					info.scope.TypeParameters[0].Declaration.GoName += "Donated"
++				case "in-progress replay":
++					certificate.phase = anonymousFunctionalBody
++				case "failed phase":
++					certificate.phase = anonymousFunctionalFailed
++				case "invalid emission stamp":
++					info.emissionStampValid = false
++				case "foreign hoist session":
++					copied := append([]ast.Decl(nil), (*ctx.hoistedDecls)...)
++					ctx.hoistedDecls = &copied
++					query.hoistedDecls = &copied
++				case "foreign counter session":
++					copied := *ctx.anonClassCounter
++					ctx.anonClassCounter = &copied
++					query.anonClassCounter = &copied
++				case "foreign physical ABI":
++					ctx.rawGenericParameterTypes = map[string]string{"T": "java.lang.Object"}
++					query.rawGenericParameterTypes = ctx.rawGenericParameterTypes
++				case "same-pointer emitted method AST":
++					changed := false
++					for _, d := range *ctx.hoistedDecls {
++						if f, ok := d.(*ast.FuncDecl); ok && f.Name.Name == executionImplementationName(selected, info.scope, query) {
++							f.Name.Name += "Donated"
++							changed = true
++							break
++						}
++					}
++					if !changed {
++						t.Fatal("actual emitted implementation missing")
++					}
++				case "missing emitted method":
++					*ctx.hoistedDecls = (*ctx.hoistedDecls)[:certificate.hoistStart]
++				case "retained import table":
++					ctx.currentFile.Imports[family] = "foreign"
++				case "registered TYPE census":
++					ctx.currentFile.TopLevelClasses = []*symbol.ClassScope{ctx.currentClass}
++				case "source owner name":
++					ctx.currentClass.Class.OriginalName = "Borrowed"
++				case "source binder name":
++					ctx.localScope.TypeParameters[0].Declaration.SourceName = "Borrowed"
++				case "current snapshot filename":
++					ctx.currentFile.SourceFilename = "Other.java"
++				case "current snapshot bytes":
++					ctx.currentFile.Source[0] = ' '
++				}
++				// Bind the actual potentially changed scope for direct calls. Its original
++				// provenance must remain anonymous even after losing/changing its node kind.
++				query.currentClass = info.scope
++				beforeHoists := anonymousFunctionalAST(&ast.File{Decls: *ctx.hoistedDecls})
++				beforeCount := *ctx.anonClassCounter
++				beforeMap := map[anonymousClassKey]*anonymousClassInfo{}
++				for k, v := range ctx.anonymousClasses {
++					beforeMap[k] = v
++				}
++				if got := sourceNativeFunctionalContracts(info.scope, query); len(got) != 0 {
++					t.Fatal("mutant acquired a native contract")
++				}
++				if got := sourceNativeFunctionalViewExpr(info.scope, contract, ast.NewIdent("receiver"), query); got != nil {
++					t.Fatal("mutant exported a native view")
++				}
++				if _, ok := supplierSourceDeclarationCtx(info.scope, query); ok {
++					t.Fatal("mutant acquired a declaration role")
++				}
++				if supplierSourceSelectedMethodOwned(info.scope, info.scope, selected, contract, query) {
++					t.Fatal("mutant acquired a Supplier selected method")
++				}
++				if got := anonymousClassConstructionExpr(allocation, typ, info, nil, ctx.currentFile.Source, ctx); got != nil {
++					t.Fatal("mutant constructed an anonymous object")
++				}
++				if got := lowerAnonymousClassToStruct(allocation, typ, body, ctx.currentFile.Source, ctx); got != nil {
++					t.Fatal("mutant replayed completed lowering")
++				}
++				if anonymousFunctionalAST(&ast.File{Decls: *ctx.hoistedDecls}) != beforeHoists || *ctx.anonClassCounter != beforeCount || !reflect.DeepEqual(ctx.anonymousClasses, beforeMap) {
++					t.Fatal("refusal mutated map hoists counter or emitted layout")
++				}
++			})
++		}
++	}
++}
++
++func TestCI214AnonymousFunctionalNamedConsumersUnchanged(t *testing.T) {
++	for _, family := range []string{"Function", "Supplier"} {
++		t.Run(family, func(t *testing.T) {
++			edge, method := "Function<String,String>", `public String apply(String value){return value;}`
++			if family == "Supplier" {
++				edge, method = "Supplier<String>", `public String get(){return "value";}`
++			}
++			h := setupParseHelper(t, `import java.util.function.`+family+`;class Named implements `+edge+`{`+method+`}`)
++			ctx := h.Ctx.Clone()
++			scope := ctx.currentFile.FindClassScope("Named")
++			ctx.currentClass = scope
++			if _, anonymous := anonymousFunctionalLookup(scope, ctx); anonymous {
++				t.Fatal("registered named declaration classified as anonymous")
++			}
++			contracts := sourceNativeFunctionalContracts(scope, ctx)
++			if len(contracts) != 1 || contracts[0].family != family || sourceNativeFunctionalViewExpr(scope, contracts[0], ast.NewIdent("receiver"), ctx) == nil {
++				t.Fatal("named native contract behavior changed")
++			}
++		})
++	}
++}
++
++// Exercise the actual private installer boundary before any body/hoist exists.
++// Its source-role lookup may describe the SAM; it cannot construct or export.
++func TestCI214AnonymousFunctionalInProgressBoundary(t *testing.T) {
++	for _, family := range []string{"Function", "Supplier"} {
++		for _, mode := range []string{"same session", "foreign hoist", "foreign counter", "foreign ABI"} {
++			t.Run(family+"/"+mode, func(t *testing.T) {
++				source, header := anonymousFunctional214Source(family)
++				h := setupParseHelper(t, source)
++				ctx := h.Ctx.Clone()
++				ctx.currentClass = ctx.currentFile.FindClassScope("Main")
++				ctx.localScope = ctx.currentClass.FindMethod().ByOriginalName("make")[0]
++				ctx.className = ctx.currentClass.Class.Name
++				var hoists []ast.Decl
++				counter := 0
++				ctx.hoistedDecls = &hoists
++				ctx.anonClassCounter = &counter
++				ctx.anonymousClasses = map[anonymousClassKey]*anonymousClassInfo{}
++				ctx.localClasses = map[string]*localClassInfo{}
++				ctx.executionContextName = "execution"
++				allocation := findNode(h.File.Ast, "object_creation_expression")
++				typ, body := allocation.ChildByFieldName("type"), objectCreationClassBody(allocation)
++				ctx.expectedType, ctx.expectedTypeRoot = header, allocation
++				certificate, attempted := anonymousFunctionalStart(allocation, typ, body, h.File.Source, ctx)
++				if !attempted || certificate == nil {
++					t.Fatal("actual initial source certificate missing")
++				}
++				fields, _ := anonymousClassDeclaredFields(body, h.File.Source, ctx)
++				captured := collectCapturedLocals(body, h.File.Source, ctx)
++				scope := synthAnonClassScope("ActualPartial", fields, captured, anonymousClassMethods(body), map[string]struct{}{}, h.File.Source, false)
++				scope.Class.DeclarationNode = allocation
++				scope.Enclosing = ctx.currentClass
++				scope.ImplementedInterfaces = []string{certificate.header}
++				scope.TypeParameters = anonymousClassTypeParameters(allocation, captured, false, h.File.Source, ctx)
++				info := &anonymousClassInfo{structName: "ActualPartial", scope: scope, declaredFields: fields, captured: captured}
++				key, _ := anonymousClassSourceKey(allocation)
++				ctx.anonymousClasses[key] = info
++				if !anonymousFunctionalAttach(certificate, info, ctx) {
++					t.Fatal("actual installer phase premise failed")
++				}
++				contract := anonymousFunctionalContract(certificate)
++				switch mode {
++				case "foreign hoist":
++					var foreign []ast.Decl
++					ctx.hoistedDecls = &foreign
++				case "foreign counter":
++					foreign := counter
++					ctx.anonClassCounter = &foreign
++				case "foreign ABI":
++					ctx.rawGenericParameterTypes = map[string]string{"T": "java.lang.Object"}
++				}
++				query := ctx.Clone()
++				query.currentClass = scope
++				query.localScope = nil
++				query.className = info.structName
++				if sourceNativeFunctionalViewExpr(scope, contract, ast.NewIdent("receiver"), query) != nil || supplierSourceSelectedMethodOwned(scope, scope, certificate.selected, contract, query) {
++					t.Fatal("in-progress source role exported completion")
++				}
++				if anonymousFunctionalFinish(certificate, ctx) {
++					t.Fatal("missing actual emitted body acquired completion")
++				}
++				if anonymousClassConstructionExpr(allocation, typ, info, nil, h.File.Source, ctx) != nil || lowerAnonymousClassToStruct(allocation, typ, body, h.File.Source, ctx) != nil {
++					t.Fatal("in-progress info constructed or replayed")
++				}
++				if len(*ctx.hoistedDecls) != 0 || *ctx.anonClassCounter != 0 || ctx.anonymousClasses[key] != info || certificate.phase != anonymousFunctionalBody {
++					t.Fatal("in-progress refusal mutated local phase or emission")
++				}
++			})
++		}
++	}
++}
++
++func TestCI214AnonymousFunctionalFailedSynthesisIsTerminal(t *testing.T) {
++	for _, family := range []string{"Function", "Supplier"} {
++		t.Run(family, func(t *testing.T) {
++			header, method := "Function<String,String>", `public Object apply(Object value){return value;}`
++			if family == "Supplier" {
++				header, method = "Supplier<String>", `public String get(int value){return "wrong";}`
++			}
++			h := setupParseHelper(t, `import java.util.function.`+family+`;class Main{static `+header+` make(){return new `+header+`(){`+method+`};}}`)
++			ctx := h.Ctx.Clone()
++			ctx.currentClass = ctx.currentFile.FindClassScope("Main")
++			ctx.localScope = ctx.currentClass.FindMethod().ByOriginalName("make")[0]
++			ctx.className = ctx.currentClass.Class.Name
++			var hoists []ast.Decl
++			counter := 0
++			ctx.hoistedDecls = &hoists
++			ctx.anonClassCounter = &counter
++			ctx.anonymousClasses = map[anonymousClassKey]*anonymousClassInfo{}
++			ctx.executionContextName = "execution"
++			allocation := findNode(h.File.Ast, "object_creation_expression")
++			typ, body := allocation.ChildByFieldName("type"), objectCreationClassBody(allocation)
++			ctx.expectedType, ctx.expectedTypeRoot = header, allocation
++			for attempt := 0; attempt < 2; attempt++ {
++				if lowerAnonymousClassToStruct(allocation, typ, body, h.File.Source, ctx) != nil || len(hoists) != 0 || counter != 0 || len(ctx.anonymousClasses) != 0 {
++					t.Fatal("failed actual selected-method synthesis acquired fallback construction or hoists")
++				}
++			}
++		})
++	}
++}
++
++func TestCI214AnonymousFunctionalNativeViewFactoryABI(t *testing.T) {
++	for _, family := range []string{"Function", "Supplier"} {
++		t.Run(family, func(t *testing.T) {
++			source, header := anonymousFunctional214Source(family)
++			ctx, _, _, info := anonymousFunctional209Lower(t, source, header)
++			query := ctx.Clone()
++			query.currentClass = info.scope
++			query.localScope = nil
++			query.className = info.structName
++			expression := sourceNativeFunctionalViewExpr(info.scope, anonymousFunctionalContract(info.functional), ast.NewIdent("actualReceiver"), query)
++			call, ok := expression.(*ast.CallExpr)
++			if !ok || len(call.Args) != 2 || call.Ellipsis.IsValid() {
++				t.Fatal("owned source factory call missing")
++			}
++			var owner ast.Expr
++			switch f := call.Fun.(type) {
++			case *ast.IndexExpr:
++				owner = f.X
++			case *ast.IndexListExpr:
++				owner = f.X
++			default:
++				t.Fatal("factory type arguments missing")
++			}
++			selector, ok := owner.(*ast.SelectorExpr)
++			if !ok || selector.Sel.Name != "New"+family+"SourceView" {
++				t.Fatal("actual source factory selector missing")
++			}
++			qualifier, ok := selector.X.(*ast.Ident)
++			if !ok || qualifier.Name != markStdjavaUsage(query) {
++				t.Fatal("source factory is not actual stdjava")
++			}
++			root, ok := call.Args[0].(*ast.SelectorExpr)
++			if !ok || root.Sel.Name != "ObjectInfo" {
++				t.Fatal("factory must consume existing ObjectInfo")
++			}
++			receiver, ok := root.X.(*ast.Ident)
++			if !ok || receiver.Name != "actualReceiver" {
++				t.Fatal("factory changed receiver root")
++			}
++			closure, ok := call.Args[1].(*ast.FuncLit)
++			if !ok || closure.Type.Params == nil || len(closure.Type.Params.List) < 1 || len(closure.Type.Params.List[0].Names) != 1 || closure.Type.Params.List[0].Names[0].Name != "execution" {
++				t.Fatal("invocation Execution parameter missing")
++			}
++			if anonymousFunctional209Calls(closure, "NewExecution") != 0 || anonymousFunctional209Calls(closure, "NewGeneratedObjectInfo") != 0 {
++				t.Fatal("view closure created construction execution or carrier")
++			}
++			if len(closure.Body.List) != 1 {
++				t.Fatal("view closure must defer exactly the selected invocation")
++			}
++			returned, ok := closure.Body.List[0].(*ast.ReturnStmt)
++			if !ok || len(returned.Results) != 1 {
++				t.Fatal("selected return missing")
++			}
++			invocation, ok := returned.Results[0].(*ast.CallExpr)
++			if !ok || len(invocation.Args) < 1 {
++				t.Fatal("selected implementation invocation missing")
++			}
++			target, ok := invocation.Fun.(*ast.SelectorExpr)
++			if !ok || target.Sel.Name != executionImplementationName(info.functional.selected, info.scope, query) {
++				t.Fatal("callback selected wrong source implementation")
++			}
++			execution, ok := invocation.Args[0].(*ast.Ident)
++			if !ok || execution.Name != "execution" {
++				t.Fatal("callback did not pass invocation Execution")
++			}
++			targetReceiver, ok := target.X.(*ast.Ident)
++			if !ok || targetReceiver.Name != "actualReceiver" {
++				t.Fatal("callback changed evaluated receiver")
++			}
++			arity := 0
++			if family == "Function" {
++				arity = 1
++			}
++			if len(invocation.Args) != arity+1 || len(closure.Type.Params.List) != arity+1 {
++				t.Fatal("selected callback arity changed")
++			}
++		})
++	}
++}
++
++// These refusal rows are parser-level namespace controls; only the qualified
++// positive rows also claim legal Java override signatures.
++func TestCI214AnonymousFunctionalLexicalOriginAuthority(t *testing.T) {
++	for _, family := range []string{"Function", "Supplier"} {
++		for _, mode := range []string{"body shadow", "qualified body", "local prefix"} {
++			t.Run(family+"/"+mode, func(t *testing.T) {
++				header, method := "Function<java.lang.String,java.lang.String>", `public String apply(String value){return value;}`
++				if family == "Supplier" {
++					header, method = "Supplier<java.lang.String>", `public String get(){return null;}`
++				}
++				if mode == "qualified body" {
++					if family == "Function" {
++						method = `public java.lang.String apply(java.lang.String value){return value;}`
++					} else {
++						method = `public java.lang.String get(){return "value";}`
++					}
++				}
++				local := ""
++				nested := `class String{}`
++				if mode == "local prefix" {
++					local = `class ` + family + `<T,R>{}`
++					nested = ""
++				}
++				source := `import java.util.function.` + family + `;class Main{static ` + header + ` make(){` + local + `return new ` + header + `(){` + nested + method + `};}}`
++				if mode == "qualified body" {
++					ctx, _, _, info := anonymousFunctional209Lower(t, source, header)
++					query := ctx.Clone()
++					query.currentClass = info.scope
++					query.localScope = nil
++					contracts := sourceNativeFunctionalContracts(info.scope, query)
++					if len(contracts) != 1 || sourceNativeFunctionalViewExpr(info.scope, contracts[0], ast.NewIdent("receiver"), query) == nil {
++						t.Fatal("qualified source origin was recaptured by body homonym")
++					}
++					return
++				}
++				h := setupParseHelper(t, source)
++				ctx := h.Ctx.Clone()
++				ctx.currentClass = ctx.currentFile.FindClassScope("Main")
++				ctx.localScope = ctx.currentClass.FindMethod().ByOriginalName("make")[0]
++				ctx.className = ctx.currentClass.Class.Name
++				var hoists []ast.Decl
++				counter := 0
++				ctx.hoistedDecls = &hoists
++				ctx.anonClassCounter = &counter
++				ctx.anonymousClasses = map[anonymousClassKey]*anonymousClassInfo{}
++				ctx.executionContextName = "execution"
++				allocation := findNode(h.File.Ast, "object_creation_expression")
++				ctx.expectedType, ctx.expectedTypeRoot = header, allocation
++				if lowerAnonymousClassToStruct(allocation, allocation.ChildByFieldName("type"), objectCreationClassBody(allocation), h.File.Source, ctx) != nil || len(hoists) != 0 || counter != 0 || len(ctx.anonymousClasses) != 0 {
++					t.Fatal("unproved lexical prefix or body origin acquired construction")
++				}
++			})
++		}
++	}
++}
+diff --git a/transpiler/anonymous_functional_source_contract.go b/transpiler/anonymous_functional_source_contract.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0f8038a77fd7968c4a8e26f4f532b653009e57e
+--- /dev/null
++++ b/transpiler/anonymous_functional_source_contract.go
+@@ -0,0 +1,1052 @@
++package transpiler
++
++import (
++	"bytes"
++	"fmt"
++	"go/ast"
++	"go/format"
++	"go/token"
++	"strconv"
++	"strings"
++
++	"github.com/NickyBoy89/java2go/nodeutil"
++	"github.com/NickyBoy89/java2go/symbol"
++	sitter "github.com/smacker/go-tree-sitter"
++)
++
++// This private certificate belongs to an actual allocation and one emission.
++// Input snapshots certify bytes only. All declaration/role proofs below are
++// repeated independently; neither a map entry nor an emission stamp is authority.
++type anonymousFunctionalCertificate struct {
++	self                                               *anonymousFunctionalCertificate
++	graph                                              *symbol.GlobalSymbols
++	file                                               *symbol.FileScope
++	root, allocation, typ, body, ownerNode, executable *sitter.Node
++	lexical                                            Ctx
++	source                                             []byte
++	sourceIdentity                                     *byte
++	family, header                                     string
++	arguments                                          []inferredJavaTypeOrigin
++	info                                               *anonymousClassInfo
++	scope                                              *symbol.ClassScope
++	class                                              *symbol.Definition
++	selected                                           *symbol.Definition
++	phase                                              uint8
++	sealed                                             bool
++	shape, lexicalBindings                             string
++	hoistStart, hoistEnd                               int
++	emitted                                            []ast.Decl
++	emittedShape                                       []string
++}
++
++const (
++	anonymousFunctionalBody uint8 = iota + 1
++	anonymousFunctionalComplete
++	anonymousFunctionalFailed
++)
++
++func bytesEqualAnonymousFunctionalSource(a, b []byte) bool { return bytes.Equal(a, b) }
++func anonymousFunctionalEqual(a, b *sitter.Node) bool      { return a != nil && b != nil && a.Equal(b) }
++func anonymousFunctionalWithin(node, root *sitter.Node) bool {
++	for current := node; current != nil; current = current.Parent() {
++		if anonymousFunctionalEqual(current, root) {
++			return true
++		}
++	}
++	return false
++}
++func anonymousFunctionalActualChild(parent, child *sitter.Node) bool {
++	if parent == nil || child == nil {
++		return false
++	}
++	for i := 0; i < int(parent.ChildCount()); i++ {
++		if anonymousFunctionalEqual(parent.Child(i), child) {
++			return true
++		}
++	}
++	return false
++}
++func anonymousFunctionalRegistered(file *symbol.FileScope, owner *symbol.ClassScope) bool {
++	if file == nil || owner == nil {
++		return false
++	}
++	for _, pkg := range symbol.GlobalScope.Packages {
++		if pkg == nil {
++			continue
++		}
++		for _, f := range pkg.Files {
++			if f != file {
++				continue
++			}
++			for _, top := range f.TopLevelClasses {
++				if classScopeContains(top, owner) {
++					return true
++				}
++			}
++		}
++	}
++	return false
++}
++
++// Original info/scope/certificate membership is tested BEFORE mutable node kind.
++// An unregistered synthetic scope also cannot become a named Function by losing
++// its map entry or borrowing a registered named declaration node.
++func anonymousFunctionalLookup(scope *symbol.ClassScope, ctx Ctx) (*anonymousFunctionalCertificate, bool) {
++	if scope == nil {
++		return nil, false
++	}
++	for _, info := range ctx.anonymousClasses {
++		if info == nil {
++			continue
++		}
++		c := info.functional
++		if info.scope == scope || c != nil && c.scope == scope {
++			if c == nil || c.self != c || c.info != info || c.scope != scope || info.scope != scope {
++				return nil, true
++			}
++			return c, true
++		}
++	}
++	if scope.Class != nil && scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Type() == "object_creation_expression" {
++		return nil, true
++	}
++	if scope.Class != nil && scope.Class.DeclarationNode != nil {
++		for _, owner := range allSourceClassScopes() {
++			if owner == scope {
++				return nil, false
++			}
++		}
++		// Local named source classes retain the old path; their original node is
++		// owned by the independently registered lexical class, never an anonymous map.
++		for _, info := range ctx.localClasses {
++			if info != nil && info.scope == scope {
++				return nil, false
++			}
++		}
++	}
++	return nil, true
++}
++
++func anonymousFunctionalBindings(params []symbol.TypeParam) string {
++	var b strings.Builder
++	for _, p := range params {
++		fmt.Fprintf(&b, "%q:%p:%q:%q|", p.Name, p.Declaration, p.EmittedName(), func() string {
++			if p.Declaration == nil {
++				return ""
++			}
++			return p.Declaration.SourceName
++		}())
++		for _, bound := range p.Bounds {
++			fmt.Fprintf(&b, "%q:%s;", bound.Original, anonymousReceiverTypeBindings(bound.TypeParameterBindings))
++		}
++	}
++	return b.String()
++}
++func anonymousFunctionalDefinition(d *symbol.Definition) string {
++	if d == nil {
++		return "nil"
++	}
++	var b strings.Builder
++	fmt.Fprintf(&b, "%p:%p:%q:%q:%q:%q:%p:%s:%s:%t:%t:%t:%t:%t:%t:%t:%t:%t:%t:%q|", d, d.DeclarationNode, d.OriginalName, d.Name, d.OriginalType, d.Type, d.DirectTypeParameter, anonymousReceiverTypeBindings(d.TypeParameterBindings), anonymousFunctionalBindings(d.TypeParameters), d.Nullable, d.IsStatic, d.IsVariadic, d.IsFinal, d.IsPrivate, d.HasBody, d.RuntimeDefault, d.RequiresHelper, d.Constructor, d.IsCompileTimeConstant, d.HelperName)
++	for _, p := range d.Parameters {
++		b.WriteString(anonymousFunctionalDefinition(p))
++	}
++	return b.String()
++}
++func anonymousFunctionalAST(n ast.Node) string {
++	if n == nil {
++		return "nil"
++	}
++	var b bytes.Buffer
++	if err := format.Node(&b, token.NewFileSet(), n); err != nil {
++		return "invalid"
++	}
++	return b.String()
++}
++func anonymousFunctionalShape(info *anonymousClassInfo) string {
++	if info == nil || info.scope == nil || info.scope.Class == nil {
++		return "invalid"
++	}
++	s := info.scope
++	var b strings.Builder
++	fmt.Fprintf(&b, "%p:%p:%p:%p:%q:%q:%q:%q:%q:%t:%t:%t:%t:%t:%t:%s:%s|", info, s, s.Class, s.Enclosing, info.structName, info.fieldInitializerMethodName, s.Superclass, s.ImplementedInterfaces, s.EnclosingField, s.IsInterface, s.IsAbstract, s.IsEnum, s.IsInner, s.HasInstanceFieldInitializers, s.DeclaredTypeParameters != nil, anonymousFunctionalBindings(s.TypeParameters), anonymousFunctionalBindings(s.DeclaredTypeParameters))
++	b.WriteString(anonymousFunctionalDefinition(s.Class))
++	for _, d := range s.Fields {
++		b.WriteString(anonymousFunctionalDefinition(d))
++	}
++	b.WriteByte('|')
++	for _, d := range info.declaredFields {
++		b.WriteString(anonymousFunctionalDefinition(d))
++	}
++	b.WriteByte('|')
++	for _, d := range s.Methods {
++		b.WriteString(anonymousFunctionalDefinition(d))
++	}
++	for _, cap := range info.captured {
++		fmt.Fprintf(&b, "%q:%q:%s:%s|", cap.name, cap.fieldName, anonymousFunctionalAST(cap.goType), anonymousFunctionalDefinition(cap.javaDef))
++	}
++	for _, nested := range s.Subclasses {
++		fmt.Fprintf(&b, "%p|", nested)
++	}
++	return b.String()
++}
++
++// Check each source binder against its actual containing declaration/order.
++// Emitted names are retained ABI, independently fingerprinted for freshness.
++func anonymousFunctionalDeclaredBinders(node *sitter.Node, params []symbol.TypeParam, source []byte) bool {
++	var names []string
++	if n := node.ChildByFieldName("type_parameters"); n != nil {
++		for _, p := range nodeutil.NamedChildrenOf(n) {
++			if p.Type() == "type_parameter" && p.NamedChild(0) != nil {
++				names = append(names, p.NamedChild(0).Content(source))
++			}
++		}
++	}
++	if len(names) != len(params) {
++		return false
++	}
++	fresh := symbol.ExtractTypeParameters(node.ChildByFieldName("type_parameters"), source)
++	for i, p := range params {
++		if len(p.Bounds) != len(fresh[i].Bounds) {
++			return false
++		}
++		for j, b := range p.Bounds {
++			if b.Original != fresh[i].Bounds[j].Original {
++				return false
++			}
++		}
++	}
++	for i, n := range names {
++		p := params[i]
++		if p.Declaration == nil || p.Name != n || p.Declaration.SourceName != n || p.EmittedName() == "" {
++			return false
++		}
++	}
++	return true
++}
++func anonymousFunctionalLexicalProof(c *anonymousFunctionalCertificate) bool {
++	ctx := c.lexical
++	if !anonymousFunctionalNamespace(c.file) || !anonymousFunctionalExecutable(c) || c.self != c || c.graph != symbol.GlobalScope || ctx.currentFile != c.file || c.file == nil || c.file.SourceInputSnapshot() == nil || c.file.SourceInputSnapshot().Validate() != nil || !bytes.Equal(c.file.Source, c.source) || anonymousReceiverSourceIdentity(c.file.Source) != c.sourceIdentity || !anonymousFunctionalEqual(c.file.ParsedRoot(), c.root) {
++		return false
++	}
++	owner := ctx.currentClass
++	if owner == nil || owner.Class == nil || !anonymousFunctionalRegistered(c.file, owner) || !anonymousFunctionalEqual(owner.Class.DeclarationNode, c.ownerNode) || !anonymousFunctionalWithin(c.allocation, c.root) || !anonymousFunctionalWithin(c.ownerNode, c.root) {
++		return false
++	}
++	if !anonymousFunctionalActualChild(c.allocation, c.typ) || !anonymousFunctionalEqual(c.allocation.ChildByFieldName("type"), c.typ) || !anonymousFunctionalActualChild(c.allocation, c.body) || !anonymousFunctionalEqual(objectCreationClassBody(c.allocation), c.body) {
++		return false
++	}
++	var nearestOwner, executable *sitter.Node
++	for p := c.allocation.Parent(); p != nil; p = p.Parent() {
++		if executable == nil && (p.Type() == "method_declaration" || p.Type() == "constructor_declaration") {
++			executable = p
++		}
++		if p.Type() == "class_declaration" || p.Type() == "enum_declaration" || p.Type() == "record_declaration" || p.Type() == "interface_declaration" {
++			nearestOwner = p
++			break
++		}
++	}
++	if c.ownerNode.ChildByFieldName("name") == nil || c.ownerNode.ChildByFieldName("name").Content(c.source) != owner.Class.OriginalName {
++		return false
++	}
++	if !anonymousFunctionalEqual(nearestOwner, c.ownerNode) {
++		return false
++	}
++	if c.executable == nil {
++		if executable != nil || ctx.localScope != nil {
++			return false
++		}
++	} else {
++		if !anonymousFunctionalEqual(executable, c.executable) || ctx.localScope == nil || !anonymousFunctionalEqual(ctx.localScope.DeclarationNode, c.executable) {
++			return false
++		}
++		found := false
++		for _, m := range owner.Methods {
++			found = found || m == ctx.localScope
++		}
++		if !found || !anonymousFunctionalDeclaredBinders(c.executable, ctx.localScope.TypeParameters, c.source) {
++			return false
++		}
++	}
++	for current := owner; current != nil; current = current.Enclosing {
++		if current.Class == nil || !anonymousFunctionalRegistered(c.file, current) || !anonymousFunctionalDeclaredBinders(current.Class.DeclarationNode, current.OwnTypeParameters(), c.source) {
++			return false
++		}
++	}
++	return true
++}
++
++func anonymousFunctionalOrigin(t string, ctx Ctx) inferredJavaTypeOrigin {
++	return declaredJavaTypeOrigin(symbol.JavaType{Original: t, TypeParameterBindings: symbol.VisibleTypeParamBindings(visibleTypeParameterDeclarations(ctx))}, ctx)
++}
++func anonymousFunctionalOriginOwned(o inferredJavaTypeOrigin, ctx Ctx) bool {
++	if !completeJavaTypeOrigin(o) || o.wildcard {
++		return false
++	}
++	if o.parameter != nil {
++		found := false
++		for _, p := range visibleTypeParameterDeclarations(ctx) {
++			found = found || p.Declaration == o.parameter
++		}
++		if !found {
++			return false
++		}
++	}
++	if o.nominalScope != nil {
++		f := findFileScopeForClassScope(o.nominalScope, ctx)
++		if !anonymousFunctionalRegistered(f, o.nominalScope) || o.nominalScope.Class == nil || o.nominalScope.Class.DeclarationNode == nil || f.SourceInputSnapshot() == nil || f.SourceInputSnapshot().Validate() != nil || !anonymousFunctionalWithin(o.nominalScope.Class.DeclarationNode, f.ParsedRoot()) {
++			return false
++		}
++	}
++	for _, a := range o.arguments {
++		if !anonymousFunctionalOriginOwned(a, ctx) {
++			return false
++		}
++	}
++	return true
++}
++
++// Diamond uses a real parent declaration, never ctx.expectedType display text.
++func anonymousFunctionalTarget(node *sitter.Node, ctx Ctx, source []byte) (inferredJavaTypeOrigin, bool) {
++	value := node
++	for p := value.Parent(); p != nil && p.Type() == "parenthesized_expression"; p = value.Parent() {
++		value = p
++	}
++	p := value.Parent()
++	if p == nil {
++		return inferredJavaTypeOrigin{}, false
++	}
++	if p.Type() == "return_statement" && anonymousFunctionalActualChild(p, value) && ctx.localScope != nil && ctx.localScope.DeclarationNode != nil {
++		typ := ctx.localScope.DeclarationNode.ChildByFieldName("type")
++		if typ != nil && typ.Content(source) == ctx.localScope.OriginalType {
++			return anonymousFunctionalOrigin(typ.Content(source), ctx), true
++		}
++	}
++	if p.Type() == "assignment_expression" && anonymousFunctionalEqual(p.ChildByFieldName("right"), value) {
++		left := p.ChildByFieldName("left")
++		if left != nil && left.Type() == "identifier" && ctx.currentClass != nil {
++			name := left.Content(source)
++			// A local declaration wins over the class field, regardless of display.
++			if ctx.localScope != nil && ctx.localScope.FindVariable(name) != nil {
++				return inferredJavaTypeOrigin{}, false
++			}
++			var field *symbol.Definition
++			for _, candidate := range ctx.currentClass.Fields {
++				if candidate != nil && candidate.OriginalName == name {
++					if field != nil {
++						return inferredJavaTypeOrigin{}, false
++					}
++					field = candidate
++				}
++			}
++			if field != nil && field.DeclarationNode != nil && field.DeclarationNode.Type() == "field_declaration" && ctx.currentClass.Class != nil && anonymousFunctionalActualChild(ctx.currentClass.Class.DeclarationNode.ChildByFieldName("body"), field.DeclarationNode) {
++				typ := field.DeclarationNode.ChildByFieldName("type")
++				actual := false
++				for _, declarator := range syntheticFieldDeclarators(field.DeclarationNode) {
++					if n := declarator.ChildByFieldName("name"); n != nil && n.Content(source) == name {
++						actual = true
++					}
++				}
++				if actual && typ != nil && typ.Content(source) == field.OriginalType {
++					declaring := classHeaderTypeCtx(ctx.currentClass, ctx)
++					return declaredJavaTypeOrigin(definitionDeclaredJavaType(field), declaring), true
++				}
++			}
++		}
++	}
++	if p.Type() == "variable_declarator" && anonymousFunctionalEqual(p.ChildByFieldName("value"), value) {
++		declaration := p.Parent()
++		if declaration != nil && (declaration.Type() == "field_declaration" || declaration.Type() == "local_variable_declaration") {
++			if typ := declaration.ChildByFieldName("type"); typ != nil {
++				return anonymousFunctionalOrigin(typ.Content(source), ctx), true
++			}
++		}
++	}
++	return inferredJavaTypeOrigin{}, false
++}
++func anonymousFunctionalHeader(c *anonymousFunctionalCertificate) (inferredJavaTypeOrigin, bool) {
++	t := c.typ.Content(c.source)
++	base, _ := parseJavaTypeString(t)
++	if !anonymousFunctionalPrefixOwned(t, c.allocation, c.lexical, c.source) || nativeFunctionalFamily(base, c.lexical) != c.family {
++		return inferredJavaTypeOrigin{}, false
++	}
++	origin := anonymousFunctionalOrigin(t, c.lexical)
++	if strings.Contains(t, "<>") {
++		target, ok := anonymousFunctionalTarget(c.allocation, c.lexical, c.source)
++		if !ok || target.externalName != "java.util.function."+c.family || target.nominalScope != nil || target.parameter != nil || target.arrayRank != 0 {
++			return origin, false
++		}
++		origin = target
++	} else if len(origin.arguments) == 0 {
++		count := 1
++		if c.family == "Function" {
++			count = 2
++		}
++		for i := 0; i < count; i++ {
++			origin.arguments = append(origin.arguments, intrinsicJavaTypeOrigin("java.lang.Object"))
++		}
++	}
++	count := 1
++	if c.family == "Function" {
++		count = 2
++	}
++	if origin.externalName != "java.util.function."+c.family || origin.nominalScope != nil || origin.parameter != nil || origin.arrayRank != 0 || len(origin.arguments) != count {
++		return origin, false
++	}
++	for _, a := range origin.arguments {
++		if !anonymousFunctionalOriginOwned(a, c.lexical) {
++			return origin, false
++		}
++	}
++	return origin, true
++}
++func anonymousFunctionalStart(node, typ, body *sitter.Node, source []byte, ctx Ctx) (*anonymousFunctionalCertificate, bool) {
++	if node == nil || typ == nil || body == nil || node.Type() != "object_creation_expression" || typ.EndByte() > uint32(len(source)) || body.EndByte() > uint32(len(source)) || node.EndByte() > uint32(len(source)) {
++		return nil, true
++	}
++	base, _ := parseJavaTypeString(typ.Content(source))
++	family := nativeFunctionalFamily(base, ctx)
++	if family != "Function" && family != "Supplier" {
++		return nil, false
++	}
++	c := &anonymousFunctionalCertificate{graph: symbol.GlobalScope, file: ctx.currentFile, allocation: node, typ: typ, body: body, lexical: ctx, source: bytes.Clone(source), sourceIdentity: anonymousReceiverSourceIdentity(source), family: family, phase: anonymousFunctionalBody}
++	c.self = c
++	if ctx.currentFile != nil {
++		c.root = ctx.currentFile.ParsedRoot()
++	}
++	if ctx.currentClass != nil && ctx.currentClass.Class != nil {
++		c.ownerNode = ctx.currentClass.Class.DeclarationNode
++	}
++	if ctx.localScope != nil {
++		c.executable = ctx.localScope.DeclarationNode
++	}
++	if ctx.currentFile == nil || anonymousReceiverSourceIdentity(source) != anonymousReceiverSourceIdentity(ctx.currentFile.Source) || !anonymousFunctionalLexicalProof(c) {
++		return nil, true
++	}
++	o, ok := anonymousFunctionalHeader(c)
++	if !ok {
++		return nil, true
++	}
++	c.arguments = o.arguments
++	// Raw source syntax stays raw; only diamond acquires the actual target ABI.
++	c.header = typ.Content(source)
++	if strings.Contains(c.header, "<>") {
++		args := make([]string, len(o.arguments))
++		for i, a := range o.arguments {
++			args[i] = anonymousFunctionalOriginText(a)
++		}
++		c.header = base + "<" + strings.Join(args, ",") + ">"
++	}
++	return c, true
++}
++func anonymousFunctionalOriginText(o inferredJavaTypeOrigin) string {
++	s := o.externalName
++	if o.parameter != nil {
++		s = o.parameter.SourceName
++	} else if o.nominalScope != nil {
++		s = javaClassBinaryName(o.nominalScope)
++	} else if s == "" {
++		s = stripOriginArrayDisplay(o.javaType)
++	}
++	if len(o.arguments) > 0 {
++		a := make([]string, len(o.arguments))
++		for i, v := range o.arguments {
++			a[i] = anonymousFunctionalOriginText(v)
++		}
++		s += "<" + strings.Join(a, ",") + ">"
++	}
++	return s + strings.Repeat("[]", o.arrayRank)
++}
++
++// Physical emission consumes already-proved origins. External mapping receives
++// fresh internal slots rather than reparsing argument names in the body namespace.
++func anonymousFunctionalPhysical(o inferredJavaTypeOrigin, ctx Ctx) (ast.Expr, bool) {
++	if !completeJavaTypeOrigin(o) || o.wildcard {
++		return nil, false
++	}
++	if o.parameter != nil || o.nominalScope != nil || o.arrayRank != 0 {
++		return classCastResultGoType(o, ctx)
++	}
++	if canonical, ok := canonicalResultPhysicalExpr(o, ctx); ok {
++		return canonical, true
++	}
++	if o.externalName == "" {
++		return nil, false
++	}
++	mapping := ctx.Clone()
++	mapping.currentClass = nil
++	mapping.currentFile = nil
++	mapping.localScope = nil
++	mapping.syntheticTypeParameters = nil
++	mapping.importAliases = map[string]string{}
++	mapping.usedImports = map[string]bool{}
++	slots := map[string]ast.Expr{}
++	names := make([]string, len(o.arguments))
++	for i, a := range o.arguments {
++		value, ok := anonymousFunctionalPhysical(a, ctx)
++		if !ok {
++			return nil, false
++		}
++		names[i] = "__java2goAnonymousSlot" + strconv.Itoa(i)
++		slots[names[i]] = value
++	}
++	text := o.externalName
++	if len(names) > 0 {
++		text += "<" + strings.Join(names, ",") + ">"
++	}
++	value := javaTypeStringToGoTypeExpr(text, names, mapping)
++	return staticFieldNativeStorageExpr(value, mapping.importAliases[stdjavaImportPath], slots, ctx)
++}
++
++func anonymousFunctionalMethodOrigin(c *anonymousFunctionalCertificate, m *symbol.Definition, t string) (inferredJavaTypeOrigin, bool) {
++	ctx := c.lexical.Clone()
++	ctx.currentClass = c.scope
++	ctx.localScope = m
++	base, _ := parseJavaTypeString(t)
++	prefix := strings.Split(base, ".")[0]
++	for _, member := range nodeutil.NamedChildrenOf(c.body) {
++		switch member.Type() {
++		case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
++			if name := member.ChildByFieldName("name"); name != nil && name.Content(c.source) == prefix {
++				return inferredJavaTypeOrigin{}, false
++			}
++		}
++	}
++	o := anonymousFunctionalOrigin(t, ctx)
++	return o, anonymousFunctionalOriginOwned(o, ctx)
++}
++func anonymousFunctionalSelected(c *anonymousFunctionalCertificate) (*symbol.Definition, inferredJavaTypeOrigin, bool) {
++	if c.scope == nil {
++		return nil, inferredJavaTypeOrigin{}, false
++	}
++	name := "get"
++	arity := 0
++	if c.family == "Function" {
++		name = "apply"
++		arity = 1
++	}
++	var selected *symbol.Definition
++	var result inferredJavaTypeOrigin
++	for _, m := range c.scope.Methods {
++		if m == nil || m.OriginalName != name {
++			continue
++		}
++		n := m.DeclarationNode
++		if n == nil || n.Type() != "method_declaration" || !anonymousFunctionalActualChild(c.body, n) || !declarationHasModifier(n, "public") || declarationHasModifier(n, "static") || declarationHasModifier(n, "private") || declarationHasModifier(n, "abstract") || declarationHasModifier(n, "native") || declarationHasModifier(n, "default") || n.ChildByFieldName("body") == nil || n.ChildByFieldName("type_parameters") != nil {
++			continue
++		}
++		formals := nodeutil.SemanticNamedChildrenOf(n.ChildByFieldName("parameters"))
++		if len(formals) != arity {
++			continue
++		}
++		if m.Constructor || m.IsStatic || m.IsPrivate || m.IsVariadic || m.RuntimeDefault || m.RequiresHelper || m.HelperName != "" || !m.HasBody || len(m.TypeParameters) != 0 || len(m.Parameters) != arity || n.ChildByFieldName("name") == nil || n.ChildByFieldName("name").Content(c.source) != m.OriginalName || n.ChildByFieldName("type") == nil || n.ChildByFieldName("type").Content(c.source) != m.OriginalType {
++			return nil, result, false
++		}
++		matches := true
++		for i, p := range formals {
++			if p.Type() != "formal_parameter" || p.ChildByFieldName("type") == nil || p.ChildByFieldName("name") == nil || m.Parameters[i] == nil || m.Parameters[i].OriginalType != p.ChildByFieldName("type").Content(c.source) || m.Parameters[i].OriginalName != p.ChildByFieldName("name").Content(c.source) {
++				return nil, result, false
++			}
++			origin, ok := anonymousFunctionalMethodOrigin(c, m, p.ChildByFieldName("type").Content(c.source))
++			stored := declaredJavaTypeOrigin(definitionDeclaredJavaType(m.Parameters[i]), func() Ctx { x := c.lexical; x.currentClass = c.scope; x.localScope = m; return x }())
++			matches = matches && ok && sameJavaTypeOrigin(origin, c.arguments[i]) && sameJavaTypeOrigin(origin, stored)
++		}
++		if !matches {
++			continue
++		}
++		actual, ok := anonymousFunctionalMethodOrigin(c, m, m.OriginalType)
++		resultCtx := c.lexical.Clone()
++		resultCtx.currentClass = c.scope
++		resultCtx.localScope = m
++		storedResult := declaredJavaTypeOrigin(definitionDeclaredJavaType(m), resultCtx)
++		if !ok || !sameJavaTypeOrigin(actual, storedResult) {
++			return nil, result, false
++		}
++		desired := c.arguments[len(c.arguments)-1]
++		if !sameJavaTypeOrigin(actual, desired) {
++			_, _, applicable, handled := declaredOriginConversion(actual, desired, c.lexical)
++			if !handled || !applicable {
++				continue
++			}
++		}
++		if selected != nil {
++			return nil, result, false
++		}
++		selected = m
++		result = actual
++	}
++	return selected, result, selected != nil
++}
++func anonymousFunctionalAttach(c *anonymousFunctionalCertificate, info *anonymousClassInfo, ctx Ctx) bool {
++	c.info = info
++	c.scope = info.scope
++	c.class = info.scope.Class
++	c.hoistStart = len(*ctx.hoistedDecls)
++	info.functional = c
++	info.scope.DeclaredTypeParameters = []symbol.TypeParam{}
++	bindings := symbol.VisibleTypeParamBindings(info.scope.TypeParameters)
++	for _, m := range info.scope.Methods {
++		if m == nil {
++			continue
++		}
++		m.TypeParameterBindings = bindings
++		m.DirectTypeParameter = symbol.DirectTypeParamForJavaType(m.OriginalType, info.scope.TypeParameters)
++		for _, p := range m.Parameters {
++			if p != nil {
++				p.TypeParameterBindings = bindings
++				p.DirectTypeParameter = symbol.DirectTypeParamForJavaType(p.OriginalType, info.scope.TypeParameters)
++			}
++		}
++	}
++	method, result, ok := anonymousFunctionalSelected(c)
++	if !ok {
++		c.phase = anonymousFunctionalFailed
++		return false
++	}
++	c.selected = method
++	if !sameJavaTypeOrigin(result, c.arguments[len(c.arguments)-1]) {
++		used := map[string]struct{}{}
++		for _, m := range info.scope.Methods {
++			used[m.Name] = struct{}{}
++		}
++		method.Name = nextSyntheticMemberName(method.Name, used)
++	}
++	c.shape = anonymousFunctionalShape(info)
++	c.lexicalBindings = anonymousFunctionalBindings(visibleTypeParameterDeclarations(c.lexical))
++	return true
++}
++func anonymousFunctionalValid(c *anonymousFunctionalCertificate, ctx Ctx, complete bool) bool {
++	if c == nil || c.self != c || c.phase == anonymousFunctionalFailed || c.phase == anonymousFunctionalBody && c.sealed || complete && c.phase != anonymousFunctionalComplete || c.info == nil || c.info.functional != c || c.info.scope != c.scope || c.scope == nil || c.scope.Class != c.class || c.scope.Enclosing != c.lexical.currentClass || !anonymousFunctionalEqual(c.scope.Class.DeclarationNode, c.allocation) || !anonymousFunctionalLexicalProof(c) {
++		return false
++	}
++	key, ok := anonymousClassSourceKey(c.allocation)
++	if !ok || ctx.anonymousClasses[key] != c.info || ctx.currentFile != c.file || ctx.hoistedDecls != c.lexical.hoistedDecls || ctx.anonClassCounter != c.lexical.anonClassCounter || ctx.genericFamilies != c.lexical.genericFamilies || ctx.dependentTypeWitnesses != c.lexical.dependentTypeWitnesses {
++		return false
++	}
++	header, ok := anonymousFunctionalHeader(c)
++	if !ok || len(header.arguments) != len(c.arguments) {
++		return false
++	}
++	for i, o := range header.arguments {
++		if !sameJavaTypeOrigin(o, c.arguments[i]) {
++			return false
++		}
++	}
++	if anonymousReceiverPhysicalABI(anonymousFunctionalRoleContext(c, ctx)) != anonymousReceiverPhysicalABI(c.lexical) {
++		return false
++	}
++	method, _, ok := anonymousFunctionalSelected(c)
++	if !ok || method != c.selected {
++		return false
++	}
++	if c.phase == anonymousFunctionalComplete {
++		if !anonymousFunctionalImplementation(c, ctx) || !anonymousFunctionalCaptureProof(c) || c.shape != anonymousFunctionalShape(c.info) || c.lexicalBindings != anonymousFunctionalBindings(visibleTypeParameterDeclarations(c.lexical)) || !c.info.emissionStampValid || c.info.emissionStamp != anonymousReceiverStamp(c.file.Source, c.lexical) {
++			return false
++		}
++		if ctx.hoistedDecls == nil || len(*ctx.hoistedDecls) < c.hoistEnd || len(c.emitted) != len(c.emittedShape) {
++			return false
++		}
++		for i, d := range c.emitted {
++			if (*ctx.hoistedDecls)[c.hoistStart+i] != d || anonymousFunctionalAST(d) != c.emittedShape[i] {
++				return false
++			}
++		}
++	}
++	return true
++}
++func anonymousFunctionalContract(c *anonymousFunctionalCertificate) sourceNativeFunctionalContract {
++	args := make([]string, len(c.arguments))
++	for i, a := range c.arguments {
++		args[i] = anonymousFunctionalOriginText(a)
++	}
++	contract, _ := nativeFunctionalContract(c.family, args)
++	return contract
++}
++func anonymousFunctionalContractEqual(c *anonymousFunctionalCertificate, contract sourceNativeFunctionalContract) bool {
++	own := anonymousFunctionalContract(c)
++	return own.family == contract.family && own.method == contract.method && own.result == contract.result && strings.Join(own.arguments, "\x00") == strings.Join(contract.arguments, "\x00") && strings.Join(own.parameters, "\x00") == strings.Join(contract.parameters, "\x00")
++}
++func anonymousFunctionalView(c *anonymousFunctionalCertificate, receiver ast.Expr, ctx Ctx) ast.Expr {
++	if !anonymousFunctionalValid(c, ctx, true) || receiver == nil {
++		return nil
++	}
++	method, result, ok := anonymousFunctionalSelected(c)
++	if !ok {
++		return nil
++	}
++	params := &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}
++	args := []ast.Expr{ast.NewIdent("execution")}
++	for i := 0; i < len(c.arguments)-1; i++ {
++		typ, ok := anonymousFunctionalPhysical(c.arguments[i], ctx)
++		if !ok {
++			return nil
++		}
++		name := "value" + strconv.Itoa(i)
++		params.List = append(params.List, &ast.Field{Names: []*ast.Ident{ast.NewIdent(name)}, Type: typ})
++		args = append(args, ast.NewIdent(name))
++	}
++	output, ok := anonymousFunctionalPhysical(c.arguments[len(c.arguments)-1], ctx)
++	if !ok {
++		return nil
++	}
++	call := ast.Expr(&ast.CallExpr{Fun: &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(executionImplementationName(method, c.scope, ctx))}, Args: args})
++	if !sameJavaTypeOrigin(result, c.arguments[len(c.arguments)-1]) {
++		descriptor, ok := declaredOriginDescriptor(c.arguments[len(c.arguments)-1], ctx, map[*symbol.TypeParamDeclaration]bool{})
++		if !ok {
++			return nil
++		}
++		call = stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{output}, []ast.Expr{call, descriptor})
++	}
++	closure := &ast.FuncLit{Type: &ast.FuncType{Params: params, Results: &ast.FieldList{List: []*ast.Field{{Type: output}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}}}
++	types := make([]ast.Expr, len(c.arguments))
++	for i, a := range c.arguments {
++		types[i], ok = anonymousFunctionalPhysical(a, ctx)
++		if !ok {
++			return nil
++		}
++	}
++	return stdjavaGenericCall(ctx, "New"+c.family+"SourceView", types, []ast.Expr{&ast.SelectorExpr{X: receiver, Sel: ast.NewIdent("ObjectInfo")}, closure})
++}
++
++// Complete only after bodies/initializers were emitted. Identity generation is
++// intentionally deferred until then, so incomplete info never exports a view.
++func anonymousFunctionalFinish(c *anonymousFunctionalCertificate, ctx Ctx) bool {
++	if c.sealed || c.phase != anonymousFunctionalBody || !anonymousFunctionalValid(c, ctx, false) || !anonymousFunctionalImplementation(c, ctx) || !anonymousFunctionalCaptureProof(c) || c.shape != anonymousFunctionalShape(c.info) || c.lexicalBindings != anonymousFunctionalBindings(visibleTypeParameterDeclarations(c.lexical)) {
++		return false
++	}
++	c.shape = anonymousFunctionalShape(c.info)
++	c.lexicalBindings = anonymousFunctionalBindings(visibleTypeParameterDeclarations(c.lexical))
++	c.phase = anonymousFunctionalComplete
++	return true
++}
++func anonymousFunctionalSeal(c *anonymousFunctionalCertificate, ctx Ctx) {
++	c.sealed = true
++	c.hoistEnd = len(*ctx.hoistedDecls)
++	c.emitted = append([]ast.Decl(nil), (*ctx.hoistedDecls)[c.hoistStart:c.hoistEnd]...)
++	for _, d := range c.emitted {
++		c.emittedShape = append(c.emittedShape, anonymousFunctionalAST(d))
++	}
++}
++func anonymousFunctionalIdentity(c *anonymousFunctionalCertificate, ctx Ctx) []ast.Decl {
++	if !anonymousFunctionalValid(c, ctx, true) {
++		return nil
++	}
++	id := javaClassBinaryName(c.lexical.currentClass) + "$" + c.info.structName
++	decls := syntheticHierarchicalReferenceIdentityDecls(c.info.structName, id, c.scope, nil, nil, c.scope.GoTypeParameterNames(), ctx)
++	if len(decls) != 3 {
++		return nil
++	}
++	view := decls[1].(*ast.FuncDecl)
++	name := view.Recv.List[0].Names[0].Name
++	native := anonymousFunctionalView(c, ast.NewIdent(name), ctx)
++	if native == nil {
++		return nil
++	}
++	cases := view.Body.List[0].(*ast.SwitchStmt).Body
++	clause := &ast.CaseClause{List: []ast.Expr{javaTypeIDLiteral("java.util.function."+c.family, ctx)}, Body: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{native}}}}
++	cases.List = append(cases.List[:len(cases.List)-1], clause, cases.List[len(cases.List)-1])
++	return decls
++}
++func anonymousFunctionalBridges(c *anonymousFunctionalCertificate, ctx Ctx) []ast.Decl {
++	if !anonymousFunctionalValid(c, ctx, true) {
++		return nil
++	}
++	method, result, ok := anonymousFunctionalSelected(c)
++	if !ok {
++		return nil
++	}
++	name := "Get"
++	if c.family == "Function" {
++		name = "Apply"
++	}
++	var declarations []ast.Decl
++	for _, aware := range []bool{false, true} {
++		selector := name
++		if aware {
++			selector += executionMethodSuffix
++		}
++		implementation := executionImplementationName(method, c.scope, ctx)
++		if sameJavaTypeOrigin(result, c.arguments[len(c.arguments)-1]) && ((!aware && method.Name == selector) || (aware && implementation == selector)) {
++			continue
++		}
++		receiver := ast.NewIdent("receiver")
++		execution := ast.Expr(stdjavaCall(ctx, "NewExecution"))
++		params := &ast.FieldList{}
++		if aware {
++			execution = ast.NewIdent("execution")
++			params.List = append(params.List, executionParameterField("execution", ctx))
++		}
++		args := []ast.Expr{execution}
++		for i := 0; i < len(c.arguments)-1; i++ {
++			typ, ok := anonymousFunctionalPhysical(c.arguments[i], ctx)
++			if !ok {
++				return nil
++			}
++			arg := "value" + strconv.Itoa(i)
++			params.List = append(params.List, &ast.Field{Names: []*ast.Ident{ast.NewIdent(arg)}, Type: typ})
++			args = append(args, ast.NewIdent(arg))
++		}
++		output, ok := anonymousFunctionalPhysical(c.arguments[len(c.arguments)-1], ctx)
++		if !ok {
++			return nil
++		}
++		call := ast.Expr(&ast.CallExpr{Fun: &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(implementation)}, Args: args})
++		if !sameJavaTypeOrigin(result, c.arguments[len(c.arguments)-1]) {
++			descriptor, ok := declaredOriginDescriptor(c.arguments[len(c.arguments)-1], ctx, map[*symbol.TypeParamDeclaration]bool{})
++			if !ok {
++				return nil
++			}
++			call = stdjavaGenericCall(ctx, "ObjectView", []ast.Expr{output}, []ast.Expr{call, descriptor})
++		}
++		declarations = append(declarations, &ast.FuncDecl{Name: ast.NewIdent(selector), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{receiver}, Type: &ast.StarExpr{X: instantiateGenericType(c.info.structName, typeParamExprs(c.scope.GoTypeParameterNames()))}}}}, Type: &ast.FuncType{Params: params, Results: &ast.FieldList{List: []*ast.Field{{Type: output}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}}})
++	}
++	return declarations
++}
++
++// Normalize only the declaration lookup role. Raw generic/erased body/lambda
++// physical ABI inputs remain the consumer's inputs and must match the source.
++func anonymousFunctionalRoleContext(c *anonymousFunctionalCertificate, ctx Ctx) Ctx {
++	ctx.currentClass = c.lexical.currentClass
++	ctx.localScope = c.lexical.localScope
++	// The consumer's expected result is not the implementation's physical ABI.
++	// Its actual emitted signature is independently checked above.
++	ctx.lastType = c.lexical.lastType
++	return ctx
++}
++func anonymousFunctionalConstructionAttempt(info *anonymousClassInfo, typ *sitter.Node, source []byte, ctx Ctx) bool {
++	if info.functional != nil {
++		return true
++	}
++	written := []string{}
++	if typ != nil {
++		written = append(written, typ.Content(source))
++	}
++	if info.scope != nil {
++		written = append(written, info.scope.ImplementedInterfaces...)
++	}
++	for _, edge := range written {
++		family := nativeFunctionalFamily(edge, ctx)
++		if family == "Function" || family == "Supplier" {
++			return true
++		}
++	}
++	return false
++}
++func anonymousFunctionalCaptureProof(c *anonymousFunctionalCertificate) bool {
++	fresh := collectCapturedLocals(c.body, c.source, c.lexical)
++	if len(fresh) != len(c.info.captured) {
++		return false
++	}
++	for i, current := range c.info.captured {
++		actual := fresh[i]
++		if current.name != actual.name || current.javaDef == nil || actual.javaDef == nil || current.javaDef.OriginalName != actual.javaDef.OriginalName || current.javaDef.OriginalType != actual.javaDef.OriginalType || current.javaDef.DirectTypeParameter != actual.javaDef.DirectTypeParameter || anonymousReceiverTypeBindings(current.javaDef.TypeParameterBindings) != anonymousReceiverTypeBindings(actual.javaDef.TypeParameterBindings) || anonymousFunctionalAST(current.goType) != anonymousFunctionalAST(actual.goType) {
++			return false
++		}
++	}
++	return true
++}
++
++// Require the selected implementation's actual emitted receiver/Execution/ABI;
++// a completed descriptor cannot be donated to a different physical body.
++func anonymousFunctionalImplementation(c *anonymousFunctionalCertificate, ctx Ctx) bool {
++	if ctx.hoistedDecls == nil || c.selected == nil || len(*ctx.hoistedDecls) < c.hoistStart {
++		return false
++	}
++	method, result, ok := anonymousFunctionalSelected(c)
++	if !ok {
++		return false
++	}
++	own := ctx.Clone()
++	own.currentClass = c.scope
++	own.localScope = method
++	implementation := executionImplementationName(method, c.scope, own)
++	found := false
++	initializer := c.info.fieldInitializerMethodName == ""
++	for _, d := range (*ctx.hoistedDecls)[c.hoistStart:] {
++		f, ok := d.(*ast.FuncDecl)
++		if !ok || f.Recv == nil || len(f.Recv.List) != 1 || f.Name == nil || f.Type == nil || f.Body == nil {
++			continue
++		}
++		receiver, ok := f.Recv.List[0].Type.(*ast.StarExpr)
++		if !ok {
++			continue
++		}
++		expected := instantiateGenericType(c.info.structName, typeParamExprs(c.scope.GoTypeParameterNames()))
++		if anonymousFunctionalAST(receiver.X) != anonymousFunctionalAST(expected) {
++			continue
++		}
++		if f.Name.Name == c.info.fieldInitializerMethodName+executionMethodSuffix {
++			initializer = true
++		}
++		if f.Name.Name != implementation {
++			continue
++		}
++		if found || f.Type.TypeParams != nil || f.Type.Params == nil || len(f.Type.Params.List) != len(c.arguments) || f.Type.Results == nil || len(f.Type.Results.List) != 1 {
++			return false
++		}
++		if anonymousFunctionalAST(f.Type.Params.List[0].Type) != anonymousFunctionalAST(executionParameterField("execution", own).Type) {
++			return false
++		}
++		for i := 0; i < len(c.arguments)-1; i++ {
++			physical, ok := anonymousFunctionalPhysical(c.arguments[i], own)
++			if !ok || anonymousFunctionalAST(f.Type.Params.List[i+1].Type) != anonymousFunctionalAST(physical) {
++				return false
++			}
++		}
++		physical, ok := anonymousFunctionalPhysical(result, own)
++		if !ok || anonymousFunctionalAST(f.Type.Results.List[0].Type) != anonymousFunctionalAST(physical) {
++			return false
++		}
++		found = true
++	}
++	return found && initializer
++}
++
++// Retained import tables and the registered TYPE census must still match the
++// actual file AST. S0 input validity alone does not establish either fact.
++func anonymousFunctionalNamespace(file *symbol.FileScope) bool {
++	if file == nil || file.ParsedRoot() == nil || file.ParsedRoot().HasError() || file.SourceInputSnapshot() == nil || file.SourceInputSnapshot().Validate() != nil {
++		return false
++	}
++	imports := map[string]string{}
++	pkg := ""
++	var declarations []*sitter.Node
++	for _, n := range nodeutil.SemanticNamedChildrenOf(file.ParsedRoot()) {
++		switch n.Type() {
++		case "package_declaration":
++			if n.NamedChild(0) == nil {
++				return false
++			}
++			pkg = n.NamedChild(0).Content(file.Source)
++		case "import_declaration":
++			wildcard, static := false, false
++			for i := 0; i < int(n.ChildCount()); i++ {
++				wildcard = wildcard || n.Child(i).Content(file.Source) == "*"
++				static = static || n.Child(i).Type() == "static"
++			}
++			if wildcard || static {
++				continue
++			}
++			target := n.NamedChild(0)
++			if target == nil || target.ChildByFieldName("name") == nil || target.ChildByFieldName("scope") == nil {
++				return false
++			}
++			name, path := target.ChildByFieldName("name").Content(file.Source), target.ChildByFieldName("scope").Content(file.Source)
++			if old, ok := imports[name]; ok && old != path {
++				return false
++			}
++			imports[name] = path
++		case "class_declaration", "interface_declaration", "enum_declaration", "annotation_type_declaration", "record_declaration":
++			declarations = append(declarations, n)
++		}
++	}
++	if pkg != file.Package || len(imports) != len(file.Imports) || len(declarations) != len(file.TopLevelClasses) {
++		return false
++	}
++	for name, path := range imports {
++		if file.Imports[name] != path {
++			return false
++		}
++	}
++	var matches func(*symbol.ClassScope, *sitter.Node) bool
++	matches = func(scope *symbol.ClassScope, n *sitter.Node) bool {
++		if scope == nil || scope.Class == nil || !anonymousFunctionalEqual(scope.Class.DeclarationNode, n) || n.ChildByFieldName("name") == nil || scope.Class.OriginalName != n.ChildByFieldName("name").Content(file.Source) {
++			return false
++		}
++		var nested []*sitter.Node
++		if body := n.ChildByFieldName("body"); body != nil {
++			for _, member := range nodeutil.SemanticNamedChildrenOf(body) {
++				switch member.Type() {
++				case "class_declaration", "interface_declaration", "enum_declaration", "annotation_type_declaration", "record_declaration":
++					nested = append(nested, member)
++				}
++			}
++		}
++		if len(nested) != len(scope.Subclasses) {
++			return false
++		}
++		for i, child := range nested {
++			if !matches(scope.Subclasses[i], child) {
++				return false
++			}
++		}
++		return true
++	}
++	for i, n := range declarations {
++		if !matches(file.TopLevelClasses[i], n) {
++			return false
++		}
++	}
++	return true
++}
++
++// TYPE declarations in enclosing class bodies are visible throughout the body;
++// local types in an executable block become visible at their source position.
++// A missing/forged resolver entry cannot turn one of those prefixes into JDK.
++func anonymousFunctionalPrefixOwned(text string, node *sitter.Node, ctx Ctx, source []byte) bool {
++	base, args := parseJavaTypeString(text)
++	base, _ = javaArrayTypeParts(base)
++	first := strings.Split(base, ".")[0]
++	for p := node.Parent(); p != nil; p = p.Parent() {
++		classBody := p.Type() == "class_body" || p.Type() == "interface_body" || p.Type() == "enum_body"
++		block := p.Type() == "block" || p.Type() == "constructor_body"
++		if !classBody && !block {
++			continue
++		}
++		for _, declaration := range nodeutil.SemanticNamedChildrenOf(p) {
++			switch declaration.Type() {
++			case "class_declaration", "interface_declaration", "enum_declaration", "annotation_type_declaration", "record_declaration":
++				if !classBody && declaration.StartByte() > node.StartByte() {
++					continue
++				}
++				name := declaration.ChildByFieldName("name")
++				if name == nil || name.Content(source) != first {
++					continue
++				}
++				resolved := resolveClassScopeByQualifiedName(ctx, first)
++				if resolved == nil || resolved.Class == nil || !anonymousFunctionalEqual(resolved.Class.DeclarationNode, declaration) {
++					return false
++				}
++			}
++		}
++	}
++	for _, arg := range args {
++		if !anonymousFunctionalPrefixOwned(arg, node, ctx, source) {
++			return false
++		}
++	}
++	return true
++}
++
++func anonymousFunctionalExecutable(c *anonymousFunctionalCertificate) bool {
++	m := c.lexical.localScope
++	if c.executable == nil {
++		return m == nil
++	}
++	n := c.executable
++	if m == nil || n.ChildByFieldName("name") == nil || m.OriginalName != n.ChildByFieldName("name").Content(c.source) || m.Constructor != (n.Type() == "constructor_declaration") || m.IsStatic != declarationHasModifier(n, "static") || m.IsPrivate != declarationHasModifier(n, "private") || m.IsFinal != declarationHasModifier(n, "final") || m.RuntimeDefault || m.HasBody != (n.ChildByFieldName("body") != nil) {
++		return false
++	}
++	if n.Type() == "method_declaration" {
++		if typ := n.ChildByFieldName("type"); typ == nil || typ.Content(c.source) != m.OriginalType {
++			return false
++		}
++	}
++	params := nodeutil.SemanticNamedChildrenOf(n.ChildByFieldName("parameters"))
++	if len(params) != len(m.Parameters) {
++		return false
++	}
++	expectedBindings := symbol.VisibleTypeParamBindings(visibleTypeParameterDeclarations(c.lexical))
++	for i, p := range params {
++		typ, name := nodeutil.JavaParameterNodes(p)
++		if typ == nil || name == nil || m.Parameters[i] == nil || typ.Content(c.source) != m.Parameters[i].OriginalType || name.Content(c.source) != m.Parameters[i].OriginalName {
++			return false
++		}
++		actual := declaredJavaTypeOrigin(symbol.JavaType{Original: typ.Content(c.source), TypeParameterBindings: expectedBindings}, c.lexical)
++		stored := declaredJavaTypeOrigin(definitionDeclaredJavaType(m.Parameters[i]), c.lexical)
++		if !sameJavaTypeOrigin(actual, stored) {
++			return false
++		}
++	}
++	return true
++}
+diff --git a/transpiler/expression.go b/transpiler/expression.go
+index 8cb6a732f5239514d255241a5eb66d5cc1c97e53..b3c6f8254cd3c604b7d3298cd78ff53983c1324e 100644
+--- a/transpiler/expression.go
++++ b/transpiler/expression.go
+@@ -6958,8 +6958,19 @@
+ 	if ctx.hoistedDecls == nil || ctx.anonymousClasses == nil || objectType == nil {
+ 		return nil
+ 	}
++	functional, attemptedFunctional := anonymousFunctionalStart(node, objectType, classBody, source, ctx)
++	if attemptedFunctional && functional == nil {
++		return nil
++	}
+ 	key, hasKey := anonymousClassSourceKey(node)
+ 	if hasKey {
++		if info := ctx.anonymousClasses[key]; info != nil && (attemptedFunctional || info.functional != nil) {
++			if functional == nil || info.functional == nil || !anonymousFunctionalValid(info.functional, ctx, true) ||
++				!info.emissionStampValid || info.emissionStamp != anonymousReceiverStamp(source, ctx) {
++				return nil
++			}
++			return anonymousClassConstructionExpr(node, objectType, info, nil, source, ctx)
++		}
+ 		if info := ctx.anonymousClasses[key]; info != nil && info.scope != nil &&
+ 			info.emissionStampValid && info.emissionStamp == anonymousReceiverStamp(source, ctx) {
+ 			baseType, _ := parseJavaTypeString(objectType.Content(source))
+@@ -6974,8 +6985,36 @@
+ 		}
+ 	}
+ 
++	functionalSucceeded := false
++	if functional != nil {
++		if !hasKey || ctx.anonClassCounter == nil {
++			return nil
++		}
++		beforeHoists, beforeCounter := len(*ctx.hoistedDecls), *ctx.anonClassCounter
++		beforeMap := make(map[anonymousClassKey]*anonymousClassInfo, len(ctx.anonymousClasses))
++		for key, info := range ctx.anonymousClasses {
++			beforeMap[key] = info
++		}
++		defer func() {
++			if functionalSucceeded {
++				return
++			}
++			functional.phase = anonymousFunctionalFailed
++			*ctx.hoistedDecls = (*ctx.hoistedDecls)[:beforeHoists]
++			*ctx.anonClassCounter = beforeCounter
++			for key := range ctx.anonymousClasses {
++				delete(ctx.anonymousClasses, key)
++			}
++			for key, info := range beforeMap {
++				ctx.anonymousClasses[key] = info
++			}
++		}()
++	}
+ 	supertype := objectType.Content(source)
+-	if isExternalFunctionType(supertype, ctx) {
++	if functional != nil {
++		supertype = functional.header
++	}
++	if functional == nil && isExternalFunctionType(supertype, ctx) {
+ 		_, args := parseJavaTypeString(supertype)
+ 		if len(args) == 0 && isExternalFunctionType(ctx.expectedType, ctx) {
+ 			supertype = ctx.expectedType
+@@ -6995,6 +7034,9 @@
+ 	captured := collectCapturedLocals(classBody, source, ctx)
+ 	bodyMethods := anonymousClassMethods(classBody)
+ 	reservedSelectors := anonymousInheritedSelectorNames(supertype, superScope, ctx)
++	if functional != nil {
++		reservedSelectors["ObjectInfo"] = struct{}{}
++	}
+ 	reservedInstallerSelectors := inheritedSubobjectInstallerSelectorNames(superScope, ctx)
+ 	// Anonymous declaration allocation uses the same fixed source reservation
+ 	// as ordinary/local classes; genuine overrides are retargeted below.
+@@ -7045,12 +7087,15 @@
+ 	if superScope == nil {
+ 		externalInterfaceOwner = anonymousExternalInterfaceOwner(node, objectType, source, ctx)
+ 	}
+-	if superScope != nil && superScope.IsInterface || externalInterfaceOwner != "" || isExternalFunctionType(supertype, ctx) || canonicalIterationOwner(supertype, ctx) != "" {
++	if functional != nil || superScope != nil && superScope.IsInterface || externalInterfaceOwner != "" || isExternalFunctionType(supertype, ctx) || canonicalIterationOwner(supertype, ctx) != "" {
+ 		syntheticScope.ImplementedInterfaces = append(syntheticScope.ImplementedInterfaces, supertype)
+ 	} else if superScope != nil || characterIOBaseTypeExpr(supertype, ctx) != nil || anonymousAbstractCollectionBase(supertype, ctx) || threadSourceCanonicalOwner(supertype, nil, ctx) == "java.lang.Thread" {
+ 		syntheticScope.Superclass = supertype
+ 	}
+ 	prepareAnonymousAbstractCollectionScope(syntheticScope, ctx)
++	if functional != nil {
++		reserveLocalIdentityMethodNames(syntheticScope)
++	}
+ 	resolveSyntheticInheritedMethodNames(syntheticScope, ctx)
+ 	syntheticScope.HasInstanceFieldInitializers = localClassHasInstanceFieldInitializers(classBody)
+ 	fieldInitializerMethod := ""
+@@ -7066,6 +7111,9 @@
+ 	}
+ 	if hasKey {
+ 		ctx.anonymousClasses[key] = info
++	}
++	if functional != nil && !anonymousFunctionalAttach(functional, info, ctx) {
++		return nil
+ 	}
+ 
+ 	// Build the struct fields: the supertype, declared fields, then captured
+@@ -7080,7 +7128,9 @@
+ 			Type:  enclosingType,
+ 		})
+ 	}
+-	if superScope != nil && superScope.Class != nil {
++	if functional != nil {
++		fields.List = append(fields.List, generatedObjectInfoField(ctx))
++	} else if superScope != nil && superScope.Class != nil {
+ 		if superScope.IsInterface {
+ 			if embedded := implementedInterfaceTypeExpr(supertype, syntheticScope.TypeParameterNames(), classScopeCtx(syntheticScope, ctx)); embedded != nil {
+ 				fields.List = append(fields.List, &ast.Field{Type: embedded})
+@@ -7143,13 +7193,17 @@
+ 	for _, declaration := range append(generateIterationBridgeDecls(installerCtx), generateMapEntryBridgeDecls(installerCtx)...) {
+ 		ctx.addHoistedDecl(declaration)
+ 	}
+-	for _, declaration := range generateFunctionSAMBridgeDecls(installerCtx) {
+-		ctx.addHoistedDecl(declaration)
++	if functional == nil {
++		for _, declaration := range generateFunctionSAMBridgeDecls(installerCtx) {
++			ctx.addHoistedDecl(declaration)
++		}
+ 	}
+ 	for _, declaration := range generateCharacterIOBridgeDecls(installerCtx) {
+ 		ctx.addHoistedDecl(declaration)
+ 	}
+-	if threadSourceDirectRoot(syntheticScope, installerCtx) {
++	if functional != nil {
++		// Its identity and native views are emitted only after source completion.
++	} else if threadSourceDirectRoot(syntheticScope, installerCtx) {
+ 		ownerID := ctx.className
+ 		if ctx.currentClass != nil {
+ 			ownerID = javaClassBinaryName(ctx.currentClass)
+@@ -7307,7 +7361,31 @@
+ 		}
+ 	}
+ 
++	if functional != nil {
++		info.emissionStamp = anonymousReceiverStamp(source, ctx)
++		info.emissionStampValid = true
++		if !anonymousFunctionalFinish(functional, ctx) {
++			return nil
++		}
++		for _, declaration := range anonymousFunctionalBridges(functional, installerCtx) {
++			ctx.addHoistedDecl(declaration)
++		}
++		identity := anonymousFunctionalIdentity(functional, installerCtx)
++		if len(identity) != 3 {
++			return nil
++		}
++		for _, declaration := range identity {
++			ctx.addHoistedDecl(declaration)
++		}
++		anonymousFunctionalSeal(functional, ctx)
++	}
+ 	expression := anonymousClassConstructionExpr(node, objectType, info, superScope, source, ctx)
++	if functional != nil {
++		if expression == nil {
++			return nil
++		}
++		functionalSucceeded = true
++	}
+ 	// The class layout captures source-local names and physical types. Keep the
+ 	// offset index for exact-type lookup, but reuse a hoisted declaration only
+ 	// within the lexical and emission context that supplied those captures.
+@@ -7333,6 +7411,15 @@
+ 	if info == nil || info.scope == nil || info.structName == "" {
+ 		return nil
+ 	}
++	functional, attemptedFunctional := anonymousFunctionalLookup(info.scope, ctx)
++	if anonymousFunctionalConstructionAttempt(info, objectType, source, ctx) || attemptedFunctional && functional != nil {
++		if functional == nil || info.functional != functional || functional.info != info || !anonymousFunctionalValid(functional, ctx, true) ||
++			!anonymousFunctionalEqual(node, functional.allocation) || !anonymousFunctionalEqual(objectType, functional.typ) ||
++			anonymousReceiverSourceIdentity(source) != functional.sourceIdentity || !bytesEqualAnonymousFunctionalSource(source, functional.source) ||
++			info.emissionStamp != anonymousReceiverStamp(source, ctx) {
++			return nil
++		}
++	}
+ 
+ 	declarationCtx := classScopeCtx(info.scope, ctx)
+ 	declarationCtx.className = info.structName
+@@ -7381,7 +7468,7 @@
+ 		},
+ 	}
+ 	instanceName := "__java2goAnonymous"
+-	if nativeReader || nativeThread {
++	if nativeReader || nativeThread || functional != nil {
+ 		used := affineLoopUsedNames(node, source, ctx)
+ 		for _, name := range append(inScopeTypeParameters(ctx), info.scope.GoTypeParameterNames()...) {
+ 			used[name] = struct{}{}
+@@ -7402,7 +7489,7 @@
+ 		)
+ 	}
+ 	if !usesMostDerived && info.fieldInitializerMethodName == "" &&
+-		len(defaultStringInitializers) == 0 && defaultCarrierConstructor == nil && !nativeReader && !nativeThread {
++		len(defaultStringInitializers) == 0 && defaultCarrierConstructor == nil && !nativeReader && !nativeThread && functional == nil {
+ 		return composite
+ 	}
+ 
+@@ -7415,6 +7502,10 @@
+ 	// values were populated by the composite literal and deliberately remain
+ 	// untouched before constructor-time virtual dispatch.
+ 	statements = append(statements, defaultStringInitializers...)
++	if functional != nil {
++		receiver := ast.NewIdent(instanceName)
++		statements = append(statements, &ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: receiver, Sel: ast.NewIdent("ObjectInfo")}}, Tok: token.ASSIGN, Rhs: []ast.Expr{stdjavaCall(ctx, "NewGeneratedObjectInfo", receiver)}})
++	}
+ 	if nativeThread {
+ 		receiver := ast.NewIdent(instanceName)
+ 		if initialize := constructorObjectInfoInitStmt(info.scope, instanceName, receiver, declarationCtx); initialize != nil {
+diff --git a/transpiler/functional_source_views.go b/transpiler/functional_source_views.go
+index 064f1571352eda2539fd390a5632524388dc61cb..0d4d59220a75efc54fc5cc66ef2eff6635763b1a 100644
+--- a/transpiler/functional_source_views.go
++++ b/transpiler/functional_source_views.go
+@@ -88,6 +88,12 @@
+ 	return c, true
+ }
+ func sourceNativeFunctionalContracts(scope *symbol.ClassScope, ctx Ctx) []sourceNativeFunctionalContract {
++	if certificate, anonymous := anonymousFunctionalLookup(scope, ctx); anonymous {
++		if !anonymousFunctionalValid(certificate, ctx, false) {
++			return nil
++		}
++		return []sourceNativeFunctionalContract{anonymousFunctionalContract(certificate)}
++	}
+ 	if scope == nil {
+ 		return nil
+ 	}
+@@ -189,6 +195,12 @@
+ 	return nil, nil, ""
+ }
+ func sourceNativeFunctionalViewExpr(scope *symbol.ClassScope, c sourceNativeFunctionalContract, receiver ast.Expr, ctx Ctx) ast.Expr {
++	if certificate, anonymous := anonymousFunctionalLookup(scope, ctx); anonymous {
++		if certificate == nil || !anonymousFunctionalContractEqual(certificate, c) {
++			return nil
++		}
++		return anonymousFunctionalView(certificate, receiver, ctx)
++	}
+ 	method, owner, result := resolveSourceNativeSAM(scope, c, ctx)
+ 	if method == nil || c.family == "Supplier" && !supplierSourceSelectedMethodOwned(scope, owner, method, c, ctx) {
+ 		return nil
+diff --git a/transpiler/supplier_source_contract.go b/transpiler/supplier_source_contract.go
+index cc4f495c8a94794e8c16bf4d7878c20f61e90bf9..07659912052e3602c7a6c3bc6474b62444bce453 100644
+--- a/transpiler/supplier_source_contract.go
++++ b/transpiler/supplier_source_contract.go
+@@ -13,6 +13,15 @@
+ // The independently retained parse root, actual registered scope and written
+ // header must agree before a source declaration can donate a Supplier view.
+ func supplierSourceDeclarationCtx(owner *symbol.ClassScope, ctx Ctx) (Ctx, bool) {
++	if certificate, anonymous := anonymousFunctionalLookup(owner, ctx); anonymous {
++		if !anonymousFunctionalValid(certificate, ctx, false) {
++			return Ctx{}, false
++		}
++		declaring := certificate.lexical.Clone()
++		declaring.currentClass = certificate.scope
++		declaring.localScope = nil
++		return declaring, true
++	}
+ 	if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil {
+ 		return Ctx{}, false
+ 	}
+@@ -234,6 +243,13 @@
+ }
+ 
+ func supplierSourceSelectedMethodOwned(scope, owner *symbol.ClassScope, method *symbol.Definition, c sourceNativeFunctionalContract, ctx Ctx) bool {
++	if certificate, anonymous := anonymousFunctionalLookup(scope, ctx); anonymous {
++		return certificate != nil && certificate.family == "Supplier" && anonymousFunctionalValid(certificate, ctx, true) &&
++			owner == certificate.scope && method == certificate.selected && anonymousFunctionalContractEqual(certificate, c)
++	}
++	if _, anonymous := anonymousFunctionalLookup(owner, ctx); anonymous {
++		return false
++	}
+ 	bindings, proved := supplierSourceContractProof(scope, c, ctx)
+ 	declaring, owned := supplierSourceDeclarationCtx(owner, ctx)
+ 	if !proved || !owned || method == nil || method.DeclarationNode == nil || method.IsStatic || method.IsPrivate || !method.HasBody || method.OriginalName != "get" || len(method.Parameters) != 0 || len(method.TypeParameters) != 0 {
+diff --git a/transpiler/tree_sitter.go b/transpiler/tree_sitter.go
+index 934a6536727f82e253254d655069d7213516726a..90570b6065cc7be9aebe152308c0965ec2453ff5 100644
+--- a/transpiler/tree_sitter.go
++++ b/transpiler/tree_sitter.go
+@@ -239,6 +239,7 @@
+ }
+ 
+ type anonymousClassInfo struct {
++	functional                 *anonymousFunctionalCertificate
+ 	emissionStamp              anonymousReceiverEmissionStamp
+ 	emissionStampValid         bool
+ 	structName                 string

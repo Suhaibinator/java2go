@@ -1,0 +1,121 @@
+{
+  "base_members": 4525,
+  "candidate_id": "raf-file-overload-v10",
+  "candidate_members": 4530,
+  "copies_not_hardlinks": true,
+  "explicit_inverse_returns_forward_copy_to_full_base": true,
+  "forward_full_base_copy_matches_full_candidate": true,
+  "fresh_unique_scratch_copies_removed": true,
+  "frozen_full_source_manifests_recomputed_before_and_after": true,
+  "git_apply_checks": [
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.autocrlf=false",
+        "apply",
+        "--whitespace=nowarn",
+        "--check",
+        "candidates/raf-file-overload-v10/FORWARD.patch"
+      ],
+      "exit": 0,
+      "repository_discovery_ceiling": "private bundle scratch parent; parent repository discovery disabled",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.autocrlf=false",
+        "apply",
+        "--whitespace=nowarn",
+        "candidates/raf-file-overload-v10/FORWARD.patch"
+      ],
+      "exit": 0,
+      "repository_discovery_ceiling": "private bundle scratch parent; parent repository discovery disabled",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.autocrlf=false",
+        "apply",
+        "--whitespace=nowarn",
+        "--check",
+        "candidates/raf-file-overload-v10/INVERSE.patch"
+      ],
+      "exit": 0,
+      "repository_discovery_ceiling": "private bundle scratch parent; parent repository discovery disabled",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.autocrlf=false",
+        "apply",
+        "--whitespace=nowarn",
+        "candidates/raf-file-overload-v10/INVERSE.patch"
+      ],
+      "exit": 0,
+      "repository_discovery_ceiling": "private bundle scratch parent; parent repository discovery disabled",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.autocrlf=false",
+        "apply",
+        "--whitespace=nowarn",
+        "--reverse",
+        "--check",
+        "candidates/raf-file-overload-v10/FORWARD.patch"
+      ],
+      "exit": 0,
+      "repository_discovery_ceiling": "private bundle scratch parent; parent repository discovery disabled",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "git",
+        "-c",
+        "core.autocrlf=false",
+        "apply",
+        "--whitespace=nowarn",
+        "--reverse",
+        "candidates/raf-file-overload-v10/FORWARD.patch"
+      ],
+      "exit": 0,
+      "repository_discovery_ceiling": "private bundle scratch parent; parent repository discovery disabled",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "mapped_blob_restore_on_third_fresh_full_base_copy_matches_full_candidate": true,
+  "reverse_forward_on_separate_full_candidate_copy_matches_full_base": true,
+  "scope": "Packaging byte integrity only. No Go/JVM/transpiler, test or semantic verdict.",
+  "shipped_full_source_verify_utility_actual_exit": 0,
+  "shipped_mapping_restore_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "shipped_mapping_restore_stdout_sha256": "f9995a1d89948aa890d9437280d6c5018417e549626c6a6cd42dfe00851c94ef",
+  "shipped_mapping_restore_utility_actual_exit": 0,
+  "shipped_utilities_restore_fourth_fresh_distinct_copy_full_manifest_exact": true
+}

@@ -1,0 +1,16 @@
+{
+  "all_source_git_blob_sha1_and_modes_match_exact_commit": true,
+  "base_git_commit": "6586fdea6a69384390021bc99f628d33082407e9",
+  "complete_path_set_matches_exact_git_commit": true,
+  "ls_tree_raw_sha256": "c10b81e8561ec7d42153b40690d7f7646441662884d426f8cc651195b060e01b",
+  "no_git_mutations": true,
+  "read_only_command": [
+    "git",
+    "ls-tree",
+    "-rz",
+    "--full-tree",
+    "6586fdea6a69384390021bc99f628d33082407e9"
+  ],
+  "source_manifest_members": 4525,
+  "tree_entries": 4525
+}

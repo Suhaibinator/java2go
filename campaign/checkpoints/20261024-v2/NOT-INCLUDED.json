@@ -1,0 +1,32 @@
+{
+  "candidates": [
+    {
+      "delivery_ref": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/supplier-sealed-reference4603-repair/source-map-provider-nested-member-origin-candidate42-v1/READY-PRIVATE42-DELIVERY.json",
+      "delivery_sha256": "1d712628d05c2e89b1d6473ed947a62d0c4d0d18a40bd2030b65f3159739e797",
+      "full_source_recomputed_exact_before_scope_exclusion": true,
+      "hold_reasons": [
+        "Missing live package census / omitted siblings",
+        "Missing registered SourceSnapshot and current parser-byte authority",
+        "Missing implicit Object/Java-ancestor TYPE-absence checks",
+        "Missing conflicting written single-import checks before map deduplication"
+      ],
+      "id": "Map42",
+      "included": false,
+      "owner": "sol61_map_owner_resume",
+      "private_base_members": 4646,
+      "public214_delta": {
+        "added": 254,
+        "deleted": 132,
+        "modified": 116,
+        "total": 502
+      },
+      "reason": "Coordinator omitted incompatible private-base4646 delta, including unrelated CI/campaign/source replacements and removals. No partial filtering, manifest payload or broad foreign-base code patch included.",
+      "source_manifest_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/supplier-sealed-reference4603-repair/source-map-provider-nested-member-origin-candidate42-v1/SOURCE-MANIFEST.json",
+      "source_manifest_sha256": "62d8262dd6735d21072644748c3450563818f28185a6f7bb3516ed28333e1cba",
+      "source_members": 4647,
+      "source_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/supplier-sealed-reference4603-repair/source-map-provider-nested-member-origin-candidate42-v1/source",
+      "status": "HOLD_WIP_NOT_INCLUDED",
+      "successor": "Map43 in preparation; regional public214 port required before checkpoint."
+    }
+  ]
+}

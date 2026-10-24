@@ -1,0 +1,2213 @@
+diff --git a/transpiler/expression.go b/transpiler/expression.go
+index e605051bc82b2bb932846691ab3beea43a2aba09..8cb6a732f5239514d255241a5eb66d5cc1c97e53 100644
+--- a/transpiler/expression.go
++++ b/transpiler/expression.go
+@@ -4354,7 +4354,7 @@
+ 	); ok {
+ 		return erasure
+ 	}
+-	if genericMethodHasErasedEntryInContext(resolution.def, ctx) {
++	if genericMethodHasErasedEntry(resolution.def) {
+ 		return genericMethodErasedJavaType(resolution.def, definitionParameterJavaSignatureType(resolution.def, parameterIndex))
+ 	}
+ 	return definitionParameterJavaSignatureType(resolution.def, parameterIndex)
+diff --git a/transpiler/generic_method_dispatch.go b/transpiler/generic_method_dispatch.go
+index 2972a4bab938ce4ddbdc6458bbb2e5e62f15aa9e..02aa9e5237271d13060d4293b90fb1aa76c23348 100644
+--- a/transpiler/generic_method_dispatch.go
++++ b/transpiler/generic_method_dispatch.go
+@@ -15,10 +15,6 @@
+ // Limit this entrypoint to bare method parameters: nested invariant Go
+ // instantiations need a separate representation plan.
+ func genericMethodHasErasedEntry(def *symbol.Definition) bool {
+-	return genericMethodHasErasedEntryInContext(def, Ctx{})
+-}
+-
+-func genericMethodHasErasedEntryInContext(def *symbol.Definition, sourceCtx Ctx) bool {
+ 	if def == nil || !def.RequiresHelper || def.IsPrivate || executionParameterIsVariadic(def, len(def.Parameters)-1) {
+ 		return false
+ 	}
+@@ -34,41 +30,14 @@
+ 	for _, typ := range types {
+ 		for _, tp := range def.TypeParameters {
+ 			if strings.TrimSpace(typ) != tp.Name && strings.TrimSpace(typ) != tp.EmittedName() && javaTypeContainsParameter(typ, tp.Name) {
+-				if ctx, found := genericMethodOwnerContext(def); found {
+-					ctx = genericMethodDeclaringSyntaxContext(ctx, sourceCtx)
+-					if canonicalGenericMethodSignature(def, ctx) {
+-						return true
+-					}
++				if ctx, found := genericMethodOwnerContext(def); found && canonicalGenericMethodSignature(def, ctx) {
++					return true
+ 				}
+ 				return false
+ 			}
+ 		}
+ 	}
+ 	return true
+-}
+-
+-// The selected definition owns lexical meaning. Only an independently
+-// admitted invocation may supply syntax routes to its fresh declaring context.
+-func genericMethodDeclaringSyntaxContext(declaring, sourceCtx Ctx) Ctx {
+-	invocation := sourceCtx.syntaxInvocation
+-	if declaring.currentClass == nil || declaring.currentFile == nil || !sourceGenericDemandOwnedCompilationUnits(invocation) {
+-		return declaring
+-	}
+-	proof, known := sourceGenericDemandOwnershipContext()
+-	if !known || proof.sourceOwnership.files[declaring.currentClass] != declaring.currentFile {
+-		return declaring
+-	}
+-	owners := allSourceClassScopes()
+-	inventory := invocation.demandSyntax
+-	if inventory == nil {
+-		inventory = buildSourceGenericDemandSyntax(invocation, owners, proof)
+-	}
+-	if inventory == nil || !inventory.matches(invocation, owners, proof) {
+-		return declaring
+-	}
+-	invocation.demandSyntax = inventory
+-	declaring.syntaxInvocation = invocation
+-	return declaring
+ }
+ 
+ func javaTypeContainsParameter(typ, name string) bool {
+diff --git a/transpiler/source_generic_demand_kind211_test.go b/transpiler/source_generic_demand_kind211_test.go
+deleted file mode 100644
+index 6cc6bd0513e1db28e2a0dd38bd7ce9ee30666370..0000000000000000000000000000000000000000
+--- a/transpiler/source_generic_demand_kind211_test.go
++++ /dev/null
+@@ -1,323 +0,0 @@
+-package transpiler
+-
+-import (
+-	"bytes"
+-	"encoding/json"
+-	"runtime"
+-	"sort"
+-	"strings"
+-	"testing"
+-
+-	"github.com/NickyBoy89/java2go/parsing"
+-	"github.com/NickyBoy89/java2go/symbol"
+-)
+-
+-func legacyKind211Expected(t *testing.T, names ...string) []*symbol.ClassScope {
+-	t.Helper()
+-	var expected []*symbol.ClassScope
+-	for _, name := range names {
+-		owner := findQualifiedSourceClass(name)
+-		if owner == nil {
+-			t.Fatalf("missing actual expected declaration %s", name)
+-		}
+-		expected = append(expected, owner)
+-	}
+-	return expected
+-}
+-
+-func legacyKind211DefaultAgree(t *testing.T, expected []*symbol.ClassScope) {
+-	t.Helper()
+-	if _, known := sourceGenericViewDemandSeedsFromSyntax(Ctx{}); known {
+-		t.Fatal("zero context unexpectedly acquired syntax authority")
+-	}
+-	actual := sourceGenericViewDemandSeeds(Ctx{})
+-	demand188Same(t, actual, expected)
+-	events, _ := demand188SyntaxWitness(Ctx{}, true)
+-	demand188Same(t, demand188Replay(events), expected)
+-}
+-
+-func TestLegacyDemandKind211DeclaringSemantics(t *testing.T) {
+-	for _, test := range []struct {
+-		name, use string
+-		want      []string
+-	}{
+-		{"ordered-declarations", `package app;public class Use{q.Cell<?> right;p.Cell<?> left;}`, []string{"p.Cell", "q.Cell"}},
+-		{"raw-formal", `package app;public class Use{void accept(p.Cell value){}}`, []string{"p.Cell"}},
+-		{"concrete-cast", `package app;public class Use{Object cast(Object value){return (p.Cell<String>)value;}}`, []string{"p.Cell"}},
+-		{"concrete-and-diamond", `package app;public class Use{p.Cell<String> value;Object make(){return new p.Cell<>();}}`, nil},
+-		{"method-binder", `package app;import p.Cell;public class Use{<Cell>Cell id(Cell value){return value;}}`, nil},
+-		{"constructor-binder", `package app;import p.Cell;public class Use{<Cell>Use(Cell value){Cell local=value;}}`, nil},
+-		{"named-nested-owner", `package app;public class Use{static class Inner{q.Cell<?> value;}}`, []string{"q.Cell"}},
+-		{"local-declaration-shadow", `package app;import p.Cell;public class Use{void work(){class Cell<T>{}Cell<?> local=null;}}`, nil},
+-		{"local-prior-demand", `package app;import p.Cell;public class Use{void work(){Cell<?> source=null;class Cell<T>{}}}`, []string{"p.Cell"}},
+-		{"anonymous-body-shadow", `package app;import p.Cell;public class Use{Object value=new Object(){class Cell<T>{}Cell<?> local;};}`, nil},
+-		{"enum-constant-body-shadow", `package app;import p.Cell;enum Pick{A{class Cell<T>{}Cell<?> local;};}public class Use{}`, nil},
+-		{"lexical-member-prefix", `package app;public class Use{static class p{static class Cell<T>{T value;}}p.Cell<?> value;}`, []string{"app.Use.p.Cell"}},
+-		{"record-header", `package app;public class Use{record Pair(p.Cell<?> value){}}`, []string{"p.Cell"}},
+-		{"binder-prefix", `package app;public class Use{<p>void work(p.Cell<?> value){}}`, nil},
+-	} {
+-		t.Run(test.name, func(t *testing.T) {
+-			_, files, _ := demand188Fixture(t, demandSyntaxBaseSources(test.use))
+-			legacyKind211DefaultAgree(t, legacyKind211Expected(t, test.want...))
+-			runtime.KeepAlive(files)
+-		})
+-	}
+-}
+-
+-// Return twice the median, exactly, without floating-point rounding or
+-// truncating either middle observation of the four fixed paired-order samples.
+-func legacyKind211Median2(values []int64) int64 {
+-	if len(values) != 4 {
+-		panic("legacy kind median requires exactly four observations")
+-	}
+-	ordered := append([]int64(nil), values...)
+-	sort.Slice(ordered, func(i, j int) bool { return ordered[i] < ordered[j] })
+-	return ordered[1] + ordered[2]
+-}
+-
+-func legacyKind211WithinGrowth(actual2, witness2 int64) bool {
+-	const maxInt64 = int64(1<<63 - 1)
+-	return actual2 >= 0 && witness2 > 0 && actual2 <= maxInt64/4 && witness2 <= maxInt64/3 && actual2*4 <= witness2*3
+-}
+-
+-func TestLegacyDemandKind211OwnershipAndRefusals(t *testing.T) {
+-	t.Run("integer-median-boundary", func(t *testing.T) {
+-		if legacyKind211Median2([]int64{0, 3, 1, 2}) != 3 || legacyKind211Median2([]int64{17, 9, 13, 11}) != 24 {
+-			t.Fatal("doubled integer median changed")
+-		}
+-		if !legacyKind211WithinGrowth(3, 4) || legacyKind211WithinGrowth(4, 4) || legacyKind211WithinGrowth(-1, 4) || legacyKind211WithinGrowth(0, 0) || legacyKind211WithinGrowth(1<<62+1, 4) {
+-			t.Fatal("strict 75 percent growth boundary changed")
+-		}
+-	})
+-	t.Run("live-import-and-matching-holder", func(t *testing.T) {
+-		ctx, files, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;import p.Cell;public class Use{Cell<?> value;}`))
+-		use := findQualifiedSourceClass("app.Use")
+-		file := findFileScopeForClassScope(use, ctx)
+-		p := legacyKind211Expected(t, "p.Cell")
+-		q := legacyKind211Expected(t, "q.Cell")
+-		legacyKind211DefaultAgree(t, p)
+-		public := ctx.Clone()
+-		public.syntaxInvocation = nil
+-		demand188Same(t, sourceGenericViewDemandSeeds(public), p)
+-		if public.callableSubclasses.graph != symbol.GlobalScope || len(public.callableSubclasses.nodes) == 0 {
+-			t.Fatal("matching syntax holder did not observe real nodes")
+-		}
+-		file.Imports["Cell"] = "q"
+-		legacyKind211DefaultAgree(t, q)
+-		demand188Same(t, sourceGenericViewDemandSeeds(public), q)
+-		file.Imports["Cell"] = "p"
+-		legacyKind211DefaultAgree(t, p)
+-		runtime.KeepAlive(files)
+-	})
+-	t.Run("stale-graph-retirement", func(t *testing.T) {
+-		ctx, oldFiles, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`))
+-		oldGraph := symbol.GlobalScope
+-		oldExpected := legacyKind211Expected(t, "p.Cell")
+-		public := ctx.Clone()
+-		public.syntaxInvocation = nil
+-		demand188Same(t, sourceGenericViewDemandSeeds(public), oldExpected)
+-		facts := ctx.syntaxInvocation.declarations
+-		if facts == nil || facts.retired || ctx.callableSubclasses.graph != oldGraph {
+-			t.Fatal("real live invocation/holder retirement premise absent")
+-		}
+-		_, freshFiles, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{q.Cell<?> value;}`))
+-		freshGraph := symbol.GlobalScope
+-		freshExpected := legacyKind211Expected(t, "q.Cell")
+-		if freshGraph == oldGraph || findQualifiedSourceClass("p.Cell") == oldExpected[0] || freshExpected[0] == oldExpected[0] || facts.retired {
+-			t.Fatal("distinct graph and live retained holder premise absent")
+-		}
+-		demand188Same(t, sourceGenericViewDemandSeeds(ctx), freshExpected)
+-		if !facts.retired || ctx.callableSubclasses.graph != freshGraph {
+-			t.Fatal("first stale-holder visit failed to retire declaration facts and reset graph")
+-		}
+-		symbol.GlobalScope = oldGraph
+-		demand188Same(t, sourceGenericViewDemandSeeds(ctx), oldExpected)
+-		if !facts.retired {
+-			t.Fatal("restoring graph revived retired declaration facts")
+-		}
+-		symbol.GlobalScope = freshGraph
+-		runtime.KeepAlive(oldFiles)
+-		runtime.KeepAlive(freshFiles)
+-	})
+-	t.Run("source-byte-fallback", func(t *testing.T) {
+-		ctx, files, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`))
+-		file := findFileScopeForClassScope(findQualifiedSourceClass("app.Use"), ctx)
+-		at := bytes.Index(file.Source, []byte("p.Cell<?>"))
+-		if at < 0 {
+-			t.Fatal("actual source mutation premise absent")
+-		}
+-		file.Source[at] = 'q'
+-		if _, known := sourceGenericViewDemandSeedsFromSyntax(ctx); known {
+-			t.Fatal("edited source retained owned syntax authority")
+-		}
+-		want := legacyKind211Expected(t, "q.Cell")
+-		legacyKind211DefaultAgree(t, want)
+-		demand188Same(t, sourceGenericViewDemandSeeds(ctx), want)
+-		file.Source[at] = 'p'
+-		legacyKind211DefaultAgree(t, legacyKind211Expected(t, "p.Cell"))
+-		runtime.KeepAlive(files)
+-	})
+-	t.Run("foreign-root-fallback", func(t *testing.T) {
+-		ctx, files, _ := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`))
+-		use := findQualifiedSourceClass("app.Use")
+-		file := findFileScopeForClassScope(use, ctx)
+-		twin := parsing.SourceFile{Name: "Twin.java", Source: append([]byte(nil), file.Source...)}
+-		if err := twin.ParseAST(); err != nil {
+-			t.Fatal(err)
+-		}
+-		twin.ParseSymbols()
+-		original := use.Class.DeclarationNode
+-		use.Class.DeclarationNode = twin.Symbols.BaseClass.Class.DeclarationNode
+-		if _, known := sourceGenericViewDemandSeedsFromSyntax(ctx); known {
+-			t.Fatal("foreign root retained owned syntax authority")
+-		}
+-		want := legacyKind211Expected(t, "p.Cell")
+-		legacyKind211DefaultAgree(t, want)
+-		demand188Same(t, sourceGenericViewDemandSeeds(ctx), want)
+-		use.Class.DeclarationNode = original
+-		legacyKind211DefaultAgree(t, want)
+-		runtime.KeepAlive(twin)
+-		runtime.KeepAlive(files)
+-	})
+-	t.Run("retired-invocation-fallback", func(t *testing.T) {
+-		ctx, files, session := demand188Fixture(t, demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`))
+-		ctx.syntaxInvocation.close()
+-		session.Close()
+-		if ctx.syntaxInvocation.active || session.Active() {
+-			t.Fatal("actual invocation/session retirement premise absent")
+-		}
+-		if _, known := sourceGenericViewDemandSeedsFromSyntax(ctx); known {
+-			t.Fatal("retired invocation retained owned syntax authority")
+-		}
+-		want := legacyKind211Expected(t, "p.Cell")
+-		legacyKind211DefaultAgree(t, want)
+-		demand188Same(t, sourceGenericViewDemandSeeds(ctx), want)
+-		runtime.KeepAlive(files)
+-	})
+-	t.Run("complete-family-refusals", func(t *testing.T) {
+-		for _, test := range []struct{ name, declaration string }{
+-			{"runtime-storage", `public class Bad<T>{java.util.List<T> values;}`},
+-			{"array-storage", `public class Bad<T>{T[] values;}`},
+-			{"generic-bound", `public class Bad<T extends java.util.List<String>>{T value;}`},
+-			{"constructor-local", `public class Bad<T>{T value;Bad(T input){this.value=input;T copy=this.value;}}`},
+-		} {
+-			t.Run(test.name, func(t *testing.T) {
+-				sources := demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> good;Bad<?> bad;}`)
+-				sources["app/Bad.java"] = "package app;" + test.declaration
+-				_, files, _ := demand188Fixture(t, sources)
+-				legacyKind211DefaultAgree(t, legacyKind211Expected(t, "app.Bad", "p.Cell"))
+-				bad := findQualifiedSourceClass("app.Bad")
+-				local := classScopeCtx(bad, Ctx{})
+-				if plan, err := planGenericFamily(bad, local); plan != nil || err == nil {
+-					t.Fatal("actual unsupported family lost complete-audit refusal")
+-				}
+-				if canonicalGenericFamily(bad, local) != nil {
+-					t.Fatal("source demand bypassed complete-family refusal")
+-				}
+-				good := findQualifiedSourceClass("p.Cell")
+-				if canonicalGenericFamily(good, classScopeCtx(good, Ctx{})) == nil {
+-					t.Fatal("positive complete-family control was not admitted")
+-				}
+-				runtime.KeepAlive(files)
+-			})
+-		}
+-	})
+-}
+-
+-type legacyKind211Sample struct {
+-	Width int
+-	Order string
+-	Index int
+-	Arm   string
+-	Q     int
+-	Cgo   int64
+-}
+-
+-type legacyKind211Growth struct {
+-	Width          int
+-	ActualMedian2  int64
+-	WitnessMedian2 int64
+-	ActualGrowth2  int64
+-	WitnessGrowth2 int64
+-	Within         bool
+-}
+-
+-func TestLegacyDemandKind211NativeWorkBudget(t *testing.T) {
+-	const queries = 4
+-	widths := []int{0, 64, 256}
+-	orders := []string{"ABBA", "BAAB"}
+-	var samples []legacyKind211Sample
+-	var retained [][]parsing.SourceFile
+-	for _, width := range widths {
+-		sources := demandSyntaxBaseSources(`package app;public class Use{p.Cell<?> value;}`)
+-		sources["noise/Noise.java"] = "package noise;public class Noise{void work(){int x=0;" + strings.Repeat("x=x+1;", width) + "}}"
+-		_, files, _ := demand188Fixture(t, sources)
+-		retained = append(retained, files)
+-		want := legacyKind211Expected(t, "p.Cell")
+-		legacyKind211DefaultAgree(t, want)
+-		if _, known := sourceGenericViewDemandSeedsFromSyntax(Ctx{}); known {
+-			t.Fatal("measured API acquired syntax authority")
+-		}
+-		_, counts := demand188SyntaxWitness(Ctx{}, false)
+-		if counts.Nodes <= 0 || counts.Candidates <= 0 || counts.Owners != 4 {
+-			t.Fatal("actual body/declaration structural witness premise absent")
+-		}
+-		for _, order := range orders {
+-			for index, arm := range order {
+-				start := runtime.NumCgoCall()
+-				for query := 0; query < queries; query++ {
+-					if arm == 'A' {
+-						demand188Same(t, sourceGenericViewDemandSeeds(Ctx{}), want)
+-					} else {
+-						_, got := demand188SyntaxWitness(Ctx{}, false)
+-						if got != counts {
+-							t.Fatal("measured structural witness changed")
+-						}
+-					}
+-				}
+-				stop := runtime.NumCgoCall()
+-				if stop < start {
+-					t.Fatal("native work counter decreased")
+-				}
+-				samples = append(samples, legacyKind211Sample{width, order, index, string(arm), queries, stop - start})
+-			}
+-		}
+-	}
+-	// Every native interval above has ended before JSON serialization or logging.
+-	medians := map[int]map[string]int64{}
+-	for _, width := range widths {
+-		medians[width] = map[string]int64{}
+-		for _, arm := range []string{"A", "B"} {
+-			var values []int64
+-			for _, sample := range samples {
+-				if sample.Width == width && sample.Arm == arm {
+-					values = append(values, sample.Cgo)
+-				}
+-			}
+-			medians[width][arm] = legacyKind211Median2(values)
+-		}
+-	}
+-	var growth []legacyKind211Growth
+-	for _, width := range widths[1:] {
+-		a := medians[width]["A"] - medians[0]["A"]
+-		b := medians[width]["B"] - medians[0]["B"]
+-		growth = append(growth, legacyKind211Growth{width, medians[width]["A"], medians[width]["B"], a, b, legacyKind211WithinGrowth(a, b)})
+-	}
+-	encoded, err := json.Marshal(struct {
+-		Q       int
+-		Widths  []int
+-		Orders  []string
+-		Samples []legacyKind211Sample
+-		Growth  []legacyKind211Growth
+-	}{queries, widths, orders, samples, growth})
+-	if err != nil {
+-		t.Fatal(err)
+-	}
+-	t.Log("LEGACY_KIND211_COUNTERS", string(encoded))
+-	for _, row := range growth {
+-		if !row.Within {
+-			t.Errorf("LEGACY_KIND211_COST_RED width=%d actual_growth2=%d witness_growth2=%d strict_bound=4A<=3B", row.Width, row.ActualGrowth2, row.WitnessGrowth2)
+-		}
+-	}
+-	runtime.KeepAlive(retained)
+-}
+diff --git a/transpiler/source_generic_demand_syntax.go b/transpiler/source_generic_demand_syntax.go
+index 820cafa1c014de8c2f84fea46080158b2f26b7b6..a9a54a54c3315f0ac51ba425758294d77ae95371 100644
+--- a/transpiler/source_generic_demand_syntax.go
++++ b/transpiler/source_generic_demand_syntax.go
+@@ -28,23 +28,19 @@
+ 
+ func sourceGenericViewDemandSeedsFromSyntax(ctx Ctx) ([]*symbol.ClassScope, bool) {
+ 	invocation := ctx.syntaxInvocation
+-	if !sourceGenericDemandOwnedCompilationUnits(invocation) {
+-		return nil, false
+-	}
+-	proof, known := sourceGenericDemandOwnershipContext()
+-	if !known {
++	if !sourceGenericDemandOwnedFiles(invocation) {
+ 		return nil, false
+ 	}
+ 	owners := allSourceClassScopes()
+ 	inventory := invocation.demandSyntax
+ 	if inventory == nil {
+-		inventory = buildSourceGenericDemandSyntax(invocation, owners, proof)
++		inventory = buildSourceGenericDemandSyntax(invocation, owners, ctx)
+ 		if inventory == nil {
+ 			return nil, false
+ 		}
+ 		invocation.demandSyntax = inventory
+ 	}
+-	if !inventory.matches(invocation, owners, proof) {
++	if !inventory.matches(invocation, owners, ctx) {
+ 		return nil, false
+ 	}
+ 	seen := map[*symbol.ClassScope]bool{}
+@@ -111,95 +107,6 @@
+ 	return len(seen) == len(invocation.files)
+ }
+ 
+-// A closed batch may also own inert package compilation units that deliberately
+-// have no FileScope registration. Prove each omitted unit from its current
+-// owned parse anchor; the legacy exact-membership predicate stays unchanged.
+-func sourceGenericDemandOwnedCompilationUnits(invocation *syntaxInvocation) bool {
+-	if invocation == nil || !invocation.active || !invocation.indexable || !invocation.session.Active() || invocation.graph != symbol.GlobalScope || !standaloneSyntaxConfigurationOK(os.Stdout) {
+-		return false
+-	}
+-	seen := make(map[*symbol.FileScope]bool, len(invocation.files))
+-	for _, pkg := range symbol.GlobalScope.Packages {
+-		if pkg == nil {
+-			continue
+-		}
+-		for _, file := range pkg.Files {
+-			if file == nil {
+-				continue
+-			}
+-			entry := invocation.identifiers[file]
+-			if _, owned := invocation.files[file]; !owned {
+-				return false
+-			}
+-			if seen[file] || entry == nil || entry.anchor == nil || entry.anchor != file.ParsedRoot() || entry.anchor.HasChanges() || !bytes.Equal(entry.source, file.Source) {
+-				return false
+-			}
+-			seen[file] = true
+-		}
+-	}
+-	for file, owned := range invocation.files {
+-		entry := invocation.identifiers[file]
+-		if file == nil || owned.Symbols != file || entry == nil || entry.anchor == nil || owned.Ast == nil || entry.anchor != file.ParsedRoot() || !owned.Ast.Equal(entry.anchor) || entry.anchor.HasChanges() || !bytes.Equal(entry.source, file.Source) || !bytes.Equal(owned.Source, entry.source) {
+-			return false
+-		}
+-		if seen[file] {
+-			continue
+-		}
+-		if file.BaseClass != nil || len(file.TopLevelClasses) != 0 {
+-			return false
+-		}
+-		// Classify the current certified root, never a filename or a missing count.
+-		current := owned
+-		current.Ast, current.Source = entry.anchor, file.Source
+-		unit, err := classifyCompilationUnit(current)
+-		if err != nil || !unit.packageMetadata || unit.packageName == "" || unit.packageName != file.Package || !sourceGenericDemandInertCompilationUnit(entry.anchor) {
+-			return false
+-		}
+-	}
+-	return true
+-}
+-
+-// Only the syntax forms needed by inert package statements, marker package
+-// annotations and imports are known here. Class literals, type demands,
+-// declarations and every unknown form fall back to ordinary discovery.
+-func sourceGenericDemandInertCompilationUnit(root *sitter.Node) bool {
+-	var visit func(*sitter.Node) bool
+-	visit = func(node *sitter.Node) bool {
+-		if node == nil || node.IsMissing() || node.HasError() || node.HasChanges() {
+-			return false
+-		}
+-		switch node.Type() {
+-		case "program", "package_declaration", "import_declaration", "marker_annotation", "identifier", "scoped_identifier", "line_comment", "block_comment":
+-		default:
+-			return false
+-		}
+-		for i := 0; i < int(node.NamedChildCount()); i++ {
+-			if !visit(node.NamedChild(i)) {
+-				return false
+-			}
+-		}
+-		return true
+-	}
+-	return root != nil && root.Type() == "program" && visit(root)
+-}
+-
+-// Ownership must come from current graph topology, independently of caller
+-// inventories. The proof context is temporary and supplies no lexical state.
+-func sourceGenericDemandOwnershipContext() (Ctx, bool) {
+-	ownership := newResolutionFileIndex()
+-	if active := activeResolutionFiles; active != nil && active.graph == symbol.GlobalScope {
+-		if len(active.files) != len(ownership.files) {
+-			return Ctx{}, false
+-		}
+-		for owner, file := range ownership.files {
+-			if active.files[owner] != file {
+-				return Ctx{}, false
+-			}
+-		}
+-	}
+-	return Ctx{sourceOwnership: ownership}, true
+-}
+-
+ func (inventory *sourceGenericDemandSyntax) matches(invocation *syntaxInvocation, owners []*symbol.ClassScope, ctx Ctx) bool {
+ 	if inventory.invocation != invocation {
+ 		return false
+diff --git a/transpiler/source_generic_metadata209_test.go b/transpiler/source_generic_metadata209_test.go
+deleted file mode 100644
+index 9c3544de383436a9715959aaadf832252fd4aa56..0000000000000000000000000000000000000000
+--- a/transpiler/source_generic_metadata209_test.go
++++ /dev/null
+@@ -1,923 +0,0 @@
+-package transpiler
+-
+-import (
+-	"bytes"
+-	"fmt"
+-	"io"
+-	"maps"
+-	"reflect"
+-	"runtime"
+-	"strings"
+-	"testing"
+-
+-	"github.com/NickyBoy89/java2go/internal/cliownership"
+-	"github.com/NickyBoy89/java2go/parsing"
+-	"github.com/NickyBoy89/java2go/symbol"
+-	log "github.com/sirupsen/logrus"
+-	sitter "github.com/smacker/go-tree-sitter"
+-)
+-
+-type nonDeclaration209Fixture struct {
+-	files   []parsing.SourceFile
+-	trees   []*sitter.Tree
+-	ctx     Ctx
+-	session *cliownership.Session
+-	owner   *symbol.ClassScope
+-	method  *symbol.Definition
+-}
+-
+-// The parser is explicitly closed by the existing parse helper; retain all
+-// trees until every work-counter sample is complete so finalizers add no Cgo.
+-func nonDeclaration209Build(t *testing.T, width int) nonDeclaration209Fixture {
+-	return nonDeclaration209BuildMode(t, width, false)
+-}
+-
+-func nonDeclaration209BuildMode(t *testing.T, width int, rejectAnonymous bool) nonDeclaration209Fixture {
+-	t.Helper()
+-	symbol.GlobalScope = &symbol.GlobalSymbols{Packages: map[string]*symbol.PackageScope{}}
+-	cell := "package p;public class Cell<T>{T value;}"
+-	noiseWidth := width
+-	if rejectAnonymous {
+-		// Unsupported invariant List<T> storage supplies the same actual rejection
+-		// witness as q.Cell. All Java syntax is valid; body work remains observable.
+-		cell = "package p;public class Cell<T>{T value;java.util.List<T> unsupported;Object early=new Cell<Object>(){};void noise(){int x=0;" + strings.Repeat("x=x+1;", width) + "}}"
+-		noiseWidth = 1
+-	}
+-	texts := []struct{ name, text string }{
+-		{"p/Cell.java", cell},
+-		{"q/Cell.java", "package q;public class Cell<T>{java.util.List<T> value;}"},
+-		{"app/Factory.java", "package app;import p.Cell;public interface Factory{<S>Cell<S> adapt(Cell<S> value);}"},
+-		{"app/Use.java", "package app;public class Use{p.Cell<?> field;}"},
+-		{"noise/Noise.java", "package noise;public class Noise{void work(){int x=0;" + strings.Repeat("x=x+1;", noiseWidth) + "}}"},
+-	}
+-	var f nonDeclaration209Fixture
+-	for _, row := range texts {
+-		file, tree := resolveImport205Parse(t, row.name, row.text)
+-		f.files = append(f.files, file)
+-		f.trees = append(f.trees, tree)
+-		symbol.AddSymbolsToPackage(file.Symbols)
+-	}
+-	ResolveFiles(f.files)
+-	f.owner = findQualifiedSourceClass("app.Factory")
+-	if f.owner == nil {
+-		t.Fatal("missing declaring owner")
+-	}
+-	for _, method := range f.owner.Methods {
+-		if method.OriginalName == "adapt" {
+-			f.method = method
+-		}
+-	}
+-	if f.method == nil || len(f.method.TypeParameters) != 1 || len(f.method.Parameters) != 1 || !f.method.RequiresHelper {
+-		t.Fatal("real generic method contract absent")
+-	}
+-	f.session = cliownership.New()
+-	t.Cleanup(f.session.Close)
+-	f.ctx = classScopeCtx(findQualifiedSourceClass("app.Use"), Ctx{callableSubclasses: &callableSubclassSourceInventory{}})
+-	f.ctx.syntaxInvocation = newSyntaxInvocation(f.session, f.files)
+-	if f.ctx.syntaxInvocation == nil || !sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-		t.Fatal("owned syntax admission absent")
+-	}
+-	t.Cleanup(f.ctx.syntaxInvocation.close)
+-	// This is the existing native caller state at the selected seam: its
+-	// preceding direct-owner check has populated the existing render analysis.
+-	// Warm through the real API rather than installing an expected plan answer.
+-	f.ctx.genericFamilies = &genericFamilyAnalysis{}
+-	invocationPhysicalParameterJavaType(f.resolution(), 0, f.ctx)
+-	if !f.ctx.genericFamilies.ready {
+-		t.Fatal("existing API did not warm its render analysis")
+-	}
+-	if _, bypass := directOwnerMethodParameterInterfaceErasure(f.owner, f.method, 0, f.ctx); bypass {
+-		t.Fatal("fixture bypassed selected erased-entry seam")
+-	}
+-	if f.method.IsPrivate || executionParameterIsVariadic(f.method, 0) || len(f.method.TypeParameters[0].Bounds) != 0 || !javaTypeContainsParameter(f.method.OriginalType, f.method.TypeParameters[0].Name) || strings.TrimSpace(f.method.OriginalType) == f.method.TypeParameters[0].Name {
+-		t.Fatal("fixture did not reach nested erased-entry branch")
+-	}
+-	if genericMethodHasErasedEntry(f.method) == rejectAnonymous {
+-		t.Fatal("nested signature canonical/anonymous-rejection contract changed")
+-	}
+-	return f
+-}
+-
+-func (f nonDeclaration209Fixture) resolution() *methodResolution {
+-	return &methodResolution{def: f.method, owner: f.owner}
+-}
+-
+-func nonDeclaration209Agree(t *testing.T, f nonDeclaration209Fixture, ctx Ctx) string {
+-	t.Helper()
+-	// Independent existing dynamic contract: derive the declaring signature and
+-	// erasure from the selected definition, never caller lexical or cached plans.
+-	want := definitionParameterJavaSignatureType(f.method, 0)
+-	if genericMethodHasErasedEntry(f.method) {
+-		want = genericMethodErasedJavaType(f.method, want)
+-	}
+-	got := invocationPhysicalParameterJavaType(f.resolution(), 0, ctx)
+-	if got != want {
+-		t.Fatalf("physical signature %q want current declaring contract %q", got, want)
+-	}
+-	return got
+-}
+-
+-func TestNonDeclaration209DeclaringContract(t *testing.T) {
+-	resolveImport205State(t)
+-	f := nonDeclaration209Build(t, 4)
+-	want := nonDeclaration209Agree(t, f, f.ctx)
+-	if !strings.Contains(want, "Cell<") || !strings.Contains(want, "java.lang.Object") || strings.Contains(want, "<S>") {
+-		t.Fatalf("non-erased nested contract %q", want)
+-	}
+-	caller := f.ctx.Clone()
+-	caller.genericFamilies = &genericFamilyAnalysis{ready: true}
+-	caller.localScope = &symbol.Definition{TypeParameters: f.method.TypeParameters}
+-	caller.syntheticTypeParameters = f.method.TypeParameters
+-	caller.expectedType = "q.Cell<S>"
+-	caller.importAliases = map[string]string{"kept/path": "kept"}
+-	caller.usedImports = map[string]bool{"kept/path": true}
+-	aliases, used := maps.Clone(caller.importAliases), maps.Clone(caller.usedImports)
+-	if nonDeclaration209Agree(t, f, caller) != want {
+-		t.Fatal("caller context escaped into declaring signature")
+-	}
+-	if !reflect.DeepEqual(aliases, caller.importAliases) || !reflect.DeepEqual(used, caller.usedImports) || len(caller.genericFamilies.plans) != 0 {
+-		t.Fatal("query changed caller answers/import ownership")
+-	}
+-	for _, index := range []int{-1, 1, 9} {
+-		if invocationPhysicalParameterJavaType(f.resolution(), index, caller) != "" {
+-			t.Fatal("argument boundary changed")
+-		}
+-	}
+-	if invocationPhysicalParameterJavaType(nil, 0, caller) != "" {
+-		t.Fatal("nil resolution changed")
+-	}
+-	saved := f.method.RequiresHelper
+-	f.method.RequiresHelper = false
+-	nonDeclaration209Agree(t, f, caller)
+-	f.method.RequiresHelper = saved
+-	if nonDeclaration209Agree(t, f, caller) != want {
+-		t.Fatal("restored helper contract changed")
+-	}
+-	runtime.KeepAlive(f)
+-}
+-
+-func TestNonDeclaration209LiveImportsAndDefinitions(t *testing.T) {
+-	resolveImport205State(t)
+-	f := nonDeclaration209Build(t, 4)
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	file := findFileScopeForClassScope(f.owner, Ctx{})
+-	saved := file.Imports["Cell"]
+-	file.Imports["Cell"] = "q"
+-	if genericMethodHasErasedEntry(f.method) {
+-		t.Fatal("unsupported live imported family unexpectedly admitted")
+-	}
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	file.Imports["Cell"] = saved
+-	if !genericMethodHasErasedEntry(f.method) {
+-		t.Fatal("restored import lost canonical contract")
+-	}
+-	savedMethods := f.owner.Methods
+-	copyMethod := *f.method
+-	f.owner.Methods = []*symbol.Definition{&copyMethod}
+-	if genericMethodHasErasedEntry(f.method) {
+-		t.Fatal("removed definition retained declaring identity")
+-	}
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	f.owner.Methods = savedMethods
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	runtime.KeepAlive(f)
+-}
+-
+-func TestNonDeclaration209SourceRootAndGraphGuards(t *testing.T) {
+-	resolveImport205State(t)
+-	f := nonDeclaration209Build(t, 4)
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	file := f.files[0].Symbols
+-	at := bytes.Index(file.Source, []byte("value"))
+-	if at < 0 {
+-		t.Fatal("fixture source missing")
+-	}
+-	file.Source[at] = 'w'
+-	if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-		t.Fatal("same-length source edit admitted")
+-	}
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	file.Source[at] = 'v'
+-	source := file.Source
+-	file.Source = append([]byte(nil), source...)
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	file.Source = source
+-	twin, tree := resolveImport205Parse(t, "Twin.java", string(f.files[2].Source))
+-	defer tree.Close()
+-	root := f.owner.Class.DeclarationNode
+-	f.owner.Class.DeclarationNode = twin.Symbols.BaseClass.Class.DeclarationNode
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	f.owner.Class.DeclarationNode = root
+-	graph := symbol.GlobalScope
+-	symbol.GlobalScope = &symbol.GlobalSymbols{Packages: map[string]*symbol.PackageScope{}}
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	symbol.GlobalScope = graph
+-	savedFiles := graph.Packages["app"].Files
+-	duplicateFiles := maps.Clone(savedFiles)
+-	for _, file := range savedFiles {
+-		duplicateFiles["duplicate.java"] = file
+-		break
+-	}
+-	graph.Packages["app"].Files = duplicateFiles
+-	if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-		t.Fatal("duplicate registered file admitted")
+-	}
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	graph.Packages["app"].Files = savedFiles
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	runtime.KeepAlive(f)
+-}
+-
+-func TestNonDeclaration209LifetimeAndPublicFallback(t *testing.T) {
+-	resolveImport205State(t)
+-	f := nonDeclaration209Build(t, 4)
+-	want := nonDeclaration209Agree(t, f, f.ctx)
+-	public := f.ctx.Clone()
+-	public.syntaxInvocation = nil
+-	public.callableSubclasses = nil
+-	if nonDeclaration209Agree(t, f, public) != want {
+-		t.Fatal("public dynamic contract changed")
+-	}
+-	logger := log.StandardLogger()
+-	output := logger.Out
+-	logger.Out = io.Discard
+-	if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-		t.Fatal("extensible logger admitted")
+-	}
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	logger.Out = output
+-	other := newSyntaxInvocation(f.session, f.files)
+-	if other == nil {
+-		t.Fatal("nested owned invocation rejected")
+-	}
+-	nested := f.ctx.Clone()
+-	nested.syntaxInvocation = other
+-	nested.callableSubclasses = &callableSubclassSourceInventory{}
+-	nonDeclaration209Agree(t, f, nested)
+-	other.close()
+-	nonDeclaration209Agree(t, f, nested)
+-	if !f.ctx.syntaxInvocation.active {
+-		t.Fatal("nested close retired outer invocation")
+-	}
+-	f.ctx.syntaxInvocation.close()
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	f.session.Close()
+-	if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-		t.Fatal("closed session admitted")
+-	}
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	runtime.KeepAlive(f)
+-}
+-
+-func TestNonDeclaration209EditedTreeAndPanic(t *testing.T) {
+-	resolveImport205State(t)
+-	f := nonDeclaration209Build(t, 4)
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	at := uint32(bytes.Index(f.files[0].Source, []byte("value")))
+-	f.trees[0].Edit(sitter.EditInput{StartIndex: at, OldEndIndex: at + 1, NewEndIndex: at + 1, StartPoint: sitter.Point{Column: at}, OldEndPoint: sitter.Point{Column: at + 1}, NewEndPoint: sitter.Point{Column: at + 1}})
+-	if !f.files[0].Symbols.ParsedRoot().HasChanges() || sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-		t.Fatal("edited parse tree was admitted")
+-	}
+-	nonDeclaration209Agree(t, f, f.ctx)
+-	public := f.ctx.Clone()
+-	public.syntaxInvocation, public.callableSubclasses = nil, nil
+-	invoke := func(ctx Ctx) (value, panicValue string) {
+-		defer func() {
+-			if recovered := recover(); recovered != nil {
+-				panicValue = fmt.Sprintf("%T:%v", recovered, recovered)
+-			}
+-		}()
+-		return invocationPhysicalParameterJavaType(f.resolution(), 0, ctx), ""
+-	}
+-	file := f.files[2].Symbols
+-	source := file.Source
+-	file.Source = nil
+-	want, wantPanic := invoke(public)
+-	got, gotPanic := invoke(f.ctx)
+-	file.Source = source
+-	if got != want || gotPanic != wantPanic {
+-		t.Fatalf("malformed-source fallback changed: (%q,%q) want (%q,%q)", got, gotPanic, want, wantPanic)
+-	}
+-	if !f.ctx.syntaxInvocation.active || !f.session.Active() {
+-		t.Fatal("query panic retired outer lifetime")
+-	}
+-	nonDeclaration209Agree(t, f, public)
+-	runtime.KeepAlive(f)
+-}
+-
+-// Compare the same existing API in an admitted context and its legacy dynamic
+-// context. The two contexts differ only in syntaxInvocation/callableSubclasses.
+-// Each width uses ABBA or BAAB chunks, eight calls each: Q16 per arm.
+-func TestNonDeclaration209ExistingAPINativeBudget(t *testing.T) {
+-	resolveImport205State(t)
+-	var retained []nonDeclaration209Fixture
+-	const queries = 16
+-	for sample := 1; sample <= 3; sample++ {
+-		var counts [2][2]int64 // width, then dynamic/owned
+-		var orders [2]string
+-		for index, width := range []int{1, 128} {
+-			f := nonDeclaration209BuildMode(t, width, true)
+-			retained = append(retained, f)
+-			owned := f.ctx
+-			dynamic := owned
+-			dynamic.syntaxInvocation = nil
+-			dynamic.callableSubclasses = nil
+-			// Both arms are warm before any counter window. All parser Close calls
+-			// occurred in construction, and every owned tree stays retained below.
+-			want := nonDeclaration209Agree(t, f, owned)
+-			if nonDeclaration209Agree(t, f, dynamic) != want || want != definitionParameterJavaSignatureType(f.method, 0) || genericMethodHasErasedEntry(f.method) {
+-				t.Fatal("anonymous rejection did not preserve the current source signature")
+-			}
+-			order := [4]int{0, 1, 1, 0}
+-			orders[index] = "DOOD"
+-			if (sample+index)%2 == 1 {
+-				order = [4]int{1, 0, 0, 1}
+-				orders[index] = "ODDO"
+-			}
+-			for _, arm := range order {
+-				ctx := dynamic
+-				if arm == 1 {
+-					ctx = owned
+-				}
+-				start := runtime.NumCgoCall()
+-				for query := 0; query < queries/2; query++ {
+-					if got := invocationPhysicalParameterJavaType(f.resolution(), 0, ctx); got != want {
+-						t.Fatalf("query changed physical signature %q want%q", got, want)
+-					}
+-				}
+-				counts[index][arm] += runtime.NumCgoCall() - start
+-			}
+-		}
+-		smallDynamic, smallOwned, largeDynamic, largeOwned := counts[0][0], counts[0][1], counts[1][0], counts[1][1]
+-		if smallDynamic <= 0 || largeDynamic <= 0 {
+-			t.Fatal("native witness absent")
+-		}
+-		ceiling := 9 * largeDynamic / 10
+-		t.Logf("ERASED_CONTEXT205_NATIVE sample=%d small_width=1 large_width=128 queries=%d small_order=%s large_order=%s small_dynamic_cgo=%d small_owned_cgo=%d large_dynamic_cgo=%d large_owned_cgo=%d ceiling=%d small_native_ratio=%.6f large_native_ratio=%.6f", sample, queries, orders[0], orders[1], smallDynamic, smallOwned, largeDynamic, largeOwned, ceiling, float64(smallOwned)/float64(smallDynamic), float64(largeOwned)/float64(largeDynamic))
+-		if largeOwned > ceiling {
+-			t.Errorf("ERASED_CONTEXT205_REPEATED_SYNTAX_NATIVE: sample%d owned%d > ceiling%d dynamic%d", sample, largeOwned, ceiling, largeDynamic)
+-		}
+-	}
+-	runtime.KeepAlive(retained)
+-}
+-
+-func nonDeclaration209Outcome(f nonDeclaration209Fixture, ctx Ctx) (value, failure string) {
+-	defer func() {
+-		if recovered := recover(); recovered != nil {
+-			failure = fmt.Sprintf("%T:%v", recovered, recovered)
+-		}
+-	}()
+-	return invocationPhysicalParameterJavaType(f.resolution(), 0, ctx), ""
+-}
+-
+-func TestNonDeclaration209FreshOwnershipAndReusedHolder(t *testing.T) {
+-	for _, active := range []bool{false, true} {
+-		t.Run(fmt.Sprint("class-move-active-", active), func(t *testing.T) {
+-			resolveImport205State(t)
+-			f := nonDeclaration209Build(t, 4)
+-			if _, known := sourceGenericViewDemandSeedsFromSyntax(f.ctx); !known {
+-				t.Fatal("initial owned routes absent")
+-			}
+-			sourceOwnershipIndex(f.ctx)
+-			if active {
+-				activeResolutionFiles = newResolutionFileIndex()
+-			}
+-			left, right := f.files[4].Symbols, f.files[3].Symbols
+-			oldLeft, oldRight := left.TopLevelClasses, right.TopLevelClasses
+-			defer func() { left.TopLevelClasses, right.TopLevelClasses = oldLeft, oldRight }()
+-			moved := oldLeft[0]
+-			left.TopLevelClasses = nil
+-			right.TopLevelClasses = append(append([]*symbol.ClassScope(nil), oldRight...), moved)
+-			if !sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-				t.Fatal("control did not isolate topology from unchanged file/source/root anchors")
+-			}
+-			public := f.ctx.Clone()
+-			public.syntaxInvocation = nil
+-			public.callableSubclasses = nil
+-			want, wantFailure := nonDeclaration209Outcome(f, public)
+-			got, gotFailure := nonDeclaration209Outcome(f, f.ctx)
+-			if got != want || gotFailure != wantFailure {
+-				t.Fatalf("moved class changed dynamic outcome (%q,%q) want(%q,%q)", got, gotFailure, want, wantFailure)
+-			}
+-			left.TopLevelClasses, right.TopLevelClasses = oldLeft, oldRight
+-			nonDeclaration209Agree(t, f, f.ctx)
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-	t.Run("nondeclaring-root", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := nonDeclaration209Build(t, 4)
+-		if _, known := sourceGenericViewDemandSeedsFromSyntax(f.ctx); !known {
+-			t.Fatal("initial routes absent")
+-		}
+-		sourceOwnershipIndex(f.ctx)
+-		owner := f.files[4].Symbols.BaseClass
+-		root := owner.Class.DeclarationNode
+-		twin, tree := resolveImport205Parse(t, "TwinNoise.java", string(f.files[4].Source))
+-		defer tree.Close()
+-		owner.Class.DeclarationNode = twin.Symbols.BaseClass.Class.DeclarationNode
+-		defer func() { owner.Class.DeclarationNode = root }()
+-		public := f.ctx.Clone()
+-		public.syntaxInvocation = nil
+-		public.callableSubclasses = nil
+-		want, wantFailure := nonDeclaration209Outcome(f, public)
+-		got, gotFailure := nonDeclaration209Outcome(f, f.ctx)
+-		if got != want || gotFailure != wantFailure {
+-			t.Fatal("nondeclaring foreign root changed dynamic outcome")
+-		}
+-		owner.Class.DeclarationNode = root
+-		nonDeclaration209Agree(t, f, f.ctx)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("closed-old-fresh-invocation-reused-holder", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := nonDeclaration209Build(t, 4)
+-		sourceGenericViewDemandSeedsFromSyntax(f.ctx)
+-		sourceOwnershipIndex(f.ctx)
+-		holder := f.ctx.callableSubclasses
+-		holder.selectorsReady = true
+-		holder.selectors = map[string]struct{}{"__old_source_selector": {}}
+-		f.ctx.syntaxInvocation.close()
+-		replacement, tree := resolveImport205Parse(t, "p/Cell.java", "package p;public class Cell<T>{java.util.List<T> unsupported;}")
+-		defer tree.Close()
+-		for key, file := range symbol.GlobalScope.Packages["p"].Files {
+-			if file == f.files[0].Symbols {
+-				symbol.GlobalScope.Packages["p"].Files[key] = replacement.Symbols
+-			}
+-		}
+-		files := append([]parsing.SourceFile(nil), f.files...)
+-		files[0] = replacement
+-		fresh := newSyntaxInvocation(f.session, files)
+-		if fresh == nil || !sourceGenericDemandOwnedFiles(fresh) {
+-			t.Fatal("fresh reparsed owned invocation absent")
+-		}
+-		defer fresh.close()
+-		ctx := f.ctx.Clone()
+-		ctx.syntaxInvocation = fresh
+-		ctx.genericFamilies = &genericFamilyAnalysis{}
+-		invocationPhysicalParameterJavaType(f.resolution(), 0, ctx)
+-		if !ctx.genericFamilies.ready {
+-			t.Fatal("fresh render analysis did not warm through existing API")
+-		}
+-		oldNodes := maps.Clone(holder.nodes)
+-		oldOwnership := holder.ownership
+-		oldSelectors := maps.Clone(holder.selectors)
+-		if genericMethodHasErasedEntry(f.method) {
+-			t.Fatal("reparsed unsupported family retained old admission")
+-		}
+-		nonDeclaration209Agree(t, f, ctx)
+-		if holder.ownership != oldOwnership || !reflect.DeepEqual(holder.nodes, oldNodes) || !reflect.DeepEqual(holder.selectors, oldSelectors) {
+-			t.Fatal("query borrowed or changed stale caller holder")
+-		}
+-		runtime.KeepAlive(f)
+-		runtime.KeepAlive(files)
+-	})
+-}
+-
+-func metadata209BuildMode(t *testing.T, width int, rejectAnonymous bool, metadata string) nonDeclaration209Fixture {
+-	t.Helper()
+-	symbol.GlobalScope = &symbol.GlobalSymbols{Packages: map[string]*symbol.PackageScope{}}
+-	cell := "package p;public class Cell<T>{T value;}"
+-	noiseWidth := width
+-	if rejectAnonymous {
+-		// Unsupported invariant List<T> storage supplies the same actual rejection
+-		// witness as q.Cell. All Java syntax is valid; body work remains observable.
+-		cell = "package p;public class Cell<T>{T value;java.util.List<T> unsupported;Object early=new Cell<Object>(){};void noise(){int x=0;" + strings.Repeat("x=x+1;", width) + "}}"
+-		noiseWidth = 1
+-	}
+-	texts := []struct{ name, text string }{
+-		{"p/Cell.java", cell},
+-		{"q/Cell.java", "package q;public class Cell<T>{java.util.List<T> value;}"},
+-		{"app/Factory.java", "package app;import p.Cell;public interface Factory{<S>Cell<S> adapt(Cell<S> value);}"},
+-		{"app/Use.java", "package app;public class Use{p.Cell<?> field;}"},
+-		{"noise/Noise.java", "package noise;public class Noise{void work(){int x=0;" + strings.Repeat("x=x+1;", noiseWidth) + "}}"},
+-	}
+-	texts = append(texts, struct{ name, text string }{"meta/Marker.java", "package meta;public @interface Marker{}"}, struct{ name, text string }{"p/package-info.java", metadata})
+-	var f nonDeclaration209Fixture
+-	var resolving []parsing.SourceFile
+-	for _, row := range texts {
+-		file, tree := metadata209ParseUnit(t, row.name, row.text)
+-		f.files = append(f.files, file)
+-		f.trees = append(f.trees, tree)
+-		symbol.AddSymbolsToPackage(file.Symbols)
+-		if file.Symbols.BaseClass != nil {
+-			resolving = append(resolving, file)
+-		}
+-	}
+-	ResolveFiles(resolving)
+-	f.owner = findQualifiedSourceClass("app.Factory")
+-	if f.owner == nil {
+-		t.Fatal("missing declaring owner")
+-	}
+-	for _, method := range f.owner.Methods {
+-		if method.OriginalName == "adapt" {
+-			f.method = method
+-		}
+-	}
+-	if f.method == nil || len(f.method.TypeParameters) != 1 || len(f.method.Parameters) != 1 || !f.method.RequiresHelper {
+-		t.Fatal("real generic method contract absent")
+-	}
+-	f.session = cliownership.New()
+-	t.Cleanup(f.session.Close)
+-	f.ctx = classScopeCtx(findQualifiedSourceClass("app.Use"), Ctx{callableSubclasses: &callableSubclassSourceInventory{}})
+-	f.ctx.syntaxInvocation = newSyntaxInvocation(f.session, f.files)
+-	if f.ctx.syntaxInvocation == nil || sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-		t.Fatal("metadata invocation absent or legacy count guard unexpectedly true")
+-	}
+-	t.Cleanup(f.ctx.syntaxInvocation.close)
+-	// This is the existing native caller state at the selected seam: its
+-	// preceding direct-owner check has populated the existing render analysis.
+-	// Warm through the real API rather than installing an expected plan answer.
+-	f.ctx.genericFamilies = &genericFamilyAnalysis{}
+-	invocationPhysicalParameterJavaType(f.resolution(), 0, f.ctx)
+-	if !f.ctx.genericFamilies.ready {
+-		t.Fatal("existing API did not warm its render analysis")
+-	}
+-	if _, bypass := directOwnerMethodParameterInterfaceErasure(f.owner, f.method, 0, f.ctx); bypass {
+-		t.Fatal("fixture bypassed selected erased-entry seam")
+-	}
+-	if f.method.IsPrivate || executionParameterIsVariadic(f.method, 0) || len(f.method.TypeParameters[0].Bounds) != 0 || !javaTypeContainsParameter(f.method.OriginalType, f.method.TypeParameters[0].Name) || strings.TrimSpace(f.method.OriginalType) == f.method.TypeParameters[0].Name {
+-		t.Fatal("fixture did not reach nested erased-entry branch")
+-	}
+-	if genericMethodHasErasedEntry(f.method) == rejectAnonymous {
+-		t.Fatal("nested signature canonical/anonymous-rejection contract changed")
+-	}
+-	return f
+-}
+-
+-func metadata209Compare(t *testing.T, f nonDeclaration209Fixture) string {
+-	t.Helper()
+-	owned, ownedFailure := nonDeclaration209Outcome(f, f.ctx)
+-	dynamic := f.ctx
+-	dynamic.syntaxInvocation, dynamic.callableSubclasses = nil, nil
+-	dynamicValue, dynamicFailure := nonDeclaration209Outcome(f, dynamic)
+-	// This helper derives the expected signature from the current definition
+-	// and the legacy declaring-context query, independently of both arms.
+-	want := nonDeclaration209Agree(t, f, dynamic)
+-	if ownedFailure != "" || dynamicFailure != "" || owned != want || dynamicValue != want {
+-		t.Fatalf("fresh dynamic contract changed owned(%q,%q) dynamic(%q,%q)", owned, ownedFailure, dynamicValue, dynamicFailure)
+-	}
+-	return owned
+-}
+-
+-func metadata209ParseUnit(t *testing.T, name, text string) (parsing.SourceFile, *sitter.Tree) {
+-	t.Helper()
+-	file, tree := resolveImport205Parse(t, name, text)
+-	unit, err := classifyCompilationUnit(file)
+-	if err != nil {
+-		t.Fatal(err)
+-	}
+-	if unit.packageMetadata {
+-		file.Symbols.Package = unit.packageName
+-	}
+-	return file, tree
+-}
+-
+-func TestMetadata209SemanticFamilies(t *testing.T) {
+-	for _, metadata := range []string{"package p;", "@meta.Marker package p;import q.Cell;", "@Marker package p;import meta.Marker;import q.Cell;", "package p;import q.*;", "package p;import static java.lang.Integer.*;"} {
+-		t.Run(fmt.Sprint("metadata-", len(metadata)), func(t *testing.T) {
+-			resolveImport205State(t)
+-			f := metadata209BuildMode(t, 4, false, metadata)
+-			want := metadata209Compare(t, f)
+-			if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-				t.Fatal("legacy all-file guard changed")
+-			}
+-			meta := f.files[len(f.files)-1].Symbols
+-			savedMarker, hadMarker := meta.Imports["Marker"]
+-			meta.Imports["Marker"] = "q"
+-			if metadata209Compare(t, f) != want {
+-				t.Fatal("metadata annotation-import provider leaked")
+-			}
+-			if hadMarker {
+-				meta.Imports["Marker"] = savedMarker
+-			} else {
+-				delete(meta.Imports, "Marker")
+-			}
+-			if metadata209Compare(t, f) != want {
+-				t.Fatal("metadata annotation-import provider restore leaked")
+-			}
+-			meta.Imports["Cell"] = "q"
+-			if metadata209Compare(t, f) != want {
+-				t.Fatal("metadata import namespace leaked")
+-			}
+-			meta.Imports["Cell"] = "p"
+-			if metadata209Compare(t, f) != want {
+-				t.Fatal("metadata provider restoration changed owner")
+-			}
+-			ownerFile := findFileScopeForClassScope(f.owner, Ctx{})
+-			saved := ownerFile.Imports["Cell"]
+-			ownerFile.Imports["Cell"] = "q"
+-			if genericMethodHasErasedEntry(f.method) {
+-				t.Fatal("fresh unsupported owner provider not observed")
+-			}
+-			metadata209Compare(t, f)
+-			ownerFile.Imports["Cell"] = saved
+-			if metadata209Compare(t, f) != want {
+-				t.Fatal("restored owner provider lost current signature")
+-			}
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-	t.Run("fresh-owner-binder-shadow", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "@Marker package p;import meta.Marker;import q.Cell;")
+-		want := metadata209Compare(t, f)
+-		saved := f.owner.TypeParameters
+-		f.owner.TypeParameters = []symbol.TypeParam{{Name: "Cell"}}
+-		f.ctx.genericFamilies = &genericFamilyAnalysis{}
+-		f.ctx.callableSubclasses = &callableSubclassSourceInventory{}
+-		invocationPhysicalParameterJavaType(f.resolution(), 0, f.ctx)
+-		metadata209Compare(t, f)
+-		f.owner.TypeParameters = saved
+-		f.ctx.genericFamilies = &genericFamilyAnalysis{}
+-		f.ctx.callableSubclasses = &callableSubclassSourceInventory{}
+-		invocationPhysicalParameterJavaType(f.resolution(), 0, f.ctx)
+-		if metadata209Compare(t, f) != want {
+-			t.Fatal("restored owner binder did not restore dynamic signature")
+-		}
+-		runtime.KeepAlive(f)
+-	})
+-
+-	t.Run("metadata-classliteral-dynamic-only", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "@meta.Marker package p;import q.Cell;")
+-		want := metadata209Compare(t, f)
+-		// Replace both declaration and metadata with legal current trees. The old
+-		// invocation must remain ineligible; current dynamic semantics still apply.
+-		marker, mt := resolveImport205Parse(t, "meta/Marker.java", "package meta;public @interface Marker{Class<?> value();}")
+-		meta, pt := metadata209ParseUnit(t, "p/package-info.java", "@meta.Marker(q.Cell.class) package p;import q.Cell;")
+-		f.trees = append(f.trees, mt, pt)
+-		symbol.GlobalScope.Packages["meta"].Files["Marker"] = marker.Symbols
+-		f.files[len(f.files)-2], f.files[len(f.files)-1] = marker, meta
+-		if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-			t.Fatal("old invocation accepted replacement files")
+-		}
+-		metadata209Compare(t, f)
+-		// A fresh invocation owns this legal classliteral root, but the new proposed
+-		// nondemand capability must reject it in candidate-specific direct guards.
+-		fresh := newSyntaxInvocation(f.session, f.files)
+-		if fresh == nil {
+-			t.Fatal("fresh classliteral setup rejected")
+-		}
+-		defer fresh.close()
+-		f.ctx.syntaxInvocation = fresh
+-		f.ctx.genericFamilies = &genericFamilyAnalysis{}
+-		invocationPhysicalParameterJavaType(f.resolution(), 0, f.ctx)
+-		if metadata209Compare(t, f) != want {
+-			t.Fatal("package annotation classliteral affected source owner")
+-		}
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("same-length-metadata-source-edit", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "@meta.Marker package p;import q.Cell;")
+-		meta := f.files[len(f.files)-1].Symbols
+-		at := bytes.Index(meta.Source, []byte("q.Cell"))
+-		if at < 0 {
+-			t.Fatal("missing metadata import")
+-		}
+-		meta.Source[at] = 'p'
+-		metadata209Compare(t, f)
+-		meta.Source[at] = 'q'
+-		metadata209Compare(t, f)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("metadata-to-class-and-unregistered-class", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;")
+-		replacement, tree := resolveImport205Parse(t, "p/Added.java", "package p;class Added{q.Cell<?> demanded;}")
+-		f.trees = append(f.trees, tree)
+-		f.files[len(f.files)-1] = replacement
+-		fresh := newSyntaxInvocation(f.session, f.files)
+-		if fresh == nil {
+-			t.Fatal("owned unregistered class setup rejected")
+-		}
+-		defer fresh.close()
+-		f.ctx.syntaxInvocation = fresh
+-		f.ctx.genericFamilies = &genericFamilyAnalysis{}
+-		invocationPhysicalParameterJavaType(f.resolution(), 0, f.ctx)
+-		if sourceGenericDemandOwnedFiles(fresh) {
+-			t.Fatal("unregistered class unexpectedly admitted")
+-		}
+-		metadata209Compare(t, f)
+-		symbol.AddSymbolsToPackage(replacement.Symbols)
+-		if !sourceGenericDemandOwnedFiles(fresh) {
+-			t.Fatal("fully registered owned class graph should satisfy the legacy guard")
+-		}
+-		metadata209Compare(t, f)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("closed-nested-and-same-graph-fresh", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "@meta.Marker package p;import q.Cell;")
+-		metadata209Compare(t, f)
+-		old := f.ctx.syntaxInvocation
+-		old.close()
+-		metadata209Compare(t, f)
+-		fresh := newSyntaxInvocation(f.session, f.files)
+-		if fresh == nil {
+-			t.Fatal("same graph fresh invocation absent")
+-		}
+-		defer fresh.close()
+-		f.ctx.syntaxInvocation = fresh
+-		f.ctx.genericFamilies = &genericFamilyAnalysis{}
+-		invocationPhysicalParameterJavaType(f.resolution(), 0, f.ctx)
+-		metadata209Compare(t, f)
+-		if old.active || old.demandSyntax != nil {
+-			t.Fatal("fresh invocation revived retired old syntax")
+-		}
+-		f.session.Close()
+-		metadata209Compare(t, f)
+-		runtime.KeepAlive(f)
+-	})
+-}
+-
+-func TestMetadata209ExistingAPINativeBudget(t *testing.T) {
+-	resolveImport205State(t)
+-	var retained []nonDeclaration209Fixture
+-	const queries = 16
+-	for sample := 1; sample <= 3; sample++ {
+-		var counts [2][2]int64 // width, then dynamic/owned
+-		var orders [2]string
+-		for index, width := range []int{1, 128} {
+-			f := metadata209BuildMode(t, width, true, "@meta.Marker package p;import q.Cell;")
+-			retained = append(retained, f)
+-			owned := f.ctx
+-			dynamic := owned
+-			dynamic.syntaxInvocation = nil
+-			dynamic.callableSubclasses = nil
+-			// Both arms are warm before any counter window. All parser Close calls
+-			// occurred in construction, and every owned tree stays retained below.
+-			want := nonDeclaration209Agree(t, f, owned)
+-			if nonDeclaration209Agree(t, f, dynamic) != want || want != definitionParameterJavaSignatureType(f.method, 0) || genericMethodHasErasedEntry(f.method) {
+-				t.Fatal("anonymous rejection did not preserve the current source signature")
+-			}
+-			order := [4]int{0, 1, 1, 0}
+-			orders[index] = "DOOD"
+-			if (sample+index)%2 == 1 {
+-				order = [4]int{1, 0, 0, 1}
+-				orders[index] = "ODDO"
+-			}
+-			for _, arm := range order {
+-				ctx := dynamic
+-				if arm == 1 {
+-					ctx = owned
+-				}
+-				start := runtime.NumCgoCall()
+-				for query := 0; query < queries/2; query++ {
+-					if got := invocationPhysicalParameterJavaType(f.resolution(), 0, ctx); got != want {
+-						t.Fatalf("query changed physical signature %q want%q", got, want)
+-					}
+-				}
+-				counts[index][arm] += runtime.NumCgoCall() - start
+-			}
+-		}
+-		smallDynamic, smallOwned, largeDynamic, largeOwned := counts[0][0], counts[0][1], counts[1][0], counts[1][1]
+-		if smallDynamic <= 0 || largeDynamic <= 0 {
+-			t.Fatal("native witness absent")
+-		}
+-		ceiling := 9 * largeDynamic / 10
+-		t.Logf("METADATA209_NATIVE sample=%d small_width=1 large_width=128 queries=%d small_order=%s large_order=%s small_dynamic_cgo=%d small_owned_cgo=%d large_dynamic_cgo=%d large_owned_cgo=%d ceiling=%d small_native_ratio=%.6f large_native_ratio=%.6f", sample, queries, orders[0], orders[1], smallDynamic, smallOwned, largeDynamic, largeOwned, ceiling, float64(smallOwned)/float64(smallDynamic), float64(largeOwned)/float64(largeDynamic))
+-		if largeOwned > ceiling {
+-			t.Errorf("METADATA209_REPEATED_SYNTAX_NATIVE: sample%d owned%d > ceiling%d dynamic%d", sample, largeOwned, ceiling, largeDynamic)
+-		}
+-	}
+-	runtime.KeepAlive(retained)
+-}
+-
+-func TestMetadata209MutationAndForeignRoots(t *testing.T) {
+-	for _, active := range []bool{false, true} {
+-		t.Run(fmt.Sprint("warmed-holder-class-move-active-", active), func(t *testing.T) {
+-			resolveImport205State(t)
+-			f := metadata209BuildMode(t, 4, false, "@meta.Marker package p;import q.Cell;")
+-			sourceOwnershipIndex(f.ctx)
+-			if active {
+-				activeResolutionFiles = newResolutionFileIndex()
+-			}
+-			left, right := f.files[4].Symbols, f.files[3].Symbols
+-			oldLeft, oldRight := left.TopLevelClasses, right.TopLevelClasses
+-			defer func() { left.TopLevelClasses, right.TopLevelClasses = oldLeft, oldRight }()
+-			left.TopLevelClasses = nil
+-			right.TopLevelClasses = append(append([]*symbol.ClassScope(nil), oldRight...), oldLeft[0])
+-			metadata209Compare(t, f)
+-			left.TopLevelClasses, right.TopLevelClasses = oldLeft, oldRight
+-			metadata209Compare(t, f)
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-	t.Run("nondeclaring-same-spelling-foreign-root", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;")
+-		sourceOwnershipIndex(f.ctx)
+-		twin, tree := resolveImport205Parse(t, "TwinNoise.java", string(f.files[4].Source))
+-		f.trees = append(f.trees, tree)
+-		owner := f.files[4].Symbols.BaseClass
+-		root := owner.Class.DeclarationNode
+-		owner.Class.DeclarationNode = twin.Symbols.BaseClass.Class.DeclarationNode
+-		defer func() { owner.Class.DeclarationNode = root }()
+-		metadata209Compare(t, f)
+-		owner.Class.DeclarationNode = root
+-		metadata209Compare(t, f)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("foreign-registered-class", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;")
+-		extra, tree := resolveImport205Parse(t, "foreign/Added.java", "package foreign;class Added{q.Cell<?> demanded;}")
+-		f.trees = append(f.trees, tree)
+-		symbol.AddSymbolsToPackage(extra.Symbols)
+-		if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-			t.Fatal("foreign file admitted")
+-		}
+-		metadata209Compare(t, f)
+-		delete(symbol.GlobalScope.Packages, "foreign")
+-		metadata209Compare(t, f)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("duplicate-file-membership", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;")
+-		pkg := symbol.GlobalScope.Packages["noise"]
+-		pkg.Files["duplicate"] = f.files[4].Symbols
+-		defer delete(pkg.Files, "duplicate")
+-		if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-			t.Fatal("duplicate file admitted")
+-		}
+-		metadata209Compare(t, f)
+-		delete(pkg.Files, "duplicate")
+-		metadata209Compare(t, f)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("edited-metadata-owned-tree", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;import q.Cell;")
+-		meta := f.files[len(f.files)-1]
+-		at := uint32(bytes.Index(meta.Source, []byte("q.Cell")))
+-		tree := f.trees[len(f.trees)-1]
+-		tree.Edit(sitter.EditInput{StartIndex: at, OldEndIndex: at + 1, NewEndIndex: at + 1, StartPoint: sitter.Point{Column: at}, OldEndPoint: sitter.Point{Column: at + 1}, NewEndPoint: sitter.Point{Column: at + 1}})
+-		if !meta.Symbols.ParsedRoot().HasChanges() {
+-			t.Fatal("real metadata Tree.Edit witness absent")
+-		}
+-		metadata209Compare(t, f)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("fresh-reparse-keeps-old-retired", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "@meta.Marker package p;import q.Cell;")
+-		old := f.ctx.syntaxInvocation
+-		old.close()
+-		replacement, tree := metadata209ParseUnit(t, "p/package-info.java", "@meta.Marker package p;import p.Cell;")
+-		f.trees = append(f.trees, tree)
+-		f.files[len(f.files)-1] = replacement
+-		fresh := newSyntaxInvocation(f.session, f.files)
+-		if fresh == nil {
+-			t.Fatal("fresh metadata reparse setup absent")
+-		}
+-		defer fresh.close()
+-		f.ctx.syntaxInvocation = fresh
+-		f.ctx.genericFamilies = &genericFamilyAnalysis{}
+-		f.ctx.callableSubclasses = &callableSubclassSourceInventory{}
+-		invocationPhysicalParameterJavaType(f.resolution(), 0, f.ctx)
+-		metadata209Compare(t, f)
+-		if old.active || old.demandSyntax != nil {
+-			t.Fatal("old invocation gained new lifetime")
+-		}
+-		runtime.KeepAlive(f)
+-	})
+-}
+-
+-func TestMetadata209SymbolOnlyExtraClass(t *testing.T) {
+-	for _, mode := range []string{"base-only", "top-level-only", "both"} {
+-		t.Run(mode, func(t *testing.T) {
+-			resolveImport205State(t)
+-			f := metadata209BuildMode(t, 4, false, "@Marker package p;import meta.Marker;import q.Cell;")
+-			want := metadata209Compare(t, f)
+-			metadata := f.files[len(f.files)-1].Symbols
+-			if metadata.BaseClass != nil || len(metadata.TopLevelClasses) != 0 {
+-				t.Fatal("metadata setup has source classes")
+-			}
+-			originalBase, originalTops := metadata.BaseClass, metadata.TopLevelClasses
+-			defer func() { metadata.BaseClass, metadata.TopLevelClasses = originalBase, originalTops }()
+-			extra := f.files[4].Symbols.BaseClass
+-			if mode == "base-only" || mode == "both" {
+-				metadata.BaseClass = extra
+-			}
+-			if mode == "top-level-only" || mode == "both" {
+-				metadata.TopLevelClasses = []*symbol.ClassScope{extra}
+-			}
+-			if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) {
+-				t.Fatal("legacy guard changed")
+-			}
+-			if metadata209Compare(t, f) != want {
+-				t.Fatal("unregistered metadata symbol alias affected declaring signature")
+-			}
+-			metadata.BaseClass, metadata.TopLevelClasses = originalBase, originalTops
+-			if metadata209Compare(t, f) != want {
+-				t.Fatal("metadata symbol closure restoration changed signature")
+-			}
+-			// Candidate-specific direct guards must refuse the proposed new capability
+-			// in each altered state, not rely on this unchanged dynamic outcome.
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-}
+diff --git a/transpiler/source_generic_metadata209_transfer_test.go b/transpiler/source_generic_metadata209_transfer_test.go
+deleted file mode 100644
+index fbf66044da32c632a760e51a99e642219ba50105..0000000000000000000000000000000000000000
+--- a/transpiler/source_generic_metadata209_transfer_test.go
++++ /dev/null
+@@ -1,346 +0,0 @@
+-package transpiler
+-
+-import (
+-	"bytes"
+-	"context"
+-	"maps"
+-	"reflect"
+-	"runtime"
+-	"testing"
+-
+-	"github.com/NickyBoy89/java2go/symbol"
+-	sitter "github.com/smacker/go-tree-sitter"
+-	"github.com/smacker/go-tree-sitter/java"
+-)
+-
+-func metadata209DirectTransfer(t *testing.T, f nonDeclaration209Fixture, want bool) {
+-	t.Helper()
+-	declaring, found := genericMethodOwnerContext(f.method)
+-	if !found {
+-		t.Fatal("fresh declaring context absent")
+-	}
+-	got := genericMethodDeclaringSyntaxContext(declaring, f.ctx)
+-	expected := declaring
+-	if want {
+-		expected.syntaxInvocation = f.ctx.syntaxInvocation
+-	}
+-	if !reflect.DeepEqual(got, expected) {
+-		t.Fatal("transfer changed fields beyond the admitted invocation, or failed refusal")
+-	}
+-	metadata209Compare(t, f)
+-	runtime.KeepAlive(f)
+-}
+-
+-func TestMetadata209DirectCertificateAndIsolation(t *testing.T) {
+-	for _, metadata := range []string{"package p;", "@Marker package p;import meta.Marker;import q.Cell;"} {
+-		t.Run(metadata, func(t *testing.T) {
+-			resolveImport205State(t)
+-			f := metadata209BuildMode(t, 4, false, metadata)
+-			if sourceGenericDemandOwnedFiles(f.ctx.syntaxInvocation) || !sourceGenericDemandOwnedCompilationUnits(f.ctx.syntaxInvocation) {
+-				t.Fatal("new syntax proof or unchanged legacy refusal absent")
+-			}
+-			metadata209DirectTransfer(t, f, true)
+-			// A filename is not a premise; actual roots, ownership and symbol closure are.
+-			inv := f.ctx.syntaxInvocation
+-			meta := f.files[len(f.files)-1].Symbols
+-			owned := inv.files[meta]
+-			owned.Name = "arbitrary/Ordinary.java"
+-			inv.files[meta] = owned
+-			if !sourceGenericDemandOwnedCompilationUnits(inv) {
+-				t.Fatal("certificate depended on a filename")
+-			}
+-			before := f.ctx
+-			f.ctx.callableSubclasses = &callableSubclassSourceInventory{}
+-			f.ctx.sourceOwnership = &resolutionFileIndex{graph: symbol.GlobalScope, files: map[*symbol.ClassScope]*symbol.FileScope{f.owner: meta}}
+-			f.ctx.expectedType = "q.Cell<S>"
+-			f.ctx.importAliases = map[string]string{"owned/path": "owned"}
+-			f.ctx.usedImports = map[string]bool{"owned/path": true}
+-			aliases, used := maps.Clone(f.ctx.importAliases), maps.Clone(f.ctx.usedImports)
+-			f.ctx.localScope = f.method
+-			f.ctx.syntheticTypeParameters = f.method.TypeParameters
+-			metadata209DirectTransfer(t, f, true)
+-			if !reflect.DeepEqual(aliases, f.ctx.importAliases) || !reflect.DeepEqual(used, f.ctx.usedImports) {
+-				t.Fatal("caller import ownership mutated")
+-			}
+-			if f.ctx.syntaxInvocation != before.syntaxInvocation || f.ctx.callableSubclasses == nil || len(f.ctx.sourceOwnership.files) != 1 {
+-				t.Fatal("caller holders were replaced")
+-			}
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-}
+-
+-func TestMetadata209DirectSymbolClosure(t *testing.T) {
+-	for _, mode := range []string{"base-only", "top-level-only", "both"} {
+-		t.Run(mode, func(t *testing.T) {
+-			resolveImport205State(t)
+-			f := metadata209BuildMode(t, 4, false, "@Marker package p;import meta.Marker;")
+-			metadata209DirectTransfer(t, f, true)
+-			meta := f.files[len(f.files)-1].Symbols
+-			base, tops := meta.BaseClass, meta.TopLevelClasses
+-			extra := f.files[4].Symbols.BaseClass
+-			defer func() { meta.BaseClass, meta.TopLevelClasses = base, tops }()
+-			if mode != "top-level-only" {
+-				meta.BaseClass = extra
+-			}
+-			if mode != "base-only" {
+-				meta.TopLevelClasses = []*symbol.ClassScope{extra}
+-			}
+-			if sourceGenericDemandOwnedCompilationUnits(f.ctx.syntaxInvocation) {
+-				t.Fatal("symbol-only extra class admitted")
+-			}
+-			metadata209DirectTransfer(t, f, false)
+-			meta.BaseClass, meta.TopLevelClasses = base, tops
+-			metadata209DirectTransfer(t, f, true)
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-}
+-
+-func TestMetadata209DirectOwnershipAndForeignRoots(t *testing.T) {
+-	for _, active := range []bool{false, true} {
+-		name := "fresh-topology"
+-		if active {
+-			name = "stale-active-index"
+-		}
+-		t.Run(name, func(t *testing.T) {
+-			resolveImport205State(t)
+-			f := metadata209BuildMode(t, 4, false, "package p;")
+-			metadata209DirectTransfer(t, f, true)
+-			sourceOwnershipIndex(f.ctx)
+-			previousActive := activeResolutionFiles
+-			if active {
+-				activeResolutionFiles = newResolutionFileIndex()
+-			}
+-			defer func() { activeResolutionFiles = previousActive }()
+-			left, right := f.files[4].Symbols, f.files[3].Symbols
+-			oldLeft, oldRight := left.TopLevelClasses, right.TopLevelClasses
+-			defer func() { left.TopLevelClasses, right.TopLevelClasses = oldLeft, oldRight }()
+-			left.TopLevelClasses = nil
+-			right.TopLevelClasses = append(append([]*symbol.ClassScope(nil), oldRight...), oldLeft[0])
+-			// Root ownership cannot be certified by the warmed caller or active map.
+-			metadata209DirectTransfer(t, f, false)
+-			left.TopLevelClasses, right.TopLevelClasses = oldLeft, oldRight
+-			metadata209DirectTransfer(t, f, true)
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-	t.Run("nondeclaring-foreign-root", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;")
+-		metadata209DirectTransfer(t, f, true)
+-		twin, tree := resolveImport205Parse(t, "TwinNoise.java", string(f.files[4].Source))
+-		f.trees = append(f.trees, tree)
+-		owner := f.files[4].Symbols.BaseClass
+-		root := owner.Class.DeclarationNode
+-		defer func() { owner.Class.DeclarationNode = root }()
+-		owner.Class.DeclarationNode = twin.Symbols.BaseClass.Class.DeclarationNode
+-		metadata209DirectTransfer(t, f, false)
+-		owner.Class.DeclarationNode = root
+-		metadata209DirectTransfer(t, f, true)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("foreign-file-and-duplicate-membership", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;")
+-		metadata209DirectTransfer(t, f, true)
+-		extra, tree := resolveImport205Parse(t, "foreign/Added.java", "package foreign;class Added{q.Cell<?> demanded;}")
+-		f.trees = append(f.trees, tree)
+-		symbol.AddSymbolsToPackage(extra.Symbols)
+-		if sourceGenericDemandOwnedCompilationUnits(f.ctx.syntaxInvocation) {
+-			t.Fatal("foreign file admitted")
+-		}
+-		metadata209DirectTransfer(t, f, false)
+-		delete(symbol.GlobalScope.Packages, "foreign")
+-		pkg := symbol.GlobalScope.Packages["noise"]
+-		pkg.Files["duplicate"] = f.files[4].Symbols
+-		if sourceGenericDemandOwnedCompilationUnits(f.ctx.syntaxInvocation) {
+-			t.Fatal("duplicate file admitted")
+-		}
+-		metadata209DirectTransfer(t, f, false)
+-		delete(pkg.Files, "duplicate")
+-		metadata209DirectTransfer(t, f, true)
+-		runtime.KeepAlive(f)
+-	})
+-}
+-
+-func TestMetadata209DirectDemandAndDeclarationRefusals(t *testing.T) {
+-	for _, text := range []string{
+-		"@meta.Marker(q.Cell.class) package p;import q.Cell;",
+-		"@meta.Marker(1) package p;",
+-		"package p;class Added{q.Cell<?> demanded;}",
+-		"package p;import static java.lang.Integer.*;",
+-	} {
+-		t.Run(text, func(t *testing.T) {
+-			resolveImport205State(t)
+-			f := metadata209BuildMode(t, 4, false, "package p;")
+-			// Keep annotation argument witnesses valid against a matching live provider.
+-			markerText := "package meta;public @interface Marker{int value();}"
+-			if bytes.Contains([]byte(text), []byte("class)")) {
+-				markerText = "package meta;public @interface Marker{Class<?> value();}"
+-			}
+-			marker, markerTree := metadata209ParseUnit(t, "meta/Marker.java", markerText)
+-			f.trees = append(f.trees, markerTree)
+-			symbol.GlobalScope.Packages["meta"].Files["Marker"] = marker.Symbols
+-			f.files[len(f.files)-2] = marker
+-			replacement, tree := metadata209ParseUnit(t, "Any.java", text)
+-			f.trees = append(f.trees, tree)
+-			f.files[len(f.files)-1] = replacement
+-			fresh := newSyntaxInvocation(f.session, f.files)
+-			if fresh == nil {
+-				t.Fatal("valid owned current-root setup absent")
+-			}
+-			defer fresh.close()
+-			f.ctx.syntaxInvocation = fresh
+-			if sourceGenericDemandOwnedCompilationUnits(fresh) {
+-				t.Fatal("demand/declaration syntax admitted")
+-			}
+-			metadata209DirectTransfer(t, f, false)
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-	t.Run("unknown-error-and-missing-root", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;")
+-		inv := f.ctx.syntaxInvocation
+-		meta := f.files[len(f.files)-1].Symbols
+-		owned := inv.files[meta]
+-		missing := owned
+-		missing.Ast = nil
+-		inv.files[meta] = missing
+-		if sourceGenericDemandOwnedCompilationUnits(inv) {
+-			t.Fatal("missing owned anchor admitted")
+-		}
+-		metadata209DirectTransfer(t, f, false)
+-		inv.files[meta] = owned
+-		if sourceGenericDemandInertCompilationUnit(f.owner.Class.DeclarationNode) {
+-			t.Fatal("non-program declaration root admitted")
+-		}
+-		metadata209DirectTransfer(t, f, true)
+-		runtime.KeepAlive(f)
+-	})
+-}
+-
+-func TestMetadata209DirectSourceAndTreeMutation(t *testing.T) {
+-	t.Run("bytes-and-source-copy", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "@Marker package p;import meta.Marker;import q.Cell;")
+-		metadata209DirectTransfer(t, f, true)
+-		meta := f.files[len(f.files)-1].Symbols
+-		at := bytes.Index(meta.Source, []byte("q.Cell"))
+-		if at < 0 {
+-			t.Fatal("source witness absent")
+-		}
+-		meta.Source[at] = 'p'
+-		if sourceGenericDemandOwnedCompilationUnits(f.ctx.syntaxInvocation) {
+-			t.Fatal("in-place metadata edit admitted")
+-		}
+-		metadata209DirectTransfer(t, f, false)
+-		meta.Source[at] = 'q'
+-		original := meta.Source
+-		meta.Source = append([]byte(nil), original...)
+-		metadata209DirectTransfer(t, f, true)
+-		meta.Source = original
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("tree-edit", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;import q.Cell;")
+-		metadata209DirectTransfer(t, f, true)
+-		meta := f.files[len(f.files)-1]
+-		at := uint32(bytes.Index(meta.Source, []byte("q.Cell")))
+-		f.trees[len(f.trees)-1].Edit(sitter.EditInput{StartIndex: at, OldEndIndex: at + 1, NewEndIndex: at + 1, StartPoint: sitter.Point{Column: at}, OldEndPoint: sitter.Point{Column: at + 1}, NewEndPoint: sitter.Point{Column: at + 1}})
+-		if !meta.Ast.HasChanges() || sourceGenericDemandOwnedCompilationUnits(f.ctx.syntaxInvocation) {
+-			t.Fatal("real tree edit not refused")
+-		}
+-		metadata209DirectTransfer(t, f, false)
+-		runtime.KeepAlive(f)
+-	})
+-}
+-
+-func TestMetadata209DirectInvocationLifetime(t *testing.T) {
+-	t.Run("closed-nested-fresh-and-panic", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "@Marker package p;import meta.Marker;")
+-		metadata209DirectTransfer(t, f, true)
+-		outer := f.ctx.syntaxInvocation
+-		nested := newSyntaxInvocation(f.session, f.files)
+-		if nested == nil {
+-			t.Fatal("nested invocation absent")
+-		}
+-		func() {
+-			defer func() {
+-				if recover() != "metadata209-panic" {
+-					t.Fatal("panic witness changed")
+-				}
+-			}()
+-			defer nested.close()
+-			f.ctx.syntaxInvocation = nested
+-			metadata209DirectTransfer(t, f, true)
+-			panic("metadata209-panic")
+-		}()
+-		if nested.active || nested.demandSyntax != nil {
+-			t.Fatal("panic retained nested authority")
+-		}
+-		metadata209DirectTransfer(t, f, false)
+-		f.ctx.syntaxInvocation = outer
+-		metadata209DirectTransfer(t, f, true)
+-		outer.close()
+-		metadata209DirectTransfer(t, f, false)
+-		replacement, tree := metadata209ParseUnit(t, "Current.java", "@Marker package p;import meta.Marker;import p.Cell;")
+-		f.trees = append(f.trees, tree)
+-		f.files[len(f.files)-1] = replacement
+-		fresh := newSyntaxInvocation(f.session, f.files)
+-		if fresh == nil {
+-			t.Fatal("fresh same-graph reparse absent")
+-		}
+-		defer fresh.close()
+-		f.ctx.syntaxInvocation = fresh
+-		// A caller holder may be ready and old; it must never cross to declaring state.
+-		metadata209DirectTransfer(t, f, true)
+-		if outer.active || outer.demandSyntax != nil {
+-			t.Fatal("retired invocation revived")
+-		}
+-		f.session.Close()
+-		metadata209DirectTransfer(t, f, false)
+-		runtime.KeepAlive(f)
+-	})
+-	t.Run("graph-and-public-context", func(t *testing.T) {
+-		resolveImport205State(t)
+-		f := metadata209BuildMode(t, 4, false, "package p;")
+-		metadata209DirectTransfer(t, f, true)
+-		saved := symbol.GlobalScope
+-		symbol.GlobalScope = &symbol.GlobalSymbols{Packages: saved.Packages}
+-		if sourceGenericDemandOwnedCompilationUnits(f.ctx.syntaxInvocation) {
+-			t.Fatal("foreign graph admitted")
+-		}
+-		metadata209DirectTransfer(t, f, false)
+-		symbol.GlobalScope = saved
+-		f.ctx.syntaxInvocation = nil
+-		metadata209DirectTransfer(t, f, false)
+-		runtime.KeepAlive(f)
+-	})
+-}
+-
+-func TestMetadata209DirectSyntaxErrors(t *testing.T) {
+-	for _, text := range []string{"package p; @", "package ;", "package p; class", "package p; import ;"} {
+-		t.Run(text, func(t *testing.T) {
+-			parser := sitter.NewParser()
+-			defer parser.Close()
+-			parser.SetLanguage(java.GetLanguage())
+-			tree, err := parser.ParseCtx(context.Background(), nil, []byte(text))
+-			if err != nil {
+-				t.Fatal(err)
+-			}
+-			defer tree.Close()
+-			root := tree.RootNode()
+-			if !root.HasError() {
+-				t.Fatal("parse-error witness absent")
+-			}
+-			if sourceGenericDemandInertCompilationUnit(root) {
+-				t.Fatal("error/missing syntax certified")
+-			}
+-			runtime.KeepAlive(tree)
+-		})
+-	}
+-}
+diff --git a/transpiler/source_generic_view_demand.go b/transpiler/source_generic_view_demand.go
+index 6ca2dfca1b49e9876358806702bcd01dd0a46262..e02ec4327df1eab2cf17ecdd60490b9bd115cee3 100644
+--- a/transpiler/source_generic_view_demand.go
++++ b/transpiler/source_generic_view_demand.go
+@@ -34,19 +34,13 @@
+ 			if node == nil {
+ 				return
+ 			}
+-			// Read this visit's kind at the original first classification point.
+-			// Keep later semantic and child-context checks fresh.
+-			kind := resolvedSourceNodeType(node, ctx)
+-			switch kind {
+-			case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
+-				if !node.Equal(root) {
+-					// Named classes are visited in their own declaration context. Local
+-					// class scopes are not in the resolved graph; do not resolve their
+-					// private binders or nested type names as enclosing declarations.
+-					return
+-				}
++			if sourceGenericViewTypeDeclaration(node, ctx) && !node.Equal(root) {
++				// Named classes are visited in their own declaration context. Local
++				// class scopes are not in the resolved graph; do not resolve their
++				// private binders or nested type names as enclosing declarations.
++				return
+ 			}
+-			if kind == "class_body" {
++			if resolvedSourceNodeType(node, ctx) == "class_body" {
+ 				parent := node.Parent()
+ 				if parent != nil && (resolvedSourceNodeType(parent, ctx) == "object_creation_expression" || resolvedSourceNodeType(parent, ctx) == "enum_constant") {
+ 					// Anonymous declarations are hoisted later. Their lexical type
+@@ -55,7 +49,7 @@
+ 					return
+ 				}
+ 			}
+-			if kind == "method_declaration" || kind == "constructor_declaration" {
++			if resolvedSourceNodeType(node, ctx) == "method_declaration" || resolvedSourceNodeType(node, ctx) == "constructor_declaration" {
+ 				lexical = lexical.Clone()
+ 				lexical.localScope = nil
+ 				for _, method := range owner.Methods {
+@@ -65,12 +59,9 @@
+ 					}
+ 				}
+ 			}
+-			switch kind {
+-			case "generic_type", "type_identifier", "scoped_type_identifier":
+-				if seed := sourceGenericViewDemandType(node, lexical, file.Source); seed != nil && !seen[seed] {
+-					seen[seed] = true
+-					seeds = append(seeds, seed)
+-				}
++			if seed := sourceGenericViewDemandType(node, lexical, file.Source); seed != nil && !seen[seed] {
++				seen[seed] = true
++				seeds = append(seeds, seed)
+ 			}
+ 			for _, child := range resolvedSourceNamedChildren(node, ctx) {
+ 				childCtx := lexical
+diff --git a/transpiler/source_identifier_bounds214_reference_test.go b/transpiler/source_identifier_bounds214_reference_test.go
+deleted file mode 100644
+index 1f922b1807998a89c8f3a96819115f5485e8f0dd..0000000000000000000000000000000000000000
+--- a/transpiler/source_identifier_bounds214_reference_test.go
++++ /dev/null
+@@ -1,116 +0,0 @@
+-package transpiler
+-
+-import (
+-	"github.com/NickyBoy89/java2go/nodeutil"
+-	"github.com/NickyBoy89/java2go/symbol"
+-	sitter "github.com/smacker/go-tree-sitter"
+-)
+-
+-func syntaxBounds214ReferenceBuild(file *symbol.FileScope) *syntaxIdentifierFile {
+-	root := file.ParsedRoot()
+-	if root == nil || root.HasError() || root.IsMissing() || root.HasChanges() {
+-		return nil
+-	}
+-	entry := &syntaxIdentifierFile{anchor: root, source: append([]byte(nil), file.Source...),
+-		bodies: map[*sitter.Node]syntaxIdentifierInterval{}, raw: map[string][]int{},
+-		methods: map[int]*sitter.Node{}, exactMethods: map[string][]int{}, prefixMethods: map[string][]int{},
+-		declarations: map[*sitter.Node]string{}}
+-	targets := map[*sitter.Node]bool{}
+-	for _, top := range file.TopLevelClasses {
+-		if top != nil && top.Class != nil && top.Class.DeclarationNode != nil {
+-			targets[top.Class.DeclarationNode] = true
+-		}
+-	}
+-	ordinal := 0
+-	var visit func(*sitter.Node) bool
+-	visit = func(node *sitter.Node) bool {
+-		if node == nil {
+-			return true
+-		}
+-		first := ordinal
+-		kind := node.Type()
+-		switch kind {
+-		case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration":
+-			entry.declarations[node] = kind
+-		}
+-		if kind == "identifier" || kind == "type_identifier" {
+-			start, end := node.StartByte(), node.EndByte()
+-			if start > end || uint64(end) > uint64(len(file.Source)) {
+-				return false
+-			}
+-			identifier := sanitizeGoIdent(node.Content(file.Source))
+-			names := [3]string{identifier, symbol.Uppercase(identifier), symbol.Lowercase(identifier)}
+-			for n, name := range names {
+-				duplicate := false
+-				for _, previous := range names[:n] {
+-					if previous == name {
+-						duplicate = true
+-						break
+-					}
+-				}
+-				if !duplicate {
+-					entry.raw[name] = append(entry.raw[name], ordinal)
+-				}
+-			}
+-			ordinal++
+-		}
+-		if kind == "method_declaration" {
+-			names, known := syntaxBounds214ReferenceMethodNames(node, file.Source)
+-			if !known {
+-				return false
+-			}
+-			entry.methods[ordinal] = node
+-			for n, name := range names {
+-				if n > 0 && names[0] == name {
+-					continue
+-				}
+-				entry.exactMethods[name] = append(entry.exactMethods[name], ordinal)
+-				for _, suffix := range [2]string{executionMethodSuffix, "Java2goExactExecution"} {
+-					stem := name + suffix
+-					entry.prefixMethods[stem] = append(entry.prefixMethods[stem], ordinal)
+-				}
+-			}
+-			ordinal++
+-		}
+-		for _, child := range nodeutil.NamedChildrenOf(node) {
+-			if !visit(child) {
+-				return false
+-			}
+-		}
+-		if targets[node] {
+-			entry.bodies[node] = syntaxIdentifierInterval{first, ordinal}
+-		}
+-		return true
+-	}
+-	if !visit(root) || len(entry.bodies) != len(targets) {
+-		return nil
+-	}
+-	return entry
+-}
+-
+-// This is the same conservative header proof as the existing MayMatch guard.
+-// Unknown syntax disables this index; it never supplies a negative conclusion.
+-func syntaxBounds214ReferenceMethodNames(method *sitter.Node, source []byte) ([2]string, bool) {
+-	if method == nil || method.HasError() || method.IsMissing() || method.HasChanges() {
+-		return [2]string{}, false
+-	}
+-	nameNode := method.ChildByFieldName("name")
+-	typeNode := method.ChildByFieldName("type")
+-	if nameNode == nil || typeNode == nil || nameNode.IsMissing() || typeNode.IsMissing() || nameNode.HasError() || typeNode.HasError() || nameNode.HasChanges() || typeNode.HasChanges() || nameNode.Type() != "identifier" {
+-		return [2]string{}, false
+-	}
+-	start, end := method.StartByte(), method.EndByte()
+-	if start > end || uint64(end) > uint64(len(source)) {
+-		return [2]string{}, false
+-	}
+-	nameStart, nameEnd := nameNode.StartByte(), nameNode.EndByte()
+-	typeStart, typeEnd := typeNode.StartByte(), typeNode.EndByte()
+-	if nameStart < start || nameStart > nameEnd || nameEnd > end || typeStart < start || typeStart > typeEnd || typeEnd > end {
+-		return [2]string{}, false
+-	}
+-	raw := nameNode.Content(source)
+-	if raw == "" {
+-		return [2]string{}, false
+-	}
+-	return [2]string{sanitizeGoIdent(symbol.HandleExportStatus(false, raw)), sanitizeGoIdent(symbol.HandleExportStatus(true, raw))}, true
+-}
+diff --git a/transpiler/source_identifier_bounds214_test.go b/transpiler/source_identifier_bounds214_test.go
+deleted file mode 100644
+index 2de07cfadb7c9b762d4ab15ba27a16abc0b8599e..0000000000000000000000000000000000000000
+--- a/transpiler/source_identifier_bounds214_test.go
++++ /dev/null
+@@ -1,199 +0,0 @@
+-package transpiler
+-
+-import (
+-	"bytes"
+-	"context"
+-	"crypto/sha256"
+-	"fmt"
+-	"reflect"
+-	"runtime"
+-	"strings"
+-	"testing"
+-
+-	"github.com/NickyBoy89/java2go/symbol"
+-	sitter "github.com/smacker/go-tree-sitter"
+-	"github.com/smacker/go-tree-sitter/java"
+-)
+-
+-type syntaxBounds214Fixture struct {
+-	scope  *symbol.FileScope
+-	root   *sitter.Node
+-	tree   *sitter.Tree
+-	source []byte
+-}
+-
+-func syntaxBounds214Parse(t *testing.T, source string) syntaxBounds214Fixture {
+-	t.Helper()
+-	parser := sitter.NewParser()
+-	parser.SetLanguage(java.GetLanguage())
+-	data := []byte(source)
+-	tree, err := parser.ParseCtx(context.Background(), nil, data)
+-	if err != nil {
+-		t.Fatal(err)
+-	}
+-	t.Cleanup(func() { tree.Close(); parser.Close() })
+-	root := tree.RootNode()
+-	return syntaxBounds214Fixture{symbol.ParseSymbols(root, data), root, tree, data}
+-}
+-
+-func syntaxBounds214Equal(t *testing.T, file *symbol.FileScope) *syntaxIdentifierFile {
+-	t.Helper()
+-	want := syntaxBounds214ReferenceBuild(file)
+-	got := buildSyntaxIdentifierFile(file)
+-	if !reflect.DeepEqual(got, want) {
+-		t.Fatal("identifier index differs: anchor, copied bytes, bodies, ordinals, raw/method/prefix/declaration maps")
+-	}
+-	return got
+-}
+-
+-func TestSyntaxIdentifierBounds214IndexEquality(t *testing.T) {
+-	sources := []string{
+-		"package bounds; class Plain { int value; public int read(int input) { return input + value; } }",
+-		"package bounds; @interface Mark { String value() default \"literal\"; } @Mark(\"Δ\") class Fixture<T> { public <U> U echo(U input) { return input; } public int[] pack(int... values) { return values; } private int dollar$name(int type) { return type; } void use() { class Local { void local() {} } Object x = new Object() { public void anonymous() {} }; java.util.function.IntUnaryOperator lambda = n -> n + 1; } class Nested { int member; } enum Choice { A { public void action() {} }; public void action() {} } record Pair(int component) { int read() { return component; } } }",
+-		"package bounds; class Δ { int café; public int read(int input) { /* commentName */ String text = \"stringName\"; return café + input; } }",
+-		"@Deprecated package bounds; import java.util.List;",
+-		"package bounds; class Empty {}",
+-	}
+-	for index, source := range sources {
+-		t.Run(fmt.Sprint(index), func(t *testing.T) {
+-			f := syntaxBounds214Parse(t, source)
+-			if f.root.HasError() {
+-				t.Fatal("valid fixed fixture grammar premise")
+-			}
+-			before := append([]byte(nil), f.scope.Source...)
+-			treeBefore := f.root.String()
+-			got := syntaxBounds214Equal(t, f.scope)
+-			if got == nil || got.anchor != f.scope.ParsedRoot() || !bytes.Equal(got.source, before) {
+-				t.Fatal("fixed fixture index premise")
+-			}
+-			if !bytes.Equal(before, f.scope.Source) || treeBefore != f.root.String() {
+-				t.Fatal("index construction mutated input")
+-			}
+-			// Snapshot bytes are copied at the original construction boundary.
+-			if len(f.scope.Source) > 0 {
+-				saved := f.scope.Source[0]
+-				f.scope.Source[0] ^= 1
+-				if !bytes.Equal(got.source, before) {
+-					t.Fatal("entry source aliases input")
+-				}
+-				f.scope.Source[0] = saved
+-			}
+-			runtime.KeepAlive(f)
+-		})
+-	}
+-}
+-
+-func TestSyntaxIdentifierBounds214Refusals(t *testing.T) {
+-	for _, row := range []struct {
+-		name  string
+-		scope *symbol.FileScope
+-	}{{"nil_scope", nil}, {"nil_root", &symbol.FileScope{}}} {
+-		t.Run(row.name, func(t *testing.T) {
+-			if syntaxBounds214Equal(t, row.scope) != nil {
+-				t.Fatal("missing root admitted")
+-			}
+-		})
+-	}
+-	t.Run("parser_error", func(t *testing.T) {
+-		f := syntaxBounds214Parse(t, "class Broken { void method( {")
+-		if !f.root.HasError() || syntaxBounds214Equal(t, f.scope) != nil {
+-			t.Fatal("parser error refusal premise")
+-		}
+-	})
+-	t.Run("short_source", func(t *testing.T) {
+-		f := syntaxBounds214Parse(t, "class Fixture { int value; }")
+-		f.scope.Source = f.scope.Source[:1]
+-		if syntaxBounds214Equal(t, f.scope) != nil {
+-			t.Fatal("out of range identifier admitted")
+-		}
+-	})
+-	t.Run("detached_body", func(t *testing.T) {
+-		f := syntaxBounds214Parse(t, "class Fixture { int value; }")
+-		twin := syntaxBounds214Parse(t, "class Fixture { int value; }")
+-		if len(f.scope.TopLevelClasses) != 1 || len(twin.scope.TopLevelClasses) != 1 {
+-			t.Fatal("one body premise")
+-		}
+-		saved := f.scope.TopLevelClasses[0].Class.DeclarationNode
+-		f.scope.TopLevelClasses[0].Class.DeclarationNode = twin.scope.TopLevelClasses[0].Class.DeclarationNode
+-		defer func() { f.scope.TopLevelClasses[0].Class.DeclarationNode = saved }()
+-		if syntaxBounds214Equal(t, f.scope) != nil {
+-			t.Fatal("detached target admitted")
+-		}
+-	})
+-	t.Run("edited_tree", func(t *testing.T) {
+-		f := syntaxBounds214Parse(t, "class Fixture { int value; }")
+-		at := uint32(bytes.Index(f.source, []byte("value")))
+-		f.tree.Edit(sitter.EditInput{StartIndex: at, OldEndIndex: at + 1, NewEndIndex: at + 1, StartPoint: sitter.Point{Column: at}, OldEndPoint: sitter.Point{Column: at + 1}, NewEndPoint: sitter.Point{Column: at + 1}})
+-		if !f.root.HasChanges() || syntaxBounds214Equal(t, f.scope) != nil {
+-			t.Fatal("edited tree refusal premise")
+-		}
+-	})
+-}
+-
+-func syntaxBounds214BudgetSource(width int) string {
+-	return "package bounds; class Fixture { int a,b,c; int fold(int value) { " + strings.Repeat("value = value + a + b + c; ", width) + "return value; } }"
+-}
+-
+-func syntaxBounds214Window(build func(*symbol.FileScope) *syntaxIdentifierFile, file *symbol.FileScope) (int64, []*syntaxIdentifierFile) {
+-	// The parsed file and interned node wrappers remain fixed. Parse, symbol setup,
+-	// warmup, validation, logging, and garbage collection requests are outside.
+-	results := make([]*syntaxIdentifierFile, 2)
+-	before := runtime.NumCgoCall()
+-	for index := range results {
+-		results[index] = build(file)
+-	}
+-	count := runtime.NumCgoCall() - before
+-	runtime.KeepAlive(file)
+-	return count, results
+-}
+-
+-func TestSyntaxIdentifierBounds214NativeBudget(t *testing.T) {
+-	widths := [2]int{64, 256}
+-	expectedSHA := [2]string{"a437871b55b763710811ba1c982a97ed1bb64be15c67f2c2ad9a846df4722194", "bf5ad57aaa0b7b146e5ff3ed7d8766e48d348b5fcd6bbfb38ac68161219ce619"}
+-	var fixtures [2]syntaxBounds214Fixture
+-	var expected [2]*syntaxIdentifierFile
+-	for index, width := range widths {
+-		fixtures[index] = syntaxBounds214Parse(t, syntaxBounds214BudgetSource(width))
+-		if fmt.Sprintf("%x", sha256.Sum256(fixtures[index].source)) != expectedSHA[index] || fixtures[index].root.HasError() {
+-			t.Fatal("fixed parsed input premise")
+-		}
+-		expected[index] = syntaxBounds214Equal(t, fixtures[index].scope)
+-		if expected[index] == nil {
+-			t.Fatal("fixed parsed input index refused")
+-		}
+-	}
+-	arms := [2]func(*symbol.FileScope) *syntaxIdentifierFile{syntaxBounds214ReferenceBuild, buildSyntaxIdentifierFile}
+-	// Counter RED is expected on unchanged production: the actual current builder
+-	// and frozen old builder perform the same work; only the fixed budget may fail.
+-	for sample := 1; sample <= 3; sample++ {
+-		var counts [2][2]int64
+-		var orders [2]string
+-		for widthIndex := range widths {
+-			order := [4]int{0, 1, 1, 0}
+-			orders[widthIndex] = "DOOD"
+-			if (sample+widthIndex)%2 == 1 {
+-				order = [4]int{1, 0, 0, 1}
+-				orders[widthIndex] = "ODDO"
+-			}
+-			for _, arm := range order {
+-				count, results := syntaxBounds214Window(arms[arm], fixtures[widthIndex].scope)
+-				counts[widthIndex][arm] += count
+-				for _, entry := range results {
+-					if !reflect.DeepEqual(entry, expected[widthIndex]) {
+-						t.Fatal("counter arm index changed")
+-					}
+-				}
+-			}
+-		}
+-		baseline, current := counts[1][0], counts[1][1]
+-		ceiling := 9 * baseline / 10
+-		t.Logf("SYNTAX_BOUNDS214_NATIVE sample=%d small_width=64 large_width=256 builds_per_arm=4 small_order=%s large_order=%s small_reference_cgo=%d small_current_cgo=%d large_reference_cgo=%d large_current_cgo=%d ceiling=%d", sample, orders[0], orders[1], counts[0][0], counts[0][1], baseline, current, ceiling)
+-		if baseline <= 0 || current <= 0 {
+-			t.Fatal("missing absolute native counter")
+-		}
+-		if current > ceiling {
+-			t.Errorf("SYNTAX_BOUNDS214_NATIVE_BUDGET_RED sample=%d current=%d exceeds fixed90percent=%d", sample, current, ceiling)
+-		}
+-	}
+-	runtime.KeepAlive(fixtures)
+-}
+diff --git a/transpiler/source_identifier_syntax_inventory.go b/transpiler/source_identifier_syntax_inventory.go
+index b0467efb8aba0d18656bb4002d6667265299b8cc..af8e96cf14c322a83a354b174f8ebfbda22ea193 100644
+--- a/transpiler/source_identifier_syntax_inventory.go
++++ b/transpiler/source_identifier_syntax_inventory.go
+@@ -57,7 +57,7 @@
+ 			if start > end || uint64(end) > uint64(len(file.Source)) {
+ 				return false
+ 			}
+-			identifier := sanitizeGoIdent(string(file.Source[start:end]))
++			identifier := sanitizeGoIdent(node.Content(file.Source))
+ 			names := [3]string{identifier, symbol.Uppercase(identifier), symbol.Lowercase(identifier)}
+ 			for n, name := range names {
+ 				duplicate := false
+@@ -127,7 +127,7 @@
+ 	if nameStart < start || nameStart > nameEnd || nameEnd > end || typeStart < start || typeStart > typeEnd || typeEnd > end {
+ 		return [2]string{}, false
+ 	}
+-	raw := string(source[nameStart:nameEnd])
++	raw := nameNode.Content(source)
+ 	if raw == "" {
+ 		return [2]string{}, false
+ 	}

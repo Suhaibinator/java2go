@@ -1,0 +1,1597 @@
+diff --git a/stdjava/random_access_file_file_constructor209.go b/stdjava/random_access_file_file_constructor209.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..df7ae21645f3f46f522d49b963a663b7e82c9567
+--- /dev/null
++++ b/stdjava/random_access_file_file_constructor209.go
+@@ -0,0 +1,42 @@
++package stdjava
++
++import "os"
++
++// NewRandomAccessFileFileExecution implements the native File overload. Source
++// File subclasses/getPath overrides require a separate dispatch protocol and
++// cannot enter this service through the compiler's allocation certificate.
++func NewRandomAccessFileFileExecution(execution *Execution, file *JavaFile, mode *JavaString) *RandomAccessFile {
++	requireExecution(execution)
++	return randomAccessFileNativeReferenceInitialize(file, mode)
++}
++
++func randomAccessFileNativeReferenceInitialize(file *JavaFile, mode *JavaString) *RandomAccessFile {
++	var name *JavaString
++	if file != nil {
++		name = file.GetPathReference()
++	}
++	flags := randomAccessFileReferenceMode(mode)
++	return randomAccessFileNativeReferenceOpen(file, name, flags)
++}
++
++func randomAccessFileNativeReferenceOpen(file *JavaFile, name *JavaString, flags int) *RandomAccessFile {
++	if name == nil {
++		panic(NewJavaNullPointerExceptionMessage(nil))
++	}
++	// UnixFileSystem.isInvalid invokes virtual getPath again in the JDK. Only
++	// exact native File objects are admitted here: their immutable getter is pure
++	// and stable, so testing the captured Java pathname is equivalent. This is
++	// neither source getter dispatch nor a model of File's cached path status.
++	for _, unit := range name.units {
++		if unit == 0 {
++			panic(newJavaThrowableBase("FileNotFoundException", JavaStringLiteralUTF16([]uint16{'I', 'n', 'v', 'a', 'l', 'i', 'd', ' ', 'f', 'i', 'l', 'e', ' ', 'p', 'a', 't', 'h'})))
++		}
++	}
++	opened, err := os.OpenFile(file.path, flags, 0666)
++	if err != nil {
++		randomAccessFileReferenceFailure(name, err)
++	}
++	result := randomAccessFileReferenceFinishOpen(file, opened)
++	result.state.writable = randomAccessFileWritableFromOpenFlags(flags)
++	return result
++}
+diff --git a/stdjava/random_access_file_file_constructor209_test.go b/stdjava/random_access_file_file_constructor209_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..a0bdc81a8f10d800245c89a2ac65727f6054c6ac
+--- /dev/null
++++ b/stdjava/random_access_file_file_constructor209_test.go
+@@ -0,0 +1,248 @@
++package stdjava
++
++import (
++	"crypto/sha256"
++	"encoding/json"
++	"errors"
++	"fmt"
++	"io"
++	"io/fs"
++	"os"
++	"path/filepath"
++	"reflect"
++	"strconv"
++	"strings"
++	"testing"
++)
++
++// Inputs/results below are an exact field projection of the immutable measured
++// RAF author oracle f248f1fb856fb469d738378a0e4615bc36315bb6ffb9c13a3af9384af5a9793a.
++// The JDK matrix's observer APIs are not additional compiler API admissions.
++// Native tests use existing byte-array writes/readers and inspect descriptor
++// state directly; they do not claim compilation of getFD, write(int), or the
++// matrix's arbitrary source File-return helpers. Original DigestIO stays whole.
++type raf209MeasuredRow struct {
++	Label        string `json:"label"`
++	Overload     string `json:"overload"`
++	Path         string `json:"pathUTF16"`
++	Mode         string `json:"modeUTF16"`
++	Failure      string `json:"failure"`
++	State        string `json:"state"`
++	ClosedRead   string `json:"closedRead"`
++	CloseFailure string `json:"closeFailure"`
++}
++
++func raf209Units(t *testing.T, text string) *JavaString {
++	t.Helper()
++	if text == "null" {
++		return nil
++	}
++	if len(text)%4 != 0 {
++		t.Fatal("invalid measured UTF16")
++	}
++	units := make([]uint16, len(text)/4)
++	for i := range units {
++		v, err := strconv.ParseUint(text[i*4:i*4+4], 16, 16)
++		if err != nil {
++			t.Fatal(err)
++		}
++		units[i] = uint16(v)
++	}
++	return NewJavaStringUTF16(units)
++}
++func raf209Panic(action func()) (failure any) {
++	defer func() { failure = recover() }()
++	action()
++	return nil
++}
++func raf209Failure(t *testing.T, e *Execution, failure any) string {
++	t.Helper()
++	if failure == nil {
++		return "none"
++	}
++	throwable, ok := failure.(Throwable)
++	if !ok {
++		t.Fatalf("non-Java panic %T:%v", failure, failure)
++	}
++	message := JavaThrowableMessageExecution(e, failure)
++	text := "null"
++	if message != nil {
++		var b strings.Builder
++		for _, unit := range message.units {
++			fmt.Fprintf(&b, "%04x", unit)
++		}
++		text = b.String()
++	}
++	return fmt.Sprintf("%s/messageUTF16=%s/causeNull=%t", BuiltinThrowableTypeID(throwable.ThrowableTypeName()), text, GetCause(failure) == nil)
++}
++func raf209FileSnapshot(t *testing.T) map[string]string {
++	t.Helper()
++	out := map[string]string{}
++	err := filepath.WalkDir("data", func(path string, entry fs.DirEntry, err error) error {
++		if err != nil {
++			return err
++		}
++		if entry.IsDir() {
++			out[filepath.ToSlash(path)+"/"] = "directory"
++			return nil
++		}
++		data, err := os.ReadFile(path)
++		if err != nil {
++			return err
++		}
++		out[filepath.ToSlash(path)] = fmt.Sprintf("%x", sha256.Sum256(data))
++		return nil
++	})
++	if err != nil {
++		t.Fatal(err)
++	}
++	return out
++}
++
++func TestRAFFile209MeasuredNativeContracts(t *testing.T) {
++	var rows []raf209MeasuredRow
++	if err := json.Unmarshal([]byte(raf209MeasuredRows), &rows); err != nil {
++		t.Fatal(err)
++	}
++	if len(rows) != 56 {
++		t.Fatal("measured row coverage drift")
++	}
++	var finalFiles map[string]map[string]string
++	if err := json.Unmarshal([]byte(raf209MeasuredFinalFiles), &finalFiles); err != nil {
++		t.Fatal(err)
++	}
++	for _, seed := range []int{17, 41, 97} {
++		t.Run(strconv.Itoa(seed), func(t *testing.T) {
++			t.Chdir(t.TempDir())
++			if err := os.MkdirAll("data/directory", 0700); err != nil {
++				t.Fatal(err)
++			}
++			e := NewExecution()
++			for index, row := range rows {
++				t.Run(row.Label, func(t *testing.T) {
++					if index == 0 || index == 28 {
++						if err := os.WriteFile("data/present.bin", []byte{1, 2, 3, 4, 5}, 0600); err != nil {
++							t.Fatal(err)
++						}
++					}
++					path, mode := raf209Units(t, row.Path), raf209Units(t, row.Mode)
++					before := raf209FileSnapshot(t)
++					var file *RandomAccessFile
++					failure := raf209Panic(func() {
++						if row.Overload == "File" {
++							var native *JavaFile
++							if path != nil {
++								native = NewJavaFileReference(path)
++							}
++							file = NewRandomAccessFileFileExecution(e, native, mode)
++						} else {
++							file = NewRandomAccessFileStringExecution(e, path, mode)
++						}
++					})
++					if got := raf209Failure(t, e, failure); got != row.Failure {
++						t.Fatalf("constructor=%s want measured %s", got, row.Failure)
++					}
++					if failure != nil {
++						if file != nil || !reflect.DeepEqual(before, raf209FileSnapshot(t)) {
++							t.Fatal("failed constructor changed filesystem/published resource")
++						}
++						return
++					}
++					if file == nil || file.state == nil || file.GetChannel() == nil || file.GetChannel().state != file.state {
++						t.Fatal("native RAF/channel must publish one shared state")
++					}
++					descriptor := file.state.file
++					if _, err := descriptor.Stat(); err != nil {
++						t.Fatal("successful descriptor invalid", err)
++					}
++					defer file.Close()
++					state := fmt.Sprintf("initialLength=%d,initialPointer=%d", file.Length(), file.GetFilePointer())
++					switch {
++					case strings.HasSuffix(row.Label, "read-only"):
++						failure := raf209Panic(func() { RandomAccessFileWriteBytesExecution(e, file, rafWriteArray(int8(seed))) })
++						state += fmt.Sprintf(",readOnlyWrite=%s,afterWritePointer=%d,first=%d", raf209Failure(t, e, failure), file.GetFilePointer(), file.ReadByteValue())
++					case strings.HasSuffix(row.Label, "existing-rw"):
++						file.SeekPosition(2)
++						RandomAccessFileWriteBytesExecution(e, file, rafWriteArray(int8(seed+40)))
++						written := file.GetFilePointer()
++						RandomAccessFileSetLengthExecution(e, file, 2)
++						shortened := file.GetFilePointer()
++						RandomAccessFileSetLengthExecution(e, file, 6)
++						file.SeekPosition(0)
++						data := make([]byte, 6)
++						if _, err := io.ReadFull(file, data); err != nil {
++							t.Fatal(err)
++						}
++						state += fmt.Sprintf(",writePointer=%d,truncatedPointer=%d,finalLength=%d,finalPointer=%d,bytes=%x", written, shortened, file.Length(), file.GetFilePointer(), data)
++					default:
++						RandomAccessFileWriteBytesExecution(e, file, rafWriteArray(int8(seed), 0, -1))
++						state += fmt.Sprintf(",finalLength=%d,finalPointer=%d", file.Length(), file.GetFilePointer())
++					}
++					if state != row.State {
++						t.Fatalf("state=%s want measured %s", state, row.State)
++					}
++					channel := file.GetChannel()
++					if channel != file.GetChannel() || rafWriteChannelPosition(t, file.GetChannel()) != file.GetFilePointer() {
++						t.Fatal("channel identity/cursor diverged")
++					}
++					closeFailure := raf209Panic(func() { file.Close() })
++					if got := raf209Failure(t, e, closeFailure); got != row.CloseFailure {
++						t.Fatalf("close=%s want measured %s", got, row.CloseFailure)
++					}
++					if _, err := descriptor.Stat(); !errors.Is(err, os.ErrClosed) {
++						t.Fatal("closed descriptor did not report closed", err)
++					}
++					if file.state.file != descriptor || file.GetChannel().IsOpen() {
++						t.Fatal("close identity/open state mismatch")
++					}
++					closed := raf209Panic(func() { file.ReadByteValue() })
++					if got := raf209Failure(t, e, closed); got != row.ClosedRead {
++						t.Fatalf("closed read=%s want measured %s", got, row.ClosedRead)
++					}
++					file.Close()
++				})
++				if strings.HasSuffix(row.Label, "failed-parent") {
++					parent := "file-parent"
++					if row.Overload == "String" {
++						parent = "string-parent"
++					}
++					if err := os.Mkdir("data/"+parent, 0700); err != nil {
++						t.Fatal("failed open must not have created parent", err)
++					}
++				}
++			}
++			actual := raf209FileSnapshot(t)
++			for name, value := range actual {
++				if value == "directory" {
++					delete(actual, name)
++				}
++			}
++			if !reflect.DeepEqual(actual, finalFiles[strconv.Itoa(seed)]) {
++				t.Fatalf("final measured file snapshot differs: %v", actual)
++			}
++		})
++	}
++}
++
++func TestRAFFile209ExecutionAndCleanup(t *testing.T) {
++	path := JavaStringFromHostUTF8(filepath.Join(t.TempDir(), "file"))
++	file := NewJavaFileReference(path)
++	if failure := raf209Panic(func() { NewRandomAccessFileFileExecution(nil, file, JavaStringLiteralUTF16([]uint16{'r', 'w'})) }); failure == nil {
++		t.Fatal("nil execution accepted")
++	}
++	e := NewExecution()
++	raf := NewRandomAccessFileFileExecution(e, file, JavaStringLiteralUTF16([]uint16{'r', 'w'}))
++	channel := raf.GetChannel()
++	channel.Close()
++	if channel.IsOpen() {
++		t.Fatal("channel close did not close RAF state")
++	}
++	raf.Close()
++	if _, err := os.Stat(file.path); err != nil {
++		t.Fatal("explicit close unexpectedly removed file", err)
++	}
++}
++
++const raf209MeasuredRows = `[{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"file-null-null","modeUTF16":"null","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-null-006200610064","modeUTF16":"006200610064","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"file-null-0072","modeUTF16":"0072","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"file-null-00720077","modeUTF16":"00720077","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"file-null-007200770073","modeUTF16":"007200770073","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"file-null-007200770064","modeUTF16":"007200770064","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-null-","modeUTF16":"","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"file-mode-null","modeUTF16":"null","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-","modeUTF16":"","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-006200610064","modeUTF16":"006200610064","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077007800220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-007200770078","modeUTF16":"007200770078","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077006100220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-007200770061","modeUTF16":"007200770061","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077000000220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-007200770000","modeUTF16":"007200770000","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077d80000220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-00720077d800","modeUTF16":"00720077d800","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"file-nul-null","modeUTF16":"null","overload":"File","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-nul-006200610064","modeUTF16":"006200610064","overload":"File","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0049006e00760061006c00690064002000660069006c006500200070006100740068/causeNull=true","label":"file-nul-00720077","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-read-only","modeUTF16":"0072","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"initialLength=5,initialPointer=0,readOnlyWrite=java.io.IOException/messageUTF16=004200610064002000660069006c0065002000640065007300630072006900700074006f0072/causeNull=true,afterWritePointer=0,first=1"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-existing-rw","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"initialLength=5,initialPointer=0,writePointer=3,truncatedPointer=2,finalLength=6,finalPointer=6,bytes=010200000000"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-create-rw","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d00720077002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-create-rws","modeUTF16":"007200770073","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d007200770073002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-create-rwd","modeUTF16":"007200770064","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d007200770064002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-unicode","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d00630061006600e9002dd83dde00002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-isolated-surrogate","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d00690073006f006c0061007400650064002dd800002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f00660069006c0065002d006d0069007300730069006e0067002e00620069006e00200028004e006f00200073007500630068002000660069006c00650020006f00720020006400690072006500630074006f007200790029/causeNull=true","label":"file-missing-read","modeUTF16":"0072","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d006d0069007300730069006e0067002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f006400690072006500630074006f007200790020002800490073002000610020006400690072006500630074006f007200790029/causeNull=true","label":"file-directory","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f006400690072006500630074006f00720079","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f00660069006c0065002d0070006100720065006e0074002f006300680069006c0064002e00620069006e00200028004e006f00200073007500630068002000660069006c00650020006f00720020006400690072006500630074006f007200790029/causeNull=true","label":"file-failed-parent","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d0070006100720065006e0074002f006300680069006c0064002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-recovered-parent","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d0070006100720065006e0074002f006300680069006c0064002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"string-null-null","modeUTF16":"null","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-null-006200610064","modeUTF16":"006200610064","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"string-null-0072","modeUTF16":"0072","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"string-null-00720077","modeUTF16":"00720077","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"string-null-007200770073","modeUTF16":"007200770073","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"string-null-007200770064","modeUTF16":"007200770064","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-null-","modeUTF16":"","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"string-mode-null","modeUTF16":"null","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-","modeUTF16":"","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-006200610064","modeUTF16":"006200610064","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077007800220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-007200770078","modeUTF16":"007200770078","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077006100220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-007200770061","modeUTF16":"007200770061","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077000000220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-007200770000","modeUTF16":"007200770000","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077d80000220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-00720077d800","modeUTF16":"00720077d800","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"string-nul-null","modeUTF16":"null","overload":"String","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-nul-006200610064","modeUTF16":"006200610064","overload":"String","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0049006e00760061006c00690064002000660069006c006500200070006100740068/causeNull=true","label":"string-nul-00720077","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-read-only","modeUTF16":"0072","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"initialLength=5,initialPointer=0,readOnlyWrite=java.io.IOException/messageUTF16=004200610064002000660069006c0065002000640065007300630072006900700074006f0072/causeNull=true,afterWritePointer=0,first=1"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-existing-rw","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"initialLength=5,initialPointer=0,writePointer=3,truncatedPointer=2,finalLength=6,finalPointer=6,bytes=010200000000"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-create-rw","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d00720077002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-create-rws","modeUTF16":"007200770073","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d007200770073002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-create-rwd","modeUTF16":"007200770064","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d007200770064002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-unicode","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d00630061006600e9002dd83dde00002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-isolated-surrogate","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d00690073006f006c0061007400650064002dd800002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f0073007400720069006e0067002d006d0069007300730069006e0067002e00620069006e00200028004e006f00200073007500630068002000660069006c00650020006f00720020006400690072006500630074006f007200790029/causeNull=true","label":"string-missing-read","modeUTF16":"0072","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d006d0069007300730069006e0067002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f006400690072006500630074006f007200790020002800490073002000610020006400690072006500630074006f007200790029/causeNull=true","label":"string-directory","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f006400690072006500630074006f00720079","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f0073007400720069006e0067002d0070006100720065006e0074002f006300680069006c0064002e00620069006e00200028004e006f00200073007500630068002000660069006c00650020006f00720020006400690072006500630074006f007200790029/causeNull=true","label":"string-failed-parent","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d0070006100720065006e0074002f006300680069006c0064002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-recovered-parent","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d0070006100720065006e0074002f006300680069006c0064002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"}]`
++
++const raf209MeasuredFinalFiles = `{"17":{"data/file-caf\u00e9-\ud83d\ude00.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-isolated-?.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-parent/child.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-rw.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-rwd.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-rws.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/present.bin":"361595a6901387c14718e6b6cc57183f07ed5c6440273d5adddeb76f70eea7a7","data/string-caf\u00e9-\ud83d\ude00.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-isolated-?.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-parent/child.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-rw.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-rwd.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-rws.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae"},"41":{"data/file-caf\u00e9-\ud83d\ude00.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-isolated-?.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-parent/child.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-rw.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-rwd.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-rws.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/present.bin":"361595a6901387c14718e6b6cc57183f07ed5c6440273d5adddeb76f70eea7a7","data/string-caf\u00e9-\ud83d\ude00.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-isolated-?.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-parent/child.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-rw.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-rwd.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-rws.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f"},"97":{"data/file-caf\u00e9-\ud83d\ude00.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-isolated-?.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-parent/child.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-rw.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-rwd.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-rws.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/present.bin":"361595a6901387c14718e6b6cc57183f07ed5c6440273d5adddeb76f70eea7a7","data/string-caf\u00e9-\ud83d\ude00.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-isolated-?.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-parent/child.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-rw.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-rwd.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-rws.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe"}}`
+diff --git a/stdjava/random_access_file_reference.go b/stdjava/random_access_file_reference.go
+index b5b247936d120bd6751f8c7cc4417bc312138a13..ea149afd8f3e8765d2c6d8f8a39b4ce102c491f8 100644
+--- a/stdjava/random_access_file_reference.go
++++ b/stdjava/random_access_file_reference.go
+@@ -15,22 +15,7 @@
+ 	if path != nil {
+ 		file = NewJavaFileReference(path)
+ 	}
+-	flags := randomAccessFileReferenceMode(mode)
+-	if file == nil {
+-		panic(NewJavaNullPointerExceptionMessage(nil))
+-	}
+-	for _, unit := range file.pathText.units {
+-		if unit == 0 {
+-			panic(newJavaThrowableBase("FileNotFoundException", JavaStringLiteralUTF16([]uint16{'I', 'n', 'v', 'a', 'l', 'i', 'd', ' ', 'f', 'i', 'l', 'e', ' ', 'p', 'a', 't', 'h'})))
+-		}
+-	}
+-	opened, err := os.OpenFile(file.path, flags, 0666)
+-	if err != nil {
+-		randomAccessFileReferenceFailure(file.pathText, err)
+-	}
+-	result := randomAccessFileReferenceFinishOpen(file, opened)
+-	result.state.writable = randomAccessFileWritableFromOpenFlags(flags)
+-	return result
++	return randomAccessFileNativeReferenceInitialize(file, mode)
+ }
+ 
+ func randomAccessFileReferenceMode(mode *JavaString) int {
+diff --git a/transpiler/intrinsics_random_access_file_reference.go b/transpiler/intrinsics_random_access_file_reference.go
+index f4123666a5737fc084c88555741192c57ad02d93..2b4cb13e9412643214e7aae3febb7671670393a0 100644
+--- a/transpiler/intrinsics_random_access_file_reference.go
++++ b/transpiler/intrinsics_random_access_file_reference.go
+@@ -33,8 +33,12 @@
+ func registerRandomAccessFileReferenceIntrinsic() {
+ 	registerIntrinsicOwner("java.io.RandomAccessFile", true)
+ 	registerConstructorNodeIntrinsic("RandomAccessFile", func(typeArgs, args []ast.Expr, node *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+-		if len(args) != 2 || !randomAccessFileStringConstructorApplicable(node, typeArgs, ctx, source) {
++		kind := raf209Constructor(node, typeArgs, ctx, source)
++		if len(args) != 2 || kind == raf209Refused {
+ 			return unsupportedIntrinsicValue(node, "java.io.RandomAccessFile", source, ctx)
++		}
++		if kind == raf209NativeFile {
++			return raf209LowerFile(args, ctx, node, source)
+ 		}
+ 		path := coerceArgumentToExpectedType(args[0], invocationArgumentNode(node, 0), "java.lang.String", ctx, source)
+ 		mode := coerceArgumentToExpectedType(args[1], invocationArgumentNode(node, 1), "java.lang.String", ctx, source)
+diff --git a/transpiler/random_access_file_allocation_origin.go b/transpiler/random_access_file_allocation_origin.go
+index 5397a81c552f556b6a105a5b7db175dec5cfcae6..5877f22f93de85cfe27de67d4293e6dca57e7d46 100644
+--- a/transpiler/random_access_file_allocation_origin.go
++++ b/transpiler/random_access_file_allocation_origin.go
+@@ -16,7 +16,7 @@
+ 	proof := ctx.Clone()
+ 	proof.expectedType, proof.expectedTypeRoot = "", nil
+ 	if node.Type() == "object_creation_expression" {
+-		return objectCreationClassBody(node) == nil && randomAccessFileStringConstructorApplicable(node, nil, proof, source)
++		return objectCreationClassBody(node) == nil && raf209Constructor(node, nil, proof, source) != raf209Refused
+ 	}
+ 	if node.Type() != "identifier" || ctx.currentClass == nil || ctx.currentClass.Class == nil || ctx.currentFile == nil || findFileScopeForClassScope(ctx.currentClass, ctx) != ctx.currentFile || !receiverNodeWithin(node, ctx.currentClass.Class.DeclarationNode) {
+ 		return false
+@@ -28,7 +28,11 @@
+ 	// The lexical resolver chooses this declaration at this occurrence, including
+ 	// capture and shadow boundaries. A declared TWR variable cannot be reassigned.
+ 	value := unwrapParenthesizedExpressionNode(binding.declaration.ChildByFieldName("value"))
+-	if value == nil || value.Type() != "object_creation_expression" || objectCreationClassBody(value) != nil || !randomAccessFileStringConstructorApplicable(value, nil, proof, source) {
++	if value == nil || value.Type() != "object_creation_expression" || objectCreationClassBody(value) != nil {
++		return false
++	}
++	constructorProof, proved := raf209ResourceInitializerContext(node, binding.declaration, proof, source)
++	if !proved || raf209Constructor(value, nil, constructorProof, source) == raf209Refused {
+ 		return false
+ 	}
+ 	return fileChannelReadExternalExpression(node, "java.io.RandomAccessFile", proof, source)
+diff --git a/transpiler/random_access_file_file_constructor209.go b/transpiler/random_access_file_file_constructor209.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..597bb05ddde491e93b26d89ed2fdee2c6ed58b9c
+--- /dev/null
++++ b/transpiler/random_access_file_file_constructor209.go
+@@ -0,0 +1,586 @@
++package transpiler
++
++import (
++	"bytes"
++	"go/ast"
++	"go/token"
++	"maps"
++	"strings"
++
++	"github.com/NickyBoy89/java2go/nodeutil"
++	"github.com/NickyBoy89/java2go/symbol"
++	sitter "github.com/smacker/go-tree-sitter"
++)
++
++type raf209ConstructorKind uint8
++
++const (
++	raf209Refused raf209ConstructorKind = iota
++	raf209String
++	raf209NativeFile
++)
++
++// Namespace sidecars must agree with the actual registered source header. The
++// immutable input snapshot detects byte replacement; neither it nor these
++// tuples establish declaration membership or expression semantics.
++func raf209FileCoherent(file *symbol.FileScope) bool {
++	if file == nil || file.SourceInputSnapshot().Validate() != nil {
++		return false
++	}
++	root := file.ParsedRoot()
++	if root == nil {
++		return false
++	}
++	imports := map[string]string{}
++	pkg := ""
++	for _, node := range nodeutil.NamedChildrenOf(root) {
++		switch node.Type() {
++		case "package_declaration":
++			if node.NamedChildCount() == 0 {
++				return false
++			}
++			pkg = node.NamedChild(0).Content(file.Source)
++		case "import_declaration":
++			// Match ParseSymbols' ordinary single-type table exactly. Static
++			// and on-demand imports remain actual AST namespace facts, but
++			// neither imports its owner as an ordinary individual type name.
++			wildcard, static := false, false
++			for index := 0; index < int(node.ChildCount()); index++ {
++				wildcard = wildcard || node.Child(index).Content(file.Source) == "*"
++				static = static || node.Child(index).Type() == "static"
++			}
++			if wildcard || static {
++				continue
++			}
++			if node.NamedChildCount() == 0 {
++				return false
++			}
++			selected := node.NamedChild(0)
++			name, scope := selected.ChildByFieldName("name"), selected.ChildByFieldName("scope")
++			if name == nil || scope == nil {
++				return false
++			}
++			imports[name.Content(file.Source)] = scope.Content(file.Source)
++		}
++	}
++	return pkg == file.Package && maps.Equal(imports, file.Imports)
++}
++
++// An unresolved single-static import can name a member type as well as a
++// value. Do not borrow the ordinary-import/default-owner fallback for a matching
++// written type root. Static wildcard resolution on the legacy String route is
++// a separate existing boundary; only new native File admission is held below.
++func raf209StaticTypeConflict(typ string, ctx Ctx) bool {
++	rootName := strings.Split(typ, ".")[0]
++	for _, node := range nodeutil.NamedChildrenOf(ctx.currentFile.ParsedRoot()) {
++		if node.Type() != "import_declaration" || node.NamedChildCount() == 0 {
++			continue
++		}
++		static, wildcard := false, false
++		for i := 0; i < int(node.ChildCount()); i++ {
++			static = static || node.Child(i).Type() == "static"
++			wildcard = wildcard || node.Child(i).Content(ctx.currentFile.Source) == "*"
++		}
++		if static && !wildcard {
++			written := node.NamedChild(0).Content(ctx.currentFile.Source)
++			if stripJavaQualifier(written) == rootName {
++				return true
++			}
++		}
++	}
++	return false
++}
++
++func raf209HasStaticWildcard(ctx Ctx) bool {
++	for _, node := range nodeutil.NamedChildrenOf(ctx.currentFile.ParsedRoot()) {
++		if node.Type() != "import_declaration" {
++			continue
++		}
++		static, wildcard := false, false
++		for i := 0; i < int(node.ChildCount()); i++ {
++			static = static || node.Child(i).Type() == "static"
++			wildcard = wildcard || node.Child(i).Content(ctx.currentFile.Source) == "*"
++		}
++		if static && wildcard {
++			return true
++		}
++	}
++	return false
++}
++
++// A registered declaration and its actual syntax own the proof. A matching
++// Java/Go spelling or a detached same-byte-range tree is not a certificate.
++func raf209Owns(node *sitter.Node, ctx Ctx, source []byte) bool {
++	if node == nil || ctx.currentClass == nil || ctx.currentClass.Class == nil || ctx.currentFile == nil {
++		return false
++	}
++	file := declaredRefusalRegisteredScopeFile(ctx.currentClass, ctx)
++	if file == nil || file != ctx.currentFile || !raf209FileCoherent(file) || !bytes.Equal(file.Source, source) || !readerSourceNodeWithin(node, file.ParsedRoot()) {
++		return false
++	}
++	var owner *sitter.Node
++	for at := node; at != nil; at = at.Parent() {
++		switch at.Type() {
++		case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
++			owner = at
++		case "object_creation_expression":
++			if objectCreationClassBody(at) != nil {
++				owner = at
++			}
++		}
++		if owner != nil {
++			break
++		}
++	}
++	if owner == nil || !owner.Equal(ctx.currentClass.Class.DeclarationNode) {
++		return false
++	}
++	if ctx.localScope != nil {
++		registered := false
++		for _, method := range ctx.currentClass.Methods {
++			if method == ctx.localScope {
++				registered = true
++				break
++			}
++		}
++		if !registered || !helpfulRegisteredMethodHeader(ctx.currentClass, ctx.localScope, ctx) || !readerSourceNodeWithin(node, ctx.localScope.DeclarationNode) {
++			return false
++		}
++		// A descendant in another executable cannot borrow this method's
++		// lexical bindings. Ordinary lambda lowering must supply its own proof.
++		for at := node; at != nil && !at.Equal(ctx.localScope.DeclarationNode); at = at.Parent() {
++			switch at.Type() {
++			case "lambda_expression", "method_declaration", "constructor_declaration", "compact_constructor_declaration":
++				return false
++			}
++		}
++	}
++	return true
++}
++
++// Inspect the written lexical headers as well as symbol bindings: deleting a
++// sidecar must not turn a source type-parameter spelling into a JDK owner.
++func raf209SyntaxParameter(name string, ctx Ctx) bool {
++	var start *sitter.Node
++	if ctx.localScope != nil {
++		start = ctx.localScope.DeclarationNode
++	}
++	if start == nil && ctx.currentClass != nil && ctx.currentClass.Class != nil {
++		start = ctx.currentClass.Class.DeclarationNode
++	}
++	if ctx.currentFile == nil {
++		return false
++	}
++	for at := start; at != nil; at = at.Parent() {
++		for _, parameter := range symbol.ExtractTypeParameters(at.ChildByFieldName("type_parameters"), ctx.currentFile.Source) {
++			if parameter.Name == name {
++				return true
++			}
++		}
++	}
++	return false
++}
++
++func raf209WrittenString(typ string, ctx Ctx) bool {
++	if !raf209FileCoherent(ctx.currentFile) {
++		return false
++	}
++	base, rank := javaArrayTypeParts(strings.TrimSpace(typ))
++	_, args := parseJavaTypeString(base)
++	if rank != 0 || len(args) != 0 || raf209StaticTypeConflict(base, ctx) {
++		return false
++	}
++	if visibleTypeParameterDeclarationForJavaType(base, ctx) == nil {
++		if raf209SyntaxParameter(strings.Split(base, ".")[0], ctx) {
++			return false
++		}
++		return isBuiltinJavaString(base, ctx)
++	}
++	// Bounds are mutable symbol sidecars. Attest their registered class/method
++	// headers and captured declaration bindings before following any bound chain.
++	if _, ok := helpfulClassHeaderParameters(ctx.currentClass, ctx, map[*symbol.ClassScope]bool{}); !ok {
++		return false
++	}
++	if ctx.localScope != nil && !helpfulRegisteredMethodHeader(ctx.currentClass, ctx.localScope, ctx) {
++		return false
++	}
++	actual := symbol.JavaType{Original: base, TypeParameterBindings: symbol.VisibleTypeParamBindings(visibleTypeParameterDeclarations(ctx))}
++	return raf209SelectedStringBound(actual, ctx, map[typeParameterIdentityKey]bool{})
++}
++
++// Follow only the selected declaration's actual bound chain. An unrelated
++// visible parameter must not donate either a String proof or a refusal.
++func raf209SelectedStringBound(actual symbol.JavaType, ctx Ctx, visiting map[typeParameterIdentityKey]bool) bool {
++	if !raf209FileCoherent(ctx.currentFile) {
++		return false
++	}
++	if binding, found := resolveReferenceTypeParameter(actual, ctx); found {
++		key := identityKeyForTypeParameter(binding.parameter)
++		if key.declaration == nil || visiting[key] {
++			return false
++		}
++		declaring := binding.context
++		if _, ok := helpfulClassHeaderParameters(declaring.currentClass, declaring, map[*symbol.ClassScope]bool{}); !ok {
++			return false
++		}
++		if declaring.localScope != nil && !helpfulRegisteredMethodHeader(declaring.currentClass, declaring.localScope, declaring) {
++			return false
++		}
++		registered := false
++		for _, parameter := range declaring.currentClass.TypeParameters {
++			registered = registered || parameter.Declaration == key.declaration
++		}
++		if declaring.localScope != nil {
++			for _, parameter := range declaring.localScope.TypeParameters {
++				registered = registered || parameter.Declaration == key.declaration
++			}
++		}
++		if !registered {
++			return false
++		}
++		visiting[key] = true
++		defer delete(visiting, key)
++		for _, bound := range binding.parameter.Bounds {
++			if raf209SelectedStringBound(bound, declaring, visiting) {
++				return true
++			}
++		}
++		return false
++	}
++	base, rank := javaArrayTypeParts(strings.TrimSpace(actual.Original))
++	base, args := parseJavaTypeString(base)
++	return rank == 0 && len(args) == 0 && !raf209StaticTypeConflict(base, ctx) && intrinsicStringBoundType(actual, ctx, map[typeParameterIdentityKey]bool{})
++}
++
++func raf209DeclaredString(node *sitter.Node, ctx Ctx, source []byte) bool {
++	node = unwrapParenthesizedExpressionNode(node)
++	if node == nil || !raf209Owns(node, ctx, source) {
++		return false
++	}
++	switch node.Type() {
++	case "string_literal":
++		return true
++	case "null_literal":
++		return true
++	case "cast_expression":
++		typ := node.ChildByFieldName("type")
++		return typ != nil && raf209WrittenString(typ.Content(source), ctx)
++	case "identifier":
++		if binding, found := fileChannelReadCaptureDeclaration(node, source); found {
++			declaration := binding.declaration
++			if declaration.ChildByFieldName("dimensions") != nil {
++				return false
++			}
++			var typ *sitter.Node
++			if declaration.Type() == "variable_declarator" {
++				typ = declaration.Parent().ChildByFieldName("type")
++			} else {
++				typ = declaration.ChildByFieldName("type")
++			}
++			return typ != nil && readerSourceNodeWithin(declaration, ctx.currentFile.ParsedRoot()) && raf209WrittenString(typ.Content(source), ctx)
++		}
++		field := findFieldResolutionInHierarchy(ctx.currentClass, node.Content(source), ctx)
++		if field != nil {
++			return raf209FieldString(field, ctx)
++		}
++	case "method_invocation":
++		object := node.ChildByFieldName("object")
++		sourceTarget := false
++		var resolution *methodResolution
++		if object == nil {
++			resolution = findBestMethodInHierarchy(ctx.currentClass, node.ChildByFieldName("name").Content(source), node.ChildByFieldName("arguments"), ctx.localScope == nil || !ctx.localScope.IsStatic, true, ctx, source)
++		} else {
++			target := resolveInvocationTarget(object, ctx, source)
++			sourceTarget = target != nil
++			resolution, _ = findBestMethodForInvocationTarget(target, node.ChildByFieldName("name").Content(source), node.ChildByFieldName("arguments"), true, true, ctx, source)
++		}
++		if resolution != nil && resolution.owner != nil && resolution.def != nil {
++			file := declaredRefusalRegisteredScopeFile(resolution.owner, ctx)
++			def := resolution.def
++			if file == nil || !helpfulRegisteredMethodHeader(resolution.owner, def, ctx) {
++				return false
++			}
++			typ := def.DeclarationNode.ChildByFieldName("type")
++			if typ == nil || def.DeclarationNode.ChildByFieldName("dimensions") != nil || typ.Content(file.Source) != def.OriginalType {
++				return false
++			}
++			declaring := classScopeCtx(resolution.owner, ctx.Clone())
++			declaring.localScope = def
++			return raf209WrittenString(typ.Content(file.Source), declaring)
++		}
++		if object == nil {
++			seen := map[*symbol.ClassScope]bool{}
++			for owner := ctx.currentClass; owner != nil && !seen[owner]; owner = resolveSuperclassScopeInDeclaringContext(ctx, owner) {
++				seen[owner] = true
++				if owner.FindMethodByName(node.ChildByFieldName("name").Content(source), nil) != nil {
++					sourceTarget = true
++					break
++				}
++			}
++		}
++		if sourceTarget {
++			return false
++		}
++	case "field_access":
++		object, name := node.ChildByFieldName("object"), node.ChildByFieldName("field")
++		if object != nil && name != nil {
++			if owner, _ := staticFieldQualifierScope(object, source, ctx); owner != nil {
++				return raf209FieldString(findFieldResolutionInHierarchy(owner, name.Content(source), ctx), ctx)
++			}
++		}
++	case "ternary_expression":
++		left, right := node.ChildByFieldName("consequence"), node.ChildByFieldName("alternative")
++		return raf209DeclaredString(left, ctx, source) && raf209DeclaredString(right, ctx, source)
++	case "binary_expression":
++		operator := node.ChildByFieldName("operator")
++		return operator != nil && operator.Content(source) == "+" && (raf209DeclaredStringNonNull(node.ChildByFieldName("left"), ctx, source) || raf209DeclaredStringNonNull(node.ChildByFieldName("right"), ctx, source))
++	}
++	// Existing external String-returning intrinsics have no source Definition.
++	// Keep their final canonical result, but never use this fallback for a local,
++	// formal, source field, or selected source method with unproved syntax.
++	if node.Type() != "method_invocation" && node.Type() != "field_access" {
++		return false
++	}
++	var origin inferredJavaTypeOrigin
++	actual, known := inferExprJavaType(node, ctx, source, &origin)
++	return known && !origin.unresolved && origin.parameter == nil && origin.nominalScope == nil && origin.arrayRank == 0 && len(origin.arguments) == 0 && origin.externalName == "java.lang.String" && isBuiltinJavaString(actual, stringReaderReferenceDeclaringContext(origin, ctx))
++}
++
++func raf209DeclaredStringNonNull(node *sitter.Node, ctx Ctx, source []byte) bool {
++	node = unwrapParenthesizedExpressionNode(node)
++	return node != nil && node.Type() != "null_literal" && raf209DeclaredString(node, ctx, source)
++}
++
++func raf209FieldString(field *fieldResolution, ctx Ctx) bool {
++	if field == nil || field.def == nil {
++		return false
++	}
++	file := declaredRefusalRegisteredScopeFile(field.owner, ctx)
++	declaration := field.def.DeclarationNode
++	if file == nil || declaration == nil || !readerSourceNodeWithin(declaration, field.owner.Class.DeclarationNode) {
++		return false
++	}
++	if declaration.Type() == "variable_declarator" {
++		declaration = declaration.Parent()
++	}
++	typ := declaration.ChildByFieldName("type")
++	named := false
++	for _, declarator := range nodeutil.VariableDeclarators(declaration) {
++		name := declarator.ChildByFieldName("name")
++		if name != nil && name.Content(file.Source) == field.def.OriginalName && declarator.ChildByFieldName("dimensions") == nil {
++			named = true
++		}
++	}
++	return named && typ != nil && typ.Content(file.Source) == field.def.OriginalType && raf209WrittenString(typ.Content(file.Source), classScopeCtx(field.owner, ctx.Clone()))
++}
++
++func raf209CanonicalType(typ *sitter.Node, owner string, ctx Ctx, source []byte) bool {
++	if typ == nil {
++		return false
++	}
++	base, rank := javaArrayTypeParts(strings.TrimSpace(typ.Content(source)))
++	base, args := parseJavaTypeString(base)
++	if rank != 0 || len(args) != 0 || raf209StaticTypeConflict(base, ctx) || raf209SyntaxParameter(strings.Split(base, ".")[0], ctx) || visibleTypeParameterDeclarationForJavaType(base, ctx) != nil || resolveClassScopeByQualifiedName(ctx, base) != nil {
++		return false
++	}
++	actual, known := canonicalIntrinsicOwner(base, ctx)
++	return known && actual == owner
++}
++
++func raf209NativeFileProducer(node *sitter.Node, ctx Ctx, source []byte) bool {
++	node = unwrapParenthesizedExpressionNode(node)
++	if node == nil || !raf209Owns(node, ctx, source) {
++		return false
++	}
++	switch node.Type() {
++	case "cast_expression":
++		value := unwrapParenthesizedExpressionNode(node.ChildByFieldName("value"))
++		return raf209CanonicalType(node.ChildByFieldName("type"), "java.io.File", ctx, source) && value != nil && value.Type() == "null_literal"
++	case "object_creation_expression":
++		return objectCreationClassBody(node) == nil && raf209CanonicalType(node.ChildByFieldName("type"), "java.io.File", ctx, source) && invocationArgumentCount(node) == 1 && raf209DeclaredString(invocationArgumentNode(node, 0), ctx, source)
++	case "method_invocation":
++		object, name := node.ChildByFieldName("object"), node.ChildByFieldName("name")
++		if object == nil || raf209StaticTypeConflict(object.Content(source), ctx) || name == nil || name.Content(source) != "createTempFile" || invocationArgumentCount(node) != 2 || node.ChildByFieldName("type_arguments") != nil {
++			return false
++		}
++		owner, known := intrinsicStaticClassName(object, ctx, source)
++		canonical, registered := canonicalIntrinsicOwner(owner, ctx)
++		if !known || !registered || canonical != "java.io.File" || resolveInvocationTarget(object, ctx, source) != nil {
++			return false
++		}
++		return raf209DeclaredString(invocationArgumentNode(node, 0), ctx, source) && raf209DeclaredString(invocationArgumentNode(node, 1), ctx, source)
++	}
++	return false
++}
++
++func raf209NativeFileOrigin(node *sitter.Node, ctx Ctx, source []byte) bool {
++	node = unwrapParenthesizedExpressionNode(node)
++	if raf209NativeFileProducer(node, ctx, source) {
++		return true
++	}
++	if node == nil || node.Type() != "identifier" || !raf209Owns(node, ctx, source) || ctx.localScope == nil || !helpfulRegisteredMethodHeader(ctx.currentClass, ctx.localScope, ctx) || !fileChannelReadExternalExpression(node, "java.io.File", ctx, source) {
++		return false
++	}
++	binding, found := fileChannelReadCaptureDeclaration(node, source)
++	if !found || binding.declaration.Type() != "variable_declarator" || binding.declaration.ChildByFieldName("dimensions") != nil {
++		return false
++	}
++	declaration := binding.declaration.Parent()
++	method := ctx.localScope.DeclarationNode
++	if declaration == nil || declaration.Type() != "local_variable_declaration" || !readerSourceNodeWithin(binding.declaration, method) || !raf209CanonicalType(declaration.ChildByFieldName("type"), "java.io.File", ctx, source) || !raf209NativeFileProducer(binding.declaration.ChildByFieldName("value"), ctx, source) {
++		return false
++	}
++	// Reject writes to this exact binding anywhere, including nested syntax.
++	// Same-name fields and shadowed locals do not mutate this declaration.
++	mutated := false
++	var walk func(*sitter.Node)
++	walk = func(n *sitter.Node) {
++		if n == nil || mutated {
++			return
++		}
++		var target *sitter.Node
++		if n.Type() == "assignment_expression" {
++			target = n.ChildByFieldName("left")
++		} else if n.Type() == "update_expression" && n.NamedChildCount() > 0 {
++			target = n.NamedChild(0)
++		}
++		target = unwrapParenthesizedExpressionNode(target)
++		if target != nil && target.Type() == "identifier" {
++			if actual, found := fileChannelReadCaptureDeclaration(target, source); found && actual.declaration.Equal(binding.declaration) {
++				mutated = true
++				return
++			}
++		}
++		for _, child := range nodeutil.SemanticNamedChildrenOf(n) {
++			walk(child)
++		}
++	}
++	walk(method.ChildByFieldName("body"))
++	return !mutated
++}
++
++func raf209Constructor(node *sitter.Node, typeArgs []ast.Expr, ctx Ctx, source []byte) raf209ConstructorKind {
++	if node == nil || len(typeArgs) != 0 || invocationArgumentCount(node) != 2 || objectCreationClassBody(node) != nil || !raf209Owns(node, ctx, source) || !raf209CanonicalType(node.ChildByFieldName("type"), "java.io.RandomAccessFile", ctx, source) {
++		return raf209Refused
++	}
++	proof := ctx.Clone()
++	proof.expectedType, proof.expectedTypeRoot = "", nil
++	path, mode := invocationArgumentNode(node, 0), invocationArgumentNode(node, 1)
++	plain := unwrapParenthesizedExpressionNode(path)
++	if plain == nil || plain.Type() == "null_literal" || !raf209DeclaredString(mode, proof, source) {
++		return raf209Refused
++	}
++	if raf209NativeFileOrigin(path, proof, source) {
++		// No complete external static member-type inventory is available. Hold
++		// new File admission here; it must never fall through to String's
++		// historical conversion fallback. Legacy String wildcard behavior is
++		// retained independently below.
++		if raf209HasStaticWildcard(proof) {
++			return raf209Refused
++		}
++		return raf209NativeFile
++	}
++	actual, known := inferExprJavaType(path, proof, source)
++	if !known || actual == "null" || actual == ternaryNullJavaType {
++		return raf209Refused
++	}
++	if raf209DeclaredString(path, proof, source) && randomAccessFileStringConstructorApplicable(node, typeArgs, proof, source) {
++		return raf209String
++	}
++	return raf209Refused
++}
++
++// Operands have already been parsed/snapshotted by the ordinary caller. Store
++// each exactly once in Java order before any constructor-body validation.
++func raf209LowerFile(args []ast.Expr, ctx Ctx, node *sitter.Node, source []byte) ast.Expr {
++	used := affineLoopUsedNames(node, source, ctx)
++	used[ctx.executionContextName] = struct{}{}
++	used[ShortName(ctx.className)] = struct{}{}
++	if ctx.currentClass != nil {
++		for _, parameter := range ctx.currentClass.GoTypeParameterNames() {
++			used[parameter] = struct{}{}
++		}
++	}
++	if ctx.localScope != nil {
++		for _, parameter := range ctx.localScope.GoTypeParameterNames() {
++			used[parameter] = struct{}{}
++		}
++	}
++	name := func(base string) *ast.Ident {
++		n := synchronizedUniqueLocalName(base, used)
++		used[n] = struct{}{}
++		return ast.NewIdent(n)
++	}
++	file, mode := name("__java2goRAFFile"), name("__java2goRAFMode")
++	path := coerceArgumentToExpectedType(args[0], invocationArgumentNode(node, 0), "java.io.File", ctx, source)
++	modeValue := coerceArgumentToExpectedType(args[1], invocationArgumentNode(node, 1), "java.lang.String", ctx, source)
++	return &ast.CallExpr{Fun: &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{}, Results: &ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: stdjavaQualifiedExpr("RandomAccessFile", ctx)}}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{
++		&ast.AssignStmt{Lhs: []ast.Expr{file}, Tok: token.DEFINE, Rhs: []ast.Expr{path}},
++		&ast.AssignStmt{Lhs: []ast.Expr{mode}, Tok: token.DEFINE, Rhs: []ast.Expr{modeValue}},
++		&ast.ReturnStmt{Results: []ast.Expr{stdjavaCall(ctx, "NewRandomAccessFileFileExecution", intrinsicExecutionExpr(ctx), file, mode)}},
++	}}}}
++}
++
++// A captured immutable TWR binding keeps the constructor's declaring executable.
++// Its use occurrence still belongs to the lambda; only the initializer proof is
++// replayed here, against the actual registered source declaration.
++func raf209ResourceInitializerContext(occurrence, resource *sitter.Node, ctx Ctx, source []byte) (Ctx, bool) {
++	if occurrence == nil || occurrence.Type() != "identifier" || resource == nil || resource.Type() != "resource" || ctx.currentClass == nil || ctx.currentFile == nil || ctx.localScope == nil {
++		return ctx, false
++	}
++	file := declaredRefusalRegisteredScopeFile(ctx.currentClass, ctx)
++	if file == nil || file != ctx.currentFile || !raf209FileCoherent(file) || !bytes.Equal(file.Source, source) || !readerSourceNodeWithin(occurrence, file.ParsedRoot()) || !readerSourceNodeWithin(resource, file.ParsedRoot()) {
++		return ctx, false
++	}
++	binding, found := fileChannelReadCaptureDeclaration(occurrence, source)
++	if !found || !binding.declaration.Equal(resource) {
++		return ctx, false
++	}
++	if raf209Owns(resource, ctx, source) {
++		return ctx, raf209Owns(occurrence, ctx, source)
++	}
++	// Only ordinary lambda lowering erases its copied declaration pointer. A
++	// copied method, missing frame, or another lambda body cannot use this bridge.
++	if ctx.localScope == nil || ctx.localScope.DeclarationNode != nil || ctx.localBindingBody == nil {
++		return ctx, false
++	}
++	var lambda *sitter.Node
++	for at := occurrence; at != nil; at = at.Parent() {
++		if at.Type() == "lambda_expression" {
++			lambda = at
++			break
++		}
++		switch at.Type() {
++		case "method_declaration", "constructor_declaration", "compact_constructor_declaration", "class_body":
++			return ctx, false
++		}
++	}
++	if lambda == nil || lambda.ChildByFieldName("body") == nil || !lambda.ChildByFieldName("body").Equal(ctx.localBindingBody) || !readerSourceNodeWithin(occurrence, ctx.localBindingBody) {
++		return ctx, false
++	}
++	for at := resource.Parent(); at != nil; at = at.Parent() {
++		switch at.Type() {
++		case "lambda_expression":
++			// A resource created in a lambda needs that executable's own
++			// declaration protocol; an enclosing method is not its owner.
++			return ctx, false
++		case "method_declaration", "constructor_declaration", "compact_constructor_declaration":
++			for _, method := range ctx.currentClass.Methods {
++				if method == nil || method.DeclarationNode == nil || !method.DeclarationNode.Equal(at) {
++					continue
++				}
++				declaring := ctx.Clone()
++				declaring.localScope = method
++				declaring.localBindingBody = at.ChildByFieldName("body")
++				if !raf209Owns(resource, declaring, source) {
++					return ctx, false
++				}
++				return declaring, true
++			}
++			return ctx, false
++		case "class_body", "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
++			return ctx, false
++		}
++	}
++	return ctx, false
++}
+diff --git a/transpiler/random_access_file_file_constructor209_probe_test.go b/transpiler/random_access_file_file_constructor209_probe_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..ba738e5c1443147eb37906187061975090a979bc
+--- /dev/null
++++ b/transpiler/random_access_file_file_constructor209_probe_test.go
+@@ -0,0 +1,122 @@
++package transpiler
++
++import (
++	"crypto/sha256"
++	"fmt"
++	"go/ast"
++	"go/parser"
++	"go/token"
++	"os"
++	"strings"
++	"testing"
++)
++
++func rafFile209OriginalDigest(t *testing.T) string {
++	t.Helper()
++	raw, err := os.ReadFile("campaign_digest_io_test.go")
++	if err != nil {
++		t.Fatal(err)
++	}
++	const prefix = "const source = `"
++	begin := strings.Index(string(raw), prefix)
++	if begin < 0 {
++		t.Fatal("original DigestIO Java constant missing")
++	}
++	tail := string(raw)[begin+len(prefix):]
++	end := strings.IndexByte(tail, '`')
++	if end < 0 {
++		t.Fatal("original DigestIO Java constant unterminated")
++	}
++	java := tail[:end]
++	if fmt.Sprintf("%x", sha256.Sum256([]byte(java))) != "2d7a621a71793f0f36392de853a9a120a216e19dcaefaa9744e0534192191a43" {
++		t.Fatal("original DigestIO Java changed")
++	}
++	return java
++}
++
++func TestRAFFile209CanonicalConstructor(t *testing.T) {
++	cases := []struct{ name, java, invocation string }{
++		{"native-var", `import java.io.*;class Probe{Object run()throws Exception{File file=new File("raf-path");return new RandomAccessFile(file,"r");}}`, `new RandomAccessFile(file,"r")`},
++		{"qualified-new", `class Probe{Object run()throws Exception{return new java.io.RandomAccessFile(new java.io.File("raf-path"),"r");}}`, `new java.io.RandomAccessFile(new java.io.File("raf-path"),"r")`},
++		{"typed-null", `import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile((java.io.File)null,"r");}}`, `new RandomAccessFile((java.io.File)null,"r")`},
++		{"canonical-temp-factory", `import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(File.createTempFile("raf",".bin"),"r");}}`, `new RandomAccessFile(File.createTempFile("raf",".bin"),"r")`},
++		{"effectful-mode", `import java.io.*;class Probe{static int calls;static String mode(){calls=calls+1;return "r";}Object run()throws Exception{return new RandomAccessFile(File.createTempFile("raf",".bin"),mode());}}`, `new RandomAccessFile(File.createTempFile("raf",".bin"),mode())`},
++		{"original-digest", rafFile209OriginalDigest(t), `new RandomAccessFile(file, "r")`},
++	}
++	for _, test := range cases {
++		t.Run(test.name, func(t *testing.T) {
++			strictRoutingState(t)
++			defer func() {
++				if observed := recover(); observed != nil {
++					failure, ok := observed.(strictModeError)
++					if !ok || failure.diagnostic.Kind != "intrinsic invocation" || failure.diagnostic.NodeType != "object_creation_expression" || failure.diagnostic.Message != test.invocation {
++						t.Fatalf("unexpected compiler frontier: %v", observed)
++					}
++					if len(Diagnostics()) != 1 {
++						t.Fatalf("unexpected diagnostic multiplicity: %v", Diagnostics())
++					}
++					t.Errorf("MISSING_CANONICAL_FILE_CTOR: %s", test.invocation)
++				}
++			}()
++			generated := renderGoFileFromJava(t, test.java)
++			if len(Diagnostics()) != 0 {
++				t.Fatalf("successful File constructor retained diagnostics: %v", Diagnostics())
++			}
++			parsed, err := parser.ParseFile(token.NewFileSet(), "generated.go", generated, 0)
++			if err != nil {
++				t.Fatal(err)
++			}
++			calls := 0
++			ast.Inspect(parsed, func(node ast.Node) bool {
++				call, ok := node.(*ast.CallExpr)
++				if !ok {
++					return true
++				}
++				selector, ok := call.Fun.(*ast.SelectorExpr)
++				if !ok || selector.Sel.Name != "NewRandomAccessFileFileExecution" {
++					return true
++				}
++				calls++
++				if len(call.Args) != 3 {
++					t.Errorf("File constructor must retain execution, File, mode: %d arguments", len(call.Args))
++				}
++				return true
++			})
++			if calls != 1 {
++				t.Fatalf("canonical File constructor call count=%d, want1", calls)
++			}
++		})
++	}
++}
++
++func TestRAFFile209HeldBoundaries(t *testing.T) {
++	cases := []struct{ name, java, invocation string }{
++		{"unknown-formal", `import java.io.*;class Probe{Object run(File file)throws Exception{return new RandomAccessFile(file,"r");}}`, `new RandomAccessFile(file,"r")`},
++		{"unknown-field", `import java.io.*;class Probe{File file;Object run()throws Exception{return new RandomAccessFile(file,"r");}}`, `new RandomAccessFile(file,"r")`},
++		{"unknown-return", `import java.io.*;class Probe{static File path(File file){return file;}Object run(File file)throws Exception{return new RandomAccessFile(path(file),"r");}}`, `new RandomAccessFile(path(file),"r")`},
++		{"reassigned-native-local", `import java.io.*;class Probe{Object run(File other)throws Exception{File file=new File("x");file=other;return new RandomAccessFile(file,"r");}}`, `new RandomAccessFile(file,"r")`},
++		{"identity-cast-unknown", `import java.io.*;class Probe{Object run(File file)throws Exception{return new RandomAccessFile((java.io.File)file,"r");}}`, `new RandomAccessFile((java.io.File)file,"r")`},
++		{"bare-null", `import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(null,"r");}}`, `new RandomAccessFile(null,"r")`},
++		{"source-file-override", `import java.io.*;class SourceFile extends File{SourceFile(){super("x");}public String getPath(){return "y";}}class Probe{Object run(SourceFile file)throws Exception{return new RandomAccessFile(file,"r");}}`, `new RandomAccessFile(file,"r")`},
++		{"anonymous-file", `import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"){public String getPath(){return "y";}},"r");}}`, `new RandomAccessFile(new File("x"){public String getPath(){return "y";}},"r")`},
++		{"cast-source-file", `import java.io.*;class SourceFile extends File{SourceFile(){super("x");}public String getPath(){return "y";}}class Probe{Object run(SourceFile file)throws Exception{return new RandomAccessFile((java.io.File)file,"r");}}`, `new RandomAccessFile((java.io.File)file,"r")`},
++		{"foreign-file", `import java.io.RandomAccessFile;import foreign.File;class Probe{Object run(File file)throws Exception{return new RandomAccessFile(file,"r");}}`, `new RandomAccessFile(file,"r")`},
++		{"type-binder-file", `import java.io.RandomAccessFile;class Probe<File>{Object run(File file)throws Exception{return new RandomAccessFile(file,"r");}}`, `new RandomAccessFile(file,"r")`},
++		{"nonstring-mode", `import java.io.*;class Probe{Object run(File file)throws Exception{return new RandomAccessFile(file,7);}}`, `new RandomAccessFile(file,7)`},
++		{"wrong-arity", `import java.io.*;class Probe{Object run(File file)throws Exception{return new RandomAccessFile(file);}}`, `new RandomAccessFile(file)`},
++	}
++	for _, test := range cases {
++		t.Run(test.name, func(t *testing.T) {
++			strictRoutingState(t)
++			defer func() {
++				observed := recover()
++				failure, ok := observed.(strictModeError)
++				if !ok || failure.diagnostic.Kind != "intrinsic invocation" || failure.diagnostic.NodeType != "object_creation_expression" || failure.diagnostic.Message != test.invocation || len(Diagnostics()) != 1 {
++					t.Fatalf("held boundary needs sole RAF constructor refusal: %v / %v", observed, Diagnostics())
++				}
++			}()
++			renderGoFileFromJava(t, test.java)
++			t.Fatal("held File constructor escaped strict refusal")
++		})
++	}
++}
+diff --git a/transpiler/random_access_file_file_constructor209_test.go b/transpiler/random_access_file_file_constructor209_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..dc75f5edf1f0298d229c06184651a3b4a40a0477
+--- /dev/null
++++ b/transpiler/random_access_file_file_constructor209_test.go
+@@ -0,0 +1,485 @@
++package transpiler
++
++import (
++	"go/ast"
++	"go/parser"
++	"go/token"
++	"strconv"
++	"strings"
++	"testing"
++
++	"github.com/NickyBoy89/java2go/nodeutil"
++	"github.com/NickyBoy89/java2go/parsing"
++	"github.com/NickyBoy89/java2go/symbol"
++	sitter "github.com/smacker/go-tree-sitter"
++)
++
++func raf209TestCreation(root *sitter.Node, source []byte) *sitter.Node {
++	if root == nil {
++		return nil
++	}
++	if root.Type() == "object_creation_expression" {
++		typ := root.ChildByFieldName("type")
++		if typ != nil && stripJavaQualifier(typ.Content(source)) == "RandomAccessFile" {
++			return root
++		}
++	}
++	for _, child := range nodeutil.SemanticNamedChildrenOf(root) {
++		if found := raf209TestCreation(child, source); found != nil {
++			return found
++		}
++	}
++	return nil
++}
++func raf209TestContext(t *testing.T, java string) (Ctx, []byte, *sitter.Node) {
++	t.Helper()
++	helper := setupParseHelper(t, java)
++	ctx := helper.Ctx
++	ctx.localScope = ctx.currentClass.FindMethodByName("run", nil)
++	ctx.executionContextName = "__java2goRAFCurrentExecution"
++	ctx.className = ctx.currentClass.Class.Name
++	if ctx.localScope == nil {
++		t.Fatal("actual run declaration missing")
++	}
++	node := raf209TestCreation(ctx.localScope.DeclarationNode, helper.File.Source)
++	if node == nil {
++		t.Fatal("actual RAF construction missing")
++	}
++	return ctx, helper.File.Source, node
++}
++func raf209TestCalls(t *testing.T, generated, api string) (*ast.File, []*ast.CallExpr) {
++	t.Helper()
++	file, err := parser.ParseFile(token.NewFileSet(), "generated.go", generated, 0)
++	if err != nil {
++		t.Fatal(err)
++	}
++	alias := ""
++	for _, imp := range file.Imports {
++		path, err := strconv.Unquote(imp.Path.Value)
++		if err != nil {
++			t.Fatal(err)
++		}
++		if path == "github.com/NickyBoy89/java2go/stdjava" {
++			alias = "stdjava"
++			if imp.Name != nil {
++				alias = imp.Name.Name
++			}
++		}
++	}
++	var calls []*ast.CallExpr
++	ast.Inspect(file, func(n ast.Node) bool {
++		call, ok := n.(*ast.CallExpr)
++		if !ok {
++			return true
++		}
++		selector, ok := call.Fun.(*ast.SelectorExpr)
++		if !ok {
++			return true
++		}
++		owner, ok := selector.X.(*ast.Ident)
++		if ok && owner.Name == alias && selector.Sel.Name == api {
++			calls = append(calls, call)
++		}
++		return true
++	})
++	return file, calls
++}
++
++func TestRAFFile209StringDeclarationContracts(t *testing.T) {
++	for _, java := range []string{
++		`import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile("path","r");}}`,
++		`import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile((String)null,(String)null);}}`,
++		`import java.io.*;class Probe{Object run(String path,String mode)throws Exception{return new RandomAccessFile(path,mode);}}`,
++		`import java.io.*;class Probe<S extends String>{Object run(S path,S mode)throws Exception{return new RandomAccessFile(path,mode);}}`,
++		`import java.io.*;class Probe<S extends String,T extends S>{Object run(T path,S mode)throws Exception{return new RandomAccessFile(path,mode);}}`,
++		`import java.io.*;class Probe{String path="path";Object run()throws Exception{return new RandomAccessFile(path,"r");}}`,
++		`import java.io.*;class Probe{static String path(){return "path";}Object run()throws Exception{return new RandomAccessFile(path(),"r");}}`,
++		`import java.io.*;class Probe{Object run(boolean b)throws Exception{return new RandomAccessFile(b?"path":null,"r");}}`,
++	} {
++		t.Run(java, func(t *testing.T) {
++			strictRoutingState(t)
++			_, calls := raf209TestCalls(t, renderGoFileFromJava(t, java), "NewRandomAccessFileStringExecution")
++			if len(calls) != 1 || len(calls[0].Args) != 3 || len(Diagnostics()) != 0 {
++				t.Fatal("valid String constructor lost its execution-aware service")
++			}
++		})
++	}
++}
++
++func TestRAFFile209NamespaceCoherence(t *testing.T) {
++	for _, row := range []struct {
++		name, java string
++		want       raf209ConstructorKind
++	}{
++		{"ordinary-single-type", `import java.io.File;import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"),"r");}}`, raf209NativeFile},
++		{"ordinary-wildcard", `import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"),"r");}}`, raf209NativeFile},
++		{"static-single-nonconflicting", `import static java.lang.Math.abs;import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"),"r");}}`, raf209NativeFile},
++		{"named-package-qualified", `package probe;class Probe{Object run()throws Exception{return new java.io.RandomAccessFile(new java.io.File("x"),"r");}}`, raf209NativeFile},
++		{"legacy-String-static-wildcard", `import static java.lang.Math.*;import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile("x","r");}}`, raf209String},
++		{"new-File-static-wildcard-held", `import static foreign.Owner.*;import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"),"r");}}`, raf209Refused},
++		{"single-static-File-conflict", `import static foreign.Owner.File;import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"),"r");}}`, raf209Refused},
++		{"single-static-String-conflict", `import static foreign.Owner.String;import java.io.*;class Probe{Object run(String mode)throws Exception{return new RandomAccessFile(new File("x"),mode);}}`, raf209Refused},
++		{"single-static-RAF-conflict", `import static foreign.Owner.RandomAccessFile;import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"),"r");}}`, raf209Refused},
++		{"unrelated-bound-not-on-String-chain", `import static foreign.Owner.Noise;import java.io.*;class Probe<T extends java.lang.String,U extends Noise>{Object run(T mode)throws Exception{return new RandomAccessFile("x",mode);}}`, raf209String},
++		{"single-static-String-bound-conflict", `import static foreign.Owner.String;import java.io.*;class Probe<S extends String>{Object run(S mode)throws Exception{return new RandomAccessFile(new File("x"),mode);}}`, raf209Refused},
++		{"qualified-File-unaffected-by-single-static-File", `import static foreign.Owner.File;class Probe{Object run()throws Exception{return new java.io.RandomAccessFile(new java.io.File("x"),"r");}}`, raf209NativeFile},
++	} {
++		t.Run(row.name, func(t *testing.T) {
++			ctx, source, node := raf209TestContext(t, row.java)
++			if !raf209FileCoherent(ctx.currentFile) {
++				t.Fatal("actual parsed namespace must first be coherent")
++			}
++			if got := raf209Constructor(node, nil, ctx, source); got != row.want {
++				t.Fatalf("namespace origin=%d want%d", got, row.want)
++			}
++			if row.name == "legacy-String-static-wildcard" {
++				strictRoutingState(t)
++				_, calls := raf209TestCalls(t, renderGoFileFromJava(t, row.java), "NewRandomAccessFileStringExecution")
++				if len(calls) != 1 || len(Diagnostics()) != 0 {
++					t.Fatal("legacy valid String static-wildcard route changed")
++				}
++			}
++		})
++	}
++}
++
++func TestRAFFile209DeclarationTamperRefusal(t *testing.T) {
++	t.Run("forged-String-bound", func(t *testing.T) {
++		ctx, source, node := raf209TestContext(t, `import java.io.*;class Probe<S>{Object run(S path)throws Exception{return new RandomAccessFile(path,"r");}}`)
++		forged := []symbol.JavaType{{Original: "java.lang.String", TypeParameterBindings: symbol.VisibleTypeParamBindings(ctx.currentClass.TypeParameters)}}
++		ctx.currentClass.TypeParameters[0].Bounds = forged
++		ctx.currentClass.DeclaredTypeParameters[0].Bounds = forged
++		if raf209Constructor(node, nil, ctx, source) != raf209Refused {
++			t.Fatal("mutable bounds manufactured a String certificate")
++		}
++	})
++	t.Run("forged-formal-type", func(t *testing.T) {
++		ctx, source, node := raf209TestContext(t, `import java.io.*;class Probe{Object run(Object path)throws Exception{return new RandomAccessFile(path,"r");}}`)
++		ctx.localScope.Parameters[0].OriginalType = "java.lang.String"
++		if raf209Constructor(node, nil, ctx, source) != raf209Refused {
++			t.Fatal("formal sidecar overrode actual Object syntax")
++		}
++	})
++	for _, row := range []struct{ name, java, before, after string }{
++		{"changed-formal-source", `import java.io.*;class Probe{Object run(Object mode)throws Exception{return new RandomAccessFile(new File("x"),mode);}}`, "Object mode", "String mode"},
++		{"changed-cast-source", `import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"),(Object)null);}}`, "(Object)null", "(String)null"},
++	} {
++		t.Run(row.name, func(t *testing.T) {
++			ctx, source, node := raf209TestContext(t, row.java)
++			if !raf209FileCoherent(ctx.currentFile) {
++				t.Fatal("actual source must first be coherent")
++			}
++			changed := []byte(strings.Replace(string(source), row.before, row.after, 1))
++			if string(changed) == string(source) || len(changed) != len(source) {
++				t.Fatal("exact same-length mutation absent")
++			}
++			ctx.currentFile.Source = changed
++			if raf209Constructor(node, nil, ctx, changed) != raf209Refused {
++				t.Fatal("changed source bytes borrowed registered tree")
++			}
++		})
++	}
++	for _, row := range []struct{ name, java, key, value string }{
++		{"foreign-File-import-donation", `import foreign.File;class Probe{Object run()throws Exception{return new java.io.RandomAccessFile(new File("x"),"r");}}`, "File", "java.io"},
++		{"foreign-String-import-donation", `import foreign.String;class Probe{Object run(String mode)throws Exception{return new java.io.RandomAccessFile(new java.io.File("x"),mode);}}`, "String", "java.lang"},
++		{"package-donation", `package foreign;import java.io.*;class Probe{Object run()throws Exception{return new RandomAccessFile(new File("x"),"r");}}`, "", "java.io"},
++	} {
++		t.Run(row.name, func(t *testing.T) {
++			ctx, source, node := raf209TestContext(t, row.java)
++			if !raf209FileCoherent(ctx.currentFile) {
++				t.Fatal("actual namespace must first be coherent")
++			}
++			if row.key == "" {
++				ctx.currentFile.Package = row.value
++			} else {
++				ctx.currentFile.Imports[row.key] = row.value
++			}
++			if raf209Constructor(node, nil, ctx, source) != raf209Refused {
++				t.Fatal("namespace sidecar overrode actual header")
++			}
++		})
++	}
++	t.Run("outer-method-cannot-own-lambda-body", func(t *testing.T) {
++		ctx, source, node := raf209TestContext(t, `import java.io.*;class Probe{Object run(){java.util.concurrent.Callable<Object> c=()->new RandomAccessFile(new File("x"),"r");return c;}}`)
++		if raf209Constructor(node, nil, ctx, source) != raf209Refused {
++			t.Fatal("outer executable donated lexical authority")
++		}
++	})
++
++	const java = `import java.io.*;class Probe{Object run()throws Exception{File file=new File("x");return new RandomAccessFile(file,"r");}}`
++	for _, name := range []string{"detached-occurrence", "copied-method-definition", "detached-current-file"} {
++		t.Run(name, func(t *testing.T) {
++			ctx, source, node := raf209TestContext(t, java)
++			if raf209Constructor(node, nil, ctx, source) != raf209NativeFile {
++				t.Fatal("registered native fixture must first be eligible")
++			}
++			switch name {
++			case "detached-occurrence":
++				twin := parsing.SourceFile{Name: "Twin.java", Source: append([]byte(nil), source...)}
++				if err := twin.ParseAST(); err != nil {
++					t.Fatal(err)
++				}
++				node = raf209TestCreation(twin.Ast, source)
++			case "copied-method-definition":
++				method := *ctx.localScope
++				ctx.localScope = &method
++			case "detached-current-file":
++				file := *ctx.currentFile
++				ctx.currentFile = &file
++			}
++			if raf209Constructor(node, nil, ctx, source) != raf209Refused {
++				t.Fatal("detached declaration acquired native allocation permission")
++			}
++		})
++	}
++}
++
++func TestRAFFile209NativeLocalWriteIdentity(t *testing.T) {
++	for _, row := range []struct {
++		name, java string
++		want       raf209ConstructorKind
++	}{
++		{"unwritten", `import java.io.*;class Probe{Object run()throws Exception{File file=new File("x");return new RandomAccessFile(file,"r");}}`, raf209NativeFile},
++		{"nested-other-binding", `import java.io.*;class Probe{Object run()throws Exception{File file=new File("x");class Other{void change(File file){file=null;}}return new RandomAccessFile(file,"r");}}`, raf209NativeFile},
++		{"nested-actual-write", `import java.io.*;class Probe{Object run(File other)throws Exception{File file=new File("x");Runnable r=()->{file=other;};return new RandomAccessFile(file,"r");}}`, raf209Refused},
++		{"later-write", `import java.io.*;class Probe{Object run(File other)throws Exception{File file=new File("x");Object r=new RandomAccessFile(file,"r");file=other;return r;}}`, raf209Refused},
++		{"native-alias-still-held", `import java.io.*;class Probe{Object run()throws Exception{File first=new File("x");File file=first;return new RandomAccessFile(file,"r");}}`, raf209Refused},
++	} {
++		t.Run(row.name, func(t *testing.T) {
++			ctx, source, node := raf209TestContext(t, row.java)
++			if got := raf209Constructor(node, nil, ctx, source); got != row.want {
++				t.Fatalf("native origin=%d want%d", got, row.want)
++			}
++		})
++	}
++}
++
++func TestRAFFile209FileLoweringEvaluationContract(t *testing.T) {
++	java := `import java.io.*;class Probe<__java2goRAFFile>{static String name(){return "x";}static String mode(){return "r";}Object run()throws Exception{return new RandomAccessFile(new File(name()),mode());}}`
++	file, calls := raf209TestCalls(t, renderGoFileFromJava(t, java), "NewRandomAccessFileFileExecution")
++	if len(calls) != 1 || len(calls[0].Args) != 3 {
++		t.Fatal("one typed File service with current execution required")
++	}
++	call := calls[0]
++	execution, ok := call.Args[0].(*ast.Ident)
++	if !ok || execution.Name == "" {
++		t.Fatal("constructor must forward current Execution")
++	}
++	var body *ast.BlockStmt
++	ast.Inspect(file, func(n ast.Node) bool {
++		literal, ok := n.(*ast.FuncLit)
++		if !ok || len(literal.Body.List) != 3 {
++			return true
++		}
++		ret, ok := literal.Body.List[2].(*ast.ReturnStmt)
++		if !ok || len(ret.Results) != 1 {
++			return true
++		}
++		c, ok := ret.Results[0].(*ast.CallExpr)
++		if !ok {
++			return true
++		}
++		s, ok := c.Fun.(*ast.SelectorExpr)
++		if ok && s.Sel.Name == "NewRandomAccessFileFileExecution" {
++			body = literal.Body
++		}
++		return true
++	})
++	if body == nil {
++		t.Fatal("explicit ordered operand captures missing")
++	}
++	matchedExecution := false
++	ast.Inspect(file, func(n ast.Node) bool {
++		declaration, ok := n.(*ast.FuncDecl)
++		if !ok || declaration.Body == nil {
++			return true
++		}
++		owns := false
++		ast.Inspect(declaration.Body, func(at ast.Node) bool {
++			if at == call {
++				owns = true
++			}
++			return true
++		})
++		if owns && declaration.Type.Params != nil {
++			for _, field := range declaration.Type.Params.List {
++				pointer, ok := field.Type.(*ast.StarExpr)
++				if !ok {
++					continue
++				}
++				typ, ok := pointer.X.(*ast.SelectorExpr)
++				if !ok || typ.Sel.Name != "Execution" {
++					continue
++				}
++				for _, name := range field.Names {
++					if name.Name == execution.Name {
++						matchedExecution = true
++					}
++				}
++			}
++		}
++		return true
++	})
++	if !matchedExecution {
++		t.Fatal("File constructor did not forward its enclosing current Execution parameter")
++	}
++	first, ok := body.List[0].(*ast.AssignStmt)
++	if !ok || first.Tok != token.DEFINE || len(first.Lhs) != 1 || len(first.Rhs) != 1 {
++		t.Fatal("File operand must be captured once first")
++	}
++	second, ok := body.List[1].(*ast.AssignStmt)
++	if !ok || second.Tok != token.DEFINE || len(second.Lhs) != 1 || len(second.Rhs) != 1 {
++		t.Fatal("mode operand must be captured once second")
++	}
++	left, lok := first.Lhs[0].(*ast.Ident)
++	right, rok := second.Lhs[0].(*ast.Ident)
++	if !lok || !rok || left.Name == right.Name || left.Name == "__java2goRAFFile" {
++		t.Fatal("capture names collide with Java declarations")
++	}
++	returned := body.List[2].(*ast.ReturnStmt).Results[0].(*ast.CallExpr)
++	a, aok := returned.Args[1].(*ast.Ident)
++	b, bok := returned.Args[2].(*ast.Ident)
++	if !aok || !bok || a.Name != left.Name || b.Name != right.Name {
++		t.Fatal("facade must consume the captured operands in order")
++	}
++}
++
++type raf209CaptureFixture struct {
++	declaring, lambdaCtx Ctx
++	source               []byte
++	creation, resource   *sitter.Node
++	occurrence, lambda   *sitter.Node
++}
++
++func raf209TestCaptureFixture(t *testing.T, java string) raf209CaptureFixture {
++	t.Helper()
++	ctx, source, creation := raf209TestContext(t, java)
++	var occurrence *sitter.Node
++	var visit func(*sitter.Node)
++	visit = func(node *sitter.Node) {
++		if node == nil || occurrence != nil {
++			return
++		}
++		if node.Type() == "method_invocation" && node.ChildByFieldName("name") != nil && node.ChildByFieldName("name").Content(source) == "setLength" {
++			occurrence = node.ChildByFieldName("object")
++			return
++		}
++		for _, child := range nodeutil.SemanticNamedChildrenOf(node) {
++			visit(child)
++		}
++	}
++	visit(ctx.localScope.DeclarationNode)
++	if occurrence == nil {
++		t.Fatal("actual captured receiver occurrence missing")
++	}
++	binding, found := fileChannelReadCaptureDeclaration(occurrence, source)
++	if !found || binding.declaration.Type() != "resource" || !unwrapParenthesizedExpressionNode(binding.declaration.ChildByFieldName("value")).Equal(creation) {
++		t.Fatal("actual immutable resource/initializer identity missing")
++	}
++	var lambda *sitter.Node
++	for at := occurrence; at != nil; at = at.Parent() {
++		if at.Type() == "lambda_expression" {
++			lambda = at
++			break
++		}
++	}
++	if lambda == nil {
++		t.Fatal("actual capture lambda missing")
++	}
++	lambdaCtx := contextWithLambdaParameters(ctx, lambda.ChildByFieldName("parameters"), nil, "void", source)
++	if lambdaCtx.localScope == nil || lambdaCtx.localScope.DeclarationNode != nil || lambdaCtx.localBindingBody == nil || !lambdaCtx.localBindingBody.Equal(lambda.ChildByFieldName("body")) {
++		t.Fatal("ordinary copied lambda context premise missing")
++	}
++	return raf209CaptureFixture{ctx, lambdaCtx, source, creation, binding.declaration, occurrence, lambda}
++}
++
++func TestRAFFile209CapturedResourceInitializerContext(t *testing.T) {
++	const tail = `){Runnable r=()->{try{f.setLength(2L);f.write(new byte[0]);}catch(java.io.IOException failure){throw new RuntimeException(failure);}};r.run();}}}`
++	const stringJava = `import java.io.*;class Probe{void run(String path)throws Exception{try(RandomAccessFile f=new RandomAccessFile(path,"rw")` + tail
++	const fileJava = `import java.io.*;class Probe{void run()throws Exception{try(RandomAccessFile f=new RandomAccessFile(new File("path"),"rw")` + tail
++	const genericJava = `import java.io.*;class Probe{<S extends String>void run(String path,S mode)throws Exception{try(RandomAccessFile f=new RandomAccessFile(path,mode)` + tail
++	for _, row := range []struct {
++		name, java, api string
++		kind            raf209ConstructorKind
++	}{
++		{"string-capture-replay", stringJava, "NewRandomAccessFileStringExecution", raf209String},
++		{"file-capture-replay", fileJava, "NewRandomAccessFileFileExecution", raf209NativeFile},
++		{"generic-mode-capture-replay", genericJava, "NewRandomAccessFileStringExecution", raf209String},
++	} {
++		t.Run(row.name, func(t *testing.T) {
++			strictRoutingState(t)
++			fixture := raf209TestCaptureFixture(t, row.java)
++			if raf209Constructor(fixture.creation, nil, fixture.lambdaCtx, fixture.source) != raf209Refused {
++				t.Fatal("current lambda must not impersonate the initializer's registered method")
++			}
++			proof, found := raf209ResourceInitializerContext(fixture.occurrence, fixture.resource, fixture.lambdaCtx, fixture.source)
++			if !found || proof.localScope != fixture.declaring.localScope || proof.localScope == fixture.lambdaCtx.localScope || raf209Constructor(fixture.creation, nil, proof, fixture.source) != row.kind || !randomAccessFileNativeAllocation(fixture.occurrence, fixture.lambdaCtx, fixture.source) {
++				t.Fatal("actual registered initializer declaration did not replay independently of the capture frame")
++			}
++			if fixture.lambdaCtx.localScope.DeclarationNode != nil || !fixture.lambdaCtx.localBindingBody.Equal(fixture.lambda.ChildByFieldName("body")) {
++				t.Fatal("initializer proof mutated the occurrence context")
++			}
++			generated := renderGoFileFromJava(t, row.java)
++			for _, api := range []string{row.api, "RandomAccessFileSetLengthExecution", "RandomAccessFileWriteBytesExecution"} {
++				_, calls := raf209TestCalls(t, generated, api)
++				if len(calls) != 1 {
++					t.Fatalf("capture replay %s calls=%d, want1", api, len(calls))
++				}
++			}
++			if len(Diagnostics()) != 0 {
++				t.Fatalf("capture replay diagnosed: %+v", Diagnostics())
++			}
++		})
++	}
++	for _, row := range []struct {
++		name   string
++		mutate func(*raf209CaptureFixture)
++	}{
++		{"missing-lambda-frame", func(f *raf209CaptureFixture) { f.lambdaCtx.localScope = nil }},
++		{"outer-method-occurrence-donation", func(f *raf209CaptureFixture) { f.lambdaCtx = f.declaring }},
++		{"missing-lambda-body", func(f *raf209CaptureFixture) { f.lambdaCtx.localBindingBody = nil }},
++		{"wrong-lambda-body", func(f *raf209CaptureFixture) {
++			f.lambdaCtx.localBindingBody = f.declaring.localScope.DeclarationNode.ChildByFieldName("body")
++		}},
++		{"copied-method-frame", func(f *raf209CaptureFixture) {
++			f.lambdaCtx.localScope.DeclarationNode = f.declaring.localScope.DeclarationNode
++		}},
++		{"missing-registered-executable", func(f *raf209CaptureFixture) { f.lambdaCtx.currentClass.Methods = nil }},
++		{"forged-executable-header", func(f *raf209CaptureFixture) { f.declaring.localScope.OriginalName = "foreign" }},
++		{"erased-declaring-binder", func(f *raf209CaptureFixture) { f.declaring.localScope.TypeParameters = nil }},
++		{"forged-namespace", func(f *raf209CaptureFixture) { f.lambdaCtx.currentFile.Imports["RandomAccessFile"] = "foreign" }},
++		{"detached-current-file", func(f *raf209CaptureFixture) { copied := *f.lambdaCtx.currentFile; f.lambdaCtx.currentFile = &copied }},
++		{"wrong-resource-identity", func(f *raf209CaptureFixture) { f.resource = f.creation }},
++	} {
++		t.Run(row.name, func(t *testing.T) {
++			fixture := raf209TestCaptureFixture(t, genericJava)
++			if !randomAccessFileNativeAllocation(fixture.occurrence, fixture.lambdaCtx, fixture.source) {
++				t.Fatal("actual capture certificate must first be admitted")
++			}
++			row.mutate(&fixture)
++			proof, found := raf209ResourceInitializerContext(fixture.occurrence, fixture.resource, fixture.lambdaCtx, fixture.source)
++			if found && raf209Constructor(fixture.creation, nil, proof, fixture.source) != raf209Refused {
++				t.Fatal("tampered capture/initializer context donated a constructor certificate")
++			}
++			if row.name != "wrong-resource-identity" && randomAccessFileNativeAllocation(fixture.occurrence, fixture.lambdaCtx, fixture.source) {
++				t.Fatal("tampered occurrence admitted native allocation")
++			}
++		})
++	}
++	t.Run("detached-initializer-tree", func(t *testing.T) {
++		fixture := raf209TestCaptureFixture(t, stringJava)
++		twin := raf209TestCaptureFixture(t, stringJava)
++		if _, found := raf209ResourceInitializerContext(fixture.occurrence, twin.resource, fixture.lambdaCtx, fixture.source); found {
++			t.Fatal("same-byte detached resource donated its initializer")
++		}
++	})
++	t.Run("initializer-inside-lambda-held", func(t *testing.T) {
++		fixture := raf209TestCaptureFixture(t, `import java.io.*;class Probe{void run(){Runnable r=()->{try(RandomAccessFile f=new RandomAccessFile("path","rw")){f.setLength(2L);}catch(java.io.IOException failure){throw new RuntimeException(failure);}};}}`)
++		if _, found := raf209ResourceInitializerContext(fixture.occurrence, fixture.resource, fixture.lambdaCtx, fixture.source); found || randomAccessFileNativeAllocation(fixture.occurrence, fixture.lambdaCtx, fixture.source) {
++			t.Fatal("enclosing method borrowed ownership of a lambda initializer")
++		}
++		if raf209Constructor(fixture.creation, nil, fixture.declaring, fixture.source) != raf209Refused {
++			t.Fatal("outer-method-cannot-own-lambda-body refusal changed")
++		}
++	})
++}
+diff --git a/transpiler/random_access_file_reference_campaign_test.go b/transpiler/random_access_file_reference_campaign_test.go
+index fb9d936a4d593d8c1c75f7f3eb4a33c20026e1ad..adad8f97b6172a02ea0c3530f054bf315fd829a3 100644
+--- a/transpiler/random_access_file_reference_campaign_test.go
++++ b/transpiler/random_access_file_reference_campaign_test.go
+@@ -131,7 +131,6 @@
+ func TestRAFStringIntrinsicStrictRefusal(t *testing.T) {
+ 	for _, source := range []string{
+ 		`import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile(null,"r");}}`,
+-		`import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile((java.io.File)null,"r");}}`,
+ 		`import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile("path",7);}}`,
+ 		`import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile("path");}}`,
+ 		`import java.io.RandomAccessFile;class Probe<RandomAccessFile>{Object run()throws Exception{return new RandomAccessFile("path","r");}}`,

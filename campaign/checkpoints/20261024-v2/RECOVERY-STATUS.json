@@ -1,0 +1,26 @@
+{
+  "all_pending_gates_remain_required": true,
+  "alternatives_not_a_coalesced_solution": true,
+  "atomic_restore_handles_hardlinked_target_without_donor_mutation": true,
+  "base_git_commit": "6586fdea6a69384390021bc99f628d33082407e9",
+  "base_source_manifest_sha256": "ea70963a866cd310e10a60007234bd38ee26740167fcace5bdcb589077185adc",
+  "base_source_members": 4525,
+  "base_source_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-public214/source",
+  "candidates": [
+    "union-metadata-bounds-kind",
+    "raf-file-overload-v10",
+    "sam-anonymous-functional-v1"
+  ],
+  "checkpoint_bundle_version": 2,
+  "created_utc": "2026-10-24T01:13:20.293203+00:00",
+  "no_active_source_or_user_file_changes": true,
+  "no_git_mutations": true,
+  "no_payloads_executed": true,
+  "no_tests_or_oracles_authored": true,
+  "purpose": "REMOTE-RECOVERY CHECKPOINT \u2014 SOURCE ONLY \u2014 UNAPPLIED \u2014 UNACCEPTED",
+  "source_manifests_patches_blobs_unchanged_from_v1": true,
+  "suggested_tracked_root": "campaign/checkpoints/20261024-v2/",
+  "supersedes_bundle_v1_for_restore_utility_only": true,
+  "v1_manifest_sha256": "5ba11b30aa6986206bc2a0b3d2b307389f764d3869a9f33a5585a523071d2f64",
+  "zero_go_java_source_files_in_bundle": true
+}

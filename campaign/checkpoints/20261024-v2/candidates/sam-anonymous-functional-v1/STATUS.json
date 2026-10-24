@@ -1,0 +1,39 @@
+{
+  "accepted": false,
+  "all_source_paths_compared_without_filters": true,
+  "base_git_commit": "6586fdea6a69384390021bc99f628d33082407e9",
+  "base_manifest_sha256": "ea70963a866cd310e10a60007234bd38ee26740167fcace5bdcb589077185adc",
+  "blockers": [
+    "Captured V1 retains anonymous-map/donated-local provenance bypass and LocalNames registry-key defects.",
+    "SAM candidate V2 supersedes V1 but remains HOLD for local named class inside anonymous context.",
+    "No SAM V2 source is captured; V1 must not be applied as verified."
+  ],
+  "changed_postimage_bytes": 666875,
+  "delta_counts": {
+    "added": 4,
+    "deleted": 0,
+    "modified": 4
+  },
+  "external_reference_hashes": {
+    "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-anonymous-functional214-candidate-v1/FULL-GREEN-PLAN.json": "80d3be3c8088a5de5bfde406996bbd1edfbb2778328db3800fac5ba70acc4927",
+    "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-anonymous-functional214-candidate-v1/REVIEW-REQUEST.json": "fd3b437d2beaa2c1a69088705757ad4d9f4dfe8e9e51074f07a4904cd7521dc5"
+  },
+  "forward_patch_sha256": "2c337c9035d702727fe69dad9a82a27a146b167acd910335424e32a8842b7a96",
+  "id": "sam-anonymous-functional-v1",
+  "inverse_patch_sha256": "dbffca735041df1becd1adb3a004c10fd87daa547ef59358dcdfa75ca1c2461a",
+  "owner": "sol61_sam_owner_resume",
+  "postimage_storage": "content-addressed .blob; explicit logical path mapping in DELTA.json",
+  "reviews": [
+    "Request fd3b437d2beaa2c1a69088705757ad4d9f4dfe8e9e51074f07a4904cd7521dc5",
+    "HOLD 96698eae8b8700e6f2a588ab66fabf476ff91551d5546150dec8aab60a49818d",
+    "Successor design identifier prefix 6501ed35; NOT IMPLEMENTED in this source"
+  ],
+  "source_manifest_sha256": "5acbad4c43c5e2c5bd56cf642caf6fe6ba6a005df7a5d0ea73e7065beb5ffbc9",
+  "source_members": 4529,
+  "source_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-anonymous-functional214-candidate-v1/source",
+  "source_postimages_unchanged_from_checkpoint_bundle_v1": true,
+  "status": "WIP_HOLD_V1_SUPERSEDED_DO_NOT_APPLY_AS_VERIFIED",
+  "status_basis": "Current coordinator report for checkpoint-bundle v2; no execution outputs interpreted by packager.",
+  "unapplied": true,
+  "v1_handoff_status": "WIP_HOLD_DO_NOT_APPLY_AS_VERIFIED"
+}

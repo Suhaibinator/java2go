@@ -1,0 +1,35 @@
+{
+  "accepted": false,
+  "all_source_paths_compared_without_filters": true,
+  "base_git_commit": "6586fdea6a69384390021bc99f628d33082407e9",
+  "base_manifest_sha256": "ea70963a866cd310e10a60007234bd38ee26740167fcace5bdcb589077185adc",
+  "blockers": [
+    "V10 STOP at new fixture premises; old22 pass per coordinator report fc2d3b2e.",
+    "Fixture-only V11 ready; V11 source is NOT captured in this checkpoint."
+  ],
+  "changed_postimage_bytes": 105900,
+  "delta_counts": {
+    "added": 5,
+    "deleted": 0,
+    "modified": 4
+  },
+  "external_reference_hashes": {
+    "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/raf-file-overload214-candidate-v10/qualification-v1/PLAN.json": "93b5181696451883a2ac58faf0d560e968a7eeb1bce2b4c1fe6a3e0980af52b8"
+  },
+  "forward_patch_sha256": "21caff353da2bd43cb39be6a7b683f64a637c04cf4aa088fb391b04a3dc117c4",
+  "id": "raf-file-overload-v10",
+  "inverse_patch_sha256": "79f80d0dc10f8a99fdcc2975d363bd0d75da3133347d6370784d012f7f55852f",
+  "owner": "sol61_raf_owner_resume",
+  "postimage_storage": "content-addressed .blob; explicit logical path mapping in DELTA.json",
+  "reviews": [
+    "Independent review identifier prefix 52e6f12d (coordinator handoff)"
+  ],
+  "source_manifest_sha256": "b2d2e838ae21d617751f47acaef4f21aeb0c0fb77e1e9bdc7628d3ef9c938c43",
+  "source_members": 4530,
+  "source_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/raf-file-overload214-candidate-v10/source",
+  "source_postimages_unchanged_from_checkpoint_bundle_v1": true,
+  "status": "UNACCEPTED_V10_STOP_NEW_FIXTURE_PREMISES",
+  "status_basis": "Current coordinator report for checkpoint-bundle v2; no execution outputs interpreted by packager.",
+  "unapplied": true,
+  "v1_handoff_status": "UNACCEPTED_ALL59_FRESH_RUNNING_AT_COORDINATOR_HANDOFF"
+}

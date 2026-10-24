@@ -1,0 +1,248 @@
+package stdjava
+
+import (
+	"crypto/sha256"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
+	"testing"
+)
+
+// Inputs/results below are an exact field projection of the immutable measured
+// RAF author oracle f248f1fb856fb469d738378a0e4615bc36315bb6ffb9c13a3af9384af5a9793a.
+// The JDK matrix's observer APIs are not additional compiler API admissions.
+// Native tests use existing byte-array writes/readers and inspect descriptor
+// state directly; they do not claim compilation of getFD, write(int), or the
+// matrix's arbitrary source File-return helpers. Original DigestIO stays whole.
+type raf209MeasuredRow struct {
+	Label        string `json:"label"`
+	Overload     string `json:"overload"`
+	Path         string `json:"pathUTF16"`
+	Mode         string `json:"modeUTF16"`
+	Failure      string `json:"failure"`
+	State        string `json:"state"`
+	ClosedRead   string `json:"closedRead"`
+	CloseFailure string `json:"closeFailure"`
+}
+
+func raf209Units(t *testing.T, text string) *JavaString {
+	t.Helper()
+	if text == "null" {
+		return nil
+	}
+	if len(text)%4 != 0 {
+		t.Fatal("invalid measured UTF16")
+	}
+	units := make([]uint16, len(text)/4)
+	for i := range units {
+		v, err := strconv.ParseUint(text[i*4:i*4+4], 16, 16)
+		if err != nil {
+			t.Fatal(err)
+		}
+		units[i] = uint16(v)
+	}
+	return NewJavaStringUTF16(units)
+}
+func raf209Panic(action func()) (failure any) {
+	defer func() { failure = recover() }()
+	action()
+	return nil
+}
+func raf209Failure(t *testing.T, e *Execution, failure any) string {
+	t.Helper()
+	if failure == nil {
+		return "none"
+	}
+	throwable, ok := failure.(Throwable)
+	if !ok {
+		t.Fatalf("non-Java panic %T:%v", failure, failure)
+	}
+	message := JavaThrowableMessageExecution(e, failure)
+	text := "null"
+	if message != nil {
+		var b strings.Builder
+		for _, unit := range message.units {
+			fmt.Fprintf(&b, "%04x", unit)
+		}
+		text = b.String()
+	}
+	return fmt.Sprintf("%s/messageUTF16=%s/causeNull=%t", BuiltinThrowableTypeID(throwable.ThrowableTypeName()), text, GetCause(failure) == nil)
+}
+func raf209FileSnapshot(t *testing.T) map[string]string {
+	t.Helper()
+	out := map[string]string{}
+	err := filepath.WalkDir("data", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			out[filepath.ToSlash(path)+"/"] = "directory"
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		out[filepath.ToSlash(path)] = fmt.Sprintf("%x", sha256.Sum256(data))
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func TestRAFFile209MeasuredNativeContracts(t *testing.T) {
+	var rows []raf209MeasuredRow
+	if err := json.Unmarshal([]byte(raf209MeasuredRows), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 56 {
+		t.Fatal("measured row coverage drift")
+	}
+	var finalFiles map[string]map[string]string
+	if err := json.Unmarshal([]byte(raf209MeasuredFinalFiles), &finalFiles); err != nil {
+		t.Fatal(err)
+	}
+	for _, seed := range []int{17, 41, 97} {
+		t.Run(strconv.Itoa(seed), func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			if err := os.MkdirAll("data/directory", 0700); err != nil {
+				t.Fatal(err)
+			}
+			e := NewExecution()
+			for index, row := range rows {
+				t.Run(row.Label, func(t *testing.T) {
+					if index == 0 || index == 28 {
+						if err := os.WriteFile("data/present.bin", []byte{1, 2, 3, 4, 5}, 0600); err != nil {
+							t.Fatal(err)
+						}
+					}
+					path, mode := raf209Units(t, row.Path), raf209Units(t, row.Mode)
+					before := raf209FileSnapshot(t)
+					var file *RandomAccessFile
+					failure := raf209Panic(func() {
+						if row.Overload == "File" {
+							var native *JavaFile
+							if path != nil {
+								native = NewJavaFileReference(path)
+							}
+							file = NewRandomAccessFileFileExecution(e, native, mode)
+						} else {
+							file = NewRandomAccessFileStringExecution(e, path, mode)
+						}
+					})
+					if got := raf209Failure(t, e, failure); got != row.Failure {
+						t.Fatalf("constructor=%s want measured %s", got, row.Failure)
+					}
+					if failure != nil {
+						if file != nil || !reflect.DeepEqual(before, raf209FileSnapshot(t)) {
+							t.Fatal("failed constructor changed filesystem/published resource")
+						}
+						return
+					}
+					if file == nil || file.state == nil || file.GetChannel() == nil || file.GetChannel().state != file.state {
+						t.Fatal("native RAF/channel must publish one shared state")
+					}
+					descriptor := file.state.file
+					if _, err := descriptor.Stat(); err != nil {
+						t.Fatal("successful descriptor invalid", err)
+					}
+					defer file.Close()
+					state := fmt.Sprintf("initialLength=%d,initialPointer=%d", file.Length(), file.GetFilePointer())
+					switch {
+					case strings.HasSuffix(row.Label, "read-only"):
+						failure := raf209Panic(func() { RandomAccessFileWriteBytesExecution(e, file, rafWriteArray(int8(seed))) })
+						state += fmt.Sprintf(",readOnlyWrite=%s,afterWritePointer=%d,first=%d", raf209Failure(t, e, failure), file.GetFilePointer(), file.ReadByteValue())
+					case strings.HasSuffix(row.Label, "existing-rw"):
+						file.SeekPosition(2)
+						RandomAccessFileWriteBytesExecution(e, file, rafWriteArray(int8(seed+40)))
+						written := file.GetFilePointer()
+						RandomAccessFileSetLengthExecution(e, file, 2)
+						shortened := file.GetFilePointer()
+						RandomAccessFileSetLengthExecution(e, file, 6)
+						file.SeekPosition(0)
+						data := make([]byte, 6)
+						if _, err := io.ReadFull(file, data); err != nil {
+							t.Fatal(err)
+						}
+						state += fmt.Sprintf(",writePointer=%d,truncatedPointer=%d,finalLength=%d,finalPointer=%d,bytes=%x", written, shortened, file.Length(), file.GetFilePointer(), data)
+					default:
+						RandomAccessFileWriteBytesExecution(e, file, rafWriteArray(int8(seed), 0, -1))
+						state += fmt.Sprintf(",finalLength=%d,finalPointer=%d", file.Length(), file.GetFilePointer())
+					}
+					if state != row.State {
+						t.Fatalf("state=%s want measured %s", state, row.State)
+					}
+					channel := file.GetChannel()
+					if channel != file.GetChannel() || rafWriteChannelPosition(t, file.GetChannel()) != file.GetFilePointer() {
+						t.Fatal("channel identity/cursor diverged")
+					}
+					closeFailure := raf209Panic(func() { file.Close() })
+					if got := raf209Failure(t, e, closeFailure); got != row.CloseFailure {
+						t.Fatalf("close=%s want measured %s", got, row.CloseFailure)
+					}
+					if _, err := descriptor.Stat(); !errors.Is(err, os.ErrClosed) {
+						t.Fatal("closed descriptor did not report closed", err)
+					}
+					if file.state.file != descriptor || file.GetChannel().IsOpen() {
+						t.Fatal("close identity/open state mismatch")
+					}
+					closed := raf209Panic(func() { file.ReadByteValue() })
+					if got := raf209Failure(t, e, closed); got != row.ClosedRead {
+						t.Fatalf("closed read=%s want measured %s", got, row.ClosedRead)
+					}
+					file.Close()
+				})
+				if strings.HasSuffix(row.Label, "failed-parent") {
+					parent := "file-parent"
+					if row.Overload == "String" {
+						parent = "string-parent"
+					}
+					if err := os.Mkdir("data/"+parent, 0700); err != nil {
+						t.Fatal("failed open must not have created parent", err)
+					}
+				}
+			}
+			actual := raf209FileSnapshot(t)
+			for name, value := range actual {
+				if value == "directory" {
+					delete(actual, name)
+				}
+			}
+			if !reflect.DeepEqual(actual, finalFiles[strconv.Itoa(seed)]) {
+				t.Fatalf("final measured file snapshot differs: %v", actual)
+			}
+		})
+	}
+}
+
+func TestRAFFile209ExecutionAndCleanup(t *testing.T) {
+	path := JavaStringFromHostUTF8(filepath.Join(t.TempDir(), "file"))
+	file := NewJavaFileReference(path)
+	if failure := raf209Panic(func() { NewRandomAccessFileFileExecution(nil, file, JavaStringLiteralUTF16([]uint16{'r', 'w'})) }); failure == nil {
+		t.Fatal("nil execution accepted")
+	}
+	e := NewExecution()
+	raf := NewRandomAccessFileFileExecution(e, file, JavaStringLiteralUTF16([]uint16{'r', 'w'}))
+	channel := raf.GetChannel()
+	channel.Close()
+	if channel.IsOpen() {
+		t.Fatal("channel close did not close RAF state")
+	}
+	raf.Close()
+	if _, err := os.Stat(file.path); err != nil {
+		t.Fatal("explicit close unexpectedly removed file", err)
+	}
+}
+
+const raf209MeasuredRows = `[{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"file-null-null","modeUTF16":"null","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-null-006200610064","modeUTF16":"006200610064","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"file-null-0072","modeUTF16":"0072","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"file-null-00720077","modeUTF16":"00720077","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"file-null-007200770073","modeUTF16":"007200770073","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"file-null-007200770064","modeUTF16":"007200770064","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-null-","modeUTF16":"","overload":"File","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"file-mode-null","modeUTF16":"null","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-","modeUTF16":"","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-006200610064","modeUTF16":"006200610064","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077007800220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-007200770078","modeUTF16":"007200770078","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077006100220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-007200770061","modeUTF16":"007200770061","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077000000220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-007200770000","modeUTF16":"007200770000","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077d80000220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-mode-00720077d800","modeUTF16":"00720077d800","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"file-nul-null","modeUTF16":"null","overload":"File","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"file-nul-006200610064","modeUTF16":"006200610064","overload":"File","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0049006e00760061006c00690064002000660069006c006500200070006100740068/causeNull=true","label":"file-nul-00720077","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-read-only","modeUTF16":"0072","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"initialLength=5,initialPointer=0,readOnlyWrite=java.io.IOException/messageUTF16=004200610064002000660069006c0065002000640065007300630072006900700074006f0072/causeNull=true,afterWritePointer=0,first=1"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-existing-rw","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"initialLength=5,initialPointer=0,writePointer=3,truncatedPointer=2,finalLength=6,finalPointer=6,bytes=010200000000"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-create-rw","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d00720077002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-create-rws","modeUTF16":"007200770073","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d007200770073002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-create-rwd","modeUTF16":"007200770064","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d007200770064002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-unicode","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d00630061006600e9002dd83dde00002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-isolated-surrogate","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d00690073006f006c0061007400650064002dd800002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f00660069006c0065002d006d0069007300730069006e0067002e00620069006e00200028004e006f00200073007500630068002000660069006c00650020006f00720020006400690072006500630074006f007200790029/causeNull=true","label":"file-missing-read","modeUTF16":"0072","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d006d0069007300730069006e0067002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f006400690072006500630074006f007200790020002800490073002000610020006400690072006500630074006f007200790029/causeNull=true","label":"file-directory","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f006400690072006500630074006f00720079","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f00660069006c0065002d0070006100720065006e0074002f006300680069006c0064002e00620069006e00200028004e006f00200073007500630068002000660069006c00650020006f00720020006400690072006500630074006f007200790029/causeNull=true","label":"file-failed-parent","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d0070006100720065006e0074002f006300680069006c0064002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"file-recovered-parent","modeUTF16":"00720077","overload":"File","pathUTF16":"0064006100740061002f00660069006c0065002d0070006100720065006e0074002f006300680069006c0064002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"string-null-null","modeUTF16":"null","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-null-006200610064","modeUTF16":"006200610064","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"string-null-0072","modeUTF16":"0072","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"string-null-00720077","modeUTF16":"00720077","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"string-null-007200770073","modeUTF16":"007200770073","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=null/causeNull=true","label":"string-null-007200770064","modeUTF16":"007200770064","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-null-","modeUTF16":"","overload":"String","pathUTF16":"null","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"string-mode-null","modeUTF16":"null","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-","modeUTF16":"","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-006200610064","modeUTF16":"006200610064","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077007800220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-007200770078","modeUTF16":"007200770078","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077006100220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-007200770061","modeUTF16":"007200770061","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077000000220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-007200770000","modeUTF16":"007200770000","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200720077d80000220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-mode-00720077d800","modeUTF16":"00720077d800","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.NullPointerException/messageUTF16=00430061006e006e006f007400200069006e0076006f006b0065002000220053007400720069006e0067002e0065007100750061006c00730028004f0062006a006500630074002900220020006200650063006100750073006500200022006d006f0064006500220020006900730020006e0075006c006c/causeNull=true","label":"string-nul-null","modeUTF16":"null","overload":"String","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.lang.IllegalArgumentException/messageUTF16=0049006c006c006500670061006c0020006d006f006400650020002200620061006400220020006d0075007300740020006200650020006f006e00650020006f00660020002200720022002c00200022007200770022002c002000220072007700730022002c0020006f0072002000220072007700640022/causeNull=true","label":"string-nul-006200610064","modeUTF16":"006200610064","overload":"String","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0049006e00760061006c00690064002000660069006c006500200070006100740068/causeNull=true","label":"string-nul-00720077","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f006e0075006c0000002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-read-only","modeUTF16":"0072","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"initialLength=5,initialPointer=0,readOnlyWrite=java.io.IOException/messageUTF16=004200610064002000660069006c0065002000640065007300630072006900700074006f0072/causeNull=true,afterWritePointer=0,first=1"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-existing-rw","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f00700072006500730065006e0074002e00620069006e","state":"initialLength=5,initialPointer=0,writePointer=3,truncatedPointer=2,finalLength=6,finalPointer=6,bytes=010200000000"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-create-rw","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d00720077002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-create-rws","modeUTF16":"007200770073","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d007200770073002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-create-rwd","modeUTF16":"007200770064","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d007200770064002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-unicode","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d00630061006600e9002dd83dde00002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-isolated-surrogate","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d00690073006f006c0061007400650064002dd800002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f0073007400720069006e0067002d006d0069007300730069006e0067002e00620069006e00200028004e006f00200073007500630068002000660069006c00650020006f00720020006400690072006500630074006f007200790029/causeNull=true","label":"string-missing-read","modeUTF16":"0072","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d006d0069007300730069006e0067002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f006400690072006500630074006f007200790020002800490073002000610020006400690072006500630074006f007200790029/causeNull=true","label":"string-directory","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f006400690072006500630074006f00720079","state":"not-opened"},{"closeFailure":"none","closedRead":"none","failure":"java.io.FileNotFoundException/messageUTF16=0064006100740061002f0073007400720069006e0067002d0070006100720065006e0074002f006300680069006c0064002e00620069006e00200028004e006f00200073007500630068002000660069006c00650020006f00720020006400690072006500630074006f007200790029/causeNull=true","label":"string-failed-parent","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d0070006100720065006e0074002f006300680069006c0064002e00620069006e","state":"not-opened"},{"closeFailure":"none","closedRead":"java.io.IOException/messageUTF16=00530074007200650061006d00200043006c006f007300650064/causeNull=true","failure":"none","label":"string-recovered-parent","modeUTF16":"00720077","overload":"String","pathUTF16":"0064006100740061002f0073007400720069006e0067002d0070006100720065006e0074002f006300680069006c0064002e00620069006e","state":"initialLength=0,initialPointer=0,finalLength=3,finalPointer=3"}]`
+
+const raf209MeasuredFinalFiles = `{"17":{"data/file-caf\u00e9-\ud83d\ude00.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-isolated-?.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-parent/child.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-rw.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-rwd.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/file-rws.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/present.bin":"361595a6901387c14718e6b6cc57183f07ed5c6440273d5adddeb76f70eea7a7","data/string-caf\u00e9-\ud83d\ude00.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-isolated-?.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-parent/child.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-rw.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-rwd.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae","data/string-rws.bin":"ce5cb8bc3a5fb268b0a449abd4d6d35a100f5c7966815f52274dc6af81b753ae"},"41":{"data/file-caf\u00e9-\ud83d\ude00.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-isolated-?.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-parent/child.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-rw.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-rwd.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/file-rws.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/present.bin":"361595a6901387c14718e6b6cc57183f07ed5c6440273d5adddeb76f70eea7a7","data/string-caf\u00e9-\ud83d\ude00.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-isolated-?.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-parent/child.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-rw.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-rwd.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f","data/string-rws.bin":"2166d1fff52759411c9edaae27190d848773de833429185564970ec87e98b79f"},"97":{"data/file-caf\u00e9-\ud83d\ude00.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-isolated-?.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-parent/child.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-rw.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-rwd.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/file-rws.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/present.bin":"361595a6901387c14718e6b6cc57183f07ed5c6440273d5adddeb76f70eea7a7","data/string-caf\u00e9-\ud83d\ude00.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-isolated-?.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-parent/child.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-rw.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-rwd.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe","data/string-rws.bin":"2d28501a66adef190c7f5b220994e76d5cc30f1eb165a8ca6cab56dfd57092fe"}}`

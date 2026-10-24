@@ -1,0 +1,37 @@
+{
+  "accepted": false,
+  "all_source_paths_compared_without_filters": true,
+  "base_git_commit": "6586fdea6a69384390021bc99f628d33082407e9",
+  "base_manifest_sha256": "ea70963a866cd310e10a60007234bd38ee26740167fcace5bdcb589077185adc",
+  "blockers": [
+    "Strict lane3 actual diagnostic FAILED300; actual identifier prefix c171a30e.",
+    "Full merged qualification and original target acceptance remain pending."
+  ],
+  "changed_postimage_bytes": 608274,
+  "delta_counts": {
+    "added": 5,
+    "deleted": 0,
+    "modified": 5
+  },
+  "external_reference_hashes": {
+    "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-netty-metadata-bounds-kind214-union-diagnostic-v1/DELIVERY.json": "1e903ef45bdbabf75309d5b2121c6b34c9b2b37a8e7507e6918ffff1a7f4e91c",
+    "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-netty-metadata-bounds-kind214-union-diagnostic-v1/PLAN.json": "7ac0e2d530a20055a41eb2de275cc60e9b92533002eddea7dcf49f693ef8adf5",
+    "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-netty-metadata-bounds-kind214-union-diagnostic-v1/READY-SOURCE-ONLY.json": "0cdae6cb9aec8e506d457329a076775d7741938ca7310995a5a4e4f9c98c727d"
+  },
+  "forward_patch_sha256": "be2341209eb5653c8709312b2769611d300aa9eeeb180883f5824893006da198",
+  "id": "union-metadata-bounds-kind",
+  "inverse_patch_sha256": "29ea5b4a9275e0839d6b3facf5fc4fbd6b83d45cced33d550aa8bfde52e1cac2",
+  "owner": "sol61_metadata_owner_resume / sol61_legacy_owner_resume",
+  "postimage_storage": "content-addressed .blob; explicit logical path mapping in DELTA.json",
+  "reviews": [
+    "metadata42 handoff 9053a3e52b038ac240a91a1dde7192360f4827e7c41239e1ff4bb9607c509a82"
+  ],
+  "source_manifest_sha256": "c54e8a5cab4b65b90741419e1ada47f4630cc44ae559e276e875bbe6c590e444",
+  "source_members": 4530,
+  "source_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-netty-metadata-bounds-kind214-union-diagnostic-v1/source",
+  "source_postimages_unchanged_from_checkpoint_bundle_v1": true,
+  "status": "UNACCEPTED_STRICT3_FAILED_300",
+  "status_basis": "Current coordinator report for checkpoint-bundle v2; no execution outputs interpreted by packager.",
+  "unapplied": true,
+  "v1_handoff_status": "UNACCEPTED_STRICT3_DIAGNOSTIC_RUNNING_AT_COORDINATOR_HANDOFF"
+}
