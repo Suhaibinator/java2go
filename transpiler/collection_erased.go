@@ -127,7 +127,7 @@ func registerRawListIntrinsics() {
 					return nil
 				}
 				args := intrinsicArgs(invocation.ChildByFieldName("object"), operation.java, source, ctx)
-				if rawListReceiver(invocation, ctx, source) {
+				if rawListReceiver(invocation, ctx, source) || operation.java == "add" {
 					return stdjavaCall(ctx, operation.erased, append([]ast.Expr{intrinsicExecutionExpr(ctx), recv}, args...)...)
 				}
 				method := operation.typed

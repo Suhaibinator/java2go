@@ -139,23 +139,16 @@ func ParseSymbols(root *sitter.Node, source []byte) *FileScope {
 		case "package_declaration":
 			filePackage = node.NamedChild(0).Content(source)
 		case "import_declaration":
-			// The table binds individual imported names. On-demand imports do
-			// not import their owner as a type (Math.* does not import Math).
-			// Their declarations remain in the AST for on-demand resolution.
-			// Static members have separate type and value namespaces; resolve them
-			// from their retained declarations once their owner symbols are known.
-			wildcard, static := false, false
-			for index := 0; index < int(node.ChildCount()); index++ {
-				wildcard = wildcard || node.Child(index).Content(source) == "*"
-				static = static || node.Child(index).Type() == "static"
+			declaration, ok := nodeutil.ReadJavaImportSyntax(node, source)
+			if !ok {
+				panic("unsupported Java import declaration: incomplete or invalid syntax")
 			}
-			if wildcard || static {
+			// Only single type imports enter this table. Valid static and
+			// on-demand declarations retain their existing separate namespaces.
+			if declaration.Kind != nodeutil.JavaImportSingleType {
 				continue
 			}
-			importedItem := node.NamedChild(0).ChildByFieldName("name").Content(source)
-			importPath := node.NamedChild(0).ChildByFieldName("scope").Content(source)
-
-			imports[importedItem] = importPath
+			imports[declaration.Name] = declaration.Scope
 		case "class_declaration", "interface_declaration", "enum_declaration", "annotation_type_declaration", "record_declaration":
 			topLevelNodes = append(topLevelNodes, node)
 		}

@@ -700,7 +700,7 @@ func sourceHierarchyUsesMostDerived(scope *symbol.ClassScope, ctx Ctx) bool {
 	if scope == nil || scope.IsInterface || scope.IsEnum {
 		return false
 	}
-	return threadSourceRoot(scope, ctx) != nil || fileChannelSourceRoot(scope, ctx) != nil || resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx) || len(sourceNativeFunctionalContracts(scope, ctx)) != 0
+	return sourceArrayListRoot(scope, ctx) != nil || threadSourceRoot(scope, ctx) != nil || fileChannelSourceRoot(scope, ctx) != nil || resolveSuperclassScopeInDeclaringContext(ctx, scope) != nil || classHasKnownSubclass(scope, ctx) || len(sourceNativeFunctionalContracts(scope, ctx)) != 0
 }
 
 func classNeedsReferenceObjectInfo(scope *symbol.ClassScope, ctx Ctx) bool {
@@ -753,6 +753,8 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(parent), ctx))
 	} else if threadSourceDirectRoot(scope, ctx) {
 		args = append(args, stdjavaQualifiedExpr("ThreadTypeID", ctx))
+	} else if sourceArrayListDirectRoot(scope, ctx) {
+		args = append(args, javaTypeIDLiteral("java.util.ArrayList", ctx))
 	} else if fileChannelSourceDirectRoot(scope, ctx) {
 		args = append(args, stdjavaQualifiedExpr("JavaNIOFileChannelType", ctx))
 	} else if isExceptionJavaType(classScopeCtx(scope, ctx), scope.Superclass) {
@@ -928,6 +930,12 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 			appendCase(javaClassBinaryName(interfaceScope), receiverExpr)
 		}
 	}
+	if sourceArrayListRoot(scope, ctx) != nil {
+		appendCase("java.util.ArrayList", sourceArrayListNativeViewExpr(scope, receiverExpr, ctx))
+		appendCase("java.util.List", sourceArrayListNativeViewExpr(scope, receiverExpr, ctx))
+		appendCase("java.util.Collection", receiverExpr)
+		appendCase("java.lang.Iterable", receiverExpr)
+	}
 	if threadSourceRoot(scope, ctx) != nil {
 		appendCase("java.lang.Thread", threadSourceNativeViewExpr(scope, receiverExpr, ctx))
 		appendCase("java.lang.Runnable", threadSourceNativeViewExpr(scope, receiverExpr, ctx))
@@ -957,6 +965,9 @@ func sourceClassReferenceIdentityDecls(scope *symbol.ClassScope, ctx Ctx) []ast.
 		}}},
 	}
 	declarations := []ast.Decl{dynamicType, viewMethod}
+	if forwarder := sourceArrayListObjectInfoDecl(scope, receiver, receiverName, ctx); forwarder != nil {
+		declarations = append(declarations, forwarder)
+	}
 	if forwarder := threadSourceObjectInfoForwarder(scope, receiver, receiverName, ctx); forwarder != nil {
 		declarations = append(declarations, forwarder)
 	}

@@ -300,6 +300,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 
 		return lambdaFunc
 	case "method_reference":
+		if lowered, known := lowerSourceArrayListConstructorReference(node, source, ctx); known {
+			return lowered
+		}
 		if lowered, ok := lowerBuiltinMethodReference(node, source, ctx); ok {
 			return lowered
 		}
@@ -494,6 +497,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			Elts: items,
 		}
 	case "method_invocation":
+		if lowered := sourceArrayListSuperInvocation(node, source, ctx); lowered != nil {
+			return lowered
+		}
 		if lowered := threadSourceInvocation(node, source, ctx); lowered != nil {
 			return lowered
 		}
@@ -822,7 +828,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if helpfulSourceInvocationStagingPlan(node, objectNode, instanceResolution, ctx, source) != nil {
 				build := func(receiver ast.Expr, stagedArgs []ast.Expr) ast.Expr {
 					return markDirectVarargsExpansion(&ast.CallExpr{
-						Fun: &ast.SelectorExpr{X: receiver, Sel: methodIdent},
+						Fun:  &ast.SelectorExpr{X: receiver, Sel: methodIdent},
 						Args: prependExecutionMethodArgument(ctx, instanceResolution.def, stagedArgs),
 					}, expandVarargsArray)
 				}
@@ -1595,6 +1601,7 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 				(resolveClassScopeByQualifiedName(ctx, rightBase) == nil && isBuiltinExceptionType(rightBase))
 			sourceHierarchyReference = sourceHierarchyReference || fileChannelSourceEquality(leftNode, rightNode, ctx, source)
 			sourceHierarchyReference = sourceHierarchyReference || threadSourceEquality(leftNode, rightNode, ctx, source)
+			sourceHierarchyReference = sourceHierarchyReference || sourceArrayListNativeEquality(leftNode, rightNode, ctx, source)
 			if (leftWrapper || rightWrapper || erasedReference || sourceHierarchyReference || genericFamilySourceBoundIdentityOperand(leftNode, ctx, source) || genericFamilySourceBoundIdentityOperand(rightNode, ctx, source)) && !leftPrimitive && !rightPrimitive {
 				comparison := ast.Expr(stdjavaCall(ctx, "JavaReferenceEqual", leftExpr, rightExpr))
 				if operator == "!=" {
@@ -5776,6 +5783,12 @@ func typedJavaTypeParameterNull(node *sitter.Node, javaType string, ctx Ctx) (as
 }
 
 func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expectedType string, ctx Ctx, source []byte) ast.Expr {
+	if converted, known := deferredToCollectionBoundary(argExpr, argNode, expectedType, ctx, source); known {
+		return converted
+	}
+	if converted, known := sourceArrayListNativeBoundaryConversion(argExpr, argNode, expectedType, ctx, source); known {
+		return converted
+	}
 	expectedType = strings.TrimSpace(expectedType)
 	if expectedType == "" || argNode == nil {
 		return argExpr
@@ -7137,6 +7150,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	info.lexicalOwner = anonymousLexicalOwnerAttach(info, node, objectType, classBody, source, ctx)
 	if hasKey {
 		ctx.anonymousClasses[key] = info
+		registerLateSourceAnonymous(info, key, ctx)
 	}
 
 	// Build the struct fields: the supertype, declared fields, then captured
@@ -8567,6 +8581,8 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 	methodCtx.localScope = methodScope
 	methodCtx.currentClass = syntheticScope
 	methodCtx.className = structName
+	leaveLateSourceMethod := enterLateSourceMethod(methodCtx)
+	defer leaveLateSourceMethod()
 	if methodScope.IsStatic && hoistedLocalClassScope(syntheticScope, ctx) {
 		methodCtx.tryReturnTarget = nil
 		methodCtx.tryControlBoundary = nil
@@ -8934,6 +8950,7 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		hiddenTypeArguments:        append([]string(nil), typeParameterPlan.hiddenArguments...),
 		fieldInitializerMethodName: fieldInitializerMethod,
 	}
+	registerLateSourceLocal(ctx.localClasses[javaName], javaName, ctx)
 	allocateLocalStaticFieldNames(syntheticScope, ctx)
 	for _, declaration := range localStaticFieldDecls(classBody, source, syntheticScope, ctx) {
 		ctx.addHoistedDecl(declaration)
@@ -10232,6 +10249,12 @@ func goIndexExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 // behavior for pointer-wrapping reference types, but operates on strings to support
 // type inference paths.
 func javaTypeStringToGoTypeExpr(typeStr string, typeParams []string, ctx Ctx) ast.Expr {
+	if ctx.sourceNativeVirtualBody != nil {
+		if ctx.sourceNativeVirtualBody.scalar(typeStr, ctx) {
+			return ast.NewIdent("any")
+		}
+		ctx.sourceNativeVirtualBody = nil
+	}
 	if ctx.genericInterfaceMethodBody != nil {
 		if ctx.genericInterfaceMethodBody.scalar(typeStr, ctx) {
 			return &ast.Ident{Name: "any"}
@@ -11316,6 +11339,9 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 		if name := node.ChildByFieldName("name"); name != nil && builtinThrowableTextSelected(node.ChildByFieldName("object"), name.Content(source), ctx, source) {
 			return "String", true
 		}
+		if resultType, known := explicitStreamFactoryResultType(node, ctx, source, origins...); known {
+			return resultType, true
+		}
 		if resultType, ok := inferIntrinsicMethodResultType(node, ctx, source); ok {
 			recordIntrinsicPrimitiveResultOrigin(origins, resultType)
 			return resultType, true
@@ -11436,6 +11462,10 @@ func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*in
 						switch methodName {
 						case "collect":
 							if len(recvArgs) == 1 && invocationArgumentCount(node) == 1 {
+								if origin, result, known := deferredToCollectionResultOrigin(invocationArgumentNode(node, 0), ctx, source); known {
+									setInferredJavaTypeOrigin(origins, origin)
+									return result, true
+								}
 								return inferCollectorJavaType(invocationArgumentNode(node, 0), recvArgs[0], ctx, source)
 							}
 						case "toList":

@@ -159,6 +159,12 @@ func directOwnerOrdinaryMethodInterfaceErasure(
 	definition *symbol.Definition,
 	ctx Ctx,
 ) (string, bool) {
+	if erased, ok := sourceArrayListScalarGetErasure(owner, definition, ctx); ok {
+		return erased, true
+	}
+	if erased, ok := sourceNativeVirtualResultErasure(owner, definition, ctx); ok {
+		return erased, true
+	}
 	if canonicalGenericFamily(owner, ctx) != nil {
 		return directOwnerInterfaceErasure(owner, definition, ctx)
 	}
@@ -208,6 +214,9 @@ func directOwnerMethodParameterInterfaceErasure(
 	index int,
 	ctx Ctx,
 ) (string, bool) {
+	if erased, ok := sourceNativeVirtualParameterErasure(owner, method, index, ctx); ok {
+		return erased, true
+	}
 	if method == nil || index < 0 || index >= len(method.Parameters) ||
 		executionParameterIsVariadic(method, index) || !directOwnerCallableMethodEligible(owner, method, ctx) {
 		return "", false
@@ -216,6 +225,9 @@ func directOwnerMethodParameterInterfaceErasure(
 }
 
 func directOwnerMethodHasErasedParameterABI(owner *symbol.ClassScope, method *symbol.Definition, ctx Ctx) bool {
+	if sourceNativeVirtualHasParameterABI(owner, method, ctx) {
+		return true
+	}
 	if !directOwnerCallableMethodEligible(owner, method, ctx) {
 		return false
 	}
@@ -231,6 +243,12 @@ func directOwnerMethodHasErasedParameterABI(owner *symbol.ClassScope, method *sy
 }
 
 func directOwnerMethodHasErasedCallableABI(owner *symbol.ClassScope, method *symbol.Definition, ctx Ctx) bool {
+	if _, ok := sourceNativeVirtualResultErasure(owner, method, ctx); ok {
+		return true
+	}
+	if sourceNativeVirtualHasParameterABI(owner, method, ctx) {
+		return true
+	}
 	if !directOwnerCallableMethodEligible(owner, method, ctx) {
 		return false
 	}

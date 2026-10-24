@@ -401,6 +401,9 @@ func listRemoveUsesIndex(invocation *sitter.Node, ctx Ctx, source []byte) bool {
 }
 
 func intrinsicFactoryElementJavaType(invocation *sitter.Node, ctx Ctx, source []byte) string {
+	if _, written, known := explicitStreamFactoryElement(invocation, ctx, source); known {
+		return written
+	}
 	_, arguments := parseJavaTypeString(ctx.expectedType)
 	if len(arguments) == 1 && expectedTypeTargetsExpression(ctx, invocation) {
 		return arguments[0]

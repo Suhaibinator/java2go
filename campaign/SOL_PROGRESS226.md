@@ -1,0 +1,11 @@
+# Sol checkpoint 226: source collections and structural import ownership
+
+This milestone integrates source-defined ArrayList and collection-factory support with the qualified late-source ownership changes. Erased native views, constructor references, equality and collector selection retain source ownership, written element types, caller execution flow and refusal guards. The shared import reader also preserves canonical single-type imports containing ordinary named comments, including `import /* actual declaration */ java.util.stream.Collectors;`, while retaining static, wildcard, malformed and conflicting-import boundaries.
+
+The packet applies 51 bounded regions across 17 existing code paths and adds 45 files against public225. Published SAM, Foo, import-isolation, reflection and campaign-runner fixes remain intact. The unchanged original commented-import assertion passes in normal and race modes.
+
+Current225 source `d817c379…` passed the composed 18-criterion integration: 173 parents and 764 subcases in each mode under their original output contracts. Eight same-source stage identities were retained and ten unstarted stages ran fresh. The reflection decoder permits only complete sibling permutations of five source-map cases and binds the unchanged static log payload to its actual current225 line164. Independent actual review is `c3e60ad8e4e02fe775f15d67495ae3f4f30c2a8ec253c7cc88271e2f29e02740`.
+
+Pinned golangci-lint2.15 passed all candidate packages with exact `0 issues.\n`, empty stderr and exit0. Full stdjava regression passed all 923 parents and 2,836 subcases per mode, without a test filter or skips. Its two intentional existing test diagnostics are checked exactly; they are not zero-stderr results. The initial blanket-zero decoder refusal and its completion-label erratum remain recorded. All owned stages were reaped and closed.
+
+Private A4 original121 and frozen current221 late-source268 remain separate historical qualifications. This local Darwin Go1.27.3/OracleJDK21 evidence does not establish full Netty/Gson application, whole hosted CI, performance or campaign round-boundary success. Root publication and observation of the new published-head CI remain required.

@@ -28963,5 +28963,75 @@
       "Round-boundary accumulatedregressions andRootintegration/publicdecision remainrequired. No application acceptance orperformance gain is inferred; unrelatedcandidate/frame5 code is excluded."
     ],
     "CI221": "PENDING_ROOT_COMMIT_PUSH_AND_NEW_PUBLISHED_HEAD_CI_OBSERVATION"
+  },
+  "sol_progress226": {
+    "status": "QUALIFIED_A4_COLLECTION_LATE_SOURCE_IMPORT_INTEGRATION_PENDING_ROOT_PUBLICATION",
+    "production_change": true,
+    "publication_parent": "1e96ff01353c31cbfdce0be9c991cfb483e1c9f5",
+    "scope": "62 reviewed code paths:51 regional edits across17 existing paths and45 new files; append-only campaign-state entry andone progress document. All other public225 bytes preserved.",
+    "behavior": [
+      "Source-defined ArrayList declaration, erased native views, equality, collection factories and constructor references retain source ownership, written element types, caller execution flow and refusal guards.",
+      "Integrates the qualified late-source ownership/import-reader regions. Canonical single-type imports remain authoritative when ordinary named comments appear among declaration children; static, wildcard, malformed and conflicting declarations retain their separate guards."
+    ],
+    "current225_native_verification": {
+      "source_manifest_sha256": "d817c379ce4c6797ee1d3d54b5768f78ce8d28e2a79d3dee3f9925c54a3b8697",
+      "source_members": 4601,
+      "compiler_registry_count": 2570,
+      "criteria": 18,
+      "coverage": "Eight same-source stages retained with exact process/binary/raw identities; ten previously unstarted stages executed fresh. Normal reflection raw revalidated only for source-map sibling order and exactcurrent225 logcallsite164.",
+      "parents_each_mode": 173,
+      "subcases_each_mode": 764,
+      "modes": [
+        "normal",
+        "race"
+      ],
+      "independent_actual_review_sha256": "c3e60ad8e4e02fe775f15d67495ae3f4f30c2a8ec253c7cc88271e2f29e02740",
+      "output_contracts": "Compiler integration output contracts validated; fullruntime intentionally emits the two exact pre-existing test diagnostics described below."
+    },
+    "all_package_lint": {
+      "version": "golangci-lint2.15.0",
+      "exit": 0,
+      "stdout": "0 issues.\n",
+      "stderr": "",
+      "timeout_seconds": 300,
+      "CPU": 2,
+      "Go_p": 1,
+      "GOMEMLIMIT": "1GiB",
+      "offline": true,
+      "owner_handoff_sha256": "c3d9e88cadc8abd70486e33f9e02f6f55fce7e6d886417b48c6f05a220632278"
+    },
+    "full_runtime_regression": {
+      "package": "stdjava",
+      "parents_each_mode": 923,
+      "subcases_each_mode": 2836,
+      "modes": [
+        "normal",
+        "race"
+      ],
+      "source_derived_full_registry_no_filter_or_skips": true,
+      "all3759_RUN_PASS_nodes_equal_between_modes": true,
+      "native_stderr": "Exactly two intentional pre-existing test diagnostics: conflicting CollidingName parents and executor worker replacement. Exact multiplicity, no unknown lines; build stderr empty.",
+      "normal_reuse": "Normal build/native raw0 retained after Root accepted source-owned diagnostic proof; only unstarted race build/native executed next.",
+      "race_owner_handoff_sha256": "e1aad3834ce90d033ec9cb913bb95ce7d33a3398987da4a2b21cc0ce517e86d4",
+      "stderr_source_proof_sha256": "85f16c7d568dcb29d30b7bb79a0861d8de94e0fc3a6ed5841e86972d76a05fe6",
+      "completion_label_erratum_sha256": "565d625a1b9d84f99d901fc6ef61b0d56dd1965628486c474902dd1a3e8ac830"
+    },
+    "historical_qualification": {
+      "A4_original121": "Private source7c9620ae completed45 JVM and45 raceGo whole-observation cases, with mandatory native/profiles; independent34d4d694. Historical source, not a new current225full121 run.",
+      "late_source_joint268": "Frozen current221 source54c15dd0 passed268 criteria; independent29a6a5e1. Historical scope retained, not a current225full268 rerun."
+    },
+    "preservation": [
+      "Canonical225 reflection production/test fix and tagged-switch lint leaf exact.",
+      "Published SAM/Foo/import-isolation/campaign-runner fixes and all canonical exterior bytes preserved.",
+      "Original Java/oracles/native assertions, SAM1GiB and all other cohort caps retained; no managed user files or Git changes by preparer."
+    ],
+    "frontier": [
+      "Compiler integration milestone only; no full Netty/Gson application, whole hosted CI, performance gain or campaign round-boundary success is claimed.",
+      "Local Darwin Go1.27.3/OracleJDK21 differs from hosted Linux/Go1.27.0. New published-head CI remains unobserved.",
+      "CI102 original helpers retain original nested arguments and assertions; successful hidden child streams, complete hidden child PID census and new JVM heap caps are not claimed.",
+      "Closed process certificates state absence at certification UTC; no forever-absent historical numeric PID claim or reprobe.",
+      "Actual tool provenance is owner-transcribed elevated launch/terminal receipts and durable controller waits, with no independent tool-service attestation."
+    ],
+    "CI226": "PENDING_ROOT_COMMIT_PUSH_AND_NEW_PUBLISHED_HEAD_CI_OBSERVATION"
   }
 }

@@ -160,6 +160,9 @@ func currentErasedCallableOwnerTypeParameter(javaType string, ctx Ctx) bool {
 }
 
 func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (string, bool) {
+	if ctx.sourceNativeVirtualBody.scalar(javaType, ctx) {
+		return "java.lang.Object", true
+	}
 	physical := genericFamilyPhysicalJavaType(javaType, ctx)
 	if physical != javaType {
 		return physical, true
@@ -291,6 +294,9 @@ func directOwnerMethodResultView(
 	target, resolution := resolvedInstanceInvocation(node, ctx, source)
 	if target == nil || resolution == nil || resolution.owner == nil || resolution.def == nil {
 		return "", "", false
+	}
+	if view, erasure, scalar := sourceArrayListScalarResultView(target, resolution, ctx); scalar {
+		return view, erasure, true
 	}
 	erasure, ok := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx)
 	if !ok {

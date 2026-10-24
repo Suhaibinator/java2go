@@ -32,6 +32,9 @@ func canonicalAbstractCollectionOwner(javaType string, ctx Ctx) string {
 }
 
 func builtinCollectionIterationElementType(javaType, target string, ctx Ctx) (string, bool) {
+	if element, ok := sourceArrayListIterationElementType(javaType, target, ctx); ok {
+		return element, true
+	}
 	owner := canonicalAbstractCollectionOwner(javaType, ctx)
 	if owner == "" || owner == "java.util.AbstractMap" {
 		return "", false
@@ -113,7 +116,7 @@ func prepareAbstractCollectionDefaults() {
 // Anonymous scopes are created after the global platform-symbol preparation.
 // Reuse the exact inherited method declarations in their lexical context.
 func prepareAbstractCollectionDefaultsForScope(scope *symbol.ClassScope, ctx Ctx) {
-	for _, spec := range directAbstractCollectionDefaults(scope, ctx) {
+	for _, spec := range append(append([]abstractCollectionDefault(nil), directAbstractCollectionDefaults(scope, ctx)...), sourceArrayListDefaults(scope, ctx)...) {
 		exists := false
 		for _, method := range scope.Methods {
 			if method.OriginalName != spec.java || method.IsStatic || len(method.Parameters) != len(spec.parameters) {
@@ -176,7 +179,7 @@ func abstractCollectionDynamicReference(ctx Ctx, receiverName string) ast.Expr {
 }
 
 func generateAbstractCollectionDefaultDecls(ctx Ctx) []ast.Decl {
-	var declarations []ast.Decl
+	declarations := sourceArrayListDefaultDecls(ctx)
 	for _, method := range ctx.currentClass.Methods {
 		if !method.RuntimeDefault {
 			continue
@@ -252,13 +255,13 @@ func sourceHasCollectionContract(scope *symbol.ClassScope, ctx Ctx, seen map[*sy
 
 func generateAbstractCollectionBridgeDecls(ctx Ctx) []ast.Decl {
 	scope := ctx.currentClass
-	if scope == nil || scope.IsInterface || !sourceHasCollectionContract(scope, ctx, map[*symbol.ClassScope]bool{}) {
+	if scope == nil || scope.IsInterface || (!sourceHasCollectionContract(scope, ctx, map[*symbol.ClassScope]bool{}) && sourceArrayListRoot(scope, ctx) == nil) {
 		return nil
 	}
 	if _, ok := sourceIterationContract(scope, "java.lang.Iterable", ctx); !ok {
 		return nil
 	}
-	var declarations []ast.Decl
+	declarations := sourceArrayListBridgeDecls(ctx)
 	for _, contract := range []struct {
 		java, bridge string
 		parameters   []string
@@ -316,7 +319,7 @@ func abstractCollectionSuperclassConstant(javaType string, ctx Ctx) string {
 
 func abstractCollectionProtocolReservedSelector(name string) bool {
 	switch name {
-	case "CollectionSizeJava2goExecution", "CollectionIsEmptyJava2goExecution", "CollectionContainsJava2goExecution", "CollectionRemoveJava2goExecution", "CollectionClearJava2goExecution", "CollectionContainsAllJava2goExecution":
+	case "CollectionAddJava2goExecution", "CollectionSizeJava2goExecution", "CollectionIsEmptyJava2goExecution", "CollectionContainsJava2goExecution", "CollectionRemoveJava2goExecution", "CollectionClearJava2goExecution", "CollectionContainsAllJava2goExecution":
 		return true
 	}
 	return false

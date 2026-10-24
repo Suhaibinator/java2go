@@ -1038,19 +1038,14 @@ func anonymousFunctionalNamespace(file *symbol.FileScope) bool {
 			}
 			pkg = n.NamedChild(0).Content(file.Source)
 		case "import_declaration":
-			wildcard, static := false, false
-			for i := 0; i < int(n.ChildCount()); i++ {
-				wildcard = wildcard || n.Child(i).Content(file.Source) == "*"
-				static = static || n.Child(i).Type() == "static"
-			}
-			if wildcard || static {
-				continue
-			}
-			target := n.NamedChild(0)
-			if target == nil || target.ChildByFieldName("name") == nil || target.ChildByFieldName("scope") == nil {
+			declaration, known := nodeutil.ReadJavaImportSyntax(n, file.Source)
+			if !known {
 				return false
 			}
-			name, path := target.ChildByFieldName("name").Content(file.Source), target.ChildByFieldName("scope").Content(file.Source)
+			if declaration.Kind != nodeutil.JavaImportSingleType {
+				continue
+			}
+			name, path := declaration.Name, declaration.Scope
 			if old, ok := imports[name]; ok && old != path {
 				return false
 			}

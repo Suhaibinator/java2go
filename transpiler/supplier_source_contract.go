@@ -27,7 +27,7 @@ func supplierSourceDeclarationCtx(owner *symbol.ClassScope, ctx Ctx) (Ctx, bool)
 	}
 	file := findFileScopeForClassScope(owner, ctx)
 	node := owner.Class.DeclarationNode
-	if file == nil || file.ParsedRoot() == nil || !receiverNodeWithin(node, file.ParsedRoot()) || node.EndByte() > uint32(len(file.Source)) {
+	if file == nil || file.ParsedRoot() == nil || !threadSourceNodeWithin(node, file.ParsedRoot()) || node.EndByte() > uint32(len(file.Source)) {
 		return Ctx{}, false
 	}
 	name := node.ChildByFieldName("name")
@@ -256,7 +256,7 @@ func supplierSourceSelectedMethodOwned(scope, owner *symbol.ClassScope, method *
 		return false
 	}
 	ownerBindings, reachable := bindings[owner]
-	if !reachable || !receiverNodeWithin(method.DeclarationNode, owner.Class.DeclarationNode) || !receiverNodeWithin(method.DeclarationNode, declaring.currentFile.ParsedRoot()) {
+	if !reachable || !threadSourceNodeWithin(method.DeclarationNode, owner.Class.DeclarationNode) || !threadSourceNodeWithin(method.DeclarationNode, declaring.currentFile.ParsedRoot()) {
 		return false
 	}
 	registered := false
@@ -270,7 +270,7 @@ func supplierSourceSelectedMethodOwned(scope, owner *symbol.ClassScope, method *
 	}
 	actual := substituteJavaTypeOrigin(declaredJavaTypeOrigin(definitionDeclaredJavaType(method), declaring), ownerBindings)
 	root, _ := supplierSourceDeclarationCtx(scope, ctx)
-	expected := declaredJavaTypeOrigin(symbol.JavaType{Original: c.result, TypeParameterBindings: symbol.VisibleTypeParamBindings(scope.TypeParameters)}, root)
+	expected := sourceNativeFunctionalResultOrigin(scope, c.result, root)
 	if actual.externalName == "" && actual.nominalScope == nil && actual.parameter == nil && actual.arrayRank == 0 {
 		return false
 	}

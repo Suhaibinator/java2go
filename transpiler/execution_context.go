@@ -59,6 +59,9 @@ func executionImplementationName(def *symbol.Definition, owner *symbol.ClassScop
 	if def == nil {
 		return ""
 	}
+	if name := sourceCollectionAddImplementationName(def, owner); name != "" {
+		return name
+	}
 	if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(owner, def, classScopeCtx(owner, ctx)); bridged {
 		return directOwnerOverrideBridgeExactExecutionName(selection.bridge)
 	}
@@ -144,6 +147,9 @@ func prependExecutionArgument(ctx Ctx, args []ast.Expr) []ast.Expr {
 }
 
 func prependExecutionMethodArgument(ctx Ctx, def *symbol.Definition, args []ast.Expr) []ast.Expr {
+	if executionExpr(ctx) == nil && (sourceNativeVirtualBodyForActualDefinition(def, ctx) != nil || sourceArrayListScalarGetExecution(def, nil, ctx)) {
+		return append([]ast.Expr{newExecutionExpr(ctx)}, args...)
+	}
 	if def == nil || (def.DeclarationNode == nil && !def.RuntimeDefault) {
 		return args
 	}
@@ -151,6 +157,12 @@ func prependExecutionMethodArgument(ctx Ctx, def *symbol.Definition, args []ast.
 }
 
 func executionMethodCallName(def *symbol.Definition, owner *symbol.ClassScope, ctx Ctx) string {
+	if sourceArrayListScalarGetExecution(def, owner, ctx) {
+		return executionImplementationName(def, owner, ctx)
+	}
+	if plan := sourceNativeVirtualBodyForMethod(owner, def, ctx); plan != nil {
+		return executionImplementationName(def, owner, ctx)
+	}
 	if def == nil {
 		return ""
 	}

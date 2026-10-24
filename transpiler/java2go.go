@@ -298,6 +298,15 @@ func convertFileNode(file parsing.SourceFile, ctx Ctx) (node ast.Node, err error
 		}
 	}()
 
+	frame := newLateSourceOwnershipFrame(file, ctx)
+	previousLateSourceOwnership := activeLateSourceOwnership
+	activeLateSourceOwnership = frame
+	ctx.lateSourceOwnership = frame
+	defer func() {
+		frame.close()
+		activeLateSourceOwnership = previousLateSourceOwnership
+	}()
+
 	unit, err := classifyCompilationUnit(file)
 	if err != nil {
 		return nil, err

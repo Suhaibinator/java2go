@@ -53,5 +53,11 @@ func jdk21NominalQualified(owner string) (jdk21NominalDeclaration, jdk21NominalP
 
 func jdk21NominalDeclaringUseOwned(ctx Ctx, first string) bool {
 	binder := visibleTypeParameterDeclarationForJavaType(first, ctx)
-	return (binder == nil || binder.SourceName != first) && ctx.currentFile != nil && ctx.currentClass != nil && findFileScopeForClassScope(ctx.currentClass, ctx) == ctx.currentFile
+	if binder != nil && binder.SourceName == first || ctx.currentFile == nil || ctx.currentClass == nil {
+		return false
+	}
+	if findFileScopeForClassScope(ctx.currentClass, ctx) == ctx.currentFile {
+		return true
+	}
+	return jdk21LateSourceDeclaringUseOwned(ctx)
 }

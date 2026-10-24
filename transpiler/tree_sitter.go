@@ -58,7 +58,8 @@ type Ctx struct {
 	// Structural source facts shared only within a resolved conversion batch.
 	callableSubclasses *callableSubclassSourceInventory
 	// Opt-in syntax ownership; never inferred by public render helpers.
-	syntaxInvocation *syntaxInvocation
+	syntaxInvocation    *syntaxInvocation
+	lateSourceOwnership *lateSourceOwnershipFrame
 	// Declaration-to-file facts can cross fresh lookup contexts without caller semantics.
 	sourceOwnership *resolutionFileIndex
 	// Active member-type hierarchy lookups; extended immutably per lookup.
@@ -79,6 +80,7 @@ type Ctx struct {
 	localScope *symbol.Definition
 
 	// Anonymous universal-method callbacks use their declaration-bound erased ABI.
+	sourceNativeVirtualBody    *sourceNativeVirtualBodyABI
 	erasedGenericMethodBody    *symbol.Definition
 	genericInterfaceMethodBody *genericInterfaceMethodBodyABI
 	// Declaration-proven raw Function erasure belongs only to its lambda scope.
@@ -441,6 +443,7 @@ func (c Ctx) Clone() Ctx {
 		genericFamilies:                     c.genericFamilies,
 		callableSubclasses:                  c.callableSubclasses,
 		syntaxInvocation:                    c.syntaxInvocation,
+		lateSourceOwnership:                 c.lateSourceOwnership,
 		sourceOwnership:                     c.sourceOwnership,
 		memberTypeLookupPath:                c.memberTypeLookupPath,
 		memberTypeLookupFrame:               c.memberTypeLookupFrame,
@@ -450,6 +453,7 @@ func (c Ctx) Clone() Ctx {
 		currentFile:                         c.currentFile,
 		currentClass:                        c.currentClass,
 		localScope:                          c.localScope,
+		sourceNativeVirtualBody:             c.sourceNativeVirtualBody,
 		erasedGenericMethodBody:             c.erasedGenericMethodBody,
 		genericInterfaceMethodBody:          c.genericInterfaceMethodBody,
 		rawFunctionTarget:                   c.rawFunctionTarget,

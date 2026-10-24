@@ -37,6 +37,14 @@ const downstreamGroupParameter = "__java2goGroup"
 
 // lowerCollectCall rewrites `stream.collect(Collectors.X(...))`.
 func lowerCollectCall(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	if collector := invocationArgumentNode(invocation, 0); collector != nil {
+		if plan, _ := lowerDeferredToCollectionPlan(collector, ctx, source); plan != nil {
+			if initialized, known := deferredToCollectionFactorySource(recv, invocation, ctx, source); known {
+				recv = initialized
+			}
+			return stdjavaCall(ctx, "StreamCollectPlanExecution", intrinsicExecutionExpr(ctx), recv, plan)
+		}
+	}
 	if invocationArgumentCount(invocation) != 1 {
 		return nil
 	}
@@ -52,6 +60,9 @@ func lowerCollectCall(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []
 // inferCollectorJavaType mirrors collector composition without generating its
 // callbacks. These are reference result types even for primitive accumulation.
 func inferCollectorJavaType(collector *sitter.Node, elementJavaType string, ctx Ctx, source []byte) (string, bool) {
+	if _, result, known := deferredToCollectionResultOrigin(collector, ctx, source); known {
+		return result, true
+	}
 	name, ok := collectorFactoryName(collector, source)
 	if !ok {
 		return "", false

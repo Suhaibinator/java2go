@@ -133,6 +133,10 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	case "record_declaration":
 		return parseRecordDecls(node, source, ctx)
 	case "class_declaration":
+		if sourceArrayListRefusesDeclaration(ctx.currentClass, ctx) {
+			diagnostic := reportUnsupported("ArrayList source capability", node, source, ctx)
+			return []ast.Decl{unsupportedDeclStub(diagnostic)}
+		}
 		// The declarations and fields for the class
 		declarations := []ast.Decl{}
 		fields := &ast.FieldList{}
@@ -154,6 +158,10 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 					continue
 				}
 				if skipAbstractCollectionSuperclass(t.Content(source), headerCtx) {
+					continue
+				}
+				if storage := sourceArrayListStorageField(ctx.currentClass, headerCtx); storage != nil {
+					fields.List = append(fields.List, storage)
 					continue
 				}
 				if storage := fileChannelSourceStorageField(ctx.currentClass, headerCtx); storage != nil {
@@ -2454,6 +2462,9 @@ func explicitSuperConstructorAssignment(
 	if invocation == nil || invocation.kind != explicitSuperConstructorInvocation || ctx.currentClass == nil {
 		return nil
 	}
+	if native := sourceArrayListSuperConstructor(invocation.parsedArgs, ctx.currentClass, receiverName, ctx); native != nil {
+		return native
+	}
 	if native := threadSourceSuperConstructor(invocation.parsedArgs, ctx.currentClass, receiverName, ctx); native != nil {
 		return native
 	}
@@ -2560,6 +2571,9 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 	parent := resolveSuperclassScope(ctx, scope)
 	if scope == nil {
 		return nil
+	}
+	if native := sourceArrayListSuperConstructor(nil, scope, receiverName, ctx); native != nil {
+		return native
 	}
 	if native := threadSourceSuperConstructor(nil, scope, receiverName, ctx); native != nil {
 		return native
@@ -2834,6 +2848,9 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 		body = append(body, setterCall)
 	}
 
+	if install := sourceArrayListCarrierInitStmt(scope, recvName, mostDerived, ctx); install != nil {
+		body = append(body, install)
+	}
 	if install := fileChannelSourceCarrierInitStmt(scope, recvName, mostDerived, ctx); install != nil {
 		// Dispatch and root ObjectInfo are ready before source initializers.
 		body = append(body, install)
@@ -4308,6 +4325,9 @@ func buildSourceConstructorDecls(
 		if setterCall := classSelfSetterCallStmtWithValue(ctx, receiverName, mostDerived); setterCall != nil {
 			body.List = append(body.List, setterCall)
 		}
+		if install := sourceArrayListCarrierInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); install != nil {
+			body.List = append(body.List, install)
+		}
 		if install := fileChannelSourceCarrierInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); install != nil {
 			body.List = append(body.List, install)
 		}
@@ -4433,6 +4453,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		ctx.localScope = methodDefinition[0]
+		nativeVirtualBody := sourceArrayListScalarBody(ctx.currentClass, ctx.localScope, ctx)
 		if static {
 			ctx.syntheticTypeParameters, ctx.rawGenericParameterTypes = synthesizeRawGenericFunctionParameters(ctx.localScope, ctx)
 			ctx.dependentTypeWitnesses = planConcreteDependentTypeWitnesses(ctx.localScope, source, ctx)
@@ -4540,6 +4561,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			}
 		}
 
+		ctx.sourceNativeVirtualBody = nativeVirtualBody
 		if !static {
 			fields := append([]*ast.Field{executionParameterField(executionName, ctx), {Type: &ast.StarExpr{X: receiverBaseType}}}, params.List...)
 			if results != nil {

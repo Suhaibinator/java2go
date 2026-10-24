@@ -1041,6 +1041,9 @@ func buildDirectOwnerOverrideBridgeMethodDecls(
 	executionName string,
 	ctx Ctx,
 ) ([]ast.Decl, bool) {
+	if declarations, ok := buildSourceNativeVirtualBodyDecls(declaration, sourceParams, sourceResults, executionName, ctx); ok {
+		return declarations, true
+	}
 	if declaration == nil || ctx.currentClass == nil || ctx.localScope == nil || ctx.localScope.IsStatic {
 		return nil, false
 	}
