@@ -32,6 +32,16 @@ func localClassInDeclaration(name string, ctx Ctx) *localClassInfo {
 	if ctx.localScope != nil && inside(ctx.localScope.DeclarationNode) {
 		return info
 	}
+	// A lambda keeps the declaring method's lexical types, but its synthetic
+	// local scope has no method declaration (its parameters describe the SAM).
+	// Use the actual lambda body anchor, never a retained method name, so a
+	// different executable cannot donate a hoisted local-class binding.
+	if ctx.localScope != nil && ctx.localScope.DeclarationNode == nil && ctx.localBindingBody != nil {
+		lambda := ctx.localBindingBody.Parent()
+		if lambda != nil && lambda.Type() == "lambda_expression" && inside(lambda) {
+			return info
+		}
+	}
 	if ctx.currentClass != nil && ctx.currentClass.Class != nil && inside(ctx.currentClass.Class.DeclarationNode) {
 		return info
 	}

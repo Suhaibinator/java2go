@@ -29062,5 +29062,33 @@
       "Original obsolete-layout failure and interim JavaString observer compile failure remain recorded.",
       "Generic inner construction, local-class lambda visibility, Netty performance and full Gson parity remain separate active work."
     ]
+  },
+  "sol_progress228": {
+    "status": "VERIFIED_CAPTURED_LOCAL_CLASS_VISIBILITY_REPAIR",
+    "production_change": true,
+    "publication_parent": "f49a706ac9c594fee60be4076eb9adedbf30871c",
+    "paths": [
+      "transpiler/local_class_visibility.go",
+      "transpiler/local_abstract_map_boundaries_jdk_test.go",
+      "transpiler/local_class_lambda_execution_test.go"
+    ],
+    "behavior": "A synthetic lambda scope retains the lexical local class from its exact declaring executable using its actual lambda-body ancestry. This preserves overload selection and caller execution when the lambda passes a captured local instance to a static source method.",
+    "verification": {
+      "modes": [
+        "normal",
+        "race"
+      ],
+      "parents_each_mode": 5,
+      "subcases_each_mode": 7,
+      "original_acceptance_and_pollution_fixtures_unchanged": true,
+      "qualified_source_manifest": "ee9895e681bf9b681fd187be0a4d6ec6d0686bc3fb4436ede8a110241cc2e20c",
+      "independent_source_and_actual_review_sha256": "4558d1e5528afbacdedf085fdb76eb0c561dd285b29563d8f4fb7405d5aa414f",
+      "all_package_lint": "golangci-lint2.15: exit0, 0 issues, empty stderr",
+      "lint_handoff_sha256": "f6c261029f4f114d49fe24d1c613d25df9ca38ab122ded3d9b6a34540ab30d42"
+    },
+    "limitations": [
+      "Targeted compiler repair; no full hosted CI, whole Gson/Netty application or campaign round acceptance.",
+      "Foreign executable, missing method/body and ordinary-block negative visibility controls remain refused."
+    ]
   }
 }
