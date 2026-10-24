@@ -202,11 +202,27 @@ Java's argument array and excludes the Go executable name.
 
 This is a source-only, offline milestone. It does not download Maven artifacts,
 execute Maven/Gradle, translate JAR bytecode, or implement classpath resource
-loading. Build plugins/extensions, profiles, imported BOMs, dependency exclusions,
+loading. Except for the bounded compiler-plugin metadata described below, build
+plugins/extensions, profiles, imported BOMs, dependency exclusions,
 classifiers, version mediation/ranges, resource filtering/patterns, JPMS,
 WAR packaging, and external parents without local POMs are unsupported.
 Inherited custom build paths must instead be declared in each child POM.
-Mutually dependent Java packages report the exact import cycle and must be
-reorganized before conversion. Java packages whose paths coincide with Go
+Mutually dependent Java packages are lowered into a shared Go package for
+each strongly connected component. Java packages whose paths coincide with Go
 standard-library imports are rejected to prevent ambiguous import rewriting. Other existing Java-language/runtime conversion
 limits still apply; project discovery does not add framework implementations.
+
+
+## String, Throwable and build metadata prerequisites
+
+Focused JVM regressions cover String.join's exercised array, expanded-varargs and runtime collection iteration paths. They preserve null behavior, callback order, caller execution and nominal CharSequence checks. Source inheritance and generic bounds contribute to CharSequence overload selection; source name shadows and typed nulls retain their bindings. Nested classes can resolve enclosing static fields using the declaring owner's type information without overriding nearer lexical bindings. Broader translated-source Iterable support remains incomplete.
+
+Throwable regressions cover concrete java.lang.Throwable construction, allocation identity, nullable messages, cause initialization and getCause reference projection. Canonical type names, source exception hierarchies, inherited getMessage and explicit text dispatch preserve the invoking Java execution context. The tested text-conversion cases distinguish Java's nominal Throwable and Object contracts from unrelated similarly named Go methods; a newly frozen ordinary source method named String() currently exposes a dispatch collision. Generic bounds and overloaded calls retain their declaring context across shadowed and renamed type parameters, including boxing into generic method parameters. The unchanged original Throwable workflow matches nine JVM and nine race-enabled Go observations; these checks do not establish every Throwable or reflection contract.
+
+The current StringCharAt implementation removes a temporary allocation in measured valid calls. A checked String conversion repair also eliminates measured receiver-box allocations in unchanged generated scans. These are Go allocation results; no CPU or JVM performance advantage is established. See [ADVERSARIAL_CAMPAIGN.md](ADVERSARIAL_CAMPAIGN.md) for the measured workloads and checkpoint verification status.
+
+Source ingestion recognizes a bounded Maven compiler-plugin metadata form: version 3.16.0, Java release 21, UTF-8, and absent or disabled annotation processing. Unsupported plugin configuration remains a diagnostic. This metadata validation does not implement arbitrary Maven plugin execution. Entry-point generation also handles static method/type name collisions.
+
+The runtime includes a separately tested immutable UTF16 String reference, interning and literal roots, fresh builder snapshots, and conversion adapters. Compiler String lowering still uses the existing representation. The retained String applications fail on identity, initialization, UTF16 and related behavior; passing runtime kernel tests does not constitute generated-application parity. See the frozen inputs under `campaign/reproducers/string-abi-prereq` and `campaign/reproducers/string-reference-prereq`.
+
+Full Gson remains an unaccepted source-translation challenge. The unchanged reflection-free NoMeta probe now matches nine JVM and nine race-enabled Go observations, including inherited Object text and Integer.toHexString. A stateful generic factory/cache application also matches its binary-JVM, dependency-source-JVM and race-enabled Go oracles after specialized erased adapter bridges were repaired. These tested prerequisites do not establish full Gson compatibility; source Iterable/Iterator bridges, abstract collection services, reflection and broader JDK contracts remain open.

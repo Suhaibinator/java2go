@@ -1,0 +1,3 @@
+annotation|defaultName|com.google.gson.annotations.SerializedName|canonical||empty
+annotation|identifier|com.google.gson.annotations.SerializedName|order_id|id,identifier|id
+export|canonical=order-97;order_id=order-97-id;|alias-97

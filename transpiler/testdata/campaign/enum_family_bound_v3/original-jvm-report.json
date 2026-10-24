@@ -1,0 +1,232 @@
+{
+  "status": "JVM_ORACLE_VALIDATED",
+  "fixture": "enum",
+  "pins_sha256": "ea769143a19df81fc453547ecab953595a1842afa24df5dc24ce70c73695d3ca",
+  "fixture_manifest_sha256": "c4b8f3503565ababb99c6501f13109c9db17c7f20260a1b3fba9a8adecc744ae",
+  "main_class": "probe.enums.Main",
+  "output": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch",
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "repeats": 3,
+  "oracle_runs": [
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "17"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-17-repeat-1.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-17-repeat-1.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 17,
+      "repeat": 1
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "17"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-17-repeat-2.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-17-repeat-2.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 17,
+      "repeat": 2
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "17"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-17-repeat-3.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-17-repeat-3.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 17,
+      "repeat": 3
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "41"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-41-repeat-1.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-41-repeat-1.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 41,
+      "repeat": 1
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "41"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-41-repeat-2.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-41-repeat-2.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 41,
+      "repeat": 2
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "41"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-41-repeat-3.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-41-repeat-3.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 41,
+      "repeat": 3
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "97"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-97-repeat-1.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-97-repeat-1.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 97,
+      "repeat": 1
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "97"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-97-repeat-2.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-97-repeat-2.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 97,
+      "repeat": 2
+    },
+    {
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+        "probe.enums.Main",
+        "97"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "limit_seconds": 15,
+      "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-97-repeat-3.stdout",
+      "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/seed-97-repeat-3.stderr",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 602,
+      "stderr_bytes": 0,
+      "seed": 97,
+      "repeat": 3
+    }
+  ],
+  "expected_stdout_authored": false,
+  "go_or_transpiler_invoked": false,
+  "compile": {
+    "command": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-classpath",
+      "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+      "-d",
+      "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/classes",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/api/Carrier.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/api/Factory.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/enums/Main.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/model/Choice.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/model/ChoiceCarrier.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/model/EnumCarrier.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/model/NamedFactory.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/model/Other.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/model/TextCarrier.java",
+      "/private/tmp/java2go-bound-family-controls-v2-r51pT7FM/projects/enum/src/main/java/probe/shadow/Enum.java"
+    ],
+    "exit_code": 0,
+    "timed_out": false,
+    "limit_seconds": 30,
+    "stdout": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/compile.stdout",
+    "stderr": "/private/tmp/java2go-enum-jvm-v2-cj0zmlch/compile.stderr",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_bytes": 0,
+    "stderr_bytes": 0
+  },
+  "source_unchanged": true,
+  "toolchain_unchanged": true
+}

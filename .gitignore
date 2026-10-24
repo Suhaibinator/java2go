@@ -22,3 +22,6 @@ transpiler/zz_*_test.go
 
 # Agent verification artifacts
 .e2e_v/
+
+# Adversarial campaign dependency/tool caches and run artifacts
+/.campaign/

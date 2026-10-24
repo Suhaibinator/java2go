@@ -1,0 +1,94 @@
+{
+  "args": [],
+  "captures": 9,
+  "fixture_manifest_sha256": "c07a5966fc88db3706919b8d03120138c7ff0578af0da9fe35bdd474d1dabfb1",
+  "java_source_sha256": "d63e9377c1ea517647f2957376ce24c1715e63bec0d65ca43ae3685a4b170c06",
+  "observations": [
+    {
+      "args": [],
+      "repeat": 1,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat1/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat1/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    },
+    {
+      "args": [],
+      "repeat": 2,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat2/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat2/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    },
+    {
+      "args": [],
+      "repeat": 3,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat3/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat3/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    },
+    {
+      "args": [],
+      "repeat": 4,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat4/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat4/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    },
+    {
+      "args": [],
+      "repeat": 5,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat5/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat5/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    },
+    {
+      "args": [],
+      "repeat": 6,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat6/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat6/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    },
+    {
+      "args": [],
+      "repeat": 7,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat7/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat7/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    },
+    {
+      "args": [],
+      "repeat": 8,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat8/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat8/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    },
+    {
+      "args": [],
+      "repeat": 9,
+      "rows": 36,
+      "stderr": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat9/stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "/private/tmp/java2go-date-subsecond-offset-sol-hmovnpzt/oracle-attempt1/JVM-repeat9/stdout",
+      "stdout_sha256": "cda63cbc6d1d13ec74e5874ce41dfcb8d8cfd53be78695814d09972a46b0e440"
+    }
+  ],
+  "rows_per_capture": 36,
+  "status": "ACTUAL_JDK21_SUBSECOND_36_CASES_9_CAPTURE_STABLE",
+  "stderr": "",
+  "stdout": "case=0|offset=-1001|instant=-1001|text=1969-12-31 23:59:57.998|fields=1969,11,31,23,59,57,998,-1001,0|parsed=-1001|index=23|error=7|raw=-1001|total=-1001\ncase=1|offset=-1001|instant=-1|text=1969-12-31 23:59:58.998|fields=1969,11,31,23,59,58,998,-1001,0|parsed=-1|index=23|error=7|raw=-1001|total=-1001\ncase=2|offset=-1001|instant=0|text=1969-12-31 23:59:58.999|fields=1969,11,31,23,59,58,999,-1001,0|parsed=0|index=23|error=7|raw=-1001|total=-1001\ncase=3|offset=-1001|instant=1|text=1969-12-31 23:59:59.000|fields=1969,11,31,23,59,59,0,-1001,0|parsed=1|index=23|error=7|raw=-1001|total=-1001\ncase=4|offset=-1001|instant=999|text=1969-12-31 23:59:59.998|fields=1969,11,31,23,59,59,998,-1001,0|parsed=999|index=23|error=7|raw=-1001|total=-1001\ncase=5|offset=-1001|instant=1000|text=1969-12-31 23:59:59.999|fields=1969,11,31,23,59,59,999,-1001,0|parsed=1000|index=23|error=7|raw=-1001|total=-1001\ncase=6|offset=-999|instant=-1001|text=1969-12-31 23:59:58.000|fields=1969,11,31,23,59,58,0,-999,0|parsed=-1001|index=23|error=7|raw=-999|total=-999\ncase=7|offset=-999|instant=-1|text=1969-12-31 23:59:59.000|fields=1969,11,31,23,59,59,0,-999,0|parsed=-1|index=23|error=7|raw=-999|total=-999\ncase=8|offset=-999|instant=0|text=1969-12-31 23:59:59.001|fields=1969,11,31,23,59,59,1,-999,0|parsed=0|index=23|error=7|raw=-999|total=-999\ncase=9|offset=-999|instant=1|text=1969-12-31 23:59:59.002|fields=1969,11,31,23,59,59,2,-999,0|parsed=1|index=23|error=7|raw=-999|total=-999\ncase=10|offset=-999|instant=999|text=1970-01-01 00:00:00.000|fields=1970,0,1,0,0,0,0,-999,0|parsed=999|index=23|error=7|raw=-999|total=-999\ncase=11|offset=-999|instant=1000|text=1970-01-01 00:00:00.001|fields=1970,0,1,0,0,0,1,-999,0|parsed=1000|index=23|error=7|raw=-999|total=-999\ncase=12|offset=-1|instant=-1001|text=1969-12-31 23:59:58.998|fields=1969,11,31,23,59,58,998,-1,0|parsed=-1001|index=23|error=7|raw=-1|total=-1\ncase=13|offset=-1|instant=-1|text=1969-12-31 23:59:59.998|fields=1969,11,31,23,59,59,998,-1,0|parsed=-1|index=23|error=7|raw=-1|total=-1\ncase=14|offset=-1|instant=0|text=1969-12-31 23:59:59.999|fields=1969,11,31,23,59,59,999,-1,0|parsed=0|index=23|error=7|raw=-1|total=-1\ncase=15|offset=-1|instant=1|text=1970-01-01 00:00:00.000|fields=1970,0,1,0,0,0,0,-1,0|parsed=1|index=23|error=7|raw=-1|total=-1\ncase=16|offset=-1|instant=999|text=1970-01-01 00:00:00.998|fields=1970,0,1,0,0,0,998,-1,0|parsed=999|index=23|error=7|raw=-1|total=-1\ncase=17|offset=-1|instant=1000|text=1970-01-01 00:00:00.999|fields=1970,0,1,0,0,0,999,-1,0|parsed=1000|index=23|error=7|raw=-1|total=-1\ncase=18|offset=1|instant=-1001|text=1969-12-31 23:59:59.000|fields=1969,11,31,23,59,59,0,1,0|parsed=-1001|index=23|error=7|raw=1|total=1\ncase=19|offset=1|instant=-1|text=1970-01-01 00:00:00.000|fields=1970,0,1,0,0,0,0,1,0|parsed=-1|index=23|error=7|raw=1|total=1\ncase=20|offset=1|instant=0|text=1970-01-01 00:00:00.001|fields=1970,0,1,0,0,0,1,1,0|parsed=0|index=23|error=7|raw=1|total=1\ncase=21|offset=1|instant=1|text=1970-01-01 00:00:00.002|fields=1970,0,1,0,0,0,2,1,0|parsed=1|index=23|error=7|raw=1|total=1\ncase=22|offset=1|instant=999|text=1970-01-01 00:00:01.000|fields=1970,0,1,0,0,1,0,1,0|parsed=999|index=23|error=7|raw=1|total=1\ncase=23|offset=1|instant=1000|text=1970-01-01 00:00:01.001|fields=1970,0,1,0,0,1,1,1,0|parsed=1000|index=23|error=7|raw=1|total=1\ncase=24|offset=999|instant=-1001|text=1969-12-31 23:59:59.998|fields=1969,11,31,23,59,59,998,999,0|parsed=-1001|index=23|error=7|raw=999|total=999\ncase=25|offset=999|instant=-1|text=1970-01-01 00:00:00.998|fields=1970,0,1,0,0,0,998,999,0|parsed=-1|index=23|error=7|raw=999|total=999\ncase=26|offset=999|instant=0|text=1970-01-01 00:00:00.999|fields=1970,0,1,0,0,0,999,999,0|parsed=0|index=23|error=7|raw=999|total=999\ncase=27|offset=999|instant=1|text=1970-01-01 00:00:01.000|fields=1970,0,1,0,0,1,0,999,0|parsed=1|index=23|error=7|raw=999|total=999\ncase=28|offset=999|instant=999|text=1970-01-01 00:00:01.998|fields=1970,0,1,0,0,1,998,999,0|parsed=999|index=23|error=7|raw=999|total=999\ncase=29|offset=999|instant=1000|text=1970-01-01 00:00:01.999|fields=1970,0,1,0,0,1,999,999,0|parsed=1000|index=23|error=7|raw=999|total=999\ncase=30|offset=1001|instant=-1001|text=1970-01-01 00:00:00.000|fields=1970,0,1,0,0,0,0,1001,0|parsed=-1001|index=23|error=7|raw=1001|total=1001\ncase=31|offset=1001|instant=-1|text=1970-01-01 00:00:01.000|fields=1970,0,1,0,0,1,0,1001,0|parsed=-1|index=23|error=7|raw=1001|total=1001\ncase=32|offset=1001|instant=0|text=1970-01-01 00:00:01.001|fields=1970,0,1,0,0,1,1,1001,0|parsed=0|index=23|error=7|raw=1001|total=1001\ncase=33|offset=1001|instant=1|text=1970-01-01 00:00:01.002|fields=1970,0,1,0,0,1,2,1001,0|parsed=1|index=23|error=7|raw=1001|total=1001\ncase=34|offset=1001|instant=999|text=1970-01-01 00:00:02.000|fields=1970,0,1,0,0,2,0,1001,0|parsed=999|index=23|error=7|raw=1001|total=1001\ncase=35|offset=1001|instant=1000|text=1970-01-01 00:00:02.001|fields=1970,0,1,0,0,2,1,1001,0|parsed=1000|index=23|error=7|raw=1001|total=1001\n",
+  "total_rows": 324
+}

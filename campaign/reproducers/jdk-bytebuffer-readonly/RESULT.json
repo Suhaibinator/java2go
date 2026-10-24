@@ -1,0 +1,169 @@
+{
+  "contract_status": "LEASE_A bounded value/view/mutation and existing relative-read entry repair. Full read-only JDK service acceptance remains pending. No FileChannel.write admission; original FileChannel/Netty witnesses preserved.",
+  "baseline": {
+    "commit": "da641f5c5827306fa499766529340856d0911fe5",
+    "source": "/Users/suhaib/code/java2go/.campaign/resume-20261002/root/source135"
+  },
+  "implemented": [
+    "Heap read-only flag, fresh aliasing views with independent cursor/mark and BIG_ENDIAN reset; array exposure denied.",
+    "All eight byte put signatures; scalar/index/range/buffer/absolute bulk order, overlap and state behavior.",
+    "Read-only rejection before all primitive writes/compact, canonical null RO message; char read/write UTF16 units.",
+    "Relative FileChannel.Read requires caller Execution; closed-before-null/readonly, preinterrupt closes shared descriptor and retains flag, suppresses close IOException in favor of canonical null-message CBI; read-only evenempty IAE shared interned literal.",
+    "Emitter and result metadata use same exact canonical declaration, argument conversion and arity proof; source/foreign/binder protections."
+  ],
+  "gates": {
+    "runtime_all_race": {
+      "pass_cases": 1856,
+      "skips": 0,
+      "native_timeout_seconds": 55,
+      "supervisor_seconds": 65
+    },
+    "emitter_result_guards": {
+      "pass_cases": 23,
+      "skips": 0
+    },
+    "wholeprogram_green": [
+      "values",
+      "mutable-errors",
+      "overflow-owner",
+      "binder-held",
+      "foreign-held"
+    ],
+    "each_wholeprogram": "Frozen JDK21 three identical observations plus strict translation/all-packages and entry race builds/three exact Go observations.",
+    "existing_oracles_green": [
+      "TestCampaignNIOHeapContracts",
+      "TestCampaignNIOPrimitiveContracts",
+      "TestCampaignRuntimeByteBuffer"
+    ],
+    "JDK_controls": "All nine fixture programs valid on installed JDK21 with three immutable observations (27 initial successful executions). No skipped or zero-selected gates."
+  },
+  "pending": {
+    "read": "Original complete read program remains Go build RED on legacy RAF(String,String) JavaString ABI and missing Thread.interrupt; unchanged Java/oracles retained and selected test stays visible.",
+    "read-message-identity": "JDK3 valid plus owned runtime RED\u2192GREEN; full Go program remains RAF ABI RED.",
+    "class-held": "Valid JDK3 and successful strict/native build but actual class-name observation differs: ByteBuffer generic versus HeapByteBuffer/HeapByteBufferR. JavaDynamicTypeID/init/type mapper intentionally unchanged.",
+    "read-source-held": "Valid JDK3, strict succeeds, Go build RED on FileChannel subclass/native type carriers. Source override semantics not claimed.",
+    "source_type_mapper": "Source/foreign/binder controls are GREEN at baseline and producer. No false claim of a demonstrated mapper RED; any conditional mapping change needs separate actual witness/grant.",
+    "positionalwrite": "Entire original e118 witness, partial-count, backend, active cancellation, channelmode and source subclass requirements retained as held, no write emitter/metadata registration."
+  },
+  "descriptor_scope": {
+    "added_rows": [
+      "java.nio.ReadOnlyBufferException \u2192 java.lang.UnsupportedOperationException",
+      "java.nio.channels.AsynchronousCloseException \u2192 java.nio.channels.ClosedChannelException",
+      "java.nio.channels.ClosedByInterruptException \u2192 java.nio.channels.AsynchronousCloseException",
+      "java.nio.BufferOverflowException \u2192 java.lang.RuntimeException (separate actual18case JDK3/GoRED grant)"
+    ],
+    "InvalidMarkException": "unchanged; no grant/witness"
+  },
+  "evidence": [
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/jdk-frozen-before-production/report.json",
+      "sha256": "23f33d3f9189bd1dbd740c7cc0b7613edf7395300fcf43d6d6124678cb493dfa",
+      "bytes": 8101
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/red-frozen-before-production/report.json",
+      "sha256": "52ad08bd15048a00ffff96aa9357a817e931231c4b42c21e33fcc173bf59bad5",
+      "bytes": 8341
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/jdk-mutable-errors-before-additional-production/report.json",
+      "sha256": "9ef8939c524d20c5fb5960c53c231ef6effc50394863e4fcbfb20ba842fb6312",
+      "bytes": 657
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/jdk-overflow-owner-before-row/report.json",
+      "sha256": "85b6b986432cec3c1f6ae764754938ecd8fa8482a214effc1efd9081a54088ad",
+      "bytes": 657
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/overflow-descriptor-row-grant.json",
+      "sha256": "f81933443f65d1f5305058d4b6b3594a0ab969549e9ccbfd5c84960d2d49c429",
+      "bytes": 1410
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/jdk-read-message-identity-before-fix/report.json",
+      "sha256": "35932c05c48fa492f9bfb366dbb22ac4a3f45e6e805cb223866d8809d8814589",
+      "bytes": 820
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/message-identity-red/report.json",
+      "sha256": "8bcc21870a13c3043c4d2ec34f91c6e5aac37e9f623653cdeb5bab994af0f4e6",
+      "bytes": 198
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/held-post-service/report.json",
+      "sha256": "668428b4b2378a4b538273504791e794d0f8e12e861f714408d16379bbfa7586",
+      "bytes": 3251
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/final-producer/report.json",
+      "sha256": "569b0f7e528587f3eb07667d051f1011dfbf8e15b0993d0ef79a7ec65a254d36",
+      "bytes": 420
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/final-producer/final-native-report.json",
+      "sha256": "b46d4ea4d2f0fed849f0b64802e3a1c5cf46b3fe84cf8859e974a2f81d9ab32f",
+      "bytes": 618
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/final-producer/final-oracle-report.json",
+      "sha256": "56a7d2093585c77b0d9987d5774cb55c4700b276d19b7cec1fd00bb80b4e170f",
+      "bytes": 1460
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/bytebuffer-readonly-lease-a/evidence/final-read-held/report.json",
+      "sha256": "78b765974906279a70803342db3f413a002a2d91a2f6b29804859ebc852f553e",
+      "bytes": 2386
+    }
+  ],
+  "source_proposals": [
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-positional-proposal.json",
+      "sha256": "e118c64ca91a4b79393dcec4fcb6abe2281c5e5928e311f91c2d2d38eb97efd7",
+      "bytes": 22091
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-positional-prerequisites-v2.json",
+      "sha256": "688041564ae47755fb51cca1f1e85b7b2401671be0f30292f591cb91bb60e684",
+      "bytes": 53616
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-positional-prerequisites-v2-preservation.json",
+      "sha256": "9b1482cf4475152a318861f766f26310761e9adfa29e29ef480c18dd4be5e712",
+      "bytes": 6385
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/file-channel-v2-descriptor-pin-erratum.json",
+      "sha256": "e8681e774c13b019cd29e80ef8a52b36f199b9b848beb5dafca3d43780e2a91d",
+      "bytes": 1053
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/readonly-read-abi-follow-on-source-proposal.json",
+      "sha256": "ead2ad2a8050c4d047ffcd79ea9c306d1535efa46c89214f4177c858f943c35e",
+      "bytes": 16052
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-staged-scope.json",
+      "sha256": "39f53a75c96100f7f7c9bee4704de060fad1186b97cce6f5a7e91c405620744b",
+      "bytes": 11516
+    }
+  ],
+  "preservation": {
+    "original_fixture_leaves": 25,
+    "same_byteexact": true,
+    "empty_expected_stderr": "Nine zero-byte leaves, SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855. Patch mode-only blocks must be restored from owned manifest if a normalized applier omits them.",
+    "tracked_verbose_artifacts": "No observed build stderr/stdout/logs tracked; durable absolute evidence references and hashes above."
+  },
+  "limits": {
+    "javac_seconds": 55,
+    "native_seconds": 55,
+    "supervisor_seconds": 65,
+    "build_seconds": 300,
+    "execution_seconds": 60,
+    "GOMAXPROCS": 2,
+    "GOFLAGS": "-p=1",
+    "nested_race": true
+  },
+  "honest_failed_attempts": "Raw initial default-cache sandbox failure and final native invocation with wrong cwd retained. Corrected campaign cache and package cwd passed without source/testdata edits or deadline increases.",
+  "implementation_provenance": "General platform implementation from contract observations/source audit; no Oracle implementation copied, no handwritten library behavior, generated edits, JVM delegation or oracle weakening."
+}

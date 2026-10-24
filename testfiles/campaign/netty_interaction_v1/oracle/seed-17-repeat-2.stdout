@@ -1,0 +1,13 @@
+seed=17
+composite.start=2:8:2
+composite.nio=2:285217024:4:0
+composite.share=286326801:17:true
+composite.lifetime=1:1118772
+composite.cleanup=0:0:0
+workflow.events=decode:1:4;sink:1:1;task:1;encode:1:1;complete:1:true:0;nested:1:true;out:1:4:25486;decode:2:6;sink:2:1;task:2;encode:2:1;complete:2:true:0;nested:2:true;out:2:6:16053;decode:255:2;sink:255:1;inbound-cause:DecoderException:true;decode:254:5;sink:254:1;task:254;encode:254:1;complete:254:false:0;nested:254:true;get-cause:true:true;decode:254:3;sink:254:1;task:254;encode:254:1;complete:254:true:0;nested:254:true;out:254:3:21090;last:1;finish:false:false
+workflow.counts=5:4:3
+workflow.failures=1:1
+workflow.promises=true:true:false;true:true:false;true:false:false;true:true:false
+workflow.ownership=0:0:0
+workflow.final=false:true:true
+done=complete

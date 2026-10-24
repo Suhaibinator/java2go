@@ -20,19 +20,31 @@ public class JavaStringConversionProgram {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "stdjava.StringValueOf") {
-		t.Fatalf("expected Java string conversion bridge in generated code, got:\n%s", out)
+	for _, bridge := range []string{
+		"stdjava.ConcatJavaStrings(",
+		"stdjava.JavaStringTextOperandExecution(__java2goExecution, nullable)",
+		"stdjava.JavaStringValueOfInt(",
+		"stdjava.JavaStringValueOfChar(",
+		"stdjava.JavaStringValueOfBoolean(",
+	} {
+		if !strings.Contains(out, bridge) {
+			t.Fatalf("expected canonical Java string conversion bridge %q in generated code, got:\n%s", bridge, out)
+		}
 	}
 
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestJavaStringConversion(t *testing.T) {
     const want = "value=7:true:null"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %v, want %q", got, want)
     }
 }
 `)

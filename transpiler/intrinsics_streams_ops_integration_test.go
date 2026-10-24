@@ -22,11 +22,11 @@ public class OpsProgram {
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.StreamDistinct(")
 	assertContains(t, out, ".Skip(")
-	assertContains(t, out, ".Peek(func(n *stdjava.Integer) {")
+	assertContains(t, out, ".Peek(stdjava.ConsumerCallbackExecution[*stdjava.Integer](__java2goExecution, stdjava.NewConsumerFuncAdapter[*stdjava.Integer](func(__java2goExecution *stdjava.Execution, n *stdjava.Integer) {")
 	assertContains(t, out, "stdjava.StreamSorted(")
 	assertContains(t, out, "stdjava.StreamSortedWith(")
 	// The comparator's closure returns Java int, not the element type.
-	assertContains(t, out, "func(a *stdjava.Integer, b *stdjava.Integer) int32")
+	assertContains(t, out, "stdjava.BiFunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer, int32](__java2goExecution, stdjava.NewBiFunctionFuncAdapter[*stdjava.Integer, *stdjava.Integer, int32](func(__java2goExecution *stdjava.Execution, a *stdjava.Integer, b *stdjava.Integer) int32")
 }
 
 func TestStreamOps_TerminalOperationsReturningOptional(t *testing.T) {
@@ -86,7 +86,7 @@ public class FlatMapProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.StreamFlatMap(")
-	assertContains(t, out, "func(w string) stdjava.Stream[string]")
+	assertContains(t, out, "stdjava.FunctionCallbackExecution[*stdjava.JavaString, stdjava.Stream[*stdjava.JavaString]](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.JavaString, stdjava.Stream[*stdjava.JavaString]](func(__java2goExecution *stdjava.Execution, w *stdjava.JavaString) stdjava.Stream[*stdjava.JavaString]")
 }
 
 // parallelStream and parallel() run sequentially, and must still chain.
@@ -122,10 +122,10 @@ public class OptionalOpsProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, ".Filter(func(s string) bool")
-	assertContains(t, out, "stdjava.OptionalFlatMap(name, func(s string) stdjava.Optional[string]")
-	// A zero-parameter Supplier still needs its result type applied.
-	assertContains(t, out, ".OrElseGet(func() string")
-	assertContains(t, out, ".OrElseThrow(nil)")
-	assertContains(t, out, ".OrElseThrow(func() any")
+	assertContains(t, out, ".Filter(stdjava.FunctionCallbackExecution[*stdjava.JavaString, bool](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.JavaString, bool](func(__java2goExecution *stdjava.Execution, s *stdjava.JavaString) bool")
+	assertContains(t, out, "stdjava.OptionalFlatMap(name, stdjava.FunctionCallbackExecution[*stdjava.JavaString, stdjava.Optional[*stdjava.JavaString]](__java2goExecution, stdjava.NewFunctionFuncAdapter[*stdjava.JavaString, stdjava.Optional[*stdjava.JavaString]](func(__java2goExecution *stdjava.Execution, s *stdjava.JavaString) stdjava.Optional[*stdjava.JavaString]")
+	// Suppliers preserve result typing and receive the invocation execution.
+	assertContains(t, out, ".OrElseGet(stdjava.NewSupplierFuncAdapter[*stdjava.JavaString](func(__java2goExecution *stdjava.Execution) *stdjava.JavaString")
+	assertContains(t, out, ".OrElseThrow(nil, __java2goExecution)")
+	assertContains(t, out, ".OrElseThrow(stdjava.NewSupplierFuncAdapter[any](func(__java2goExecution *stdjava.Execution) any")
 }

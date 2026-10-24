@@ -1,0 +1,16 @@
+# east imports: canonical and alternate field names both occur
+{"kind":"CREATE","id":"A-1","client":"Cafe\u0301","lines":[{"sku":"tea","title":"Jasmin/\u96ea","quantity":2,"unit_cents":125},{"sku":"cup","title":"Blue \ud83e\uddea","quantity":1,"unit_cents":399}],"metadata":{"priority":"high","gift":"<tag>&"}}
+{"kind":"INCREMENT","order_id":"A-1","sku":"tea","delta":3}
+{"kind":"TAG","id":"A-1","note":"urgent + 20%"}
+{"kind":"RENAME","id":"A-1","customer":"Café"}
+{"kind":"CREATE","order_id":"B-2","customer":"東京","lines":[{"sku":"fan","title":"扇子","quantity":3,"unit_cents":750}],"metadata":{"region":"東"}}
+{"kind":"INCREMENT","id":"B-2","sku":"fan","delta":-1}
+{"kind":"CANCEL","order_id":"B-2"}
+{"kind":"CREATE","id":"C-3","client":"München","lines":[{"sku":"book","title":"café notes","quantity":4,"unit_cents":220}]}
+{"kind":"INCREMENT","id":"X-0","sku":"missing","delta":1}
+{"kind":"CREATE","id":"bad-line","customer":"Nobody","lines":[{"sku":"x","title":"invalid","quantity":0,"unit_cents":20}]}
+{"kind":"CREATE","id":"overflow","customer":"Large","lines":[{"sku":"x","title":"large","quantity":2147483647,"unit_cents":2}]}
+{"kind":"CREATE","id":"E-5","customer":"emoji 🧪","lines":[{"sku":"spark","title":"spark ✨","quantity":2,"unit_cents":505}],"metadata":{"flag":null}}
+{"kind":"CREATE","id":"bad-json",}
+["not an object"]
+{"id":"no-kind","customer":"None"}

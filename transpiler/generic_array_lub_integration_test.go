@@ -56,11 +56,20 @@ public class GenericArrayLubProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestGenericArrayLubParity(t *testing.T) {
-    if got := Run(); got != "1:7:9:3" {
-        t.Fatalf("Run() = %q, want exact generic lower-bound/LUB parity", got)
+    got := Run()
+    want := utf16.Encode([]rune("1:7:9:3"))
+    if got == nil {
+        t.Fatal("Run() returned null, want exact generic lower-bound/LUB parity")
+    }
+    if units := got.UTF16Copy(); !slices.Equal(units, want) {
+        t.Fatalf("Run() UTF16 = %v, want %v for exact generic lower-bound/LUB parity", units, want)
     }
 }
 `)

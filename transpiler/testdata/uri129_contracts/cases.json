@@ -1,0 +1,227 @@
+[
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value() throws Exception{return new java.net.URL(\"https://example.test/a\");}}"
+    },
+    "kind": "JDK owner java.net.URL",
+    "name": "URL exact",
+    "snippet": "new java.net.URL(\"https://example.test/a\")",
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(java.net.URI value){return value.normalize();}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "URI exact",
+    "snippet": "value.normalize()",
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(java.net.URI URI){return URI.normalize();}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "canonical URI variable named URI",
+    "snippet": "URI.normalize()",
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "import java.net.URL;class Probe {Object value() throws Exception{return new URL(\"https://example.test/a\");}}"
+    },
+    "kind": "JDK owner java.net.URL",
+    "name": "URL import java.net.URL;",
+    "snippet": "new URL(\"https://example.test/a\")",
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "import java.net.*;class Probe {Object value() throws Exception{return new URL(\"https://example.test/a\");}}"
+    },
+    "kind": "JDK owner java.net.URL",
+    "name": "URL import java.net.*;",
+    "snippet": "new URL(\"https://example.test/a\")",
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(int java) throws Exception{return new java.net.URL(\"https://example.test/a\");}}"
+    },
+    "kind": "JDK owner java.net.URL",
+    "name": "value java does not own TYPE prefix",
+    "snippet": "new java.net.URL(\"https://example.test/a\")",
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {<URI>Object value(p.Box box){return box.value.normalize();}}",
+      "p/Box.java": "package p;import java.net.URI;public class Box {public URI value;public URI get(){return value;}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "imported field under caller URI binder",
+    "snippet": "box.value.normalize()",
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {<URI>Object value(p.Box box){return box.get().normalize();}}",
+      "p/Box.java": "package p;import java.net.URI;public class Box {public URI value;public URI get(){return value;}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "imported return under caller URI binder",
+    "snippet": "box.get().normalize()",
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class URI {Object normalize(){return this;}} class Probe {Object value(URI URI){return URI.normalize();}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "source URI value named URI",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(foreign.URI URI){return URI.normalize();}}",
+      "foreign/URI.java": "package foreign;public class URI {public Object normalize(){return this;}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "foreign URI",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class URL {URL(String text){}} class Probe {Object value(){return new URL(\"source\");}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "source URL",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(){return new foreign.URL(\"source\");}}",
+      "foreign/URL.java": "package foreign;public class URL {public URL(String text){}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "foreign URL",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class java {static class net {static class URL {URL(String s){}}}} class Probe {Object value(){return new java.net.URL(\"source\");}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "source TYPE java owns complete path",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class java {} class Probe {Object value(){return new java.net.URL(\"https://example.test/a\");}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "source TYPE java owns missing member",
+    "snippet": null,
+    "valid_jdk": false
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe<java> {Object value(){return new java.net.URL(\"https://example.test/a\");}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "binder TYPE java owns prefix",
+    "snippet": null,
+    "valid_jdk": false
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(){class java {}return new java.net.URL(\"https://example.test/a\");}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "local TYPE java owns missing member",
+    "snippet": null,
+    "valid_jdk": false
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe<URI extends foreign.URI> {Object value(URI URI){return URI.normalize();}}",
+      "foreign/URI.java": "package foreign;public class URI {public Object normalize(){return this;}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "source bound URI binder",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(java.net.URI[] URI){return URI.getClass();}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "URI array Object member",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(java.net.URI URI){synchronized(URI){URI.notify();URI.notifyAll();}return URI.getClass();}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "URI admitted inherited Object",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(Object URI){return URI.getClass();}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "Object view getClass",
+    "snippet": null,
+    "valid_jdk": true
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(java.net.URI value){return value.normalize(1);}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "URI wrong normalize arity outside contract",
+    "snippet": null,
+    "valid_jdk": false
+  },
+  {
+    "caller": "Probe.java",
+    "files": {
+      "Probe.java": "class Probe {Object value(){return unknown().normalize();}}"
+    },
+    "kind": "intrinsic invocation",
+    "name": "unresolved receiver origin",
+    "snippet": null,
+    "valid_jdk": false
+  }
+]

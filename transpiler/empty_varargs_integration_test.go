@@ -60,12 +60,20 @@ public class EmptyVarargsProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestEmptyVarargsBehavior(t *testing.T) {
     const want = "0:70:-1:-1:90:0:0:0:0"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
     }
 }
 `)

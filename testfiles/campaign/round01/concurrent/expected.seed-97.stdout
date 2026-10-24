@@ -1,0 +1,4 @@
+seed=97
+probe=39377ccf807c417c323931:CANCELLED:IllegalArgumentException
+batch=j1=39377ccf807c427c333838,j2=39377ccf807c437c343835,j3=39377ccf807c447c353832,j4=39377ccf807c457c363739,j5=39377ccf807c467c373736,j6=39377ccf807c477c383733
+invariants=7 worker-owned successes; 1 worker-owned failure; 1 queued cancellation; terminated

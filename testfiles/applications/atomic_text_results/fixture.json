@@ -1,0 +1,5 @@
+{
+  "main_class": "parity.atomic_text_results.AtomicTextResults",
+  "module_path": "parity/atomic_text_results",
+  "status": "passing"
+}

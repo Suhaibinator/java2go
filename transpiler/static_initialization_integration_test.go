@@ -46,11 +46,11 @@ public class StaticOrderProgram {
 	}
 	lastPosition := -1
 	for _, marker := range []string{
-		`markJava2goExecution(__java2goExecution, "a", 1)`,
-		`"block1,"`,
-		`markJava2goExecution(__java2goExecution, "b", 2)`,
-		`markJava2goExecution(__java2goExecution, "c", 3)`,
-		`"block2,"`,
+		`markJava2goExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{97}), 1)`,
+		`stdjava.JavaStringLiteralUTF16([]uint16{98, 108, 111, 99, 107, 49, 44})`,
+		`markJava2goExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{98}), 2)`,
+		`markJava2goExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{99}), 3)`,
+		`stdjava.JavaStringLiteralUTF16([]uint16{98, 108, 111, 99, 107, 50, 44})`,
 	} {
 		position := strings.Index(out, marker)
 		if position <= lastPosition {
@@ -62,11 +62,20 @@ public class StaticOrderProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestStaticInitializationOrder(t *testing.T) {
-    if got := Run(); got != "a,block1,b,c,block2,6" {
-        t.Fatalf("Run() = %q, want source-ordered Java initialization", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null, want source-ordered Java initialization")
+    }
+    const want = "a,block1,b,c,block2,6"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q for source-ordered Java initialization", units, want)
     }
 }
 `)

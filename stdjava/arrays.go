@@ -58,7 +58,7 @@ func ArraySet[T any, I ~int | ~int8 | ~int16 | ~int32](array []T, index I, value
 	}
 	index64 := int64(index)
 	if index64 < 0 || index64 >= int64(len(array)) {
-		panic(NewArrayIndexOutOfBoundsException("array index out of bounds"))
+		panic(NewArrayIndexOutOfBoundsException(arrayIndexOutOfBoundsMessage(index64, len(array))))
 	}
 	array[index] = value
 	return value

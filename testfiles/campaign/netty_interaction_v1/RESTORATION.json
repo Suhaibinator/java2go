@@ -1,0 +1,258 @@
+{
+  "status": "PROPOSED_RESTORATION_OF_FROZEN_ORIGINAL_BYTES_NO_NEW_EXECUTION_OR_ACCEPTANCE",
+  "original_challenge_identity": {
+    "author_task": "/root/sol_netty_challenge",
+    "creation_root": "/private/tmp/java2go-netty-interaction-challenge-sol-v1",
+    "maven_coordinates": "challenge.netty:interaction:1",
+    "seeds": [
+      17,
+      41,
+      97
+    ],
+    "repeats_per_seed": 3,
+    "app_Java": 8,
+    "app_packages": 6
+  },
+  "recovery_sources": {
+    "parent_task": "01a0e60d-4120-7cf2-b0c0-6a888a36a9ae",
+    "parent_readiness_record_line": 73696,
+    "author_child_task": "01a0f585-48e5-7d62-9fc8-0baa0ded016e",
+    "source_creation_tool_record_line": 71,
+    "manifest_and_contract_creation_tool_record_line": 102,
+    "JVM_actual_hash_audit_and_transcript_record_line": 199,
+    "method": "Decoded recorded exec_command JSON string, parsed Python AST literal files/contract only; no historical script execution. Original paths/order/JSON formatting reconstructed to match frozen manifest SHA exactly. Actual printed seed transcripts recovered by hash; nine historical run hashes all reconcile to their respective seed bytes."
+  },
+  "original_pins": {
+    "source_input_manifest": {
+      "bytes": 3417,
+      "sha256": "ad29e2573bae991691700bef400c9f6431f80787500633bdbaa7e4f0a1608a28"
+    },
+    "observation_contract": {
+      "bytes": 2551,
+      "sha256": "b6119932f268fb7b69486a7e86f90b318ffa1e7b68b1413d1c8bbcdb97fcab2a"
+    },
+    "JVM_report_sha256": "6f33d69258aa34471b62593dd67f92887a1a05c73dee36f63b7c05d0cb3db74b",
+    "JVM_capture_seal_sha256": "8b000dd9b0b95fe5cb89a54cd5adc62e7de12520a9e7b8e468eba5cb8e5614a5"
+  },
+  "original_observations": [
+    {
+      "seed": 17,
+      "repeat": 1,
+      "stdout_sha256": "5e38171c68f3da8d9ef60d97bb543276a20814540bd3b2c53800fc6c0d02865a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 17,
+      "repeat": 2,
+      "stdout_sha256": "5e38171c68f3da8d9ef60d97bb543276a20814540bd3b2c53800fc6c0d02865a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 17,
+      "repeat": 3,
+      "stdout_sha256": "5e38171c68f3da8d9ef60d97bb543276a20814540bd3b2c53800fc6c0d02865a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 41,
+      "repeat": 1,
+      "stdout_sha256": "9b2a1b96c88afc8fe02caa6db6691e66c0f97dae5ae7a249a6fb4b32a2c8a60f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 41,
+      "repeat": 2,
+      "stdout_sha256": "9b2a1b96c88afc8fe02caa6db6691e66c0f97dae5ae7a249a6fb4b32a2c8a60f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 41,
+      "repeat": 3,
+      "stdout_sha256": "9b2a1b96c88afc8fe02caa6db6691e66c0f97dae5ae7a249a6fb4b32a2c8a60f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 97,
+      "repeat": 1,
+      "stdout_sha256": "1bf27d8e257bdd6687a73b974fdfb2ca96a62556bd8c73a81e11f5be6cf841dd",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 97,
+      "repeat": 2,
+      "stdout_sha256": "1bf27d8e257bdd6687a73b974fdfb2ca96a62556bd8c73a81e11f5be6cf841dd",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 97,
+      "repeat": 3,
+      "stdout_sha256": "1bf27d8e257bdd6687a73b974fdfb2ca96a62556bd8c73a81e11f5be6cf841dd",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "dependency_linkage": {
+    "tracked_proposal": {
+      "path": "campaign/netty/dependency-proposal.json",
+      "bytes": 19024,
+      "sha256": "494b3a04d3a7cbf8de9c6dbe98b699fb6e9e654dae8537e70de44cb1258e62a6"
+    },
+    "original_source_manifest": {
+      "path": ".campaign/netty/4.1.138.Final/implementation-source-manifest.json",
+      "bytes": 761808,
+      "sha256": "e811888e561cfbee7d01a5bc2ed7f2c5dd79115214dee31b4eb3c0daae0e9472",
+      "members": 1212,
+      "all_members_rehashed_against_durable_source_jars": true
+    },
+    "proposed_lock": {
+      "path": ".campaign/netty/4.1.138.Final/proposed-lock.json",
+      "bytes": 4468,
+      "sha256": "fb96f9d526212c489d3d87106e6c62513e79f7b1b14dd1005b3401b3bfa53c95",
+      "status": "PRIVATE_PROPOSED_LOCK_FOR_ROOT_REVIEW"
+    },
+    "mandatory_modules": [
+      "netty-buffer",
+      "netty-codec",
+      "netty-codec-http",
+      "netty-common",
+      "netty-handler",
+      "netty-resolver",
+      "netty-transport",
+      "netty-transport-native-unix-common"
+    ],
+    "netty_version": "4.1.138.Final",
+    "jctools_version": "4.0.5",
+    "full_strict_fixture_requirement": "1212 genuine implementation Java plus original8 app Java; complete dependency source translation, no omissions or handwritten Netty replacement",
+    "historical_JVM_scope": "743 selected genuine sources, five modules, source-built classpath. Original contract remains unchanged; historical JVM evidence is not full eight-module/authenticated Maven closure or Go acceptance."
+  },
+  "restored_files": {
+    "inputs/seed-17.txt": {
+      "bytes": 3,
+      "sha256": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5"
+    },
+    "inputs/seed-41.txt": {
+      "bytes": 3,
+      "sha256": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1"
+    },
+    "inputs/seed-97.txt": {
+      "bytes": 3,
+      "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+    },
+    "observation-contract.json": {
+      "bytes": 2551,
+      "sha256": "b6119932f268fb7b69486a7e86f90b318ffa1e7b68b1413d1c8bbcdb97fcab2a"
+    },
+    "oracle/seed-17-repeat-1.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-17-repeat-1.stdout": {
+      "bytes": 815,
+      "sha256": "5e38171c68f3da8d9ef60d97bb543276a20814540bd3b2c53800fc6c0d02865a"
+    },
+    "oracle/seed-17-repeat-2.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-17-repeat-2.stdout": {
+      "bytes": 815,
+      "sha256": "5e38171c68f3da8d9ef60d97bb543276a20814540bd3b2c53800fc6c0d02865a"
+    },
+    "oracle/seed-17-repeat-3.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-17-repeat-3.stdout": {
+      "bytes": 815,
+      "sha256": "5e38171c68f3da8d9ef60d97bb543276a20814540bd3b2c53800fc6c0d02865a"
+    },
+    "oracle/seed-41-repeat-1.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-41-repeat-1.stdout": {
+      "bytes": 813,
+      "sha256": "9b2a1b96c88afc8fe02caa6db6691e66c0f97dae5ae7a249a6fb4b32a2c8a60f"
+    },
+    "oracle/seed-41-repeat-2.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-41-repeat-2.stdout": {
+      "bytes": 813,
+      "sha256": "9b2a1b96c88afc8fe02caa6db6691e66c0f97dae5ae7a249a6fb4b32a2c8a60f"
+    },
+    "oracle/seed-41-repeat-3.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-41-repeat-3.stdout": {
+      "bytes": 813,
+      "sha256": "9b2a1b96c88afc8fe02caa6db6691e66c0f97dae5ae7a249a6fb4b32a2c8a60f"
+    },
+    "oracle/seed-97-repeat-1.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-97-repeat-1.stdout": {
+      "bytes": 817,
+      "sha256": "1bf27d8e257bdd6687a73b974fdfb2ca96a62556bd8c73a81e11f5be6cf841dd"
+    },
+    "oracle/seed-97-repeat-2.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-97-repeat-2.stdout": {
+      "bytes": 817,
+      "sha256": "1bf27d8e257bdd6687a73b974fdfb2ca96a62556bd8c73a81e11f5be6cf841dd"
+    },
+    "oracle/seed-97-repeat-3.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/seed-97-repeat-3.stdout": {
+      "bytes": 817,
+      "sha256": "1bf27d8e257bdd6687a73b974fdfb2ca96a62556bd8c73a81e11f5be6cf841dd"
+    },
+    "original-source-input-manifest.json": {
+      "bytes": 3417,
+      "sha256": "ad29e2573bae991691700bef400c9f6431f80787500633bdbaa7e4f0a1608a28"
+    },
+    "project/pom.xml": {
+      "bytes": 601,
+      "sha256": "0cc29214f84d2564338ce0c00fac93ed610ff64737426f6363e67bd3b6f7d336"
+    },
+    "project/src/main/java/app/Main.java": {
+      "bytes": 547,
+      "sha256": "1d197b889be28628e987bc91c9615268250ea15b5dbf37bb7b9fc98112432d91"
+    },
+    "project/src/main/java/audit/Trace.java": {
+      "bytes": 589,
+      "sha256": "aa336b2aca604769e5aa581a36adfa4e109c860b2f5c942bbd4316470ec865b4"
+    },
+    "project/src/main/java/buffers/CompositeFlow.java": {
+      "bytes": 1545,
+      "sha256": "b41b6a7cfb20550d85b19dfdbc17578db62719d895a495c10895f9d164d21582"
+    },
+    "project/src/main/java/flow/Interaction.java": {
+      "bytes": 5641,
+      "sha256": "dc1579e8330aa46f872616831f895a4861cef93f78b854c87d28abbd383f75e6"
+    },
+    "project/src/main/java/model/Packet.java": {
+      "bytes": 243,
+      "sha256": "0593bfb8f4e850362da1bb31129de10f7905c5dc20e2fcde252f01d044d2333d"
+    },
+    "project/src/main/java/model/Problem.java": {
+      "bytes": 123,
+      "sha256": "143f8f9747359df47cb28810439e5544ed1de42c2a89801259023e2fd4a381b2"
+    },
+    "project/src/main/java/wire/FrameDecoder.java": {
+      "bytes": 989,
+      "sha256": "5fa4d34a8911fe896ba092fcefa146bcdec89bed75ca899aab499acc67c182d9"
+    },
+    "project/src/main/java/wire/ReplyEncoder.java": {
+      "bytes": 1053,
+      "sha256": "e7406359699e7e48f9637fdbe80645a3b7e7c9a04aa999503afe7dbf31ecb2db"
+    }
+  },
+  "remaining": "No new JVM/Go run, full raw supervisor receipt reconstruction or dependency closure acceptance. Root review and public restoration pending."
+}

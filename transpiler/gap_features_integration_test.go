@@ -43,12 +43,13 @@ public class GapFeatures<T extends Number> {
 		"x\tfloat64",
 		"y\tfloat64",
 		"stdjava.NumberDoubleValue(n)",
-		"stdjava.ClassLiteral(stdjava.DoubleTypeID)",
 	} {
 		if !strings.Contains(out, fragment) {
 			t.Fatalf("generated source is missing %q:\n%s", fragment, out)
 		}
 	}
+
+	ci196AssertDoubleClassIdentity(t, out)
 
 	runGoTestInTempModule(t, out, `
 package main
@@ -117,6 +118,7 @@ import (
 )
 
 func TestGenericEnumRuntime(t *testing.T) {
+    GenericOperationJava2goEnsureInitialized(stdjava.NewExecution())
     helper := NewGenericOperationApplyHelper[*stdjava.Double](DOUBLE)
     if got := helper.Apply(stdjava.BoxDouble(2.5)); got != 5 {
         t.Fatalf("DOUBLE.apply(2.5) = %v, want 5", got)

@@ -1,0 +1,4 @@
+static-first=41;reads=1;source=0;trace=static-holder,
+static-second=42;reads=2;source=0;trace=static-holder,
+alias=true
+final=true;retained=42;source=0;trace=static-holder,static-cleanup,

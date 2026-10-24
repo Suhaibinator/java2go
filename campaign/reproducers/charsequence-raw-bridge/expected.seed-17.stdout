@@ -1,0 +1,1 @@
+seed=17,delayedCast=true,recovered=A17|B17|C17,counts=2/1/1,size=3,events=iterator#1/hasNext/next/toString:first#1/raw-set-object-at-1/hasNext/next/caught-ClassCastException/restore-index-1/iterator#2/hasNext/next/toString:first#2/hasNext/next/toString:second#1/hasNext/next/toString:third#1/hasNext

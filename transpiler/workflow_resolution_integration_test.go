@@ -32,9 +32,7 @@ public class Planner {
 
 	outputs := convertJavaProjectDir(t, root)
 	out := outputs["parity/chain/engine/Planner.go"]
-	if !strings.Contains(out, "task.GetPriorityJava2goExecution(__java2goExecution).GetWeightJava2goExecution(__java2goExecution)") {
-		t.Fatalf("expected a chained return type to resolve in the declaring method's package, got:\n%s", out)
-	}
+	ci193AssertOrdinaryCall(t, out, "WeightJava2goExecution", "task.GetPriorityJava2goExecution(__java2goExecution).GetWeightJava2goExecution(__java2goExecution)", nil, "*model.Priority")
 }
 
 func TestWorkflowResolution_ListGetPreservesElementTypeForChainedCall(t *testing.T) {
@@ -77,8 +75,8 @@ public class Lambdas {
 `
 
 	out := renderGoFileFromJava(t, src)
-	if !strings.Contains(out, "task.GetPayloadJava2goExecution(__java2goExecution)") ||
-		!strings.Contains(out, "task.GetAttemptsJava2goExecution(__java2goExecution)") {
+	if !strings.Contains(out, "taskJava2goLocal.GetPayloadJava2goExecution(__java2goExecution)") ||
+		!strings.Contains(out, "taskJava2goLocal.GetAttemptsJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected inferred SAM parameters to resolve method calls while parsing the lambda body, got:\n%s", out)
 	}
 }
@@ -116,8 +114,8 @@ public class Application {
 	flat := normalizeSpaces(out)
 	for _, want := range []string{
 		`enginepkg "parity/alias/engine"`,
-		"enginepkg.NewWorkflowEngineJava2goExecution[string](__java2goExecution)",
-		"enginepkg.NewTaskActionFuncAdapterJava2goExecution[string]",
+		"enginepkg.NewWorkflowEngineJava2goExecution[*stdjava.JavaString](__java2goExecution)",
+		"enginepkg.NewTaskActionFuncAdapterJava2goExecution[*stdjava.JavaString]",
 	} {
 		if !strings.Contains(flat, normalizeSpaces(want)) {
 			t.Fatalf("expected collision-safe package qualification %q, got:\n%s", want, out)

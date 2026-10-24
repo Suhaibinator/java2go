@@ -81,9 +81,9 @@ func (o Optional[T]) IfPresentOrElse(action func(T), emptyAction func()) {
 
 // OrElseGet returns the value if present, otherwise the result of supplier,
 // matching Optional.orElseGet. The supplier is only invoked when empty.
-func (o Optional[T]) OrElseGet(supplier func() T) T {
+func (o Optional[T]) OrElseGet(supplier any, execution ...*Execution) T {
 	if o.value == nil {
-		return supplier()
+		return CallSupplierExecution[T](optionalComparisonExecution(execution), supplier)
 	}
 	return *o.value
 }
@@ -91,14 +91,14 @@ func (o Optional[T]) OrElseGet(supplier func() T) T {
 // OrElseThrow returns the value if present and otherwise throws, matching both
 // Optional.orElseThrow() and its supplier-taking overload. A nil supplier
 // produces the no-argument form's NoSuchElementException.
-func (o Optional[T]) OrElseThrow(supplier func() any) T {
+func (o Optional[T]) OrElseThrow(supplier any, execution ...*Execution) T {
 	if o.value != nil {
 		return *o.value
 	}
 	if supplier == nil {
 		panic(NewNoSuchElementException("No value present"))
 	}
-	panic(supplier())
+	panic(CallSupplierExecution[any](optionalComparisonExecution(execution), supplier))
 }
 
 // Filter returns this Optional if it is empty or its value matches predicate,

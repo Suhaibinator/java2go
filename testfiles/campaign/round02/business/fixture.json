@@ -1,0 +1,29 @@
+{
+  "name": "round02-business",
+  "source_roots": ["src/main/java"],
+  "pom": "pom.xml",
+  "main_class": "campaign.business2.app.Main",
+  "dependencies": ["commons-lang3", "commons-codec"],
+  "dependency_sources": {
+    "commons-lang3": [
+      "org/apache/commons/lang3/mutable/Mutable.java",
+      "org/apache/commons/lang3/mutable/MutableInt.java",
+      "org/apache/commons/lang3/mutable/MutableLong.java"
+    ],
+    "commons-codec": [
+      "org/apache/commons/codec/BinaryDecoder.java",
+      "org/apache/commons/codec/BinaryEncoder.java",
+      "org/apache/commons/codec/CharEncoding.java",
+      "org/apache/commons/codec/Decoder.java",
+      "org/apache/commons/codec/DecoderException.java",
+      "org/apache/commons/codec/Encoder.java",
+      "org/apache/commons/codec/EncoderException.java",
+      "org/apache/commons/codec/binary/Hex.java"
+    ]
+  },
+  "resources": [],
+  "args": ["{seed}"],
+  "seeds": [17, 41, 97],
+  "repeats": 3,
+  "output_files": []
+}

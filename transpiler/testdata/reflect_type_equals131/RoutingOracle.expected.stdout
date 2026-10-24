@@ -1,0 +1,7 @@
+metadata=true:true:true:true
+variables=true:true:true:true
+class=true:true:true
+source=true:false:17:CCH
+null=RA
+throw=RX:argument
+once=true:RAC

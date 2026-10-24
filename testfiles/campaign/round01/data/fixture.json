@@ -1,0 +1,35 @@
+{
+  "name": "round01-data",
+  "source_roots": ["src/main/java"],
+  "pom": "pom.xml",
+  "main_class": "campaign.data.app.Main",
+  "dependencies": ["commons-codec"],
+  "dependency_sources": {
+    "commons-codec": [
+      "org/apache/commons/codec/BinaryDecoder.java",
+      "org/apache/commons/codec/BinaryEncoder.java",
+      "org/apache/commons/codec/CharEncoding.java",
+      "org/apache/commons/codec/Decoder.java",
+      "org/apache/commons/codec/DecoderException.java",
+      "org/apache/commons/codec/Encoder.java",
+      "org/apache/commons/codec/EncoderException.java",
+      "org/apache/commons/codec/StringDecoder.java",
+      "org/apache/commons/codec/StringEncoder.java",
+      "org/apache/commons/codec/binary/Hex.java",
+      "org/apache/commons/codec/binary/CharSequenceUtils.java",
+      "org/apache/commons/codec/binary/StringUtils.java",
+      "org/apache/commons/codec/digest/DigestUtils.java",
+      "org/apache/commons/codec/digest/MessageDigestAlgorithms.java",
+      "org/apache/commons/codec/net/Utils.java",
+      "org/apache/commons/codec/net/URLCodec.java"
+    ]
+  },
+  "resources": [
+    {"source": "src/main/resources/events-east.tsv", "target": "events-east.tsv"},
+    {"source": "src/main/resources/events-west.tsv", "target": "events-west.tsv"}
+  ],
+  "args": ["{seed}"],
+  "seeds": [17, 41, 97],
+  "repeats": 3,
+  "output_files": ["out/accounts.tsv", "out/summary.txt", "out/rejects.tsv"]
+}

@@ -1,0 +1,31 @@
+package transpiler
+
+import "testing"
+
+func TestCampaignSourceCatchDeclaredViewJVM(t *testing.T) {
+ runCampaignCompilerStrictProjectOracle(t, map[string]string{
+ "pom.xml": "<project><modelVersion>4.0.0</modelVersion><groupId>probe</groupId><artifactId>catchview</artifactId><version>1</version></project>",
+ "src/main/java/probe/catchview/Main.java": `package probe.catchview;
+public final class Main {
+ static String trace="";
+ static final class LocalFailure extends RuntimeException {
+  final String stage;int calls;boolean held;
+  LocalFailure(String message,String stage,Throwable cause){super(message,cause);this.stage=stage;}
+  String stage(){calls++;held=Thread.holdsLock(this);trace+="m";return stage;}
+ }
+ public static void main(String[] args){
+  Throwable cause=new IllegalArgumentException("cause");
+  LocalFailure original=new LocalFailure("root","stage",cause);RuntimeException erased=original;Object alias=original;
+  synchronized(original){
+   try{throw erased;}catch(LocalFailure caught){trace+="c";String stage=caught.stage();System.out.println((caught==original)+":"+(caught==alias)+":"+(caught.getCause()==cause)+":"+caught.getMessage()+":"+stage+":"+caught.calls+":"+caught.held);}finally{trace+="f";}
+  }
+  LocalFailure empty=new LocalFailure(null,null,null);
+  try{throw empty;}catch(LocalFailure caught){trace+="z";System.out.println((caught==empty)+":"+(caught.getMessage()==null)+":"+(caught.getCause()==null)+":"+(caught.stage()==null)+":"+caught.calls);}finally{trace+="g";}
+  boolean rethrown=false;
+  try{try{throw original;}catch(LocalFailure caught){trace+="i";throw caught;}finally{trace+="n";}}catch(RuntimeException caught){trace+="o";rethrown=caught==original;}finally{trace+="h";}
+  System.out.println(rethrown+":"+original.calls+":"+empty.calls+":"+trace);
+ }
+}
+`,
+ }, "probe.catchview.Main", "true:true:true:root:stage:1:true\ntrue:true:true:true:1\ntrue:1:1:cmfzmginoh\n")
+}

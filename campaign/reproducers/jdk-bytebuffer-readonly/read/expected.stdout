@@ -1,0 +1,9 @@
+open:java.lang.IllegalArgumentException:Read-only buffer:0:true
+empty:java.lang.IllegalArgumentException:Read-only buffer:0
+closed-ro:java.nio.channels.ClosedChannelException:null
+closed-null:java.nio.channels.ClosedChannelException:null
+readmode:java.lang.IllegalArgumentException:Read-only buffer
+interrupt:java.nio.channels.ClosedByInterruptException:null:false
+retained:true
+shared:true
+interrupt-null:java.nio.channels.ClosedByInterruptException:null:false

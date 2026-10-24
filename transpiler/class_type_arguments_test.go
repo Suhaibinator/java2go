@@ -176,10 +176,13 @@ public class DiamondRawDistinction<T> {
     }
 }
 `)
-	if strings.Contains(out, "newDiamondRawDistinctionJava2goExecution[any](__java2goExecution, \"diamond\")") {
+	if strings.Contains(out, "newDiamondRawDistinctionJava2goExecution[any](__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{100, 105, 97, 109, 111, 110, 100}))") {
 		t.Fatalf("untargeted diamond was incorrectly erased instead of inferred:\n%s", out)
 	}
-	if !strings.Contains(out, "newDiamondRawDistinctionJava2goExecution[any](__java2goExecution, \"raw\")") {
+	if !strings.Contains(out, "newDiamondRawDistinctionJava2goExecution[*stdjava.JavaString](__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{100, 105, 97, 109, 111, 110, 100}))") {
+		t.Fatalf("untargeted diamond did not infer the canonical String argument:\n%s", out)
+	}
+	if !strings.Contains(out, "newDiamondRawDistinctionJava2goExecution[any](__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{114, 97, 119}))") {
 		t.Fatalf("raw construction did not explicitly use erased arguments:\n%s", out)
 	}
 }

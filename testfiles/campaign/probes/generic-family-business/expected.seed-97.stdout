@@ -1,0 +1,8 @@
+seed=97
+step=0,source=named,value=98,label=shared-anonymous
+step=1,source=anonymous,value=105,label=shared-anonymous
+step=2,source=named,value=112,label=shared-anonymous
+step=3,source=anonymous,value=119,label=shared-anonymous
+identity=true,missing=true,shadow=true
+bridge=100,118,same=true
+pollution=true,true,text=polluted-97,sum=434

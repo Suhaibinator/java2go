@@ -1,0 +1,8 @@
+default=true:true:true:true
+implicit=A:A:A:varargs
+override=true:true
+callback=true:callertrue:caller:enum:A:A:enum:C:overload
+aliases=true:true:true
+constant=constant:A:B
+once=A:1
+null=NullPointerException:null

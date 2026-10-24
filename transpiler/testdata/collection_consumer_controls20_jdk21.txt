@@ -1,0 +1,6 @@
+consumers=7:changed:1
+raw-remove=9:true:1:changed
+sorted=[a, b, c]:true
+reverse=[c, b, a]:true
+iterable=cba:true
+unbox=2

@@ -1,0 +1,13 @@
+# Sol checkpoint 214: strict wildcard overload selection
+
+Two generic overload cases now match Java. The upper-capture application prints `1`, where generated Go previously selected the broader overload and printed `2`. The lower-bound application now prints `1:1:11:retained:true`, matching the unchanged JVM oracle instead of `2:2:22:retained:true`.
+
+The change refines the score of an already-applicable strict invocation in a deliberately bounded case: one scalar argument, one formal and method binder, and a proven canonical JDK generic parent preserving one argument slot. Upper captures remain existential; their readable upper type is only a bound witness. Original lower bounds, inferred arguments, complete bound checks, exact and loose conversions, and existing strict costs remain intact. Input snapshots attest input identity and bytes; separate AST, declaring-owner, binder and namespace checks establish the semantic facts. No semantic result is cached.
+
+The first candidate failed two unchanged direct lower-bound guards. The pinned parser represents `super` as a named direction token and `extends` as an unnamed token. The corrected helper counts exactly one direction and one valid TYPE bound. All original assertions remain, with eight additional parsed grammar controls. The failed attempt is retained and receives no passing credit.
+
+Coordinator and independent audits verified 40 fresh stages: 28 parent tests and 304 subcases in normal/race modes, two fresh JVM observations against four whole generated-Go runs, all generated-package builds, and six default/F1 build, test-compilation and lint profiles. Java sources, expectations and generated Go were preserved. All 81 recorded PIDs and 41 groups were independently absent. Eight very short children had no live lifecycle identity sample; their raw PID/group records and fresh absence checks provide the explicitly limited evidence instead.
+
+Hosted CI for the preceding checkpoint confirmed all 920 runtime tests passing under Linux race execution, including the 32 new runtime parents. Compiler results remained 2,361 passes, 18 failures and zero skips, with no new failures or changed parent statuses; application parity passed and the separate Gson failure remained. That CI evidence is attributed to checkpoint 213, not this new revision.
+
+Supplier28, Gson112 and Netty1220 remain mandatory unaccepted gates. Other wildcard shapes, a complete round, universal Java support and performance gains are not established by this checkpoint. The Sol-only campaign continues with the original applications and failure evidence retained.

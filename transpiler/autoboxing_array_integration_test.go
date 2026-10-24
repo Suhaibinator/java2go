@@ -44,11 +44,22 @@ public class ObjectArrayBoxingProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestObjectArrayBoxingRuntime(t *testing.T) {
-	if got := Run(); got != "int:21,long:9,float:1.5,double:2.5,int:22" {
-        t.Fatalf("Run() = %q", got)
+	got := Run()
+	if got == nil {
+	    t.Fatal("Run() returned null")
+	}
+	const want = "int:21,long:9,float:1.5,double:2.5,int:22"
+	wantUnits := utf16.Encode([]rune(want))
+	gotUnits := got.UTF16Copy()
+	if !slices.Equal(gotUnits, wantUnits) {
+        t.Fatalf("Run() UTF16 = %v, want %v", gotUnits, wantUnits)
     }
 }
 `)

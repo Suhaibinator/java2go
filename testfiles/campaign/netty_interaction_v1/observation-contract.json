@@ -1,0 +1,59 @@
+{
+  "assertions": [
+    "original Netty DecoderException.getCause identity of sentinel",
+    "original EncoderException cause identity and ExecutionException wrapper identity",
+    "all submitted fragment, consumed Packet and outbound Packet reference counts are zero after finishAndReleaseAll",
+    "composite and both component refs reach zero after last retained slice release"
+  ],
+  "expectation_bytes": null,
+  "new_interactions": [
+    "COMPOSITE_CUMULATOR plus readRetainedSlice Packet output into auto-releasing typed MessageToMessageDecoder",
+    "source-inferred generic matcher of MessageToMessageDecoder<Packet>/MessageToMessageEncoder<Packet>, retained payload ownership, queued eventloop writes and ChannelPromise completion together",
+    "outbound failure releases Packet, preserves original sentinel through two exception wrappers, listener remains terminal",
+    "live pipeline replace of rejecting encoder permits same reserved id to recover and produce seeded reply",
+    "partial final frame triggers original decodeLast then original cleanup",
+    "ByteBuffer gathering views mutate actual CompositeByteBuf backing data with independent NIO positions and retained read-only slice lifetime"
+  ],
+  "oracles_generated": false,
+  "ordered_event_fields": "workflow.events emits actual decode/sink/queued-task/encoder/listener/nested-listener/outbound/cause/last/finish order, with seeded payload checksums",
+  "outside_scope": [
+    "TCP/HTTP/native transports",
+    "GC timing",
+    "pending cross-thread promise waits",
+    "eight-module/provider/JNI closure acceptance",
+    "Netty Go stage acceptance"
+  ],
+  "public_config": {
+    "Unsafe": "unchanged discovery, no disable flags",
+    "allocator": "UnpooledByteBufAllocator(false)",
+    "logger": "JdkLoggerFactory.INSTANCE"
+  },
+  "record_labels": [
+    "seed",
+    "composite.start",
+    "composite.nio",
+    "composite.share",
+    "composite.lifetime",
+    "composite.cleanup",
+    "workflow.events",
+    "workflow.counts",
+    "workflow.failures",
+    "workflow.promises",
+    "workflow.ownership",
+    "workflow.final",
+    "done"
+  ],
+  "records_per_run": 13,
+  "repeats": [
+    1,
+    2,
+    3
+  ],
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "status": "SOURCE_DERIVED_OBSERVATION_MEMBERSHIP_NO_ORACLE_BYTES",
+  "strict_translation_requirement": "All 743 selected real sources including shaded JCTools/package-info and these 8 app files must translate; no Netty behavior hand replacements or pruning. Eight-module proposal/provider/JNI/loader graph stays unresolved."
+}

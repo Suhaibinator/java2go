@@ -1,0 +1,41 @@
+{
+  "name": "queued-dateformat-iso-stateful",
+  "source_roots": [
+    "src/main/java"
+  ],
+  "pom": "pom.xml",
+  "main_class": "app.Main",
+  "dependencies": [
+    "gson"
+  ],
+  "dependency_sources": {
+    "gson": [
+      "com/google/gson/internal/bind/util/ISO8601Utils.java"
+    ]
+  },
+  "resources": [],
+  "args": [
+    "{seed}"
+  ],
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "repeats": 3,
+  "output_files": [],
+  "classification": "QUEUED_SUPPLEMENTAL_JDK_DATE_CONTRACTS_NOT_PROMOTED",
+  "oracle_policy": "First fresh JDK output captured perseed; two repetitions must match exactstdout/stderr. No guessed output values.",
+  "contract_scope": [
+    "all DateFormat date/time styles US/default and mixed styles",
+    "en-US/en formatdefault and timezone snapshot",
+    "explicit timezone set/get and mutable argument alias",
+    "ParsePosition prefix/trailing input/stale error/reset invalid/recovery",
+    "strict invalid dates and ParseException cause/errorOffset",
+    "invalid DateFormat style rejection",
+    "DST springgap/falloverlap with strict SimpleDateFormat",
+    "real Gson ISO8601Utils explicit offsets/fraction/leap second/invalid causes",
+    "capture and restore general/FORMAT/DISPLAY locales and timezone finally"
+  ],
+  "existing_Gson_sources_oracles_preserved": true
+}

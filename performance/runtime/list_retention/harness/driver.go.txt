@@ -1,0 +1,27 @@
+package main
+
+import (
+ "fmt"
+ "os"
+ "runtime"
+ "strconv"
+)
+func usedHeap() int64 { runtime.GC(); runtime.GC(); var m runtime.MemStats; runtime.ReadMemStats(&m); return int64(m.HeapAlloc) }
+func metric(phase string, baseline int64) { used:=usedHeap(); fmt.Fprintf(os.Stderr,"{\"runtime\":\"go\",\"phase\":%q,\"used_heap\":%d,\"delta\":%d}\n",phase,used,used-baseline) }
+func main() {
+ count,_:=strconv.Atoi(os.Args[1]); bytes,_:=strconv.Atoi(os.Args[2]); rounds,_:=strconv.Atoi(os.Args[3])
+ for i:=0;i<4;i++ { Cycle(int32(i),int32(count),1024) }
+ Reset()
+ usedHeap()
+ fmt.Sprintf("round=%d checksum=%d size=%d",0,int64(0),0)
+ baseline:=usedHeap()
+ metric("baseline",baseline)
+ for round:=0;round<rounds;round++ {
+  checksum:=Cycle(int32(round),int32(count),int32(bytes))
+  fmt.Printf("round=%d checksum=%d size=%d\n",round,checksum,Size())
+  metric(fmt.Sprintf("removed-%d",round),baseline)
+ }
+ ClearList()
+ fmt.Printf("cleared size=%d\n",Size())
+ metric("cleared",baseline)
+}

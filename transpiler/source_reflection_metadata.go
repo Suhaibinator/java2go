@@ -1,0 +1,392 @@
+package transpiler
+
+import (
+	"go/ast"
+	"go/token"
+	"strconv"
+
+	"github.com/NickyBoy89/java2go/nodeutil"
+	"github.com/NickyBoy89/java2go/symbol"
+)
+
+// Reflective flags come from the original Java declaration. Exported Go names
+// encode ABI visibility and do not distinguish public from protected members.
+func sourceReflectionModifiers(def *symbol.Definition, scope *symbol.ClassScope) int32 {
+	var result int32
+	if def != nil && def.DeclarationNode != nil {
+		bits := map[string]int32{"public": 1, "private": 2, "protected": 4, "static": 8, "final": 16, "synchronized": 32, "volatile": 64, "transient": 128, "native": 256, "abstract": 1024, "strictfp": 2048}
+		for _, child := range nodeutil.NamedChildrenOf(def.DeclarationNode) {
+			if child.Type() == "modifiers" {
+				for _, modifier := range nodeutil.UnnamedChildrenOf(child) {
+					result |= bits[modifier.Type()]
+				}
+			}
+		}
+		if def.IsStatic {
+			result |= 8
+		}
+		if def.IsFinal {
+			result |= 16
+		}
+	}
+	if def == scope.Class {
+		if scope.IsInterface {
+			result |= 512 | 1024
+		}
+		if scope.IsAbstract {
+			result |= 1024
+		}
+		if scope.IsEnum {
+			result |= 16384
+		}
+		if def != nil && def.DeclarationNode != nil && def.DeclarationNode.Type() == "annotation_type_declaration" {
+			result |= 8192
+		}
+	} else if scope.IsInterface {
+		result |= 1
+		if def != nil && !def.Constructor && !def.IsStatic {
+			result |= 1024
+		}
+	}
+	return result
+}
+func reflectionInteger(n int32) ast.Expr {
+	return &ast.BasicLit{Kind: token.INT, Value: strconv.FormatInt(int64(n), 10)}
+}
+
+func sourceReflectionFieldAccessorName(scope *symbol.ClassScope, field *symbol.Definition, set bool) string {
+	operation := "Get"
+	if set {
+		operation = "Set"
+	}
+	// Public, uniquely allocated selectors let the runtime project the declaring
+	// view and invoke its storage accessor without unsafe or Generic[any] casts.
+	// Keep the allocated binding raw until AST or selector-literal emission.
+	return collisionSafeExecutionIdentifier("Java2goReflectField"+operation+field.Name+"Java2goExecution", scope)
+}
+func sourceReflectionFieldStorageType(scope *symbol.ClassScope, field *symbol.Definition, ctx Ctx) ast.Expr {
+	ctx = classScopeCtx(scope, ctx)
+	value := abstractClassToInterface(javaTypeStringToGoTypeExpr(field.OriginalType, scope.TypeParameterNames(), ctx), field.OriginalType, ctx)
+	return directOwnerTypeParameterFieldStorageType(scope, field, value, ctx)
+}
+
+// Captured storage fields reuse the original outer/local declaration nodes.
+// Only declarations inside this Java class belong to getDeclaredFields.
+func sourceReflectionDeclaredField(scope *symbol.ClassScope, field *symbol.Definition) bool {
+	if scope == nil || scope.Class == nil || scope.Class.DeclarationNode == nil || field == nil || field.DeclarationNode == nil {
+		return false
+	}
+	declaration := field.DeclarationNode
+	if declaration.Type() != "field_declaration" && declaration.Type() != "constant_declaration" {
+		return false
+	}
+	owner := scope.Class.DeclarationNode
+	return declaration.StartByte() >= owner.StartByte() && declaration.EndByte() <= owner.EndByte()
+}
+
+func sourceReflectionAnonymousClass(scope *symbol.ClassScope) bool {
+	return scope != nil && scope.Class != nil && scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Type() == "object_creation_expression"
+}
+
+// A generated anonymous ABI can carry enclosing variables without declaring
+// them. Reflection resolves those captured identities through Enclosing, rather
+// than assigning them to the anonymous class itself.
+func sourceReflectionJavaDeclarationScope(scope *symbol.ClassScope) *symbol.ClassScope {
+	if !sourceReflectionAnonymousClass(scope) {
+		return scope
+	}
+	copy := *scope
+	copy.DeclaredTypeParameters = []symbol.TypeParam{}
+	return &copy
+}
+
+func sourceReflectionFieldAccessors(scope *symbol.ClassScope, ctx Ctx) []ast.Decl {
+	if !sourceUsesReflection() || scope == nil || scope.IsInterface {
+		return nil
+	}
+	// Method accessors share this declaration-emission hook with field accessors.
+	out := sourceReflectionPrivateMethodAccessors(scope, ctx)
+	for _, field := range scope.Fields {
+		if !sourceReflectionDeclaredField(scope, field) || field.IsStatic {
+			continue
+		}
+		storage := sourceReflectionFieldStorageType(scope, field, ctx)
+		receiver := ast.NewIdent("receiver")
+		getter := &ast.FuncDecl{Name: ast.NewIdent(sourceReflectionFieldAccessorName(scope, field, false)), Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{receiver}, Type: classSubobjectDeclarationPointerType(scope, ctx)}}}, Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: storage}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(field.Name)}}}}}}
+		setter := &ast.FuncDecl{Name: ast.NewIdent(sourceReflectionFieldAccessorName(scope, field, true)), Recv: getter.Recv, Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("value")}, Type: storage}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.AssignStmt{Lhs: []ast.Expr{&ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(field.Name)}}, Tok: token.ASSIGN, Rhs: []ast.Expr{ast.NewIdent("value")}}}}}
+		if volatileFieldDefinition(field) {
+			backing := &ast.SelectorExpr{X: receiver, Sel: ast.NewIdent(field.Name)}
+			getter.Body.List = []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{volatileFieldLoad(backing, storage, classScopeCtx(scope, ctx), field, scope)}}}
+			setter.Body.List = []ast.Stmt{volatileFieldStoreStmt(field, backing, ast.NewIdent("value"), classScopeCtx(scope, ctx))}
+		}
+		out = append(out, getter, setter)
+	}
+	return out
+}
+func sourceReflectionGeneratedFieldCallback(scope *symbol.ClassScope, field *symbol.Definition, ctx Ctx, set bool) ast.Expr {
+	params := []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: ast.NewIdent("any")}}
+	args := []ast.Expr{ast.NewIdent("execution"), ast.NewIdent("receiver"), javaTypeIDLiteral(sourceClassRuntimeTypeID(scope, ctx), ctx), metadataGoName(sourceReflectionFieldAccessorName(scope, field, set))}
+	service := "ReflectGeneratedFieldGetExecution"
+	var results *ast.FieldList
+	if set {
+		service = "ReflectGeneratedFieldSetExecution"
+		params = append(params, &ast.Field{Names: []*ast.Ident{ast.NewIdent("value")}, Type: ast.NewIdent("any")})
+		args = append(args, ast.NewIdent("value"))
+	} else {
+		results = &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}
+	}
+	call := stdjavaCall(ctx, service, args...)
+	var body ast.Stmt = &ast.ExprStmt{X: call}
+	if !set {
+		body = &ast.ReturnStmt{Results: []ast.Expr{call}}
+	}
+	return &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: params}, Results: results}, Body: &ast.BlockStmt{List: []ast.Stmt{body}}}
+}
+
+// Unknown finite trees must fail explicitly at the runtime Type boundary. Nil
+// preserves the legacy erased fallback and would falsely describe a supported
+// parameterized or variable type. ABI4 reserves no named unsupported kind;
+// its closed resolver rejects every unknown kind with UnsupportedOperationException.
+func sourceReflectionUnsupportedType(ctx Ctx) ast.Expr {
+	return &ast.CompositeLit{Type: stdjavaQualifiedExpr("ReflectTypeDescriptor", ctx), Elts: []ast.Expr{
+		metadataKey("Kind", &ast.CallExpr{Fun: stdjavaQualifiedExpr("ReflectTypeKind", ctx), Args: []ast.Expr{reflectionInteger(255)}}),
+	}}
+}
+
+// Fields remain in the parser's source/declarator order; inherited fields belong
+// to their own ClassDescriptor and are not flattened into this class.
+func sourceReflectionFields(scope *symbol.ClassScope, ctx Ctx) []ast.Expr {
+	return sourceReflectionFieldsForFields(scope, scope.Fields, ctx)
+}
+func sourceReflectionFieldsForFields(scope *symbol.ClassScope, fields []*symbol.Definition, ctx Ctx) []ast.Expr {
+	declaring := classScopeCtx(sourceReflectionJavaDeclarationScope(scope), ctx)
+	var out []ast.Expr
+	for _, field := range fields {
+		if !sourceReflectionDeclaredField(scope, field) {
+			continue
+		}
+		fieldCtx := declaring.Clone()
+		fieldCtx.localScope = field
+		erased, ok := javaTypeDescriptorExpr(qualifyDeclaredReferenceType(symbol.JavaType{Original: field.OriginalType, TypeParameterBindings: field.TypeParameterBindings}, fieldCtx), fieldCtx)
+		if !ok {
+			continue
+		}
+		values := []ast.Expr{metadataKey("Name", metadataString(field.OriginalName)), metadataKey("GoName", metadataGoName(field.Name)), metadataKey("Type", erased), metadataKey("Final", ast.NewIdent(strconv.FormatBool(field.IsFinal))), metadataKey("NonPublic", ast.NewIdent(strconv.FormatBool(sourceReflectionModifiers(field, scope)&1 == 0))), metadataKey("Modifiers", reflectionInteger(sourceReflectionModifiers(field, scope))), metadataKey("HasModifiers", ast.NewIdent("true")), metadataKey("Annotations", sourceAnnotationDescriptors(field.DeclarationNode, scope, ctx))}
+		generic, supported := reflectiveTypeDescriptorExpr(symbol.JavaType{Original: field.OriginalType, TypeParameterBindings: field.TypeParameterBindings}, fieldCtx)
+		if !supported {
+			generic = sourceReflectionUnsupportedType(ctx)
+		}
+		values = append(values, metadataKey("GenericType", &ast.UnaryExpr{Op: token.AND, X: generic}))
+		if volatileFieldDefinition(field) {
+			values = append(values, metadataKey("VolatileCell", volatileFieldDescriptorCallback(scope, field, ctx)))
+		}
+		if field.IsStatic {
+			backing := ast.NewIdent(field.Name)
+			value := ast.Expr(backing)
+			if volatileFieldDefinition(field) {
+				value = volatileFieldLoad(backing, sourceReflectionFieldStorageType(scope, field, ctx), classScopeCtx(scope, ctx), field, scope)
+			}
+			values = append(values, metadataKey("StaticGet", &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{value}}}}}))
+			if !field.IsFinal {
+				storage := sourceReflectionFieldStorageType(scope, field, ctx)
+
+				convert := &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent("converted")}, Type: storage}}}}
+				assign := &ast.AssignStmt{Lhs: []ast.Expr{ast.NewIdent("converted")}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.TypeAssertExpr{X: ast.NewIdent("value"), Type: storage}}}
+				callback := &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("value")}, Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{convert, &ast.IfStmt{Cond: &ast.BinaryExpr{X: ast.NewIdent("value"), Op: token.NEQ, Y: ast.NewIdent("nil")}, Body: &ast.BlockStmt{List: []ast.Stmt{assign}}}, volatileFieldStoreStmt(field, backing, ast.NewIdent("converted"), classScopeCtx(scope, ctx))}}}
+				values = append(values, metadataKey("StaticSet", callback))
+			}
+		} else if !scope.IsInterface {
+			values = append(values, metadataKey("Get", sourceReflectionGeneratedFieldCallback(scope, field, ctx, false)), metadataKey("Set", sourceReflectionGeneratedFieldCallback(scope, field, ctx, true)))
+		}
+		out = append(out, &ast.CompositeLit{Elts: values})
+	}
+	return out
+}
+
+// Local constructor captures lead the generated function's parameters, but
+// javac exposes them after the declared parameters in reflection. Resolve the
+// registered declaration by scope identity while emitting global metadata.
+func sourceReflectionConstructorCaptures(scope *symbol.ClassScope, ctx Ctx) []capturedLocal {
+	for _, info := range ctx.localClasses {
+		if info != nil && info.scope == scope {
+			return info.captured
+		}
+	}
+	return nil
+}
+
+func sourceReflectionConstructorCaptureParameters(scope *symbol.ClassScope, parameters []ast.Expr, ctx Ctx) []ast.Expr {
+	declaring := classScopeCtx(scope, ctx)
+	for _, capture := range sourceReflectionConstructorCaptures(scope, ctx) {
+		if capture.javaDef == nil {
+			panic("missing reflection constructor capture declaration")
+		}
+		javaType := symbol.JavaType{Original: definitionJavaType(capture.javaDef), TypeParameterBindings: capture.javaDef.TypeParameterBindings}
+		descriptor, ok := javaTypeDescriptorExpr(qualifyDeclaredReferenceType(javaType, declaring), declaring)
+		if !ok {
+			panic("unresolved reflection constructor capture parameter descriptor")
+		}
+		parameters = append(parameters, descriptor)
+	}
+	return parameters
+}
+
+// Runtime validation converts each argument to the erased Java parameter before
+// entering this callback. Project references at that descriptor, preserving null
+// and generated superclass/interface views instead of asserting their Go shape.
+func sourceReflectionConstructorCallback(scope *symbol.ClassScope, method *symbol.Definition, name string, parameters []ast.Expr, ctx Ctx) ast.Expr {
+	declaring := classScopeCtx(scope, ctx).Clone()
+	declaring.localScope = method
+	declaring.syntheticTypeParameters = nil
+	fun := ast.Expr(ast.NewIdent(executionConstructorImplementationName(name, scope)))
+	arguments := []ast.Expr{ast.NewIdent("execution")}
+	sourceParameterCount := 0
+	if method != nil {
+		sourceParameterCount = len(method.Parameters)
+	}
+	for index, capture := range sourceReflectionConstructorCaptures(scope, ctx) {
+		javaType := definitionJavaType(capture.javaDef)
+		physical := abstractClassToInterface(javaTypeStringToGoTypeExpr(javaType, nil, declaring), javaType, declaring)
+		value := ast.Expr(&ast.IndexExpr{X: ast.NewIdent("arguments"), Index: reflectionInteger(int32(sourceParameterCount + index))})
+		if _, primitive := javaPrimitiveType(javaType); primitive {
+			value = &ast.TypeAssertExpr{X: value, Type: physical}
+		} else {
+			value = stdjavaGenericCall(declaring, "ObjectView", []ast.Expr{physical}, []ast.Expr{value, parameters[sourceParameterCount+index]})
+		}
+		arguments = append(arguments, value)
+	}
+	replacements := map[string]string{}
+	if method != nil && len(method.TypeParameters) != 0 {
+		javaTypes := genericMainErasedJavaTypes(method, declaring)
+		goTypes := make([]ast.Expr, len(javaTypes))
+		for index, parameter := range method.TypeParameters {
+			goTypes[index] = javaTypeStringToGoTypeExpr(javaTypes[index], nil, declaring)
+			replacements[parameter.Name] = javaTypes[index]
+			replacements[parameter.EmittedName()] = javaTypes[index]
+		}
+		fun = applyTypeArguments(fun, goTypes)
+		witnesses := dependentTypeWitnessArgumentsForJavaTypes(method, javaTypes, declaring)
+		if len(witnesses) != len(concreteDependentTypeWitnessEdges(method, declaring)) {
+			panic("unresolved erased reflection constructor projection")
+		}
+		arguments = append(arguments, witnesses...)
+	}
+	if method != nil {
+		for index := range method.Parameters {
+			javaType := substituteJavaTypeParameters(definitionParameterJavaSignatureType(method, index), replacements)
+			physical := abstractClassToInterface(javaTypeStringToGoTypeExpr(javaType, nil, declaring), javaType, declaring)
+			value := ast.Expr(&ast.IndexExpr{X: ast.NewIdent("arguments"), Index: reflectionInteger(int32(index))})
+			if _, primitive := javaPrimitiveType(javaType); primitive {
+				value = &ast.TypeAssertExpr{X: value, Type: physical}
+			} else {
+				value = stdjavaGenericCall(declaring, "ObjectView", []ast.Expr{physical}, []ast.Expr{value, parameters[index]})
+			}
+			arguments = append(arguments, value)
+		}
+	}
+	call := &ast.CallExpr{Fun: fun, Args: arguments}
+	markVariadicForwardCall(call, method)
+	return &ast.FuncLit{
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{List: []*ast.Field{
+				executionParameterField("execution", ctx),
+				{Names: []*ast.Ident{ast.NewIdent("arguments")}, Type: &ast.ArrayType{Elt: ast.NewIdent("any")}},
+			}},
+			Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}},
+		},
+		Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{call}}}},
+	}
+}
+
+func sourceReflectionConstructorDescriptors(scope *symbol.ClassScope, ctx Ctx) ast.Expr {
+	out := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("ConstructorDescriptor", ctx)}}
+	// Enclosing/captured/class-generic ABI arguments need their own descriptor
+	// planning. Ordinary constructor parameters use their declared erased types.
+	if scope.IsInterface || scope.IsEnum || scope.IsInner || len(scope.TypeParameters) != 0 || sourceReflectionAnonymousClass(scope) {
+		return out
+	}
+	declared := false
+	for _, method := range scope.Methods {
+		// Synthetic constructors have a separate ABI (for example, a record's
+		// canonical constructor). This path describes source declarations only.
+		if method == nil || !method.Constructor || method.DeclarationNode == nil {
+			continue
+		}
+		declared = true
+		declaring := classScopeCtx(scope, ctx).Clone()
+		declaring.localScope = method
+		parameters := make([]ast.Expr, len(method.Parameters))
+		for index, parameter := range method.Parameters {
+			value, ok := javaTypeDescriptorExpr(qualifyDeclaredReferenceType(symbol.JavaType{Original: definitionParameterJavaSignatureType(method, index), TypeParameterBindings: parameter.TypeParameterBindings}, declaring), declaring)
+			if !ok {
+				panic("unresolved reflection constructor parameter descriptor")
+			}
+			parameters[index] = value
+		}
+		parameters = sourceReflectionConstructorCaptureParameters(scope, parameters, ctx)
+		modifiers := sourceReflectionModifiers(method, scope)
+		if len(method.Parameters) > 0 && executionParameterIsVariadic(method, len(method.Parameters)-1) {
+			modifiers |= 128
+		}
+		entry := &ast.CompositeLit{Elts: []ast.Expr{
+			metadataKey("Parameters", sourceReflectionTypeIDs(parameters, ctx)),
+			metadataKey("Modifiers", reflectionInteger(modifiers)),
+		}}
+		if !scope.IsAbstract {
+			entry.Elts = append(entry.Elts, metadataKey("Construct", sourceReflectionConstructorCallback(scope, method, method.Name, parameters, ctx)))
+		}
+		out.Elts = append(out.Elts, entry)
+	}
+	if !declared {
+		if name := noArgConstructorName(scope); name != "" {
+			modifiers := sourceReflectionModifiers(scope.Class, scope) & 7
+			for _, method := range scope.Methods {
+				if method != nil && method.Constructor && len(method.Parameters) == 0 {
+					modifiers = sourceReflectionModifiers(method, scope)
+					break
+				}
+			}
+			parameters := sourceReflectionConstructorCaptureParameters(scope, nil, ctx)
+			entry := &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Modifiers", reflectionInteger(modifiers))}}
+			if len(parameters) != 0 {
+				entry.Elts = append(entry.Elts, metadataKey("Parameters", sourceReflectionTypeIDs(parameters, ctx)))
+			}
+			if !scope.IsAbstract {
+				entry.Elts = append(entry.Elts, metadataKey("Construct", sourceReflectionConstructorCallback(scope, nil, name, parameters, ctx)))
+			}
+			out.Elts = append(out.Elts, entry)
+		}
+	}
+	return out
+}
+
+func extendSourceReflectionMetadata(descriptor *ast.CompositeLit, scope *symbol.ClassScope, ctx Ctx) {
+	descriptor.Elts = append(descriptor.Elts, metadataKey("NestHost", sourceReflectionNestHostTypeID(scope, ctx)))
+	descriptor.Elts = append(descriptor.Elts, metadataKey("Modifiers", reflectionInteger(sourceReflectionModifiers(scope.Class, scope))), metadataKey("HasModifiers", ast.NewIdent("true")), metadataKey("Constructors", sourceReflectionConstructorDescriptors(scope, ctx)))
+	// Anonymous classes declare no Java type variables, even when their Go ABI
+	// carries captured enclosing binders. Preserve the original scope for all
+	// storage/header planning and change only the reflection declaration view.
+	variableScope := sourceReflectionJavaDeclarationScope(scope)
+	declarationCtx := classScopeCtx(variableScope, ctx)
+	variables, ok := reflectiveTypeVariableDescriptorsExpr(variableScope, declarationCtx)
+	if !ok {
+		// Preserve declaration arity and source names while refusing an unknown
+		// bound. The unavailable bound must not silently become Object.
+		entries := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("TypeVariableDescriptor", ctx)}}
+		for _, parameter := range variableScope.OwnTypeParameters() {
+			name := parameter.Name
+			if parameter.Declaration != nil && parameter.Declaration.SourceName != "" {
+				name = parameter.Declaration.SourceName
+			}
+			bounds := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("ReflectTypeDescriptor", ctx)}, Elts: []ast.Expr{sourceReflectionUnsupportedType(ctx)}}
+			entries.Elts = append(entries.Elts, &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Name", metadataString(name)), metadataKey("Bounds", bounds)}})
+		}
+		variables = entries
+	}
+	descriptor.Elts = append(descriptor.Elts, metadataKey("TypeParameters", variables))
+	superclass, ok := reflectiveGenericSuperclassDescriptorExpr(variableScope, declarationCtx)
+	if !ok {
+		superclass = &ast.UnaryExpr{Op: token.AND, X: sourceReflectionUnsupportedType(ctx)}
+	}
+	descriptor.Elts = append(descriptor.Elts, metadataKey("GenericSuperclass", superclass))
+}

@@ -1,0 +1,15 @@
+# Eastern ledger; input order is deliberately different from replay order.
+alpha	PUT	Caf%C3%A9	7	e69d08eff2f7
+beta	PUT	%E6%9D%B1%E4%BA%AC	12	2643304061de
+alpha	ADD	Cafe%CC%81	-2	03df1e50e376
+gamma	ADD	space+%2B+%25	4	f9d8d2bc403f
+delta	PUT	na%C3%AFve%2F%E9%9B%AA	2147483647	71c9a3e87ce3
+delta	ADD	na%C3%AFve%2F%E9%9B%AA	1	4e6de4d736e9
+beta	ADD	%E6%9D%B1%E4%BA%AC	-3	6653ebd29091
+epsilon	PUT	emoji+%F0%9F%A7%AA	-8	82dac69d266e
+alpha	DEL	Caf%C3%A9	0	37447562a3aa
+alpha	PUT	Caf%C3%A9	22	801e6e991923
+oops	PUT	broken%ZZ	2	001122334455
+zeta	PUT	cr%C3%A8me+br%C3%BBl%C3%A9e	0	5a4b116b38ff
+eta	PUT	space+%2B+%25	13	225646a550c6
+broken	PUT	too-few

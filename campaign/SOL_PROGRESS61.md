@@ -1,0 +1,13 @@
+# Progress61: expanded Sol-only repairs and independent verification
+
+Eighteen Sol owners have distinct compiler, runtime, dependency, oracle, verification and performance assignments. Root schedules three Go-heavy correctness lanes and two JVM-only oracle lanes, with private outputs and process trees. Performance measurements require an exclusive window. No Astra work runs.
+
+The native candidate independently passes all sixteen scoped verification groups: 119 supervised stages and 128 reported output comparisons. Canonical Supplier applicability now passes the complete Objects workflow and all three preservation groups, including 54 frozen JVM stream comparisons and 405 independent audit checks. These results bind separate immutable private source snapshots, not the active managed checkout.
+
+Fresh paired native unit CI finds six additional candidate failures. Four assertions need review against the changed generated API; two valid Java applications expose missing Function nominal registration and incorrect List projection/descriptor handling. Separate Sol owners repair these defects while preserving strict nominal casts. Baseline has 1,924 passing test/subtest records and nine failures; candidate has 1,978 passes and fifteen failures. Neither run skips tests. The nine shared failures concern JVM ASCII stdout under the frozen C locale and remain visible.
+
+Focused tests reproduce Long parsing, String split and Paths/IOException missing APIs or dispatch defects. Encoding exposes both missing APIs and a Go build-JSON transport schema defect; a transport-only correction is reviewed before fresh execution. Generic scope oracles confirm class-header and switch-group binding, and focused tests reproduce six context failures. Formatter captures fixed and expanded bare-null varargs independently. Resource/reader v2 retains the original Unicode lookup as an exception observation and passes nine JVM repetitions. Digest repairs reach generated race execution, which exposes an additional canonical Integer.toHexString prerequisite; none of its three full applications is accepted yet.
+
+Root verifies every member of a fixed-cutoff progress61 archive and all ten complete source closures: 3,327 safe regular members and 19,782 source-index references. The ignored local copy preserves its cutoff and explicitly excludes later CI and Long results. Current user changes and unrelated untracked performance files remain preserved.
+
+Checkpoint18 remains the latest complete compatibility acceptance. Full Gson and accumulated CI still gate progression; no Netty parity or measured performance advantage is claimed. The goal controller is active. Exact source hashes, raw receipts, ownership and resume limits are in active_resume.progress61.

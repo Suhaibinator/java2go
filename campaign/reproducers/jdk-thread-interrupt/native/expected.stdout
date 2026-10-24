@@ -1,0 +1,8 @@
+current:consumed
+reset:consumed
+once:1
+new:consumed
+alive:consumed
+terminated:false
+null:java.lang.NullPointerException
+evaluations:2

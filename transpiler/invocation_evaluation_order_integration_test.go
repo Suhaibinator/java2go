@@ -68,14 +68,18 @@ public class InvocationOrderProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestInvocationEvaluationOrder(t *testing.T) {
-    if got := RunNullInstanceCall(); got != "rac" {
-        t.Fatalf("null instance call trace = %q, want receiver, argument, catch", got)
+    if got := RunNullInstanceCall(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("rac"))) {
+        t.Fatalf("null instance call trace = %v, want receiver, argument, catch", got)
     }
-    if got := RunStaticCallThroughExpression(); got != "7:ras" {
-        t.Fatalf("static-through-expression trace = %q, want receiver, argument, body", got)
+    if got := RunStaticCallThroughExpression(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("7:ras"))) {
+        t.Fatalf("static-through-expression trace = %v, want receiver, argument, body", got)
     }
 }
 `)

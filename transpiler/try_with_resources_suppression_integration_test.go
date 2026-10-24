@@ -105,29 +105,33 @@ public class ResourceSuppressionProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestBodyAndClose(t *testing.T) {
-	if got := BodyAndClose(); got != "B21:body:2" {
-		t.Fatalf("BodyAndClose() = %q, want %q", got, "B21:body:2")
+	if got := BodyAndClose(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("B21:body:2"))) {
+		t.Fatalf("BodyAndClose() = %v, want %q", got, "B21:body:2")
 	}
 }
 
 func TestCloseOnly(t *testing.T) {
-	if got := CloseOnly(); got != "B21:2:1" {
-		t.Fatalf("CloseOnly() = %q, want %q", got, "B21:2:1")
+	if got := CloseOnly(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("B21:2:1"))) {
+		t.Fatalf("CloseOnly() = %v, want %q", got, "B21:2:1")
 	}
 }
 
 func TestReturnVsClose(t *testing.T) {
-	if got := ReturnVsClose(); got != "BC:C" {
-		t.Fatalf("ReturnVsClose() = %q, want %q", got, "BC:C")
+	if got := ReturnVsClose(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("BC:C"))) {
+		t.Fatalf("ReturnVsClose() = %v, want %q", got, "BC:C")
 	}
 }
 
 func TestSelfSuppression(t *testing.T) {
-	if got := SelfSuppression(); got != "Self-suppression not permitted:0:true:same" {
-		t.Fatalf("SelfSuppression() = %q, want %q", got, "Self-suppression not permitted:0:true:same")
+	if got := SelfSuppression(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("Self-suppression not permitted:0:true:same"))) {
+		t.Fatalf("SelfSuppression() = %v, want %q", got, "Self-suppression not permitted:0:true:same")
 	}
 }
 `)

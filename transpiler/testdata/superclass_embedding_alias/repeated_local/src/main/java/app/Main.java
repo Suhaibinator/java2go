@@ -1,0 +1,1 @@
+package app; public class Main {static int first(){class Local extends p.Base {} return new Local().base();} static int second(){class Local extends q.Base {} return new Local().base();} public static void main(String[] args){System.out.println(first()+":"+second());}}

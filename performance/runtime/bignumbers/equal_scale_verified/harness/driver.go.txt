@@ -1,0 +1,7 @@
+package main
+import("fmt";"os";"strconv")
+func main(){
+ fmt.Println(Audit())
+ seed,_:=strconv.Atoi(os.Args[1]);count,_:=strconv.Atoi(os.Args[2]);mode,_:=strconv.Atoi(os.Args[3]);repeats,_:=strconv.Atoi(os.Args[4])
+ Setup(int32(seed),int32(count),int32(mode));fmt.Println(Run(int32(repeats)))
+}

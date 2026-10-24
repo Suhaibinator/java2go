@@ -1,0 +1,13 @@
+# Sol progress73: reflective results, java.time and cache allocation
+
+The public compiler now carries tested Class, annotation and Constructor result types through generic expressions and declaration-aware namespace resolution. The wildcard projection cleanup reuses the existing parser and handles legal whitespace while preserving source-owned Object names. Fourteen exercised java.time services and the matching embedded zone database are published, together with generic invocation inference and isolated legacy main tests.
+
+The125 reviewed paths comprise26 production files and99 tests/fixtures. The composed source passes34 Time stages and48 raw-stream comparisons,36 reflective checks and30 generic/legacy/Maven checks. A separate three-line ZoneOffset cache successor passes three race controls; all368 other preceding runtime files remain byte-identical. Coordinator audit c77e0f25 verifies2666 source hashes,226 retained evidence hashes,38 clean receipts and raw unique terminals. Original reflection native outputs are checked by the unchanged byte-comparison helper; successful nested native streams were not separately retained.
+
+Warmed offset lookups report128 bytes and10 allocations per benchmark operation before the fast path and zero after it. This is a controlled allocation observation with averaged-counter limits, not a Java or application speedup claim. The earlier builder pilot remains stability-inconclusive.
+
+Historical23a27b1 CI is actually RED: unit2555PASS/326FAIL/0SKIP, including273 failed parents; e2e-other59PASS/14FAIL; strict application parity49 childfixtures pass and5 fail. All started tests terminate, and infrastructure/source/cleanup checks pass after the local C SDK transport correction. Genuine application defects are retained separately from stale native-string harness assertions. Current fullCI is not accepted.
+
+Private Future getter/worker/lifetime repairs match696 original JVM rows across normal and race runs. Generic-null, bound-Character and caller-aware Constructor fixes have independent scoped acceptance; portable Date/ISO, original full43 and full120 Gson integration remain active. Full43 exposes general Thread/Future namespace and immutable Map.Entry prerequisites, including a preserved missing FutureTask composition row. New challenge fixtures are supplements until promotion; current applications cannot be replaced by easier cases.
+
+Checkpoint18 remains the latest accepted full round. Twenty GPT-6.1 Sol/high roles plus the coordinator continue bounded TDD, independent verification and performance research. Root alone commits/pushes exact reviewed milestones; primary-checkout user changes and untracked equal-scale work are preserved.

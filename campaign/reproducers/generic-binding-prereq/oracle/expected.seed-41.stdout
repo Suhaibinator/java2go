@@ -1,0 +1,6 @@
+seed=41,routes=1,2,3,4,5,1
+retail=I/41/78/5/p[agent-41/primitive:45]b[agent-41/boxed:51]g[agent-41/wide:59]g[agent-41/widened:68]g[agent-41/forwarded:78]pX
+reserve=G/82/85/1/b[agent-41/reserve:85]
+bound=49,90
+rejection=true,touches=1,before=I/41/78/5/p[agent-41/primitive:45]b[agent-41/boxed:51]g[agent-41/wide:59]g[agent-41/widened:68]g[agent-41/forwarded:78]
+evaluations=opebewebebefbeep

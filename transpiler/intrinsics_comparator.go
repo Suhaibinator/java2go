@@ -91,7 +91,13 @@ func registerComparatorIntrinsics() {
 	// chained onto it resolves to the generated Go spelling instead of keeping
 	// its Java one.
 	for _, method := range []string{"comparing", "comparingInt", "comparingLong", "comparingDouble", "naturalOrder", "reverseOrder"} {
-		registerStaticIntrinsicResultType("Comparator", method, "Comparator")
+		registerStaticIntrinsicDerivedResultType("Comparator", method, func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
+			elements := targetElementJavaTypes(invocation, ctx, source)
+			if len(elements) == 1 {
+				return "Comparator<" + elements[0] + ">", true
+			}
+			return "Comparator", true
+		})
 	}
 	registerStaticIntrinsicResultType("Collections", "reverseOrder", "Comparator")
 	for _, t := range comparatorTypeNames {
@@ -125,7 +131,7 @@ func registerComparatorIntrinsics() {
 			if !expectArgs(args, 1) {
 				return nil
 			}
-			if isKeyExtractorExpr(args[0]) {
+			if isKeyExtractorExpr(args[0], ctx) {
 				return stdjavaCall(ctx, "ComparatorThenComparingKey", recv, args[0], intrinsicExecutionExpr(ctx))
 			}
 			return methodCall(recv, "ThenComparing", args[0])
@@ -158,15 +164,29 @@ func enclosingTargetTypeArgs(invocation *sitter.Node, ctx Ctx, source []byte) []
 
 // isKeyExtractorExpr reports whether a thenComparing argument is a single-
 // parameter key extractor rather than a two-parameter comparator. A non-lambda
-// argument (a comparator variable or a method reference) is treated as a
-// comparator, which is the commoner form.
-func isKeyExtractorExpr(arg ast.Expr) bool {
-	funcLit, ok := arg.(*ast.FuncLit)
-	if !ok || funcLit.Type == nil || funcLit.Type.Params == nil {
+// argument defaults to a comparator. Function callback adapters retain their
+// unary callable contract even though their generated syntax is a call.
+func isKeyExtractorExpr(arg ast.Expr, ctx Ctx) bool {
+	if isFunctionCallbackExpr(arg, ctx) {
+		return true
+	}
+	var functionType *ast.FuncType
+	switch expression := arg.(type) {
+	case *ast.FuncLit:
+		functionType = expression.Type
+	case *ast.CallExpr:
+		// A method reference stages its captured receiver/execution token in
+		// an IIFE returning a closure. Its callable arity remains the arity of
+		// that result, not the argument count of the staging invocation.
+		if factory, ok := expression.Fun.(*ast.FuncLit); ok && factory.Type.Results != nil && len(factory.Type.Results.List) == 1 {
+			functionType, _ = factory.Type.Results.List[0].Type.(*ast.FuncType)
+		}
+	}
+	if functionType == nil || functionType.Params == nil {
 		return false
 	}
 	parameters := 0
-	for _, field := range funcLit.Type.Params.List {
+	for _, field := range functionType.Params.List {
 		if len(field.Names) == 0 {
 			parameters++
 			continue

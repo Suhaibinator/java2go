@@ -1,0 +1,12 @@
+bound:ok:82,55296,0,56320,82:false:rab:true
+direct:ok:82,55296,0,56320,82:false:rab:true
+same:ok:114,55296,0,56320,114:true:rab:true
+surrogate:ok:114,56320,0,56320,114:false:rab:true
+old-null:NullPointerException:false:ra:true
+new-null:NullPointerException:false:rab:true
+receiver-null:NullPointerException:false:rab:true
+both-null:NullPointerException:false:ra:true
+old-null-abrupt-second:NullPointerException:false:ra:true
+second-abrupt:RuntimeException:true:rab:true
+source-owner:zbz:rabTtrueUtrue
+shadow-binder:zbz:rabTtrueUtrue

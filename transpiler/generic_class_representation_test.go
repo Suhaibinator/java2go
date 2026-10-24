@@ -40,16 +40,27 @@ public class GenericTypedCastProgram {
         Box<First> original = new Box<>(new First(7));
         Object erased = original;
         Box<First> restored = (Box<First>) erased;
-        return "value=" + restored.value.number();
+        Object missing = null;
+        Box<First> absent = (Box<First>) missing;
+        Object wrong = "bad";
+        boolean rejected = false;
+        try { ((Box<First>) wrong).value.number(); }
+        catch (ClassCastException expected) { rejected = true; }
+        return "value=" + restored.value.number() + ":" + (original == restored) + ":" + (absent == null) + ":" + rejected;
     }
 }
 `
-	assertGeneratedLocalConstructorResult(t, source, "value=7")
-
-	generated := normalizeSpaces(renderGoFileFromJava(t, source))
-	if !strings.Contains(generated, "restored := any(erased).(") {
-		t.Fatalf("Object-to-parameterized cast lost its runtime check:\n%s", generated)
+	want := campaignRuntimeJavaOracle(t, "GenericTypedCastProgram", source)
+	if want != "value=7:true:true:true" {
+		t.Fatalf("unexpected JVM cast semantics: %q", want)
 	}
+	assertGeneratedLocalConstructorResult(t, source, want)
+
+	generated := ciABI193Parse(t, renderGoFileFromJava(t, source))
+	method := ciABI193Function(t, generated, "RunJava2goExecution")
+	ciABI193RequireExpr(t, ciABI193Local(t, method, "restored"), `stdjava.ReferenceCheckCast[*GenericTypedCastProgrambox[*GenericTypedCastProgramfirst]](erased, stdjava.TypeID("GenericTypedCastProgram$Box"))`)
+	ciABI193RequireExpr(t, ciABI193Local(t, method, "absent"), `stdjava.ReferenceCheckCast[*GenericTypedCastProgrambox[*GenericTypedCastProgramfirst]](missing, stdjava.TypeID("GenericTypedCastProgram$Box"))`)
+	ciABI193RequireCallCount(t, method, `stdjava.ReferenceCheckCast[*GenericTypedCastProgrambox[*GenericTypedCastProgramfirst]](wrong, stdjava.TypeID("GenericTypedCastProgram$Box"))`, 1)
 }
 
 func TestGenericCast_RawSameClassPreservesExistingRepresentation(t *testing.T) {

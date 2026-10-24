@@ -18,8 +18,13 @@ func builtinJavaWrapperPrimitive(javaType string, ctx Ctx) (string, bool) {
 		return "", false
 	}
 	base, arguments := parseJavaTypeString(base)
-	if len(arguments) != 0 || (strings.Contains(base, ".") && !strings.HasPrefix(base, "java.lang.")) {
+	if len(arguments) != 0 || (strings.Contains(base, ".") && base != "java.lang."+stripJavaQualifier(base)) {
 		return "", false
+	}
+	if !strings.Contains(base, ".") && ctx.currentFile != nil {
+		if owner, imported := ctx.currentFile.Imports[base]; imported && owner != "java.lang" {
+			return "", false
+		}
 	}
 	if !strings.HasPrefix(base, "java.lang.") && ctx.currentFile != nil && resolveClassScopeByQualifiedName(ctx, base) != nil {
 		return "", false

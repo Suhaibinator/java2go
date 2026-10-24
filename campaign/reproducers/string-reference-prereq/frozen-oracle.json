@@ -1,0 +1,77 @@
+{
+  "provenance_oracle_sha256": "05d6a1fb18a24f9be6e60b755e29869ef5852c041ceab8ed134163deb4f51b14",
+  "main_class": "probe.StringReferencePrereq",
+  "java_release": 21,
+  "observations": [
+    {
+      "args": [],
+      "repeat": 1,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    },
+    {
+      "args": [],
+      "repeat": 2,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    },
+    {
+      "args": [],
+      "repeat": 3,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    },
+    {
+      "args": [],
+      "repeat": 4,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    },
+    {
+      "args": [],
+      "repeat": 5,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    },
+    {
+      "args": [],
+      "repeat": 6,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    },
+    {
+      "args": [],
+      "repeat": 7,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    },
+    {
+      "args": [],
+      "repeat": 8,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    },
+    {
+      "args": [],
+      "repeat": 9,
+      "exit": 0,
+      "stdout": "expected.stdout",
+      "stderr": "expected.stderr"
+    }
+  ],
+  "files": {
+    "README.md": "b5952f388aaf777f300f15d092c9e1282ef0f63a88912ba23bfc98b1ea9fdb29",
+    "expected.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected.stdout": "d8c6b2ac1a76120fcebee23b4f6454f1fe571d93a453088346c151b96c9aedc6",
+    "pom.xml": "5d49b9008c2fbc70e74ac47bc106951ff7ed4923786c5cc1525b3756849c905b",
+    "src/main/java/probe/StringReferencePrereq.java": "493596f5e7ee478196156f1d21d0b7e79bf1b454bbaa4a5c1d4258b2a9e818fd"
+  }
+}

@@ -98,21 +98,21 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	}
 
 	loggerOut := normalizeSpaces(outputs["com/acme/common/Logger.go"])
-	if !strings.Contains(loggerOut, "fmt.Println(stdjava.StringValueOf(msg))") {
-		t.Fatalf("expected System.out.println lowering to fmt.Println in Logger:\n%s", outputs["com/acme/common/Logger.go"])
+	if !strings.Contains(loggerOut, "stdjava.JavaPrintlnStrings(stdjava.JavaStringTextOperandExecution(__java2goExecution, msg))") {
+		t.Fatalf("expected System.out.println lowering to canonical Java String printing in Logger:\n%s", outputs["com/acme/common/Logger.go"])
 	}
-	if !strings.Contains(loggerOut, "fmt \"fmt\"") {
-		t.Fatalf("expected fmt import in Logger output:\n%s", outputs["com/acme/common/Logger.go"])
+	if !strings.Contains(loggerOut, "stdjava \"github.com/NickyBoy89/java2go/stdjava\"") {
+		t.Fatalf("expected canonical runtime import in Logger output:\n%s", outputs["com/acme/common/Logger.go"])
 	}
 
 	parseTaskOut := normalizeSpaces(outputs["com/acme/domain/ParseTask.go"])
-	if !strings.Contains(parseTaskOut, "common.NewMapperFuncAdapterJava2goExecution[string, string]") {
+	if !strings.Contains(parseTaskOut, "common.NewMapperFuncAdapterJava2goExecution[*stdjava.JavaString, *stdjava.JavaString]") {
 		t.Fatalf("expected package-qualified lambda wrapper call in ParseTask:\n%s", outputs["com/acme/domain/ParseTask.go"])
 	}
 	if !strings.Contains(parseTaskOut, "stdjava.ObjectInstanceOf(normalized, stdjava.StringTypeID)") {
 		t.Fatalf("expected instanceof conversion in ParseTask:\n%s", outputs["com/acme/domain/ParseTask.go"])
 	}
-	if !strings.Contains(parseTaskOut, "stdjava.StringLength(stdjava.StringRequireNonNull(normalized))") {
+	if !strings.Contains(parseTaskOut, "stdjava.RequireJavaString(normalized).Length()") {
 		t.Fatalf("expected String.length() lowering in ParseTask:\n%s", outputs["com/acme/domain/ParseTask.go"])
 	}
 	if !strings.Contains(parseTaskOut, "common \"com/acme/common\"") {
@@ -120,13 +120,13 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	}
 
 	pipelineOut := normalizeSpaces(outputs["com/acme/app/Pipeline.go"])
-	if !strings.Contains(pipelineOut, "func Execute(task domain.TaskI, mapper common.Mapper[string, string]) int32") {
+	if !strings.Contains(pipelineOut, "func Execute(task domain.TaskI, mapper common.Mapper[*stdjava.JavaString, *stdjava.JavaString]) int32") {
 		t.Fatalf("expected abstract-class interface parameter in Pipeline:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
 	if !strings.Contains(pipelineOut, `stdjava.ObjectInstanceOf(task, stdjava.TypeID("com.acme.domain.ParseTask"))`) {
 		t.Fatalf("expected package-qualified class instanceof conversion in Pipeline:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
-	if !strings.Contains(pipelineOut, "stdjava.StringLength(stdjava.StringRequireNonNull(out))") {
+	if !strings.Contains(pipelineOut, "stdjava.RequireJavaString(out).Length()") {
 		t.Fatalf("expected String.length() lowering in Pipeline:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
 	if !strings.Contains(pipelineOut, "common \"com/acme/common\"") || !strings.Contains(pipelineOut, "domain \"com/acme/domain\"") {
@@ -147,7 +147,7 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	if !strings.Contains(pipelineOut, "func GuardedFinallyPanicOverride() int32") {
 		t.Fatalf("expected guardedFinallyPanicOverride method to be converted:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
-	if !strings.Contains(pipelineOut, "func GuardedResourceOrder() string") {
+	if !strings.Contains(pipelineOut, "func GuardedResourceOrder() *stdjava.JavaString") {
 		t.Fatalf("expected guardedResourceOrder method to be converted:\n%s", outputs["com/acme/app/Pipeline.go"])
 	}
 	if !strings.Contains(pipelineOut, "defer stdjava.CloseResource(func()") || !strings.Contains(pipelineOut, ".Close()") {
@@ -155,13 +155,13 @@ func TestFullProgram_MultiPackageConversion(t *testing.T) {
 	}
 
 	mainOut := normalizeSpaces(outputs["com/acme/app/MainApp.go"])
-	if !strings.Contains(mainOut, "domain.NewParseTaskJava2goExecution(__java2goExecution, \"alpha\")") {
+	if !strings.Contains(mainOut, "domain.NewParseTaskJava2goExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{97, 108, 112, 104, 97}))") {
 		t.Fatalf("expected package-qualified constructor call in MainApp:\n%s", outputs["com/acme/app/MainApp.go"])
 	}
-	if !strings.Contains(mainOut, "common.ModeValueOf(\"FAST\")") {
+	if !strings.Contains(mainOut, "common.ModeValueOfJava2goExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{70, 65, 83, 84}))") {
 		t.Fatalf("expected enum valueOf helper usage in MainApp:\n%s", outputs["com/acme/app/MainApp.go"])
 	}
-	if !strings.Contains(mainOut, "common.ModeValues()") {
+	if !strings.Contains(mainOut, "common.ModeValuesJava2goExecution(__java2goExecution)") {
 		t.Fatalf("expected enum values helper usage in MainApp:\n%s", outputs["com/acme/app/MainApp.go"])
 	}
 	if !strings.Contains(mainOut, "common \"com/acme/common\"") || !strings.Contains(mainOut, "domain \"com/acme/domain\"") {

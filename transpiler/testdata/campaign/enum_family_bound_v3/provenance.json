@@ -1,0 +1,94 @@
+{
+  "main_class": "probe.enums.Main",
+  "project_files": {
+    "README.md": "56774a14f90079a29d15cb3672c862c89e6fa834923857af21aea946b7db1300",
+    "pom.xml": "13575ffb3c53172a75fd515b717f674675861c53619943062d16bef6c7d33a03",
+    "src/main/java/probe/api/Carrier.java": "3345a09e282b5f9305d15ffc8c475c02b68a03ffea5e5211f6070ac1cd8a0b64",
+    "src/main/java/probe/api/Factory.java": "44ed9f60209d28500bd62570679eeae9570f9f84576b8fdce0916ee01e155de0",
+    "src/main/java/probe/enums/Main.java": "c941a3df47f8c646b38f952d28458ca6b3fbcdc75f92821993dd72e857020014",
+    "src/main/java/probe/model/Choice.java": "d30a6703b1ef7d1206d8c29e18ae3f4381f17e2aab41277534e1412861794deb",
+    "src/main/java/probe/model/ChoiceCarrier.java": "afd59637e07d23f701e962456d6839f3af467f27b08c763d7f62baf1b1e22329",
+    "src/main/java/probe/model/EnumCarrier.java": "463035eaae16fb6428e3d00a41452ee32420d19b11fe544af1825d0dda8b51c2",
+    "src/main/java/probe/model/NamedFactory.java": "2236ad50e975ebc48ff2f91f997d69ce6cdd955fcfbbc647759e04d8a0e3d035",
+    "src/main/java/probe/model/Other.java": "5467af5aa5001d524bf8be65acf5d4f11a453f3b6414e3c07abc1d37b920eecf",
+    "src/main/java/probe/model/TextCarrier.java": "9713d7f7c644e35b096617771334d567377ac328d288d2143df76318180ffe77",
+    "src/main/java/probe/shadow/Enum.java": "1bea033fe639e9139f6767094dabb360d7c4182cd40131407ce5afa634fc89c5"
+  },
+  "source_manifest_sha256": "c4b8f3503565ababb99c6501f13109c9db17c7f20260a1b3fba9a8adecc744ae",
+  "original_report": "original-jvm-report.json",
+  "original_report_sha256": "9c5df4c1ac4627cf5628c586bdf1d68e231119ab8f22122995c9d0209fc48104",
+  "observations": [
+    {
+      "seed": 17,
+      "repeat": 1,
+      "stdout": "observations/seed-17-repeat-1.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-17-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 17,
+      "repeat": 2,
+      "stdout": "observations/seed-17-repeat-2.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-17-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 17,
+      "repeat": 3,
+      "stdout": "observations/seed-17-repeat-3.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-17-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 41,
+      "repeat": 1,
+      "stdout": "observations/seed-41-repeat-1.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-41-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 41,
+      "repeat": 2,
+      "stdout": "observations/seed-41-repeat-2.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-41-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 41,
+      "repeat": 3,
+      "stdout": "observations/seed-41-repeat-3.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-41-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 97,
+      "repeat": 1,
+      "stdout": "observations/seed-97-repeat-1.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-97-repeat-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 97,
+      "repeat": 2,
+      "stdout": "observations/seed-97-repeat-2.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-97-repeat-2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "seed": 97,
+      "repeat": 3,
+      "stdout": "observations/seed-97-repeat-3.stdout",
+      "stdout_sha256": "633029791422081750f9721b9b3f29cee592b9ce70ed7273f8047af4f453b068",
+      "stderr": "observations/seed-97-repeat-3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

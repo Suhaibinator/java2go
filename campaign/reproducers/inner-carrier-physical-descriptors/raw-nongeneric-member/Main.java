@@ -1,0 +1,1 @@
+public class Main {public static void main(String[]args){Box<String> owner=new Box<String>();Box<Integer> otherOwner=new Box<Integer>();Box<String>.Member same=owner.new Member();Box<Integer>.Member other=otherOwner.new Member();System.out.print(Probe.run(owner,same,other));}}

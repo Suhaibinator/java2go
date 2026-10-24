@@ -1,0 +1,13 @@
+before=true
+inside=true
+after-block=true
+sibling=true
+local=true:true
+nested=true
+capture=true
+anonymous=true
+qualified=true
+header-local
+header=true
+other-method=true
+switch-local

@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -63,7 +64,7 @@ public class App {
 	if !strings.Contains(flat, "type MapperFuncAdapter[T any, R any] struct") {
 		t.Fatalf("expected functional interface adapter generation, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "NewMapperFuncAdapterJava2goExecution[string, string](func(__java2goExecution *stdjava.Execution, v string) string") {
+	if !regexp.MustCompile(`NewMapperFuncAdapterJava2goExecution\[\*stdjava\.JavaString, \*stdjava\.JavaString\]\(func\([A-Za-z_][A-Za-z0-9_]* \*stdjava\.Execution, v \*stdjava\.JavaString\) \*stdjava\.JavaString`).MatchString(flat) {
 		t.Fatalf("expected lambda in main to be wrapped and typed, got:\n%s", out)
 	}
 	if !strings.Contains(flat, `stdjava.ObjectInstanceOf(task, stdjava.TypeID("complex.workflow.ParseTask"))`) {
@@ -72,10 +73,10 @@ public class App {
 	if !strings.Contains(flat, "stdjava.ObjectInstanceOf(normalized, stdjava.StringTypeID)") {
 		t.Fatalf("expected String instanceof conversion in run(), got:\n%s", out)
 	}
-	if !strings.Contains(flat, "ModeValueOf(\"FAST\")") {
+	if !regexp.MustCompile(`ModeValueOfJava2goExecution\([A-Za-z_][A-Za-z0-9_]*, stdjava\.JavaStringLiteralUTF16\(\[\]uint16\{70, 65, 83, 84\}\)\)`).MatchString(flat) {
 		t.Fatalf("expected enum valueOf rewrite to generated helper, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "ModeValues()") {
+	if !regexp.MustCompile(`ModeValuesJava2goExecution\([A-Za-z_][A-Za-z0-9_]*\)`).MatchString(flat) {
 		t.Fatalf("expected enum values() rewrite to generated helper, got:\n%s", out)
 	}
 }
@@ -101,13 +102,13 @@ public class Logger {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "func WriteAll(handler Handler[string])") {
+	if !strings.Contains(flat, "func WriteAll(handler Handler[*stdjava.JavaString])") {
 		t.Fatalf("expected interface method parameter type without pointer indirection, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "type HandlerFuncAdapter[T any] struct") {
 		t.Fatalf("expected functional adapter type for Handler<T>, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "WriteAllJava2goExecution(__java2goExecution, NewHandlerFuncAdapterJava2goExecution[string](func(__java2goExecution *stdjava.Execution, v string)") {
+	if !strings.Contains(flat, "WriteAllJava2goExecution(__java2goExecution, NewHandlerFuncAdapterJava2goExecution[*stdjava.JavaString](func(__java2goExecution *stdjava.Execution, v *stdjava.JavaString)") {
 		t.Fatalf("expected void lambda to be wrapped with typed adapter in main(), got:\n%s", out)
 	}
 }
@@ -137,17 +138,5 @@ public class FactoryApp {
 `
 
 	out := renderGoFileFromJava(t, src)
-	flat := normalizeSpaces(out)
-
-	if !strings.Contains(flat, "func Build(factory Factory[*Box[string]]) *Box[string]") {
-		t.Fatalf("expected nested generic interface + return types in build(), got:\n%s", out)
-	}
-	if !strings.Contains(flat, "BuildJava2goExecution(__java2goExecution, NewFactoryFuncAdapterJava2goExecution[*Box[string]](func(__java2goExecution *stdjava.Execution, seed string) *Box[string]") {
-		t.Fatalf("expected lambda to infer generic return type and use adapter, got:\n%s", out)
-	}
-	if !strings.Contains(flat, "NewBoxJava2goExecution[string](__java2goExecution, seed)") &&
-		!strings.Contains(flat, "NewBoxJava2goExecution[*Box[string]](__java2goExecution, seed)") &&
-		!strings.Contains(flat, "ConstructBoxJava2goExecution[*Box[string]](__java2goExecution, seed)") {
-		t.Fatalf("expected constructor call with inferred generic type inside lambda body, got:\n%s", out)
-	}
+	assertComplexFactoryContract(t, out)
 }

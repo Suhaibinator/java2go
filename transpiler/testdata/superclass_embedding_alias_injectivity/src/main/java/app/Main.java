@@ -1,0 +1,1 @@
+package app; public class Main {public static void main(String[] args){Derived d=new Derived(); DerivedA a=new DerivedA(); System.out.println(d.base()+":"+a.base()+":"+d.Java2goSuperFor6170702E44657269766564()+":"+d.Java2goSuperFor6170702E4465726976656440());}}

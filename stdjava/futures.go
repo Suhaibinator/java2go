@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -64,6 +65,8 @@ type Future[T any] struct {
 	completed, cancelled bool
 	value                T
 	failure              any
+	task                 func(*Execution)
+	started              bool
 }
 
 func newFuture[T any]() *Future[T] { return &Future[T]{done: make(chan struct{})} }
@@ -77,6 +80,24 @@ func (f *Future[T]) finish(value T, failure any) {
 	f.value, f.failure, f.completed = value, failure, true
 	close(f.done)
 }
+
+// Submitted futures are the queued Runnable objects, as with Java FutureTask.
+// A task returned by shutdownNow can still be run and complete its Future.
+func (f *Future[T]) Run() { f.RunJava2goExecution(NewExecution()) }
+func (f *Future[T]) RunJava2goExecution(execution *Execution) {
+	f.mu.Lock()
+	if f.completed || f.started {
+		f.mu.Unlock()
+		return
+	}
+	f.started = true
+	task := f.task
+	f.mu.Unlock()
+	if task != nil {
+		task(execution)
+	}
+}
+
 func (f *Future[T]) Cancel(_ bool) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -127,31 +148,51 @@ func (f *Future[T]) GetTimed(timeout int64, unit *TimeUnit) T {
 // ExecutorService uses an unbounded queue guarded by the same mutex as
 // shutdown. Submissions never block behind a full channel and shutdown cannot
 // close a channel while a producer sends to it.
-type ExecutorService struct {
-	mu         sync.Mutex
-	available  *sync.Cond
-	queue      []func(*Execution)
-	shutdown   bool
-	workers    sync.WaitGroup
-	terminated chan struct{}
+type executorTask struct {
+	run      func(*Execution)
+	runnable Runnable
 }
+
+type ExecutorService struct {
+	mu             sync.Mutex
+	available      *sync.Cond
+	queue          []executorTask
+	shutdown       bool
+	workers        sync.WaitGroup
+	terminated     chan struct{}
+	threadPrefix   string
+	threadSequence atomic.Int32
+	threads        map[*Thread]struct{}
+}
+
+var executorSequence atomic.Int64
 
 func NewFixedThreadPool(n int32) *ExecutorService {
 	if n <= 0 {
 		panic(NewIllegalArgumentException("pool size must be positive"))
 	}
-	e := &ExecutorService{terminated: make(chan struct{})}
+	e := &ExecutorService{terminated: make(chan struct{}), threads: make(map[*Thread]struct{})}
 	e.available = sync.NewCond(&e.mu)
 	e.workers.Add(int(n))
+	e.threadPrefix = fmt.Sprintf("pool-%d-thread-", executorSequence.Add(1))
 	for i := int32(0); i < n; i++ {
-		go e.worker()
+		go e.worker(e.newWorkerThread())
 	}
 	go func() { e.workers.Wait(); close(e.terminated) }()
 	return e
 }
-func (e *ExecutorService) worker() {
+func (e *ExecutorService) newWorkerThread() *Thread {
+	thread := newNamedThread(fmt.Sprintf("%s%d", e.threadPrefix, e.threadSequence.Add(1)))
+	thread.started.Store(true)
+	e.mu.Lock()
+	e.threads[thread] = struct{}{}
+	e.mu.Unlock()
+	return thread
+}
+func (e *ExecutorService) worker(thread *Thread) {
 	defer e.workers.Done()
-	execution := NewExecution()
+	defer func() { e.finishWorkerThread(thread) }()
+	execution := &Execution{thread: thread}
 	for {
 		e.mu.Lock()
 		for len(e.queue) == 0 && !e.shutdown {
@@ -162,7 +203,7 @@ func (e *ExecutorService) worker() {
 			return
 		}
 		task := e.queue[0]
-		e.queue[0] = nil
+		e.queue[0] = executorTask{}
 		e.queue = e.queue[1:]
 		e.mu.Unlock()
 		// An execute task's uncaught exception ends the Java worker. Continuing
@@ -172,14 +213,16 @@ func (e *ExecutorService) worker() {
 			defer func() {
 				if failure := recover(); failure != nil {
 					fmt.Fprintln(os.Stderr, "Exception in executor worker:", failure)
-					execution = NewExecution()
+					e.finishWorkerThread(thread)
+					thread = e.newWorkerThread()
+					execution = &Execution{thread: thread}
 				}
 			}()
-			task(execution)
+			task.run(execution)
 		}()
 	}
 }
-func (e *ExecutorService) enqueue(task func(*Execution)) {
+func (e *ExecutorService) enqueue(task executorTask) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if e.shutdown {
@@ -194,14 +237,12 @@ func SubmitCallable[T any](e *ExecutorService, task Callable[T]) *Future[T] {
 }
 func submitFuture[T any](e *ExecutorService, call func(*Execution) T) *Future[T] {
 	f := newFuture[T]()
-	e.enqueue(func(execution *Execution) {
-		if f.IsCancelled() {
-			return
-		}
+	f.task = func(execution *Execution) {
 		var value T
 		defer func() { f.finish(value, recover()) }()
 		value = call(execution)
-	})
+	}
+	e.enqueue(executorTask{run: f.RunJava2goExecution, runnable: f})
 	return f
 }
 func SubmitRunnableResult[T any](e *ExecutorService, task any, result T) *Future[T] {
@@ -213,8 +254,34 @@ func (e *ExecutorService) Submit(task any) *Future[any] {
 }
 func (e *ExecutorService) Execute(task any) {
 	ReferenceRequireNonNull(task)
-	e.enqueue(func(execution *Execution) { RunRunnableExecution(execution, task) })
+	e.enqueue(executorTask{run: func(execution *Execution) { RunRunnableExecution(execution, task) }, runnable: asRunnable(task)})
 }
+func (e *ExecutorService) finishWorkerThread(thread *Thread) {
+	close(thread.done)
+	e.mu.Lock()
+	delete(e.threads, thread)
+	e.mu.Unlock()
+}
+
+// ShutdownNow stops queued work and requests cooperative interruption from
+// running workers. Pending submitted futures are neither run nor cancelled;
+// their returned Runnable wrappers can still be invoked by the caller.
+func (e *ExecutorService) ShutdownNow() *List[Runnable] {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.shutdown = true
+	pending := NewList[Runnable]()
+	for _, task := range e.queue {
+		pending.Add(task.runnable)
+	}
+	e.queue = nil
+	for thread := range e.threads {
+		thread.Interrupt()
+	}
+	e.available.Broadcast()
+	return pending
+}
+
 func (e *ExecutorService) Shutdown() {
 	e.mu.Lock()
 	defer e.mu.Unlock()

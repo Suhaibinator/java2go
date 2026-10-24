@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""Proof-only generic declaration bounds from pinned classfiles; no API admission."""
+import argparse
+import copy
+import hashlib
+import importlib.util
+import json
+import pathlib
+import shutil
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+HERE = pathlib.Path(__file__).resolve().parent
+
+
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+parent = load('bound_parent_reader', HERE / 'class_parent_producer.py')
+signature = parent.signature
+
+
+def formal_bounds(text):
+    """Retain the class-bound delimiter, using the unchanged reference grammar."""
+    parsed, _ = signature.Signature(text).class_signature()
+    reader = signature.Signature(text)
+    result = []
+    if reader.peek() == '<':
+        reader.take()
+        while reader.peek() != '>':
+            name = reader.identifier(':')
+            reader.expect(':')
+            class_bound = reader.reference() if reader.peek() != ':' else None
+            interfaces = []
+            while reader.peek() == ':':
+                reader.take()
+                interfaces.append(reader.reference())
+            result.append({'name': name, 'classBound': class_bound, 'interfaceBounds': interfaces})
+        reader.expect('>')
+    flattened = [{'name': p['name'], 'bounds': ([p['classBound']] if p['classBound'] else []) + p['interfaceBounds']} for p in result]
+    if flattened != parsed:
+        raise ValueError('formal-prefix/full-parser disagreement')
+    return result
+
+
+def lowerable(node):
+    for item in signature.walk(node):
+        if item['kind'] == 'nominal' and len(item['segments']) != 1:
+            return False
+        if item['kind'] not in ('nominal', 'parameter', 'array', 'wildcard'):
+            return False
+    return True
+
+
+def prepare():
+    provenance = json.loads((HERE / 'PROVENANCE.json').read_text())
+    raw = parent.read_pinned(HERE / 'SYSTEMATIC-CLASSFILES.json', provenance['systematic_facts_sha256'])
+    facts = json.loads(raw)
+    if facts['archive_sha256'] != provenance['jdk_pins']['jmods/java.base.jmod'] or facts['profile'] != 'jdk21-java.base-unnamed-no-preview':
+        raise ValueError('bound profile/archive mismatch')
+    records = parent.bind_records(facts)
+    _, parent_rows, _ = parent.prepare()
+    inventory = json.loads(parent.read_pinned(HERE.parent / 'jdk21nominal/inventory.json', provenance['nominal_inventory_sha256']))
+    rows = {}
+    for name, record in records.items():
+        row = record['classfile']
+        formals = formal_bounds(row['signature']) if row['signature'] else []
+        for slot, formal in enumerate(formals):
+            bound = record['parameters'][slot]
+            actual = copy.deepcopy(bound['bounds'])
+            count = int(formal['classBound'] is not None)
+            formal.update(slot=slot, declaration={k: bound[k] for k in ('module', 'owner', 'class_sha256', 'slot')},
+                          classBound=actual[0] if count else None, interfaceBounds=actual[count:])
+            complete = all(lowerable(b) for b in actual)
+            formal.update(state='known' if complete else 'held', heldReasons=[] if complete else ['unsupported complete bound recipe; retained unchanged'])
+        rows[name] = {'module': row['module'], 'binary': name, 'classEntry': row['classEntry'],
+                      'class_sha256': row['class_sha256'], 'signature': row['signature'], 'parameters': formals}
+    selected = set()
+    def visit(name):
+        if name in selected:
+            return
+        if name not in rows:
+            raise ValueError('missing bound declaration dependency: ' + name)
+        selected.add(name)
+        for p in rows[name]['parameters']:
+            for b in ([p['classBound']] if p['classBound'] else []) + p['interfaceBounds']:
+                for n in signature.walk(b):
+                    if n['kind'] == 'nominal':
+                        for segment in n['segments']:
+                            visit(segment['binary'])
+                    elif n['kind'] == 'parameter':
+                        visit(n['declaration']['owner'].replace('.', '/'))
+    for name in sorted(inventory['memberOwners']):
+        visit(name.replace('.', '/'))
+    result = {name: rows[name] for name in sorted(selected)}
+    for name, row in result.items():
+        row['certificate'] = parent.digest(parent.encoded({'profile': facts['profile'], 'archive': facts['archive_sha256'], 'row': row}))
+    return {'schema': 'java2go.jdk21.generic-declaration-bounds.v1', 'profile': facts['profile'],
+            'archive_sha256': facts['archive_sha256'], 'records': result}, parent_rows
+
+
+def generate():
+    facts, old = prepare()
+    rows = facts['records']
+    indexes = {name: i for i, name in enumerate(rows)}
+    q = json.dumps
+    lines = ['package transpiler\nimport "github.com/NickyBoy89/java2go/symbol"\n',
+             '// Code generated by testdata/jdk_generic_parent_origin/class_bound_producer.py; DO NOT EDIT.\n',
+             '// Declaration-only facts and BOUND-PROVENANCE.json are beside the generator.\n',
+             'var jdk21GenericDeclarationBoundCertificates = map[string]string{\n']
+    for name, row in rows.items():
+        lines.append(q(name.replace('/', '.')) + ':' + q(row['certificate']) + ',\n')
+    lines.append('}\nvar jdk21GenericDeclarationBoundClassSHAs = map[string]string{\n')
+    for name, row in rows.items():
+        lines.append(q(name.replace('/', '.')) + ':' + q(row['class_sha256']) + ',\n')
+    lines.append('}\nvar jdk21GenericDeclarationBounds = buildJDK21GenericDeclarationBounds()\nfunc buildJDK21GenericDeclarationBounds() map[string]jdk21GenericDeclarationBoundRecord {\n')
+    for name, row in rows.items():
+        for p in row['parameters']:
+            key = 'p%d_%d' % (indexes[name], p['slot'])
+            if name in old:
+                lines.append('%s := jdk21GenericParentRecords[%s].parameters[%d]\n' % (key, q(name.replace('/', '.')), p['slot']))
+            else:
+                lines.append('%s := &symbol.TypeParamDeclaration{SourceName:%s, GoName:%s}\n' % (key, q(p['name']), q(p['name'])))
+    def recipe(n):
+        if not lowerable(n):
+            return 'nil'
+        k = n['kind']
+        fields = ['kind:' + q(k)]
+        if k == 'parameter':
+            d = n['declaration']; owner = d['owner'].replace('.', '/')
+            p = rows[owner]['parameters'][d['slot']]
+            if p['declaration'] != {key: d[key] for key in ('module', 'owner', 'class_sha256', 'slot')}:
+                raise ValueError('bound recipe declaration certificate mismatch')
+            fields.append('parameter:p%d_%d' % (indexes[owner], d['slot']))
+        if k == 'nominal':
+            fields += ['externalName:' + q(n['binary'].replace('/', '.')), 'arguments:[]*declaredBoundRecipe{' + ','.join(recipe(a) for a in n['segments'][0]['arguments']) + '}']
+        if k == 'wildcard':
+            fields.append('variance:' + q(n['variance']))
+            if 'bound' in n:
+                fields.append('bound:' + recipe(n['bound']))
+        if k == 'array':
+            fields += ['arrayRank:' + str(n['rank']), 'bound:' + recipe(n['component'])]
+        return '&declaredBoundRecipe{' + ','.join(fields) + '}'
+    lines.append('return map[string]jdk21GenericDeclarationBoundRecord{\n')
+    for name, row in rows.items():
+        ps = []
+        for p in row['parameters']:
+            ps.append('{declaration:p%d_%d,classBoundAbsent:%s,classBound:%s,interfaceBounds:[]*declaredBoundRecipe{%s},known:%s}' % (
+                indexes[name], p['slot'], str(p['classBound'] is None).lower(), recipe(p['classBound']) if p['classBound'] else 'nil',
+                ','.join(recipe(b) for b in p['interfaceBounds']), str(p['state'] == 'known').lower()))
+        lines.append(q(name.replace('/', '.')) + ':{certificate:' + q(row['certificate']) + ',classSHA:' + q(row['class_sha256']) + ',parameters:[]jdk21GenericFormalBound{' + ','.join(ps) + '}},\n')
+    lines.append('}\n}\n')
+    return parent.serialized(facts), ''.join(lines).encode()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check', action='store_true')
+    parser.add_argument('--gofmt', default=shutil.which('gofmt'))
+    args = parser.parse_args()
+    facts, go = generate()
+    if not args.gofmt:
+        parser.error('provide --gofmt /path/to/gofmt')
+    go = subprocess.run([args.gofmt], input=go, capture_output=True, check=True).stdout
+    go_path = HERE.parents[1] / 'jdk21_generic_declaration_bounds_data.go'
+    provenance = {'schema': 'java2go.jdk21.generic-bound-provenance.v1',
+                  'policy': 'Proof-only declaration facts; no parent, nominal or API admission.',
+                  'inputs': {name: parent.digest((HERE / name).read_bytes()) for name in ('SYSTEMATIC-CLASSFILES.json', 'PROVENANCE.json', 'class_signature.py', 'class_parent_producer.py', 'class_bound_producer.py')},
+                  'outputs': {'DECLARATION-BOUNDS.json': parent.digest(facts), go_path.name: parent.digest(go)}}
+    outputs = {HERE / 'DECLARATION-BOUNDS.json': facts, go_path: go, HERE / 'BOUND-PROVENANCE.json': parent.serialized(provenance)}
+    for path, data in outputs.items():
+        if args.check:
+            if not path.exists() or path.read_bytes() != data:
+                raise ValueError('stale bound output: ' + str(path))
+        else:
+            path.write_bytes(data)
+
+
+if __name__ == '__main__':
+    main()

@@ -50,7 +50,20 @@ func runCollectionApplication(t *testing.T, name string) {
 	}
 	generated := renderGoFileFromJava(t, strings.Replace(string(source), "package parity.collections;", "", 1))
 	runGeneratedWithStdjava(t, generated, `package main
-import "testing"
-func TestApplication(t *testing.T) { if got := Run(); got != `+strconv.Quote(want)+` { t.Fatalf("got %q", got) } }
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
+func TestApplication(t *testing.T) {
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = `+strconv.Quote(want)+`
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
+    }
+}
 `)
 }

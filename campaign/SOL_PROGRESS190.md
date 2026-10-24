@@ -1,0 +1,13 @@
+# Sol checkpoint 190: owned UTF8 decoding
+
+Canonical UTF8 byte-to-String decoding now uses a checked length pass and fills fresh owned UTF16 storage directly. It reuses the existing Java malformed-input policy, including supplementary characters and malformed prefixes. Empty results remain fresh and noninterned. Null-check order, ASCII, Latin1, UTF16, named charset resolution, encoding and the copying fallback remain unchanged.
+
+The same allocation regression measured seven allocations before this change and two afterward for ASCII, supplementary and malformed 4096-byte inputs, with preallocated input and escaping results. Nine fresh JDK21 runs match nine baseline Go and nine candidate Go runtime-API runs completely. Independent corpus checks cover all 2,439 frozen observation rows. This establishes allocation savings, without a whole-application speed claim.
+
+All 841 default runtime, 23 symbol and 10 parser race tests pass, together with 16 existing charset/compiler regressions and six default/F1 build, test-compilation and lint checks. The coordinator audited all 67 raw implementation receipts, including the genuine allocation failure before repair. Independent source review found no blocker.
+
+Independent application qualification rebuilt and strictly translated the unchanged 26 Java sources, including actual Commons Codec implementation code, then built every generated package and the application entry. All 58 stages and 24 fresh JVM/generated-Go observation pairs passed. Qualify and cold outputs match completely; warm phase order, operation counts, checksums and every behavior field match, excluding only the declared api_ns and validated_ns timing fields. All 28 generated implementation files remained byte-identical to strict output. The coordinator verified 587 sealed artifact pins, all 58 raw receipts and both streams, actual process handles, cleanup and sequential execution. No generated implementation was edited.
+
+Hosted checkpoint 189 CI still failed overall. All 44 focused parents, application parity and five isolated measurements passed; the same 37 compiler parents and eight skip events remained. Two job records retained inconsistent in-progress metadata despite successful completed steps and available logs; their status was preserved explicitly. Full CI, Netty, Gson and round acceptance remain open.
+
+Private work separately advanced the Netty cache reducer through strict conversion and generated race builds; its first full Go run exposed four exception-message differences. Source generic selection, collector body erasure, deferred streams and native startup services remain active work. Those private changes are excluded from this runtime milestone. The Sol campaign continues.

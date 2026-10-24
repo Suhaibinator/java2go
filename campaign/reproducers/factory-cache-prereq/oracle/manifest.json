@@ -1,0 +1,373 @@
+{
+  "compile": {
+    "exit": 0,
+    "original_command": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-cp",
+      "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/cache/commons-lang3-3.20.0.jar",
+      "-d",
+      "/private/tmp/java2go-factory-cache-oracle-next/classes",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/api/Adapter.java",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/api/Factory.java",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/api/Token.java",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/app/Main.java",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/cache/Context.java",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/domain/Document.java",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/domain/Order.java",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/impl/DocumentFactory.java",
+      "/private/tmp/java2go-factory-cache-prereq/src/main/java/prereq/factory/impl/OrderFactory.java"
+    ],
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 300
+  },
+  "dependency": {
+    "binary_lock": {
+      "file": "commons-lang3-3.20.0.jar",
+      "group": "org.apache.commons",
+      "id": "commons-lang3",
+      "kind": "binary",
+      "sha256": "69e5c9fa35da7a51a5fd2099dfe56a2d8d32cf233e2f6d770e796146440263f4",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar",
+      "version": "3.20.0"
+    },
+    "name": "commons-lang3",
+    "source_only_closure": {
+      "org/apache/commons/lang3/mutable/Mutable.java": {
+        "bytes": 2119,
+        "sha256": "ee3ab7061cb3c3032b06ce8e5d80c425e54e226f9bca016a1aa187168faa957c"
+      },
+      "org/apache/commons/lang3/mutable/MutableInt.java": {
+        "bytes": 11091,
+        "sha256": "ff69949af3b457c46889347b4b2f98d3cce886b0c2ff035189e982aefcf5bb75"
+      }
+    },
+    "sources_lock": {
+      "file": "commons-lang3-3.20.0-sources.jar",
+      "group": "org.apache.commons",
+      "id": "commons-lang3",
+      "kind": "sources",
+      "sha256": "eec245e820ec2800a1780cf756aefb427c1c6170e06902e67ac15b6910ce6335",
+      "url": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0-sources.jar",
+      "version": "3.20.0"
+    },
+    "version": "3.20.0"
+  },
+  "files_sha256_excluding_this_manifest": {
+    "CHECKIN.md": {
+      "bytes": 1428,
+      "sha256": "3179896830d34faff5587a439e1e41ae917fc3e376fbc2edaa304ba4fc7d8a1e"
+    },
+    "README.md": {
+      "bytes": 1493,
+      "sha256": "56b3baabd4f0e8312b49cec97b4a4475e57756856fd8bb18b58f725c0e111a9a"
+    },
+    "dependency-contract.json": {
+      "bytes": 267,
+      "sha256": "717f56e64db4ec613dc020c1a9f15591bfa6500d4842961fc8da8979859f03d0"
+    },
+    "inputs/seed-17.txt": {
+      "bytes": 3,
+      "sha256": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5"
+    },
+    "inputs/seed-41.txt": {
+      "bytes": 3,
+      "sha256": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1"
+    },
+    "inputs/seed-97.txt": {
+      "bytes": 3,
+      "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+    },
+    "oracle/dependency-lock.json": {
+      "bytes": 810,
+      "sha256": "f909132b63e7197e56e85107b43129aea8fe47d32eeb7c6c5904415fb639d964"
+    },
+    "oracle/expected.seed-17.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/expected.seed-17.stdout": {
+      "bytes": 404,
+      "sha256": "2be96225663045ba8625ca598477f13325003f1cc13c365c8ac0c3930c876f9e"
+    },
+    "oracle/expected.seed-41.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/expected.seed-41.stdout": {
+      "bytes": 404,
+      "sha256": "4104dd5e2cf280703149cbbcb2f9eb4d1118a5ef160f8732a923f9792093a7e4"
+    },
+    "oracle/expected.seed-97.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/expected.seed-97.stdout": {
+      "bytes": 406,
+      "sha256": "cad083f7572a1462d18a68692cdfaf0a2004d12c2b46f36f21eb52d117bf2763"
+    },
+    "oracle/run_jdk.py": {
+      "bytes": 5867,
+      "sha256": "5f7e69cccd754500fffb4dd41ce22358082545a337c40e3a28972ccda0191633"
+    },
+    "oracle/runner.provenance.py": {
+      "bytes": 5212,
+      "sha256": "fcb34cfee5146bb306d5500b2f33942eea747d1d564bec3c5e68ed2ec96ffc36"
+    },
+    "pom.xml": {
+      "bytes": 1126,
+      "sha256": "d808d440112c9e3be68cb73be15fa106dcdff3acd408ac91222a21a7b7d8bc5e"
+    },
+    "src/main/java/prereq/factory/api/Adapter.java": {
+      "bytes": 252,
+      "sha256": "6e01b0d6f25e32197463d4dda76eb500329bac177bbda2563e504a2c275d3720"
+    },
+    "src/main/java/prereq/factory/api/Factory.java": {
+      "bytes": 156,
+      "sha256": "4035c20520aecc6264ba47638b567b2c9ad2051ece843b03a2eac56d12811473"
+    },
+    "src/main/java/prereq/factory/api/Token.java": {
+      "bytes": 212,
+      "sha256": "f945ff1870711a282897273328b9bdd78d8bb45e0d98e427a0dec1b62b61141a"
+    },
+    "src/main/java/prereq/factory/app/Main.java": {
+      "bytes": 3765,
+      "sha256": "42e6f16ed100c5ea7acd52f3ca91b2613893ca88b88c1c2eb1e6a10f31e5c0f8"
+    },
+    "src/main/java/prereq/factory/cache/Context.java": {
+      "bytes": 1750,
+      "sha256": "7a1cb8c3f942a006235727c5e9af182790772cb6a1f6a500851053a6af76e4e6"
+    },
+    "src/main/java/prereq/factory/domain/Document.java": {
+      "bytes": 595,
+      "sha256": "d544d9dfd00f53c2fa6955d974c3c10f54708633839e83227b3f794bd5e9bce7"
+    },
+    "src/main/java/prereq/factory/domain/Order.java": {
+      "bytes": 759,
+      "sha256": "45553dc5999136c00761fa72fed627c0ecc41ebec24c63b918a43e795daeef56"
+    },
+    "src/main/java/prereq/factory/impl/DocumentFactory.java": {
+      "bytes": 1348,
+      "sha256": "599c476b466b879b659df50fdf8e27ecac6a7865ac12be81e3b0d5cea2cdad11"
+    },
+    "src/main/java/prereq/factory/impl/OrderFactory.java": {
+      "bytes": 1322,
+      "sha256": "99808005ddcde68703a7e46064c293f0a62aba9f08b48b29846920be5a5db125"
+    }
+  },
+  "jdk21_original_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "main_class": "prereq.factory.app.Main",
+  "name": "factory-cache-prereq",
+  "original_input_files": {
+    "README.md": {
+      "bytes": 1493,
+      "sha256": "56b3baabd4f0e8312b49cec97b4a4475e57756856fd8bb18b58f725c0e111a9a"
+    },
+    "dependency-contract.json": {
+      "bytes": 267,
+      "sha256": "717f56e64db4ec613dc020c1a9f15591bfa6500d4842961fc8da8979859f03d0"
+    },
+    "inputs/seed-17.txt": {
+      "bytes": 3,
+      "sha256": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5"
+    },
+    "inputs/seed-41.txt": {
+      "bytes": 3,
+      "sha256": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1"
+    },
+    "inputs/seed-97.txt": {
+      "bytes": 3,
+      "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+    },
+    "pom.xml": {
+      "bytes": 1126,
+      "sha256": "d808d440112c9e3be68cb73be15fa106dcdff3acd408ac91222a21a7b7d8bc5e"
+    },
+    "src/main/java/prereq/factory/api/Adapter.java": {
+      "bytes": 252,
+      "sha256": "6e01b0d6f25e32197463d4dda76eb500329bac177bbda2563e504a2c275d3720"
+    },
+    "src/main/java/prereq/factory/api/Factory.java": {
+      "bytes": 156,
+      "sha256": "4035c20520aecc6264ba47638b567b2c9ad2051ece843b03a2eac56d12811473"
+    },
+    "src/main/java/prereq/factory/api/Token.java": {
+      "bytes": 212,
+      "sha256": "f945ff1870711a282897273328b9bdd78d8bb45e0d98e427a0dec1b62b61141a"
+    },
+    "src/main/java/prereq/factory/app/Main.java": {
+      "bytes": 3765,
+      "sha256": "42e6f16ed100c5ea7acd52f3ca91b2613893ca88b88c1c2eb1e6a10f31e5c0f8"
+    },
+    "src/main/java/prereq/factory/cache/Context.java": {
+      "bytes": 1750,
+      "sha256": "7a1cb8c3f942a006235727c5e9af182790772cb6a1f6a500851053a6af76e4e6"
+    },
+    "src/main/java/prereq/factory/domain/Document.java": {
+      "bytes": 595,
+      "sha256": "d544d9dfd00f53c2fa6955d974c3c10f54708633839e83227b3f794bd5e9bce7"
+    },
+    "src/main/java/prereq/factory/domain/Order.java": {
+      "bytes": 759,
+      "sha256": "45553dc5999136c00761fa72fed627c0ecc41ebec24c63b918a43e795daeef56"
+    },
+    "src/main/java/prereq/factory/impl/DocumentFactory.java": {
+      "bytes": 1348,
+      "sha256": "599c476b466b879b659df50fdf8e27ecac6a7865ac12be81e3b0d5cea2cdad11"
+    },
+    "src/main/java/prereq/factory/impl/OrderFactory.java": {
+      "bytes": 1322,
+      "sha256": "99808005ddcde68703a7e46064c293f0a62aba9f08b48b29846920be5a5db125"
+    }
+  },
+  "original_source_tree_sha256_path_nul_bytes_nul": "354d17005f9ef9b42f82ed6e26ab1b6ff6e87699877940d4b5bc894f86a9e73f",
+  "proposed_repository_path": "campaign/reproducers/factory-cache-prereq",
+  "run": {
+    "fresh_jvm_each_repeat": true,
+    "observations": [
+      {
+        "exit": 0,
+        "repeat": 1,
+        "seed": 17,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "2be96225663045ba8625ca598477f13325003f1cc13c365c8ac0c3930c876f9e"
+      },
+      {
+        "exit": 0,
+        "repeat": 2,
+        "seed": 17,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "2be96225663045ba8625ca598477f13325003f1cc13c365c8ac0c3930c876f9e"
+      },
+      {
+        "exit": 0,
+        "repeat": 3,
+        "seed": 17,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "2be96225663045ba8625ca598477f13325003f1cc13c365c8ac0c3930c876f9e"
+      },
+      {
+        "exit": 0,
+        "repeat": 1,
+        "seed": 41,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "4104dd5e2cf280703149cbbcb2f9eb4d1118a5ef160f8732a923f9792093a7e4"
+      },
+      {
+        "exit": 0,
+        "repeat": 2,
+        "seed": 41,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "4104dd5e2cf280703149cbbcb2f9eb4d1118a5ef160f8732a923f9792093a7e4"
+      },
+      {
+        "exit": 0,
+        "repeat": 3,
+        "seed": 41,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "4104dd5e2cf280703149cbbcb2f9eb4d1118a5ef160f8732a923f9792093a7e4"
+      },
+      {
+        "exit": 0,
+        "repeat": 1,
+        "seed": 97,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "cad083f7572a1462d18a68692cdfaf0a2004d12c2b46f36f21eb52d117bf2763"
+      },
+      {
+        "exit": 0,
+        "repeat": 2,
+        "seed": 97,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "cad083f7572a1462d18a68692cdfaf0a2004d12c2b46f36f21eb52d117bf2763"
+      },
+      {
+        "exit": 0,
+        "repeat": 3,
+        "seed": 97,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "cad083f7572a1462d18a68692cdfaf0a2004d12c2b46f36f21eb52d117bf2763"
+      }
+    ],
+    "original_command_template": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+      "-cp",
+      "/private/tmp/java2go-factory-cache-oracle-next/classes:/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/cache/commons-lang3-3.20.0.jar",
+      "prereq.factory.app.Main",
+      "{seed}"
+    ],
+    "results": [
+      {
+        "exact_repeat_match": true,
+        "exits": [
+          0,
+          0,
+          0
+        ],
+        "repeats": 3,
+        "seed": 17,
+        "stderr_bytes": 0,
+        "stderr_file": "oracle/expected.seed-17.stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 404,
+        "stdout_file": "oracle/expected.seed-17.stdout",
+        "stdout_sha256": "2be96225663045ba8625ca598477f13325003f1cc13c365c8ac0c3930c876f9e"
+      },
+      {
+        "exact_repeat_match": true,
+        "exits": [
+          0,
+          0,
+          0
+        ],
+        "repeats": 3,
+        "seed": 41,
+        "stderr_bytes": 0,
+        "stderr_file": "oracle/expected.seed-41.stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 404,
+        "stdout_file": "oracle/expected.seed-41.stdout",
+        "stdout_sha256": "4104dd5e2cf280703149cbbcb2f9eb4d1118a5ef160f8732a923f9792093a7e4"
+      },
+      {
+        "exact_repeat_match": true,
+        "exits": [
+          0,
+          0,
+          0
+        ],
+        "repeats": 3,
+        "seed": 97,
+        "stderr_bytes": 0,
+        "stderr_file": "oracle/expected.seed-97.stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 406,
+        "stdout_file": "oracle/expected.seed-97.stdout",
+        "stdout_sha256": "cad083f7572a1462d18a68692cdfaf0a2004d12c2b46f36f21eb52d117bf2763"
+      }
+    ],
+    "seeds": [
+      17,
+      41,
+      97
+    ],
+    "timeout_seconds_per_run": 60
+  },
+  "runner": {
+    "original_report_sha256": "f22a24a67755b54c94e98b990d1399f255f12b09510f98372682c637f3d18bfc",
+    "portable_file": "oracle/run_jdk.py",
+    "portable_sha256": "5f7e69cccd754500fffb4dd41ce22358082545a337c40e3a28972ccda0191633",
+    "portable_status": "prepared; not executed",
+    "provenance_file": "oracle/runner.provenance.py",
+    "provenance_sha256": "fcb34cfee5146bb306d5500b2f33942eea747d1d564bec3c5e68ed2ec96ffc36"
+  },
+  "source_roots": [
+    "src/main/java"
+  ],
+  "status": "supplemental prerequisite; JDK21 oracle validated 9/9; transpiler UNRUN",
+  "transpiler_status": "UNRUN"
+}

@@ -1,0 +1,68 @@
+package transpiler
+
+// Pinned OpenJDK 21.0.6+8 java.sql/java/sql top-level declarations.
+// All 56 class files were inspected independently for ACC_PUBLIC and
+// ACC_INTERFACE; the 55 public names exactly match the src.zip inventory.
+// java.sql.jmod SHA256: ed3da5d8a853a32acda277b35d2cceca3679921fbfad395952981fb79877fdeb
+// Verification SHA256: ab17a56277f05dc57aed42d4b4d77dccf246f574aecde9b3ad180d6a8581b645
+// Absence is evidence only for this exact package, not another wildcard.
+// Membership does not supply an otherwise unsupported native representation.
+// Transpilation and generated execution do not read the installed JDK.
+var declaredJavaSQLTypes = map[string]declaredExternalType{
+	"Array":                           {public: true, isInterface: true},
+	"BatchUpdateException":            {public: true, isInterface: false},
+	"Blob":                            {public: true, isInterface: true},
+	"CallableStatement":               {public: true, isInterface: true},
+	"ClientInfoStatus":                {public: true, isInterface: false},
+	"Clob":                            {public: true, isInterface: true},
+	"Connection":                      {public: true, isInterface: true},
+	"ConnectionBuilder":               {public: true, isInterface: true},
+	"DataTruncation":                  {public: true, isInterface: false},
+	"DatabaseMetaData":                {public: true, isInterface: true},
+	"Date":                            {public: true, isInterface: false},
+	"Driver":                          {public: true, isInterface: true},
+	"DriverAction":                    {public: true, isInterface: true},
+	"DriverInfo":                      {public: false, isInterface: false},
+	"DriverManager":                   {public: true, isInterface: false},
+	"DriverPropertyInfo":              {public: true, isInterface: false},
+	"JDBCType":                        {public: true, isInterface: false},
+	"NClob":                           {public: true, isInterface: true},
+	"ParameterMetaData":               {public: true, isInterface: true},
+	"PreparedStatement":               {public: true, isInterface: true},
+	"PseudoColumnUsage":               {public: true, isInterface: false},
+	"Ref":                             {public: true, isInterface: true},
+	"ResultSet":                       {public: true, isInterface: true},
+	"ResultSetMetaData":               {public: true, isInterface: true},
+	"RowId":                           {public: true, isInterface: true},
+	"RowIdLifetime":                   {public: true, isInterface: false},
+	"SQLClientInfoException":          {public: true, isInterface: false},
+	"SQLData":                         {public: true, isInterface: true},
+	"SQLDataException":                {public: true, isInterface: false},
+	"SQLException":                    {public: true, isInterface: false},
+	"SQLFeatureNotSupportedException": {public: true, isInterface: false},
+	"SQLInput":                        {public: true, isInterface: true},
+	"SQLIntegrityConstraintViolationException": {public: true, isInterface: false},
+	"SQLInvalidAuthorizationSpecException":     {public: true, isInterface: false},
+	"SQLNonTransientConnectionException":       {public: true, isInterface: false},
+	"SQLNonTransientException":                 {public: true, isInterface: false},
+	"SQLOutput":                                {public: true, isInterface: true},
+	"SQLPermission":                            {public: true, isInterface: false},
+	"SQLRecoverableException":                  {public: true, isInterface: false},
+	"SQLSyntaxErrorException":                  {public: true, isInterface: false},
+	"SQLTimeoutException":                      {public: true, isInterface: false},
+	"SQLTransactionRollbackException":          {public: true, isInterface: false},
+	"SQLTransientConnectionException":          {public: true, isInterface: false},
+	"SQLTransientException":                    {public: true, isInterface: false},
+	"SQLType":                                  {public: true, isInterface: true},
+	"SQLWarning":                               {public: true, isInterface: false},
+	"SQLXML":                                   {public: true, isInterface: true},
+	"Savepoint":                                {public: true, isInterface: true},
+	"ShardingKey":                              {public: true, isInterface: true},
+	"ShardingKeyBuilder":                       {public: true, isInterface: true},
+	"Statement":                                {public: true, isInterface: true},
+	"Struct":                                   {public: true, isInterface: true},
+	"Time":                                     {public: true, isInterface: false},
+	"Timestamp":                                {public: true, isInterface: false},
+	"Types":                                    {public: true, isInterface: false},
+	"Wrapper":                                  {public: true, isInterface: true},
+}

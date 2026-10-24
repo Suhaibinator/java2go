@@ -1,0 +1,241 @@
+{
+  "compile": {
+    "exit": 0,
+    "original_command": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "/private/tmp/java2go-typed-constant-oracle-next/classes",
+      "/private/tmp/java2go-typed-constant-prereq/src/main/java/prereq/typed/api/Base.java",
+      "/private/tmp/java2go-typed-constant-prereq/src/main/java/prereq/typed/api/Trace.java",
+      "/private/tmp/java2go-typed-constant-prereq/src/main/java/prereq/typed/app/Main.java",
+      "/private/tmp/java2go-typed-constant-prereq/src/main/java/prereq/typed/mid/Derived.java",
+      "/private/tmp/java2go-typed-constant-prereq/src/main/java/prereq/typed/mid/Flow.java",
+      "/private/tmp/java2go-typed-constant-prereq/src/main/java/prereq/typed/shadow/String.java"
+    ],
+    "portable_command_argv": [
+      "$JDK21/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "$OUT/classes",
+      "src/main/java/prereq/typed/api/Base.java",
+      "src/main/java/prereq/typed/api/Trace.java",
+      "src/main/java/prereq/typed/app/Main.java",
+      "src/main/java/prereq/typed/mid/Derived.java",
+      "src/main/java/prereq/typed/mid/Flow.java",
+      "src/main/java/prereq/typed/shadow/String.java"
+    ],
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 300
+  },
+  "files_sha256_excluding_this_manifest": {
+    "CHECKIN.md": {
+      "bytes": 714,
+      "sha256": "8bd0dd3a54e6ff15692d06ce05eae3b7b16e1efb285614f528d3dac7df8f3483"
+    },
+    "README.md": {
+      "bytes": 1022,
+      "sha256": "d285a500e53fa4ae5142652a9a682567b63123e09139a4c8e7e547af91ce57ff"
+    },
+    "inputs/seed-17.txt": {
+      "bytes": 3,
+      "sha256": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5"
+    },
+    "inputs/seed-41.txt": {
+      "bytes": 3,
+      "sha256": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1"
+    },
+    "inputs/seed-97.txt": {
+      "bytes": 3,
+      "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+    },
+    "oracle/expected.seed-17.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/expected.seed-17.stdout": {
+      "bytes": 298,
+      "sha256": "09cae96c737d51f4d6ec486c4ce2cabe98eeec1710463247e77ffe6b9156649a"
+    },
+    "oracle/expected.seed-41.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/expected.seed-41.stdout": {
+      "bytes": 298,
+      "sha256": "e2aefd23ddb1f4681a79d679954de33474af172b9b1bb51c52ee975da1c08c22"
+    },
+    "oracle/expected.seed-97.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "oracle/expected.seed-97.stdout": {
+      "bytes": 298,
+      "sha256": "6a0ba02ce67b4c63d608b08661aa1e5073e5dd7f58ffb6a4bf22db07813ccb07"
+    },
+    "pom.xml": {
+      "bytes": 762,
+      "sha256": "4aa5ca7a8b8ef827874666ff08104f24a79132665fa15f7802eb95d0caf63b52"
+    },
+    "src/main/java/prereq/typed/api/Base.java": {
+      "bytes": 311,
+      "sha256": "cf9ad138b79bcbbb1ac937f33b2e9afa80503013b8d91d1461817e142477de36"
+    },
+    "src/main/java/prereq/typed/api/Trace.java": {
+      "bytes": 340,
+      "sha256": "cb94e320ac445842edea501442768231071867de2e32c5957810c526361b7fac"
+    },
+    "src/main/java/prereq/typed/app/Main.java": {
+      "bytes": 2612,
+      "sha256": "d52dafd4f030d427b6315975380c86b29e760e1f42ad6e086526e6cf1eef84e1"
+    },
+    "src/main/java/prereq/typed/mid/Derived.java": {
+      "bytes": 473,
+      "sha256": "73b854074fc3ee6e2f4fb3c0d964cb06b43aea4b8cc2920a3309086e4243f456"
+    },
+    "src/main/java/prereq/typed/mid/Flow.java": {
+      "bytes": 515,
+      "sha256": "164a43395fd7de5385ad6f05eb1d4a76fde14e10771d37382a7d77be53e57392"
+    },
+    "src/main/java/prereq/typed/shadow/String.java": {
+      "bytes": 458,
+      "sha256": "4f2da603c60d4919c38d4836035628ede1048c9752e8656041796ce451ad1543"
+    }
+  },
+  "jdk21_original_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "main_class": "prereq.typed.app.Main",
+  "name": "typed-constant-prereq",
+  "original_input_files": {
+    "README.md": {
+      "bytes": 1022,
+      "sha256": "d285a500e53fa4ae5142652a9a682567b63123e09139a4c8e7e547af91ce57ff"
+    },
+    "inputs/seed-17.txt": {
+      "bytes": 3,
+      "sha256": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5"
+    },
+    "inputs/seed-41.txt": {
+      "bytes": 3,
+      "sha256": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1"
+    },
+    "inputs/seed-97.txt": {
+      "bytes": 3,
+      "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+    },
+    "pom.xml": {
+      "bytes": 762,
+      "sha256": "4aa5ca7a8b8ef827874666ff08104f24a79132665fa15f7802eb95d0caf63b52"
+    },
+    "src/main/java/prereq/typed/api/Base.java": {
+      "bytes": 311,
+      "sha256": "cf9ad138b79bcbbb1ac937f33b2e9afa80503013b8d91d1461817e142477de36"
+    },
+    "src/main/java/prereq/typed/api/Trace.java": {
+      "bytes": 340,
+      "sha256": "cb94e320ac445842edea501442768231071867de2e32c5957810c526361b7fac"
+    },
+    "src/main/java/prereq/typed/app/Main.java": {
+      "bytes": 2612,
+      "sha256": "d52dafd4f030d427b6315975380c86b29e760e1f42ad6e086526e6cf1eef84e1"
+    },
+    "src/main/java/prereq/typed/mid/Derived.java": {
+      "bytes": 473,
+      "sha256": "73b854074fc3ee6e2f4fb3c0d964cb06b43aea4b8cc2920a3309086e4243f456"
+    },
+    "src/main/java/prereq/typed/mid/Flow.java": {
+      "bytes": 515,
+      "sha256": "164a43395fd7de5385ad6f05eb1d4a76fde14e10771d37382a7d77be53e57392"
+    },
+    "src/main/java/prereq/typed/shadow/String.java": {
+      "bytes": 458,
+      "sha256": "4f2da603c60d4919c38d4836035628ede1048c9752e8656041796ce451ad1543"
+    }
+  },
+  "original_source_tree_sha256_path_nul_bytes_nul": "bdd94c819454db7803525ecc2b14ee5f9d5124521bd240bfb65975b47d2072df",
+  "proposed_repository_path": "campaign/reproducers/typed-constant-prereq",
+  "run": {
+    "fresh_jvm_each_repeat": true,
+    "original_command_template": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+      "-cp",
+      "/private/tmp/java2go-typed-constant-oracle-next/classes",
+      "prereq.typed.app.Main",
+      "{seed}"
+    ],
+    "portable_command_argv": [
+      "$JDK21/bin/java",
+      "-cp",
+      "$OUT/classes",
+      "prereq.typed.app.Main",
+      "{seed}"
+    ],
+    "results": [
+      {
+        "exact_repeat_match": true,
+        "exits": [
+          0,
+          0,
+          0
+        ],
+        "repeats": 3,
+        "seed": 17,
+        "stderr_bytes": 0,
+        "stderr_file": "oracle/expected.seed-17.stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 298,
+        "stdout_file": "oracle/expected.seed-17.stdout",
+        "stdout_sha256": "09cae96c737d51f4d6ec486c4ce2cabe98eeec1710463247e77ffe6b9156649a"
+      },
+      {
+        "exact_repeat_match": true,
+        "exits": [
+          0,
+          0,
+          0
+        ],
+        "repeats": 3,
+        "seed": 41,
+        "stderr_bytes": 0,
+        "stderr_file": "oracle/expected.seed-41.stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 298,
+        "stdout_file": "oracle/expected.seed-41.stdout",
+        "stdout_sha256": "e2aefd23ddb1f4681a79d679954de33474af172b9b1bb51c52ee975da1c08c22"
+      },
+      {
+        "exact_repeat_match": true,
+        "exits": [
+          0,
+          0,
+          0
+        ],
+        "repeats": 3,
+        "seed": 97,
+        "stderr_bytes": 0,
+        "stderr_file": "oracle/expected.seed-97.stderr",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 298,
+        "stdout_file": "oracle/expected.seed-97.stdout",
+        "stdout_sha256": "6a0ba02ce67b4c63d608b08661aa1e5073e5dd7f58ffb6a4bf22db07813ccb07"
+      }
+    ],
+    "seeds": [
+      17,
+      41,
+      97
+    ],
+    "timeout_seconds_per_run": 60
+  },
+  "source_roots": [
+    "src/main/java"
+  ],
+  "status": "supplemental prerequisite; JDK21 oracle validated 9/9; transpiler UNRUN",
+  "transpiler_status": "UNRUN"
+}

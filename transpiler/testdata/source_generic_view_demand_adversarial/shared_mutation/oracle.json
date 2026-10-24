@@ -1,0 +1,30 @@
+{
+  "status": "PROVISIONAL_PREDICTIONS_PENDING_FRESH_JDK21_GRANT",
+  "main_class": "app.Main",
+  "observations": [
+    {
+      "name": "alias",
+      "args": [
+        "alias"
+      ],
+      "stdout": "one:two:true:true:2:2\n",
+      "stderr": ""
+    },
+    {
+      "name": "pollution",
+      "args": [
+        "pollution"
+      ],
+      "stdout": "7:delayed:restored:3:2\n",
+      "stderr": ""
+    },
+    {
+      "name": "arrays",
+      "args": [
+        "arrays"
+      ],
+      "stdout": "7:true:ase:true:true\n",
+      "stderr": ""
+    }
+  ]
+}

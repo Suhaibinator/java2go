@@ -67,12 +67,16 @@ public class BoxedNullAndViewsProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    j "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestBoxedNullAndViewsRuntime(t *testing.T) {
     const want = "ZBSCIJFD:cast:compare:null:true:true:true:true:true:true"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    var got *j.JavaString = Run()
+    if got == nil || !got.Equals(j.JavaStringFromHostUTF8(want)) {
+        t.Fatalf("Run() UTF16 object = %#v, want %q", got, want)
     }
 }
 `)

@@ -1,0 +1,169 @@
+package stdjava
+
+import (
+	"strings"
+	"unicode/utf16"
+	"unicode/utf8"
+)
+
+// The parameter is already a concrete string; no interface boxing is needed.
+func searchNonNullString(s string) string {
+	if s == nullStringSentinel {
+		panic(NewNullPointerException("String method called on null"))
+	}
+	return s
+}
+
+// searchPoint scans UTF-16 positions without materializing a UTF-16 slice.
+// Surrogate-valued int needles match the individual units of a valid pair.
+func searchPoint(s string, point int32, start int32, backwards bool) int32 {
+	if point < 0 || point > utf8.MaxRune || (backwards && start < 0) {
+		return -1
+	}
+	if start < 0 {
+		start = 0
+	}
+	if point <= 0x7f {
+		boundary := searchByteBoundary(s, start, backwards)
+		var found int
+		if backwards {
+			end := len(s)
+			if boundary < end {
+				end = boundary + 1
+			}
+			found = strings.LastIndexByte(s[:end], byte(point))
+		} else {
+			found = strings.IndexByte(s[boundary:], byte(point))
+			if found >= 0 {
+				found += boundary
+			}
+		}
+		if found < 0 {
+			return -1
+		}
+		return StringLength(s[:found])
+	}
+	result := int32(-1)
+	position := int32(0)
+	for _, r := range s {
+		width := int32(1)
+		first, second := r, rune(-1)
+		if r > 0xffff {
+			first, second = utf16.EncodeRune(r)
+			width = 2
+		}
+		if backwards && position > start {
+			break
+		}
+		match := func(at int32) bool { return (!backwards && at >= start) || (backwards && at <= start) }
+		if point > 0xffff {
+			if r == point && match(position) {
+				if !backwards {
+					return position
+				}
+				result = position
+			}
+		} else {
+			if first == point && match(position) {
+				if !backwards {
+					return position
+				}
+				result = position
+			}
+			if second == point && match(position+1) {
+				if !backwards {
+					return position + 1
+				}
+				result = position + 1
+			}
+		}
+		position += width
+	}
+	return result
+}
+
+// searchByteBoundary maps a UTF-16 offset to a valid UTF-8 boundary. Forward
+// searches starting on a low surrogate skip that scalar; backward searches
+// may still match a complete scalar whose high surrogate precedes the offset.
+func searchByteBoundary(s string, offset int32, backwards bool) int {
+	position := int32(0)
+	for byteIndex, r := range s {
+		if position >= offset {
+			return byteIndex
+		}
+		width := int32(1)
+		if r > 0xffff {
+			width = 2
+		}
+		if position+width > offset && backwards {
+			return byteIndex
+		}
+		position += width
+	}
+	return len(s)
+}
+func searchString(s, needle string, start int32, backwards bool) int32 {
+	if backwards && start < 0 {
+		return -1
+	}
+	if start < 0 {
+		start = 0
+	}
+	if len(needle) == 0 {
+		length := StringLength(s)
+		if start > length {
+			return length
+		}
+		return start
+	}
+	boundary := searchByteBoundary(s, start, backwards)
+	var found int
+	if backwards {
+		end := len(s)
+		if len(needle) < len(s)-boundary {
+			end = boundary + len(needle)
+		}
+		found = strings.LastIndex(s[:end], needle)
+	} else {
+		found = strings.Index(s[boundary:], needle)
+		if found >= 0 {
+			found += boundary
+		}
+	}
+	if found < 0 {
+		return -1
+	}
+	return StringLength(s[:found])
+}
+func StringIndexOf(s string, needle any, from ...any) int32 {
+	s = searchNonNullString(s)
+	start := int32(0)
+	if len(from) != 0 {
+		start = stringSearchInt(from[0])
+	}
+	if text, ok := needle.(string); ok {
+		text = searchNonNullString(text)
+		// Noncanonical raw Go strings retain the previous runtime behavior.
+		// Java's isolated-surrogate String storage is a separate ABI gap.
+		if !utf8.ValidString(s) || !utf8.ValidString(text) {
+			return stringIndexOfMaterialized(s, needle, from...)
+		}
+		return searchString(s, text, start, false)
+	}
+	return searchPoint(s, stringSearchInt(needle), start, false)
+}
+func StringLastIndexOf(s string, needle any, from ...any) int32 {
+	s = searchNonNullString(s)
+	start := StringLength(s)
+	if len(from) != 0 {
+		start = stringSearchInt(from[0])
+	}
+	if text, ok := needle.(string); ok {
+		text = searchNonNullString(text)
+		if !utf8.ValidString(s) || !utf8.ValidString(text) {
+			return stringLastIndexOfMaterialized(s, needle, from...)
+		}
+		return searchString(s, text, start, true)
+	}
+	return searchPoint(s, stringSearchInt(needle), start, true)
+}

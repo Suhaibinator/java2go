@@ -1,0 +1,1 @@
+package p;public class Cell<T>{public T value;public Cell(T value){this.value=value;}public T read(){return value;}public void write(T value){this.value=value;}public <T> T echo(T value){return value;}}

@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -33,23 +34,20 @@ func TestFullProgram_AnnotationHandlingAndExclusion(t *testing.T) {
 	if !strings.Contains(defaultService, "//@Skip") {
 		t.Fatalf("expected annotation passthrough comments in default conversion:\n%s", defaultOutputs["com/acme/services/UserService.go"])
 	}
-	if !strings.Contains(defaultService, "func (ue *UserService) InternalName() string") {
-		t.Fatalf("expected annotated method to be present when annotation is not excluded:\n%s", defaultOutputs["com/acme/services/UserService.go"])
+	defaultAST := ciABI193Parse(t, defaultOutputs["com/acme/services/UserService.go"])
+	ciABI193RequireMethod(t, defaultAST, "InternalName", "*UserService", "*stdjava.JavaString")
+	if field := ciABI193Field(t, defaultAST, "UserService", "token"); field != nil {
+		ciABI193RequireExpr(t, field, "*stdjava.JavaString")
+	} else {
+		t.Fatal("annotated field missing when annotation is not excluded")
 	}
 
 	excludedAnnotations = map[string]bool{"@Skip": true}
 	excludedOutputs := convertJavaProjectDir(t, root)
-	excludedService := normalizeSpaces(excludedOutputs["com/acme/services/UserService.go"])
-
-	if strings.Contains(excludedService, "InternalName(") {
-		t.Fatalf("expected annotated method to be excluded when @Skip is configured:\n%s", excludedOutputs["com/acme/services/UserService.go"])
-	}
-	if strings.Contains(excludedService, "token string") {
-		t.Fatalf("expected annotated field to be excluded when @Skip is configured:\n%s", excludedOutputs["com/acme/services/UserService.go"])
-	}
-	if !strings.Contains(excludedService, "PublicName(") {
-		t.Fatalf("expected unannotated method to remain after exclusion:\n%s", excludedOutputs["com/acme/services/UserService.go"])
-	}
+	excludedAST := ciABI193Parse(t, excludedOutputs["com/acme/services/UserService.go"])
+	ciABI193RequireMethodAbsent(t, excludedAST, "InternalName")
+	ciABI193RequireFieldAbsent(t, excludedAST, "UserService", "token")
+	ciABI193RequireMethod(t, excludedAST, "PublicName", "*UserService", "*stdjava.JavaString")
 }
 
 func TestFullProgram_CastSemanticsEdgeCases(t *testing.T) {
@@ -60,9 +58,22 @@ func TestFullProgram_CastSemanticsEdgeCases(t *testing.T) {
 	if !strings.Contains(flat, "return int32(value)") {
 		t.Fatalf("expected primitive cast to use Go conversion call:\n%s", outputs["com/acme/casts/Casts.go"])
 	}
-	if !strings.Contains(flat, "return any(value).(string)") {
-		t.Fatalf("expected reference cast to use type assertion over any(...):\n%s", outputs["com/acme/casts/Casts.go"])
+	castAST := ciABI193Parse(t, outputs["com/acme/casts/Casts.go"])
+	castMethod := ciABI193Function(t, castAST, "AsStringJava2goExecution")
+	if castMethod.Type.Results == nil || len(castMethod.Type.Results.List) != 1 {
+		t.Fatal("AsString lost its canonical reference result")
 	}
+	ciABI193RequireExpr(t, castMethod.Type.Results.List[0].Type, "*stdjava.JavaString")
+	ciABI193RequireReturn(t, castMethod, `stdjava.ObjectView[*stdjava.JavaString](value, stdjava.StringTypeID)`)
+	castSource, err := os.ReadFile(filepath.Join(root, "com/acme/casts/Casts.java"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	runCampaignCompilerProjectOracle(t, map[string]string{
+		"pom.xml": `<project><groupId>example</groupId><artifactId>cast-semantics</artifactId><version>1</version></project>`,
+		"src/main/java/com/acme/casts/Casts.java": string(castSource),
+		"src/main/java/example/Main.java":         `package example;import com.acme.casts.Casts;public class Main{public static void main(String[] args){System.out.println(Casts.fromDouble(2.9));System.out.println(Casts.asString("ok"));System.out.println(Casts.asString(null)==null);try{Casts.asString(42);System.out.println("wrong");}catch(ClassCastException expected){System.out.println("rejected");}}}`,
+	}, "example.Main", "2\nok\ntrue\nrejected\n")
 }
 
 func TestFullProgram_WildcardsAndVarianceGenerics(t *testing.T) {
@@ -84,7 +95,7 @@ func TestFullProgram_MethodReferencesAndNestedConstructors(t *testing.T) {
 	outputs := convertJavaProjectDir(t, root)
 	outer := normalizeSpaces(outputs["com/acme/refs/Outer.go"])
 
-	if !strings.Contains(outer, "NewMapperFuncAdapterJava2goExecution[string, string](IdJava2goExecution)") {
+	if !strings.Contains(outer, "NewMapperFuncAdapterJava2goExecution[*stdjava.JavaString, *stdjava.JavaString](IdJava2goExecution)") {
 		t.Fatalf("expected static method reference to map through SAM adapter:\n%s", outputs["com/acme/refs/Outer.go"])
 	}
 	// Inner (non-static) class: `this.new Inner(in)` lowers to the renamed

@@ -1,0 +1,6 @@
+seed=41,constants=true,before=
+qualified=-128,2,shadow,trace=Q41|Q41|H41|
+binding=1,field=9,narrow=-128,char=65,unsigned=1,long=2,folded=true,dynamicSame=false
+instance=instance,trace=Q41|Q41|H41|H41|S|
+touch=true,true,trace=Q41|Q41|H41|H41|S|B|D|F|
+source=source-41,trace=Q41|Q41|H41|H41|S|B|D|F|

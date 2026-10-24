@@ -1,0 +1,13 @@
+# Expanded Sol work and verified component checkpoint
+
+The Number and Enum implementation is committed and pushed as `3cfd5fdc750913129e58c4062058bf5582f62b55` on `origin/codex/adversarial-enum-checkpoint19`. Independent raw verification covers Number18, Enum9, constructor9, neighbors35 and runtime7 on one immutable 1,980-file source. The root publication audit verifies the tested bytes. This is a component checkpoint; full Gson and cumulative acceptance remain open.
+
+The canonical integration passed all16 focused stages independently. A fresh run of the original22-stage gate then passed four version checks and the build, and stopped at eight lint issues. Later stages did not run. Sol owns a minimal lint repair; publication of that candidate is deferred until its checks and review pass. No lint suppression or skipped assertion is authorized.
+
+Four additional GPT-6.1 Sol agents now handle independent source-catch verification, dependency-resource review, callback performance experiment preparation, and private JDK integration. Existing Sol agents own routine compiler/runtime repairs, full gates, comparisons and evidence review. Astra is reserved for hard semantic conflicts and optimization design. Heavy correctness work remains capped at three isolated lanes with GOMAXPROCS=2; measurements remain exclusive.
+
+The added review found a concrete resource destination collision: syntactically different targets can normalize to the same path. The original Codec source-JVM missing-resource red is preserved, and a separate regression and general fix are being prepared before green validation. Another integration review identified a native versus canonical String ABI mismatch, preventing an unsafe cross-ABI Throwable merge. DateFormat can be composed separately.
+
+Other frontiers remain explicit. Source catch passes its focused tests, while the full EntrySet application reaches a separate Set parameter build failure. Entry applicability clears its core tests but exposes a nominal shadow case, inherited AbstractMap Put resolution and a premature Integer cast. Reflection application comparisons pass according to owner receipts, but its aggregate is rejected because three requested runtime tests were absent. The repaired literal baseline passes18 comparisons; qualifier controls and cache optimization remain separate gates. No performance advantage has been measured.
+
+`active_resume.progress53` in `campaign-state.json` records the exact component roots, hashes and limitations. This checkpoint does not claim later evidence is contained in the older progress51 archive. Checkpoint18 remains the latest full compatibility milestone. The campaign remains active, full Gson remains mandatory, and Netty progression remains gated.

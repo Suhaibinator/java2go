@@ -50,12 +50,16 @@ public class OverloadProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestOverloadDispatchBehavior(t *testing.T) {
     const want = "long,long,float,double,string,string,object,3,6,member-int,member-string,7.0"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %v, want %q", got, want)
     }
 }
 `)

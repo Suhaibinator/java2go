@@ -13,8 +13,15 @@ import (
 // Intrinsic calls cross the same Java conversion boundaries as source methods.
 // Keep their parameter types available before parsing arguments: changing only
 // a Go lambda's signature afterwards cannot insert boxing into its body.
-func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx, source []byte) []string {
-	invocation := object.Parent()
+func intrinsicInvocationExpectedArgumentTypes(invocation, object *sitter.Node, staticClass, method string, ctx Ctx, source []byte) []string {
+	if expected := functionalDefaultExpected(invocation, ctx, source); expected != nil {
+		return expected
+	}
+	if method == "equals" {
+		if _, ok := reflectObjectInvocationReceiver(object, method, ctx, source); ok {
+			return []string{"java.lang.Object"}
+		}
+	}
 	count := invocationArgumentCount(invocation)
 	result := make([]string, count)
 	set := func(types ...string) []string {
@@ -25,18 +32,45 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 		t, _ := inferExprJavaType(invocationArgumentNode(invocation, index), ctx, source)
 		return t
 	}
-	if class, ok := intrinsicStaticClassName(object, ctx, source); ok {
+	if class := staticClass; class != "" {
+		if expected := atomicFieldUpdaterExpectedArguments(class, method, count, nil, ctx, source); expected != nil {
+			return expected
+		}
+		if derive := staticIntrinsicExpectedArguments[intrinsicKey{class, method}]; derive != nil {
+			return derive(invocation, ctx, source)
+		}
+		if (class == "Paths" && method == "get") || (class == "Path" && method == "of") {
+			if expected := pathGetReferenceExpected(invocation, ctx, source); expected != nil {
+				return expected
+			}
+		}
+		if class == "Objects" && method == "requireNonNull" {
+			return objectsRequireNonNullExpected(invocation, ctx, source)
+		}
+		if expected, known := bigMathExpectedArgumentTypes(class, method, count); known {
+			return expected
+		}
+		if expected, known := javaTimeExpectedArgumentTypes(class, method, count, ctx); known {
+			return expected
+		}
+		if expected, known := datetimeExpectedArgumentTypes(class, method, count); known {
+			return expected
+		}
 		if primitive, wrapper := builtinJavaWrapperPrimitive("java.lang."+class, ctx); wrapper {
 			switch method {
 			case "valueOf":
-				if isJavaStringType(actual(0)) || actual(0) == "null" {
-					return set("String", "int")
+				if isBuiltinJavaString(actual(0), ctx) || actual(0) == "null" || actual(0) == ternaryNullJavaType {
+					return set("java.lang.String", "int")
 				}
 				return set(primitive)
 			case "parseByte", "parseShort", "parseInt", "parseLong", "parseFloat", "parseDouble", "parseBoolean":
-				return set("String", "int")
+				return set("java.lang.String", "int")
 			case "compare":
 				return set(primitive, primitive)
+			case "toHexString":
+				if class == "Integer" {
+					return set("int")
+				}
 			case "toString", "hashCode", "isNaN", "isInfinite":
 				return set(primitive)
 			}
@@ -48,6 +82,10 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			}
 		}
 		switch class {
+		case "ThreadLocal":
+			if method == "withInitial" {
+				return set("Supplier<" + threadLocalElement(invocation, ctx, source) + ">")
+			}
 		case "Class":
 			if method == "forName" {
 				return set("String")
@@ -56,6 +94,13 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			switch method {
 			case "of", "ofNullable", "singletonList", "singleton", "asList":
 				element := intrinsicFactoryElementJavaType(invocation, ctx, source)
+				if class == "Arrays" && method == "asList" {
+					var array bool
+					element, array = arraysAsListElementType(invocation, ctx, source)
+					if array {
+						return set(element + "[]")
+					}
+				}
 				for i := range result {
 					result[i] = element
 				}
@@ -75,11 +120,13 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			}
 		case "Math":
 			switch method {
+			case "toIntExact":
+				return set("long")
 			case "sin", "cos", "pow", "sqrt", "floor", "ceil":
 				for i := range result {
 					result[i] = "double"
 				}
-			case "abs", "min", "max", "round":
+			case "abs", "min", "max", "round", "addExact", "multiplyExact":
 				parameter := intrinsicMathParameterJavaType(invocation, ctx, source)
 				for i := range result {
 					result[i] = parameter
@@ -93,6 +140,65 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 	if !ok {
 		return result
 	}
+	if expected := atomicArrayExpectedArguments(class, method, count, ctx); expected != nil {
+		return expected
+	}
+	if expected := atomicFieldUpdaterExpectedArguments(class, method, count, object, ctx, source); expected != nil {
+		return expected
+	}
+	if class == "Path" && method == "resolve" {
+		return pathResolveReferenceExpected(invocation, ctx, source)
+	}
+	if (class == "Path" || class == "Class") && method == "equals" {
+		return set("java.lang.Object")
+	}
+	if class == "String" && method == "replace" && count == 2 {
+		primitive, wrapper := javaUnboxingPrimitive(actual(0), ctx)
+		if actual(0) == "char" || wrapper && primitive == "char" {
+			return set("char", "char")
+		}
+		return set("java.lang.CharSequence", "java.lang.CharSequence")
+	}
+	if (class == "StringBuilder" || class == "StringBuffer") && method == "setLength" {
+		return set("int")
+	}
+	if (class == "StringBuilder" || class == "StringBuffer") && method == "charAt" {
+		argument := invocationArgumentNode(invocation, 0)
+		if argument == nil {
+			return result
+		}
+		argumentCtx := ctx.Clone()
+		argumentCtx.expectedType = ""
+		argumentCtx.expectedTypeRoot = nil
+		var origin inferredJavaTypeOrigin
+		if _, known := inferExprJavaType(argument, argumentCtx, source, &origin); !known || origin.nominalScope != nil {
+			return result
+		}
+		return set("int")
+	}
+	if expected, known := bigMathExpectedArgumentTypes(class, method, count); known {
+		return expected
+	}
+	if expected, known := datetimeExpectedArgumentTypes(class, method, count); known {
+		return expected
+	}
+	if class == "ThreadLocal" && method == "set" {
+		elements := receiverElementJavaTypes(object, ctx, source)
+		if len(elements) == 1 {
+			return set(elements[0])
+		}
+		return set("Object")
+	}
+	if class == "Random" {
+		switch method {
+		case "setSeed":
+			return set("long")
+		case "nextInt":
+			return set("int")
+		case "nextBytes":
+			return set("byte[]")
+		}
+	}
 	if class == "Field" {
 		if method == "set" {
 			return set("Object", "Object")
@@ -101,7 +207,10 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			return set("Object")
 		}
 	}
-	if class == "Class" && (method == "getField" || method == "getMethod") {
+	if class == "Class" && method == "isInstance" {
+		return set("java.lang.Object")
+	}
+	if class == "Class" && (method == "getField" || method == "getDeclaredField" || method == "getMethod") {
 		return set("String")
 	}
 	if intrinsicFunctionalMethodNames[class] == method {
@@ -134,6 +243,9 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			return set("java.lang." + class)
 		}
 	}
+	if class == "Entry" && method == "setValue" {
+		return set(element(1))
+	}
 	if class == "Comparable" && method == "compareTo" {
 		return set(element(0))
 	}
@@ -149,6 +261,8 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			return set(element(0))
 		case "get":
 			return set("int")
+		case "subList":
+			return set("int", "int")
 		case "set":
 			return set("int", element(0))
 		case "contains", "indexOf", "lastIndexOf":
@@ -168,17 +282,22 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 			return set("Object")
 		}
 	}
+	class = mapIntrinsicLogicalName(class)
 	if containsString(mapTypeNames, class) || class == "ConcurrentHashMap" || class == "ConcurrentMap" {
 		switch method {
 		case "put", "putIfAbsent":
 			return set(element(0), element(1))
+		case "putAll":
+			return set("java.util.Map<? extends " + element(0) + ",? extends " + element(1) + ">")
 		case "get", "containsKey", "containsValue", "remove":
 			return set("Object", "Object")
 		case "getOrDefault":
 			return set("Object", element(1))
 		case "replace":
 			return set(element(0), element(1), element(1))
-		case "compute", "computeIfAbsent", "computeIfPresent":
+		case "computeIfAbsent":
+			return set(element(0), "java.util.function.Function<"+element(0)+","+element(1)+">")
+		case "compute", "computeIfPresent":
 			return set(element(0))
 		case "merge":
 			return set(element(0), element(1))
@@ -220,11 +339,24 @@ func intrinsicExpectedArgumentTypes(object *sitter.Node, method string, ctx Ctx,
 	}
 	if class == "String" {
 		switch method {
+		case "toUpperCase", "toLowerCase":
+			return set("java.util.Locale")
 		case "charAt", "substring", "subSequence", "repeat":
 			return set("int", "int")
 		case "equals":
 			return set("Object")
-		case "concat", "compareTo", "equalsIgnoreCase", "startsWith", "endsWith", "indexOf", "lastIndexOf", "split":
+		case "indexOf", "lastIndexOf":
+			target := actual(0)
+			if primitive, boxed := javaUnboxingPrimitive(target, ctx); boxed {
+				target = primitive
+			}
+			switch target {
+			case "byte", "short", "char", "int":
+				return set("int", "int", "int")
+			default:
+				return set("java.lang.String", "int", "int")
+			}
+		case "concat", "compareTo", "equalsIgnoreCase", "startsWith", "endsWith", "split":
 			return set("String", "int")
 		}
 	}
@@ -305,7 +437,7 @@ func intrinsicLambdaTargetJavaType(types lambdaArgumentTypes) string {
 	case 0:
 		return "Supplier<" + result + ">"
 	case 1:
-		return "Function<" + params[0] + "," + result + ">"
+		return "java.util.function.Function<" + params[0] + "," + result + ">"
 	case 2:
 		return "BiFunction<" + strings.Join(params, ",") + "," + result + ">"
 	}
@@ -375,23 +507,49 @@ func intrinsicReferenceJavaType(javaType string) string {
 
 func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver string, ctx Ctx, source []byte) (string, bool) {
 	name := invocation.ChildByFieldName("name").Content(source)
+	if receiver == "Comparator" && (name == "thenComparing" || name == "reversed") {
+		return inferExprJavaType(invocation.ChildByFieldName("object"), ctx, source)
+	}
 	if receiver == "ExecutorService" && name == "submit" {
 		result, _ := executorSubmitType(invocation, ctx, source)
 		return "Future<" + result + ">", true
 	}
-	elements := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
+	var elements []string
+	elementsLoaded := false
+	elementTypes := func() []string {
+		if !elementsLoaded {
+			elements = receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
+			elementsLoaded = true
+		}
+		return elements
+	}
 	if intrinsicFunctionalMethodNames[receiver] == name {
-		if sam, bindings, known := builtinFunctionalInterfaceMethod(receiver, elements); known {
+		if sam, bindings, known := builtinFunctionalInterfaceMethod(receiver, elementTypes()); known {
 			return substituteJavaTypeParams(sam.OriginalType, bindings), true
 		}
 	}
 	element := func(index int) string {
-		if index < len(elements) {
-			return elements[index]
+		types := elementTypes()
+		if index < len(types) {
+			return types[index]
 		}
 		return "Object"
 	}
-	if receiver == "Future" && name == "get" {
+	if receiver == "Iterator" && name == "next" {
+		return readableWildcardProjection(element(0)), true
+	}
+	if name == "iterator" && (receiver == "Collection" || receiver == "Iterable" || containsString(listTypeNames, receiver) || containsString(setTypeNames, receiver)) {
+		return "Iterator<" + element(0) + ">", true
+	}
+	if receiver == "Entry" {
+		if name == "getKey" {
+			return element(0), true
+		}
+		if name == "getValue" || name == "setValue" {
+			return element(1), true
+		}
+	}
+	if (receiver == "Future" || receiver == "ThreadLocal") && name == "get" {
 		return element(0), true
 	}
 	if receiver == "Callable" && name == "call" {
@@ -409,7 +567,7 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 		case "filter":
 			return "Optional<" + element(0) + ">", true
 		case "map", "flatMap":
-			result, ok := inferLambdaResultJavaType(invocationArgumentNode(invocation, 0), elements, ctx, source)
+			result, ok := inferLambdaResultJavaType(invocationArgumentNode(invocation, 0), elementTypes(), ctx, source)
 			if !ok {
 				result = element(0)
 			}
@@ -440,8 +598,15 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 			return "boolean", true
 		}
 	}
+	receiver = mapIntrinsicLogicalName(receiver)
 	if containsString(mapTypeNames, receiver) || receiver == "ConcurrentHashMap" || receiver == "ConcurrentMap" {
 		switch name {
+		case "keySet":
+			return "java.util.Set<" + element(0) + ">", true
+		case "entrySet":
+			return "java.util.Set<java.util.Map.Entry<" + element(0) + ", " + element(1) + ">>", true
+		case "values":
+			return "java.util.Collection<" + element(1) + ">", true
 		case "get", "getOrDefault", "put", "putIfAbsent", "compute", "computeIfAbsent", "computeIfPresent", "merge":
 			return element(1), true
 		case "remove", "replace":
@@ -451,6 +616,8 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 			return "boolean", true
 		case "size":
 			return "int", true
+		case "clear", "putAll":
+			return "void", true
 		case "containsKey", "containsValue", "isEmpty":
 			return "boolean", true
 		}
@@ -476,6 +643,12 @@ var intrinsicFunctionalMethodNames = map[string]string{
 func init() {
 	for name, method := range intrinsicFunctionalMethodNames {
 		registerInstanceIntrinsic(name, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+			if name == "Function" {
+				return stdjavaCall(ctx, "CallFunctionExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx), recv}, args...)...)
+			}
+			if name == "Supplier" {
+				return stdjavaCall(ctx, "GetSupplierExecution", intrinsicExecutionExpr(ctx), recv)
+			}
 			return &ast.CallExpr{Fun: recv, Args: args}
 		})
 	}
@@ -493,8 +666,8 @@ func tryWrapperConstructorIntrinsic(node *sitter.Node, className string, source 
 	arg := invocationArgumentNode(node, 0)
 	actual, _ := inferExprJavaType(arg, ctx, source)
 	expected := primitive
-	if isJavaStringType(actual) || actual == "null" {
-		expected = "String"
+	if isBuiltinJavaString(actual, ctx) || actual == "null" || actual == ternaryNullJavaType {
+		expected = "java.lang.String"
 	} else if name == "Float" {
 		if actualPrimitive, _ := builtinJavaWrapperPrimitive(actual, ctx); actualPrimitive == "double" || actual == "double" {
 			expected = "double"
@@ -507,12 +680,11 @@ func tryWrapperConstructorIntrinsic(node *sitter.Node, className string, source 
 	argCtx.expectedType = expected
 	argCtx.expectedTypeRoot = arg
 	value := coerceArgumentToExpectedType(ParseExpr(arg, source, argCtx), arg, expected, ctx, source)
-	if expected == "String" {
-		parser := map[string]string{"Boolean": "ParseBoolean", "Byte": "ParseByte", "Short": "ParseShort", "Integer": "ParseInt", "Long": "ParseLong", "Float": "ParseFloat", "Double": "ParseDouble"}[name]
-		if parser == "" {
-			return nil, false
+	if expected == "java.lang.String" {
+		value = canonicalBoxedStringParse(className, []ast.Expr{value}, ctx)
+		if value == nil {
+			return unsupportedIntrinsicValue(node, "java.lang."+name, source, ctx), true
 		}
-		value = stdjavaCall(ctx, parser, value)
 	}
 	if name == "Float" && expected == "double" {
 		return stdjavaCall(ctx, "NewFloatFromDouble", value), true
@@ -521,14 +693,14 @@ func tryWrapperConstructorIntrinsic(node *sitter.Node, className string, source 
 }
 
 func wrapperValueOfApplicable(invocation *sitter.Node, wrapper string, ctx Ctx, source []byte) bool {
-	expected := intrinsicExpectedArgumentTypes(invocation.ChildByFieldName("object"), "valueOf", ctx, source)
+	expected := intrinsicInvocationExpectedArgumentTypes(invocation, invocation.ChildByFieldName("object"), wrapper, "valueOf", ctx, source)
 	if len(expected) == 0 || len(expected) > 2 {
 		return false
 	}
-	if len(expected) == 2 && (expected[0] != "String" || (wrapper != "Byte" && wrapper != "Short" && wrapper != "Integer" && wrapper != "Long")) {
+	if len(expected) == 2 && (expected[0] != "java.lang.String" || (wrapper != "Byte" && wrapper != "Short" && wrapper != "Integer" && wrapper != "Long")) {
 		return false
 	}
-	if wrapper == "Character" && expected[0] == "String" {
+	if wrapper == "Character" && expected[0] == "java.lang.String" {
 		return false
 	}
 	for index, target := range expected {
@@ -556,19 +728,23 @@ func unsupportedIntrinsicValue(node *sitter.Node, resultType string, source []by
 }
 
 func parseTypedIntrinsicArguments(object *sitter.Node, method string, source []byte, ctx Ctx) []ast.Expr {
-	invocation := object.Parent()
+	class, _ := intrinsicStaticClassName(object, ctx, source)
+	return parseTypedIntrinsicInvocationArguments(object.Parent(), object, class, method, source, ctx)
+}
+
+func parseTypedIntrinsicInvocationArguments(invocation, object *sitter.Node, staticClass, method string, source []byte, ctx Ctx, preserveFunctionObject ...bool) []ast.Expr {
 	argList := invocation.ChildByFieldName("arguments")
 	if argList == nil {
 		return nil
 	}
-	expected := intrinsicExpectedArgumentTypes(object, method, ctx, source)
+	expected := intrinsicInvocationExpectedArgumentTypes(invocation, object, staticClass, method, ctx, source)
 	perArgument := map[int]lambdaArgumentTypes{}
 	if receiver, ok := intrinsicReceiverTypeName(object, ctx, source); ok {
 		if typed := lookupLambdaArgumentTypes(receiver, method, invocation, ctx, source); typed != nil {
 			perArgument = typed
 		} else if kind, found := lookupLambdaShape(receiver, method); found {
 			if elements := receiverElementJavaTypes(object, ctx, source); len(elements) == 1 {
-				for index, arg := range nodeutil.NamedChildrenOf(argList) {
+				for index, arg := range nodeutil.SemanticNamedChildrenOf(argList) {
 					if arg.Type() == "lambda_expression" || arg.Type() == "method_reference" {
 						perArgument[index] = intrinsicShapeLambdaTypes(arg, elements, kind, ctx, source)
 					}
@@ -576,7 +752,7 @@ func parseTypedIntrinsicArguments(object *sitter.Node, method string, source []b
 			}
 		}
 	}
-	if class, ok := intrinsicStaticClassName(object, ctx, source); ok {
+	if class := staticClass; class != "" {
 		if shape, found := staticLambdaShapes[intrinsicKey{class, method}]; found {
 			if elements := staticIntrinsicElementJavaTypes(invocation, shape.elementArg, ctx, source); len(elements) == 1 {
 				for _, index := range shape.lambdaArgs {
@@ -587,8 +763,8 @@ func parseTypedIntrinsicArguments(object *sitter.Node, method string, source []b
 			}
 		}
 	}
-	args := make([]ast.Expr, 0, argList.NamedChildCount())
-	for index, arg := range nodeutil.NamedChildrenOf(argList) {
+	args := make([]ast.Expr, 0, nodeutil.SemanticNamedChildCount(argList))
+	for index, arg := range nodeutil.SemanticNamedChildrenOf(argList) {
 		argCtx := ctx.Clone()
 		argCtx.expectedType = ""
 		argCtx.expectedTypeRoot = arg
@@ -601,6 +777,7 @@ func parseTypedIntrinsicArguments(object *sitter.Node, method string, source []b
 		parsed := ParseExpr(arg, source, argCtx)
 		if index < len(expected) && expected[index] != "" && arg.Type() != "lambda_expression" && arg.Type() != "method_reference" {
 			parsed = coerceArgumentToExpectedType(parsed, arg, expected[index], ctx, source)
+			parsed = convertIntrinsicStringBoundArgument(parsed, arg, expected[index], ctx, source)
 		}
 		if intrinsicLaterArgumentsMayWrite(invocation, index) {
 			valueType := ""
@@ -611,6 +788,49 @@ func parseTypedIntrinsicArguments(object *sitter.Node, method string, source []b
 				valueType, _ = inferExprJavaType(arg, ctx, source)
 			}
 			parsed = snapshotJavaExpressionValueForType(parsed, valueType, ctx)
+		}
+		callbackType := argCtx.expectedType
+		_, callback := perArgument[index]
+		receiver, _ := intrinsicReceiverTypeName(object, ctx, source)
+		if method == "computeIfAbsent" && index == 1 && (containsString(mapTypeNames, mapIntrinsicLogicalName(receiver)) || mapIntrinsicLogicalName(receiver) == "ConcurrentHashMap" || mapIntrinsicLogicalName(receiver) == "ConcurrentMap") {
+			callback = true
+		}
+		if !callback {
+			if _, shaped := lookupLambdaShape(receiver, method); shaped {
+				actual, _ := inferExprJavaType(arg, ctx, source)
+				if nativeFunctionalFamily(actual, ctx) != "" {
+					callback, callbackType = true, actual
+				}
+			}
+			if class := staticClass; class != "" {
+				if shape, shaped := staticLambdaShapes[intrinsicKey{class, method}]; shaped {
+					for _, position := range shape.lambdaArgs {
+						if position == index {
+							callback = true
+						}
+					}
+				}
+			}
+		}
+		if callback {
+			if len(preserveFunctionObject) != 0 && preserveFunctionObject[0] && isExternalFunctionType(callbackType, ctx) {
+				args = append(args, parsed)
+				continue
+			}
+			if isExternalFunctionType(callbackType, ctx) {
+				parsed = functionCallbackExpr(parsed, callbackType, ctx)
+			}
+			if family := nativeFunctionalFamily(callbackType, ctx); family == "BiFunction" || family == "Consumer" {
+				_, arguments := parseJavaTypeString(callbackType)
+				contract, ok := nativeFunctionalContract(family, arguments)
+				if ok {
+					types := []ast.Expr{}
+					for _, argument := range contract.arguments {
+						types = append(types, javaTypeStringToGoTypeExpr(argument, inScopeTypeParameters(ctx), ctx))
+					}
+					parsed = stdjavaGenericCall(ctx, family+"CallbackExecution", types, []ast.Expr{intrinsicExecutionExpr(ctx), parsed})
+				}
+			}
 		}
 		args = append(args, parsed)
 	}

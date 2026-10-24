@@ -1,0 +1,13 @@
+{
+  "scope": "native Thread interruption; state observer admission held",
+  "oracle": "Actual installed JDK21 three byte-identical runs frozen; no runtime JVM delegation",
+  "deadlines": {
+    "javac": 55,
+    "exec": 60
+  },
+  "source_java_sha256": {
+    "src/main/java/probe/Main.java": "fc3495b0093f6a65630bac697a1457950d63e2383c1e6c4cfc86cdce154ceac5"
+  },
+  "expected_stdout_sha256": "154e4e6569938bb916b3d3bdd36b85a6b473f1eee88ad1b04dc517f7ec54baef",
+  "classification": "Mandatory selected actual GoRED held, valid JDK; not native-stage acceptance"
+}

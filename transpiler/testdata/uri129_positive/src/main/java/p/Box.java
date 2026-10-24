@@ -1,0 +1,1 @@
+package p;import java.net.URI;public class Box {public URI value;public Box(String text) throws Exception {value=new URI(text);}public URI get(){return value;}}

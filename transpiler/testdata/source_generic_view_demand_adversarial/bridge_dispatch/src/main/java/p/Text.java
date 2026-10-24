@@ -1,0 +1,1 @@
+package p; public class Text extends Base<String>{public int bodies;public Text(String value){super(value);}@Override public String read(){reads++;return value;}@Override public void write(String value){bodies++;this.value=value;}}

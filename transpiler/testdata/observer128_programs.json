@@ -1,0 +1,63 @@
+{
+  "programs": {
+    "CanonicalSuper": {
+      "entry": "app.Main",
+      "files": {
+        "pom.xml": "<project><groupId>observe</groupId><artifactId>guard128</artifactId><version>1</version></project>",
+        "src/main/java/app/Main.java": "package app;\nimport java.security.GeneralSecurityException;\nclass Child extends GeneralSecurityException {\n static int calls;Throwable overrideCause;\n Child(String message,Throwable other){super(message);overrideCause=other;}\n @Override public Throwable getCause(){calls++;return overrideCause;}\n Throwable body(){return super.getCause();}\n Throwable[] suppressed(){return super.getSuppressed();}\n <GeneralSecurityException> boolean seed(Throwable cause){return super.initCause(cause)==this;}\n}\npublic class Main {\n public static void main(String[] args){String text=new String(new char[]{'r',0,(char)0xd800});Throwable cause=new Exception(\"cause\");Throwable other=new Exception(\"other\");Child value=new Child(text,other);\n System.out.println(value.seed(cause)+\":\"+(value.body()==cause)+\":\"+Child.calls+\":\"+(value.getCause()==other)+\":\"+Child.calls);\n value.addSuppressed(other);Throwable[] suppressed=value.suppressed();System.out.println((suppressed[0]==other)+\":\"+suppressed.length+\":\"+(value.getMessage()==text)+\":\"+value.getMessage().length()+\":\"+(int)value.getMessage().charAt(2));\n }\n}"
+      },
+      "stderr": "",
+      "stdout": "true:true:0:true:1\ntrue:1:true:3:55296\n"
+    },
+    "GSEImportedBinders": {
+      "entry": "app.Main",
+      "files": {
+        "pom.xml": "<project><groupId>observe</groupId><artifactId>guard128</artifactId><version>1</version></project>",
+        "src/main/java/app/Main.java": "package app;\nimport foreign.GeneralSecurityException;\nclass Child extends GeneralSecurityException {}\nclass Bound<GeneralSecurityException extends foreign.GeneralSecurityException>{String read(GeneralSecurityException value){return value.getCause()+\":\"+value.getMessage()+\":\"+value.toString();}}\npublic class Main {\n static <Throwable extends foreign.GeneralSecurityException> String read(Throwable value){return value.getCause();}\n static <T extends java.security.GeneralSecurityException> Throwable canonical(T value){return value.getCause();}\n public static void main(String[] args)throws Exception{\n GeneralSecurityException value=new GeneralSecurityException();Child child=new Child();String text=new String(new char[]{'r',0,(char)0xd800});\n System.out.println(value.initCause(text)==value);System.out.println((value.getCause()==text)+\":\"+(value.getMessage()==text)+\":\"+(value.toString()==text)+\":\"+value.calls);value.printStackTrace();System.out.println(value.calls);\n System.out.println(new Bound<GeneralSecurityException>().read(child)+\":\"+read(child)+\":\"+child.calls);\n System.out.println(child.getClass().getSuperclass().getName()+\":\"+Throwable.class.isInstance(child)+\":\"+GeneralSecurityException.class.isInstance(child));\n java.security.GeneralSecurityException security=new java.security.GeneralSecurityException((String)null);Throwable cause=new Exception(\"cause\");security.initCause(cause);System.out.println((canonical(security)==cause)+\":\"+(security.getMessage()==null)+\":\"+(security.getClass()==java.security.GeneralSecurityException.class));\n }\n}",
+        "src/main/java/foreign/GeneralSecurityException.java": "package foreign;\npublic class GeneralSecurityException {\n public int calls;public String text=\"source\";\n public String getCause(){calls++;return text;}\n public String getMessage(){calls++;return text;}\n public String toString(){calls++;return text;}\n public void printStackTrace(){calls++;}\n public GeneralSecurityException initCause(String value){text=value;return this;}\n}"
+      },
+      "stderr": "",
+      "stdout": "true\ntrue:true:true:3\n4\nsource:source:source:source:4\nforeign.GeneralSecurityException:false:true\ntrue:true:true\n"
+    },
+    "GSEMinimal": {
+      "entry": "Main",
+      "files": {
+        "pom.xml": "<project><groupId>observe</groupId><artifactId>guard128</artifactId><version>1</version></project>",
+        "src/main/java/Main.java": "class GeneralSecurityException { String getCause(){return \"source\";} } public class Main { public static void main(String[] args){System.out.println(new GeneralSecurityException().getCause());} }"
+      },
+      "stderr": "",
+      "stdout": "source\n"
+    },
+    "SourceParentSuper": {
+      "entry": "app.Main",
+      "files": {
+        "pom.xml": "<project><groupId>observe</groupId><artifactId>guard128</artifactId><version>1</version></project>",
+        "src/main/java/app/Main.java": "package app;\nclass Parent extends java.security.GeneralSecurityException {\n static String trace=\"\";Throwable selected;String text;\n Parent(Throwable value,String detail){super(\"base\");selected=value;text=detail;}\n @Override public Throwable getCause(){trace+=\"parent-cause,\";return selected;}\n @Override public String getMessage(){trace+=\"message,\";return text;}\n @Override public String toString(){trace+=\"text,\";return text;}\n @Override public void printStackTrace(){trace+=\"parent-print,\";}\n}\nclass Child extends Parent {\n Child(Throwable value,String detail){super(value,detail);}\n @Override public Throwable getCause(){trace+=\"child-cause,\";return null;}\n @Override public void printStackTrace(){trace+=\"child-print,\";}\n Throwable body(){return super.getCause();}\n void printBody(){super.printStackTrace();}\n}\npublic class Main {\n public static void main(String[] args){Throwable cause=new Exception(\"cause\");String text=new String(new char[]{'r',0,(char)0xd800});Child child=new Child(cause,text);java.security.GeneralSecurityException view=child;\n System.out.println((child.body()==cause)+\":\"+(child.getCause()==null));child.printBody();child.printStackTrace();System.out.println(Parent.trace);\n Parent.trace=\"\";System.out.println((view.getMessage()==text)+\":\"+(view.toString()==text)+\":\"+(child.getClass().getSuperclass()==Parent.class)+\":\"+(view.getClass()==Child.class));System.out.println(Parent.trace);\n }\n}"
+      },
+      "stderr": "",
+      "stdout": "true:true\nparent-cause,child-cause,parent-print,child-print,\ntrue:true:true:true\nmessage,text,\n"
+    },
+    "URIImportedChild": {
+      "entry": "app.Main",
+      "files": {
+        "pom.xml": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>campaign</groupId><artifactId>uri-observer128</artifactId><version>1</version><properties><maven.compiler.source>21</maven.compiler.source><maven.compiler.target>21</maven.compiler.target></properties></project>\n",
+        "src/main/java/app/Main.java": "package app;\nimport observe.URISyntaxException;\nimport observe.Child;\npublic class Main {\n  public static void main(String[] args) {\n    URISyntaxException source = new URISyntaxException();\n    Child child = new Child();\n    URISyntaxException base = child;\n    foreign.URISyntaxException other = new foreign.URISyntaxException();\n    System.out.println(source.getCause() + \":\" + source.getSuppressed());\n    System.out.println(source.initCause(\"ab\") == source);\n    source.printStackTrace();\n    System.out.println(source.getCause() + \":\" + source.getSuppressed());\n    System.out.println(base.getCause() + \":\" + base.getSuppressed());\n    System.out.println(base.initCause(\"x\") == child);\n    base.printStackTrace();\n    System.out.println(child.getCause() + \":\" + child.getSuppressed());\n    System.out.println(other.initCause(\"abc\") == other);\n    other.printStackTrace();\n    System.out.println(other.getCause() + \":\" + other.getSuppressed());\n    System.out.println(source.getClass().getName() + \":\" + child.getClass().getName() + \":\" + other.getClass().getName());\n    System.out.println(child.getClass().getSuperclass().getName());\n    System.out.println(URISyntaxException.class.isInstance(child) + \":\" + Throwable.class.isInstance(source) + \":\" + Throwable.class.isInstance(child) + \":\" + Throwable.class.isInstance(other));\n  }\n}\n",
+        "src/main/java/foreign/URISyntaxException.java": "package foreign;\npublic class URISyntaxException {\n  private int calls;\n  public int getCause() { return 11 + calls; }\n  public String getSuppressed() { return \"foreign:\" + calls; }\n  public URISyntaxException initCause(String text) { calls += text.length(); return this; }\n  public void printStackTrace() { calls++; System.out.println(\"foreign-print:\" + calls); }\n}\n",
+        "src/main/java/observe/Child.java": "package observe;\npublic class Child extends URISyntaxException {\n  public String getSuppressed() { return \"child:\" + state; }\n}\n",
+        "src/main/java/observe/URISyntaxException.java": "package observe;\npublic class URISyntaxException {\n  protected int state = 3;\n  public int getCause() { return state; }\n  public String getSuppressed() { return \"source:\" + state; }\n  public URISyntaxException initCause(String text) { state += text.length(); return this; }\n  public void printStackTrace() { state++; System.out.println(\"source-print:\" + state); }\n}\n"
+      },
+      "stderr": "",
+      "stdout": "3:source:3\ntrue\nsource-print:6\n6:source:6\n3:child:3\ntrue\nsource-print:5\n5:child:5\ntrue\nforeign-print:4\n15:foreign:4\nobserve.URISyntaxException:observe.Child:foreign.URISyntaxException\nobserve.URISyntaxException\ntrue:false:false:false\n"
+    },
+    "URIMinimal": {
+      "entry": "app.Main",
+      "files": {
+        "pom.xml": "<project><groupId>observe</groupId><artifactId>guard128</artifactId><version>1</version></project>",
+        "src/main/java/app/Main.java": "package app; public class Main {public static void main(String[] args){System.out.println(new Probe().run(new URISyntaxException()));}}",
+        "src/main/java/app/Probe.java": "package app; class URISyntaxException { int getCause(){return 7;} } class Probe { int run(URISyntaxException x){return x.getCause();} }"
+      },
+      "stderr": "",
+      "stdout": "7\n"
+    }
+  }
+}

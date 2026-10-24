@@ -1,0 +1,154 @@
+{
+  "JDK21_capture": {
+    "JDK_src_zip_sha256": "d887da897fc0065a2532500ee92320ce3bc633ccd6c4e637304045ce5d90de43",
+    "captured_oracles_sha256": "fc03db304485f8954f6b7699111a69853d28fe039ea6b3b1201bc4cf320019f0",
+    "fresh_JVM": 9,
+    "independent_audit_sha256": "0aa87fb54b0bd95e167d822c7a705ca1cd45c3a7ab6c19a02c553aa48c780351",
+    "javac": 1,
+    "original_source_manifest_sha256": "76180bdfc4c59cf9f898d04d8faf5e928aed0a0d7b2b8f521ef639e30e5115cd",
+    "owner_receipt_sha256": "283e84776f4fbcfa8fb652ed3ea3306054be6426a0c5be610c192d18ee7530e0",
+    "rows": 171,
+    "verified_stable_repeats": true
+  },
+  "build_metadata_note": "Original six-file project kept byteexact, including capture-time dependency-lock paths; portable source-only dependency module is supplied separately. Tests do not need binary JARs or regenerate JVM oracles.",
+  "dependency_sources": [
+    {
+      "binary_jar_sha256": "2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f",
+      "coordinate": "com.google.code.gson:gson",
+      "project": "dependency-source/gson",
+      "source_member": "com/google/gson/internal/bind/util/ISO8601Utils.java",
+      "source_sha256": "ae515fc0a17f15c919a152a3004d874a81d1466d39bdf163bd45d468a3faeba5",
+      "sources_jar_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "version": "2.14.0"
+    }
+  ],
+  "main_class": "app.Main",
+  "module": "example.test/dateiso",
+  "observations": [
+    {
+      "args": [
+        "17"
+      ],
+      "exit_code": 0,
+      "repeat": 1,
+      "rows": 19,
+      "seed": 17,
+      "stderr": "oracle/17-repeat1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/17-repeat1.stdout",
+      "stdout_sha256": "35f872821f103c21c3a40a51e7d8912999784ffbb21f74f7d57a7ea3ad978b03"
+    },
+    {
+      "args": [
+        "17"
+      ],
+      "exit_code": 0,
+      "repeat": 2,
+      "rows": 19,
+      "seed": 17,
+      "stderr": "oracle/17-repeat2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/17-repeat2.stdout",
+      "stdout_sha256": "35f872821f103c21c3a40a51e7d8912999784ffbb21f74f7d57a7ea3ad978b03"
+    },
+    {
+      "args": [
+        "17"
+      ],
+      "exit_code": 0,
+      "repeat": 3,
+      "rows": 19,
+      "seed": 17,
+      "stderr": "oracle/17-repeat3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/17-repeat3.stdout",
+      "stdout_sha256": "35f872821f103c21c3a40a51e7d8912999784ffbb21f74f7d57a7ea3ad978b03"
+    },
+    {
+      "args": [
+        "41"
+      ],
+      "exit_code": 0,
+      "repeat": 1,
+      "rows": 19,
+      "seed": 41,
+      "stderr": "oracle/41-repeat1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/41-repeat1.stdout",
+      "stdout_sha256": "9eeadc57456606f49b311f796b2b74d4139dd28aa86e67b9711ba66c76c3274b"
+    },
+    {
+      "args": [
+        "41"
+      ],
+      "exit_code": 0,
+      "repeat": 2,
+      "rows": 19,
+      "seed": 41,
+      "stderr": "oracle/41-repeat2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/41-repeat2.stdout",
+      "stdout_sha256": "9eeadc57456606f49b311f796b2b74d4139dd28aa86e67b9711ba66c76c3274b"
+    },
+    {
+      "args": [
+        "41"
+      ],
+      "exit_code": 0,
+      "repeat": 3,
+      "rows": 19,
+      "seed": 41,
+      "stderr": "oracle/41-repeat3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/41-repeat3.stdout",
+      "stdout_sha256": "9eeadc57456606f49b311f796b2b74d4139dd28aa86e67b9711ba66c76c3274b"
+    },
+    {
+      "args": [
+        "97"
+      ],
+      "exit_code": 0,
+      "repeat": 1,
+      "rows": 19,
+      "seed": 97,
+      "stderr": "oracle/97-repeat1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/97-repeat1.stdout",
+      "stdout_sha256": "afa4662bc0f2361d1f8eee27309a29a7c354ec2233a6f46991f760e4a7584d48"
+    },
+    {
+      "args": [
+        "97"
+      ],
+      "exit_code": 0,
+      "repeat": 2,
+      "rows": 19,
+      "seed": 97,
+      "stderr": "oracle/97-repeat2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/97-repeat2.stdout",
+      "stdout_sha256": "afa4662bc0f2361d1f8eee27309a29a7c354ec2233a6f46991f760e4a7584d48"
+    },
+    {
+      "args": [
+        "97"
+      ],
+      "exit_code": 0,
+      "repeat": 3,
+      "rows": 19,
+      "seed": 97,
+      "stderr": "oracle/97-repeat3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "oracle/97-repeat3.stdout",
+      "stdout_sha256": "afa4662bc0f2361d1f8eee27309a29a7c354ec2233a6f46991f760e4a7584d48"
+    }
+  ],
+  "project": "project",
+  "repeats": 3,
+  "scope": "supplemental JDK/date dependency contract; not an active campaign application or full Gson acceptance",
+  "seeds": [
+    17,
+    41,
+    97
+  ]
+}

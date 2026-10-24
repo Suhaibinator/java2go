@@ -4,12 +4,13 @@ import (
 	"flag"
 	"os"
 
-	java2go "github.com/NickyBoy89/java2go"
+	"github.com/NickyBoy89/java2go/internal/cliownership"
+	"github.com/NickyBoy89/java2go/transpiler"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	if err := java2go.Run(os.Args[1:]); err != nil {
+	if err := transpiler.RunStandalone(os.Args[1:], cliownership.New()); err != nil {
 		if err == flag.ErrHelp {
 			return
 		}

@@ -23,7 +23,14 @@ func MathAbs[T number](x T) T {
 // MathMax returns the larger of a and b, preserving the numeric type, matching
 // Java's overloaded Math.max.
 func MathMax[T number](a, b T) T {
-	if a > b {
+	if a != a {
+		return a
+	}
+	// Only zero is converted: integer comparisons retain their full precision.
+	if a == 0 && b == 0 && math.Signbit(float64(a)) {
+		return b
+	}
+	if a >= b {
 		return a
 	}
 	return b
@@ -32,7 +39,14 @@ func MathMax[T number](a, b T) T {
 // MathMin returns the smaller of a and b, preserving the numeric type, matching
 // Java's overloaded Math.min.
 func MathMin[T number](a, b T) T {
-	if a < b {
+	if a != a {
+		return a
+	}
+	// Java orders negative zero below positive zero for minimum selection.
+	if a == 0 && b == 0 && math.Signbit(float64(b)) {
+		return b
+	}
+	if a <= b {
 		return a
 	}
 	return b
