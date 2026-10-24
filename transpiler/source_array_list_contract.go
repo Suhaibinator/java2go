@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"go/token"
 	"strings"
 
 	"github.com/NickyBoy89/java2go/nodeutil"
@@ -43,6 +44,9 @@ func sourceArrayListCanonicalEdge(javaType string, ctx Ctx) bool {
 }
 
 func sourceArrayListDirectRoot(scope *symbol.ClassScope, ctx Ctx) bool {
+	if scope == nil || !sourceArrayListSuperclassCandidate(scope.Superclass) {
+		return false
+	}
 	header, owned := sourceArrayListDeclaration(scope, ctx)
 	return owned && sourceArrayListCanonicalEdge(scope.Superclass, header) && sourceArrayListNativeConstructors(scope, header) && !sourceArrayListUncoveredOverride(scope, header)
 }
@@ -340,4 +344,55 @@ func sourceArrayListParameterRanksExact(method *symbol.Definition, ctx Ctx) bool
 		}
 	}
 	return true
+}
+
+// This is only a necessary spelling check for a direct native superclass.
+// Comments, escape spellings and unknown syntax keep the complete source proof.
+// No candidate is accepted here, and inherited source roots keep their walk.
+func sourceArrayListSuperclassCandidate(javaType string) bool {
+	javaType = strings.TrimSpace(javaType)
+	if javaType == "" {
+		return false
+	}
+	var base strings.Builder
+	depth := 0
+	closed := false
+	for _, ch := range javaType {
+		if ch > 127 || ch == '/' || ch == '\\' || ch == '@' {
+			return true
+		}
+		switch ch {
+		case '<':
+			if depth == 0 && closed {
+				return true
+			}
+			depth++
+		case '>':
+			depth--
+			if depth < 0 {
+				return true
+			}
+			if depth == 0 {
+				closed = true
+			}
+		default:
+			if depth == 0 {
+				if closed && ch != '.' {
+					return true
+				}
+				closed = false
+				base.WriteRune(ch)
+			}
+		}
+	}
+	if depth != 0 {
+		return true
+	}
+	name := base.String()
+	for _, part := range strings.Split(name, ".") {
+		if !token.IsIdentifier(part) {
+			return true
+		}
+	}
+	return stripJavaQualifier(name) == "ArrayList"
 }

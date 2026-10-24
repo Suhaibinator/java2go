@@ -29144,5 +29144,33 @@
     },
     "independent_repair_review_sha256": "7400a6d58bfc3455f3319efed0b315e3e1f84633a8a2cb1dbb882e889b7fc9a0",
     "limitations": "Finite focused milestone. Full published-head CI, Supplier28, Gson112, Netty strict conversion and round-boundary regressions remain required."
+  },
+  "sol_progress232": {
+    "status": "VERIFIED_FOCUSED_REPAIR",
+    "production_change": true,
+    "publication_parent": "15ec6a02a558f86eb4e286e33ca2b2aa8d650e3b",
+    "paths": [
+      "transpiler/source_array_list_contract.go",
+      "transpiler/source_array_list_superclass_candidate_test.go"
+    ],
+    "joint_integration": {
+      "results_sha256": "272a73834f96c9ec5ce8384965f15d7cc673a1ab9df5728d88b70f63854a4140",
+      "review_sha256": "158f15c52892be46678e739b1d5edd2d2fcee1c925eb94deb3e04be69507edb8",
+      "counts": {
+        "normal": {
+          "parents": 22,
+          "subcases": 12
+        },
+        "race": {
+          "parents": 22,
+          "subcases": 12
+        }
+      },
+      "normal_race": "PASS",
+      "lint": "golangci-lint2.15 allpackages: 0 issues, empty stderr",
+      "retained_failed_aggregate_race": "55.198s cumulative native deadline; all9 exact parents passed individually at unchanged55s, source/binary/env; no failure credit"
+    },
+    "independent_repair_review_sha256": "cd118742ae30e85402e8db6aaacb135465b03ca66cfa4b784f74ccc280f9ef61",
+    "limitations": "Finite focused milestone. Full published-head CI, Supplier28, Gson112, Netty strict conversion and round-boundary regressions remain required."
   }
 }
