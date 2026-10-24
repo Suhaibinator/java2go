@@ -138,9 +138,10 @@ func TestReflectionClassDeclaredOriginsCompetingStaticTypeImports(t *testing.T) 
 			for _, competing := range []string{"relevantSingle", "unknownWildcard", "unrelatedSingle", "knownAbsentWildcard"} {
 				t.Run(name+"/"+form+"/"+competing, func(t *testing.T) {
 					written, header := name, "import java.lang.reflect.*;"
-					if form == "explicit" {
+					switch form {
+					case "explicit":
 						header = "import java.lang.reflect." + name + ";"
-					} else if form == "qualified" {
+					case "qualified":
 						written, header = "java.lang.reflect."+name, ""
 					}
 					first := name
