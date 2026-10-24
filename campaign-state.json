@@ -29033,5 +29033,34 @@
       "Actual tool provenance is owner-transcribed elevated launch/terminal receipts and durable controller waits, with no independent tool-service attestation."
     ],
     "CI226": "PENDING_ROOT_COMMIT_PUSH_AND_NEW_PUBLISHED_HEAD_CI_OBSERVATION"
+  },
+  "sol_progress227": {
+    "status": "VERIFIED_TEST_ABI_MIGRATION",
+    "production_change": false,
+    "publication_parent": "e1d11a8e2fc306682063fe59226a1682184a305f",
+    "tests": [
+      "transpiler/ci_generic_static107_test.go",
+      "transpiler/raw_generics_runtime_integration_test.go"
+    ],
+    "behavior": "Update generated-code guards for source-owned physical generic calls and erased fields. Preserve the original Java fixtures, dependent binder/witness assertions and value=7 behavior. Observe canonical JavaString equality in the runtime test.",
+    "verification": {
+      "modes": [
+        "normal",
+        "race"
+      ],
+      "parents_each_mode": 3,
+      "failures": 0,
+      "skips": 0,
+      "stderr": "",
+      "qualified_source_manifest": "591449723c2fa7e6565160d20a0af7f4391e4ab00ff00d93951b636538de682c",
+      "independent_actual_review_sha256": "b10b65320671cc9a5285bced3197058eccf3309598157ac12c54282aebbb16e8",
+      "JDK21_raw_fixture_oracle_sha256": "4fa4bb4985d880d0bb9a8a813add5aecd9645b3c4176a54c36201ab31912ac38",
+      "JDK21_raw_fixture_stdout": "value=7\n"
+    },
+    "limitations": [
+      "Two stale test contracts repaired; no production semantics change or full hosted CI success claimed.",
+      "Original obsolete-layout failure and interim JavaString observer compile failure remain recorded.",
+      "Generic inner construction, local-class lambda visibility, Netty performance and full Gson parity remain separate active work."
+    ]
   }
 }
