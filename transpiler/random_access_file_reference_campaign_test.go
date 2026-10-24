@@ -131,7 +131,6 @@ func rafStringFrozenFixture(t *testing.T, name string) {
 func TestRAFStringIntrinsicStrictRefusal(t *testing.T) {
 	for _, source := range []string{
 		`import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile(null,"r");}}`,
-		`import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile((java.io.File)null,"r");}}`,
 		`import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile("path",7);}}`,
 		`import java.io.RandomAccessFile;class Probe{Object run()throws Exception{return new RandomAccessFile("path");}}`,
 		`import java.io.RandomAccessFile;class Probe<RandomAccessFile>{Object run()throws Exception{return new RandomAccessFile("path","r");}}`,

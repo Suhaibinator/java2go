@@ -28621,5 +28621,97 @@
     "qualified_source_members": 4531,
     "scope": "Use actual registered outer Declaration.GoName under declaration-identity and distinctness guards; preserve fixed expected CharSequence/Number erasure/descriptors, captured U, qualified nominal classes, source-cast T-to-Number and method T2; stable first array role label emitted-outer, other four labels exact.",
     "status": "QUALIFIED_TEST_ONLY_DESCRIPTOR_BINDER_FIXTURE_ALIAS_MIGRATION"
+  },
+  "sol_progress218": {
+    "CI217_parent_only": {
+      "application_parity": "SUCCESS",
+      "compiler_FAIL": 13,
+      "compiler_PASS": 2394,
+      "compiler_SKIP": 0,
+      "head": "ab41edb28767a421ff328190c72c60c1ceb0ed9a",
+      "report_sha256": "e1d30a92d23a39d64d4e13f56455c73e8cc10d391c3e264b201af5149a6c52d7",
+      "run": 40061277305,
+      "separate_adversarial": "sameGsonJavaTimeTypeAdapters.java138requireNonNullFieldFAIL",
+      "stdjava_Linux_race_PASS": 920
+    },
+    "CI218": "PENDING_PUBLICATION_AND_NEW_CI_EXECUTION",
+    "cleanup": {
+      "current_recorded_PIDs": 120,
+      "current_recorded_groups": 61,
+      "fast_child_birth_identity_unobserved": 11,
+      "fresh_current_numeric_absence": true,
+      "historical_closed_instances": "Exact raw/lifecycle closed-instance certificates under amendment; no current ESRCH claim or future numeric reservation for historical PIDs.",
+      "transient_descendant_individual_PIDs_not_logged": true
+    },
+    "fresh_current217_actual": {
+      "actual_exit0": 59,
+      "canonical_profiles": 6,
+      "compiler_pure_parent_PASS": 960,
+      "complete_stream_file_directory_observations_exact": true,
+      "controller_exit": 0,
+      "controller_wait_reaped": true,
+      "current_projection_sha256": "618c4005fa0f1e47c5c908af213479122068450ca73197160502e45a49f290c1",
+      "independent_actual_review_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-raf217-actual-verification-recovery-v1/REPORT.json",
+      "independent_actual_review_sha256": "cead6a32748be62d9dabb52a41c261d40f5213faf33b236a013a47770502a56b",
+      "operational_amendment_grant_sha256": "7465b9f078ca7c262d739b870e004fd14f99304377445dd71945e25ff0d78088",
+      "original_Go_normal_race_runs": 6,
+      "original_JVM_runs": 3,
+      "owner_completion_cleanup_sha256": "87e087b143950c66d652378250691ed5c638fab4508be0253afd31b2d9687d0e",
+      "owner_observed_tool_exit": 0,
+      "parent_PASS": 2834,
+      "plan_sha256": "28ad8de738f3d1989f6b38e77930eefcf846ccf10a8306d6045dc9a358f1af2d",
+      "preconsumption_revocation_sha256": "859cb7de94f1dbc28d3500ba051b1824b65e8f4567d55e859e0ba481fc591077",
+      "retained": 0,
+      "runtime_focused_parent_PASS": 12,
+      "runtime_full_parent_PASS": 1846,
+      "runtime_registry_per_mode": 923,
+      "stages": 59,
+      "terminal_sha256": "b5f144caebbbf50e705459adb492433c1f85b5b1970f808281ece79cc17692b7",
+      "tool_session": 49899,
+      "unchanged_original_behavior_parent_PASS": 16
+    },
+    "held": [
+      "Supplier28",
+      "Gson112",
+      "full Netty application compatibility",
+      "original Netty Q4 real-query FAILED mandatory unwaived",
+      "original Netty strict300 FAILED mandatory unwaived",
+      "full accumulated round acceptance"
+    ],
+    "limitations": [
+      "Unchanged legacy parents supply only bounded outer native55/65 evidence. Nested JVM helpers lack both ActiveProcessorCount and heap flags. Some helpers override GOFLAGS to -p=1 and generated builds to -mod=mod; bare go mod tidy/test helpers have no child context, timer or WaitDelay. No canonical nested CPU/heap/readonly/buildvcs or actual nested race evidence is inferred. New direct original pipeline independently uses CPU2/Xmx1g and records normal/race binary metadata.",
+      "GOMEMLIMIT=512MiB is a Go soft memory target; no Go hard 1GiB cap claim.",
+      "Six default/F1 build, test-compilation and lint profiles provide compilation evidence; -run ^$ is not runtime leaf coverage.",
+      "No source File subclass/getPath override dispatch, anonymous File admission, global typeparameter-to-String widening, JVM delegation or library replacement.",
+      "No performance, full Netty compatibility or accumulated-round acceptance claim."
+    ],
+    "owned_code_and_test_postimages": {
+      "stdjava/random_access_file_file_constructor209.go": "aa3c3e0524075b4627ba30dbe4c084f905174c7c77f01f3fe26272a670277413",
+      "stdjava/random_access_file_file_constructor209_test.go": "79f51aca343af87c758b8c3ac7aac98e7119ca14ebdb5d86f125610e2acec2f9",
+      "stdjava/random_access_file_reference.go": "e3b77ac99366d924cb977276e9471ea6908bc53049d5dcd37d59beae19c15827",
+      "transpiler/intrinsics_random_access_file_reference.go": "f5297eb2b1915f553358b469ff918a30aa5304865d90b6d9dddf491f0a341847",
+      "transpiler/random_access_file_allocation_origin.go": "c605e1fc5759d30845c7f1c95e0fa1f3b6916ac27ba519ec2c16a3778d126429",
+      "transpiler/random_access_file_file_constructor209.go": "ca2d6e19d357bd8cd8a503d73108c6e88e97d1a3e45a80853c901817c6fccdf6",
+      "transpiler/random_access_file_file_constructor209_probe_test.go": "ac6195674a133ef1291d742d1316f8d84534a911e565f386605a179c38001b8a",
+      "transpiler/random_access_file_file_constructor209_test.go": "e755a40361756e6f9c79f0f58e876199139ee268df8537e061bcf650a61ae273",
+      "transpiler/random_access_file_reference_campaign_test.go": "a715997c0e9bbae5ae53bb959bcb4292aca368a96459425abaa06887404a7b22"
+    },
+    "protected_user_files": {
+      "performance/runtime/bignumbers/equal_scale/README.md": "c39a78225c4fc6434068c114cd4e694b1c2a3ef2eeb3c06489e246359cf19ace",
+      "performance/runtime/bignumbers/equal_scale/VALIDATE_AFTER_RELEASE.sh": "3dbaa71b850c16c552780d535a488696bfd43b2dbc6c4fa4252e62a2394ae92f",
+      "performance/runtime/bignumbers/equal_scale/equal-scale.patch": "a168cd860e01f3f3545bc5c71975626dbf0b161ada7f13abc72a6d66ac17a9be",
+      "performance/runtime/bignumbers/equal_scale/harness/DecimalCompareDriver.java": "f8a5eb31d40dfe5f6fc336dc91f137b2aeb850ed55529f12cee2f013d8619916",
+      "performance/runtime/bignumbers/equal_scale/harness/allocation_test.go.txt": "b677f7efd09cb71283d45ed4893163948f0d6bcdfa565e186d1aa587182a8ec9",
+      "performance/runtime/bignumbers/equal_scale/harness/driver.go.txt": "2e733639022fcbf6aff2cc26151cd5023f7cc127b5b20016efd86b44a77e57f0",
+      "performance/runtime/bignumbers/equal_scale/harness/regression_test.go.txt": "cccf16f4b88c71a07e60ceb7c709518eb2545e5a5976105d1fd06fdbf5c574c0",
+      "performance/runtime/bignumbers/equal_scale/prepare.py": "0ffd8b7bf383e4ad7cc5a86620fdeff1f139d0d3c2073528391c29bc7f39f360",
+      "performance/runtime/bignumbers/equal_scale/prepared.json": "b6fbc6cb19c1f9b767d4e92d8c70d5d0bfaafe90a2b6a8d6b3f253b0241d204f",
+      "performance/runtime/bignumbers/equal_scale/source/DecimalCompareProbe.java": "54658040c6ba6a9d4b24b7f0545f4c299845b5f550960fccb4735cbeefd1675a"
+    },
+    "publication_parent": "ab41edb28767a421ff328190c72c60c1ceb0ed9a",
+    "qualified_source_manifest_sha256": "d92683737fe05cf1ba2d83e613b6dd7276c0a35ef2d37c5050f2492157876748",
+    "qualified_source_members": 4537,
+    "scope": "Exact native java.io.File RAF constructor plus selected canonical String provenance, selected generic witnesses and captured try-with-resources initializer bridge; runtime-local Java byte-read Stream Closed hook.",
+    "status": "QUALIFIED_NATIVE_RANDOM_ACCESS_FILE_FILE_AND_SELECTED_STRING_CONTRACTS"
   }
 }

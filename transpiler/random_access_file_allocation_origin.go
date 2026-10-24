@@ -16,7 +16,7 @@ func randomAccessFileNativeAllocation(node *sitter.Node, ctx Ctx, source []byte)
 	proof := ctx.Clone()
 	proof.expectedType, proof.expectedTypeRoot = "", nil
 	if node.Type() == "object_creation_expression" {
-		return objectCreationClassBody(node) == nil && randomAccessFileStringConstructorApplicable(node, nil, proof, source)
+		return objectCreationClassBody(node) == nil && raf209Constructor(node, nil, proof, source) != raf209Refused
 	}
 	if node.Type() != "identifier" || ctx.currentClass == nil || ctx.currentClass.Class == nil || ctx.currentFile == nil || findFileScopeForClassScope(ctx.currentClass, ctx) != ctx.currentFile || !receiverNodeWithin(node, ctx.currentClass.Class.DeclarationNode) {
 		return false
@@ -28,7 +28,11 @@ func randomAccessFileNativeAllocation(node *sitter.Node, ctx Ctx, source []byte)
 	// The lexical resolver chooses this declaration at this occurrence, including
 	// capture and shadow boundaries. A declared TWR variable cannot be reassigned.
 	value := unwrapParenthesizedExpressionNode(binding.declaration.ChildByFieldName("value"))
-	if value == nil || value.Type() != "object_creation_expression" || objectCreationClassBody(value) != nil || !randomAccessFileStringConstructorApplicable(value, nil, proof, source) {
+	if value == nil || value.Type() != "object_creation_expression" || objectCreationClassBody(value) != nil {
+		return false
+	}
+	constructorProof, proved := raf209ResourceInitializerContext(node, binding.declaration, proof, source)
+	if !proved || raf209Constructor(value, nil, constructorProof, source) == raf209Refused {
 		return false
 	}
 	return fileChannelReadExternalExpression(node, "java.io.RandomAccessFile", proof, source)

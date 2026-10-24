@@ -15,22 +15,7 @@ func NewRandomAccessFileStringExecution(execution *Execution, path, mode *JavaSt
 	if path != nil {
 		file = NewJavaFileReference(path)
 	}
-	flags := randomAccessFileReferenceMode(mode)
-	if file == nil {
-		panic(NewJavaNullPointerExceptionMessage(nil))
-	}
-	for _, unit := range file.pathText.units {
-		if unit == 0 {
-			panic(newJavaThrowableBase("FileNotFoundException", JavaStringLiteralUTF16([]uint16{'I', 'n', 'v', 'a', 'l', 'i', 'd', ' ', 'f', 'i', 'l', 'e', ' ', 'p', 'a', 't', 'h'})))
-		}
-	}
-	opened, err := os.OpenFile(file.path, flags, 0666)
-	if err != nil {
-		randomAccessFileReferenceFailure(file.pathText, err)
-	}
-	result := randomAccessFileReferenceFinishOpen(file, opened)
-	result.state.writable = randomAccessFileWritableFromOpenFlags(flags)
-	return result
+	return randomAccessFileNativeReferenceInitialize(file, mode)
 }
 
 func randomAccessFileReferenceMode(mode *JavaString) int {

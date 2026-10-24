@@ -33,8 +33,12 @@ func randomAccessFileStringConstructorApplicable(node *sitter.Node, typeArgs []a
 func registerRandomAccessFileReferenceIntrinsic() {
 	registerIntrinsicOwner("java.io.RandomAccessFile", true)
 	registerConstructorNodeIntrinsic("RandomAccessFile", func(typeArgs, args []ast.Expr, node *sitter.Node, ctx Ctx, source []byte) ast.Expr {
-		if len(args) != 2 || !randomAccessFileStringConstructorApplicable(node, typeArgs, ctx, source) {
+		kind := raf209Constructor(node, typeArgs, ctx, source)
+		if len(args) != 2 || kind == raf209Refused {
 			return unsupportedIntrinsicValue(node, "java.io.RandomAccessFile", source, ctx)
+		}
+		if kind == raf209NativeFile {
+			return raf209LowerFile(args, ctx, node, source)
 		}
 		path := coerceArgumentToExpectedType(args[0], invocationArgumentNode(node, 0), "java.lang.String", ctx, source)
 		mode := coerceArgumentToExpectedType(args[1], invocationArgumentNode(node, 1), "java.lang.String", ctx, source)
