@@ -49,18 +49,48 @@ func sourceReflectionRecordSetUnavailable(ctx Ctx) ast.Expr {
 }
 func sourceReflectionRecordConstructors(scope *symbol.ClassScope, ctx Ctx) ast.Expr {
 	constructors := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("ConstructorDescriptor", ctx)}}
-	var parameters []ast.Expr
-	for _, field := range scope.Fields {
-		if sourceReflectionRecordComponent(scope, field) == nil {
+	if recordCanonicalConstructor(scope, ctx) == nil {
+		return constructors
+	}
+	for _, method := range scope.Methods {
+		if method == nil || !method.Constructor {
 			continue
 		}
-		id, known := javaTypeDescriptorExpr(qualifyDeclaredReferenceType(symbol.JavaType{Original: field.OriginalType, TypeParameterBindings: field.TypeParameterBindings}, classScopeCtx(scope, ctx)), classScopeCtx(scope, ctx))
-		if !known {
-			return constructors
+		if method.DeclarationNode != nil && !recordWrittenConstructorOwned(scope, method) {
+			return &ast.CompositeLit{Type: constructors.Type}
 		}
-		parameters = append(parameters, id)
+		declaring := classScopeCtx(scope, ctx)
+		declaring.localScope = method
+		var parameters []ast.Expr
+		for index, parameter := range method.Parameters {
+			typ := definitionDeclaredJavaType(parameter)
+			typ.Original = definitionParameterJavaSignatureType(method, index)
+			id, known := javaTypeDescriptorExpr(qualifyDeclaredReferenceType(typ, declaring), declaring)
+			if !known {
+				panic("unresolved reflection record constructor parameter descriptor")
+			}
+			parameters = append(parameters, id)
+		}
+		modifiers := sourceReflectionModifiers(method, scope)
+		if method.DeclarationNode == nil {
+			modifiers = sourceReflectionModifiers(scope.Class, scope) & 7
+		}
+		if len(method.Parameters) > 0 && executionParameterIsVariadic(method, len(method.Parameters)-1) {
+			modifiers |= 128
+		}
+		entry := &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Parameters", sourceReflectionTypeIDs(parameters, ctx)), metadataKey("Modifiers", reflectionInteger(modifiers))}}
+		if method.DeclarationNode != nil {
+			if annotations := sourceReflectionWrittenAnnotationDescriptors(method.DeclarationNode, scope, ctx); annotations != nil {
+				entry.Elts = append(entry.Elts, metadataKey("Annotations", annotations))
+			}
+		}
+		// Generic class/constructor reflective ABIs retain their explicit unavailable
+		// callback boundary. Plain source construction still uses the same body.
+		if len(scope.TypeParameters) == 0 && len(method.TypeParameters) == 0 {
+			entry.Elts = append(entry.Elts, metadataKey("Construct", sourceReflectionConstructorCallback(scope, method, method.Name, parameters, ctx)))
+		}
+		constructors.Elts = append(constructors.Elts, entry)
 	}
-	constructors.Elts = append(constructors.Elts, &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Parameters", sourceReflectionTypeIDs(parameters, ctx)), metadataKey("Modifiers", reflectionInteger(sourceReflectionModifiers(scope.Class, scope)&7))}})
 	return constructors
 }
 

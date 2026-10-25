@@ -2072,35 +2072,17 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	recvBase := instantiateGenericType(ctx.className, typeParamExprs(goTypeParams))
 	recvName := ShortName(ctx.className)
 
-	// Canonical constructor: New<Name>(c1, c2, ...) *Name.
-	ctorParams := &ast.FieldList{}
-	ctorBody := []ast.Stmt{
-		&ast.AssignStmt{
-			Lhs: []ast.Expr{&ast.Ident{Name: recvName}},
-			Tok: token.DEFINE,
-			Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.Ident{Name: "new"}, Args: []ast.Expr{recvBase}}},
-		},
+	// Canonical constructors share the ordinary source constructor lifecycle.
+	// Written canonical bodies are emitted from the record body below.
+	if constructor := recordCanonicalConstructor(scope, ctx); constructor == nil {
+		return []ast.Decl{unsupportedDeclStub(reportUnsupported("record canonical constructor signature", node, source, ctx))}
+	} else if constructor.DeclarationNode == nil {
+		declarations = append(declarations, buildRecordImplicitConstructorDecls(node, source, ctx, constructor)...)
+	} else if constructor.DeclarationNode.Type() == "compact_constructor_declaration" {
+		// The generic declaration walker deliberately does not lower compact nodes.
+		// Emit this actual canonical member here once, through the shared lifecycle.
+		declarations = append(declarations, buildRecordCompactConstructorDecls(constructor.DeclarationNode, source, ctx)...)
 	}
-	for _, f := range scope.Fields {
-		ctorParams.List = append(ctorParams.List, &ast.Field{
-			Names: []*ast.Ident{{Name: f.OriginalName}},
-			Type:  javaTypeStringToGoTypeExpr(f.OriginalType, typeParams, ctx),
-		})
-		ctorBody = append(ctorBody, &ast.AssignStmt{
-			Lhs: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: f.Name}}},
-			Tok: token.ASSIGN,
-			Rhs: []ast.Expr{&ast.Ident{Name: f.OriginalName}},
-		})
-	}
-	ctorBody = append(ctorBody, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: recvName}}})
-	declarations = append(declarations, genFuncDeclWithTypeParamsInContext(
-		"New"+ctx.className,
-		scope.TypeParameters,
-		ctorParams,
-		&ast.FieldList{List: []*ast.Field{{Type: &ast.StarExpr{X: recvBase}}}},
-		&ast.BlockStmt{List: ctorBody},
-		ctx,
-	))
 
 	// Accessor method per component: func (r *Name) X() T { return r.x }. The
 	// method is exported (matching the resolved accessor Definition); the field it
@@ -2145,9 +2127,10 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		declarations = append(declarations, sourceClassReferenceIdentityDecls(scope, ctx)...)
 	}
 
-	// User-declared methods in the record body.
+	// Record constructors use the same lazy initialization coordinator as other
+	// source constructors; body lowering must not also emit eager Go init work.
 	if body := node.ChildByFieldName("body"); body != nil {
-		declarations = append(declarations, ParseDecls(body, source, ctx)...)
+		declarations = append(declarations, buildRecordConstructorBodyDecls(body, source, ctx)...)
 	}
 
 	return declarations
@@ -4201,6 +4184,12 @@ type constructorLoweringOptions struct {
 	fieldInitializerMethodName  string
 	forceMostDerived            bool
 	skipClassInitialization     bool
+	// Record canonical constructors retain real header/body nodes. The zero
+	// value preserves ordinary class/enum/local constructor behavior.
+	parameterNode    *sitter.Node
+	bodyNode         *sitter.Node
+	bodyNodeSupplied bool
+	canonicalTail    func(Ctx, string) []ast.Stmt
 }
 
 func constructorInitializerCall(
@@ -4233,6 +4222,9 @@ func buildSourceConstructorDecls(
 	options constructorLoweringOptions,
 ) []ast.Decl {
 	paramNode := node.ChildByFieldName("parameters")
+	if options.parameterNode != nil {
+		paramNode = options.parameterNode
+	}
 	nameNode := node.ChildByFieldName("name")
 	if paramNode == nil || nameNode == nil || ctx.currentClass == nil {
 		return nil
@@ -4295,12 +4287,18 @@ func buildSourceConstructorDecls(
 	ctx.executionContextName = executionName
 
 	bodyNode := node.ChildByFieldName("body")
+	if options.bodyNodeSupplied {
+		bodyNode = options.bodyNode
+	}
 	constructorInvocation := constructorInvocationFromBody(bodyNode, source, ctx)
 	var omittedInvocation *sitter.Node
 	if constructorInvocation != nil {
 		omittedInvocation = constructorInvocation.node
 	}
-	body := parseStatementBlock(bodyNode, omittedInvocation, source, withGenericFamilyConstructorBody(ctx))
+	body := &ast.BlockStmt{}
+	if bodyNode != nil {
+		body = parseStatementBlock(bodyNode, omittedInvocation, source, withGenericFamilyConstructorBody(ctx))
+	}
 
 	var structType ast.Expr = &ast.Ident{Name: ctx.className}
 	if len(ctx.currentClass.TypeParameters) > 0 {
@@ -4390,6 +4388,9 @@ func buildSourceConstructorDecls(
 		}
 	}
 	body.List = append(body.List, userBody...)
+	if options.canonicalTail != nil {
+		body.List = append(body.List, options.canonicalTail(ctx, receiverName)...)
+	}
 	body.List = append(body.List, &ast.ReturnStmt{Results: []ast.Expr{&ast.Ident{Name: receiverName}}})
 
 	returnType := &ast.StarExpr{X: structType}

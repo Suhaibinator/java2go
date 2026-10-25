@@ -189,6 +189,9 @@ func executionConstructorWithSelfImplementationName(name string, owner *symbol.C
 // Synthetic constructors such as a record's canonical constructor are emitted
 // public-only and must retain that ABI.
 func constructorHasExecutionImplementation(def *symbol.Definition, scope *symbol.ClassScope) bool {
+	if sourceReflectionRecord(scope) {
+		return recordConstructorExecutionReady(def, scope)
+	}
 	if def != nil {
 		return def.Constructor && def.DeclarationNode != nil && def.DeclarationNode.Type() == "constructor_declaration"
 	}

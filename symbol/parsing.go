@@ -455,7 +455,7 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 				DeclarationNode: node,
 			})
 		}
-	case "method_declaration", "abstract_method_declaration", "constructor_declaration", "annotation_type_element_declaration":
+	case "method_declaration", "abstract_method_declaration", "constructor_declaration", "compact_constructor_declaration", "annotation_type_element_declaration":
 		var public bool
 		var isStatic bool
 		var isPrivate bool
@@ -526,7 +526,11 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 		// Parse the parameters
 
 		var annotationParameters []*sitter.Node
-		if parameters := node.ChildByFieldName("parameters"); parameters != nil {
+		parameters := node.ChildByFieldName("parameters")
+		if node.Type() == "compact_constructor_declaration" && scope.Class != nil && scope.Class.DeclarationNode != nil {
+			parameters = scope.Class.DeclarationNode.ChildByFieldName("parameters")
+		}
+		if parameters != nil {
 			annotationParameters = nodeutil.SemanticNamedChildrenOf(parameters)
 		}
 		for _, parameter := range annotationParameters {

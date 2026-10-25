@@ -65,6 +65,7 @@ func ResolveFiles(files []parsing.SourceFile) {
 		activeResolutionFiles, activeImportSourceInventory = previousIndex, previousImports
 	}()
 
+	prepareRecordConstructorDefinitions(files)
 	prepareBuiltinInterfaceMethods()
 	prepareAbstractCollectionDefaults()
 	prepareAbstractMapDefaults()
