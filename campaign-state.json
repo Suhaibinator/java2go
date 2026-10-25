@@ -29343,5 +29343,63 @@
     "accepted_round": false,
     "limits": "Exercised JDK APIs/configurations only. New-head hosted CI and full Supplier/Gson/Netty campaign acceptance remain required."
   },
-  "generated_executable_cleanup_policy": "User-authorized removal of closed, checkpointed generated executables; preserve sources, inputs, logs, tools, active baselines and comparison executables."
+  "generated_executable_cleanup_policy": "User-authorized removal of closed, checkpointed generated executables; preserve sources, inputs, logs, tools, active baselines and comparison executables.",
+  "sol_progress236": {
+    "status": "VERIFIED_EXERCISED_FILES_CREATE_DIRECTORIES_SERVICE",
+    "publication_parent": "79d53b1d92c5fa0935805c555df0d9c26339ca27",
+    "source_manifest_sha256": "26246bf398db406cf4ab96106a8fc93402aed102fd11d0b69a515e45aac5ebc0",
+    "actual_delivery_sha256": "7ee22b64f4b553b93103f44dcbbc0c64e2df91ddfc70f68afc4c54abb47942c0",
+    "independent_review_sha256": "2f877a5464109c2b3e5052ce7528ac6aec091698481fb401a365b0ae72c633c3",
+    "paths": [
+      "stdjava/files_create_directories.go",
+      "stdjava/files_create_directories_access_other.go",
+      "stdjava/files_create_directories_access_unix.go",
+      "stdjava/filesystemcontract/README.md",
+      "stdjava/filesystemcontract/files_create_directories_contract_test.go",
+      "stdjava/filesystemcontract/files_create_directories_dot_fallback_test.go",
+      "stdjava/filesystemcontract/files_create_directories_empty_cwd_test.go",
+      "stdjava/filesystemcontract/files_create_directories_fallback_matrix_test.go",
+      "stdjava/filesystemcontract/oracle/DirectoryLifecycleFallbackMatrixOracle.java",
+      "stdjava/filesystemcontract/oracle/EmptyPathRemovedCwdOracle.java",
+      "stdjava/filesystemcontract/testdata/directory_jdk21_fallback_observations.json",
+      "stdjava/filesystemcontract/testdata/directory_jdk21_observations.json",
+      "stdjava/filesystemcontract/testdata/empty_path_removed_cwd_jdk21.stdout",
+      "stdjava/nio.go",
+      "stdjava/throwable_type_names.go"
+    ],
+    "verification": {
+      "actual_payloads": 57,
+      "runtime_parents_per_mode": 939,
+      "modes": [
+        "normal",
+        "race"
+      ],
+      "JDK_derived_controls": 17,
+      "new_CI_test_subpackage": "stdjava/filesystemcontract",
+      "fresh_Codec_semantic_children": 24,
+      "fresh_Codec_workflow_calls": 54,
+      "report_files": 162,
+      "strict_and_generated_package_builds": "PASS",
+      "generated_implementation_edits": 0,
+      "lint": "golangci-lint 2.15: 0 issues",
+      "lint_validator_correction": "Original clean-lint decoder STOP retained. Exact exit0/empty stderr/0 issues newline adopted without rerunning payloads."
+    },
+    "semantic_scope": "Actual native Darwin verification; Linux source reviewed and tests wired to hosted CI. Other GOOS retain approximate access/error behavior.",
+    "generated_program_speedup_claim": false,
+    "private_concat_optimizer_included": false,
+    "accepted_round": false
+  },
+  "hosted_ci235": {
+    "head": "79d53b1d92c5fa0935805c555df0d9c26339ca27",
+    "run": 40155442729,
+    "report_sha256": "9ed51d8528e1c5d5b7626ed27ba91ceefcd67b6663867548ca75c9ddbdb458be",
+    "compiler_parents_pass": 2631,
+    "compiler_children_pass": 4570,
+    "compiler_failures": 0,
+    "compiler_skips": 0,
+    "runtime_pass": 939,
+    "unit_pass": 1026,
+    "remaining_failure": "Gson generated Go build: undefined T and remaining collection/reflection services; aggregate Test also fails.",
+    "child_migration": "One prior URL constructor refusal becomes positive conformance with identical Java text."
+  }
 }

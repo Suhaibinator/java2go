@@ -1,0 +1,4 @@
+BEFORE	cwd-exists=true
+REMOVED	cwd-exists=false
+RETURN	identity=true	lexical-empty=true	directory=true
+AFTER	cwd-exists=false	local-directory=true

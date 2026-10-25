@@ -411,7 +411,7 @@ func FilesExists(path any) bool {
 // FilesIsDirectory reports whether the path is a directory, matching
 // Files.isDirectory.
 func FilesIsDirectory(path any) bool {
-	info, err := os.Stat(ioPathOf(path))
+	info, err := os.Stat(filesDirectorySystemPath(ioPathOf(path)))
 	return err == nil && info.IsDir()
 }
 
@@ -437,9 +437,14 @@ func FilesSize(path any) int64 {
 // error, as in Java. It returns the path. Files.createDirectory, which refuses
 // to create parents and throws for an existing directory, is not modeled.
 func FilesCreateDirectories(path any) *JavaPath {
+	if javaReferenceIsNull(path) {
+		// Files.provider(Path) dereferences its path argument before any IO.
+		panic(NewNullPointerException("Cannot invoke \"java.nio.file.Path.getFileSystem()\" because \"path\" is null"))
+	}
 	target := ioPathOf(path)
-	if err := os.MkdirAll(target, 0o777); err != nil {
-		throwIOException(err)
+	filesCreateDirectoriesNative(target)
+	if original, ok := path.(*JavaPath); ok {
+		return original
 	}
 	return &JavaPath{path: target}
 }
