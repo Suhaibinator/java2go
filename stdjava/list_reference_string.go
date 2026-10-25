@@ -8,6 +8,9 @@ package stdjava
 func (list *List[T]) StringJava2goExecution(execution *Execution) *JavaString {
 	requireExecution(execution)
 	ReferenceRequireNonNull(list)
+	if list.abstractState != nil && list.abstractView == nil {
+		return JavaStringValueOfExecution(execution, abstractListCollectionView(list))
+	}
 	cursor := list.IteratorJava2goExecution(execution)
 	if !IteratorHasNextExecution(execution, cursor) {
 		// AbstractCollection returns the literal for an empty iterator.

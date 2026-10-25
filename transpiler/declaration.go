@@ -160,6 +160,10 @@ func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				if skipAbstractCollectionSuperclass(t.Content(source), headerCtx) {
 					continue
 				}
+				if storage := sourceAbstractListStorageField(ctx.currentClass, headerCtx); storage != nil {
+					fields.List = append(fields.List, storage)
+					continue
+				}
 				if storage := sourceArrayListStorageField(ctx.currentClass, headerCtx); storage != nil {
 					fields.List = append(fields.List, storage)
 					continue
@@ -920,6 +924,9 @@ func buildInstanceFieldInitializerMethodDecl(ctx Ctx, initializers []ast.Stmt) [
 // qualifies types that live in another generated package.
 func implementedInterfaceTypeExpr(javaType string, typeParams []string, ctx Ctx) ast.Expr {
 	ctx = classHeaderTypeCtx(ctx.currentClass, ctx)
+	if platformTypeOwner(javaType, nil, ctx, nil) == "java.util.RandomAccess" {
+		return nil
+	}
 	if externalCloneableType(javaType, ctx) || isExternalFunctionType(javaType, ctx) || canonicalIterationOwner(javaType, ctx) != "" || canonicalMapEntryOwner(javaType, ctx) != "" {
 		return nil
 	}
@@ -2462,6 +2469,9 @@ func explicitSuperConstructorAssignment(
 	if invocation == nil || invocation.kind != explicitSuperConstructorInvocation || ctx.currentClass == nil {
 		return nil
 	}
+	if native := sourceAbstractListSuperConstructor(invocation.parsedArgs, ctx.currentClass, receiverName, ctx); native != nil {
+		return native
+	}
 	if native := sourceArrayListSuperConstructor(invocation.parsedArgs, ctx.currentClass, receiverName, ctx); native != nil {
 		return native
 	}
@@ -2571,6 +2581,9 @@ func implicitSuperConstructorAssignmentWithSelf(ctx Ctx, receiverName string, mo
 	parent := resolveSuperclassScope(ctx, scope)
 	if scope == nil {
 		return nil
+	}
+	if native := sourceAbstractListSuperConstructor(nil, scope, receiverName, ctx); native != nil {
+		return native
 	}
 	if native := sourceArrayListSuperConstructor(nil, scope, receiverName, ctx); native != nil {
 		return native
@@ -2848,6 +2861,9 @@ func buildDefaultConstructorDeclsWithOptions(ctx Ctx, options constructorLowerin
 		body = append(body, setterCall)
 	}
 
+	if install := sourceAbstractListCarrierInitStmt(scope, recvName, mostDerived, ctx); install != nil {
+		body = append(body, install)
+	}
 	if install := sourceArrayListCarrierInitStmt(scope, recvName, mostDerived, ctx); install != nil {
 		body = append(body, install)
 	}
@@ -4325,6 +4341,9 @@ func buildSourceConstructorDecls(
 		if setterCall := classSelfSetterCallStmtWithValue(ctx, receiverName, mostDerived); setterCall != nil {
 			body.List = append(body.List, setterCall)
 		}
+		if install := sourceAbstractListCarrierInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); install != nil {
+			body.List = append(body.List, install)
+		}
 		if install := sourceArrayListCarrierInitStmt(ctx.currentClass, receiverName, mostDerived, ctx); install != nil {
 			body.List = append(body.List, install)
 		}
@@ -4453,7 +4472,7 @@ func ParseDecl(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		}
 
 		ctx.localScope = methodDefinition[0]
-		nativeVirtualBody := sourceArrayListScalarBody(ctx.currentClass, ctx.localScope, ctx)
+		nativeVirtualBody := sourceNativeVirtualBodyForMethod(ctx.currentClass, ctx.localScope, ctx)
 		if static {
 			ctx.syntheticTypeParameters, ctx.rawGenericParameterTypes = synthesizeRawGenericFunctionParameters(ctx.localScope, ctx)
 			ctx.dependentTypeWitnesses = planConcreteDependentTypeWitnesses(ctx.localScope, source, ctx)

@@ -1,0 +1,15 @@
+roles:true:true:true:true:java.util.AbstractList
+set:b:[a, B, c]:3:false:true
+null:Element must be non-null:4
+first:a
+delegate-edit:B:true
+iterator-remove:[a, c, d, e]:c
+end:true
+sub:[c, d]:true
+shift:a:2:a:[z, c, d, e]:[c]
+li:1:0:z
+li-write:[Q, Z, c, d, e]:Z:Z
+plain:a:1:0:0:true:1:1
+cme:1
+plain-default:1:2:true:true:false
+cleanup:[b, c, x]:1:2

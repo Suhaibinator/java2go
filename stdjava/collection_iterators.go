@@ -14,6 +14,16 @@ type listJavaIterator[T any] struct {
 func (list *List[T]) IteratorJava2goExecution(execution *Execution) JavaIterator {
 	requireExecution(execution)
 	ReferenceRequireNonNull(list)
+	if list.abstractState != nil {
+		if list.abstractView != nil {
+			return list.abstractView.listIterator(execution, 0)
+		}
+		source := abstractListCollectionView(list)
+		if source == list {
+			panic(NewUnsupportedOperationException("AbstractList source is not bound"))
+		}
+		return IterableIteratorExecution(execution, source)
+	}
 	list.checkViewModification()
 	return &listJavaIterator[T]{source: list, expected: list.storageRoot().modCount}
 }

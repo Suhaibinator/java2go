@@ -17,6 +17,8 @@ type List[T any] struct {
 	allocationKind listAllocationKind
 	sourceInfo     *ObjectInfo
 	sourceMethods  ArrayListSourceMethods
+	abstractState  *AbstractListState
+	abstractView   *abstractListView
 	elements       []T
 	erasedElements []any
 	erasedStorage  bool
@@ -45,6 +47,7 @@ func NewListFrom[T any](elements ...T) *List[T] {
 // Add appends an element and returns true, matching List.add (which always
 // returns true for a List).
 func (l *List[T]) Add(element T) bool {
+	l.requireNativeListStorage()
 	if l.viewRoot != nil {
 		l.viewInsert(l.viewSize, []any{element}, false)
 		return true
@@ -61,6 +64,7 @@ func (l *List[T]) Add(element T) bool {
 
 // Get returns the element at index, matching List.get.
 func (l *List[T]) Get(index int32) T {
+	l.requireNativeListStorage()
 	if l.array != nil {
 		return ReferenceArrayGet[T](l.array, index, l.elementType)
 	}
@@ -70,6 +74,7 @@ func (l *List[T]) Get(index int32) T {
 // Set replaces the element at index and returns the previous value, matching
 // List.set.
 func (l *List[T]) Set(index int32, element T) T {
+	l.requireNativeListStorage()
 	old := l.rawGet(index)
 	l.rawSet(index, element)
 	return collectionElementView[T](old)
@@ -77,6 +82,7 @@ func (l *List[T]) Set(index int32, element T) T {
 
 // Size returns the number of elements, matching List.size.
 func (l *List[T]) Size() int32 {
+	l.requireNativeListStorage()
 	if l.viewRoot != nil {
 		l.checkViewModification()
 		return l.viewSize
@@ -97,6 +103,7 @@ func (l *List[T]) IsEmpty() bool {
 
 // Clear removes all elements, matching List.clear.
 func (l *List[T]) Clear() {
+	l.requireNativeListStorage()
 	if l.viewRoot != nil {
 		l.checkViewModification()
 		l.viewRoot.removeRange(l.viewOffset, l.viewOffset+l.viewSize)
@@ -117,12 +124,14 @@ func (l *List[T]) Clear() {
 
 // RemoveAt removes and returns the element at index, matching List.remove(int).
 func (l *List[T]) RemoveAt(index int32) T {
+	l.requireNativeListStorage()
 	return collectionElementView[T](l.rawRemove(index))
 }
 
 // AddAll appends every element of other and returns true if any were added,
 // matching List.addAll.
 func (l *List[T]) AddAll(other *List[T]) bool {
+	l.requireNativeListStorage()
 	ReferenceRequireNonNull(other)
 	if l.viewRoot != nil {
 		if other.Size() == 0 {
@@ -158,6 +167,7 @@ func (l *List[T]) AddAll(other *List[T]) bool {
 
 // ToArray returns a copy of the backing slice, matching List.toArray.
 func (l *List[T]) ToArray() []T {
+	l.requireNativeListStorage()
 	cp := NewArray[T](l.Size())
 	copy(cp, l.Slice())
 	return cp
@@ -172,6 +182,7 @@ func (l *List[T]) Contains(target any, execution ...*Execution) bool {
 // IndexOf returns the index of the first element equal to target, or -1,
 // matching List.indexOf.
 func (l *List[T]) IndexOf(target any, execution ...*Execution) int32 {
+	l.requireNativeListStorage()
 	for i := int32(0); i < l.Size(); i++ {
 		e := l.rawGet(i)
 		if listElementEqual(target, e, optionalComparisonExecution(execution)) {
@@ -196,6 +207,7 @@ func (l *List[T]) RemoveObject(target any, execution ...*Execution) bool {
 // array-backed view. Java iteration uses CollectionIterationElements so each
 // array slot is read only when the iterator advances.
 func (l *List[T]) Slice() []T {
+	l.requireNativeListStorage()
 	if l.viewRoot != nil {
 		l.checkViewModification()
 		root := l.viewRoot
@@ -224,6 +236,7 @@ func (l *List[T]) Slice() []T {
 // String returns the Java AbstractCollection.toString form, e.g. "[a, b, c]", so
 // that a List printed via fmt (System.out.println) matches Java's output.
 func (l *List[T]) String() string {
+	l.requireNativeListStorage()
 	parts := make([]string, l.Size())
 	for i := int32(0); i < l.Size(); i++ {
 		e := l.rawGet(i)

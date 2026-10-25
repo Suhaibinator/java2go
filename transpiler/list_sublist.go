@@ -15,7 +15,14 @@ func init() {
 			if rawListReceiver(invocation, ctx, source) {
 				return stdjavaCall(ctx, "CollectionListSubListExecution", append([]ast.Expr{intrinsicExecutionExpr(ctx), recv}, args...)...)
 			}
-			return methodCall(recv, "SubList", args...)
+			if !sourceAbstractListProjectionPossible(ctx) {
+				return methodCall(recv, "SubList", args...)
+			}
+			element := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
+			if len(element) != 1 {
+				return unsupportedIntrinsicValue(invocation, "java.util.List", source, ctx)
+			}
+			return stdjavaGenericCall(ctx, "CollectionListSubListTypedExecution", []ast.Expr{javaTypeStringToGoTypeExpr(element[0], inScopeTypeParameters(ctx), ctx)}, append([]ast.Expr{intrinsicExecutionExpr(ctx), recv}, args...))
 		})
 		registerInstanceIntrinsicDerivedResultType(owner, "subList", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
 			elements := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)

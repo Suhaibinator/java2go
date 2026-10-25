@@ -33,11 +33,13 @@ type directOwnerOverrideBridgeFamilyPlan struct {
 }
 
 type directOwnerOverrideBridgePlan struct {
-	owner        *symbol.ClassScope
-	method       *symbol.Definition
-	ancestorArgs []string
-	parameters   []directOwnerOverrideBridgeParameterPlan
-	result       directOwnerOverrideBridgeResultPlan
+	// Native-backed families retain a distinct exact body at every source level.
+	sourceNativeExactExecutionName string
+	owner                          *symbol.ClassScope
+	method                         *symbol.Definition
+	ancestorArgs                   []string
+	parameters                     []directOwnerOverrideBridgeParameterPlan
+	result                         directOwnerOverrideBridgeResultPlan
 }
 
 type directOwnerOverrideBridgeParameterPlan struct {
@@ -942,6 +944,9 @@ func directOwnerOverrideBridgePlanCoversMethod(
 }
 
 func directOwnerOverrideBridgeExactExecutionName(plan directOwnerOverrideBridgePlan) string {
+	if plan.sourceNativeExactExecutionName != "" {
+		return plan.sourceNativeExactExecutionName
+	}
 	if plan.method == nil {
 		return ""
 	}
@@ -967,6 +972,9 @@ func directOwnerSpecializedOverrideBridgeForMethod(
 	method *symbol.Definition,
 	ctx Ctx,
 ) (directOwnerSpecializedOverrideBridgeSelection, bool) {
+	if selection, ok := sourceAbstractListSpecializedOverride(owner, method, ctx); ok {
+		return selection, true
+	}
 	if owner == nil || method == nil || method.Constructor || method.IsStatic || method.IsPrivate {
 		return directOwnerSpecializedOverrideBridgeSelection{}, false
 	}
@@ -1031,6 +1039,9 @@ func directOwnerOverrideBridgeFamilyUsesErasedHiddenOnly(
 	method *symbol.Definition,
 	ctx Ctx,
 ) bool {
+	if sourceAbstractListErasedSignature(sourceAbstractListVirtualBody(owner, method, ctx)) {
+		return true
+	}
 	if _, ok := directOwnerSpecializedOverrideBridgeForMethod(owner, method, ctx); ok {
 		// The public Go wrapper may implement a wider inherited descriptor.
 		// Java virtual dispatch requires the checked exact hidden body instead

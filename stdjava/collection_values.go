@@ -2,7 +2,6 @@ package stdjava
 
 // Private erased views allow collection equality across Go instantiations,
 // matching Java's erased List/Set/Map contracts without treating arrays as lists.
-type javaListValue interface{ javaListElements() []any }
 type javaSetValue interface {
 	javaSetElements() []any
 	Contains(any, ...*Execution) bool
@@ -24,33 +23,50 @@ func (l *List[T]) javaListElements() []any {
 func (l *List[T]) Equals(other any) bool { return l.EqualsJava2goExecution(nil, other) }
 func (l *List[T]) EqualsJava2goExecution(execution *Execution, other any) bool {
 	ReferenceRequireNonNull(l)
+	if execution == nil {
+		execution = NewExecution()
+	}
+	if l.abstractState != nil || l.fixed || l.allocationKind == listAllocationLinked || l.viewRoot != nil {
+		return AbstractListEqualsExecution(execution, l, other)
+	}
 	if JavaReferenceEqual(l, other) {
 		return true
 	}
-	if javaReferenceIsNull(other) {
+	if !ObjectInstanceOf(other, "java.util.List") {
 		return false
 	}
-	right, ok := other.(javaListValue)
-	if !ok {
-		return false
-	}
-	elements := right.javaListElements()
-	if int(l.Size()) != len(elements) {
-		return false
-	}
-	for i, element := range l.javaListElements() {
-		if !ObjectsEqual(element, elements[i], execution) {
-			return false
+	expected := l.storageRoot().modCount
+	equal := func() bool {
+		right := ObjectView[JavaIterable](other, CollectionTypeID)
+		it := IterableIteratorExecution(execution, right)
+		for _, value := range l.javaListElements() {
+			if !IteratorHasNextExecution(execution, it) || !ObjectsEqual(value, IteratorNextExecution(execution, it), execution) {
+				return false
+			}
 		}
+		return !IteratorHasNextExecution(execution, it)
+	}()
+	if l.storageRoot().modCount != expected {
+		panic(NewJavaConcurrentModificationExceptionMessage(nil))
 	}
-	return true
+	return equal
 }
 func (l *List[T]) HashCode() int32 { return l.HashCodeJava2goExecution(nil) }
 func (l *List[T]) HashCodeJava2goExecution(execution *Execution) int32 {
 	ReferenceRequireNonNull(l)
+	if execution == nil {
+		execution = NewExecution()
+	}
+	if l.abstractState != nil || l.fixed || l.allocationKind == listAllocationLinked || l.viewRoot != nil {
+		return AbstractListHashCodeExecution(execution, l)
+	}
+	expected := l.storageRoot().modCount
 	hash := int32(1)
-	for _, element := range l.javaListElements() {
-		hash = 31*hash + ObjectsHashCode(element, execution)
+	for _, value := range l.javaListElements() {
+		hash = hash*31 + ObjectsHashCode(value, execution)
+	}
+	if l.storageRoot().modCount != expected {
+		panic(NewJavaConcurrentModificationExceptionMessage(nil))
 	}
 	return hash
 }

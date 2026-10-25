@@ -128,6 +128,9 @@ func directOwnerOrdinaryFieldInterfaceErasure(
 	definition *symbol.Definition,
 	ctx Ctx,
 ) (string, bool) {
+	if erased, known := sourceAbstractListScalarFieldErasure(owner, definition, ctx); known {
+		return erased, true
+	}
 	if canonicalGenericFamily(owner, ctx) != nil {
 		return directOwnerInterfaceErasure(owner, definition, ctx)
 	}

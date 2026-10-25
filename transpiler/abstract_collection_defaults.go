@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	for _, name := range []string{"Collection", "Set", "AbstractCollection", "AbstractSet", "AbstractMap"} {
+	for _, name := range []string{"Collection", "List", "AbstractList", "Set", "AbstractCollection", "AbstractSet", "AbstractMap"} {
 		registerIntrinsicOwner("java.util."+name, true)
 	}
 }
@@ -25,7 +25,7 @@ func canonicalAbstractCollectionOwner(javaType string, ctx Ctx) string {
 		return ""
 	}
 	switch owner {
-	case "java.util.Collection", "java.util.Set", "java.util.AbstractCollection", "java.util.AbstractSet", "java.util.AbstractMap":
+	case "java.util.Collection", "java.util.List", "java.util.AbstractList", "java.util.Set", "java.util.AbstractCollection", "java.util.AbstractSet", "java.util.AbstractMap":
 		return owner
 	}
 	return ""
@@ -41,6 +41,14 @@ func builtinCollectionIterationElementType(javaType, target string, ctx Ctx) (st
 	}
 	switch target {
 	case "java.lang.Iterable", "java.util.Collection":
+	case "java.util.List":
+		if owner != "java.util.List" && owner != "java.util.AbstractList" {
+			return "", false
+		}
+	case "java.util.AbstractList":
+		if owner != "java.util.AbstractList" {
+			return "", false
+		}
 	case "java.util.Set":
 		if owner != "java.util.Set" && owner != "java.util.AbstractSet" {
 			return "", false
@@ -60,7 +68,7 @@ func builtinCollectionIterationElementType(javaType, target string, ctx Ctx) (st
 // does not establish this Java nominal conversion.
 func sourceAbstractCollectionAssignable(actual, expected string, candidateTypeParams []string, ctx Ctx) bool {
 	owner := canonicalAbstractCollectionOwner(expected, ctx)
-	if owner != "java.util.Collection" && owner != "java.util.Set" {
+	if owner != "java.util.Collection" && owner != "java.util.Set" && owner != "java.util.List" && owner != "java.util.AbstractList" {
 		return false
 	}
 	element, found := iterationElementType(actual, owner, ctx)
@@ -116,7 +124,7 @@ func prepareAbstractCollectionDefaults() {
 // Anonymous scopes are created after the global platform-symbol preparation.
 // Reuse the exact inherited method declarations in their lexical context.
 func prepareAbstractCollectionDefaultsForScope(scope *symbol.ClassScope, ctx Ctx) {
-	for _, spec := range append(append([]abstractCollectionDefault(nil), directAbstractCollectionDefaults(scope, ctx)...), sourceArrayListDefaults(scope, ctx)...) {
+	for _, spec := range append(append(append([]abstractCollectionDefault(nil), directAbstractCollectionDefaults(scope, ctx)...), sourceArrayListDefaults(scope, ctx)...), sourceAbstractListDefaults(scope, ctx)...) {
 		exists := false
 		for _, method := range scope.Methods {
 			if method.OriginalName != spec.java || method.IsStatic || len(method.Parameters) != len(spec.parameters) {
@@ -148,6 +156,7 @@ func prepareAbstractCollectionDefaultsForScope(scope *symbol.ClassScope, ctx Ctx
 		}
 		scope.Methods = append(scope.Methods, method)
 	}
+	sourceAbstractListAttestDefaultBindings(scope, ctx)
 }
 
 func abstractCollectionReceiver(ctx Ctx, receiverName string) *ast.FieldList {
@@ -179,7 +188,7 @@ func abstractCollectionDynamicReference(ctx Ctx, receiverName string) ast.Expr {
 }
 
 func generateAbstractCollectionDefaultDecls(ctx Ctx) []ast.Decl {
-	declarations := sourceArrayListDefaultDecls(ctx)
+	declarations := append(sourceArrayListDefaultDecls(ctx), sourceAbstractListDefaultDecls(ctx)...)
 	for _, method := range ctx.currentClass.Methods {
 		if !method.RuntimeDefault {
 			continue
@@ -261,7 +270,7 @@ func generateAbstractCollectionBridgeDecls(ctx Ctx) []ast.Decl {
 	if _, ok := sourceIterationContract(scope, "java.lang.Iterable", ctx); !ok {
 		return nil
 	}
-	declarations := sourceArrayListBridgeDecls(ctx)
+	declarations := append(sourceArrayListBridgeDecls(ctx), sourceAbstractListBridgeDecls(ctx)...)
 	for _, contract := range []struct {
 		java, bridge string
 		parameters   []string
@@ -314,7 +323,7 @@ func sourceAbstractCollectionInterfaceIDs(scope *symbol.ClassScope, ctx Ctx) []a
 }
 
 func abstractCollectionSuperclassConstant(javaType string, ctx Ctx) string {
-	return map[string]string{"java.util.AbstractCollection": "AbstractCollectionTypeID", "java.util.AbstractSet": "AbstractSetTypeID", "java.util.AbstractMap": "AbstractMapTypeID"}[canonicalAbstractCollectionOwner(javaType, ctx)]
+	return map[string]string{"java.util.AbstractCollection": "AbstractCollectionTypeID", "java.util.AbstractSet": "AbstractSetTypeID", "java.util.AbstractMap": "AbstractMapTypeID", "java.util.AbstractList": "AbstractListTypeID"}[canonicalAbstractCollectionOwner(javaType, ctx)]
 }
 
 func abstractCollectionProtocolReservedSelector(name string) bool {

@@ -34,6 +34,7 @@ func init() {
 	registerOptionalIntrinsics()
 	registerCollectionsStatics()
 	registerCollectionObjectMethods()
+	registerListVirtualIntrinsics()
 }
 
 // listTypeNames are the Java types that a List-valued receiver may be declared

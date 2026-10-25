@@ -114,6 +114,9 @@ func sourceIterationContract(scope *symbol.ClassScope, target string, ctx Ctx) (
 }
 
 func iterationProtocolReservedSelector(name string) bool {
+	if sourceAbstractListProtocolReservedSelector(name) {
+		return true
+	}
 	if abstractMapProtocolReservedSelector(name) {
 		return true
 	}

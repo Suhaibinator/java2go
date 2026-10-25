@@ -42,5 +42,11 @@ func buildSourceNativeVirtualBodyDecls(declaration *ast.FuncDecl, sourceParams, 
 	// Reuse only the emitter. This adapter is not added to the source-family or
 	// field-layout eligibility planners, and never changes a receiver's Go type.
 	family := &directOwnerOverrideBridgeFamilyPlan{owner: plan.owner, method: plan.method, erasedParameters: plan.erasedParameters, erasedResult: plan.erasedResult, requiresErasedView: true}
-	return buildDirectOwnerErasedFamilyMethodDecls(declaration, sourceParams, sourceResults, executionName, family, ctx), true
+	declarations := buildDirectOwnerErasedFamilyMethodDecls(declaration, sourceParams, sourceResults, executionName, family, ctx)
+	if selection, ok := sourceAbstractListSpecializedOverride(plan.owner, plan.method, ctx); ok {
+		if bridge := buildDirectOwnerSpecializedOverrideBridgeDecl(declaration, executionName, selection, ctx); bridge != nil {
+			declarations = append(declarations, bridge)
+		}
+	}
+	return declarations, true
 }

@@ -8,11 +8,20 @@ const (
 	listAllocationUnknown listAllocationKind = iota
 	listAllocationArray
 	listAllocationLinked
+	listAllocationAbstract
 )
 
 func (list *List[T]) JavaDynamicTypeID() TypeID {
 	if list != nil {
 		switch list.allocationKind {
+		case listAllocationAbstract:
+			if list.abstractView != nil {
+				if list.abstractView.random {
+					return "java.util.AbstractList$RandomAccessSubList"
+				}
+				return "java.util.AbstractList$SubList"
+			}
+			return "java.util.AbstractList"
 		case listAllocationArray:
 			return "java.util.ArrayList"
 		case listAllocationLinked:

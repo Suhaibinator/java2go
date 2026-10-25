@@ -103,6 +103,9 @@ func (list *List[T]) collectionAdd(value any, execution *Execution) bool {
 	return true
 }
 func (list *List[T]) rawGet(index int32) any {
+	if list.viewRoot == nil && list.array == nil {
+		listCheckIndex(index, list.Size())
+	}
 	if list.viewRoot != nil {
 		list.checkElementIndex(index)
 		list.checkViewModification()
@@ -205,6 +208,9 @@ func (list *List[T]) promoteCollectionStorage() {
 }
 func CollectionListGetExecution(execution *Execution, collection JavaIterable, index int32) any {
 	ReferenceRequireNonNull(collection)
+	if source, ok := collection.(interface{ CollectionListGetJava2goExecution(*Execution, int32) any }); ok {
+		return source.CollectionListGetJava2goExecution(execution, index)
+	}
 	if list, ok := collection.(interface{ rawGet(int32) any }); ok {
 		return list.rawGet(index)
 	}
@@ -212,6 +218,11 @@ func CollectionListGetExecution(execution *Execution, collection JavaIterable, i
 }
 func CollectionListSetExecution(execution *Execution, collection JavaIterable, index int32, value any) any {
 	ReferenceRequireNonNull(collection)
+	if source, ok := collection.(interface {
+		CollectionListSetJava2goExecution(*Execution, int32, any) any
+	}); ok {
+		return source.CollectionListSetJava2goExecution(execution, index, value)
+	}
 	if list, ok := collection.(interface{ collectionSet(int32, any) any }); ok {
 		return list.collectionSet(index, value)
 	}
@@ -234,6 +245,7 @@ func CollectionSortOrderedExecution(execution *Execution, collection JavaIterabl
 	panic(NewUnsupportedOperationException("list sort is unavailable"))
 }
 func (list *List[T]) collectionSort(execution *Execution) {
+	list.requireNativeListStorage()
 	if list.viewRoot != nil {
 		list.checkViewModification()
 		values := list.javaListElements()
@@ -271,6 +283,9 @@ func (list *List[T]) collectionSort(execution *Execution) {
 
 func CollectionListRemoveAtExecution(execution *Execution, collection JavaIterable, index int32) any {
 	ReferenceRequireNonNull(collection)
+	if source, ok := collection.(interface{ CollectionListRemoveAtJava2goExecution(*Execution, int32) any }); ok {
+		return source.CollectionListRemoveAtJava2goExecution(execution, index)
+	}
 	if list, ok := collection.(interface{ rawRemove(int32) any }); ok {
 		return list.rawRemove(index)
 	}

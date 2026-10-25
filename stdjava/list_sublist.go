@@ -101,8 +101,20 @@ func (list *List[T]) removeRange(from, to int32) {
 	}
 }
 func (list *List[T]) collectionSubList(from, to int32) JavaIterable { return list.SubList(from, to) }
+func (list *List[T]) CollectionListSubListJava2goExecution(e *Execution, from, to int32) JavaIterable {
+	if list.abstractState != nil {
+		return AbstractListSubListTypedExecution[T](e, list, from, to)
+	}
+	return list.SubList(from, to)
+}
 func CollectionListSubListExecution(execution *Execution, collection JavaIterable, from, to int32) JavaIterable {
 	ReferenceRequireNonNull(collection)
+	collection = abstractListCollectionView(collection)
+	if role, ok := collection.(interface {
+		CollectionListSubListJava2goExecution(*Execution, int32, int32) JavaIterable
+	}); ok {
+		return role.CollectionListSubListJava2goExecution(execution, from, to)
+	}
 	if list, ok := collection.(interface {
 		collectionSubList(int32, int32) JavaIterable
 	}); ok {

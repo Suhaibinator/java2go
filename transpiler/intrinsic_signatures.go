@@ -538,8 +538,11 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 		}
 		return "Object"
 	}
-	if receiver == "Iterator" && name == "next" {
+	if (receiver == "Iterator" || receiver == "ListIterator") && (name == "next" || name == "previous") {
 		return readableWildcardProjection(element(0)), true
+	}
+	if name == "listIterator" && containsString(listTypeNames, receiver) {
+		return "java.util.ListIterator<" + element(0) + ">", true
 	}
 	if name == "iterator" && (receiver == "Collection" || receiver == "Iterable" || containsString(listTypeNames, receiver) || containsString(setTypeNames, receiver)) {
 		return "Iterator<" + element(0) + ">", true
@@ -597,7 +600,12 @@ func intrinsicCollectionMethodResultType(invocation *sitter.Node, receiver strin
 			return "boolean", true
 		case "size", "indexOf", "lastIndexOf":
 			return "int", true
-		case "add", "addAll", "contains", "isEmpty":
+		case "add":
+			if invocationArgumentCount(invocation) == 2 {
+				return "void", true
+			}
+			return "boolean", true
+		case "addAll", "contains", "isEmpty", "removeAll", "retainAll", "containsAll":
 			return "boolean", true
 		}
 	}

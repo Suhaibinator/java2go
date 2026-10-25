@@ -50,6 +50,17 @@ func (list *List[T]) JavaObjectInfo() *ObjectInfo {
 
 func (list *List[T]) CollectionAddJava2goExecution(execution *Execution, value any) bool {
 	ReferenceRequireNonNull(list)
+	if list.abstractState != nil {
+		requireExecution(execution)
+		if list.abstractView != nil {
+			return AbstractListAddExecution(execution, list, value)
+		}
+		source := abstractListCollectionView(list)
+		if source == list {
+			panic(NewUnsupportedOperationException("AbstractList source is not bound"))
+		}
+		return CollectionAddExecution(execution, source, value)
+	}
 	if list.sourceMethods.Add != nil {
 		requireExecution(execution)
 		return list.sourceMethods.Add(execution, value)

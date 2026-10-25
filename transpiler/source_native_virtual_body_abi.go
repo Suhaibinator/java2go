@@ -71,5 +71,8 @@ func sourceNativeVirtualBodyForActualDefinition(definition *symbol.Definition, c
 }
 
 func sourceNativeVirtualBodyForMethod(owner *symbol.ClassScope, method *symbol.Definition, ctx Ctx) *sourceNativeVirtualBodyABI {
+	if plan := sourceAbstractListVirtualBody(owner, method, ctx); plan != nil {
+		return plan
+	}
 	return sourceArrayListScalarBody(owner, method, ctx)
 }

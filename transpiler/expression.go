@@ -1043,6 +1043,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// named struct hoisted to file scope, capturing referenced enclosing
 		// locals as fields.
 		if classBody := objectCreationClassBody(node); classBody != nil {
+			base, _ := parseJavaTypeString(objectType.Content(source))
+			if canonicalAbstractCollectionOwner(base, ctx) == "java.util.AbstractList" || sourceAbstractListRoot(resolveClassScopeByQualifiedName(ctx, base), ctx) != nil {
+				return unsupportedIntrinsicValue(node, objectType.Content(source), source, ctx)
+			}
 			if lowered := lowerAnonymousClass(node, objectType, classBody, source, ctx); lowered != nil {
 				return lowered
 			}
@@ -1816,6 +1820,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		}
 		return nullableReferenceAssertion(valueExpr, targetType, targetOrigin, ctx)
 	case "field_access":
+		if field := sourceAbstractListModCountExpr(node, ctx, source); field != nil {
+			return field
+		}
 		if access := selectedReaderLockAccess(node, source, ctx); access != nil {
 			return readerLockRead(access, source, ctx)
 		}
@@ -1974,6 +1981,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 	case "this":
 		return &ast.Ident{Name: sourceInstanceReceiverName(ctx)}
 	case "identifier":
+		if field := sourceAbstractListModCountExpr(node, ctx, source); field != nil {
+			return field
+		}
 		identName := node.Content(source)
 		if ctx.localScope != nil {
 			if param := ctx.localScope.ParameterByName(identName); param != nil {
@@ -5789,6 +5799,9 @@ func coerceArgumentToExpectedType(argExpr ast.Expr, argNode *sitter.Node, expect
 	if converted, known := deferredToCollectionBoundary(argExpr, argNode, expectedType, ctx, source); known {
 		return converted
 	}
+	if converted, known := sourceAbstractListBoundaryConversion(argExpr, argNode, expectedType, ctx, source); known {
+		return converted
+	}
 	if converted, known := sourceArrayListNativeBoundaryConversion(argExpr, argNode, expectedType, ctx, source); known {
 		return converted
 	}
@@ -8954,6 +8967,9 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		fieldInitializerMethodName: fieldInitializerMethod,
 	}
 	registerLateSourceLocal(ctx.localClasses[javaName], javaName, ctx)
+	prepareAbstractCollectionDefaultsForScope(syntheticScope, classScopeCtx(syntheticScope, ctx))
+	sourceAbstractListAllocateLocalDefaults(syntheticScope, ctx)
+	resolveSyntheticInheritedMethodNames(syntheticScope, ctx)
 	allocateLocalStaticFieldNames(syntheticScope, ctx)
 	for _, declaration := range localStaticFieldDecls(classBody, source, syntheticScope, ctx) {
 		ctx.addHoistedDecl(declaration)
@@ -9001,6 +9017,8 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 			superclassScope = resolveClassScopeByQualifiedName(ctx, base)
 			storage, builtinException := builtinExceptionStorageTypeName(base, ctx)
 			switch {
+			case sourceAbstractListDirectRoot(syntheticScope, fieldTypeCtx):
+				fields.List = append(fields.List, sourceAbstractListStorageField(syntheticScope, fieldTypeCtx))
 			case nativeAbstractMap:
 				// The canonical platform base contributes defaults, not Go storage.
 			case builtinException:
@@ -9065,7 +9083,9 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	}
 	if needsObjectInfo {
 		var identityDeclarations []ast.Decl
-		if threadSourceRoot(syntheticScope, fieldTypeCtx) != nil {
+		if sourceAbstractListRoot(syntheticScope, fieldTypeCtx) != nil {
+			identityDeclarations = sourceAbstractListSyntheticIdentityDecls(structName, dynamicTypeID, syntheticScope, superclassScope, directInterfaceScopes, fieldTypeCtx)
+		} else if threadSourceRoot(syntheticScope, fieldTypeCtx) != nil {
 			identityDeclarations = threadSourceSyntheticIdentityDecls(structName, dynamicTypeID, syntheticScope, superclassScope, directInterfaceScopes, fieldTypeCtx)
 		} else {
 			identityDeclarations = syntheticHierarchicalReferenceIdentityDecls(structName, dynamicTypeID, syntheticScope, superclassScope, directInterfaceScopes, syntheticScope.GoTypeParameterNames(), ctx)
@@ -9108,6 +9128,9 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		ctx.addHoistedDecl(declaration)
 	}
 	for _, declaration := range append(generateIterationBridgeDecls(localCtx), generateMapEntryBridgeDecls(localCtx)...) {
+		ctx.addHoistedDecl(declaration)
+	}
+	for _, declaration := range append(generateAbstractCollectionDefaultDecls(localCtx), generateAbstractCollectionBridgeDecls(localCtx)...) {
 		ctx.addHoistedDecl(declaration)
 	}
 	for _, declaration := range append(generateAbstractMapDefaultDecls(localCtx), generateAbstractMapBridgeDecls(localCtx)...) {
@@ -11115,6 +11138,9 @@ func inferLambdaResultJavaType(lambda *sitter.Node, paramJavaTypes []string, ctx
 }
 
 func inferExprJavaType(node *sitter.Node, ctx Ctx, source []byte, origins ...*inferredJavaTypeOrigin) (string, bool) {
+	if (node.Type() == "identifier" || node.Type() == "field_access") && sourceAbstractListModCountExpr(node, ctx, source) != nil {
+		return "int", true
+	}
 	switch node.Type() {
 	case "null_literal":
 		setInferredJavaTypeOrigin(origins, inferredJavaTypeOrigin{javaType: "null"})
