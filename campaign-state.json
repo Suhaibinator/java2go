@@ -29552,5 +29552,53 @@
     "limits": "Exercised AbstractList and RandomAccess protocols only. No universal List or ArrayList ABI claim, full Gson112 acceptance or round acceptance.",
     "current_separate_anonymous_capture_issue_closed": false,
     "accepted_round": false
+  },
+  "sol_progress240": {
+    "status": "VERIFIED_REPAIR_OF_EXERCISED_PUBLIC239_REGRESSIONS",
+    "publication_parent": "65c113e1b323895b7aa5fc6ba1cc6d36b8b1b7b8",
+    "source_manifest_sha256": "cff8b6bd1cc9e8c13641f35480aa9dad90f61923e38d5a082f8b98e9fb70446f",
+    "source_delivery_sha256": "f3249d8cc485c85f719e739de1e42e4fb46137e95b151d8a73c42ded5a6a7c16",
+    "qualification_sha256": "1388d23c609f4ac98e94fe08e5506e7c10670b5f32ac6a3e2a9107c6a7c2221a",
+    "source_review_sha256": "6b6610997338b8634f78004040f836a5243e637d6e650494c41145bb05591bc2",
+    "actual_review": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-ci239-collection-iteration-independent-review-v1/FINAL-ACTUAL-REVIEW.json",
+    "actual_review_sha256": "441f8c72b94af66f7da98f28d8c498e1cc62170b64dc242c6685519475ab3de0",
+    "paths": [
+      "stdjava/record_nominal_identity_test.go",
+      "stdjava/reference_arrays.go",
+      "transpiler/collection_erased.go",
+      "transpiler/declaration.go",
+      "transpiler/native_list_iteration_regression_jdk_test.go",
+      "transpiler/reference_array_codegen.go",
+      "transpiler/source_abstract_list.go",
+      "transpiler/source_array_list_contract.go"
+    ],
+    "verification": {
+      "credited_nonempty_stages": 196,
+      "raw_records_retained": 202,
+      "empty_selector_qualification_mistakes_uncredited": 6,
+      "compiler_real_parents_each_normal_race": 85,
+      "required_real_parents_discovered_by_Go_AST": 84,
+      "runtime_parents_each_normal_race": 947,
+      "runtime_children_each": 3030,
+      "compiler_baseline_parents_retained": 2679,
+      "compiler_registry": 2687,
+      "original4059_parents_each_atomic_and_race_atomic": 17,
+      "original_dependency_applications": 3,
+      "JVM_Go_pairs": 27,
+      "race_stress_observations": 60,
+      "lint": "0 issues",
+      "existing_test_or_application_edits": 0,
+      "generated_implementation_edits": 0
+    },
+    "prior_CI239": {
+      "report_sha256": "7c461a9f73ea1a02b0f9966dabadcbac5b99014fbc6bd918686bd310b1657516",
+      "compiler_pass": 2637,
+      "compiler_fail": 3,
+      "compiler_skip": 0,
+      "compiler_missing_footer": 39,
+      "historical_timeout_retained": true
+    },
+    "limits": "Exercised List and non-generic record identity repair. No universal record reflection, generic cross-instantiation record erasure, full Gson112 or Netty acceptance. Hosted CI on this head remains required.",
+    "accepted_round": false
   }
 }

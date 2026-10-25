@@ -36,6 +36,11 @@ func sourceAbstractListDeclaration(scope *symbol.ClassScope, ctx Ctx) (Ctx, bool
 	return declaring, true
 }
 func sourceAbstractListDirectRoot(scope *symbol.ClassScope, ctx Ctx) bool {
+	// A negative spelling filter avoids attesting unrelated complete headers.
+	// Ambiguous syntax still enters every declaration and nominal-edge proof.
+	if scope == nil || !sourceNativeSuperclassCandidate(scope.Superclass, "AbstractList") {
+		return false
+	}
 	declaring, owned := sourceAbstractListDeclaration(scope, ctx)
 	if !owned {
 		return false

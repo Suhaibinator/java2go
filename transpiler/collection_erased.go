@@ -45,6 +45,12 @@ func erasedIterableExpression(node *sitter.Node, ctx Ctx, source []byte) bool {
 	if !known {
 		return false
 	}
+	// Native List values keep their typed iterator unless a source AbstractList
+	// projection can flow through a List alias in this conversion.
+	_, rank := javaArrayTypeParts(typ)
+	if rank == 0 && canonicalAbstractCollectionOwner(typ, ctx) == "java.util.List" && !sourceAbstractListProjectionPossible(ctx) {
+		return false
+	}
 	_, iterable := iterationElementType(typ, "java.lang.Iterable", ctx)
 	return iterable
 }

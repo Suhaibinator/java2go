@@ -350,6 +350,10 @@ func sourceArrayListParameterRanksExact(method *symbol.Definition, ctx Ctx) bool
 // Comments, escape spellings and unknown syntax keep the complete source proof.
 // No candidate is accepted here, and inherited source roots keep their walk.
 func sourceArrayListSuperclassCandidate(javaType string) bool {
+	return sourceNativeSuperclassCandidate(javaType, "ArrayList")
+}
+
+func sourceNativeSuperclassCandidate(javaType, simpleName string) bool {
 	javaType = strings.TrimSpace(javaType)
 	if javaType == "" {
 		return false
@@ -394,5 +398,5 @@ func sourceArrayListSuperclassCandidate(javaType string) bool {
 			return true
 		}
 	}
-	return stripJavaQualifier(name) == "ArrayList"
+	return stripJavaQualifier(name) == simpleName
 }

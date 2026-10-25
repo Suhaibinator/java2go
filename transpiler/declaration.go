@@ -2102,6 +2102,9 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 			continue // user provided an explicit accessor; emitted from the body below
 		}
 		accessorName := symbol.HandleExportStatus(true, f.OriginalName)
+		if method := scope.FindMethodByName(f.OriginalName, nil); method != nil {
+			accessorName = method.Name
+		}
 		declarations = append(declarations, &ast.FuncDecl{
 			Name: &ast.Ident{Name: accessorName},
 			Recv: &ast.FieldList{List: []*ast.Field{{Names: []*ast.Ident{{Name: recvName}}, Type: &ast.StarExpr{X: recvBase}}}},
@@ -2110,6 +2113,16 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 				&ast.ReturnStmt{Results: []ast.Expr{&ast.SelectorExpr{X: &ast.Ident{Name: recvName}, Sel: &ast.Ident{Name: f.Name}}}},
 			}},
 		})
+	}
+
+	// Erased List reads in conversions with source AbstractList projections
+	// need a record's declared nominal identity as well as its concrete Go view.
+	// Records are final and need no most-derived subobject provider.
+	if sourceAbstractListProjectionPossible(ctx) {
+		if registration := sourceClassRegistrationDecl(scope, ctx); registration != nil {
+			declarations = append(declarations, registration)
+		}
+		declarations = append(declarations, fixedJavaDynamicTypeDeclWithTypeParams(ctx.className, javaClassBinaryName(scope), goTypeParams, ctx))
 	}
 
 	// Value-equality method mirroring Java record equals(): compares all fields.

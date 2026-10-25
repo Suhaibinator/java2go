@@ -14,6 +14,7 @@ type TypeID string
 
 const (
 	ObjectTypeID       TypeID = "java.lang.Object"
+	RecordTypeID       TypeID = "java.lang.Record"
 	CloneableTypeID    TypeID = "java.lang.Cloneable"
 	SerializableTypeID TypeID = "java.io.Serializable"
 	ComparableTypeID   TypeID = "java.lang.Comparable"
@@ -158,6 +159,7 @@ var javaTypeRegistry = struct {
 				ConstantDescTypeID,
 			},
 		},
+		RecordTypeID:    {super: ObjectTypeID},
 		NumberTypeID:    {super: ObjectTypeID, interfaces: []TypeID{SerializableTypeID}},
 		BooleanTypeID:   {super: ObjectTypeID, interfaces: []TypeID{SerializableTypeID, ComparableTypeID, ConstableTypeID}},
 		ByteTypeID:      {super: NumberTypeID, interfaces: []TypeID{ComparableTypeID, ConstableTypeID}},

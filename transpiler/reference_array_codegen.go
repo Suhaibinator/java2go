@@ -747,7 +747,9 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		return nil
 	}
 	args := []ast.Expr{javaTypeIDLiteral(id, ctx)}
-	if scope.IsEnum {
+	if scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Type() == "record_declaration" {
+		args = append(args, stdjavaQualifiedExpr("RecordTypeID", ctx))
+	} else if scope.IsEnum {
 		args = append(args, stdjavaQualifiedExpr("EnumTypeID", ctx))
 	} else if parent := resolveSuperclassScopeInDeclaringContext(ctx, scope); parent != nil {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(parent), ctx))
