@@ -1520,6 +1520,11 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		return parseJavaIndexExpr(nodeutil.SemanticNamedChild(node, 0), source, ctx)
 	case "binary_expression":
 		operator := node.ChildByFieldName("operator").Content(source)
+		if operator == "+" {
+			if span, ok := lowerCanonicalStringConcatSpan(node, source, ctx); ok {
+				return span
+			}
+		}
 		if (operator == "&&" || operator == "||") && patternConditionHasBindings(node, source) {
 			return buildPatternBooleanExpression(node, source, ctx)
 		}

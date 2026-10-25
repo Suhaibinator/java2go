@@ -350,6 +350,12 @@ func volatileFieldDescriptorCallback(scope *symbol.ClassScope, field *symbol.Def
 	var cell ast.Expr
 	if field.IsStatic {
 		cell = &ast.UnaryExpr{Op: token.AND, X: ast.NewIdent(field.Name)}
+		used := sourceReflectionCallbackUsedNames(scope, ctx, cell)
+		executionName := affineUniqueLocalName("execution", used)
+		receiverName := affineUniqueLocalName("receiver", used)
+		callbackCtx := ctx.Clone()
+		callbackCtx.executionContextName = executionName
+		params = []*ast.Field{executionParameterField(executionName, callbackCtx), {Names: []*ast.Ident{ast.NewIdent(receiverName)}, Type: ast.NewIdent("any")}}
 	} else {
 		cell = stdjavaCall(ctx, "ReflectGeneratedVolatileFieldCellExecution", ast.NewIdent("execution"), ast.NewIdent("receiver"), javaTypeIDLiteral(sourceClassRuntimeTypeID(scope, ctx), ctx), metadataGoName(volatileFieldAccessorName(scope, field)))
 	}

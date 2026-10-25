@@ -198,17 +198,22 @@ func sourceReflectionFieldsForFields(scope *symbol.ClassScope, fields []*symbol.
 		}
 		if field.IsStatic {
 			backing := ast.NewIdent(field.Name)
+			storage := sourceReflectionFieldStorageType(scope, field, ctx)
+			used := sourceReflectionCallbackUsedNames(scope, ctx, backing, storage)
+			executionName := affineUniqueLocalName("execution", used)
+			valueName := affineUniqueLocalName("value", used)
+			convertedName := affineUniqueLocalName("converted", used)
+			callbackCtx := classScopeCtx(scope, ctx).Clone()
+			callbackCtx.executionContextName = executionName
 			value := ast.Expr(backing)
 			if volatileFieldDefinition(field) {
-				value = volatileFieldLoad(backing, sourceReflectionFieldStorageType(scope, field, ctx), classScopeCtx(scope, ctx), field, scope)
+				value = volatileFieldLoad(backing, storage, callbackCtx, field, scope)
 			}
-			values = append(values, metadataKey("StaticGet", &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{value}}}}}))
+			values = append(values, metadataKey("StaticGet", &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField(executionName, callbackCtx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{value}}}}}))
 			if !field.IsFinal {
-				storage := sourceReflectionFieldStorageType(scope, field, ctx)
-
-				convert := &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent("converted")}, Type: storage}}}}
-				assign := &ast.AssignStmt{Lhs: []ast.Expr{ast.NewIdent("converted")}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.TypeAssertExpr{X: ast.NewIdent("value"), Type: storage}}}
-				callback := &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("value")}, Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{convert, &ast.IfStmt{Cond: &ast.BinaryExpr{X: ast.NewIdent("value"), Op: token.NEQ, Y: ast.NewIdent("nil")}, Body: &ast.BlockStmt{List: []ast.Stmt{assign}}}, volatileFieldStoreStmt(field, backing, ast.NewIdent("converted"), classScopeCtx(scope, ctx))}}}
+				convert := &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{&ast.ValueSpec{Names: []*ast.Ident{ast.NewIdent(convertedName)}, Type: storage}}}}
+				assign := &ast.AssignStmt{Lhs: []ast.Expr{ast.NewIdent(convertedName)}, Tok: token.ASSIGN, Rhs: []ast.Expr{&ast.TypeAssertExpr{X: ast.NewIdent(valueName), Type: storage}}}
+				callback := &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField(executionName, callbackCtx), {Names: []*ast.Ident{ast.NewIdent(valueName)}, Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{convert, &ast.IfStmt{Cond: &ast.BinaryExpr{X: ast.NewIdent(valueName), Op: token.NEQ, Y: ast.NewIdent("nil")}, Body: &ast.BlockStmt{List: []ast.Stmt{assign}}}, volatileFieldStoreStmt(field, backing, ast.NewIdent(convertedName), callbackCtx)}}}
 				values = append(values, metadataKey("StaticSet", callback))
 			}
 		} else if !scope.IsInterface {

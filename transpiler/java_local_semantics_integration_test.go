@@ -22,7 +22,6 @@ public class JavaStringConversionProgram {
 	out := renderGoFileFromJava(t, src)
 	for _, bridge := range []string{
 		"stdjava.ConcatJavaStrings(",
-		"stdjava.JavaStringTextOperandExecution(__java2goExecution, nullable)",
 		"stdjava.JavaStringValueOfInt(",
 		"stdjava.JavaStringValueOfChar(",
 		"stdjava.JavaStringValueOfBoolean(",
@@ -30,6 +29,10 @@ public class JavaStringConversionProgram {
 		if !strings.Contains(out, bridge) {
 			t.Fatalf("expected canonical Java string conversion bridge %q in generated code, got:\n%s", bridge, out)
 		}
+	}
+
+	if err := verifyCanonicalNullableConcatReturn(out, "RunJava2goExecution", "nullable"); err != nil {
+		t.Fatalf("canonical nullable concatenation dataflow: %v", err)
 	}
 
 	runGoTestInTempModule(t, out, `
