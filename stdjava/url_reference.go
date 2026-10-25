@@ -42,6 +42,7 @@ func newJavaURLStringExecution(execution *Execution, text *JavaString) (value *J
 	if text == nil {
 		panic(NewJavaNullPointerExceptionMessage(uriRuntimeText(`Cannot invoke "String.length()" because "spec" is null`)))
 	}
+	requireSystemPropertyURLProfile()
 	return (&javaURLParser{input: text, execution: execution}).parse()
 }
 

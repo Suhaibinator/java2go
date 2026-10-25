@@ -85,12 +85,12 @@ func urlExceptionConstructorExpr(className string, arguments *sitter.Node, args 
 }
 
 func init() {
-	// Property mutation is currently an unimplemented platform service. Refuse
-	// every argument value, independently of the URL strings later constructed.
+	// Whole Properties replacement remains an unimplemented platform service.
+	// Individual String properties use the separate canonical property service.
 	for _, configuration := range []struct {
 		name, result string
 		arity        int
-	}{{"setProperty", "java.lang.String", 2}, {"clearProperty", "java.lang.String", 1}, {"setProperties", "void", 1}} {
+	}{{"setProperties", "void", 1}} {
 		registerStaticNodeIntrinsic("System", configuration.name, func(node *sitter.Node, _ []ast.Expr, ctx Ctx, source []byte) ast.Expr {
 			if object := node.ChildByFieldName("object"); object != nil {
 				if platformTypeOwner(object.Content(source), object, ctx, source) != "java.lang.System" {

@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"go/ast"
 	"strings"
 	"testing"
 )
@@ -46,6 +47,7 @@ func TestURL180ConstructorOwnerShields(t *testing.T) {
 }
 
 func TestURL180UnsupportedTypedServices(t *testing.T) {
+	t.Setenv("JAVA_HOME", systemPropertyReferenceHome(t))
 	for name, source := range map[string]string{
 		"context_constructor":    `class Probe {Object value(java.net.URL base) throws Exception{return new java.net.URL(base,"next");}}`,
 		"components_constructor": `class Probe {Object value() throws Exception{return new java.net.URL("http","host",80,"/a");}}`,
@@ -64,7 +66,17 @@ func TestURL180UnsupportedTypedServices(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			strictRoutingState(t)
 			var observed any
-			func() { defer func() { observed = recover() }(); renderGoFileFromJava(t, source) }()
+			var output string
+			func() { defer func() { observed = recover() }(); output = renderGoFileFromJava(t, source) }()
+			// These exact two former blanket-refusal inputs now exercise the general
+			// String property service. Real JDK state and URL boundary tests accompany
+			// this deliberate admission; all other unsupported URL rows remain refused.
+			if name == "handler_property" || name == "validation_property" {
+				if observed != nil || len(Diagnostics()) != 0 || strings.Count(output, "stdjava.SystemSetProperty(") != 1 || !strings.Contains(output, "stdjava.SystemPropertyProfile{") {
+					t.Fatalf("canonical property admission/profile missing: %T %v\n%s", observed, observed, output)
+				}
+				return
+			}
 			if _, ok := observed.(strictModeError); !ok {
 				t.Fatalf("unsupported URL/configuration must be refused, actual %T %v", observed, observed)
 			}
@@ -89,6 +101,7 @@ func TestURL180ConstructorFormatterJDK21(t *testing.T) {
 const url180PositiveOutput = "http://Example.invalid:80/a/../b?q=x%20y#piece\nhttp://Example.invalid:80/a/../b?q=x%20y#piece\ntrue:1:true:java.net.URL\nhttps://Example.invalid/path?q=1\nfile:/var/tmp/catalog%20one.json\njar:file:/var/tmp/catalog.jar!/entries/a.json\njava.net.MalformedURLException:no protocol: relative/catalog:true:true\nsame:true:java.io.IOException\n"
 
 func TestURL180ConfigurationDeclarationOwnership(t *testing.T) {
+	t.Setenv("JAVA_HOME", systemPropertyReferenceHome(t))
 	for _, entry := range []struct {
 		name   string
 		files  map[string]string
@@ -115,21 +128,30 @@ func TestURL180ConfigurationDeclarationOwnership(t *testing.T) {
 			ctx := ordinaryDemandTestContext(t, entry.files, "Probe.java")
 			strictRoutingState(t)
 			var observed any
+			var program ast.Node
 			func() {
 				defer func() { observed = recover() }()
 				node := ctx.currentClass.Class.DeclarationNode
 				for node.Parent() != nil {
 					node = node.Parent()
 				}
-				ParseNode(node, ctx.currentFile.Source, ctx)
+				program, _ = ParseNode(node, ctx.currentFile.Source, ctx).(ast.Node)
 			}()
-			if entry.refuse {
+			propertyAdmission := entry.refuse && entry.name != "all_properties"
+			if propertyAdmission {
+				count, valid := systemPropertyAdapterCount(program)
+				if observed != nil || len(Diagnostics()) != 0 || count != 1 || !valid {
+					t.Fatalf("owned property call must admit one typed profile adapter: %T %v count=%d valid=%v", observed, observed, count, valid)
+				}
+			} else if entry.refuse {
 				failure, ok := observed.(strictModeError)
 				if !ok || failure.diagnostic.Kind != "intrinsic invocation" {
 					t.Fatalf("canonical configuration refusal=%T %v", observed, observed)
 				}
 			} else if observed != nil || len(Diagnostics()) != 0 {
 				t.Fatalf("source/import/binder was stolen: %T %v diagnostics=%v", observed, observed, Diagnostics())
+			} else if count, _ := systemPropertyAdapterCount(program); count != 0 {
+				t.Fatalf("source/import/binder borrowed System property runtime: %d calls", count)
 			}
 		})
 	}
