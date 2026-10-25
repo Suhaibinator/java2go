@@ -36,6 +36,12 @@ func (method *Method) GetModifiers() int32 {
 }
 func (method *Method) SetAccessible(value bool) {
 	method.requireMethod()
+	if value {
+		location := ClassRuntimeLocationOf(method.GetDeclaringClass().TypeID())
+		if location.Known && location.ModuleName != "" && !reflectionCanSetAccessible("", method) {
+			reflectionAccessDenied("", method)
+		}
+	}
 	method.accessible.Store(value)
 }
 func (method *Method) CanAccess(receiver any) bool {
@@ -73,6 +79,9 @@ func (class *Class) reflectionFindMethodJavaStringKey(key string, parameters []*
 	return class.reflectionFindMethodMatching(func(d MethodDescriptor) bool { return JavaStringSwitchKey(d.nameJavaString) == key }, parameters, declared)
 }
 func (class *Class) reflectionFindMethodMatching(nameMatches func(MethodDescriptor) bool, parameters []*Class, declared bool) *Method {
+	reflectionPlatformMethodLookup(class, func(name string) bool {
+		return nameMatches(MethodDescriptor{Name: name, nameJavaString: reflectionIdentifierJavaString(name)})
+	})
 	queue := []TypeID{class.TypeID()}
 	seen := make(map[TypeID]bool)
 	var inheritedInterface *Method
@@ -214,6 +223,7 @@ func (class *Class) GetDeclaredMethodJavaString(name *JavaString, parameters ...
 	panic(reflectionJavaStringException("NoSuchMethodException", name))
 }
 func (class *Class) GetDeclaredMethods() *ReferenceArray {
+	reflectionPlatformEnumeration(class)
 	descriptors := classDescriptor(class.TypeID()).Methods
 	array := NewReferenceArray(len(descriptors), ReflectMethodTypeID)
 	for index, descriptor := range descriptors {
@@ -223,13 +233,23 @@ func (class *Class) GetDeclaredMethods() *ReferenceArray {
 }
 
 func (method *Method) Invoke(execution *Execution, receiver any, arguments ...any) any {
+	return method.invokeCallerExecution(execution, "", receiver, arguments...)
+}
+func (method *Method) InvokeWithCallerExecution(execution *Execution, caller TypeID, receiver any, arguments ...any) any {
+	return method.invokeCallerExecution(execution, caller, receiver, arguments...)
+}
+func (method *Method) invokeCallerExecution(execution *Execution, caller TypeID, receiver any, arguments ...any) any {
 	method.requireMethod()
 	requireExecution(execution)
 	static := method.GetModifiers()&8 != 0
 	if !static && nilJavaReference(receiver) {
 		panic(NewNullPointerException("reflection receiver is null"))
 	}
-	if !method.accessible.Load() && method.GetModifiers()&1 == 0 {
+	allowed := method.accessible.Load() || method.GetModifiers()&1 != 0
+	if caller != "" && !method.accessible.Load() {
+		allowed = reflectionCallerAccess(caller, method, receiver)
+	}
+	if !allowed {
 		panic(reflectionException("IllegalAccessException", method.descriptor.Name))
 	}
 	if len(arguments) != len(method.descriptor.ParameterTypes) {
@@ -241,6 +261,15 @@ func (method *Method) Invoke(execution *Execution, receiver any, arguments ...an
 	}
 	descriptor := method.descriptor
 	owner := method.owner
+	if descriptor.Invoke != nil {
+		if !static {
+			reflectionReceiver(receiver, owner)
+		} else if initialize := classDescriptor(owner.TypeID()).Initialize; initialize != nil {
+			initialize(execution)
+		}
+		defer reflectionInvocationPanic()
+		return reflectionBox(descriptor.Invoke(execution, caller, receiver, converted), descriptor.Return)
+	}
 	var target reflect.Value
 	if static {
 		if descriptor.StaticFunction == nil {

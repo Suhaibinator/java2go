@@ -142,7 +142,13 @@ func inheritedOverloadOverrides(owner *symbol.ClassScope, method *symbol.Definit
 	if directOwnerOverrideBridgeVisibility(ancestor, inherited) == directOwnerOverrideBridgePackagePrivate && !directOwnerOverrideBridgeSamePackage(owner, ancestor) {
 		return false
 	}
-	ctx := classScopeCtx(owner, Ctx{})
+	return inheritedOverloadSignatureOverrides(owner, method, ancestor, inherited, Ctx{})
+}
+
+// Synthetic declarations supply their proved lexical context; ordinary source
+// declarations retain the resolved-file context used by the global name pass.
+func inheritedOverloadSignatureOverrides(owner *symbol.ClassScope, method *symbol.Definition, ancestor *symbol.ClassScope, inherited *symbol.Definition, ctx Ctx) bool {
+	ctx = classScopeCtx(owner, ctx)
 	args := mapClassTypeArgumentStringsToAncestor(owner, owner.GoTypeParameterNames(), ancestor, ctx)
 	if len(args) != len(ancestor.TypeParameters) {
 		return false

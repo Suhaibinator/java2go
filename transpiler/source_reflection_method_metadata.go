@@ -91,6 +91,9 @@ func sourceReflectionMethodModifiers(scope *symbol.ClassScope, method *symbol.De
 func sourceReflectionMethodDescriptor(scope *symbol.ClassScope, method *symbol.Definition, parameters []ast.Expr, result ast.Expr, bridge bool, invocationParameters []ast.Expr, ctx Ctx) ast.Expr {
 	modifiers := sourceReflectionMethodModifiers(scope, method, bridge)
 	values := []ast.Expr{metadataKey("Name", metadataString(method.OriginalName)), metadataKey("GoName", metadataGoName(sourceReflectionMethodExecutionName(scope, method, ctx))), metadataKey("ParameterTypes", sourceReflectionTypeIDs(parameters, ctx)), metadataKey("Return", result), metadataKey("Modifiers", reflectionInteger(modifiers)), metadataKey("HasModifiers", ast.NewIdent("true")), metadataKey("Bridge", ast.NewIdent(strconv.FormatBool(bridge))), metadataKey("Synthetic", ast.NewIdent(strconv.FormatBool(bridge)))}
+	if annotations := sourceReflectionWrittenAnnotationDescriptors(method.DeclarationNode, scope, ctx); annotations != nil {
+		values = append(values, metadataKey("Annotations", annotations))
+	}
 	if bridge {
 		values = append(values, metadataKey("InvocationParameterTypes", sourceReflectionTypeIDs(invocationParameters, ctx)))
 	}

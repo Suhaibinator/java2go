@@ -3,13 +3,17 @@ package stdjava
 // Reflection metadata is declarative. Registering or copying it never invokes
 // class initialization, construction, annotation factories, or field access.
 type ConstructorDescriptor struct {
-	Parameters []TypeID
-	Modifiers  int32
-	Construct  func(*Execution, []any) any
+	Annotations []AnnotationDescriptor
+	Parameters  []TypeID
+	Modifiers   int32
+	Construct   func(*Execution, []any) any
 }
 type AnnotationDescriptor struct {
 	Type    TypeID
 	Factory func(*Execution) any
+	// Native annotation classes may have unavailable proxy factories while
+	// their declaration's inheritance policy is still known exactly.
+	Inherited bool
 }
 type ReflectTypeKind uint8
 
@@ -77,6 +81,7 @@ func cloneReflectionMetadata(input ClassDescriptor) ClassDescriptor {
 	}
 	for index := range output.Constructors {
 		output.Constructors[index].Parameters = append([]TypeID(nil), input.Constructors[index].Parameters...)
+		output.Constructors[index].Annotations = append([]AnnotationDescriptor(nil), input.Constructors[index].Annotations...)
 	}
 	output.AnnotationValues = append([]AnnotationDescriptor(nil), input.AnnotationValues...)
 	output.Fields = append([]FieldDescriptor(nil), input.Fields...)
@@ -84,5 +89,10 @@ func cloneReflectionMetadata(input ClassDescriptor) ClassDescriptor {
 		output.Fields[index].GenericType = cloneReflectTypeDescriptor(input.Fields[index].GenericType)
 		output.Fields[index].Annotations = append([]AnnotationDescriptor(nil), input.Fields[index].Annotations...)
 	}
+	output.Methods = append([]MethodDescriptor(nil), input.Methods...)
+	for index := range output.Methods {
+		output.Methods[index].Annotations = append([]AnnotationDescriptor(nil), input.Methods[index].Annotations...)
+	}
+
 	return output
 }

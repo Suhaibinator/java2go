@@ -29,7 +29,16 @@ func sourceReflectionModifiers(def *symbol.Definition, scope *symbol.ClassScope)
 			result |= 16
 		}
 	}
+	if sourceReflectionRecordComponent(scope, def) != nil {
+		return 2 | 16
+	}
 	if def == scope.Class {
+		if sourceReflectionRecord(scope) {
+			result |= 16
+			if scope.Enclosing != nil {
+				result |= 8
+			}
+		}
 		if scope.IsInterface {
 			result |= 512 | 1024
 		}
@@ -73,6 +82,9 @@ func sourceReflectionFieldStorageType(scope *symbol.ClassScope, field *symbol.De
 // Captured storage fields reuse the original outer/local declaration nodes.
 // Only declarations inside this Java class belong to getDeclaredFields.
 func sourceReflectionDeclaredField(scope *symbol.ClassScope, field *symbol.Definition) bool {
+	if sourceReflectionRecordComponent(scope, field) != nil {
+		return true
+	}
 	if scope == nil || scope.Class == nil || scope.Class.DeclarationNode == nil || field == nil || field.DeclarationNode == nil {
 		return false
 	}
@@ -108,6 +120,10 @@ func sourceReflectionFieldAccessors(scope *symbol.ClassScope, ctx Ctx) []ast.Dec
 	out := sourceReflectionPrivateMethodAccessors(scope, ctx)
 	for _, field := range scope.Fields {
 		if !sourceReflectionDeclaredField(scope, field) || field.IsStatic {
+			continue
+		}
+		if sourceReflectionRecordComponent(scope, field) != nil {
+			out = append(out, sourceReflectionRecordGetter(scope, field, ctx))
 			continue
 		}
 		storage := sourceReflectionFieldStorageType(scope, field, ctx)
@@ -171,7 +187,7 @@ func sourceReflectionFieldsForFields(scope *symbol.ClassScope, fields []*symbol.
 		if !ok {
 			continue
 		}
-		values := []ast.Expr{metadataKey("Name", metadataString(field.OriginalName)), metadataKey("GoName", metadataGoName(field.Name)), metadataKey("Type", erased), metadataKey("Final", ast.NewIdent(strconv.FormatBool(field.IsFinal))), metadataKey("NonPublic", ast.NewIdent(strconv.FormatBool(sourceReflectionModifiers(field, scope)&1 == 0))), metadataKey("Modifiers", reflectionInteger(sourceReflectionModifiers(field, scope))), metadataKey("HasModifiers", ast.NewIdent("true")), metadataKey("Annotations", sourceAnnotationDescriptors(field.DeclarationNode, scope, ctx))}
+		values := []ast.Expr{metadataKey("Name", metadataString(field.OriginalName)), metadataKey("GoName", metadataGoName(field.Name)), metadataKey("Type", erased), metadataKey("Final", ast.NewIdent(strconv.FormatBool(field.IsFinal || sourceReflectionRecordComponent(scope, field) != nil))), metadataKey("NonPublic", ast.NewIdent(strconv.FormatBool(sourceReflectionModifiers(field, scope)&1 == 0))), metadataKey("Modifiers", reflectionInteger(sourceReflectionModifiers(field, scope))), metadataKey("HasModifiers", ast.NewIdent("true")), metadataKey("Annotations", sourceAnnotationDescriptors(field.DeclarationNode, scope, ctx))}
 		generic, supported := reflectiveTypeDescriptorExpr(symbol.JavaType{Original: field.OriginalType, TypeParameterBindings: field.TypeParameterBindings}, fieldCtx)
 		if !supported {
 			generic = sourceReflectionUnsupportedType(ctx)
@@ -196,7 +212,11 @@ func sourceReflectionFieldsForFields(scope *symbol.ClassScope, fields []*symbol.
 				values = append(values, metadataKey("StaticSet", callback))
 			}
 		} else if !scope.IsInterface {
-			values = append(values, metadataKey("Get", sourceReflectionGeneratedFieldCallback(scope, field, ctx, false)), metadataKey("Set", sourceReflectionGeneratedFieldCallback(scope, field, ctx, true)))
+			setter := sourceReflectionGeneratedFieldCallback(scope, field, ctx, true)
+			if sourceReflectionRecordComponent(scope, field) != nil {
+				setter = sourceReflectionRecordSetUnavailable(ctx)
+			}
+			values = append(values, metadataKey("Get", sourceReflectionGeneratedFieldCallback(scope, field, ctx, false)), metadataKey("Set", setter))
 		}
 		out = append(out, &ast.CompositeLit{Elts: values})
 	}
@@ -300,6 +320,9 @@ func sourceReflectionConstructorCallback(scope *symbol.ClassScope, method *symbo
 
 func sourceReflectionConstructorDescriptors(scope *symbol.ClassScope, ctx Ctx) ast.Expr {
 	out := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("ConstructorDescriptor", ctx)}}
+	if sourceReflectionRecord(scope) {
+		return sourceReflectionRecordConstructors(scope, ctx)
+	}
 	// Enclosing/captured/class-generic ABI arguments need their own descriptor
 	// planning. Ordinary constructor parameters use their declared erased types.
 	if scope.IsInterface || scope.IsEnum || scope.IsInner || len(scope.TypeParameters) != 0 || sourceReflectionAnonymousClass(scope) {
@@ -332,6 +355,9 @@ func sourceReflectionConstructorDescriptors(scope *symbol.ClassScope, ctx Ctx) a
 			metadataKey("Parameters", sourceReflectionTypeIDs(parameters, ctx)),
 			metadataKey("Modifiers", reflectionInteger(modifiers)),
 		}}
+		if annotations := sourceReflectionWrittenAnnotationDescriptors(method.DeclarationNode, scope, ctx); annotations != nil {
+			entry.Elts = append(entry.Elts, metadataKey("Annotations", annotations))
+		}
 		if !scope.IsAbstract {
 			entry.Elts = append(entry.Elts, metadataKey("Construct", sourceReflectionConstructorCallback(scope, method, method.Name, parameters, ctx)))
 		}

@@ -54,7 +54,7 @@ func RegisterClassRuntimeLocation(id TypeID, location ClassRuntimeLocation) {
 	if location.LoaderName != loaderName {
 		panic("class runtime location has inconsistent loader name")
 	}
-	if location.LoaderIdentity == AppClassLoaderIdentity && location.ModuleName != "" {
+	if location.LoaderIdentity == AppClassLoaderIdentity && location.ModuleName != "" && !reflectionNamedApplicationLocation(id, location) {
 		panic("named application modules are unsupported")
 	}
 	if location.LoaderIdentity != AppClassLoaderIdentity && location.ModuleName == "" {

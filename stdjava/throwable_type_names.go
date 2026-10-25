@@ -67,6 +67,8 @@ var builtinThrowableDescriptors = map[string]struct {
 	"CharacterCodingException":        {id: "java.nio.charset.CharacterCodingException", parent: "IOException"},
 	"MalformedInputException":         {id: "java.nio.charset.MalformedInputException", parent: "CharacterCodingException"},
 	"UnmappableCharacterException":    {id: "java.nio.charset.UnmappableCharacterException", parent: "CharacterCodingException"},
+	"InaccessibleObjectException":     {id: "java.lang.reflect.InaccessibleObjectException", parent: "RuntimeException"},
+	"SecurityException":               {id: "java.lang.SecurityException", parent: "RuntimeException"},
 	"InvocationTargetException":       {id: "java.lang.reflect.InvocationTargetException", parent: "ReflectiveOperationException"},
 }
 

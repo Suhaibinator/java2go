@@ -26,7 +26,7 @@ func declaredExternalNominalOwner(base string, bindings map[string]*symbol.TypeP
 		// Admit only existing runtime carriers, backed by their canonical class
 		// declaration and this source use's TYPE namespace and declaring file.
 		switch owner {
-		case "java.lang.reflect.Method", "java.lang.reflect.Field", "java.lang.reflect.Constructor":
+		case "java.lang.reflect.Method", "java.lang.reflect.Field", "java.lang.reflect.Constructor", "java.lang.reflect.AccessibleObject":
 		default:
 			return false
 		}
@@ -58,7 +58,7 @@ func declaredExternalNominalOwner(base string, bindings map[string]*symbol.TypeP
 	}
 	if owner, proved := declaredJDK21MemberNominalOwner(base, bindings, ctx); proved {
 		switch owner {
-		case "java.lang.reflect.Method", "java.lang.reflect.Field", "java.lang.reflect.Constructor":
+		case "java.lang.reflect.Method", "java.lang.reflect.Field", "java.lang.reflect.Constructor", "java.lang.reflect.AccessibleObject":
 			if !knownReflectionClass(owner) {
 				return ""
 			}
@@ -76,6 +76,11 @@ func declaredExternalNominalOwner(base string, bindings map[string]*symbol.TypeP
 				return knownReflectionClass(owner)
 			}
 			_, supported := reflectProtocolConstants[name]
+			if name == "Member" {
+				resolved, proved := jdk21MemberUseOwner(base, bindings, ctx)
+				nominal, presence := jdk21NominalQualified(owner)
+				return present && declaration.public && declaration.isInterface && proved && resolved == owner && presence == jdk21NominalPresent && jdk21NominalEligible(nominal) && jdk21NominalDeclaringUseOwned(ctx, first)
+			}
 			return present && declaration.public && declaration.isInterface && supported
 		}
 		if knownDeclaredExternalInterface(owner) {

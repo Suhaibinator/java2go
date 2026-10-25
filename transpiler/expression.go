@@ -1043,6 +1043,9 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 		// named struct hoisted to file scope, capturing referenced enclosing
 		// locals as fields.
 		if classBody := objectCreationClassBody(node); classBody != nil {
+			if reflectionAnonymousCarrierUnsupported(objectType.Content(source), ctx) {
+				return unsupportedIntrinsicValue(node, objectType.Content(source), source, ctx)
+			}
 			base, _ := parseJavaTypeString(objectType.Content(source))
 			if canonicalAbstractCollectionOwner(base, ctx) == "java.util.AbstractList" || sourceAbstractListRoot(resolveClassScopeByQualifiedName(ctx, base), ctx) != nil {
 				return unsupportedIntrinsicValue(node, objectType.Content(source), source, ctx)
@@ -7163,20 +7166,26 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	if functional != nil {
 		reserveLocalIdentityMethodNames(syntheticScope)
 	}
+	// Publish the exact source declaration for lexical-file proof before the
+	// selector pass. Functional certificates snapshot the final selectors below.
+	info := &anonymousClassInfo{
+		structName: structName, scope: syntheticScope,
+		declaredFields: declaredFieldDefs, captured: captured,
+	}
+	if hasKey {
+		ctx.anonymousClasses[key] = info
+	}
 	resolveSyntheticInheritedMethodNames(syntheticScope, ctx)
 	syntheticScope.HasInstanceFieldInitializers = localClassHasInstanceFieldInitializers(classBody)
 	fieldInitializerMethod := ""
 	if syntheticScope.HasInstanceFieldInitializers {
 		fieldInitializerMethod = localClassFieldInitializerMethodName(syntheticScope)
 	}
-	info := &anonymousClassInfo{
-		structName:                 structName,
-		scope:                      syntheticScope,
-		declaredFields:             declaredFieldDefs,
-		captured:                   captured,
-		fieldInitializerMethodName: fieldInitializerMethod,
-	}
+	info.fieldInitializerMethodName = fieldInitializerMethod
 	if functional != nil && !anonymousFunctionalAttach(functional, info, ctx) {
+		if hasKey {
+			delete(ctx.anonymousClasses, key)
+		}
 		return nil
 	}
 	info.lexicalOwner = anonymousLexicalOwnerAttach(info, node, objectType, classBody, source, ctx)
@@ -7364,6 +7373,12 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 	}
 
+	// A hoisted anonymous class owns initialization state just like a named
+	// subclass, including when all initialization work belongs to its parent.
+	for _, declaration := range buildLazyClassInitializationDecls(classBody, source, installerCtx) {
+		ctx.addHoistedDecl(declaration)
+	}
+
 	// Emit a method for each declared method in the anonymous body. The complete
 	// synthetic method table is already registered, so self-recursion and calls
 	// between sibling methods resolve exactly like ordinary class methods.
@@ -7493,7 +7508,12 @@ func anonymousClassConstructionExpr(
 	superScope *symbol.ClassScope,
 	source []byte,
 	ctx Ctx,
-) ast.Expr {
+) (result ast.Expr) {
+	defer func() {
+		if result != nil && info != nil && info.scope != nil && classInitializationNeedsCoordinator(info.scope, ctx) {
+			result = guardClassInitializationBeforeExpr(info.scope, result, classSubobjectDeclarationPointerType(info.scope, ctx), ctx)
+		}
+	}()
 	if info == nil || info.scope == nil || info.structName == "" {
 		return nil
 	}
@@ -8695,15 +8715,11 @@ func buildAnonymousStructMethod(structName string, methodNode *sitter.Node, synt
 			Type:  &ast.StarExpr{X: receiverType},
 		}}}
 	}
-	if declarations, ok := buildDirectOwnerOverrideBridgeMethodDecls(decl, sourceParams, sourceResults, executionName, methodCtx); ok {
-		return declarations
+	declarations, bridged := buildDirectOwnerOverrideBridgeMethodDecls(decl, sourceParams, sourceResults, executionName, methodCtx)
+	if !bridged {
+		declarations = buildExecutionAwareFuncDecls(decl, executionImplementationName(methodScope, syntheticScope, methodCtx), executionName, methodCtx)
 	}
-	return buildExecutionAwareFuncDecls(
-		decl,
-		executionImplementationName(methodScope, syntheticScope, methodCtx),
-		executionName,
-		methodCtx,
-	)
+	return appendSyntheticInheritedSelectorAliases(declarations, methodScope, syntheticScope, methodCtx)
 }
 
 func localClassHasInstanceFieldInitializers(classBody *sitter.Node) bool {
@@ -8971,6 +8987,10 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 		syntheticScope.IsInner = true
 	}
 	prepareAbstractMapDefaultsForScope(syntheticScope, classHeaderTypeCtx(syntheticScope, ctx))
+	ctx.localClasses[javaName] = &localClassInfo{
+		structName: structName, dynamicTypeID: dynamicTypeID, captured: captured,
+		scope: syntheticScope, hiddenTypeArguments: append([]string(nil), typeParameterPlan.hiddenArguments...),
+	}
 	resolveSyntheticInheritedMethodNames(syntheticScope, ctx)
 	fieldInitializerMethod := ""
 	if syntheticScope.HasInstanceFieldInitializers {
@@ -8980,15 +9000,12 @@ func hoistLocalClass(node *sitter.Node, source []byte, ctx Ctx) {
 	// class-qualified call to a sibling (`LocalType.helper()`), an initializer may
 	// recursively allocate the same local type, and later code in the enclosing
 	// method uses the same entry for `LocalType.method()`.
-	ctx.localClasses[javaName] = &localClassInfo{
-		structName:                 structName,
-		dynamicTypeID:              dynamicTypeID,
-		captured:                   captured,
-		scope:                      syntheticScope,
-		hiddenTypeArguments:        append([]string(nil), typeParameterPlan.hiddenArguments...),
-		fieldInitializerMethodName: fieldInitializerMethod,
-	}
+	ctx.localClasses[javaName].fieldInitializerMethodName = fieldInitializerMethod
 	registerLateSourceLocal(ctx.localClasses[javaName], javaName, ctx)
+	if reflectionSourceCarrierUnsupported(syntheticScope, ctx) {
+		reportUnsupported("reflection source capability", node, source, ctx)
+		return
+	}
 	prepareAbstractCollectionDefaultsForScope(syntheticScope, classScopeCtx(syntheticScope, ctx))
 	sourceAbstractListAllocateLocalDefaults(syntheticScope, ctx)
 	resolveSyntheticInheritedMethodNames(syntheticScope, ctx)

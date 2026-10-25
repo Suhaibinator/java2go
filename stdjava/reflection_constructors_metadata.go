@@ -41,6 +41,9 @@ func reflectionConstructorLookup(class *Class, publicOnly bool, parameters []*Cl
 			return &Constructor{owner: class, descriptor: descriptor}
 		}
 	}
+	if reflectionPlatformPartial(class.TypeID()) {
+		panic(NewUnsupportedOperationException("complete constructor metadata is unavailable"))
+	}
 	names := make([]string, len(ids))
 	for index, id := range ids {
 		names[index] = ClassLiteral(id).GetTypeName()
@@ -68,6 +71,12 @@ func (constructor *Constructor) GetDeclaringClass() *Class {
 func (constructor *Constructor) SetAccessible(enabled bool) {
 	if constructor == nil {
 		panic(NewNullPointerException("constructor is null"))
+	}
+	if enabled {
+		location := ClassRuntimeLocationOf(constructor.GetDeclaringClass().TypeID())
+		if location.Known && location.ModuleName != "" && !reflectionCanSetAccessible("", constructor) {
+			reflectionAccessDenied("", constructor)
+		}
 	}
 	constructor.accessible.Store(enabled)
 }
@@ -97,11 +106,21 @@ func (constructor *Constructor) CanAccess(receiver any) bool {
 	return constructor.publicAccess()
 }
 func (constructor *Constructor) NewInstance(execution *Execution, arguments ...any) any {
+	return constructor.newInstanceCallerExecution(execution, "", arguments...)
+}
+func (constructor *Constructor) NewInstanceWithCallerExecution(execution *Execution, caller TypeID, arguments ...any) any {
+	return constructor.newInstanceCallerExecution(execution, caller, arguments...)
+}
+func (constructor *Constructor) newInstanceCallerExecution(execution *Execution, caller TypeID, arguments ...any) any {
 	if constructor == nil {
 		panic(NewNullPointerException("constructor is null"))
 	}
 	requireExecution(execution)
-	if !constructor.publicAccess() {
+	allowed := constructor.publicAccess()
+	if caller != "" && !constructor.accessible.Load() {
+		allowed = reflectionCallerAccess(caller, constructor, nil)
+	}
+	if !allowed {
 		panic(reflectionException("IllegalAccessException", "non-public constructor"))
 	}
 	descriptor := classDescriptor(constructor.owner.TypeID())

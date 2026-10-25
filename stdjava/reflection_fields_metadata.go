@@ -36,6 +36,7 @@ func (class *Class) GetModifiers() int32 {
 	return modifiers
 }
 func (class *Class) GetDeclaredFields() *ReferenceArray {
+	reflectionPlatformEnumeration(class)
 	fields := classDescriptor(class.TypeID()).Fields
 	result := NewReferenceArray(len(fields), ReflectFieldTypeID)
 	for index, descriptor := range fields {
@@ -81,6 +82,12 @@ func (field *Field) SetAccessible(enabled bool) {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
+	if enabled {
+		location := ClassRuntimeLocationOf(field.GetDeclaringClass().TypeID())
+		if location.Known && location.ModuleName != "" && !reflectionCanSetAccessible("", field) {
+			reflectionAccessDenied("", field)
+		}
+	}
 	field.accessible.Store(enabled)
 }
 func (field *Field) isStatic() bool { return field.GetModifiers()&8 != 0 }
@@ -112,11 +119,21 @@ func (field *Field) CanAccess(receiver any) bool {
 }
 func (field *Field) Get(receiver any) any { return field.GetExecution(NewExecution(), receiver) }
 func (field *Field) GetExecution(execution *Execution, receiver any) any {
+	return field.getCallerExecution(execution, "", receiver)
+}
+func (field *Field) GetWithCallerExecution(execution *Execution, caller TypeID, receiver any) any {
+	return field.getCallerExecution(execution, caller, receiver)
+}
+func (field *Field) getCallerExecution(execution *Execution, caller TypeID, receiver any) any {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
 	field.requireInstanceReceiver(receiver)
-	if !field.accessibleFromPublicCaller() {
+	allowed := field.accessibleFromPublicCaller()
+	if caller != "" && !field.accessible.Load() {
+		allowed = reflectionCallerAccess(caller, field, receiver)
+	}
+	if !allowed {
 		panic(reflectionException("IllegalAccessException", "non-public field"))
 	}
 	requireExecution(execution)
@@ -146,12 +163,22 @@ func (field *Field) SetExecution(execution *Execution, receiver, value any) {
 
 // Typed setters share receiver, access, final and initialization checks. Their
 // primitive-only conversion runs at the same point as the ordinary Set path.
+func (field *Field) SetWithCallerExecution(execution *Execution, caller TypeID, receiver, value any) {
+	field.setCallerExecution(execution, caller, receiver, value, reflectionFieldValue)
+}
 func (field *Field) setExecution(execution *Execution, receiver, value any, convert func(any, TypeID) any) {
+	field.setCallerExecution(execution, "", receiver, value, convert)
+}
+func (field *Field) setCallerExecution(execution *Execution, caller TypeID, receiver, value any, convert func(any, TypeID) any) {
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
 	field.requireInstanceReceiver(receiver)
-	if !field.accessibleFromPublicCaller() {
+	allowed := field.accessibleFromPublicCaller()
+	if caller != "" && !field.accessible.Load() {
+		allowed = reflectionCallerAccess(caller, field, receiver)
+	}
+	if !allowed {
 		panic(reflectionException("IllegalAccessException", "non-public field"))
 	}
 	requireExecution(execution)

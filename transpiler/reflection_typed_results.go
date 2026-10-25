@@ -12,7 +12,7 @@ func init() {
 		registerInstanceIntrinsicDerivedResultType("Class", name, reflectionDeclaredResultType)
 	}
 	registerInstanceIntrinsicDerivedResultType("Constructor", "newInstance", reflectionDeclaredResultType)
-	for _, receiver := range []string{"Class", "Field"} {
+	for _, receiver := range []string{"Class", "Field", "Method", "Constructor", "AccessibleObject"} {
 		registerInstanceIntrinsicDerivedResultType(receiver, "getAnnotation", reflectionDeclaredResultType)
 	}
 }

@@ -5,7 +5,11 @@ func (field *Field) GetLong(receiver any) int64 {
 }
 
 func (field *Field) GetLongExecution(execution *Execution, receiver any) int64 {
-	value := field.GetExecution(execution, receiver)
+	return field.GetLongWithCallerExecution(execution, "", receiver)
+}
+
+func (field *Field) GetLongWithCallerExecution(execution *Execution, caller TypeID, receiver any) int64 {
+	value := field.GetWithCallerExecution(execution, caller, receiver)
 	switch field.descriptor.Type {
 	case PrimitiveByteTypeID, PrimitiveShortTypeID, PrimitiveCharTypeID, PrimitiveIntTypeID, PrimitiveLongTypeID:
 		return reflectionUnbox(value, PrimitiveLongTypeID).(int64)
@@ -19,7 +23,11 @@ func (field *Field) SetLong(receiver any, value int64) {
 }
 
 func (field *Field) SetLongExecution(execution *Execution, receiver any, value int64) {
-	field.setExecution(execution, receiver, BoxLong(value), func(boxed any, id TypeID) any {
+	field.SetLongWithCallerExecution(execution, "", receiver, value)
+}
+
+func (field *Field) SetLongWithCallerExecution(execution *Execution, caller TypeID, receiver any, value int64) {
+	field.setCallerExecution(execution, caller, receiver, BoxLong(value), func(boxed any, id TypeID) any {
 		if !isPrimitiveTypeID(id) {
 			panic(NewIllegalArgumentException("typed long setter requires a primitive field"))
 		}

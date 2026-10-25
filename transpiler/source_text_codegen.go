@@ -39,6 +39,9 @@ func sourceToStringRegistration(scope *symbol.ClassScope, id string, ctx Ctx) as
 func sourceInheritsObjectTextDefault(scope *symbol.ClassScope, ctx Ctx) bool {
 	seen := map[*symbol.ClassScope]bool{}
 	for current := scope; current != nil && !seen[current]; {
+		if sourceReflectionRecord(current) {
+			return false
+		}
 		seen[current] = true
 		declaring := classScopeCtx(current, ctx)
 		if parent := resolveSuperclassScopeInDeclaringContext(declaring, current); parent != nil {

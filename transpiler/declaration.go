@@ -128,6 +128,12 @@ func sourceClassLiteralTypeIDName(scope *symbol.ClassScope, ctx Ctx) string {
 
 func parseDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 	switch node.Type() {
+	case "class_declaration", "interface_declaration", "enum_declaration", "record_declaration":
+		if reflectionSourceCarrierUnsupported(ctx.currentClass, ctx) {
+			return []ast.Decl{unsupportedDeclStub(reportUnsupported("reflection source capability", node, source, ctx))}
+		}
+	}
+	switch node.Type() {
 	case "annotation_type_declaration":
 		return sourceAnnotationDecls(ctx.currentClass, ctx)
 	case "record_declaration":
@@ -2044,6 +2050,9 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 		return nil
 	}
 	ctx.className = scope.Class.Name
+	if unsupported := sourceReflectionRecordMetadataUnsupported(scope, ctx); unsupported != "" {
+		return []ast.Decl{unsupportedDeclStub(reportUnsupported(unsupported, node, source, ctx))}
+	}
 	typeParams := scope.TypeParameterNames()
 	goTypeParams := scope.GoTypeParameterNames()
 
@@ -2127,6 +2136,14 @@ func parseRecordDecls(node *sitter.Node, source []byte, ctx Ctx) []ast.Decl {
 
 	// Value-equality method mirroring Java record equals(): compares all fields.
 	declarations = append(declarations, buildRecordEqualsDecl(scope, recvBase, recvName))
+
+	declarations = append(declarations, sourceReflectionFieldAccessors(scope, ctx)...)
+	if !sourceAbstractListProjectionPossible(ctx) {
+		if registration := sourceClassRegistrationDecl(scope, ctx); registration != nil {
+			declarations = append(declarations, registration)
+		}
+		declarations = append(declarations, sourceClassReferenceIdentityDecls(scope, ctx)...)
+	}
 
 	// User-declared methods in the record body.
 	if body := node.ChildByFieldName("body"); body != nil {

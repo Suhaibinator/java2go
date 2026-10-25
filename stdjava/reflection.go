@@ -11,6 +11,8 @@ import (
 // the transpiler. Callbacks retain Java initialization and execution semantics.
 // Descriptors are registered without constructing or initializing Java classes.
 type ClassDescriptor struct {
+	// Explicit partial inventories refuse unknown member lookup/enumeration.
+	PartialMemberMetadata bool
 	// RuntimeLocation is optional explicit immutable declaration provenance.
 	RuntimeLocation ClassRuntimeLocation
 	SimpleName      string
@@ -58,6 +60,8 @@ type FieldDescriptor struct {
 	VolatileCell func(*Execution, any) *VolatileFieldCell
 }
 type MethodDescriptor struct {
+	Annotations    []AnnotationDescriptor
+	Invoke         func(*Execution, TypeID, any, []any) any
 	nameJavaString *JavaString
 	Name, GoName   string
 	Return         TypeID
@@ -175,22 +179,21 @@ func (class *Class) IsEnum() bool {
 }
 func (class *Class) IsAnnotationPresent(annotation *Class) bool {
 	class.TypeID()
-	id := annotation.TypeID()
+	id := reflectionAnnotationClass(annotation)
 	inherited := classDescriptor(id).InheritedAnnotation
 	for current := class; current != nil; current = current.GetSuperclass() {
 		descriptor := classDescriptor(current.TypeID())
 		for _, candidate := range descriptor.AnnotationValues {
 			if candidate.Type == id {
-				return true
+				return current == class || candidate.Inherited || inherited
 			}
 		}
-		for _, candidate := range descriptor.Annotations {
-			if candidate == id {
-				return true
+		if current == class || inherited {
+			for _, candidate := range descriptor.Annotations {
+				if candidate == id {
+					return true
+				}
 			}
-		}
-		if !inherited {
-			break
 		}
 	}
 	return false
@@ -235,6 +238,7 @@ func (class *Class) GetDeclaredField(name string) *Field {
 			return &Field{owner: class, descriptor: field}
 		}
 	}
+	reflectionPlatformFieldMissing(class)
 	panic(reflectionException("NoSuchFieldException", name))
 }
 func (field *Field) IsEnumConstant() bool {

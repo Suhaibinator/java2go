@@ -92,6 +92,16 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 		metadataKey("Enum", ast.NewIdent(strconv.FormatBool(scope.IsEnum))),
 	}}
 	extendSourceReflectionMetadata(descriptor, scope, ctx)
+	if sourceReflectionRecord(scope) {
+		descriptor.Elts = append(descriptor.Elts, metadataKey("PartialMemberMetadata", ast.NewIdent("true")))
+		for _, entry := range descriptor.Elts {
+			if key, ok := entry.(*ast.KeyValueExpr); ok {
+				if name, ok := key.Key.(*ast.Ident); ok && name.Name == "GenericSuperclass" {
+					key.Value = &ast.UnaryExpr{Op: token.AND, X: &ast.CompositeLit{Type: stdjavaQualifiedExpr("ReflectTypeDescriptor", ctx), Elts: []ast.Expr{metadataKey("Kind", stdjavaQualifiedExpr("ReflectClassKind", ctx)), metadataKey("Raw", stdjavaQualifiedExpr("RecordTypeID", ctx))}}}
+				}
+			}
+		}
+	}
 	execution := ast.NewIdent("execution")
 	if initialize := classInitializationEnsureCall(scope, execution, ctx); initialize != nil {
 		target := classInitializationTarget(scope, ctx)
@@ -103,7 +113,7 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 	}
 	// Inner/local/generic classes require extra ABI arguments and are outside
 	// this public no-argument reflection surface.
-	if !scope.IsInterface && !scope.IsAbstract && !scope.IsEnum && !scope.IsInner && len(scope.TypeParameters) == 0 && !sourceReflectionAnonymousClass(scope) {
+	if !sourceReflectionRecord(scope) && !scope.IsInterface && !scope.IsAbstract && !scope.IsEnum && !scope.IsInner && len(scope.TypeParameters) == 0 && !sourceReflectionAnonymousClass(scope) {
 		constructor := noArgConstructorName(scope)
 		var definition *symbol.Definition
 		public := reflectionPublic(scope.Class, scope)
@@ -139,25 +149,22 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 
 	descriptor.Elts = append(descriptor.Elts, metadataKey("Fields", fields), metadataKey("Methods", methods))
 	annotations := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("TypeID", ctx)}}
-	for _, annotation := range declarationAnnotations(scope) {
-		nameNode := annotation.ChildByFieldName("name")
-		if nameNode == nil {
-			continue
-		}
-		file := findFileScopeForClassScope(scope)
-		name := nameNode.Content(file.Source)
-		annotationScope := resolveClassScopeByQualifiedName(ctx, name)
-		if annotationScope != nil {
-			runtime, _ := runtimeMarkerPolicy(annotationScope)
-			if runtime {
-				annotations.Elts = append(annotations.Elts, javaTypeIDLiteral(javaClassBinaryName(annotationScope), ctx))
+	annotationValues := sourceAnnotationDescriptors(scope.Class.DeclarationNode, scope, ctx)
+	if values, ok := annotationValues.(*ast.CompositeLit); ok {
+		for _, value := range values.Elts {
+			if descriptor, ok := value.(*ast.CompositeLit); ok {
+				for _, element := range descriptor.Elts {
+					if pair, ok := element.(*ast.KeyValueExpr); ok {
+						if key, ok := pair.Key.(*ast.Ident); ok && key.Name == "Type" {
+							annotations.Elts = append(annotations.Elts, pair.Value)
+						}
+					}
+				}
 			}
-		} else if annotationNameIs(name, "java.lang.Deprecated", scope) {
-			annotations.Elts = append(annotations.Elts, javaTypeIDLiteral("java.lang.Deprecated", ctx))
 		}
 	}
 	descriptor.Elts = append(descriptor.Elts, metadataKey("Annotations", annotations))
-	descriptor.Elts = append(descriptor.Elts, metadataKey("AnnotationValues", sourceAnnotationDescriptors(scope.Class.DeclarationNode, scope, ctx)))
+	descriptor.Elts = append(descriptor.Elts, metadataKey("AnnotationValues", annotationValues))
 	if _, inherited := runtimeMarkerPolicy(scope); inherited {
 		descriptor.Elts = append(descriptor.Elts, metadataKey("InheritedAnnotation", ast.NewIdent("true")))
 	}
@@ -273,6 +280,18 @@ func reflectionVarargsIntrinsic(receiver, name string) nodeIntrinsicGenerator {
 			args = append([]ast.Expr{intrinsicExecutionExpr(ctx)}, args...)
 		}
 		selector := strings.ToUpper(name[:1]) + name[1:]
+		if (receiver == "Method" && name == "invoke") || (receiver == "Constructor" && name == "newInstance") {
+			if caller, owned := reflectionCallerExpression(invocation, ctx); owned {
+				args = append([]ast.Expr{args[0], caller}, args[1:]...)
+				if receiver == "Method" {
+					selector = "InvokeWithCallerExecution"
+				} else {
+					selector = "NewInstanceWithCallerExecution"
+				}
+			} else if ctx.runtimeLocationProfile == sourceRuntimeLocationClasspath {
+				return unsupportedIntrinsicValue(invocation, "java.lang.Object", source, ctx)
+			}
+		}
 		if receiver == "Class" && (name == "getMethod" || name == "getDeclaredMethod") {
 			selector += "JavaString"
 		}
@@ -304,48 +323,10 @@ func declarationAnnotations(scope *symbol.ClassScope) []*sitter.Node {
 	}
 	return annotations
 }
-func annotationNameIs(name, qualified string, scope *symbol.ClassScope) bool {
-	if name == qualified {
-		return true
-	}
-	simple := stripJavaQualifier(qualified)
-	if name != simple {
-		return false
-	}
-	if file := findFileScopeForClassScope(scope); file != nil {
-		if imported, ok := file.Imports[simple]; ok {
-			return imported+"."+simple == qualified
-		}
-	}
-	return true
-}
 
-// CLASS is the Java default retention for marker and valued annotations;
-// RUNTIME must be explicitly declared, and @Inherited applies to class ancestry.
+// CLASS retention and declaration targets come from the actual annotation
+// declaration's owned TYPE namespace, never from simple names or enum suffixes.
 func runtimeMarkerPolicy(scope *symbol.ClassScope) (runtime, inherited bool) {
-	if scope == nil || scope.Class == nil || scope.Class.DeclarationNode == nil || scope.Class.DeclarationNode.Type() != "annotation_type_declaration" {
-		return false, false
-	}
-	file := findFileScopeForClassScope(scope)
-	if file == nil {
-		return false, false
-	}
-	for _, annotation := range declarationAnnotations(scope) {
-		nameNode := annotation.ChildByFieldName("name")
-		if nameNode == nil {
-			continue
-		}
-		name := nameNode.Content(file.Source)
-		if annotationNameIs(name, "java.lang.annotation.Inherited", scope) {
-			inherited = true
-		}
-		if annotationNameIs(name, "java.lang.annotation.Retention", scope) {
-			arguments := annotation.ChildByFieldName("arguments")
-			if arguments != nil {
-				value := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(arguments.Content(file.Source), "("), ")"))
-				runtime = value == "RUNTIME" || strings.HasSuffix(value, ".RUNTIME")
-			}
-		}
-	}
-	return runtime, inherited
+	policy, known := reflectionSourceAnnotationPolicy(scope)
+	return known && policy.retention == "RUNTIME", known && policy.inherited
 }

@@ -774,6 +774,9 @@ func sourceClassRegistrationDecl(scope *symbol.ClassScope, ctx Ctx) ast.Decl {
 		args = append(args, javaTypeIDLiteral(javaClassBinaryName(implementedScope), ctx))
 	}
 
+	if scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Type() == "annotation_type_declaration" {
+		args = append(args, stdjavaQualifiedExpr("AnnotationTypeID", ctx))
+	}
 	args = append(args, sourceDeclaredExternalInterfaceIDs(scope, ctx)...)
 	args = append(args, sourceIterationInterfaceIDs(scope, ctx)...)
 	args = append(args, sourceFunctionInterfaceIDs(scope, ctx)...)

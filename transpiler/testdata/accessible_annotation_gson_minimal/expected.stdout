@@ -1,0 +1,8 @@
+before=false:false:gson=false
+after=true:value=17
+reset=false
+invalid=java.lang.reflect.InvocationTargetException:null:java.lang.IllegalArgumentException:null object for private int access.fixture.Target.privateValue
+annotation=com.google.gson.annotations.SerializedName
+annotation=com.google.gson.annotations.Expose
+metadata=wire:old
+method-annotation=accessor-only:field-absent=true

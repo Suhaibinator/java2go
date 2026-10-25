@@ -106,8 +106,34 @@ func sourceAnnotationDefaultNode(method *symbol.Definition) *sitter.Node {
 	}
 	return nil
 }
-func sourceAnnotationMemberValue(node *sitter.Node, javaType string, source []byte, ctx Ctx) (ast.Expr, bool) {
+
+// Nested annotation literals have no value-proxy lowering yet. Classify the
+// complete member syntax before expression lowering so an unavailable factory
+// cannot publish diagnostics or imports while an unrelated annotation is read.
+func sourceAnnotationMemberSyntaxAvailable(node *sitter.Node) bool {
 	if node == nil {
+		return false
+	}
+	if node.Type() == "annotation" || node.Type() == "marker_annotation" {
+		return false
+	}
+	for _, child := range nodeutil.NamedChildrenOf(node) {
+		if !sourceAnnotationMemberSyntaxAvailable(child) {
+			return false
+		}
+	}
+	return true
+}
+
+type sourceAnnotationMemberPlan struct {
+	member *symbol.Definition
+	value  *sitter.Node
+	source []byte
+	ctx    Ctx
+}
+
+func sourceAnnotationMemberValue(node *sitter.Node, javaType string, source []byte, ctx Ctx) (ast.Expr, bool) {
+	if !sourceAnnotationMemberSyntaxAvailable(node) {
 		return nil, false
 	}
 	ctx.expectedType = javaType
@@ -144,9 +170,37 @@ func sourceAnnotationDescriptors(node *sitter.Node, scope *symbol.ClassScope, ct
 	if node == nil {
 		return out
 	}
+	// An unannotated synthetic declaration needs no annotation capability.
+	// Demand source ownership only when an actual written annotation exists.
+	writtenAnnotation := false
+	for _, modifiers := range nodeutil.NamedChildrenOf(node) {
+		if modifiers.Type() != "modifiers" {
+			continue
+		}
+		for _, annotation := range nodeutil.NamedChildrenOf(modifiers) {
+			if annotation.Type() == "annotation" || annotation.Type() == "marker_annotation" {
+				writtenAnnotation = true
+			}
+		}
+	}
+	if !writtenAnnotation {
+		return out
+	}
 	caller := classScopeCtx(scope, ctx)
-	file := findFileScopeForClassScope(scope)
-	if file == nil {
+	if scope != nil {
+		for _, method := range scope.Methods {
+			if method != nil && method.DeclarationNode != nil && method.DeclarationNode.Equal(node) {
+				caller.localScope = method
+				break
+			}
+		}
+	}
+	file := findFileScopeForClassScope(scope, ctx)
+	if file == nil && intrinsicLexicalDeclaringFile(scope, ctx.currentFile, ctx) {
+		file = ctx.currentFile
+	}
+	if file == nil || scope == nil || scope.Class == nil || !threadSourceNodeWithin(node, scope.Class.DeclarationNode) || !threadSourceNodeWithin(scope.Class.DeclarationNode, file.ParsedRoot()) || file.SourceInputSnapshot() == nil || file.SourceInputSnapshot().Validate() != nil {
+		reportUnsupported("annotation declaration ownership", node, nil, caller)
 		return out
 	}
 	for _, modifiers := range nodeutil.NamedChildrenOf(node) {
@@ -161,12 +215,35 @@ func sourceAnnotationDescriptors(node *sitter.Node, scope *symbol.ClassScope, ct
 			if name == nil {
 				continue
 			}
-			declaration := resolveClassScopeByQualifiedName(caller, name.Content(file.Source))
-			if declaration == nil {
+			written := name.Content(file.Source)
+			declaration := resolveClassScopeByQualifiedName(caller, written)
+			var policy reflectionAnnotationPolicy
+			var policyKnown bool
+			id := ""
+			if declaration != nil {
+				policy, policyKnown = reflectionSourceAnnotationPolicy(declaration)
+				id = sourceClassRuntimeTypeID(declaration, ctx)
+			} else {
+				id = reflectionAnnotationNominalOwner(written, symbol.VisibleTypeParamBindings(visibleTypeParameterDeclarations(caller)), caller)
+				policy, policyKnown = reflectionJDKAnnotationPolicies[id]
+			}
+			if !policyKnown {
+				reportUnsupported("annotation declaration policy", annotation, file.Source, caller)
 				continue
 			}
-			retention, _ := runtimeMarkerPolicy(declaration)
-			if !retention {
+			if policy.retention != "RUNTIME" {
+				continue
+			}
+			applies, targetKnown := reflectionAnnotationTargetApplies(policy, node)
+			if !targetKnown {
+				reportUnsupported("annotation declaration target", annotation, file.Source, caller)
+				continue
+			}
+			if !applies {
+				continue
+			}
+			if declaration == nil {
+				out.Elts = append(out.Elts, reflectionUnavailableAnnotationDescriptor(id, policy, ctx))
 				continue
 			}
 			values := map[string]*sitter.Node{}
@@ -186,7 +263,7 @@ func sourceAnnotationDescriptors(node *sitter.Node, scope *symbol.ClassScope, ct
 					}
 				}
 			}
-			args := []ast.Expr{ast.NewIdent("execution")}
+			var plans []sourceAnnotationMemberPlan
 			supported := true
 			for _, member := range declaration.Methods {
 				if member.DeclarationNode == nil || member.DeclarationNode.Type() != "annotation_type_element_declaration" {
@@ -200,19 +277,34 @@ func sourceAnnotationDescriptors(node *sitter.Node, scope *symbol.ClassScope, ct
 					valueCtx = classScopeCtx(declaration, ctx)
 					source = findFileScopeForClassScope(declaration).Source
 				}
-				value, ok := sourceAnnotationMemberValue(valueNode, member.OriginalType, source, valueCtx)
-				if !ok {
+				if !sourceAnnotationMemberSyntaxAvailable(valueNode) {
 					supported = false
 					break
 				}
-				args = append(args, value)
+				plans = append(plans, sourceAnnotationMemberPlan{member: member, value: valueNode, source: source, ctx: valueCtx})
+			}
+			args := []ast.Expr{ast.NewIdent("execution")}
+			if supported {
+				for _, plan := range plans {
+					value, ok := sourceAnnotationMemberValue(plan.value, plan.member.OriginalType, plan.source, plan.ctx)
+					if !ok {
+						supported = false
+						break
+					}
+					args = append(args, value)
+				}
 			}
 			if !supported {
+				out.Elts = append(out.Elts, reflectionUnavailableAnnotationDescriptor(id, policy, ctx))
 				continue
 			}
 			factory := qualifiedNameExpr(sourceAnnotationFactoryName(declaration), findJavaPackageForClassScope(declaration), ctx)
 			callback := &ast.FuncLit{Type: &ast.FuncType{Params: &ast.FieldList{List: []*ast.Field{executionParameterField("execution", ctx)}}, Results: &ast.FieldList{List: []*ast.Field{{Type: ast.NewIdent("any")}}}}, Body: &ast.BlockStmt{List: []ast.Stmt{&ast.ReturnStmt{Results: []ast.Expr{&ast.CallExpr{Fun: factory, Args: args}}}}}}
-			out.Elts = append(out.Elts, &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Type", javaTypeIDLiteral(sourceClassRuntimeTypeID(declaration, ctx), ctx)), metadataKey("Factory", callback)}})
+			descriptor := &ast.CompositeLit{Elts: []ast.Expr{metadataKey("Type", javaTypeIDLiteral(id, ctx)), metadataKey("Factory", callback)}}
+			if policy.inherited {
+				descriptor.Elts = append(descriptor.Elts, metadataKey("Inherited", ast.NewIdent("true")))
+			}
+			out.Elts = append(out.Elts, descriptor)
 		}
 	}
 	return out

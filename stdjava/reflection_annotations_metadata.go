@@ -22,14 +22,17 @@ func (class *Class) GetAnnotation(annotation *Class) any {
 }
 func (class *Class) GetAnnotationExecution(execution *Execution, annotation *Class) any {
 	class.TypeID()
-	id := annotation.TypeID()
-	inherited := classDescriptor(id).InheritedAnnotation
+	id := reflectionAnnotationClass(annotation)
 	for current := class; current != nil; current = current.GetSuperclass() {
-		if value, found := reflectionAnnotationValue(execution, classDescriptor(current.TypeID()).AnnotationValues, id); found {
+		for _, descriptor := range classDescriptor(current.TypeID()).AnnotationValues {
+			if descriptor.Type != id {
+				continue
+			}
+			if current != class && !descriptor.Inherited && !classDescriptor(id).InheritedAnnotation {
+				return nil
+			}
+			value, _ := reflectionAnnotationValue(execution, []AnnotationDescriptor{descriptor}, id)
 			return value
-		}
-		if !inherited {
-			break
 		}
 	}
 	return nil
@@ -41,7 +44,7 @@ func (field *Field) GetAnnotationExecution(execution *Execution, annotation *Cla
 	if field == nil {
 		panic(NewNullPointerException("field is null"))
 	}
-	id := annotation.TypeID()
+	id := reflectionAnnotationClass(annotation)
 	value, _ := reflectionAnnotationValue(execution, field.descriptor.Annotations, id)
 	return value
 }

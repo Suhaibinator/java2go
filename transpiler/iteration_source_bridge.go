@@ -124,22 +124,8 @@ func iterationPlainFactoryCallback(factory ast.Expr, ctx Ctx) ast.Expr {
 // names. All local and anonymous classes must preserve their inherited selector
 // families, including ordinary interfaces with globally reserved spellings.
 func resolveSyntheticInheritedMethodNames(scope *symbol.ClassScope, ctx Ctx) {
-	var ancestors []*symbol.ClassScope
-	seen := map[*symbol.ClassScope]bool{scope: true}
-	queue := []*symbol.ClassScope{scope}
-	for len(queue) > 0 {
-		current := queue[0]
-		queue = queue[1:]
-		parents := append([]*symbol.ClassScope{resolveSuperclassScopeInDeclaringContext(ctx, current)}, resolveImplementedInterfaceScopesInDeclaringContext(ctx, current)...)
-		for _, parent := range parents {
-			if parent == nil || seen[parent] {
-				continue
-			}
-			seen[parent] = true
-			ancestors = append(ancestors, parent)
-			queue = append(queue, parent)
-		}
-	}
+	ancestors := inheritedOverloadAncestorsInContext(scope, ctx)
+	reserveSyntheticInheritedSelectorRoles(scope, ancestors, ctx)
 	matched := map[*symbol.Definition]bool{}
 	for _, method := range scope.Methods {
 		if method == nil || method.IsStatic || method.IsPrivate || method.Constructor {
@@ -150,7 +136,7 @@ func resolveSyntheticInheritedMethodNames(scope *symbol.ClassScope, ctx Ctx) {
 				if inherited == nil || inherited.IsStatic || inherited.IsPrivate || inherited.Constructor {
 					continue
 				}
-				if inheritedOverloadOverrides(scope, method, ancestor, inherited) {
+				if syntheticInheritedMethodOverrides(scope, method, ancestor, inherited, ctx) {
 					method.Rename(inherited.Name)
 					matched[method] = true
 					break

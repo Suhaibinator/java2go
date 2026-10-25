@@ -57,6 +57,7 @@ func (class *Class) GetDeclaredFieldJavaString(name *JavaString) *Field {
 			return &Field{owner: class, descriptor: field}
 		}
 	}
+	reflectionPlatformFieldMissing(class)
 	panic(reflectionJavaStringException("NoSuchFieldException", name))
 }
 

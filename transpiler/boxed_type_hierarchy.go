@@ -124,6 +124,9 @@ func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, c
 	if characterIOReferenceAssignable(actual, expected, ctx) {
 		return true
 	}
+	if reflectionSurfaceReferenceAssignable(actual, expected, ctx) {
+		return true
+	}
 	if builtinReflectTypeAssignable(actual, expected, ctx) {
 		return true
 	}
