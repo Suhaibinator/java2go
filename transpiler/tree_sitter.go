@@ -55,6 +55,8 @@ type Ctx struct {
 	runtimeLocationProfile sourceRuntimeLocationProfile
 	// Immutable named-family analysis shared only within this resolved file render.
 	genericFamilies *genericFamilyAnalysis
+	// A declaration-owned certificate applies only while parsing its constructor body.
+	genericFamilyConstructorBody *genericFamilyConstructorBodyCertificate
 	// Structural source facts shared only within a resolved conversion batch.
 	callableSubclasses *callableSubclassSourceInventory
 	// Opt-in syntax ownership; never inferred by public render helpers.
@@ -441,6 +443,7 @@ func (c Ctx) Clone() Ctx {
 		projectMode:                         c.projectMode,
 		runtimeLocationProfile:              c.runtimeLocationProfile,
 		genericFamilies:                     c.genericFamilies,
+		genericFamilyConstructorBody:        c.genericFamilyConstructorBody,
 		callableSubclasses:                  c.callableSubclasses,
 		syntaxInvocation:                    c.syntaxInvocation,
 		lateSourceOwnership:                 c.lateSourceOwnership,

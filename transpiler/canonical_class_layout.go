@@ -15,17 +15,27 @@ import (
 func canonicalClassArgumentIndependent(javaType string, ctx Ctx, occurrences ...*sitter.Node) bool {
 	component, _ := javaArrayTypeParts(strings.TrimSpace(javaType))
 	base, arguments, valid := reflectiveNamedTypeParts(component)
-	if !valid || stripJavaQualifier(base) != "Class" || len(arguments) > 1 || len(occurrences) != 1 || occurrences[0] == nil || ctx.currentFile == nil {
+	if !valid || stripJavaQualifier(base) != "Class" || len(arguments) > 1 {
 		return false
+	}
+	owner, known := canonicalArgumentIndependentOccurrenceOwner(base, ctx, occurrences...)
+	return known && owner == "java.lang.Class"
+}
+
+// Argument-independent layouts still require the occurrence's original Java
+// namespace. A logical type name alone cannot establish a native declaration.
+func canonicalArgumentIndependentOccurrenceOwner(base string, ctx Ctx, occurrences ...*sitter.Node) (string, bool) {
+	if len(occurrences) != 1 || occurrences[0] == nil || ctx.currentFile == nil {
+		return "", false
 	}
 	occurrence := occurrences[0]
 	source := ctx.currentFile.Source
 	if occurrence.EndByte() > uint32(len(source)) || occurrence.StartByte() >= occurrence.EndByte() {
-		return false
+		return "", false
 	}
 	prefix := strings.SplitN(base, ".", 2)[0]
 	if visibleTypeParameterDeclarationForJavaType(prefix, ctx) != nil || sourceGenericViewLocalTypeShadowed(occurrence, base, source) {
-		return false
+		return "", false
 	}
 	// A method-wide hoisted registry cannot establish visibility at an earlier
 	// occurrence. Its original lexical declarations were checked above instead.
@@ -38,23 +48,23 @@ func canonicalClassArgumentIndependent(javaType string, ctx Ctx, occurrences ...
 		}
 	}
 	if classServiceASTTypePrefix(occurrence, prefix, source, lookup) || classServiceSourceTypePrefix(prefix, lookup) {
-		return false
+		return "", false
 	}
 	if resolveClassScopeByQualifiedName(lookup, base) != nil {
-		return false
+		return "", false
 	}
 	if strings.Contains(base, ".") {
 		// A single-type import binds this first TYPE segment even if its source
 		// declaration is outside the loaded graph; a failed member lookup is final.
 		if _, imported := lookup.currentFile.Imports[prefix]; imported {
-			return false
+			return "", false
 		}
 	}
 	if classServiceUnknownImportPrefix(prefix, lookup) {
-		return false
+		return "", false
 	}
 	owner, known := canonicalIntrinsicOwner(base, lookup)
-	return known && owner == "java.lang.Class" && intrinsicOwnerSupported(owner)
+	return owner, known && intrinsicOwnerSupported(owner)
 }
 
 // The occurrence's actual ancestors supply unhoisted member namespaces. Member

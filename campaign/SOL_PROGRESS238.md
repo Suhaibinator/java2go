@@ -1,0 +1,9 @@
+# Generic source storage checkpoint 238
+
+The compiler now handles the tested declaration-owned enum constructor locals, canonical Collection storage and descriptor bridges, and registered source-interface dependency components. Interface adoption restarts complete hierarchy, constructor and body audits until a finite seed set stabilizes; provisional plans never publish ABI decisions. Named, anonymous, local and nested source values preserve tested identity, delayed casts and dispatch. Current AST roots, independently established ownership and lexical binder checks remain required.
+
+The 27-path union passed 211 fresh stages on public236: 155 compiler parents and 401 subtests, plus 939 runtime parents and 3025 subtests, in each of normal and race modes. Real JDK/generated-Go component programs passed. Both original atomic-covered/race budget parents passed; all 2631 baseline compiler parents remain, with 31 new parents for a total of 2662. Public lint reports zero issues. Original failures remain recorded, including the exact covered-registry warning decoder correction.
+
+Public237 changes only test framing and metadata. All implementation and compiler test bytes remain identical to the qualified236 union. Its four postimages were composed and independently checked, and 18 fresh covered filesystem stages passed all seven parents and 27 subtests per mode. The NIO repair and all its fixtures remain intact.
+
+The original Gson112 plan still refuses DateType<T>; full application emission, build and parity remain open. Native List/ArrayList ABI expansion, AbstractList and the separate reflection work are excluded. This checkpoint accepts the exercised compiler contracts; it does not accept the campaign round or claim full Gson or Netty compatibility. New-head hosted CI remains required.

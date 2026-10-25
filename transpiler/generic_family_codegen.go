@@ -159,17 +159,25 @@ func genericFamilyPhysicalJavaType(typ string, ctx Ctx) string {
 	if plan == nil {
 		return typ
 	}
+	var constructorDeclarations map[*symbol.TypeParamDeclaration]bool
 	if ctx.localScope.Constructor {
 		certified := false
 		for _, representation := range plan.representations {
 			certified = certified || (representation.sourceCertificate != nil && representation.sourceCertificate.constructors[ctx.localScope])
 		}
 		if !certified {
-			return typ
+			certificate := ctx.genericFamilyConstructorBody
+			if !genericFamilyConstructorCertificateMatches(certificate, plan, ctx) {
+				return typ
+			}
+			constructorDeclarations = certificate.declarations
 		}
 	}
 	bindings := map[string]string{}
 	for _, parameter := range ctx.currentClass.TypeParameters {
+		if constructorDeclarations != nil && !constructorDeclarations[parameter.Declaration] {
+			continue
+		}
 		if parameter.Declaration != nil && visibleTypeParameterDeclarationForJavaType(parameter.Name, ctx) == parameter.Declaration {
 			representation, present := plan.representations[parameter.Declaration]
 			if !present {

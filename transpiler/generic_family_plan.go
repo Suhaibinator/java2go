@@ -14,11 +14,14 @@ import (
 // descriptor bridges, anonymous implementations and all member storage must
 // consume the same successful plan before family lowering can be activated.
 type genericFamilyPlan struct {
-	members         map[*symbol.ClassScope]struct{}
-	anonymous       map[genericFamilySourceKey]genericFamilyAnonymous
-	locals          map[genericFamilySourceKey]genericFamilyAnonymous
-	binders         map[*symbol.TypeParamDeclaration]struct{}
-	representations map[*symbol.TypeParamDeclaration]genericFamilyBinderRepresentation
+	storageInventory         *genericFamilyInventory
+	pendingStorageInterfaces map[*symbol.ClassScope]struct{}
+	members                  map[*symbol.ClassScope]struct{}
+	anonymous                map[genericFamilySourceKey]genericFamilyAnonymous
+	locals                   map[genericFamilySourceKey]genericFamilyAnonymous
+	binders                  map[*symbol.TypeParamDeclaration]struct{}
+	representations          map[*symbol.TypeParamDeclaration]genericFamilyBinderRepresentation
+	constructorBodies        map[*symbol.Definition]*genericFamilyConstructorBodyCertificate
 }
 
 type genericFamilySourceKey struct {
@@ -45,11 +48,18 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 // hierarchy edges stay unchanged throughout those audits. Reuse only that
 // structural inventory; eligibility and physical storage remain plan-owned.
 type genericFamilyInventory struct {
-	scopes          []*symbol.ClassScope
-	localInterfaces [][]*symbol.ClassScope
-	parents         map[*symbol.ClassScope][]*symbol.ClassScope
-	sourceEvents    []genericFamilySourceEvent
-	eventsLoaded    bool
+	storageInterfaceComponents map[*symbol.ClassScope]*symbol.ClassScope
+	storageComponentScans      int
+	storageAuditRounds         int
+	storageScopesAudited       int
+	storageSourceEventScans    int
+	storageOwnership           *resolutionFileIndex
+	storageOwnershipChecked    bool
+	scopes                     []*symbol.ClassScope
+	localInterfaces            [][]*symbol.ClassScope
+	parents                    map[*symbol.ClassScope][]*symbol.ClassScope
+	sourceEvents               []genericFamilySourceEvent
+	eventsLoaded               bool
 }
 
 func newGenericFamilyInventory(ctx Ctx) *genericFamilyInventory {
@@ -125,6 +135,7 @@ func (inventory *genericFamilyInventory) genericFamilySourceEvents(ctx Ctx) []ge
 		return inventory.sourceEvents
 	}
 	inventory.eventsLoaded = true
+	inventory.storageSourceEventScans++
 	for _, owner := range inventory.scopes {
 		if owner.Class == nil || owner.Class.DeclarationNode == nil {
 			continue
@@ -189,6 +200,18 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 	if seed == nil || seed.Class == nil || len(seed.TypeParameters) == 0 {
 		return nil, fmt.Errorf("generic family requires a source generic declaration")
 	}
+	if inventory == nil {
+		inventory = newGenericFamilyInventory(ctx)
+	}
+	return planGenericFamilyWithStorageSeeds(seed, ctx, inventory, nil)
+}
+
+// Dependency rounds restart the unchanged complete audit. No provisional
+// member, body certificate or anonymous scope escapes an unfinished round.
+func planGenericFamilyWithStorageSeeds(seed *symbol.ClassScope, ctx Ctx, inventory *genericFamilyInventory, storageSeeds map[*symbol.ClassScope]struct{}) (*genericFamilyPlan, error) {
+	if seed == nil || seed.Class == nil || len(seed.TypeParameters) == 0 {
+		return nil, fmt.Errorf("generic family requires a source generic declaration")
+	}
 	plan := &genericFamilyPlan{
 		members:         map[*symbol.ClassScope]struct{}{seed: {}},
 		anonymous:       map[genericFamilySourceKey]genericFamilyAnonymous{},
@@ -198,6 +221,11 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 	}
 	if inventory == nil {
 		inventory = newGenericFamilyInventory(ctx)
+	}
+	inventory.storageAuditRounds++
+	plan.storageInventory = inventory
+	for dependency := range storageSeeds {
+		plan.members[dependency] = struct{}{}
 	}
 	scopes := inventory.scopes
 	localInterfaces := inventory.localInterfaces
@@ -298,13 +326,14 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 				continue
 			}
 			audited[scope] = true
+			inventory.storageScopesAudited++
 			declarationCtx := classScopeCtx(scope, ctx)
 			for _, method := range scope.Methods {
 				if method == nil || !method.Constructor {
 					continue
 				}
 				for _, parameter := range scope.TypeParameters {
-					if !constructorBodySupportsCallableErasure(scope, method, parameter.Declaration, ctx) {
+					if !constructorBodySupportsCallableErasure(scope, method, parameter.Declaration, ctx) && !certifyGenericFamilyEnumConstructorBody(plan, scope, method, parameter.Declaration, ctx) {
 						return nil, fmt.Errorf("generic family constructor requires an erased body entry: %s", scope.Class.OriginalName)
 					}
 				}
@@ -328,6 +357,20 @@ func planGenericFamilyWithInventory(seed *symbol.ClassScope, ctx Ctx, inventory 
 			}
 		}
 	}
+	if len(plan.pendingStorageInterfaces) != 0 {
+		next := make(map[*symbol.ClassScope]struct{}, len(storageSeeds)+len(plan.pendingStorageInterfaces))
+		for dependency := range storageSeeds {
+			next[dependency] = struct{}{}
+		}
+		for dependency := range plan.pendingStorageInterfaces {
+			next[dependency] = struct{}{}
+		}
+		if len(next) <= len(storageSeeds) {
+			return nil, fmt.Errorf("source interface storage closure made no progress")
+		}
+		return planGenericFamilyWithStorageSeeds(seed, ctx, inventory, next)
+	}
+	plan.storageInventory = nil
 	if err := certifyGenericFamilySourceBounds(plan, ctx); err != nil {
 		return nil, err
 	}
@@ -372,6 +415,9 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 	if canonicalClassArgumentIndependent(typ, ctx, occurrences...) {
 		return true
 	}
+	if genericFamilyCollectionArgumentIndependent(typ, ctx, occurrences...) {
+		return true
+	}
 	declaration := visibleTypeParameterDeclarationForJavaType(base, ctx)
 	_, owned := plan.binders[declaration]
 	if len(args) == 0 {
@@ -393,7 +439,18 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 	target := resolveClassScopeByQualifiedName(ctx, base)
 	_, member := plan.members[target]
 	if !member {
-		if !containsOwned || !genericFamilyStorageLeaf(target, ctx) {
+		if !containsOwned {
+			return false
+		}
+		if plan.queueSourceInterfaceStorage(target, typ, ctx, occurrences...) {
+			for _, argument := range args {
+				if !plan.typeSupported(argument, ctx, true, occurrences...) {
+					return false
+				}
+			}
+			return true
+		}
+		if !genericFamilyStorageLeaf(target, ctx) {
 			return false
 		}
 		// Nested source storage must activate with its owning family, including

@@ -489,6 +489,9 @@ func directOwnerOverrideBridgeErasedType(
 	}
 	for _, parameter := range owner.TypeParameters {
 		if parameter.Declaration != nil && definitionReferencesTypeParameterDeclaration(definition, parameter.Declaration) {
+			if erasure, proven := genericFamilyCollectionDefinitionErasure(owner, definition, ctx); proven {
+				return erasure, false, true
+			}
 			// Arrays and nested parameterized uses require a separate canonical
 			// representation plan; do not accidentally call them bridgeable here.
 			return "", false, false

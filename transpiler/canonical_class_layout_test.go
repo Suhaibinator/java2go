@@ -148,6 +148,10 @@ func TestCanonicalClassPhysicalKeepsNestedStorageRejections(t *testing.T) {
 	for _, body := range []string{`java.lang.Class<java.util.Collection<T>> hidden;`, `T[] ownedArray;`, `java.util.Date date;java.util.Collection<T> collection;`, `java.util.Map<String,T> map;`} {
 		t.Run(body, func(t *testing.T) {
 			ctx := sourceGenericViewDemandTestContext(t, map[string]string{"proof/Reject.java": `package proof;public class Reject<T>{` + body + `}`})
+			if strings.Contains(body, "java.util.Collection<T>") {
+				canonicalClassPhysicalIndependentCollectionStorage(t, body, ctx)
+				return
+			}
 			if body != `java.util.Map<String,T> map;` {
 				if _, err := planGenericFamily(findQualifiedSourceClass("proof.Reject"), ctx); err == nil {
 					t.Fatal("Class service widened unrelated owned storage")
@@ -276,5 +280,127 @@ func TestCanonicalClassPhysicalOriginalTypeTokenMetadataFrontier(t *testing.T) {
 	reflectMetadataVariable(t, lower[0], "com.google.gson.reflect.TypeToken", "T")
 	if raw.OriginalType != "Class<? super T>" || raw.TypeParameterBindings["T"] != owner.TypeParameters[0].Declaration {
 		t.Fatal("physical proof mutated logical metadata")
+	}
+}
+
+// Keep the original negative fixture bytes. Collection now has its own
+// declaration-owned layout proof, just as Map does above; Class service must
+// not donate that eligibility or discard the logical owned T.
+func canonicalClassPhysicalIndependentCollectionStorage(t *testing.T, body string, ctx Ctx) {
+	t.Helper()
+	owner := findQualifiedSourceClass("proof.Reject")
+	if owner == nil || len(owner.TypeParameters) != 1 {
+		t.Fatal("original owner or T lost")
+	}
+	parameter := owner.TypeParameters[0]
+	if parameter.Name != "T" || parameter.Declaration == nil {
+		t.Fatal("original owned T declaration lost")
+	}
+	want := map[string]string{}
+	switch body {
+	case `java.lang.Class<java.util.Collection<T>> hidden;`:
+		want["hidden"] = "java.lang.Class<java.util.Collection<T>>"
+	case `java.util.Date date;java.util.Collection<T> collection;`:
+		want["date"] = "java.util.Date"
+		want["collection"] = "java.util.Collection<T>"
+	default:
+		t.Fatal("unexpected original fixture body")
+	}
+	if len(owner.Fields) != len(want) {
+		t.Fatal("original field inventory changed")
+	}
+	ctx = classScopeCtx(owner, ctx)
+	occurrences := map[string]*sitter.Node{}
+	var walk func(*sitter.Node)
+	walk = func(node *sitter.Node) {
+		if node == nil {
+			return
+		}
+		if node.Type() == "field_declaration" {
+			for _, child := range nodeutil.NamedChildrenOf(node) {
+				if child.Type() == "variable_declarator" && child.ChildByFieldName("name") != nil {
+					occurrences[child.ChildByFieldName("name").Content(ctx.currentFile.Source)] = node.ChildByFieldName("type")
+				}
+			}
+		}
+		for _, child := range nodeutil.NamedChildrenOf(node) {
+			walk(child)
+		}
+	}
+	walk(owner.Class.DeclarationNode)
+	collectionCount := 0
+	for _, field := range owner.Fields {
+		expected, known := want[field.OriginalName]
+		if !known || field.OriginalType != expected {
+			t.Fatalf("original field changed: %s %s", field.OriginalName, field.OriginalType)
+		}
+		occurrence := occurrences[field.OriginalName]
+		if occurrence == nil || occurrence.Content(ctx.currentFile.Source) != expected {
+			t.Fatal("original field occurrence lost")
+		}
+		if strings.Contains(expected, "<T>") && field.TypeParameterBindings["T"] != parameter.Declaration {
+			t.Fatal("logical nested T lost its exact declaration")
+		}
+		var collection *sitter.Node
+		var find func(*sitter.Node)
+		find = func(node *sitter.Node) {
+			if node == nil {
+				return
+			}
+			if node.Type() == "generic_type" && node.Content(ctx.currentFile.Source) == "java.util.Collection<T>" {
+				collection = node
+				collectionCount++
+			}
+			for _, child := range nodeutil.NamedChildrenOf(node) {
+				find(child)
+			}
+		}
+		find(occurrence)
+		if collection != nil {
+			if canonicalClassArgumentIndependent("java.util.Collection<T>", ctx, collection) {
+				t.Fatal("Collection borrowed Class eligibility")
+			}
+			if !genericFamilyCollectionArgumentIndependent("java.util.Collection<T>", ctx, collection) {
+				t.Fatal("Collection lost its independent native declaration/layout proof")
+			}
+			if genericFamilyCollectionArgumentIndependent("java.util.Collection<T>", ctx) {
+				t.Fatal("Collection accepted without its original occurrence")
+			}
+			physical := javaTypeStringToGoTypeExpr("java.util.Collection<T>", inScopeTypeParameters(ctx), ctx)
+			physical = genericFamilyPhysicalGoType(physical, owner.TypeParameters, ctx)
+			if physical == nil || volatileFamilyRootExpr(t, physical) != "stdjava.JavaIterable" {
+				t.Fatal("Collection must retain non-indexed JavaIterable physical storage")
+			}
+			descriptor, supported := javaTypeDescriptorExpr("java.util.Collection<T>", ctx)
+			if !supported || descriptor == nil || reflectCoreTypeID(t, descriptor) != "java.util.Collection" {
+				t.Fatal("Collection lost its nominal logical descriptor")
+			}
+		}
+		if field.OriginalName == "hidden" {
+			if !canonicalClassArgumentIndependent(field.OriginalType, ctx, occurrence) {
+				t.Fatal("outer Class lost its independent native proof")
+			}
+			physical := javaTypeStringToGoTypeExpr(field.OriginalType, inScopeTypeParameters(ctx), ctx)
+			physical = genericFamilyPhysicalGoType(physical, owner.TypeParameters, ctx)
+			if physical == nil || symbol.NodeToStr(physical) != "*stdjava.Class" {
+				t.Fatalf("outer Class physical storage changed: %s", symbol.NodeToStr(physical))
+			}
+			descriptor, supported := javaTypeDescriptorExpr(field.OriginalType, ctx)
+			if !supported || descriptor == nil || reflectCoreTypeID(t, descriptor) != "java.lang.Class" {
+				t.Fatal("outer Class logical descriptor changed")
+			}
+		}
+	}
+	if collectionCount != 1 {
+		t.Fatal("original native Collection occurrence inventory changed")
+	}
+	plan, err := planGenericFamily(owner, ctx)
+	if err != nil || plan == nil {
+		t.Fatalf("independently supported Collection storage rejected: %v", err)
+	}
+	representation, present := plan.representations[parameter.Declaration]
+	_, bound := plan.binders[parameter.Declaration]
+	if !present || !bound || representation.erasure != "java.lang.Object" || representation.goName != "any" {
+		t.Fatalf("owned unbounded T lost Object/any representation: %+v", representation)
 	}
 }

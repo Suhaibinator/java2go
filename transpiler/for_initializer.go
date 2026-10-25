@@ -64,6 +64,11 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 	// If a variable is being declared, but not set to a value
 	// Ex: `int value;`
 	if nodeutil.SemanticNamedChildCount(variableDeclarator) == 1 {
+		if _, certified := genericFamilyConstructorLocalErasure(originalType, ctx); certified {
+			if initializer := genericFamilyConstructorForInitializer(node, []*ast.Ident{localBindingIdent(variableDeclarator.ChildByFieldName("name"), source, ctx)}, nil, originalType, ctx); initializer != nil {
+				return initializer
+			}
+		}
 		return &ast.DeclStmt{
 			Decl: &ast.GenDecl{
 				Tok: token.VAR,
@@ -93,6 +98,8 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 	containsNull := expressionUsesNullableValueStorage(initializerNode, ctx, source)
 
 	names := make([]*ast.Ident, len(declaration.Lhs))
+	var inferredConstructorLocal string
+	var constructorLocalOrigin inferredJavaTypeOrigin
 	for ind, decl := range declaration.Lhs {
 		ident := decl.(*ast.Ident)
 		names[ind] = ident
@@ -101,11 +108,27 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 		// concrete type of its initializer. Only `var` declarations derive their
 		// static type from the initializer.
 		if isVarKeywordType(strings.TrimSpace(originalType)) && nodeutil.SemanticNamedChildCount(variableDeclarator) == 2 {
-			if inferredType, ok := inferExprJavaType(nodeutil.SemanticNamedChild(variableDeclarator, 1), ctx, source); ok && strings.TrimSpace(inferredType) != "" {
+			var origins []*inferredJavaTypeOrigin
+			if ctx.genericFamilyConstructorBody != nil {
+				origins = []*inferredJavaTypeOrigin{&constructorLocalOrigin}
+			}
+			if inferredType, ok := inferExprJavaType(nodeutil.SemanticNamedChild(variableDeclarator, 1), ctx, source, origins...); ok && strings.TrimSpace(inferredType) != "" {
 				recordedOriginalType = inferredType
+				inferredConstructorLocal = inferredType
 			}
 		}
 		recordLocalVariableDefinition(ctx, sourceName, recordedOriginalType, symbol.NodeToStr(variableType))
+	}
+
+	// Certified constructor locals retain the JVM bound rather than the concrete
+	// constructor instantiation, including before a later polluted reassignment.
+	if physicalLocal, certified := genericFamilyConstructorLocalType(originalType, inferredConstructorLocal, constructorLocalOrigin, ctx); certified {
+		if initializer := genericFamilyConstructorForInitializer(node, names, declaration.Rhs, physicalLocal, ctx); initializer != nil {
+			return initializer
+		}
+		return &ast.DeclStmt{Decl: &ast.GenDecl{Tok: token.VAR, Specs: []ast.Spec{
+			&ast.ValueSpec{Names: names, Type: explicitLocalVariableType(physicalLocal, ctx), Values: declaration.Rhs},
+		}}}
 	}
 
 	// If the declaration contains null, declare it with the `var` keyword instead
@@ -200,4 +223,20 @@ func parseLocalVariableDeclarator(node, variableDeclarator *sitter.Node, source 
 	}
 
 	return declaration
+}
+
+// A Go for initializer must be a simple statement. Converting its RHS to the
+// certified JVM bound pins the short declaration's storage without hoisting the
+// Java binding or moving any initializer evaluation. The existing multi-local
+// path uses the same statement inside its left-to-right IIFE.
+func genericFamilyConstructorForInitializer(node *sitter.Node, names []*ast.Ident, values []ast.Expr, javaType string, ctx Ctx) ast.Stmt {
+	if node == nil || node.Parent() == nil || node.Parent().Type() != "for_statement" || !sameSourceNode(node.Parent().ChildByFieldName("init"), node) || len(names) != 1 || len(values) > 1 {
+		return nil
+	}
+	if len(values) == 0 {
+		values = []ast.Expr{ast.NewIdent("nil")}
+	}
+	return &ast.AssignStmt{Lhs: []ast.Expr{names[0]}, Tok: token.DEFINE, Rhs: []ast.Expr{
+		&ast.CallExpr{Fun: explicitLocalVariableType(javaType, ctx), Args: values},
+	}}
 }

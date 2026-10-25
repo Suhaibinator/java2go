@@ -4254,7 +4254,7 @@ func buildSourceConstructorDecls(
 	if constructorInvocation != nil {
 		omittedInvocation = constructorInvocation.node
 	}
-	body := parseStatementBlock(bodyNode, omittedInvocation, source, ctx)
+	body := parseStatementBlock(bodyNode, omittedInvocation, source, withGenericFamilyConstructorBody(ctx))
 
 	var structType ast.Expr = &ast.Ident{Name: ctx.className}
 	if len(ctx.currentClass.TypeParameters) > 0 {
