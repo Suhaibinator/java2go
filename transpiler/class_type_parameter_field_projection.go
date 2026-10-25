@@ -12,6 +12,16 @@ import (
 // intValue on a polluted Box<Integer> must fail even though Number's runtime
 // accessor would also accept the Long stored through a raw alias.
 func projectDirectOwnerErasedIntrinsicReceiver(receiver ast.Expr, node *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	return projectDirectOwnerErasedReceiver(receiver, node, ctx, source, false)
+}
+
+// Native method selection consumes a proved reference view, unlike scalar or
+// binary operations. Reuse the declaration-owned view and nominal checkcast.
+func projectDirectOwnerErasedMethodReceiver(receiver ast.Expr, node *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	return projectDirectOwnerErasedReceiver(receiver, node, ctx, source, true)
+}
+
+func projectDirectOwnerErasedReceiver(receiver ast.Expr, node *sitter.Node, ctx Ctx, source []byte, methodReceiver bool) ast.Expr {
 	if receiver == nil || node == nil {
 		return receiver
 	}
@@ -31,7 +41,7 @@ func projectDirectOwnerErasedIntrinsicReceiver(receiver ast.Expr, node *sitter.N
 		return receiver
 	}
 	_, wrapper := builtinJavaWrapperPrimitive(sourceView, ctx)
-	if !wrapper && (stripJavaQualifier(sourceView) != "String" || resolveClassScopeByQualifiedName(ctx, sourceView) != nil) {
+	if !methodReceiver && !wrapper && (stripJavaQualifier(sourceView) != "String" || resolveClassScopeByQualifiedName(ctx, sourceView) != nil) {
 		return receiver
 	}
 	return projectDirectOwnerErasedView(receiver, sourceView, erasure, ctx)

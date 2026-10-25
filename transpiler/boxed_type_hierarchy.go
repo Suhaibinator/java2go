@@ -79,6 +79,12 @@ func builtinJavaReferenceAssignableWithTypeParameters(actual, expected string, c
 	if threadSourceNativeReferenceAssignable(actual, expected, ctx) {
 		return true
 	}
+	if inetAddressReferenceAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
+	if urlReferenceAssignable(actual, expected, candidateTypeParams, ctx) {
+		return true
+	}
 	if uriReferenceAssignable(actual, expected, candidateTypeParams, ctx) {
 		return true
 	}

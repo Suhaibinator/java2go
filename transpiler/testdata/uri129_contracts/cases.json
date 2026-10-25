@@ -4,9 +4,9 @@
     "files": {
       "Probe.java": "class Probe {Object value() throws Exception{return new java.net.URL(\"https://example.test/a\");}}"
     },
-    "kind": "JDK owner java.net.URL",
+    "kind": "intrinsic invocation",
     "name": "URL exact",
-    "snippet": "new java.net.URL(\"https://example.test/a\")",
+    "snippet": null,
     "valid_jdk": true
   },
   {
@@ -34,9 +34,9 @@
     "files": {
       "Probe.java": "import java.net.URL;class Probe {Object value() throws Exception{return new URL(\"https://example.test/a\");}}"
     },
-    "kind": "JDK owner java.net.URL",
+    "kind": "intrinsic invocation",
     "name": "URL import java.net.URL;",
-    "snippet": "new URL(\"https://example.test/a\")",
+    "snippet": null,
     "valid_jdk": true
   },
   {
@@ -44,9 +44,9 @@
     "files": {
       "Probe.java": "import java.net.*;class Probe {Object value() throws Exception{return new URL(\"https://example.test/a\");}}"
     },
-    "kind": "JDK owner java.net.URL",
+    "kind": "intrinsic invocation",
     "name": "URL import java.net.*;",
-    "snippet": "new URL(\"https://example.test/a\")",
+    "snippet": null,
     "valid_jdk": true
   },
   {
@@ -54,9 +54,9 @@
     "files": {
       "Probe.java": "class Probe {Object value(int java) throws Exception{return new java.net.URL(\"https://example.test/a\");}}"
     },
-    "kind": "JDK owner java.net.URL",
+    "kind": "intrinsic invocation",
     "name": "value java does not own TYPE prefix",
-    "snippet": "new java.net.URL(\"https://example.test/a\")",
+    "snippet": null,
     "valid_jdk": true
   },
   {

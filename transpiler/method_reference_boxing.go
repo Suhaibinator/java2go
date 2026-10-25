@@ -180,6 +180,12 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 	staticGenerator := staticIntrinsics[intrinsicKey{class, method}]
 	instanceGenerator := instanceIntrinsics[intrinsicKey{class, method}]
 	static := typeQualifier && staticGenerator != nil
+	dequeResult := ""
+	if !constructor && !static {
+		if generator, result, supported := arrayDequeMethodReferenceIntrinsic(targetJavaType, method, typeQualifier, node, source, ctx); supported {
+			instanceGenerator, dequeResult = generator, result
+		}
+	}
 	if !constructor && !static && instanceGenerator == nil {
 		return nil, false
 	}
@@ -266,6 +272,9 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 		}
 	} else {
 		actualResult = instanceIntrinsicResultTypes[intrinsicKey{class, method}]
+		if dequeResult != "" {
+			actualResult = dequeResult
+		}
 		switch method {
 		case "equals":
 			if len(expected) == 1 {
@@ -349,6 +358,8 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 	}
 	if adapted := wrapLambdaWithFunctionalInterfaceAdapter(expression, ctx.expectedType, methodReferenceUsesExecutionSAM(ctx), ctx); adapted != nil {
 		expression = adapted
+	} else {
+		expression = wrapExternalRunnableMethodReference(expression, ctx.expectedType, methodReferenceUsesExecutionSAM(ctx), node, source, ctx)
 	}
 	return expression, true
 }

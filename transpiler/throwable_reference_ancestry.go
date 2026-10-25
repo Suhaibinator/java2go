@@ -22,6 +22,8 @@ var reflectiveThrowableReferenceParents = map[string]string{
 // Most modeled Throwable classes belong to java.lang. These are the canonical
 // owners of the remaining entries in the concrete runtime constructor inventory.
 var builtinThrowableReferencePackages = map[string]string{
+	"UnknownHostException":            "java.net",
+	"MalformedURLException":           "java.net",
 	"DateTimeException":               "java.time",
 	"DateTimeParseException":          "java.time.format",
 	"ZoneRulesException":              "java.time.zone",

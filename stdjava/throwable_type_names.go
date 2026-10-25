@@ -7,6 +7,8 @@ var builtinThrowableDescriptors = map[string]struct {
 	id     TypeID
 	parent string
 }{
+	"UnknownHostException":            {id: "java.net.UnknownHostException", parent: "IOException"},
+	"MalformedURLException":           {id: "java.net.MalformedURLException", parent: "IOException"},
 	"Throwable":                       {id: "java.lang.Throwable", parent: ""},
 	"Error":                           {id: "java.lang.Error", parent: "Throwable"},
 	"AssertionError":                  {id: "java.lang.AssertionError", parent: "Error"},

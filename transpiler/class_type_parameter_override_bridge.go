@@ -799,6 +799,17 @@ func overrideBridgeResultCompatible(
 	if builtinJavaReferenceAssignable(actualBase, expectedBase, classScopeCtx(actualOwner, ctx)) {
 		return true
 	}
+	if actualOwner != nil && expectedOwner != nil {
+		actualDeclaring := classScopeCtx(actualOwner, ctx)
+		expectedDeclaring := classScopeCtx(expectedOwner, ctx)
+		actualDeclaring.syntheticTypeParameters = nil
+		expectedDeclaring.syntheticTypeParameters = nil
+		actualOrigin := declaredJavaTypeOrigin(symbol.JavaType{Original: actual, TypeParameterBindings: symbol.VisibleTypeParamBindings(actualOwner.TypeParameters)}, actualDeclaring)
+		expectedOrigin := declaredJavaTypeOrigin(symbol.JavaType{Original: expected, TypeParameterBindings: symbol.VisibleTypeParamBindings(expectedOwner.TypeParameters)}, expectedDeclaring)
+		if jdk21RawReferenceOriginAssignable(actualOrigin, expectedOrigin) {
+			return true
+		}
+	}
 	actualScope := resolveClassScopeByQualifiedName(classScopeCtx(actualOwner, ctx), actualBase)
 	expectedCtx := classScopeCtx(expectedOwner, ctx)
 	expectedScope := resolveClassScopeByQualifiedName(expectedCtx, expectedBase)
@@ -1060,6 +1071,9 @@ func buildDirectOwnerOverrideBridgeMethodDecls(
 		// the promoted ancestor body incorrectly handles virtual calls.
 		if selection, bridged := directOwnerSpecializedOverrideBridgeForMethod(ctx.currentClass, ctx.localScope, ctx); bridged {
 			if bridge := buildDirectOwnerSpecializedOverrideBridgeDecl(declaration, executionName, selection, ctx); bridge != nil {
+				if canonicalGenericFamily(ctx.currentClass, ctx) != nil && len(declarations) > 0 {
+					declarations[0] = genericFamilyPublicBridgeWrapper(declaration, bridge.(*ast.FuncDecl), executionName, ctx)
+				}
 				declarations = append(declarations, bridge)
 			}
 		}

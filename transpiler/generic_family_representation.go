@@ -76,6 +76,13 @@ func (plan *genericFamilyPlan) addBinderRepresentations(scope *symbol.ClassScope
 			representation.goName = "JavaNumber"
 		case "java.lang.Enum":
 			representation.goName = "JavaEnum"
+		case "java.util.Date":
+			owner, known := canonicalIntrinsicOwner(erasure, parameterCtx)
+			if !known || owner != erasure || !intrinsicOwnerSupported(owner) {
+				return fmt.Errorf("generic family bound requires an unsupported physical representation: %s", erasure)
+			}
+			// The existing util.Date reference protocol retains SQL subtype identity.
+			representation.goName = "DateValue"
 		default:
 			if representation.sourceBound == nil {
 				return fmt.Errorf("generic family bound requires an unsupported physical representation: %s", erasure)

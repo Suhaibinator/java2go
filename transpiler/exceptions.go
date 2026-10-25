@@ -15,6 +15,8 @@ import (
 // produces the corresponding stdjava value, and the names double as the parent
 // links recognised by stdjava.CaughtAs.
 var builtinExceptionTypes = map[string]string{
+	"UnknownHostException":            "IOException",
+	"MalformedURLException":           "IOException",
 	"DateTimeException":               "RuntimeException",
 	"DateTimeParseException":          "DateTimeException",
 	"ZoneRulesException":              "DateTimeException",
@@ -68,6 +70,12 @@ func isBuiltinExceptionType(className string) bool {
 // built-in exception type, e.g. stdjava.NewIllegalArgumentException(args). The
 // Types with modeled cause overloads preserve the entire Java argument list.
 func builtinExceptionConstructorExpr(className string, arguments *sitter.Node, args []ast.Expr, ctx Ctx, source []byte) ast.Expr {
+	if call := inetAddressExceptionConstructorExpr(className, arguments, args, ctx, source); call != nil {
+		return call
+	}
+	if call := urlExceptionConstructorExpr(className, arguments, args, ctx, source); call != nil {
+		return call
+	}
 	if call := uriSyntaxExceptionConstructorExpr(className, arguments, args, ctx, source); call != nil {
 		return call
 	}

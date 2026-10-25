@@ -37,11 +37,10 @@ func TestURI129ExistingRefusalsHaveTypedSourceDiagnostics(t *testing.T) {
 	}
 }
 
-// Both Java programs call valid JDK declarations outside the approved service
-// slice. This is a proposed strict contract, not evidence that refusal exists.
+// URI.normalize remains outside the implemented service slice. URL(String)
+// moved to URL701 positive conformance using its unchanged Java source.
 func TestURI129UnadmittedJDKAPIsRequireTypedSourceRefusal(t *testing.T) {
 	for _, entry := range []struct{ name, source, kind, node, snippet string }{
-		{"URL String constructor", `class Probe {Object value() throws Exception{return new java.net.URL("https://example.test/a");}}`, "JDK owner java.net.URL", "object_creation_expression", `new java.net.URL("https://example.test/a")`},
 		{"URI normalize", `class Probe {Object value(java.net.URI value){return value.normalize();}}`, "intrinsic invocation", "method_invocation", `value.normalize()`},
 	} {
 		t.Run(entry.name, func(t *testing.T) {

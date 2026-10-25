@@ -11,7 +11,7 @@ import (
 
 // Admission records use canonical Java declarations, independently of source
 // names and physical Go runtime types. These records promise refusal only.
-var unimplementedPlatformConstructors = map[string]bool{"java.net.URL": true}
+var unimplementedPlatformConstructors = map[string]bool{}
 
 type platformMemberContract struct {
 	owner, name, result string
@@ -21,8 +21,6 @@ type platformMemberContract struct {
 var unimplementedPlatformMembers = []platformMemberContract{
 	{owner: "java.net.URI", name: "normalize", arity: 0, result: "java.net.URI"},
 }
-
-func init() { registerIntrinsicOwner("java.net.URL", false) }
 
 // Type syntax ignores value-only prefixes, but a type/binder owns the first
 // segment even if a later member is missing. Pre-hoisting locals count too.

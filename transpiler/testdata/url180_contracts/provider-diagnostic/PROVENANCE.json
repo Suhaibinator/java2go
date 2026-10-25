@@ -1,0 +1,11 @@
+{
+  "Go_policy": "Explicit unsupported service for any present descriptor (including empty/comments) or uninspectable metadata; no provider or ServiceLoader parity/support claim",
+  "JDK21_release_sha256": "f61d466aaef05ecd3e431d2cced84792613ee2ef2e20bd7168f4c8d1960c2273",
+  "JDK_observation": "ServiceConfigurationError before default handlers for HTTP/HTTPS/unknown/jar:http; file and jar:file unaffected",
+  "actual_descriptor_observation_receipt_sha256": "dbb291127efcacba3db78362cf622a8b011a052a588008ba3a9fd2f5f3649f3a",
+  "actual_descriptor_stdout_sha256": "d66ef8fd47f14c4ab10572117004bc9ffba2520aed58f1a99105510c1250ee71",
+  "descriptor_sha256": "bb65abcb686672b5f3f17b9b29bea4af2012fe76cba3862873309269828a9790",
+  "java_source": "ProviderDescriptorDiagnostic.java",
+  "role": "JDK-only classpath descriptor diagnostic; no Java/provider implementation copied or executed",
+  "source_sha256": "5d2efafe8b85e8c4bd573bbc9b2296ac3746191f8ea5b2f3cf0cde3d3637dead"
+}

@@ -1,0 +1,89 @@
+{
+  "expected_sha256": "e21051ba720dcf379faf9a3a069f14063ed83eb9e76f4fc9ab5ba89561565e0b",
+  "inputs_sha256": "cc913e4d930e00d327755fc335a7f40c07978425a08feb40f355fa47d4f12ee0",
+  "java_sha256": "9c994a3170832e121a9bd7fb78f53a84e59fac1b269af59881433ce6c639ff60",
+  "javac_sha256": "5d4eb06daaf4319f7c58bc63737b2b332b48a583a6f8618c9c7e93709325aa02",
+  "jdk": "Oracle21.0.6+8-LTS-188",
+  "observation": {
+    "argv": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+      "-XX:ActiveProcessorCount=2",
+      "-Dfile.encoding=UTF-8",
+      "-Duser.language=en",
+      "-Duser.country=US",
+      "-Duser.timezone=UTC",
+      "-cp",
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/compiler-gson-url181-implementation/run/jdk-matrix-classes",
+      "URLConstructorMatrix"
+    ],
+    "cleanup": {
+      "group_absent": true,
+      "leader_reaped": true,
+      "signals": []
+    },
+    "cwd": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/compiler-gson-url181-implementation/source",
+    "disk_floor_bytes": 10737418240,
+    "duration_seconds": 0.090518,
+    "env": {
+      "GOCACHE": "/Users/suhaib/code/java2go/.campaign/resume-20261002/cache/go-build",
+      "GOFLAGS": "-p=1 -mod=readonly",
+      "GOGC": "100",
+      "GOLANGCI_LINT_CACHE": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-netty-varargs166/macro-run/lint-cache",
+      "GOMAXPROCS": "2",
+      "GOMEMLIMIT": "1GiB",
+      "GOMODCACHE": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/gomodcache",
+      "GOPATH": "/Users/suhaib/go",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOTOOLCHAIN": "local",
+      "GOWORK": "off",
+      "JAVA2GO_CAMPAIGN_CACHE": null,
+      "JAVA2GO_CAMPAIGN_MAVEN_REPO": null,
+      "JAVA_HOME": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-netty-varargs166/macro-run/jdk",
+      "LANG": "C",
+      "LC_ALL": "C",
+      "MAVEN_OPTS": null,
+      "PATH": "/opt/homebrew/Cellar/go/1.27.3/libexec/bin:/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/root-netty-varargs166/macro-run/jdk/bin:/opt/homebrew/bin:/usr/bin:/bin",
+      "TMPDIR": "/var/folders/c1/bq3rcd9d3y54bw8n_fp4x0sr0000gn/T/",
+      "TZ": "UTC"
+    },
+    "exit_code": 0,
+    "finished_utc": "2026-10-22T04:51:19.572441+00:00",
+    "free_disk_bytes": {
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/compiler-gson-url181-implementation/run/evidence/jdk-matrix-observation": 80763871232,
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/compiler-gson-url181-implementation/source": 80763871232
+    },
+    "kind": "exec",
+    "native_timeout": "55s",
+    "output": {
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 18692,
+        "sha256": "e21051ba720dcf379faf9a3a069f14063ed83eb9e76f4fc9ab5ba89561565e0b"
+      }
+    },
+    "pid": 57524,
+    "process_group": 57524,
+    "requested_argv": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+      "-XX:ActiveProcessorCount=2",
+      "-Dfile.encoding=UTF-8",
+      "-Duser.language=en",
+      "-Duser.country=US",
+      "-Duser.timezone=UTC",
+      "-cp",
+      "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/compiler-gson-url181-implementation/run/jdk-matrix-classes",
+      "URLConstructorMatrix"
+    ],
+    "runner_exit": 0,
+    "started_utc": "2026-10-22T04:51:19.481650+00:00",
+    "timed_out": false,
+    "timeout_seconds": 60.0
+  },
+  "purpose": "fresh no-network JDK21 constructor/formatter UTF16/cause supplemental controls, independent of original113/114 inputs",
+  "source_sha256": "635424747a2625fb7d857a5ccc731e4dff96fa9d6e6b0ffc437e61a44e6cae87",
+  "src_zip_sha256": "d887da897fc0065a2532500ee92320ce3bc633ccd6c4e637304045ce5d90de43"
+}

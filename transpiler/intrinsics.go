@@ -274,7 +274,7 @@ func tryInstanceIntrinsic(objectNode *sitter.Node, methodName string, source []b
 		}
 	}
 	recv := ParseExpr(objectNode, source, ctx)
-	recv = projectDirectOwnerErasedIntrinsicReceiver(recv, objectNode, ctx, source)
+	recv = projectDirectOwnerErasedMethodReceiver(recv, objectNode, ctx, source)
 	if intrinsicLaterArgumentsMayWrite(objectNode.Parent(), -1) {
 		recv = snapshotJavaExpressionValue(recv, ctx)
 	}
