@@ -46,7 +46,7 @@ func TestGenericFamilySourceInterfaceStorageForeignOwnershipHolder(t *testing.T)
 	symbol.GlobalScope = graph
 	ctx.sourceOwnership = holder
 	plan := &genericFamilyPlan{storageInventory: inventory}
-	admitted := plan.queueSourceInterfaceStorage(target, "Source<A>", ctx, use)
+	admitted := plan.queueSourceComponentStorage(target, "Source<A>", ctx, use)
 	if holder.graph != oldGraph || !maps.Equal(holder.files, oldFiles) || holder.renderFile != oldRender || holder.declarations != oldFacts {
 		t.Fatal("direct storage helper mutated foreign caller ownership holder")
 	}
@@ -66,7 +66,7 @@ func TestGenericFamilySourceInterfaceStorageForeignOccurrenceFile(t *testing.T) 
 	use := sourceInterfaceIsolationUse(t, owner, foreign.File.Symbols.Source)
 	symbol.GlobalScope = graph
 	plan := &genericFamilyPlan{storageInventory: inventory}
-	if plan.queueSourceInterfaceStorage(target, "Source<A>", ctx, use) {
+	if plan.queueSourceComponentStorage(target, "Source<A>", ctx, use) {
 		t.Fatal("unregistered foreign occurrence file acquired a current graph dependency")
 	}
 }

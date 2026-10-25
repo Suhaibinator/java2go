@@ -7251,6 +7251,7 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 	installerCtx.currentClass = syntheticScope
 	installerCtx.className = structName
 	installerCtx.localScope = nil
+	canonicalReceiverStart := len(*ctx.hoistedDecls)
 	ctx.addHoistedDecl(genStructWithTypeParamsInContext(structName, fields, syntheticScope.TypeParameters, installerCtx))
 	if alias := superclassEmbeddingAliasDecl(syntheticScope, installerCtx); alias != nil {
 		ctx.addHoistedDecl(alias)
@@ -7452,6 +7453,11 @@ func lowerAnonymousClassToStruct(node, objectType, classBody *sitter.Node, sourc
 		}
 		anonymousFunctionalSeal(functional, ctx)
 	}
+	// Anonymous classes hoist outside ParseDecl, so finish the same receiver
+	// lowering as a named class after all of this scope's methods are emitted.
+	// The canonicalizer matches only this exact synthetic receiver name; nested
+	// class methods and genuine constructor/function binders remain separate.
+	canonicalizeGenericReceivers((*ctx.hoistedDecls)[canonicalReceiverStart:], installerCtx)
 	expression := anonymousClassConstructionExpr(node, objectType, info, superScope, source, ctx)
 	if functional != nil {
 		if expression == nil {

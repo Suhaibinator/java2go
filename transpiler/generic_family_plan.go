@@ -15,7 +15,7 @@ import (
 // consume the same successful plan before family lowering can be activated.
 type genericFamilyPlan struct {
 	storageInventory         *genericFamilyInventory
-	pendingStorageInterfaces map[*symbol.ClassScope]struct{}
+	pendingStorageComponents map[*symbol.ClassScope]struct{}
 	members                  map[*symbol.ClassScope]struct{}
 	anonymous                map[genericFamilySourceKey]genericFamilyAnonymous
 	locals                   map[genericFamilySourceKey]genericFamilyAnonymous
@@ -51,18 +51,18 @@ func planGenericFamily(seed *symbol.ClassScope, ctx Ctx) (*genericFamilyPlan, er
 // hierarchy edges stay unchanged throughout those audits. Reuse only that
 // structural inventory; eligibility and physical storage remain plan-owned.
 type genericFamilyInventory struct {
-	storageInterfaceComponents map[*symbol.ClassScope]*symbol.ClassScope
-	storageComponentScans      int
-	storageAuditRounds         int
-	storageScopesAudited       int
-	storageSourceEventScans    int
-	storageOwnership           *resolutionFileIndex
-	storageOwnershipChecked    bool
-	scopes                     []*symbol.ClassScope
-	localInterfaces            [][]*symbol.ClassScope
-	parents                    map[*symbol.ClassScope][]*symbol.ClassScope
-	sourceEvents               []genericFamilySourceEvent
-	eventsLoaded               bool
+	storageComponents       map[*symbol.ClassScope]*symbol.ClassScope
+	storageComponentScans   int
+	storageAuditRounds      int
+	storageScopesAudited    int
+	storageSourceEventScans int
+	storageOwnership        *resolutionFileIndex
+	storageOwnershipChecked bool
+	scopes                  []*symbol.ClassScope
+	localInterfaces         [][]*symbol.ClassScope
+	parents                 map[*symbol.ClassScope][]*symbol.ClassScope
+	sourceEvents            []genericFamilySourceEvent
+	eventsLoaded            bool
 }
 
 func newGenericFamilyInventory(ctx Ctx) *genericFamilyInventory {
@@ -383,16 +383,16 @@ func planGenericFamilyWithStorageSeeds(seed *symbol.ClassScope, ctx Ctx, invento
 			}
 		}
 	}
-	if len(plan.pendingStorageInterfaces) != 0 {
-		next := make(map[*symbol.ClassScope]struct{}, len(storageSeeds)+len(plan.pendingStorageInterfaces))
+	if len(plan.pendingStorageComponents) != 0 {
+		next := make(map[*symbol.ClassScope]struct{}, len(storageSeeds)+len(plan.pendingStorageComponents))
 		for dependency := range storageSeeds {
 			next[dependency] = struct{}{}
 		}
-		for dependency := range plan.pendingStorageInterfaces {
+		for dependency := range plan.pendingStorageComponents {
 			next[dependency] = struct{}{}
 		}
 		if len(next) <= len(storageSeeds) {
-			return nil, fmt.Errorf("source interface storage closure made no progress")
+			return nil, fmt.Errorf("source storage component closure made no progress")
 		}
 		return planGenericFamilyWithStorageSeeds(seed, ctx, inventory, next)
 	}
@@ -468,16 +468,16 @@ func (plan *genericFamilyPlan) typeSupported(typ string, ctx Ctx, specialization
 		if !containsOwned {
 			return false
 		}
-		if plan.queueSourceInterfaceStorage(target, typ, ctx, occurrences...) {
+		if !genericFamilyStorageLeaf(target, ctx) {
+			if !plan.queueSourceComponentStorage(target, typ, ctx, occurrences...) {
+				return false
+			}
 			for _, argument := range args {
 				if !plan.typeSupported(argument, ctx, true, occurrences...) {
 					return false
 				}
 			}
 			return true
-		}
-		if !genericFamilyStorageLeaf(target, ctx) {
-			return false
 		}
 		// Nested source storage must activate with its owning family, including
 		// transitive and cyclic dependencies. Eligibility alone is insufficient:

@@ -145,17 +145,17 @@ func TestGenericFamilySourceInterfaceStorageOwnsOccurrenceAndRegisteredDeclarati
 		t.Fatal("missing identical foreign type")
 	}
 	plan := &genericFamilyPlan{storageInventory: inventory}
-	if plan.queueSourceInterfaceStorage(target, "Source<A>", h.Ctx, foreignUse) {
+	if plan.queueSourceComponentStorage(target, "Source<A>", h.Ctx, foreignUse) {
 		t.Fatal("foreign tree with equal source span donated storage ownership")
 	}
 	copy := *target
-	if plan.queueSourceInterfaceStorage(&copy, "Source<A>", h.Ctx, use) {
+	if plan.queueSourceComponentStorage(&copy, "Source<A>", h.Ctx, use) {
 		t.Fatal("unregistered copied scope donated storage ownership")
 	}
-	if (&genericFamilyPlan{}).queueSourceInterfaceStorage(target, "Source<A>", h.Ctx, use) {
+	if (&genericFamilyPlan{}).queueSourceComponentStorage(target, "Source<A>", h.Ctx, use) {
 		t.Fatal("fabricated binder-only plan acquired a storage capability")
 	}
-	if !plan.queueSourceInterfaceStorage(target, "Source<A>", h.Ctx, use) {
+	if !plan.queueSourceComponentStorage(target, "Source<A>", h.Ctx, use) {
 		t.Fatal("actual registered source occurrence lost ownership")
 	}
 }

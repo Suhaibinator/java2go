@@ -9,9 +9,9 @@ import (
 )
 
 // An occurrence can name either an interface or one of its concrete source
-// implementations. Queue only an actual generic source-interface anchor; the
-// next fresh audit must certify that entire connected component before ABI use.
-func (plan *genericFamilyPlan) queueSourceInterfaceStorage(target *symbol.ClassScope, javaType string, ctx Ctx, occurrences ...*sitter.Node) bool {
+// implementations, or a generic source class component. Queue an actual source
+// declaration anchor; the next fresh audit must certify that entire connected component before ABI use.
+func (plan *genericFamilyPlan) queueSourceComponentStorage(target *symbol.ClassScope, javaType string, ctx Ctx, occurrences ...*sitter.Node) bool {
 	if plan == nil || plan.storageInventory == nil || target == nil || target.Class == nil || target.Class.DeclarationNode == nil || len(target.TypeParameters) == 0 || ctx.currentFile == nil || len(occurrences) != 1 || occurrences[0] == nil {
 		return false
 	}
@@ -35,7 +35,7 @@ func (plan *genericFamilyPlan) queueSourceInterfaceStorage(target *symbol.ClassS
 	if !registered {
 		return false
 	}
-	seed := inventory.sourceStorageInterfaceAnchor(target)
+	seed := inventory.sourceStorageComponentAnchor(target)
 	if seed == nil {
 		return false
 	}
@@ -108,10 +108,10 @@ func (plan *genericFamilyPlan) queueSourceInterfaceStorage(target *symbol.ClassS
 	if resolveClassScopeByQualifiedName(lookup, base) != target {
 		return false
 	}
-	if plan.pendingStorageInterfaces == nil {
-		plan.pendingStorageInterfaces = make(map[*symbol.ClassScope]struct{})
+	if plan.pendingStorageComponents == nil {
+		plan.pendingStorageComponents = make(map[*symbol.ClassScope]struct{})
 	}
-	plan.pendingStorageInterfaces[seed] = struct{}{}
+	plan.pendingStorageComponents[seed] = struct{}{}
 	return true
 }
 
@@ -138,12 +138,12 @@ func sourceStorageDeclarationOwned(scope *symbol.ClassScope, ownership *resoluti
 // Cache only immutable structural edges already inventoried by the planner.
 // No admission, synthesized scope, binder representation or partial plan is
 // stored here. A stable full audit still decides whether the component works.
-func (inventory *genericFamilyInventory) sourceStorageInterfaceAnchor(target *symbol.ClassScope) *symbol.ClassScope {
-	if inventory.storageInterfaceComponents != nil {
-		return inventory.storageInterfaceComponents[target]
+func (inventory *genericFamilyInventory) sourceStorageComponentAnchor(target *symbol.ClassScope) *symbol.ClassScope {
+	if inventory.storageComponents != nil {
+		return inventory.storageComponents[target]
 	}
 	inventory.storageComponentScans++
-	inventory.storageInterfaceComponents = make(map[*symbol.ClassScope]*symbol.ClassScope, len(inventory.scopes))
+	inventory.storageComponents = make(map[*symbol.ClassScope]*symbol.ClassScope, len(inventory.scopes))
 	registered := make(map[*symbol.ClassScope]bool, len(inventory.scopes))
 	for _, scope := range inventory.scopes {
 		registered[scope] = true
@@ -176,10 +176,14 @@ func (inventory *genericFamilyInventory) sourceStorageInterfaceAnchor(target *sy
 		seen[first] = true
 		queue := []*symbol.ClassScope{first}
 		var seed *symbol.ClassScope
+		var sourceClass *symbol.ClassScope
 		for index := 0; index < len(queue); index++ {
 			scope := queue[index]
 			if seed == nil && scope.IsInterface && len(scope.TypeParameters) > 0 && scope.Class != nil && scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Type() == "interface_declaration" {
 				seed = scope
+			}
+			if sourceClass == nil && !scope.IsInterface && scope.Class != nil && len(scope.TypeParameters) > 0 && scope.Class.DeclarationNode != nil && scope.Class.DeclarationNode.Type() == "class_declaration" {
+				sourceClass = scope
 			}
 			for _, next := range edges[scope] {
 				if !seen[next] {
@@ -188,9 +192,12 @@ func (inventory *genericFamilyInventory) sourceStorageInterfaceAnchor(target *sy
 				}
 			}
 		}
+		if seed == nil {
+			seed = sourceClass
+		}
 		for _, scope := range queue {
-			inventory.storageInterfaceComponents[scope] = seed
+			inventory.storageComponents[scope] = seed
 		}
 	}
-	return inventory.storageInterfaceComponents[target]
+	return inventory.storageComponents[target]
 }

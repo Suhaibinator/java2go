@@ -29748,5 +29748,50 @@
     "composition": "Only published242 isolated unselected fixture body plus state/note normalize the qualified241 source. Production/selected tests/original inputs unchanged; independently reviewed with no new interaction.",
     "limits": "Exercised property state, identity, validation, UTF16 keys, profile facts and URL boundaries only; not complete JDK property/platform or Gson112/Netty compatibility.",
     "accepted_round": false
+  },
+  "sol_progress244": {
+    "status": "VERIFIED_EXERCISED_GENERIC_SOURCE_CLASS_STORAGE_CLOSURE",
+    "publication_parent": "ca97c15778e4187fa53011d539fc0e6a0bbf9c33",
+    "source_manifest_sha256": "bffcc5df55ce7b63d61724845fe185646b15ab2ec3b3a71ec5fbb07e3a336454",
+    "paths": [
+      "transpiler/expression.go",
+      "transpiler/generic_family_plan.go",
+      "transpiler/generic_family_source_class_storage_runtime_test.go",
+      "transpiler/generic_family_source_class_storage_test.go",
+      "transpiler/generic_family_source_interface_isolation_test.go",
+      "transpiler/generic_family_source_interface_storage.go",
+      "transpiler/generic_family_source_interface_storage_test.go",
+      "transpiler/testdata/date_source_class_storage/Main.java",
+      "transpiler/testdata/date_source_class_storage_nested/Main.java"
+    ],
+    "verification": {
+      "status": "ALL_CURRENT243_JOINT_GATES_AND_INDEPENDENT_ACTUAL_REVIEW_CLEAR",
+      "stages": 32,
+      "compiler_parents_each_mode": 60,
+      "compiler_subtests_each_mode": 214,
+      "compiler_registry": 2719,
+      "compiler_registry_is_inventory_not_full_execution": true,
+      "all_original_caps_and_observations_preserved": true,
+      "all_stages_closed": true,
+      "independent_actual_review_clear": true,
+      "failures": 0,
+      "skips": 0,
+      "timeouts": 0,
+      "lint": "0 issues.\n",
+      "whole_JDK_Go_helpers_each_mode": 4,
+      "generated_apps_built_with_race": true,
+      "full112_or_Netty_accepted": false
+    },
+    "independent_actual_review_sha256": "39ba70421c6f51cec7d77977e28333d0444d1a23082d832696086b6472ea762c",
+    "older_qualification_scope": "236 stages and 214 affected parents per mode retain qualified public241 source scope; not relabelled as current243 executions.",
+    "limits": "Exercised generic source-class components, exact anonymous receiver canonicalization, Date/Timestamp storage and ownership guards; not full Gson112 or Netty compatibility.",
+    "accepted_round": false
+  },
+  "campaign_build_cache_cleanup_policy": {
+    "standing_user_authorization": "please always clean the campaign build cache",
+    "cache": "/Users/suhaib/code/java2go/.campaign/resume-20261002/cache/go-build",
+    "when": "Quiescent batch boundaries and proactively before space exhaustion; no active campaign cache users.",
+    "operation": "Selected Go clean -cache with explicit campaign GOCACHE; no module/fuzz cache clearing.",
+    "preserve": "Sources, dependencies, run logs, tools and explicit baseline/comparison executables."
   }
 }
