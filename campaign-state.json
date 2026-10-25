@@ -29401,5 +29401,20 @@
     "unit_pass": 1026,
     "remaining_failure": "Gson generated Go build: undefined T and remaining collection/reflection services; aggregate Test also fails.",
     "child_migration": "One prior URL constructor refusal becomes positive conformance with identical Java text."
+  },
+  "sol_progress237": {
+    "status": "VERIFIED_CI_COVERAGE_TRAILER_FIXTURE_REPAIR",
+    "publication_parent": "67dce4c59cd9b987487ed7e74dfde70191364cc0",
+    "source_manifest_sha256": "80570739204bf5e720a766f6ee0e5f7f99cfabca5dc33bb38fe436bf76a53a1a",
+    "delivery_sha256": "f79ada03f587dd4916f8c0b61e3ba6e0f66ee2af84f066d97bfcc8e8d4047d5f",
+    "review_sha256": "7e1b74bd56e950838860d2b0d60bbfd018a785c753fba521222f05f0a5728aba",
+    "paths": [
+      "stdjava/filesystemcontract/files_create_directories_child_output_test.go",
+      "stdjava/filesystemcontract/files_create_directories_empty_cwd_test.go"
+    ],
+    "runtime_or_oracle_changes": false,
+    "covered_normal_and_race": "Original 17 filesystem controls and 11 exact decoder vectors pass",
+    "original_hosted_and_local_RED_preserved": true,
+    "limits": "CI test framing only; new-head hosted CI remains required, no full campaign acceptance."
   }
 }

@@ -15,6 +15,16 @@ import (
 	"time"
 )
 
+// directoryChildAPIObservations removes exactly one recognized Go testing
+// success footer. The caller still checks exit/status/stderr and compares every
+// remaining API byte to the immutable JDK oracle.
+func directoryChildAPIObservations(output []byte) ([]byte, bool) {
+	if api, ok := bytes.CutSuffix(output, []byte("PASS\ncoverage: [no statements]\n")); ok {
+		return api, true
+	}
+	return bytes.CutSuffix(output, []byte("PASS\n"))
+}
+
 // A separate copy of this same test binary owns and removes only its child cwd.
 // The parent never changes its cwd or permissions. The exact child operation
 // observations are compared to the three-fresh-JDK stdout fixture.
@@ -59,10 +69,10 @@ func TestFilesCreateDirectoriesEmptyPathRemovedCwd(t *testing.T) {
 	if runErr != nil || ctx.Err() != nil || stderr.Len() != 0 {
 		t.Fatalf("child setup/framework/timeout failure: %v context=%v stderr=%q", runErr, ctx.Err(), stderr.String())
 	}
-	if !bytes.HasSuffix(stdout.Bytes(), []byte("PASS\n")) {
-		t.Fatalf("child framework PASS missing: %q", stdout.String())
+	got, frameworkOK := directoryChildAPIObservations(stdout.Bytes())
+	if !frameworkOK {
+		t.Fatalf("child framework footer invalid: %q", stdout.String())
 	}
-	got := bytes.TrimSuffix(stdout.Bytes(), []byte("PASS\n"))
 	if !bytes.Equal(got, want) {
 		t.Errorf("child API observations differ\nGOT:\n%sWANT:\n%s", got, want)
 	}
