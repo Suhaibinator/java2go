@@ -29661,5 +29661,31 @@
     "limits": "Conservative rejection of unproved anonymous layouts; no generic anonymous receiver execution guarantee, DateType extension, full Gson112 or Netty acceptance.",
     "DateType_separate_unpublished": true,
     "accepted_round": false
+  },
+  "sol_progress242": {
+    "status": "VERIFIED_SYNTHETIC_ANONYMOUS_FIXTURE_FIDELITY_CORRECTION",
+    "publication_parent": "6d8cd5d4291c8f4f685a63c956f284ff63231dfa",
+    "source_manifest_sha256": "5875f894dd5652319771efc8ef5f674c0aae851e94c9cd77cc879f1e87ca95d7",
+    "qualified_delivery_sha256": "eea0db846efa16c8e8a756da165919413e45dd6d81395a6bd76d173a1e553762",
+    "qualification_sha256": "f2aa534ac94811ea4671c6f0a72c7ee5ec6807f7c7b0f4e5ac3b631bde8e185c",
+    "source_review_sha256": "4ef86b6442da86d922203b890de2d33b7bbd1bf0711ea36e5f8ca2f73939746d",
+    "actual_review": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-gson112-component-review-20261024/CI241-OWNER-SLOTS136-V1-ACTUAL-EVIDENCE-AUDIT.json",
+    "actual_review_sha256": "d5585888808b22bff9e0c44f22779dbfe617c6d23ff45f061e9c1bcd7d6b22f9",
+    "paths": [
+      "transpiler/private_generic_helper_owner_slots136_test.go"
+    ],
+    "verification": {
+      "fresh_stages": 68,
+      "compiler_parents_each_normal_race": 32,
+      "compiler_children_each": 37,
+      "exact_compiler_registry": 2701,
+      "production_changes": 0,
+      "original_Java_changes": 0,
+      "existing_assertions_removed": 0
+    },
+    "repair": "Use the actual zero-carried Left<String> event metadata for the synthetic anonymous scope and explicitly reject the original foreign Box<T> metadata.",
+    "coverage_scopes": "Unchanged local full-arity private-helper owner checks and existing full-arity anonymous declaration/source proof guards remain distinct, exercised controls.",
+    "limits": "Fixture metadata correction only. No class capability, lexical method ownership, full Gson112 or Netty support claim.",
+    "accepted_round": false
   }
 }

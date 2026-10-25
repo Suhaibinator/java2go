@@ -173,6 +173,21 @@ func TestPrivateGenericHelperOwnerSlotsRefuseUncertifiedOrForeignOrigins(t *test
 				c := syntheticCtx.Clone()
 				c.currentClass = &copied
 				c.genericFamilies = &genericFamilyAnalysis{ready: true, plans: []*genericFamilyPlan{plan}}
+				if kind == "anonymous" {
+					// This source event carries no Box<T> owner binder. Its actual
+					// emitted scope must retain the audited parent and carried list.
+					if len(event.carried) != 0 || len(copied.TypeParameters) != 1 || !event.parent.IsInterface {
+						t.Fatal("anonymous source event no longer distinguishes foreign owner metadata")
+					}
+					if canonicalGenericFamily(&copied, c) != nil {
+						t.Fatal("anonymous event accepted foreign Box<T> owner metadata")
+					}
+					copied.TypeParameters = append([]symbol.TypeParam(nil), event.carried...)
+					copied.Superclass = ""
+					copied.ImplementedInterfaces = []string{event.javaType}
+				} else if len(copied.TypeParameters) != len(actual.TypeParameters) {
+					t.Fatal("local copied-owner control lost its full phantom owner arity")
+				}
 				// This source key really synthesizes membership. That membership
 				// cannot certify this copied scope as the method's actual owner.
 				synthesized := canonicalGenericFamily(&copied, c)
