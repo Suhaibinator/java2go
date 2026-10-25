@@ -29,8 +29,8 @@ func TestGenericFamilyCacheRenderLifetimeAndSyntheticIsolation(t *testing.T) {
 	if anonymous.node == nil {
 		t.Fatal("anonymous source inventory missing")
 	}
-	first := &symbol.ClassScope{Class: &symbol.Definition{DeclarationNode: anonymous.node}, Enclosing: anonymous.owner}
-	second := &symbol.ClassScope{Class: &symbol.Definition{DeclarationNode: anonymous.node}, Enclosing: anonymous.owner}
+	first := &symbol.ClassScope{Class: &symbol.Definition{DeclarationNode: anonymous.node}, Enclosing: anonymous.owner, Superclass: anonymous.javaType}
+	second := &symbol.ClassScope{Class: &symbol.Definition{DeclarationNode: anonymous.node}, Enclosing: anonymous.owner, Superclass: anonymous.javaType}
 	firstPlan := canonicalGenericFamily(first, ctx)
 	secondPlan := canonicalGenericFamily(second, ctx)
 	if firstPlan == nil || secondPlan == nil {

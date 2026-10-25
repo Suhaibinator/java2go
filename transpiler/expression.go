@@ -1047,6 +1047,10 @@ func ParseExpr(node *sitter.Node, source []byte, ctx Ctx) ast.Expr {
 			if canonicalAbstractCollectionOwner(base, ctx) == "java.util.AbstractList" || sourceAbstractListRoot(resolveClassScopeByQualifiedName(ctx, base), ctx) != nil {
 				return unsupportedIntrinsicValue(node, objectType.Content(source), source, ctx)
 			}
+			if member := anonymousMemberTypeDeclaration(classBody); member != nil {
+				diagnostic := reportUnsupported("anonymous member type declaration", member, source, ctx)
+				return &ast.CallExpr{Fun: ast.NewIdent("panic"), Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: fmt.Sprintf("%q", diagnostic.String())}}}
+			}
 			if lowered := lowerAnonymousClass(node, objectType, classBody, source, ctx); lowered != nil {
 				return lowered
 			}
@@ -6371,6 +6375,7 @@ type capturedLocal struct {
 	fieldName string
 	goType    ast.Expr
 	javaDef   *symbol.Definition
+	origin    *symbol.Definition
 }
 
 func capturedLocalFieldName(capture capturedLocal) string {
@@ -6413,6 +6418,16 @@ func identifierIsSyntheticCaptureRead(node, parent *sitter.Node) bool {
 // and parameters it references, in first-seen order. These become fields of a
 // synthesized struct so the class can close over them.
 func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []capturedLocal {
+	captured := collectCapturedLocalDefinitions(body, source, ctx)
+	for index := range captured {
+		captured[index].goType = javaTypeStringToGoTypeExpr(captured[index].javaDef.OriginalType, inScopeTypeParameters(ctx), ctx)
+	}
+	return captured
+}
+
+// Planning reads capture declarations without entering physical Go type
+// conversion, which can itself request a complete generic family discovery.
+func collectCapturedLocalDefinitions(body *sitter.Node, source []byte, ctx Ctx) []capturedLocal {
 	if ctx.localScope == nil || body == nil {
 		return nil
 	}
@@ -6449,6 +6464,7 @@ func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []captured
 			}
 			if _, ok := seen[name]; !ok {
 				if def := ctx.localScope.FindVariable(name); def != nil {
+					origin := def
 					javaType := def.OriginalType
 					for index, parameter := range ctx.localScope.Parameters {
 						if parameter == def && executionParameterIsVariadic(ctx.localScope, index) {
@@ -6465,8 +6481,8 @@ func collectCapturedLocals(body *sitter.Node, source []byte, ctx Ctx) []captured
 					captured = append(captured, capturedLocal{
 						name:      def.Name,
 						fieldName: def.Name,
-						goType:    javaTypeStringToGoTypeExpr(javaType, inScopeTypeParameters(ctx), ctx),
 						javaDef:   def,
+						origin:    origin,
 					})
 				}
 			}

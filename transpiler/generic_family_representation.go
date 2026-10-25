@@ -50,8 +50,13 @@ func genericFamilyBinderErasure(parameter symbol.TypeParam, ctx Ctx, visiting ma
 }
 
 func (plan *genericFamilyPlan) addBinderRepresentations(scope *symbol.ClassScope, ctx Ctx) error {
-	declarationCtx := classScopeCtx(scope, ctx)
-	for _, parameter := range scope.TypeParameters {
+	return plan.addBinderParameterRepresentations(scope.TypeParameters, classScopeCtx(scope, ctx))
+}
+
+// Carried binders keep the source namespace of their original declaration,
+// even when their anonymous body inherits a different member TYPE namespace.
+func (plan *genericFamilyPlan) addBinderParameterRepresentations(parameters []symbol.TypeParam, declarationCtx Ctx) error {
+	for _, parameter := range parameters {
 		parameterCtx := declarationCtx
 		// Carried enclosing declarations retain their original lexical context.
 		for _, binding := range referenceTypeParameterBindings(declarationCtx) {

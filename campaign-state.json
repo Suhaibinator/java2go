@@ -29600,5 +29600,66 @@
     },
     "limits": "Exercised List and non-generic record identity repair. No universal record reflection, generic cross-instantiation record erasure, full Gson112 or Netty acceptance. Hosted CI on this head remains required.",
     "accepted_round": false
+  },
+  "sol_progress241": {
+    "status": "VERIFIED_ANONYMOUS_GENERIC_CAPTURE_PROOF_REPAIR",
+    "publication_parent": "8f6d607c36dde9e36d60b2c94f55837dc771a61a",
+    "source_manifest_sha256": "75d5a07dca4f4e8680a9bab5613ae787d47041f7018eea6d876e01b16a7960f7",
+    "qualified_delivery_sha256": "a86963407eb7104ec452a723af0e9675c3d58c630b20a7c7b1e1c4b1b7972da1",
+    "qualification_sha256": "6456c1a2c35f6c7b957aeea53117efad8120d8cbd44a96b47bf52d25cc026cb8",
+    "source_review_sha256": "9b0ad928a24b40ebd6100e4f321aaf0b87d4c15e7e32f33a75fd166ed183ec34",
+    "actual_review": "/Users/suhaib/code/java2go/.campaign/resume-20261002/resume-20261020/sol61-gson112-component-review-20261024/CURRENT240-ANONYMOUS-CI-JOINT-ACTUAL-EVIDENCE-AUDIT.json",
+    "actual_review_sha256": "4724467433527fd63defc206b24236c286a51bd40a30b0a5c9dd4d78a8c103b9",
+    "paths": [
+      "transpiler/anonymous_carried_method_public238_counterexample_test.go",
+      "transpiler/anonymous_header_namespace_counterexample_test.go",
+      "transpiler/anonymous_inferred_capture_counterexample_test.go",
+      "transpiler/anonymous_inherited_member_counterexample_test.go",
+      "transpiler/anonymous_own_member_counterexample_test.go",
+      "transpiler/expression.go",
+      "transpiler/generic_family_anonymous_audit.go",
+      "transpiler/generic_family_anonymous_carried_audit_test.go",
+      "transpiler/generic_family_cache_test.go",
+      "transpiler/generic_family_codegen.go",
+      "transpiler/generic_family_plan.go",
+      "transpiler/generic_family_representation.go",
+      "transpiler/testdata/anonymous_header_namespace/AnonymousCreationHeaderNamespaceBoundary.java",
+      "transpiler/testdata/anonymous_inferred_capture/AnonymousInferredCaptureBoundary.java",
+      "transpiler/testdata/anonymous_inherited_member/AnonymousInheritedMemberTypeBoundary.java",
+      "transpiler/testdata/anonymous_own_member/AnonymousOwnMemberTypeBoundary.java",
+      "transpiler/testdata/published_anonymous_carried/PublishedAnonymousCarriedBinderBoundary.java"
+    ],
+    "verification": {
+      "fresh_joint_stages": 132,
+      "compiler_parents_each_normal_race": 58,
+      "compiler_subtests_each": 210,
+      "runtime_parents_each_normal_race": 947,
+      "runtime_subtests_each": 3030,
+      "all2687_baseline_names_retained": true,
+      "compiler_registry": 2701,
+      "original_CI_applications": 3,
+      "JVM_Go_pairs": 27,
+      "race_stress_observations": 60,
+      "lint": "0 issues",
+      "generated_implementation_edits": 0
+    },
+    "earlier_current239_evidence": {
+      "compiler_parents_each_mode": 196,
+      "compiler_subtests_each": 564,
+      "covered4059_and_inventory_and_lint": "Verified on source5ebaea83; not relabeled as fresh current240 execution",
+      "actual_affected_audit": "63a0b22a25733d0c18b18da773a290c8daa1e4d483b618388c609c4e43b396f8",
+      "final_gates_audit": "825f6eb94dfd0b25c9e959bd5532f1c6d78cffc316a35c479301e506fb99e2b3"
+    },
+    "closed_findings": [
+      "missing carried method binder",
+      "inherited member namespace",
+      "creation header lexical namespace",
+      "anonymous own member declaration refusal",
+      "unknown inferred capture type",
+      "late capture identity/type drift"
+    ],
+    "limits": "Conservative rejection of unproved anonymous layouts; no generic anonymous receiver execution guarantee, DateType extension, full Gson112 or Netty acceptance.",
+    "DateType_separate_unpublished": true,
+    "accepted_round": false
   }
 }

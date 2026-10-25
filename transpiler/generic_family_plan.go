@@ -30,10 +30,13 @@ type genericFamilySourceKey struct {
 }
 
 type genericFamilyAnonymous struct {
-	owner    *symbol.ClassScope
-	parent   *symbol.ClassScope
-	node     *sitter.Node
-	javaType string
+	owner          *symbol.ClassScope
+	parent         *symbol.ClassScope
+	node           *sitter.Node
+	javaType       string
+	carried        []symbol.TypeParam
+	declarationCtx Ctx
+	captures       []genericFamilyCaptureSnapshot
 }
 
 func genericFamilyKey(file *symbol.FileScope, node *sitter.Node) genericFamilySourceKey {
@@ -311,13 +314,36 @@ func planGenericFamilyWithStorageSeeds(seed *symbol.ClassScope, ctx Ctx, invento
 			plan.locals[genericFamilyKey(event.file, event.node)] = genericFamilyAnonymous{owner: event.owner, parent: event.parent, node: event.node, javaType: event.javaType}
 			continue
 		}
-		plan.anonymous[genericFamilyKey(event.file, event.node)] = genericFamilyAnonymous{owner: event.owner, parent: event.parent, node: event.node, javaType: event.javaType}
+		proof, captures, err := genericFamilyAnonymousAuditScope(event)
+		if err != nil {
+			return nil, err
+		}
+		anonymousCtx := classScopeCtx(proof, event.lexical)
+		if err := plan.addBinderParameterRepresentations(proof.TypeParameters, event.lexical); err != nil {
+			return nil, err
+		}
+		if proof.IsInner && proof.Enclosing != nil && len(proof.Enclosing.TypeParameters) != 0 {
+			if _, present := plan.members[proof.Enclosing]; !present {
+				return nil, fmt.Errorf("anonymous generic family enclosing instance requires a canonical layout")
+			}
+		}
 		if !plan.typeSupported(event.javaType, event.lexical, true, canonicalClassFamilyTypeOccurrence(event.javaType, event.node, event.file.Source)) {
 			return nil, fmt.Errorf("anonymous generic family specialization needs shared storage: %s", event.javaType)
 		}
-		if err := plan.auditTypeSyntax(event.body, event.file.Source, event.lexical); err != nil {
+		for _, capture := range captures {
+			occurrence := genericFamilyCaptureTypeOccurrence(capture, event)
+			if !plan.typeSupported(capture.javaDef.OriginalType, event.lexical, true, occurrence) {
+				return nil, fmt.Errorf("anonymous generic family capture requires unsupported physical storage: %s", capture.javaDef.OriginalType)
+			}
+		}
+		captureProofs, err := genericFamilyCaptureSnapshots(captures, event.lexical)
+		if err != nil {
 			return nil, err
 		}
+		if err := plan.auditTypeSyntax(event.body, event.file.Source, anonymousCtx); err != nil {
+			return nil, err
+		}
+		plan.anonymous[genericFamilyKey(event.file, event.node)] = genericFamilyAnonymous{owner: event.owner, parent: event.parent, node: event.node, javaType: event.javaType, carried: append([]symbol.TypeParam(nil), proof.TypeParameters...), declarationCtx: event.lexical, captures: captureProofs}
 	}
 	audited := map[*symbol.ClassScope]bool{}
 	for len(audited) < len(plan.members) {

@@ -43,8 +43,14 @@ func canonicalGenericFamily(scope *symbol.ClassScope, ctx Ctx) *genericFamilyPla
 				file = ctx.currentFile
 			}
 			key := genericFamilyKey(file, scope.Class.DeclarationNode)
-			_, anonymous := plan.anonymous[key]
-			_, local := plan.locals[key]
+			frame, anonymous := plan.anonymous[key]
+			localFrame, local := plan.locals[key]
+			if anonymous && !genericFamilyAnonymousEmissionMatches(frame, scope, plan, ctx) {
+				continue
+			}
+			if local && !localFrame.node.Equal(scope.Class.DeclarationNode) {
+				continue
+			}
 			if anonymous || local {
 				instance := *plan
 				instance.members = make(map[*symbol.ClassScope]struct{}, len(plan.members)+1)
@@ -60,8 +66,10 @@ func canonicalGenericFamily(scope *symbol.ClassScope, ctx Ctx) *genericFamilyPla
 				for declaration, representation := range plan.representations {
 					instance.representations[declaration] = representation
 				}
-				if err := instance.addBinderRepresentations(scope, ctx); err != nil {
-					return nil
+				if local {
+					if err := instance.addBinderRepresentations(scope, ctx); err != nil {
+						return nil
+					}
 				}
 				return &instance
 			}
