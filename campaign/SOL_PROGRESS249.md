@@ -1,0 +1,9 @@
+# Sol campaign checkpoint 249
+
+This milestone adds Java record metadata: Class.isRecord(), ordered fresh Class.getRecordComponents() arrays, and nominal platform RecordComponent references exposing getName() and getType(). Compiler metadata retains declaration provenance and header order, and exposes implicit record accessors to reflection. Source ownership, namespace, current-context and unavailable-metadata guards remain enforced.
+
+The public248-based candidate (37ddeba6f9b7) passed 68 top-level stages and six original wrapped commands. Fresh normal and race runs each covered 66 compiler parents/257 nodes and the full ordinary runtime, 973 parents/4,031 nodes. The compiled registries contain 2,812 compiler parents and 973 runtime parents; all 2,787 public248 compiler names remain present. Four new compiler/runtime images have source/config/build/info causal metadata proofs. Default and F1 build, test-compilation and lint profiles passed. F1 native execution and the full 2,812-parent compiler execution were not run locally.
+
+The selected compiler suite includes the original 49 record/metadata/concat/hygiene parents and all 17 compiler parents added in public248. Java fixtures, JVM-derived expectations and helper assertions remain unchanged. Successful component helpers compare complete JVM and generated-Go observations; they do not separately archive every successful native stream. The coordinator audits raw receipts and retained artifacts, and an independent recorded-result review is required before publication.
+
+Generated output requires the matching runtime revision. This checkpoint does not establish full Gson112, Supplier28 or Netty1220 parity or campaign round acceptance. Parameter-type getters, typed-loop lowering, Math.floorMod and Unicode literal work retain their separate private qualification scopes. The measured concatenation allocation evidence applies to frozen public247, with no new Java-relative performance claim here.

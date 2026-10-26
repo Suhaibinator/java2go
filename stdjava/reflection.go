@@ -20,22 +20,25 @@ type ClassDescriptor struct {
 	Type            TypeID
 	// NestHost is the outermost parsed declaration, independent of binary spelling.
 	// Empty metadata preserves the legacy single-class nest.
-	NestHost            TypeID
-	Interface           bool
-	Enum                bool
-	InheritedAnnotation bool
-	Initialize          func(*Execution)
-	Construct           func(*Execution) any
-	Fields              []FieldDescriptor
-	Methods             []MethodDescriptor
-	Annotations         []TypeID
-	Modifiers           int32
-	HasModifiers        bool
-	GenericSuperclass   *ReflectTypeDescriptor
-	TypeParameters      []TypeVariableDescriptor
-	genericVariables    []*metadataTypeVariable
-	Constructors        []ConstructorDescriptor
-	AnnotationValues    []AnnotationDescriptor
+	NestHost              TypeID
+	Interface             bool
+	Enum                  bool
+	Record                bool
+	RecordComponentsKnown bool
+	RecordComponents      []RecordComponentDescriptor
+	InheritedAnnotation   bool
+	Initialize            func(*Execution)
+	Construct             func(*Execution) any
+	Fields                []FieldDescriptor
+	Methods               []MethodDescriptor
+	Annotations           []TypeID
+	Modifiers             int32
+	HasModifiers          bool
+	GenericSuperclass     *ReflectTypeDescriptor
+	TypeParameters        []TypeVariableDescriptor
+	genericVariables      []*metadataTypeVariable
+	Constructors          []ConstructorDescriptor
+	AnnotationValues      []AnnotationDescriptor
 	// Initialization is the shared coordinator used by direct active uses.
 	// A callback that enters an independently used coordinator must bind it
 	// here; without one, Initialize is a reflection-owned initialization body.

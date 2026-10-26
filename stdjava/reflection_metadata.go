@@ -66,6 +66,7 @@ func cloneReflectTypeDescriptors(input []ReflectTypeDescriptor) []ReflectTypeDes
 }
 func cloneReflectionMetadata(input ClassDescriptor) ClassDescriptor {
 	output := input
+	output.RecordComponents = append([]RecordComponentDescriptor(nil), input.RecordComponents...)
 	output.GenericSuperclass = cloneReflectTypeDescriptor(input.GenericSuperclass)
 	output.TypeParameters = append([]TypeVariableDescriptor(nil), input.TypeParameters...)
 	for index := range output.TypeParameters {

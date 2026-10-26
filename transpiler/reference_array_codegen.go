@@ -268,6 +268,9 @@ func javaTypeDescriptorExpr(javaType string, ctx Ctx) (ast.Expr, bool) {
 	if source, ok := sourceReferenceTypeIDExpr(base, ctx); ok {
 		return source, true
 	}
+	if descriptor, proved := sourceReflectionRecordComponentDescriptor(base, ctx); proved {
+		return descriptor, true
+	}
 	if isBuiltinEnum(javaType, ctx) {
 		return stdjavaQualifiedExpr("EnumTypeID", ctx), true
 	}
