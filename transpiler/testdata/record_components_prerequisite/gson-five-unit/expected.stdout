@@ -1,8 +1,0 @@
-record=true
-ordinary=false
-names=count:label
-empty=0
-accessor=7
-count=2
-built=8:new
-empty-count=0

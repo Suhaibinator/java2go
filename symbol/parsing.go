@@ -596,7 +596,6 @@ func parseClassMember(scope *ClassScope, node *sitter.Node, source []byte) {
 // publicly. Explicit accessors/constructors already declared in the body are not
 // duplicated.
 func injectRecordMembers(scope *ClassScope, root *sitter.Node, source []byte) {
-	scope.beginRecordMemberOrigin(root)
 	paramsNode := root.ChildByFieldName("parameters")
 	if paramsNode == nil {
 		return
@@ -627,7 +626,7 @@ func injectRecordMembers(scope *ClassScope, root *sitter.Node, source []byte) {
 		// The component field is unexported so it does not collide with the
 		// exported accessor METHOD of the same Java name (Go shares the field/method
 		// namespace; Java does not).
-		field := &Definition{
+		scope.Fields = append(scope.Fields, &Definition{
 			Name:         Lowercase(comp.name),
 			OriginalName: comp.name,
 			Type:         comp.goType,
@@ -637,22 +636,18 @@ func injectRecordMembers(scope *ClassScope, root *sitter.Node, source []byte) {
 				scope.TypeParameters,
 			),
 			TypeParameterBindings: VisibleTypeParamBindings(scope.TypeParameters),
-		}
-		scope.Fields = append(scope.Fields, field)
+		})
 
 		// Accessor method named exactly after the component (exported), unless the
 		// body already declares one.
-		var accessor *Definition
 		if scope.FindMethodByName(comp.name, nil) == nil {
-			accessor = &Definition{
+			scope.Methods = append(scope.Methods, &Definition{
 				Name:         HandleExportStatus(true, comp.name),
 				OriginalName: comp.name,
 				Type:         comp.goType,
 				OriginalType: comp.origType,
-			}
-			scope.Methods = append(scope.Methods, accessor)
+			})
 		}
-		scope.retainRecordMemberOrigin(param, field, accessor)
 	}
 
 	// Implicit value-equality method, so `a.equals(b)` resolves to the synthesized

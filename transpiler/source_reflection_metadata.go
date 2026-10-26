@@ -137,7 +137,7 @@ func sourceReflectionFieldAccessors(scope *symbol.ClassScope, ctx Ctx) []ast.Dec
 		}
 		out = append(out, getter, setter)
 	}
-	return append(out, sourceReflectionRecordAccessorBridges(scope, ctx)...)
+	return out
 }
 func sourceReflectionGeneratedFieldCallback(scope *symbol.ClassScope, field *symbol.Definition, ctx Ctx, set bool) ast.Expr {
 	params := []*ast.Field{executionParameterField("execution", ctx), {Names: []*ast.Ident{ast.NewIdent("receiver")}, Type: ast.NewIdent("any")}}

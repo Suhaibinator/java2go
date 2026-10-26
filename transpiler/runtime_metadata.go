@@ -93,7 +93,6 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 	}}
 	extendSourceReflectionMetadata(descriptor, scope, ctx)
 	if sourceReflectionRecord(scope) {
-		appendSourceReflectionRecordMetadata(descriptor, scope, ctx)
 		descriptor.Elts = append(descriptor.Elts, metadataKey("PartialMemberMetadata", ast.NewIdent("true")))
 		for _, entry := range descriptor.Elts {
 			if key, ok := entry.(*ast.KeyValueExpr); ok {
@@ -147,7 +146,6 @@ func sourceClassMetadataForTypeIDStmt(scope *symbol.ClassScope, id string, ctx C
 		fields.Elts = append(fields.Elts, sourceReflectionFields(scope, ctx)...)
 	}
 	methods.Elts = append(methods.Elts, sourceReflectionMethods(scope, ctx)...)
-	methods.Elts = append(methods.Elts, sourceReflectionRecordAccessorDescriptors(scope, ctx)...)
 
 	descriptor.Elts = append(descriptor.Elts, metadataKey("Fields", fields), metadataKey("Methods", methods))
 	annotations := &ast.CompositeLit{Type: &ast.ArrayType{Elt: stdjavaQualifiedExpr("TypeID", ctx)}}

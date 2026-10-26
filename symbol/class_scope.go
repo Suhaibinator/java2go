@@ -4,8 +4,6 @@ import sitter "github.com/smacker/go-tree-sitter"
 
 // ClassScope represents a single defined class, and the declarations in it
 type ClassScope struct {
-	// Parser origin for implicit record members; copied scopes retain no authority.
-	recordMemberOrigin *recordMemberOrigin
 	// anonymousSourceOrigin is a monotonic negative routing fact. It proves no
 	// source/family/AST/binder/ABI/completion authority and survives value copies.
 	anonymousSourceOrigin bool
