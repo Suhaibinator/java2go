@@ -5993,7 +5993,7 @@
     "status": "verified-clean",
     "verification": "Exact golangci-lint 2.14.0 reports0; focused race/JVM regressions and independently rebuilt full business application pass after replacing recursive cyclic binding with package-local lexical analysis."
   },
-  "next_action": "Integrate accepted source components with restored suppression/identity; continue Class.cast prerequisites, FileChannel callbacks, Throwable frames and pinned Netty source/JVM validation.",
+  "next_action": "Continue the original three-application campaign, repair frozen Gson/Netty fronts, verify every added or modified test parent and affected regressions, and commit/push qualified milestones. Keep RecordComponent private until its full genuine helper and unchanged allocation budget pass.",
   "oracle_repeats": 3,
   "performance_findings": {
     "array_write_candidate": "Unsigned bounds predicate enables inlining in isolated runtime copy; focused timings improved, live patch not applied",
@@ -30178,5 +30178,26 @@
     },
     "full_Gson112_or_Netty_accepted": false,
     "accepted_round": false
-  }
+  },
+  "sol_progress251": {
+    "milestone": "Math.floorMod overloads and method references",
+    "status": "qualified scoped component; campaign active",
+    "base": "public250 f3e07e13b87, exact public248 tree",
+    "changes": [
+      "int/int->int, long/int->int, long/long->long with Java signed-width and zero-divisor rules",
+      "Native-bound invocation, static import and method-reference applicability; source/value/binder shadows preserved"
+    ],
+    "test_parent_gate": "All 12 added parents normal/race RUN/PASS, 24 links; independent 6302c2b7",
+    "qualification": "60 functional V1 stages; test-only lint correction and 7 fresh V2 stages; 6 fresh default/F1 build/testcompile/lint profiles. Reviews 5d532f7e and 97cbb299.",
+    "scope": "No F1 native/full compiler native/full application/Netty/round acceptance. Private 5226 application evidence remains separately scoped.",
+    "public249_correction": "250 fully reverted 249. Both introduced CI failures and unchanged fixtures remain private. 250 hosted compiler2787/children4762/unit1064 pass; old Gson undefinedT campaign failure remains.",
+    "private_fronts": [
+      "Gson112 raw/project strict117 pass; SCC layout postcheck corrected; Go build now stops on module metadata",
+      "Checked-store runtime976/4073 normal/race GREEN; translated primary discovers explicit ArrayStoreException JavaString constructor front",
+      "Netty clean Q4 normal34.69 PASS, race native55 HOLD in later lexical-shadow agreement",
+      "Long fixed2 allocation baseline RED; narrow GREEN24 running",
+      "RecordComponent full genuine Gson helper prerequisites and generic virtual dispatch remain open"
+    ]
+  },
+  "latest_public_milestone": 251
 }

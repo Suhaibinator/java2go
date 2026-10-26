@@ -91,6 +91,9 @@ func inferMethodReferenceResultJavaType(node *sitter.Node, parameters []string, 
 	}
 	method := node.NamedChild(int(node.NamedChildCount()) - 1).Content(source)
 	if class, ok := intrinsicStaticClassName(target, ctx, source); ok {
+		if declaration, handled := mathFloorModReferenceDeclaration(class, method, parameters, ctx); handled {
+			return declaration.result, declaration.result != ""
+		}
 		if result := staticIntrinsicResultTypes[intrinsicKey{class, method}]; result != "" {
 			return result, true
 		}
@@ -295,6 +298,23 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 						expected[0] = typeArguments[0]
 					}
 				}
+			}
+		}
+	}
+	if static && !constructor {
+		if declaration, handled := mathFloorModReferenceDeclaration(class, method, argumentTypes, bodyCtx); handled {
+			if declaration.result == "" {
+				return nil, false
+			}
+			if result != "void" {
+				if _, _, compatible := methodReferenceConversionCost(declaration.result, result, true, bodyCtx); !compatible {
+					return nil, false
+				}
+			}
+			expected = declaration.parameters[:]
+			actualResult = declaration.result
+			staticGenerator = func(_ ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
+				return stdjavaCall(ctx, declaration.helper, args...)
 			}
 		}
 	}
