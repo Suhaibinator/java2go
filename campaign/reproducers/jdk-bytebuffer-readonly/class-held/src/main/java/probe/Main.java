@@ -1,0 +1,1 @@
+package probe;import java.nio.*;public class Main {public static void main(String[] args){ByteBuffer b=ByteBuffer.wrap(new byte[2]);ByteBuffer r=b.asReadOnlyBuffer();System.out.println(b.getClass().getName()+":"+r.getClass().getName()+":"+r.duplicate().getClass().getName()+":"+r.slice().getClass().getName());}}

@@ -1,0 +1,122 @@
+{
+  "schema": "java2go-checkin-package-manifest-v1",
+  "package_path": "campaign/reproducers/string-thread-prereq",
+  "entries_exclude": "MANIFEST.json itself",
+  "files": [
+    {
+      "path": "CHECKIN.md",
+      "bytes": 1251,
+      "sha256": "a28b4440f0bd79ef4136b59137425a141d13fb56b3b90a010eeb7942e9a7f2c6"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1305,
+      "sha256": "a28cdcf57528ad4c14c38ef47f313dcce953efd1b192160867591651ea36bd26"
+    },
+    {
+      "path": "inputs/seed-17.txt",
+      "bytes": 3,
+      "sha256": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5"
+    },
+    {
+      "path": "inputs/seed-41.txt",
+      "bytes": 3,
+      "sha256": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1"
+    },
+    {
+      "path": "inputs/seed-97.txt",
+      "bytes": 3,
+      "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+    },
+    {
+      "path": "oracle/expected.seed-17.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/expected.seed-17.stdout",
+      "bytes": 275,
+      "sha256": "5920a78b8759cfad3d9ad02c21034ef044fe28b8fd49d9367bde8df8446405a8"
+    },
+    {
+      "path": "oracle/expected.seed-41.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/expected.seed-41.stdout",
+      "bytes": 275,
+      "sha256": "426c6a96607938253a50280a153a8b7c9098b0e529127622d80c75d7693392c2"
+    },
+    {
+      "path": "oracle/expected.seed-97.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/expected.seed-97.stdout",
+      "bytes": 275,
+      "sha256": "2fc768292e441f45bd0aa6ea8ad7ff7d7e2b4dc9593b2e993d113c801a2a595b"
+    },
+    {
+      "path": "oracle/oracle.json",
+      "bytes": 8634,
+      "sha256": "ff585a401eb8a2c6df37546a524616c96dcc513a66c112a0d41fc0450c2d5a9e"
+    },
+    {
+      "path": "src/main/java/prereq/thread/app/Main.java",
+      "bytes": 4282,
+      "sha256": "c38891a89cb5bb90ceb7302208e399509baf8cb1a454a6b1484815fbadce312f"
+    },
+    {
+      "path": "src/main/java/prereq/thread/flow/Observation.java",
+      "bytes": 685,
+      "sha256": "38c24c590f586b74671a85634f9c444da095d2944a37b55fbfde3ee34b3abe66"
+    },
+    {
+      "path": "src/main/java/prereq/thread/flow/WorkerStep.java",
+      "bytes": 3254,
+      "sha256": "c192f64cf17fc73f51f5e7e255630b1f1f4d2f1cd69698ec5fb3172502433f4c"
+    },
+    {
+      "path": "src/main/java/prereq/thread/literal/LateLiteral.java",
+      "bytes": 229,
+      "sha256": "25bcb9dd7a82a300a8c0b5d98f53f1e9ab5c98208241190d2d37ce8402baa61d"
+    },
+    {
+      "path": "src/main/java/prereq/thread/state/Contexts.java",
+      "bytes": 189,
+      "sha256": "53f9c5fd85d9404ec6aa8c2f81174d43bf0eba22de061cbffac58d3fefc5b865"
+    },
+    {
+      "path": "src/main/java/prereq/thread/state/SharedState.java",
+      "bytes": 1037,
+      "sha256": "c475debad3cbd68c99624047c391c7ab3c512d9fb483b9ef606b37060230a800"
+    },
+    {
+      "path": "src/main/java/prereq/thread/state/WorkerContext.java",
+      "bytes": 166,
+      "sha256": "e0fcbeff9242f017e9f12fbfa5e71adb5a882e4926f7581add0d9e8855af8c00"
+    },
+    {
+      "path": "support/unrun-differential/README.md",
+      "bytes": 2105,
+      "sha256": "86e4e9941f991aae462ad2f754d165471a02e773a75be0f12c80b2ac02e31dd9"
+    },
+    {
+      "path": "support/unrun-differential/pin.json",
+      "bytes": 174,
+      "sha256": "06c8c1903bb1f5b00b2d72cf7d65bb9bf4f3fb5226da11a63bbf51b4a96ec7c0"
+    },
+    {
+      "path": "support/unrun-differential/pom.xml",
+      "bytes": 762,
+      "sha256": "88afeb1a22f0b28615de844f052ccb910b54de032be7829c8e1dd2afb3864ad5"
+    },
+    {
+      "path": "support/unrun-differential/run.py",
+      "bytes": 11096,
+      "sha256": "c4d90dd06023526e4acaf3b5275ebf71a2443e81d6cbf348a7661731fbd713bc"
+    }
+  ]
+}

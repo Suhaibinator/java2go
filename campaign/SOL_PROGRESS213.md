@@ -1,0 +1,9 @@
+# Sol checkpoint 213: ArrayList and collector runtime foundation
+
+The runtime now provides allocation-bound source ArrayList identity, execution-aware virtual add calls, and nonvirtual base add/get/size operations. Sequential collector recipes preserve supplier timing and the supplied collection reference through identity finish. A value-slice stream source owns its outer slice while retaining element references. These services support the separately developed compiler lowering; this checkpoint does not activate that lowering or claim new application compatibility.
+
+The qualified runtime donor passed 36 focused parents twenty times and its complete 920-parent runtime suite in both normal and race modes. Its entire runtime package, imports, module locks and embedded resources match this integration exactly, allowing that library evidence to carry forward. The current branch additionally passed 28 fresh gates: eight compiler parents in both modes, 60 mutation controls, six JVM/Go whole-program parity observations, compiler reuse checks, and all six default/F1 build, test-compilation and lint profiles. Coordinator and independent audits verified raw outputs, source hashes and unassisted process cleanup. These are 28 fresh integration gates plus adopted library evidence, not a fresh full-runtime execution on the joined tree.
+
+The collector combiner deliberately rejects unsupported parallel use. Two optional fields added to List have an unmeasured memory cost; no performance improvement is claimed. Compiler activation and the full adversarial application gates remain separate work.
+
+Hosted CI on checkpoint 212 reported 2,361 compiler passes, 18 failures and zero skips, with no new failing names. Currency and the two migrated legacy contracts passed, as did all six new parity parents. Supplier28, Gson112 and Netty1220 remain unaccepted. The Sol-only campaign continues against those blockers and retains the original challenges and observations.

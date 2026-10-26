@@ -14,6 +14,11 @@ func AddSymbolsToPackage(symbols *FileScope) {
 	if _, exist := GlobalScope.Packages[symbols.Package]; !exist {
 		GlobalScope.Packages[symbols.Package] = NewPackageScope()
 	}
+	// A compilation unit can declare package metadata without declaring a type.
+	// Keep its package scope, but do not invent a class entry for that unit.
+	if symbols.BaseClass == nil {
+		return
+	}
 	GlobalScope.Packages[symbols.Package].Files[symbols.BaseClass.Class.Name] = symbols
 }
 

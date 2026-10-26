@@ -1,0 +1,13 @@
+initial:false
+base:true
+leaf:true
+reentrant:true
+other:false
+outer:true
+released:false
+null:NullPointerException
+abrupt:false
+notifier:true
+wait-restored:true
+wait-outer:true
+after-wait:false

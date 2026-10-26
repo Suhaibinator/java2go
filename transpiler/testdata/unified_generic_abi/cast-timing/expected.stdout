@@ -1,0 +1,8 @@
+object:true:1
+cast:2
+discard:3
+null:true:4
+bound-object:true:5
+bound-child:true:6
+bound-null:true:7
+bound-cast:8

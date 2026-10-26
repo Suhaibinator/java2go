@@ -1,0 +1,79 @@
+package transpiler
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+// This source and expected stdout are the unchanged independently authored
+// prerequisite. Passing it does not replace the full ConcurrentMap/Gson gates.
+func TestCampaignRuntimeStringReferencePrerequisite(t *testing.T) {
+	root, err := filepath.Abs("../campaign/reproducers/string-reference-prereq")
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := filepath.Join(root, "src/main/java/probe/StringReferencePrereq.java")
+	contents, err := os.ReadFile(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const frozenSHA = "493596f5e7ee478196156f1d21d0b7e79bf1b454bbaa4a5c1d4258b2a9e818fd"
+	if got := fmt.Sprintf("%x", sha256.Sum256(contents)); got != frozenSHA {
+		t.Fatalf("frozen Java source changed: %s", got)
+	}
+	expected, err := os.ReadFile(filepath.Join(root, "expected.stdout"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	java, err := campaignCompilerJavaTool("java")
+	if err != nil {
+		t.Fatal(err)
+	}
+	javac, err := campaignCompilerJavaTool("javac")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func(stage, directory, command string, timeout time.Duration, args ...string) ([]byte, []byte) {
+		t.Helper()
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, command, args...)
+		cmd.Dir = directory
+		cmd.Env = append(os.Environ(), "GOWORK=off")
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout, cmd.Stderr = &stdout, &stderr
+		t.Logf("starting stage %s", stage)
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("%s: %v\nstdout:\n%s\nstderr:\n%s", stage, err, stdout.Bytes(), stderr.Bytes())
+		}
+		return stdout.Bytes(), stderr.Bytes()
+	}
+	temp := t.TempDir()
+	classes := filepath.Join(temp, "classes")
+	run("javac", root, javac, 300*time.Second, "--release", "21", "-encoding", "UTF-8", "-d", classes, source)
+	want, wantErr := run("JVM", root, java, 60*time.Second, "-cp", classes, "probe.StringReferencePrereq")
+	if !bytes.Equal(want, expected) || len(wantErr) != 0 {
+		t.Fatalf("frozen oracle changed: expected %q with empty stderr, got %q / %q", expected, want, wantErr)
+	}
+	t.Logf("validated frozen JVM oracle: %q", want)
+	generated := filepath.Join(temp, "generated")
+	run("strict transpilation", repo, "go", 300*time.Second, "run", "./cmd/java2go", "-strict", "-maven", root, "-main-class", "probe.StringReferencePrereq", "-runtime", repo, "-output", generated)
+	run("all generated packages", generated, "go", 300*time.Second, "build", "-race", "-mod=mod", "./...")
+	executable := filepath.Join(temp, "probe")
+	run("generated executable", generated, "go", 300*time.Second, "build", "-race", "-mod=mod", "-o", executable, "./cmd/app")
+	got, gotErr := run("generated Go", generated, executable, 60*time.Second)
+	if !bytes.Equal(got, want) || !bytes.Equal(gotErr, wantErr) {
+		t.Fatalf("JVM stdout=%q stderr=%q; Go stdout=%q stderr=%q", want, wantErr, got, gotErr)
+	}
+}

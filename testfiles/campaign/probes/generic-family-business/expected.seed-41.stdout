@@ -1,0 +1,8 @@
+seed=41
+step=0,source=named,value=42,label=shared-anonymous
+step=1,source=anonymous,value=49,label=shared-anonymous
+step=2,source=named,value=56,label=shared-anonymous
+step=3,source=anonymous,value=63,label=shared-anonymous
+identity=true,missing=true,shadow=true
+bridge=44,62,same=true
+pollution=true,true,text=polluted-41,sum=210

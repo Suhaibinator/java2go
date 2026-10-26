@@ -1,0 +1,1 @@
+package app; import model.Item;import model.Other;public class Child extends base.Plain implements contracts.Ordered {public int CompareToJava2goErasedExecution=17;public Child(int key){super(key);}public int compareTo(Other value){Main.trace+="O;";return 90;}public int compareToJava2goErasedExecution(Object value){Main.trace+="H;";return 901;}}

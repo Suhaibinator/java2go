@@ -10,10 +10,16 @@ import (
 )
 
 type SourceFile struct {
-	Name    string
-	Source  []byte
-	Ast     *sitter.Node
-	Symbols *symbol.FileScope
+	// InputKind defaults to an explicitly supplied in-memory source.
+	InputKind symbol.SourceInputKind
+
+	Name   string
+	Source []byte
+	// UnicodeSource maps parser byte offsets back to the unchanged input when
+	// repeated-u Unicode escape spellings required grammar canonicalization.
+	UnicodeSource *UnicodeSourceMap
+	Ast           *sitter.Node
+	Symbols       *symbol.FileScope
 }
 
 func (file SourceFile) String() string {
@@ -21,19 +27,38 @@ func (file SourceFile) String() string {
 }
 
 func (file *SourceFile) ParseAST() error {
+	file.canonicalizeUnicodeEscapes()
 	parser := sitter.NewParser()
 	parser.SetLanguage(java.GetLanguage())
-	tree, err := parser.ParseCtx(context.Background(), nil, file.Source)
+	parserInput := physicalLineTerminatorParserSource(unicodeLineTerminatorParserSource(file.Source))
+	tree, err := parser.ParseCtx(context.Background(), nil, parserInput)
 	if err != nil {
 		return err
 	}
 
+	if parserSource, repairs := parenthesizedAssignmentParserSource(tree.RootNode(), parserInput); len(repairs) != 0 {
+		repaired, repairError := parser.ParseCtx(context.Background(), nil, parserSource)
+		if repairError != nil {
+			return repairError
+		}
+		if parenthesizedAssignmentsRecovered(repaired.RootNode(), file.Source, repairs) {
+			tree = repaired
+		}
+	}
 	file.Ast = tree.RootNode()
-	return nil
+	return physicalLineTerminatorLiteralError(file.Ast, parserInput)
 }
 
 func (file *SourceFile) ParseSymbols() *symbol.FileScope {
 	symbols := symbol.ParseSymbols(file.Ast, file.Source)
+	symbols.SourceFilename = file.Name
+	if file.UnicodeSource != nil {
+		symbols.OriginalSource = file.UnicodeSource.Original
+		symbols.SourceOffsets = append([]uint32(nil), file.UnicodeSource.offsets...)
+	}
+	symbols.AttachSourceInputSnapshot(symbol.NewSourceInputSnapshot(
+		symbols, file.Name, file.InputKind, file.Source, symbols.OriginalSource, symbols.SourceOffsets,
+	))
 	file.Symbols = symbols
 	return symbols
 }

@@ -3,9 +3,12 @@ package stdjava
 import (
 	"math"
 	"reflect"
+	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
+	"weak"
 )
 
 // This file provides Go runtime equivalents for the java.util.concurrent and
@@ -86,147 +89,57 @@ func (a *AtomicBoolean) CompareAndSet(expect, update bool) bool {
 	return a.v.CompareAndSwap(expect, update)
 }
 
-// ConcurrentHashMap publishes immutable collision-bucket snapshots. User
-// hashCode/equals callbacks run outside the mutex, allowing reentrant reads.
-// Writers validate the snapshot version before publishing; concurrent writes
-// may cause a callback to be retried. Key/entry views are snapshots.
-type ConcurrentHashMap[K, V any] struct {
-	mu      sync.RWMutex
-	buckets map[int32][]MapEntry[K, V]
-	version uint64
-	size    int32
-}
+// ConcurrentHashMap keeps one allocation across typed and erased Java aliases.
+// Its private core publishes bucket membership under a mutex; user callbacks
+// execute outside that mutex and writes validate their observed version.
+type ConcurrentHashMap[K, V any] struct{ concurrentMapCore }
 
 func NewConcurrentHashMap[K, V any]() *ConcurrentHashMap[K, V] {
-	return &ConcurrentHashMap[K, V]{buckets: make(map[int32][]MapEntry[K, V])}
-}
-func (c *ConcurrentHashMap[K, V]) snapshot(hash int32) ([]MapEntry[K, V], uint64) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.buckets[hash], c.version
-}
-func concurrentEntryIndex[K, V any](entries []MapEntry[K, V], key any, execution *Execution) int {
-	for i, entry := range entries {
-		if ObjectsEqual(key, entry.Key, execution) {
-			return i
-		}
-	}
-	return -1
+	return &ConcurrentHashMap[K, V]{concurrentMapCore: concurrentMapCore{buckets: make(map[int32][]*concurrentMapRecord)}}
 }
 func (c *ConcurrentHashMap[K, V]) Put(key K, value V, execution ...*Execution) V {
-	ReferenceRequireNonNull(key)
-	ReferenceRequireNonNull(value)
-	exec := optionalComparisonExecution(execution)
-	hash := ObjectsHashCode(key, exec)
-	for {
-		entries, version := c.snapshot(hash)
-		index := concurrentEntryIndex(entries, key, exec)
-		updated := append([]MapEntry[K, V](nil), entries...)
-		previous := collectionZero[V]()
-		if index >= 0 {
-			previous = updated[index].Value
-			updated[index].Value = value
-		} else {
-			updated = append(updated, MapEntry[K, V]{Key: key, Value: value})
-		}
-		c.mu.Lock()
-		if c.version != version {
-			c.mu.Unlock()
-			continue
-		}
-		if c.buckets == nil {
-			c.buckets = make(map[int32][]MapEntry[K, V])
-		}
-		c.buckets[hash] = updated
-		c.version++
-		if index < 0 {
-			c.size++
-		}
-		c.mu.Unlock()
-		return previous
-	}
+	return collectionElementView[V](c.PutObject(key, value, execution...))
+}
+func (c *ConcurrentHashMap[K, V]) PutIfAbsent(key K, value V, execution ...*Execution) V {
+	return collectionElementView[V](c.PutIfAbsentObject(key, value, execution...))
 }
 func (c *ConcurrentHashMap[K, V]) Get(key any, execution ...*Execution) V {
-	value, _ := c.GetOk(key, execution...)
-	return value
+	return collectionElementView[V](c.GetObject(key, execution...))
 }
 func (c *ConcurrentHashMap[K, V]) GetOk(key any, execution ...*Execution) (V, bool) {
-	ReferenceRequireNonNull(key)
-	exec := optionalComparisonExecution(execution)
-	entries, _ := c.snapshot(ObjectsHashCode(key, exec))
-	if index := concurrentEntryIndex(entries, key, exec); index >= 0 {
-		return entries[index].Value, true
-	}
-	return collectionZero[V](), false
-}
-func (c *ConcurrentHashMap[K, V]) ContainsKey(key any, execution ...*Execution) bool {
-	_, ok := c.GetOk(key, execution...)
-	return ok
-}
-func (c *ConcurrentHashMap[K, V]) ContainsValue(value any, execution ...*Execution) bool {
-	ReferenceRequireNonNull(value)
-	for _, entry := range c.EntrySet() {
-		if ObjectsEqual(value, entry.Value, execution...) {
-			return true
-		}
-	}
-	return false
+	ReferenceRequireNonNull(c)
+	value, present := c.getObject(key, optionalComparisonExecution(execution))
+	return collectionElementView[V](value), present
 }
 func (c *ConcurrentHashMap[K, V]) Remove(key any, execution ...*Execution) V {
-	ReferenceRequireNonNull(key)
-	exec := optionalComparisonExecution(execution)
-	hash := ObjectsHashCode(key, exec)
-	for {
-		entries, version := c.snapshot(hash)
-		index := concurrentEntryIndex(entries, key, exec)
-		if index < 0 {
-			return collectionZero[V]()
-		}
-		previous := entries[index].Value
-		updated := make([]MapEntry[K, V], 0, len(entries)-1)
-		updated = append(updated, entries[:index]...)
-		updated = append(updated, entries[index+1:]...)
-		c.mu.Lock()
-		if c.version != version {
-			c.mu.Unlock()
-			continue
-		}
-		if len(updated) == 0 {
-			delete(c.buckets, hash)
-		} else {
-			c.buckets[hash] = updated
-		}
-		c.version++
-		c.size--
-		c.mu.Unlock()
-		return previous
-	}
+	return collectionElementView[V](c.RemoveObject(key, execution...))
 }
-func (c *ConcurrentHashMap[K, V]) Size() int32 { c.mu.RLock(); defer c.mu.RUnlock(); return c.size }
+
+// Legacy native slices consume typed elements; Java view iteration stays erased.
 func (c *ConcurrentHashMap[K, V]) EntrySet() []MapEntry[K, V] {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	entries := make([]MapEntry[K, V], 0, c.size)
-	for _, bucket := range c.buckets {
-		entries = append(entries, bucket...)
+	ReferenceRequireNonNull(c)
+	entries := c.entrySnapshot()
+	out := make([]MapEntry[K, V], len(entries))
+	for i, e := range entries {
+		out[i] = MapEntry[K, V]{Key: collectionElementView[K](e.Key), Value: collectionElementView[V](e.Value)}
 	}
-	return entries
+	return out
 }
 func (c *ConcurrentHashMap[K, V]) KeySet() []K {
 	entries := c.EntrySet()
-	keys := make([]K, len(entries))
-	for i, entry := range entries {
-		keys[i] = entry.Key
+	out := make([]K, len(entries))
+	for i, e := range entries {
+		out[i] = e.Key
 	}
-	return keys
+	return out
 }
 
 // Runnable is the Go counterpart of java.lang.Runnable: anything with a Run()
 // method. Anonymous Runnable classes and Thread subclasses (whose run() override
 // is generated as Run()) satisfy it, so they can be handed to a Thread directly.
 const (
-	RunnableTypeID TypeID = "Runnable"
-	ThreadTypeID   TypeID = "Thread"
+	RunnableTypeID TypeID = "java.lang.Runnable"
+	ThreadTypeID   TypeID = "java.lang.Thread"
 )
 
 type Runnable interface {
@@ -313,16 +226,20 @@ func (*PlainRunnableFuncAdapter) JavaDynamicTypeID() TypeID {
 // transpiler appends a numeric suffix, which invokeSuffixedExecutionRunnable
 // discovers before falling back to the public Go entry point.
 func RunRunnableExecution(execution *Execution, value any) {
-	r := asRunnable(value)
-	if r == nil {
+	if thread, ok := value.(*Thread); ok {
+		thread.runJava2goExecution(execution)
 		return
 	}
-	// Preserve the caller's logical execution for a direct Thread.run() without
-	// exporting an execution-aware method that Go would promote through embedded
-	// Thread subclasses. The exact type assertion deliberately excludes those
-	// subclasses so their generated/overridden Run method remains authoritative.
-	if thread, ok := r.(*Thread); ok {
-		thread.runJava2goExecution(execution)
+	// A source Thread's declaration-backed provider owns its native view. Check
+	// nominal ancestry before the unrelated legacy Runnable method-set adapter.
+	if carrier, ok := value.(JavaObjectInfoCarrier); ok {
+		if info := carrier.JavaObjectInfo(); info != nil && JavaTypeAssignable(info.DynamicType(), ThreadTypeID) {
+			ThreadRunExecution(execution, ObjectView[*Thread](value, ThreadTypeID))
+			return
+		}
+	}
+	r := asRunnable(value)
+	if r == nil {
 		return
 	}
 	if generated, ok := r.(executionRunnable); ok {
@@ -377,16 +294,55 @@ func decimalSuffix(name, prefix string) bool {
 // finishes. Java's Thread is far richer (priorities, interruption, daemon status,
 // fairness); those are out of scope and documented as such.
 type Thread struct {
-	run     Runnable
-	done    chan struct{}
-	started atomic.Bool
+	sourceObjectInfo       *ObjectInfo
+	sourceRunExecution     func(*Execution)
+	sourceStartExecution   func(*Execution)
+	isInterruptedExecution func(*Execution) bool
+	interruptExecution     func(*Execution)
+	interruptMu            sync.Mutex
+	interrupted            bool
+	interruptSignal        chan struct{}
+	name                   string
+	nameText               *JavaString
+	run                    Runnable
+	done                   chan struct{}
+	started                atomic.Bool
+}
+
+var threadSequence atomic.Int64
+var mainThread = func() *Thread {
+	thread := newNamedThread("main")
+	thread.started.Store(true)
+	return thread
+}()
+
+// ThreadCurrentThread resolves Java thread identity from the explicit execution
+// token, including callbacks and reentrant calls on the same worker.
+func ThreadCurrentThread(execution *Execution) *Thread {
+	if execution != nil && execution.thread != nil {
+		return execution.thread
+	}
+	return mainThread
+}
+
+func (t *Thread) GetName() string { return t.name }
+
+func (t *Thread) GetNameReference() *JavaString {
+	ReferenceRequireNonNull(t)
+	return t.nameText
+}
+
+func newNamedThread(name string) *Thread {
+	return &Thread{name: name, nameText: JavaStringFromHostUTF8(name), done: make(chan struct{})}
 }
 
 // JavaDynamicTypeID lets the reified reference-array runtime recognize the
-// compact stdjava-backed representation as a java.lang.Thread. Built-in types
-// currently retain the same simple descriptor spelling emitted for unresolved
-// JDK classes by the transpiler.
-func (*Thread) JavaDynamicTypeID() TypeID {
+// compact stdjava-backed representation using its canonical java.lang.Thread
+// descriptor, matching compiler-generated casts and reference-array components.
+func (t *Thread) JavaDynamicTypeID() TypeID {
+	if t != nil && t.sourceObjectInfo != nil {
+		return t.sourceObjectInfo.DynamicType()
+	}
 	return ThreadTypeID
 }
 
@@ -403,7 +359,34 @@ func init() {
 // (an anonymous Runnable class). Other values produce a Thread that does
 // nothing when started.
 func NewThread(runnable any) *Thread {
-	return &Thread{run: asRunnable(runnable), done: make(chan struct{})}
+	if name, ok := runnable.(*JavaString); ok {
+		return NewThreadNamedReference(nil, name)
+	}
+	if name, ok := runnable.(string); ok {
+		return NewThreadNamed(nil, name)
+	}
+	thread := newNamedThread("Thread-" + strconv.FormatInt(threadSequence.Add(1)-1, 10))
+	thread.run = asRunnable(runnable)
+	return thread
+}
+
+// NewThreadNamed covers Thread(Runnable, String) and Thread(String).
+func NewThreadNamed(runnable any, name string) *Thread {
+	StringRequireNonNull(name)
+	thread := newNamedThread(name)
+	thread.run = asRunnable(runnable)
+	return thread
+}
+
+func NewThreadNamedReference(runnable any, name *JavaString) *Thread {
+	ReferenceRequireNonNull(name)
+	thread := &Thread{
+		name:     string(unsignedBytes(JavaStringGetBytes(name, UTF_8).Elements)),
+		nameText: name,
+		done:     make(chan struct{}),
+	}
+	thread.run = asRunnable(runnable)
+	return thread
 }
 
 // asRunnable coerces the accepted Thread argument forms into a Runnable.
@@ -427,30 +410,23 @@ func asRunnable(runnable any) Runnable {
 // Run()) so that Start() dispatches to it. It is embedded as the *Thread field of
 // the subclass struct.
 func NewThreadBase(self Runnable) *Thread {
-	return &Thread{run: self, done: make(chan struct{})}
+	return NewThread(self)
 }
 
 // Run executes this Thread's target synchronously. java.lang.Thread implements
 // Runnable even when it has not been subclassed, so the runtime representation
 // must expose Run to remain a valid generated Runnable and Runnable[] view.
 func (t *Thread) Run() {
-	t.runJava2goExecution(NewExecution())
+	ThreadRunExecution(NewExecution(), t)
 }
 
 func (t *Thread) runJava2goExecution(execution *Execution) {
-	RunRunnableExecution(execution, t.run)
+	ThreadRunExecution(execution, t)
 }
 
 // Start can transition a Thread from NEW to alive only once.
 func (t *Thread) Start() {
-	if !t.started.CompareAndSwap(false, true) {
-		panic(NewIllegalThreadStateException("thread already started"))
-	}
-	go func() {
-		defer close(t.done)
-		defer reportUncaughtTaskException()
-		RunRunnableExecution(NewExecution(), t.run)
-	}()
+	ThreadStartExecution(NewExecution(), t)
 }
 
 // Join on a NEW or terminated Thread returns immediately, as in Java.
@@ -511,7 +487,7 @@ func NewObject() any {
 	// Pointers to distinct zero-sized Go variables are permitted to compare
 	// equal. Use a non-zero-sized token so every live Java Object has a distinct
 	// identity, including when two objects are used as nested monitor locks.
-	return new(byte)
+	return new(canonicalObject)
 }
 
 // --- intrinsic object monitors (synchronized) ------------------------------
@@ -522,12 +498,13 @@ func NewObject() any {
 // Execution token: entering again with the same token increments its depth,
 // while every different token waits until the depth returns to zero.
 //
-// LIMITATION: monitors are keyed by the runtime pointer of the value passed in,
-// so the synchronized argument must be a reference type (the common case:
-// `this`, a lock object, a field). Synchronizing on a value type would key on a
-// transient boxed copy and not exclude correctly; such uses are rare and not
-// modelled. The registry never releases monitors, matching the fact that an
-// object's monitor lives as long as the object.
+// Generated superclass views share the ObjectInfo identity of their Java
+// allocation. Other supported runtime references retain their existing identity.
+// Managed Java allocations use scalar identity keys and weak monitor values.
+// A live guard, entrant, waiter, or legacy mutex handle retains the monitor and
+// its anchor; an idle managed registry entry does not retain the Java object.
+// Arbitrary comparable host values keep the legacy value-key fallback described
+// below; they are outside the managed Java allocation lifecycle contract.
 type monitor struct {
 	// mu protects explicit logical ownership. The outermost explicit entry also
 	// holds legacyMu across the generated body; reentrant entries by the same
@@ -543,10 +520,11 @@ type monitor struct {
 	legacyMu   sync.Mutex
 	legacyCond *sync.Cond
 
-	// anchor keeps identity-bearing reference storage alive for as long as its
-	// monitor is registered. In particular, a slice monitor is keyed by its
-	// backing-storage address; retaining the slice prevents that address from
-	// being recycled for an unrelated Java array.
+	// anchor keeps identity-bearing reference storage alive while callers hold
+	// this monitor. The registry holds only a weak pointer to the monitor, so
+	// this strong edge cannot turn an idle registry entry into an object root.
+	// It also prevents scalar addresses from being recycled while a live
+	// monitor, including an interior legacyMu pointer, still uses that identity.
 	anchor interface{}
 }
 
@@ -558,9 +536,14 @@ type MonitorGuard struct {
 	released  bool
 }
 
-// monitorIdentity is a comparable description of a Java reference. Most
-// generated references are already comparable Go values and use comparable
-// directly. Java arrays are represented as Go slices, which cannot be map
+// monitorIdentity is a nonretaining description of a managed Java reference. Pointer
+// identities are scalar addresses, never strong Go pointers. Legacy native
+// value identities (including strings and class names) retain their existing
+// value comparison; these representations do not carry Java allocation identity.
+// The legacy comparable-host-value fallback can retain pointer fields until
+// monitor cleanup. A host value that points back to its monitor can form a rooted
+// cycle; managed Java allocations never take this compatibility path.
+// Java arrays are represented as Go slices, which cannot be map
 // keys, so their identity is the typed address of their first backing-storage
 // element together with the slice shape. An aliased Java array carries the
 // same slice header and therefore resolves to the same monitor.
@@ -574,16 +557,26 @@ type monitorIdentity struct {
 
 var (
 	monitorsMu sync.Mutex
-	monitors   = map[monitorIdentity]*monitor{}
+	monitors   = map[monitorIdentity]weak.Pointer[monitor]{}
 )
 
 func monitorIdentityFor(obj interface{}) monitorIdentity {
-	value := reflect.ValueOf(obj)
-	if value.Type().Comparable() {
-		return monitorIdentity{comparable: obj}
+	if carrier, ok := obj.(JavaObjectInfoCarrier); ok {
+		if identity := carrier.JavaObjectInfo(); identity != nil {
+			return monitorIdentity{reference: reflect.TypeOf(identity), data: reflect.ValueOf(identity).Pointer()}
+		}
 	}
-
+	// Builtin throwables are Go values whose copies share this state pointer.
+	// Use that Java allocation identity without storing the pointer in the key.
+	if carrier, ok := obj.(interface{ ThrowableIdentity() *throwableState }); ok {
+		if identity := carrier.ThrowableIdentity(); identity != nil {
+			return monitorIdentity{reference: reflect.TypeOf(identity), data: reflect.ValueOf(identity).Pointer()}
+		}
+	}
+	value := reflect.ValueOf(obj)
 	switch value.Kind() {
+	case reflect.Pointer, reflect.UnsafePointer, reflect.Chan:
+		return monitorIdentity{reference: value.Type(), data: value.Pointer()}
 	case reflect.Slice:
 		return monitorIdentity{
 			reference: value.Type(),
@@ -594,9 +587,12 @@ func monitorIdentityFor(obj interface{}) monitorIdentity {
 	case reflect.Map:
 		// Maps are not emitted as Java object representations, but accepting a
 		// map-backed external reference is safe: reflect exposes its stable
-		// runtime identity and the monitor anchor keeps it alive.
+		// runtime identity and a live monitor's anchor keeps it alive.
 		return monitorIdentity{reference: value.Type(), data: value.Pointer()}
 	default:
+		if value.Type().Comparable() {
+			return monitorIdentity{comparable: obj}
+		}
 		// Do not let an unexpected backend representation reach Go's map hash
 		// operation and panic with "hash of unhashable type". Such a value is not
 		// a Java reference representation for which this runtime can promise
@@ -605,16 +601,35 @@ func monitorIdentityFor(obj interface{}) monitorIdentity {
 	}
 }
 
+type monitorCleanupEntry struct {
+	identity monitorIdentity
+	epoch    weak.Pointer[monitor]
+}
+
+// Managed cleanup keys contain no object, monitor, bound view, or execution.
+// Comparable host values retain the existing value-key compatibility caveat.
+// A delayed cleanup must not remove a replacement with the same scalar key.
+func cleanupMonitorEntry(entry monitorCleanupEntry) {
+	monitorsMu.Lock()
+	if monitors[entry.identity] == entry.epoch {
+		delete(monitors, entry.identity)
+	}
+	monitorsMu.Unlock()
+}
+
 func monitorRecord(obj interface{}) *monitor {
 	identity := monitorIdentityFor(obj)
 	monitorsMu.Lock()
 	defer monitorsMu.Unlock()
-	m, ok := monitors[identity]
-	if !ok {
+	m := monitors[identity].Value()
+	if m == nil {
 		m = &monitor{anchor: obj}
 		m.legacyCond = sync.NewCond(&m.legacyMu)
-		monitors[identity] = m
+		epoch := weak.Make(m)
+		monitors[identity] = epoch
+		runtime.AddCleanup(m, cleanupMonitorEntry, monitorCleanupEntry{identity, epoch})
 	}
+	runtime.KeepAlive(obj)
 	return m
 }
 
@@ -630,17 +645,7 @@ func monitorFor(obj interface{}) *sync.Mutex {
 // consulting the monitor registry both preserves Java's exception and avoids a
 // raw Go panic for unhashable nil slices.
 func nilMonitorReference(obj interface{}) bool {
-	if obj == nil {
-		return true
-	}
-
-	value := reflect.ValueOf(obj)
-	switch value.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
-		return value.IsNil()
-	default:
-		return false
-	}
+	return javaReferenceIsNull(obj)
 }
 
 func requireNonNullMonitorReference(obj interface{}, operation string) {
@@ -662,6 +667,7 @@ func MonitorEnter(obj interface{}) *sync.Mutex {
 	requireNonNullMonitorReference(obj, "monitor operation")
 	m := monitorFor(obj)
 	m.Lock()
+	runtime.KeepAlive(obj)
 	return m
 }
 
@@ -696,6 +702,7 @@ func MonitorEnterExecution(execution *Execution, obj interface{}) *MonitorGuard 
 	m.owner = execution
 	m.depth = 1
 	m.mu.Unlock()
+	runtime.KeepAlive(obj)
 	return &MonitorGuard{monitor: m, execution: execution}
 }
 
@@ -726,27 +733,40 @@ func MonitorExitExecution(guard *MonitorGuard) {
 	if releasePhysical {
 		m.legacyMu.Unlock()
 	}
+	// Released generated guards must not extend the Java allocation's lifetime.
+	guard.monitor = nil
+	guard.execution = nil
+	runtime.KeepAlive(m)
 }
 
 // MonitorWait retains the original wait implementation for legacy generated
 // code. The caller must hold the mutex returned by MonitorEnter.
 func MonitorWait(obj interface{}) {
 	requireNonNullMonitorReference(obj, "wait")
-	monitorRecord(obj).legacyCond.Wait()
+	m := monitorRecord(obj)
+	m.legacyCond.Wait()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorNotify retains the original notify implementation for legacy
 // generated code.
 func MonitorNotify(obj interface{}) {
 	requireNonNullMonitorReference(obj, "notify")
-	monitorRecord(obj).legacyCond.Signal()
+	m := monitorRecord(obj)
+	m.legacyCond.Signal()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorNotifyAll retains the original notifyAll implementation for legacy
 // generated code.
 func MonitorNotifyAll(obj interface{}) {
 	requireNonNullMonitorReference(obj, "notifyAll")
-	monitorRecord(obj).legacyCond.Broadcast()
+	m := monitorRecord(obj)
+	m.legacyCond.Broadcast()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorWaitExecution implements Object.wait(): the caller must hold obj's
@@ -778,6 +798,8 @@ func MonitorWaitExecution(execution *Execution, obj interface{}) {
 	m.owner = execution
 	m.depth = savedDepth
 	m.mu.Unlock()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorNotifyExecution implements Object.notify(): wake one waiter on obj's
@@ -793,6 +815,8 @@ func MonitorNotifyExecution(execution *Execution, obj interface{}) {
 	}
 	m.legacyCond.Signal()
 	m.mu.Unlock()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 // MonitorNotifyAllExecution implements Object.notifyAll(): wake all waiters on
@@ -808,6 +832,8 @@ func MonitorNotifyAllExecution(execution *Execution, obj interface{}) {
 	}
 	m.legacyCond.Broadcast()
 	m.mu.Unlock()
+	runtime.KeepAlive(m)
+	runtime.KeepAlive(obj)
 }
 
 type classMonitorReference struct {

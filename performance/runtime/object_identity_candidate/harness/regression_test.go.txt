@@ -1,0 +1,160 @@
+package stdjava
+
+import (
+	"fmt"
+	"reflect"
+	"sync"
+	"testing"
+)
+
+var candidateAssignableSink bool
+
+func TestCandidateSmallTraversalAllocation(t *testing.T) {
+	RegisterJavaType("queue.alloc.Base", ObjectTypeID)
+	RegisterJavaType("queue.alloc.Mid", "queue.alloc.Base")
+	RegisterJavaType("queue.alloc.Leaf", "queue.alloc.Mid", "queue.alloc.Tag")
+	RegisterJavaType("queue.alloc.Tag", ObjectTypeID)
+	for _, expected := range []TypeID{"queue.alloc.Base", "queue.alloc.Tag", ObjectTypeID} {
+		got := testing.AllocsPerRun(100, func() { candidateAssignableSink = JavaTypeAssignable("queue.alloc.Leaf", expected) })
+		if !candidateAssignableSink {
+			t.Fatalf("missing ancestor %s", expected)
+		}
+		if got != 0 {
+			t.Errorf("assignable to %s allocated %g; want zero for this bounded graph", expected, got)
+		}
+	}
+}
+
+func TestCandidateRegistrationReplacement(t *testing.T) {
+	const leaf, base, tag, other TypeID = "queue.replace.Leaf", "queue.replace.Base", "queue.replace.Tag", "queue.replace.Other"
+	RegisterJavaType(leaf, base)
+	if JavaTypeAssignable(leaf, tag) {
+		t.Fatal("unregistered ancestor unexpectedly resolved")
+	}
+	RegisterJavaType(base, ObjectTypeID, tag)
+	if !JavaTypeAssignable(leaf, tag) {
+		t.Fatal("late ancestor registration not observed")
+	}
+	RegisterJavaType(base, ObjectTypeID, other)
+	if JavaTypeAssignable(leaf, tag) || !JavaTypeAssignable(leaf, other) {
+		t.Fatal("replacement not observed")
+	}
+	want := []TypeID{leaf, base, ObjectTypeID, other}
+	if got := registeredJavaViewCandidates(leaf); !reflect.DeepEqual(got, want) {
+		t.Fatalf("views %v, want %v", got, want)
+	}
+}
+
+func TestCandidateTraversalOrderCyclesAndOverflow(t *testing.T) {
+	const root, base, tag1, tag2 TypeID = "queue.order.Root", "queue.order.Base", "queue.order.Tag1", "queue.order.Tag2"
+	RegisterJavaType(root, base, tag1, tag2, tag1)
+	RegisterJavaType(base, ObjectTypeID, tag2)
+	RegisterJavaType(tag1, "", root)
+	RegisterJavaType(tag2, "", tag1)
+	want := []TypeID{root, base, tag1, tag2, ObjectTypeID}
+	if got := registeredJavaViewCandidates(root); !reflect.DeepEqual(got, want) {
+		t.Fatalf("BFS/duplicates/cycles %v, want %v", got, want)
+	}
+	if JavaTypeAssignable(root, "queue.order.Missing") {
+		t.Fatal("cycle fabricated assignability")
+	}
+	// More than eight queued entries exercises stack-buffer overflow and a long chain.
+	interfaces := make([]TypeID, 40)
+	want = []TypeID{"queue.wide.Root", ObjectTypeID}
+	for i := range interfaces {
+		interfaces[i] = TypeID(fmt.Sprintf("queue.wide.Tag%d", i))
+		RegisterJavaType(interfaces[i], "")
+		want = append(want, interfaces[i])
+	}
+	RegisterJavaType("queue.wide.Root", ObjectTypeID, interfaces...)
+	if got := registeredJavaViewCandidates("queue.wide.Root"); !reflect.DeepEqual(got, want) {
+		t.Fatalf("wide order %v", got)
+	}
+	if !JavaTypeAssignable("queue.wide.Root", interfaces[39]) {
+		t.Fatal("overflow lost final interface")
+	}
+	for i := 0; i < 40; i++ {
+		RegisterJavaType(TypeID(fmt.Sprintf("queue.deep.%d", i)), TypeID(fmt.Sprintf("queue.deep.%d", i+1)))
+	}
+	if !JavaTypeAssignable("queue.deep.0", "queue.deep.40") {
+		t.Fatal("overflow lost deep ancestor")
+	}
+}
+
+func TestCandidateRegistrationConcurrentReaders(t *testing.T) {
+	const leaf, base, tagA, tagB TypeID = "queue.concurrent.Leaf", "queue.concurrent.Base", "queue.concurrent.A", "queue.concurrent.B"
+	RegisterJavaType(leaf, base)
+	RegisterJavaType(base, ObjectTypeID, tagA)
+	var workers sync.WaitGroup
+	workers.Add(3)
+	go func() {
+		defer workers.Done()
+		for i := 0; i < 400; i++ {
+			tag := tagA
+			if i%2 != 0 {
+				tag = tagB
+			}
+			RegisterJavaType(base, ObjectTypeID, tag)
+		}
+	}()
+	for reader := 0; reader < 2; reader++ {
+		go func() {
+			defer workers.Done()
+			for i := 0; i < 400; i++ {
+				if !JavaTypeAssignable(leaf, ObjectTypeID) {
+					t.Error("replacement lost common ancestor")
+					return
+				}
+				got := registeredJavaViewCandidates(leaf)
+				if len(got) != 4 || got[0] != leaf || got[1] != base || got[2] != ObjectTypeID || (got[3] != tagA && got[3] != tagB) {
+					t.Errorf("torn traversal %v", got)
+					return
+				}
+			}
+		}()
+	}
+	workers.Wait()
+}
+
+func TestCandidateArraysNullAndCasts(t *testing.T) {
+	registerReferenceArrayTestTypes()
+	for _, p := range []struct {
+		actual, expected TypeID
+		want             bool
+	}{
+		{ArrayTypeID(testChildType), ArrayTypeID(testBaseType), true},
+		{ArrayTypeID(testBaseType), ArrayTypeID(testChildType), false},
+		{ArrayTypeID(PrimitiveIntTypeID), ArrayTypeID(PrimitiveLongTypeID), false},
+		{ArrayTypeID(ArrayTypeID(PrimitiveIntTypeID)), ArrayTypeID(ObjectTypeID), true},
+		{ArrayTypeID(testChildType), CloneableTypeID, true},
+		{ArrayTypeID(testChildType), SerializableTypeID, true},
+		{"", ObjectTypeID, false},
+	} {
+		if got := JavaTypeAssignable(p.actual, p.expected); got != p.want {
+			t.Errorf("assignable(%s,%s)=%v", p.actual, p.expected, got)
+		}
+	}
+	leaf := newReferenceArrayChild(11)
+	if ObjectView[*referenceArrayBaseView](leaf, testBaseType) != leaf.referenceArrayBaseView {
+		t.Fatal("base view changed")
+	}
+	if ObjectView[*referenceArrayChildView](leaf.referenceArrayBaseView, testChildType) != leaf {
+		t.Fatal("derived identity changed")
+	}
+	if ObjectView[*referenceArrayBaseView](leaf, ObjectTypeID) != leaf.referenceArrayBaseView {
+		t.Fatal("erased view changed")
+	}
+	var absent *referenceArrayChildView
+	if ObjectView[*referenceArrayBaseView](absent, testBaseType) != nil {
+		t.Fatal("typed null changed")
+	}
+	if !StringIsNull(ObjectView[string](nil, StringTypeID)) {
+		t.Fatal("String null changed")
+	}
+	defer func() {
+		if v := recover(); !CaughtAs(v, "ClassCastException") {
+			t.Fatalf("bad cast threw %T: %v", v, v)
+		}
+	}()
+	ObjectView[*referenceArraySiblingView](leaf, testSiblingType)
+}

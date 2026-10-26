@@ -6,6 +6,14 @@ import (
 	"github.com/NickyBoy89/java2go/symbol"
 )
 
+// Generated boxing harnesses observe canonical Java String references by exact
+// UTF-16 content, retaining the expected Java results and rejecting null.
+const boxingCanonicalJavaStringHarness = `
+func boxingJavaStringEquals(got *stdjava.JavaString, want string) bool {
+    return got != nil && slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want)))
+}
+`
+
 func TestBoxingUnboxingBoundsRetainDeclarationIdentity(t *testing.T) {
 	outer := symbol.NewTypeParam("T", []symbol.JavaType{{Original: "java.lang.Long"}})
 	inner := symbol.NewTypeParam("T", []symbol.JavaType{{Original: "java.lang.Integer"}})
@@ -39,11 +47,16 @@ public class WrapperBoundConversions {
 }
 `)
 	runGoTestInTempModule(t, out, `package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestWrapperBoundConversions(t *testing.T) {
-    if got := Run(); got != "3:4:long:5:true" { t.Fatalf("Run() = %q", got) }
+    if got := Run(); !boxingJavaStringEquals(got, "3:4:long:5:true") { t.Fatalf("Run() = %v", got) }
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }
 
 func TestBoxingLoweringArraysSnapshotEarlierReads(t *testing.T) {
@@ -66,11 +79,16 @@ public class BoxedArraySequencing {
 }
 `)
 	runGoTestInTempModule(t, out, `package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestBoxedArraySequencing(t *testing.T) {
-    if got := Run(); got != "true:0:8:2:1:1" { t.Fatalf("Run() = %q", got) }
+    if got := Run(); !boxingJavaStringEquals(got, "true:0:8:2:1:1") { t.Fatalf("Run() = %v", got) }
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }
 
 func TestBoxingInvocationRejectsNarrowingAndWideningThenBoxing(t *testing.T) {
@@ -134,11 +152,16 @@ public class BoxedConversionsProgram {
 }
 `)
 	runGoTestInTempModule(t, out, `package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestBoxedConversions(t *testing.T) {
-    if got := Run(); got != "true:true:22:A:null:9:1.5:2.5:1" { t.Fatalf("Run() = %q", got) }
+    if got := Run(); !boxingJavaStringEquals(got, "true:true:22:A:null:9:1.5:2.5:1") { t.Fatalf("Run() = %v", got) }
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }
 
 func TestBoxingLoweringOverloadPhasesAndConstructorSelection(t *testing.T) {
@@ -162,11 +185,16 @@ public class BoxedOverloadProgram {
 }
 `)
 	runGoTestInTempModule(t, out, `package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestBoxedOverloads(t *testing.T) {
-    if got := Run(); got != "wide:object:integer:number:long:integer" { t.Fatalf("Run() = %q", got) }
+    if got := Run(); !boxingJavaStringEquals(got, "wide:object:integer:number:long:integer") { t.Fatalf("Run() = %v", got) }
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }
 
 func TestBoxingLoweringNullViewsAndUnboxingOrder(t *testing.T) {
@@ -188,9 +216,14 @@ public class BoxedNullProgram {
 }
 `)
 	runGoTestInTempModule(t, out, `package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestBoxedNulls(t *testing.T) {
-    if got := Run(); got != "false:true:null" { t.Fatalf("Run() = %q", got) }
+    if got := Run(); !boxingJavaStringEquals(got, "false:true:null") { t.Fatalf("Run() = %v", got) }
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }

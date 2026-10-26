@@ -1,0 +1,16 @@
+# west imports: mutations may precede their create after shuffle
+{"kind":"CREATE","id":"F-6","client":"Café","lines":[{"sku":"bean","title":"crème brûlée","quantity":1,"unit_cents":660}]}
+{"kind":"INCREMENT","order_id":"F-6","sku":"bean","delta":3}
+{"kind":"TAG","order_id":"F-6","note":null}
+{"kind":"CREATE","order_id":"A-1","customer":"Café","lines":[{"sku":"pen","title":"ink & paper","quantity":1,"unit_cents":90}],"metadata":{"retry":"yes"}}
+{"kind":"CANCEL","id":"A-1"}
+{"kind":"CREATE","id":"A-1","client":"Café","lines":[{"sku":"tea","title":"Jasmin/雪","quantity":1,"unit_cents":125}]}
+{"kind":"RENAME","id":"C-3","customer":"Muenchen"}
+{"kind":"CREATE","id":"B-2","client":"東京","lines":[{"sku":"fan","title":"扇子","quantity":1,"unit_cents":750}]}
+{"kind":"INCREMENT","id":"B-2","sku":"wrong","delta":2}
+{"kind":"CREATE","id":"G-7","customer":"<tag>&","lines":[{"sku":"quote","title":"say \"hello\"","quantity":2,"unit_cents":35}]}
+{"kind":"CANCEL","id":"Z-9"}
+{"kind":"CREATE","id":"H-8","customer":"space + %","lines":[{"sku":"free","title":"zero","quantity":1,"unit_cents":0}]}
+{"kind":"INCREMENT","id":"E-5","sku":"spark","delta":-20}
+{"kind":"CREATE","id":"bad-number","customer":"Bad","lines":[{"sku":"n","title":"number","quantity":"two","unit_cents":3}]}
+{"kind":"BOGUS","id":"Y-1"}

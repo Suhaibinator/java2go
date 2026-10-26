@@ -1,0 +1,11 @@
+seed=17
+serial=s-oak|10|6dc3b8c3b87365233137
+cancelled=s-cancel
+failed=s-bad:IllegalArgumentException
+recovery=s-river|15|e6bca2e5ad97207761746572233330
+parallel=p-oak|10|6dc3b8c3b87365233137
+parallel=p-river|15|e6bca2e5ad97207761746572233330
+parallel=p-sky|10|617a756c20cf80233433
+parallel=p-stone|13|636166c3a9206e6f6972233536
+parallel=p-grove|12|666972202620617368233639
+invariants=7 success,1 failure,1 cancel; 8 streams closed; fresh worker contexts

@@ -139,10 +139,10 @@ public class NullableStringReferenceProgram {
 	out := renderGoFileFromJava(t, src)
 	flat := strings.Join(strings.Fields(out), " ")
 	for _, want := range []string{
-		`value string`,
-		`stdjava.StringIsNull`,
-		`stdjava.StringValueOf(old)`,
-		`stdjava.StringRequireNonNull`,
+		`value *stdjava.JavaString`,
+		`stdjava.JavaReferenceEqual(first, nil)`,
+		`stdjava.JavaStringTextOperandExecution(__java2goExecution, old)`,
+		`stdjava.RequireJavaString(ne.implicit).Length()`,
 	} {
 		if !strings.Contains(flat, want) {
 			t.Fatalf("nullable String lowering missing %q:\n%s", want, out)
@@ -152,12 +152,20 @@ public class NullableStringReferenceProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestNullableStringRuntime(t *testing.T) {
 	const want = "base-init=null/null|base-ctor=null/null|true/true/null/null/false/false/true|nullx/nully|true/true/true/true/false/null|true/nullarray|null/null|npe"
-    if got := Run(); got != want {
-        t.Fatalf("Run() = %q, want %q", got, want)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() = UTF16 %x, want UTF16 %x", got.UTF16Copy(), utf16.Encode([]rune(want)))
 	}
 }
 `)
@@ -180,19 +188,29 @@ public class NullableStringAliasCollision {
 	if !strings.Contains(flat, `stdjava3 "github.com/NickyBoy89/java2go/stdjava"`) {
 		t.Fatalf("runtime import did not avoid stdjava/stdjavapkg/stdjava2 declarations:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava3.StringValueOf") {
+	if !strings.Contains(flat, "stdjava3.ConcatJavaStrings(stdjava3.JavaStringTextOperandExecution(__java2goExecution, old), stdjava3.JavaStringTextOperandExecution(__java2goExecution, rhs))") {
 		t.Fatalf("nullable String calls did not use allocated runtime alias:\n%s", out)
 	}
 
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+
+	stdjava "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestAliasCollisionRuntime(t *testing.T) {
-    if got := Run("x"); got != "nullx" {
-        t.Fatalf("Run(x) = %q, want nullx", got)
-    }
+	got := Run(stdjava.JavaStringFromHostUTF8("x"))
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("nullx"))) {
+		t.Fatalf("Run(x) = UTF16 %x, want nullx", got.UTF16Copy())
+	}
 }
 `)
 }

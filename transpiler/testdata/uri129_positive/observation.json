@@ -1,0 +1,6 @@
+{
+  "evidence": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_ci_polymorphism_assertions/uri-refusal129-work/evidence/positive-jdk-run",
+  "exit_code": 0,
+  "stderr": "",
+  "stdout": "urn:e\u0301:urn:e\u0301:java.net.URI\nsource-url:text\nforeign-normalize\njava.net.URI\nurn:%C3%A9\n"
+}

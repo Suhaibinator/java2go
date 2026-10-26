@@ -1,0 +1,94 @@
+[
+  {
+    "name": "fresh-leaf",
+    "before": ".:D",
+    "exception": "",
+    "after": ".:D|leaf:D"
+  },
+  {
+    "name": "fresh-nested",
+    "before": ".:D",
+    "exception": "",
+    "after": ".:D|a/b/leaf:D|a/b:D|a:D"
+  },
+  {
+    "name": "existing-nested",
+    "before": ".:D|a/b:D|a:D",
+    "exception": "",
+    "after": ".:D|a/b:D|a:D"
+  },
+  {
+    "name": "existing-file",
+    "before": ".:D|leaf:F=410042",
+    "exception": "FileAlreadyExistsException",
+    "after": ".:D|leaf:F=410042",
+    "messageUTF16": "003c0052004f004f0054003e002f006500780069007300740069006e0067002d00660069006c0065002f006c006500610066",
+    "causeNull": true
+  },
+  {
+    "name": "file-parent",
+    "before": ".:D|block:F=46",
+    "exception": "FileSystemException",
+    "after": ".:D|block:F=46",
+    "messageUTF16": "003c0052004f004f0054003e002f00660069006c0065002d0070006100720065006e0074002f0062006c006f0063006b002f006300680069006c0064003a0020004e006f0074002000610020006400690072006500630074006f00720079",
+    "causeNull": true
+  },
+  {
+    "name": "link-dir-leaf",
+    "before": ".:D|link:L=real|real:D",
+    "exception": "",
+    "after": ".:D|link:L=real|real:D"
+  },
+  {
+    "name": "link-dir-parent",
+    "before": ".:D|link:L=real|real:D",
+    "exception": "",
+    "after": ".:D|link:L=real|real/child:D|real:D"
+  },
+  {
+    "name": "link-file",
+    "before": ".:D|link:L=real|real:F=4c",
+    "exception": "FileAlreadyExistsException",
+    "after": ".:D|link:L=real|real:F=4c",
+    "messageUTF16": "003c0052004f004f0054003e002f006c0069006e006b002d00660069006c0065002f006c0069006e006b",
+    "causeNull": true
+  },
+  {
+    "name": "dangling-leaf",
+    "before": ".:D|link:L=missing",
+    "exception": "FileAlreadyExistsException",
+    "after": ".:D|link:L=missing",
+    "messageUTF16": "003c0052004f004f0054003e002f00640061006e0067006c0069006e0067002d006c006500610066002f006c0069006e006b",
+    "causeNull": true
+  },
+  {
+    "name": "dangling-parent",
+    "before": ".:D|link:L=missing",
+    "exception": "FileAlreadyExistsException",
+    "after": ".:D|link:L=missing",
+    "messageUTF16": "003c0052004f004f0054003e002f00640061006e0067006c0069006e0067002d0070006100720065006e0074002f006c0069006e006b",
+    "causeNull": true
+  },
+  {
+    "name": "link-loop-parent",
+    "before": ".:D|a:L=b|b:L=a",
+    "exception": "FileSystemException",
+    "after": ".:D|a:L=b|b:L=a",
+    "messageUTF16": "003c0052004f004f0054003e002f006c0069006e006b002d006c006f006f0070002d0070006100720065006e0074002f0061003a00200054006f006f0020006d0061006e00790020006c006500760065006c00730020006f0066002000730079006d0062006f006c006900630020006c0069006e006b00730020006f007200200075006e00610062006c006500200074006f0020006100630063006500730073002000610074007400720069006200750074006500730020006f0066002000730079006d0062006f006c006900630020006c0069006e006b",
+    "causeNull": true
+  },
+  {
+    "name": "relative-dot",
+    "before": ".:D|inside:D",
+    "exception": "",
+    "after": ".:D|dot-leaf:D|inside:D"
+  },
+  {
+    "name": "null-path",
+    "before": ".:D",
+    "exception": "NullPointerException",
+    "after": ".:D",
+    "messageUTF16": "00430061006e006e006f007400200069006e0076006f006b006500200022006a006100760061002e006e0069006f002e00660069006c0065002e0050006100740068002e00670065007400460069006c006500530079007300740065006d0028002900220020006200650063006100750073006500200022007000610074006800220020006900730020006e0075006c006c",
+    "causeNull": true
+  }
+]

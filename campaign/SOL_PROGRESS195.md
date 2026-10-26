@@ -1,0 +1,7 @@
+# Sol checkpoint 195: reference ABI regression assertions
+
+Six compiler tests now inspect the canonical reference ABI through complete AST expressions. They check UTF-16 Java strings, primitive and reference array descriptors, boxed object elements, typed casts, annotation inclusion/exclusion and the stream source/count expression. Java fixtures, behavioral expectations and production code are unchanged. Negative controls reject wrong descriptors, element order, boxing, casts, member types and retained excluded members.
+
+All 25 qualification stages passed on the public194 rebase: six parents in normal and race modes, three assertion-control parents repeated twenty times in each mode, both actual 2312-parent registries, and default/F1 whole-project race compilation and lint. That is 132 passing parent executions. The coordinator independently rechecked source files, receipts, raw streams, environments, tool/binary pins and owned process absence. The six original assertion failures remain preserved in baseline evidence.
+
+These tests repair stale representation expectations; they do not establish broader application compatibility. Parent race execution does not imply race instrumentation in unchanged generated-child test commands. Hosted CI, the existing Gson adversarial failure, full Netty/Gson/Supplier28 parity and measured performance gains remain open. The campaign continues with the original applications.

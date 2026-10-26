@@ -1,0 +1,40 @@
+package stdjava
+
+// Exact declaration facts observed with the pinned JDK21 ClassLocations oracle.
+// This inventory supplies provenance only, preserving existing descriptors and
+// assignment edges. Add declarations only after an actual metadata observation.
+func init() {
+	RegisterClassRuntimeLocation(TypeID("java.lang.StringBuilder"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.AbstractStringBuilder"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.String"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.StringBuffer"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.util.UUID"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Boolean"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Byte"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Short"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Integer"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Long"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Float"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Double"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Character"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Number"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.CharSequence"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Runnable"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.Object"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.sql.Date"), ClassRuntimeLocation{Known: true, ModuleName: "java.sql", LoaderIdentity: PlatformClassLoaderIdentity, LoaderName: "platform"})
+	RegisterClassRuntimeLocation(TypeID("java.sql.Timestamp"), ClassRuntimeLocation{Known: true, ModuleName: "java.sql", LoaderIdentity: PlatformClassLoaderIdentity, LoaderName: "platform"})
+	RegisterClassRuntimeLocation(TypeID("java.sql.Time"), ClassRuntimeLocation{Known: true, ModuleName: "java.sql", LoaderIdentity: PlatformClassLoaderIdentity, LoaderName: "platform"})
+	RegisterClassRuntimeLocation(TypeID("java.util.Date"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.lang.ClassCastException"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.util.ArrayList"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("java.util.LinkedList"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:boolean"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:byte"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:short"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:char"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:int"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:long"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:float"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:double"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+	RegisterClassRuntimeLocation(TypeID("primitive:void"), ClassRuntimeLocation{Known: true, ModuleName: "java.base", LoaderIdentity: BootstrapClassLoaderIdentity, LoaderName: "bootstrap"})
+}

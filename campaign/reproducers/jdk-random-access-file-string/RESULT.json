@@ -1,0 +1,137 @@
+{
+  "status": "Bounded canonical java.io.RandomAccessFile(String,String) constructor repair. Full RAF/FileChannel/read-only/Netty acceptance remains pending.",
+  "baseline": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/PRE_PRODUCTION_BASELINE.json",
+    "sha256": "d7aac392eac2bef9425cf8ecb4094104885cee9bbc6c9d28d85f132866ab3326",
+    "bytes": 4333
+  },
+  "scope": {
+    "new_production": [
+      "stdjava/random_access_file_reference.go",
+      "transpiler/intrinsics_random_access_file_reference.go"
+    ],
+    "existing_hunk": "Only 207-byte legacy constructor registration SHA373337299b024d34c3bc14fdefe2f405796e98ecc9580d5d71bc305c59212dd1 replaced by owned node registration call. Existing relative-read hook and legacy runtime NewRandomAccessFile unchanged."
+  },
+  "behavior": [
+    "Caller Execution and exact canonical String arguments; evaluates lowered original arguments once left-to-right, no host mode bridge.",
+    "Normalizes internal canonical File path before mode processing; mode invalid/null wins typed-null path and NUL path. Canonical null path message remains Java null.",
+    "All r/rw/rws/rwd exact UTF16 mode discrimination, invalid diagnostic preserves arbitrary UTF16 units, real JDK null-mode helpful text.",
+    "Native path ingress uses existing encoder, while normalized original UTF16 stays in FileNotFoundException diagnostic; real missing/permission/ENOTDIR/ENAMETOOLONG and directory refusal match pinned JDK.",
+    "Closes native descriptor on failed stat/directory rejection before state/channel publication. Native devices allowed. Existing cached getChannel/shared descriptor cursor and closure preserved.",
+    "Exact constructor declaration/signature guards, source/foreign/binder/value owner controls, array/typearg/invalidarity rejection; no unsafe File/bare-null fallback."
+  ],
+  "JDK_pin": {
+    "jdk": "21.0.6+8-LTS-188",
+    "platform": "Installed macOS/Darwin JDK21, actual user filesystem permissions and native errno text. Seeds/fixture.setup.json define test input permissions for both JDK and Go; no runtime fixture lookup.",
+    "initial_freeze": "Four genuine wholeprograms,12 successful identical JDK observations before production; source/POM/input/setup/oracles29leaves byteexact."
+  },
+  "verification": {
+    "wholeprogram_green": [
+      "contracts",
+      "open-errors",
+      "ordering",
+      "owners"
+    ],
+    "execution": "Each has frozen JDK3 + strict/all-package/entry Go race builds +three exact Go stdout/stderr observations. No skipped or zero-selected gates.",
+    "runtime_all_race": "627top-level parents +1231subtests =1858 actual PASS names,0skip/0fail",
+    "constructor_guard_tests": "2parents+8subtests=10 actual PASS names,0skip",
+    "composition_read_message_identity": "Original immutable LEASE_A message-identity wholeprogram now JDK3/Go3 GREEN with String constructor, no original fixture edits.",
+    "retained_controls_green": [
+      "All5 LEASE_A heap/value/overflow/source/foreign programs",
+      "TestCampaignNIOHeapContracts",
+      "TestCampaignNIOPrimitiveContracts",
+      "TestCampaignRuntimeByteBuffer"
+    ]
+  },
+  "mandatory_pending": {
+    "File_constructor": "Canonical File overload withheld until virtual source getPath/base invalid state carrier. Original old TestCampaignDigestIOJVMParity retained; actual composed baseline already failed native mode ABI + native-string harness comparison. After producer it still fails native-string harness comparison; absence of native ctor type mismatch does NOT establish File acceptance. Typed File strict refusal explicitly tested.",
+    "original_full_read": "Frozen full Read program now Go build RED solely two missing Thread.interrupt calls, no RAF mode mismatch. Thread bridge/source override carrier remain held.",
+    "readonly_class": "Concrete HeapByteBuffer/HeapByteBufferR class identity/mapper remains validJDK/native mismatch from unchanged A; no class edits.",
+    "source_FileChannel": "Original source subclass carrier build RED preserved; no source override semantics claimed.",
+    "rwd_exact_flags": "Runtime uses portable O_SYNC to provide data+metadata syncing, a stronger minimum guarantee for rwd. Exact native O_DSYNC flag/performance equivalence is NOT claimed; any platform-specific flags require separate source audit/scope.",
+    "platforms_security_and_lifecycle": "No Windows filesystem normalization/error compatibility, SecurityManager/virtual source RAF subclass, FileDescriptor registration/cleaner/full serialization or active I/O interruption admission. Source implementation and explicit close ownership scope only; original broader requirements remain separate frontiers.",
+    "positional_write_Netty": "Original e118 positional FileChannel write and genuine Netty1220 source witness untouched and held; no write emitter/runtime/result admission."
+  },
+  "evidence": [
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/evidence/jdk-before-producer/report.json",
+      "sha256": "bbd585aea47be7750ddf6b7e9323d6359d7757d74447f1229b32d6aa4aa22404",
+      "bytes": 4171
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/evidence/jdk-open-errors-before-producer/report.json",
+      "sha256": "04c9d8de6d6740d5045a3baae9e561542dd58cc0109fc293df1af235e0fc768e",
+      "bytes": 1356
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/evidence/jdk-frozen-before-producer-fixture-manifest.json",
+      "sha256": "a082586bc8edfe9bc335caa6275295d725fcf24ccce19c570d5b94bd6c7d84ca",
+      "bytes": 4021
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/evidence/red-before-producer/report.json",
+      "sha256": "8208230565be1ed4dd7a1cc3738aca9ab0d0b681d2aeecb5e7b7e32456c68678",
+      "bytes": 7398
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/evidence/first-producer/report.json",
+      "sha256": "47944408736da92bf4123ed47452ed715bc92a93c92cf0375e42710726e7d712",
+      "bytes": 2256
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/evidence/first-producer/oracle-report.json",
+      "sha256": "a87eaa97b068f345330f7a22f4b1a044ba4261256bd0dd8f1ef0f52c916e5bc3",
+      "bytes": 2682
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/evidence/final-producer/report.json",
+      "sha256": "ff6a5f561a8f1c34fc0ec78f53e34bbc7a3a5c495b2059d194022441bb428293",
+      "bytes": 8267
+    },
+    {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/evidence/held-after-producer/report.json",
+      "sha256": "4a8008115714af731a8d9edf8ae49995b0475900da0988d5b622da26e24153f5",
+      "bytes": 1271
+    }
+  ],
+  "classification": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/RUNTIME_PASS_NAME_CLASSIFICATION.json",
+    "sha256": "f43704e8f0bd99f6c65f967d2d575df03c82aa98a17f89baaa5c7c5ccdcb1fa9",
+    "bytes": 112735
+  },
+  "preservation": {
+    "frozen_A_source": "All baseline leaves remain byteexact except permitted constructor callback; A namespace/patch/manifest unchanged.",
+    "legacy_File_test": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/source/transpiler/campaign_digest_io_test.go",
+      "sha256": "f7e751873a6df8a698fd44afdc03d7eb2e5afe8b52a8360051932c932d5eb2a8",
+      "bytes": 2012
+    },
+    "original_Read_fixture": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/random-access-file-string-lease-b/source/campaign/reproducers/jdk-bytebuffer-readonly/read/src/main/java/probe/Main.java",
+      "sha256": "76878fdd7ef425edd236c71f10e55b5f0594158f21402c7ff10af415e7f4f45d",
+      "bytes": 1761
+    },
+    "empty_stderr": "Four new zero-byte expected.stderr leaves SHAe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855; manifest-aware restoration required for mode-only patch blocks.",
+    "verbose_artifacts": "Ignored private campaign evidence only; tracked metadata links absolute durable evidence paths+SHA hashes."
+  },
+  "supervision": {
+    "Go_env": {
+      "GOMAXPROCS": "2",
+      "GOFLAGS": "-p=1",
+      "GOWORK": "off",
+      "GOCACHE": "campaign cache"
+    },
+    "limits": {
+      "javac_seconds": 55,
+      "native_seconds": 55,
+      "supervisor_seconds": 65,
+      "build_seconds": 300,
+      "execution_seconds": 60,
+      "GOMAXPROCS": 2,
+      "GOFLAGS": "-p=1",
+      "nested_race": true
+    },
+    "receipt_limits": "Direct subprocess.run supervisors plus native55s; all commands returned normally with no timeout and sessions terminal. No independent process-group cleanup certificate or OS CPU affinity/Java CPU quota claim."
+  },
+  "provenance": "Contract-derived general native platform service; no Oracle implementation copy, library special cases, generated edits, JVM delegation, runtime oracle embedding or fixture table."
+}

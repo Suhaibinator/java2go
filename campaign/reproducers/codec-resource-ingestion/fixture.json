@@ -1,0 +1,32 @@
+{
+  "name": "codec-resource-ingestion-prereq",
+  "main_class": "prereq.codec.Main",
+  "source_roots": [
+    "src/main/java"
+  ],
+  "pom": "pom.xml",
+  "dependencies": [
+    "commons-codec"
+  ],
+  "dependency_sources": {
+    "commons-codec": [
+      "org/apache/commons/codec/Resources.java"
+    ]
+  },
+  "dependency_resources": {
+    "commons-codec": [
+      "org/apache/commons/codec/language/dmrules.txt"
+    ]
+  },
+  "resources": [],
+  "args": [
+    "{seed}"
+  ],
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "repeats": 3,
+  "output_files": []
+}

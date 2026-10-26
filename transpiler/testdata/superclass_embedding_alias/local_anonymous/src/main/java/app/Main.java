@@ -1,0 +1,1 @@
+package app; public class Main {public static void main(String[] args){class Local extends p.Base {} Local local=new Local(); p.Base anonymous=new p.Base(){public int extra(){return 1;}}; p.Base override=new p.Base(){public int base(){return super.base()+6;}}; System.out.println(local.base()+":"+anonymous.base()+":"+override.base()+":"+((p.Base)local).base());}}

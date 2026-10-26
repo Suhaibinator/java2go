@@ -1,0 +1,85 @@
+package transpiler
+
+import "testing"
+
+func TestCampaignConcurrentModificationExceptionOverloadsJDK21(t *testing.T) {
+	runCampaignCompilerStrictProjectOracle(t, map[string]string{
+		"pom.xml": `<project><groupId>probe</groupId><artifactId>cme-overloads</artifactId><version>1</version></project>`,
+		"src/main/java/probe/Main.java": `package probe;
+import java.util.ConcurrentModificationException;
+class Child extends ConcurrentModificationException {
+ <S extends String> Child(S message){super(message);}
+ Child(Throwable cause){super(cause);}
+ Child(String message,Throwable cause){super(message,cause);}
+}
+public class Main {
+ static <S extends String> ConcurrentModificationException message(S value){return new ConcurrentModificationException(value);}
+ static <T extends Throwable> ConcurrentModificationException cause(T value){return new ConcurrentModificationException(value);}
+ static boolean available(ConcurrentModificationException value,Throwable replacement){
+  try{return value.initCause(replacement)==value && value.getCause()==replacement;}
+  catch(IllegalStateException expected){return false;}
+ }
+ public static void main(String[] args){
+  String text=new String(new char[]{'r',0,(char)0xd800,'x',(char)0xdc00});
+  RuntimeException replacement=new RuntimeException("replacement");
+  ConcurrentModificationException empty=new ConcurrentModificationException();
+  ConcurrentModificationException detail=new ConcurrentModificationException(text);
+  ConcurrentModificationException absent=new ConcurrentModificationException((String)null);
+  System.out.println("message="+(empty.getMessage()==null)+":"+(detail.getMessage()==text)+":"+(absent.getMessage()==null)+":"+available(empty,replacement)+":"+available(detail,replacement)+":"+available(absent,replacement));
+  System.out.println("units="+detail.getMessage().length()+":"+(int)detail.getMessage().charAt(1)+":"+(int)detail.getMessage().charAt(2)+":"+(int)detail.getMessage().charAt(4));
+  ConcurrentModificationException nullCause=new ConcurrentModificationException((Throwable)null);
+  ConcurrentModificationException caused=new ConcurrentModificationException(replacement);
+  ConcurrentModificationException paired=new ConcurrentModificationException(text,replacement);
+  ConcurrentModificationException nullPair=new ConcurrentModificationException(null,null);
+  ConcurrentModificationException nullMessage=new ConcurrentModificationException(null,replacement);
+  System.out.println("cause="+(nullCause.getMessage()==null)+":"+(nullCause.getCause()==null)+":"+(caused.getCause()==replacement)+":"+(paired.getMessage()==text)+":"+(paired.getCause()==replacement)+":"+(nullPair.getMessage()==null)+":"+(nullMessage.getCause()==replacement));
+  System.out.println("closed="+available(nullCause,replacement)+":"+available(caused,replacement)+":"+available(paired,replacement)+":"+available(nullPair,replacement)+":"+available(nullMessage,replacement));
+  ConcurrentModificationException generic=message(text);
+  ConcurrentModificationException genericNull=Main.<String>message(null);
+  ConcurrentModificationException genericCause=cause(replacement);
+  Child childMessage=new Child(text);Child childCause=new Child((Throwable)replacement);Child childPair=new Child(null,replacement);
+  System.out.println("bound="+(generic.getMessage()==text)+":"+(genericNull.getMessage()==null)+":"+(genericCause.getCause()==replacement)+":"+(childMessage.getMessage()==text)+":"+(childCause.getCause()==replacement)+":"+(childPair.getCause()==replacement));
+  System.out.println("class="+(detail.getClass()==ConcurrentModificationException.class)+":"+(ConcurrentModificationException.class.getSuperclass()==RuntimeException.class));
+ }
+}`,
+	}, "probe.Main", "message=true:true:true:true:true:true\nunits=5:0:55296:56320\ncause=true:true:true:true:true:true:true\nclosed=false:false:false:false:false\nbound=true:true:true:true:true:true\nclass=true:true\n")
+}
+
+func TestCampaignConcurrentModificationExceptionCauseCallerJDK21(t *testing.T) {
+	runCampaignCompilerStrictProjectOracle(t, map[string]string{
+		"pom.xml": `<project><groupId>probe</groupId><artifactId>cme-callback</artifactId><version>1</version></project>`,
+		"src/main/java/probe/Main.java": `package probe;
+import java.util.ConcurrentModificationException;
+public class Main {
+ static ThreadLocal<String> local=new ThreadLocal<String>();
+ static String trace="";
+ static String detail=new String(new char[]{'r',0,(char)0xd800});
+ static RuntimeException marker=new RuntimeException("marker");
+ static class Cause extends RuntimeException {
+  int calls;boolean held;boolean same;boolean contextual;boolean abrupt;boolean nullText;Thread caller;
+  public String toString(){calls++;held=Thread.holdsLock(this);same=Thread.currentThread()==caller;contextual=local.get()==detail;trace+="render,";if(abrupt)throw marker;return nullText?null:detail;}
+ }
+ static String message(){trace+="message,";return detail;}
+ static Throwable cause(Cause value){trace+="cause,";return value;}
+ public static void main(String[] args){
+  Cause value=new Cause();value.caller=Thread.currentThread();
+  ConcurrentModificationException built=null;
+  synchronized(value){local.set(detail);trace+="enter,";try{built=new ConcurrentModificationException(cause(value));trace+="built,";}finally{local.remove();trace+="finally,";}}
+  synchronized(value){trace+="reacquire,";}
+  System.out.println("caller="+(built.getMessage()==detail)+":"+(built.getCause()==value)+":"+value.calls+":"+value.held+":"+value.same+":"+value.contextual+":"+(local.get()==null)+":"+Thread.holdsLock(value));
+  System.out.println(trace);
+  trace="";Cause lazy=new Cause();lazy.abrupt=true;
+  ConcurrentModificationException paired=new ConcurrentModificationException(message(),cause(lazy));
+  System.out.println("pair="+(paired.getMessage()==detail)+":"+(paired.getCause()==lazy)+":"+lazy.calls+":"+trace);
+  trace="";Cause abrupt=new Cause();abrupt.caller=Thread.currentThread();abrupt.abrupt=true;boolean caught=false;
+  try{synchronized(abrupt){local.set(detail);trace+="enter,";try{new ConcurrentModificationException(cause(abrupt));trace+="bad,";}finally{local.remove();trace+="finally,";}}}
+  catch(RuntimeException failure){caught=failure==marker;trace+="catch,";}
+  synchronized(abrupt){trace+="reacquire,";}
+  System.out.println("abrupt="+caught+":"+abrupt.calls+":"+abrupt.held+":"+abrupt.same+":"+abrupt.contextual+":"+(local.get()==null)+":"+Thread.holdsLock(abrupt));
+  System.out.println(trace);
+  Cause nil=new Cause();nil.nullText=true;ConcurrentModificationException nullText=new ConcurrentModificationException(nil);
+  System.out.println("null-text="+(nullText.getMessage()==null)+":"+(nullText.getCause()==nil)+":"+nil.calls);
+ }
+}`,
+	}, "probe.Main", "caller=true:true:1:true:true:true:true:false\nenter,cause,render,built,finally,reacquire,\npair=true:true:0:message,cause,\nabrupt=true:1:true:true:true:true:false\nenter,cause,render,finally,catch,reacquire,\nnull-text=true:true:1\n")
+}

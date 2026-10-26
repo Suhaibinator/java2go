@@ -40,7 +40,7 @@ public class GenericInterfaceMethodReferenceProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, ".(genericReaderJava2goExecution[string])") {
+	if !strings.Contains(flat, ".(genericReaderJava2goExecution[*stdjava.JavaString])") {
 		t.Fatalf("bound generic interface reference did not use the receiver's concrete type argument:\n%s", out)
 	}
 	if strings.Contains(flat, "genericReaderJava2goExecution[T]") {
@@ -49,11 +49,15 @@ public class GenericInterfaceMethodReferenceProgram {
 	runGeneratedWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestBoundGenericInterfaceReference(t *testing.T) {
-    if got := Run(); got != "bound-interface" {
-        t.Fatalf("Run() = %q, want bound-interface", got)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("bound-interface"))) {
+        t.Fatalf("Run() = %v, want bound-interface", got)
     }
 }
 `)
@@ -78,7 +82,8 @@ public class GenericAbstractMethodReferenceProgram {
 
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
-	if !strings.Contains(flat, ".(genericAbstractReaderJava2goExecution[string])") {
+	if !strings.Contains(flat, "reader *genericAbstractReader[*stdjava.JavaString]") ||
+		!strings.Contains(flat, ".__java2goGenericAbstractReaderSelf.ReadJava2goExecution(__java2goExecution)") {
 		t.Fatalf("bound generic abstract reference did not use the receiver's concrete type argument:\n%s", out)
 	}
 	if strings.Contains(flat, "genericAbstractReaderJava2goExecution[T]") {
@@ -189,6 +194,7 @@ import (
 )
 
 func TestVariadicEnum(t *testing.T) {
+    VariadicEnumProgramcalculatorJava2goEnsureInitialized(stdjava.NewExecution())
     values := stdjava.PrimitiveArrayLiteral[int32](stdjava.PrimitiveIntTypeID, 4, 6, 8)
     if got := SUM.Calculate(values); got != 18 {
         t.Fatalf("Calculate() = %d, want 18", got)

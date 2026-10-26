@@ -1,0 +1,37 @@
+{
+  "annotated_tag_sha": "69517c5cc2ce0d343e128dd5e8f9fa15a8658ebb",
+  "commit": "26e68a2c3935e459b374891c87760f6d6c5e2550",
+  "coordinate": "io.netty:netty-buffer:4.1.138.Final",
+  "files": [
+    {
+      "bytes": 106403,
+      "extracted_member": "dependencies/netty-buffer/src/main/java/io/netty/buffer/ByteBuf.java",
+      "file": "io/netty/buffer/ByteBuf.java",
+      "license_header_sha256": "80081b00d82c82b723614297920b7cef6ad55123d3d502a9d5d3a148e6be5fd3",
+      "sha256": "ffcd7cec64307042d74ff062d1fe881cd34959eeae505cc2221f67dcffe83fe9",
+      "source_jar_member": "io/netty/buffer/ByteBuf.java"
+    },
+    {
+      "bytes": 79623,
+      "extracted_member": "dependencies/netty-buffer/src/main/java/io/netty/buffer/CompositeByteBuf.java",
+      "file": "io/netty/buffer/CompositeByteBuf.java",
+      "license_header_sha256": "80081b00d82c82b723614297920b7cef6ad55123d3d502a9d5d3a148e6be5fd3",
+      "sha256": "91cbe99cfe493f4acacaee0edfbb46d1584531adad0dc0c3d4cf2a8ca557e203",
+      "source_jar_member": "io/netty/buffer/CompositeByteBuf.java"
+    }
+  ],
+  "fixtures_byte_exact": true,
+  "license": "Apache-2.0",
+  "license_text_sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+  "original_license_headers": "Retained byte-exact in both files.",
+  "retained_implementation_manifest_sha256": "e811888e561cfbee7d01a5bc2ed7f2c5dd79115214dee31b4eb3c0daae0e9472",
+  "scope": "Original complete source files parsed as genuine two-file dependency diagnostic; not a complete Netty build/acceptance fixture.",
+  "source_jar": {
+    "bytes": 228284,
+    "sha256": "57ec5e8742518e5fb9b3814316713eaf605132d4b3aff16a9d952ae208952013",
+    "url": "https://repo.maven.apache.org/maven2/io/netty/netty-buffer/4.1.138.Final/netty-buffer-4.1.138.Final-sources.jar"
+  },
+  "tag": "netty-4.1.138.Final",
+  "upstream": "The Netty Project",
+  "version": "4.1.138.Final"
+}

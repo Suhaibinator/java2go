@@ -1,0 +1,29 @@
+{
+  "jdk_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "source_sha256": "78ddbb21a9bd314a3b71beb3571f2b0bb5c5a2e24810dc4370ccd261e07d25b6",
+  "javac_limit_seconds": 55,
+  "execution_limit_seconds": 60,
+  "observations": [
+    {
+      "repeat": 1,
+      "exit": 0,
+      "seconds": 0.0721585840001353,
+      "stdout_sha256": "3b5d9f5faeebc1536c1ce0e4a88cb1600b480b3b82dd99529a4cc7164a2e1437",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "repeat": 2,
+      "exit": 0,
+      "seconds": 0.07285425000009127,
+      "stdout_sha256": "3b5d9f5faeebc1536c1ce0e4a88cb1600b480b3b82dd99529a4cc7164a2e1437",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "repeat": 3,
+      "exit": 0,
+      "seconds": 0.07178220900095766,
+      "stdout_sha256": "3b5d9f5faeebc1536c1ce0e4a88cb1600b480b3b82dd99529a4cc7164a2e1437",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

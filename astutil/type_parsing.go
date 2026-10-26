@@ -172,7 +172,7 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 
 		// Special case for strings, because in Go, these are primitive types
 		if typeName == "String" {
-			return &ast.Ident{Name: "string"}
+			return &ast.StarExpr{X: &ast.SelectorExpr{X: ast.NewIdent("stdjava"), Sel: ast.NewIdent("JavaString")}}
 		}
 		// Java's Object is the universal supertype, which maps to Go's any.
 		if typeName == "Object" {
@@ -210,7 +210,7 @@ func ParseTypeWithTypeParams(node *sitter.Node, source []byte, typeParams []stri
 				return &ast.Ident{Name: "any"}
 			}
 			if name == "String" {
-				return &ast.Ident{Name: "string"}
+				return &ast.StarExpr{X: &ast.SelectorExpr{X: ast.NewIdent("stdjava"), Sel: ast.NewIdent("JavaString")}}
 			}
 		}
 		if strings.HasSuffix(node.Content(source), ".AutoCloseable") {

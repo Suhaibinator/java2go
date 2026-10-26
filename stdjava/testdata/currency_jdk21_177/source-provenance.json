@@ -1,0 +1,82 @@
+{
+  "status": "matching-public-revision177-complete-resource-verified",
+  "release_tag": "jdk-21.0.6+7",
+  "license": "GPL version 2 only with Classpath exception; original headers and complete accompanying LICENSE retained",
+  "acquired_files": [
+    {
+      "kind": "properties",
+      "url": "https://raw.githubusercontent.com/openjdk/jdk21u/jdk-21.0.6+7/src/java.base/share/data/currency/CurrencyData.properties",
+      "bytes": 10348,
+      "sha256": "070dfbffa4fb770776cd481f8a6b682e39192b0ceb343ee89c363c518c69b27c",
+      "acquisition_evidence_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/currency-source-research/public-currency-jdk21.0.6+7.properties",
+      "file": "CurrencyData.properties"
+    },
+    {
+      "kind": "generator",
+      "url": "https://raw.githubusercontent.com/openjdk/jdk21u/jdk-21.0.6+7/make/jdk/src/classes/build/tools/generatecurrencydata/GenerateCurrencyData.java",
+      "bytes": 20220,
+      "sha256": "3d4b7dae9855889edbd13810d865ff094def1c8843b655e8e5cf014aff3f4003",
+      "acquisition_evidence_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/currency-source-research/public-GenerateCurrencyData-jdk21.0.6+7.java",
+      "file": "GenerateCurrencyData.java"
+    },
+    {
+      "kind": "license",
+      "url": "https://raw.githubusercontent.com/openjdk/jdk21u/jdk-21.0.6+7/LICENSE",
+      "bytes": 19274,
+      "sha256": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+      "acquisition_evidence_path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/currency-source-research/public-LICENSE-jdk21.0.6+7",
+      "file": "LICENSE"
+    }
+  ],
+  "generator_script_sha256": "dd76a074b7d4b5aed05e96c2c2562a3b38f2ce4fbe2bb61b0c2f267d63f23179",
+  "table_blocks": {
+    "main": {
+      "count": 676,
+      "bytes": 2704,
+      "sha256": "73d3a4295705569ee9775a7a9f4d7dab68e83fbe7a22e09137f5731699107a43",
+      "byte_exact_installed_match": true
+    },
+    "special": {
+      "count": 15,
+      "bytes": 468,
+      "sha256": "e62bf7f5af1a4e7f2503deab05f4e6320e6ada677e8021d2fbf62fe7c38dcc9b",
+      "byte_exact_installed_match": true
+    },
+    "other": {
+      "count": 80,
+      "bytes": 1040,
+      "sha256": "ad2a7770f26ff47db5f93eded5ed08344896ca2144001ef4e907535c3bc629bb",
+      "byte_exact_installed_match": true
+    }
+  },
+  "derived_resource": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/currency-source-research/public-derived-currency.data",
+    "bytes": 4232,
+    "sha256": "83c35f47bdc9406f7b15768ff48f88176e69933f778ea141f0433b41f07db343",
+    "byte_exact_installed_match": true
+  },
+  "dated_special_cases": [
+    {
+      "cutover_millis": 1743480000000,
+      "old_code": "ANG",
+      "new_code": "XCG"
+    }
+  ],
+  "installed_source_not_copied": true,
+  "old_proposal_sha256": "10ec752d3c91cbc444f130813df6772d71c345e8be9cb81d58c22e5e307dd829",
+  "failed_get_retained": {
+    "url": "https://raw.githubusercontent.com/openjdk/jdk21u/jdk-21.0.6+7/make/data/currency/CurrencyData.properties",
+    "curl_exit": 56,
+    "http_status": 404
+  },
+  "verification_stage": "Immutable source-only public177 acquisition, before separately approved production ingestion",
+  "verification_record": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/currency-source-research/PUBLIC177-VERIFIED.json",
+    "sha256": "fff6631ca544348bcef0d65fb61d032af01e11b9a2f1e7e29c4ef8c0f148fd05"
+  },
+  "production_generator": {
+    "file": "tools/generate-currency-data.py",
+    "sha256": "b2cef33f9e56502357da8c7608b896d399345413f0b5e4c8cae6cc7e722b4d61",
+    "check": "python3 tools/generate-currency-data.py --check"
+  }
+}

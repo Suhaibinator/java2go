@@ -280,7 +280,7 @@ public class App {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "return NewGreeterFuncAdapterJava2goExecution(func(__java2goExecution *stdjava.Execution, name string) string") {
+	if !strings.Contains(flat, "return NewGreeterFuncAdapterJava2goExecution(func(__java2goExecution *stdjava.Execution, name *stdjava.JavaString) *stdjava.JavaString") {
 		t.Fatalf("expected anonymous SAM class to lower to the functional-interface adapter with a closure, got:\n%s", out)
 	}
 }
@@ -632,12 +632,20 @@ public class LocalFieldInitializerProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestLocalFieldInitializers(t *testing.T) {
 	const want = "5:6:11:22:123:5:6:11:22:123123"
-	if got := Run(5); got != want {
-		t.Fatalf("Run(5) = %q, want %q", got, want)
+	got := Run(5)
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+		t.Fatalf("Run(5) = UTF16 %x, want UTF16 %x", got.UTF16Copy(), utf16.Encode([]rune(want)))
 	}
 }
 `)
@@ -671,11 +679,19 @@ public class LocalRecursiveAllocationProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestLocalRecursiveAllocation(t *testing.T) {
-	if got := Run(5); got != "7:-1:17:-2" {
-		t.Fatalf("Run(5) = %q, want 7:-1:17:-2", got)
+	got := Run(5)
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("7:-1:17:-2"))) {
+		t.Fatalf("Run(5) = UTF16 %x, want 7:-1:17:-2", got.UTF16Copy())
 	}
 }
 `)
@@ -709,11 +725,19 @@ public class LocalNullReceiverProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestLocalNullReceiverOrder(t *testing.T) {
-	if got := Run(); got != "npe:2" {
-		t.Fatalf("Run() = %q, want npe:2", got)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("npe:2"))) {
+		t.Fatalf("Run() = UTF16 %x, want npe:2", got.UTF16Copy())
 	}
 }
 `)
@@ -746,11 +770,19 @@ public class AnonymousNullReceiverProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestAnonymousNullReceiverOrder(t *testing.T) {
-	if got := Run(); got != "npe:2" {
-		t.Fatalf("Run() = %q, want npe:2", got)
+	got := Run()
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("npe:2"))) {
+		t.Fatalf("Run() = UTF16 %x, want npe:2", got.UTF16Copy())
 	}
 }
 `)

@@ -128,6 +128,9 @@ func compileTimeConstantExpression(
 			compileTimeConstantExpression(node.NamedChild(2), source, ctx, visiting)
 	case "identifier":
 		name := node.Content(source)
+		if constant, bound := javaLocalConstantExpression(node, source, ctx, visiting); bound {
+			return constant
+		}
 		for scope := ctx.currentClass; scope != nil; scope = scope.Enclosing {
 			resolution := findFieldResolutionInHierarchy(scope, name, ctx)
 			if resolution == nil {
@@ -135,11 +138,18 @@ func compileTimeConstantExpression(
 			}
 			return isCompileTimeConstantField(resolution.def, resolution.owner, source, ctx, visiting)
 		}
-		return false
+		imported := resolveStaticImportedField(name, ctx)
+		return imported.problem == "" && imported.source == nil && wrapperDimensionConstantVariable(imported.intrinsic)
 	case "field_access":
 		object := node.ChildByFieldName("object")
 		if object == nil {
 			return false
+		}
+		if owner, ok := intrinsicStaticClassName(object, ctx, source); ok {
+			field := node.ChildByFieldName("field")
+			if field != nil && wrapperDimensionConstantVariable(intrinsicKey{owner, field.Content(source)}) {
+				return true
+			}
 		}
 		_, typeQualifier := staticFieldQualifierScope(object, source, ctx)
 		if !typeQualifier {

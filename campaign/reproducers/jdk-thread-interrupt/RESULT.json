@@ -1,0 +1,292 @@
+{
+  "status": "Native interruption stage1 component GREEN; full Thread/source/positional FileChannel services HELD",
+  "baseline": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/baseline-source-manifest.json",
+    "sha256": "a2f5735d5cb48d1fc1d5f44850a7aecc65ce107d5e1bb55f28af3e6fd1b538de",
+    "bytes": 593264
+  },
+  "new_owned_runtime": "stdjava/thread_interrupt_execution.go; private Thread.interruptExecution slot only",
+  "new_owned_compiler": "transpiler/intrinsics_thread_interrupt.go; exact zeroarg void canonical native receiver + single registerThreadIntrinsics initialization call",
+  "preproducer_actual_JDK": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/jdk-before-producer/ORACLES.json",
+    "sha256": "f6455131c3ff04cc34423ff5781b983964b854d91593172e7f6456b7e95a0087",
+    "bytes": 1467
+  },
+  "source_override_JDK3": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/jdk-source-override-before-producer/ORACLE.json",
+    "sha256": "2ed8e87412d96b534271282d8784775e1bfd8ce93d49c436b9d5093ab7c31b9a",
+    "bytes": 279
+  },
+  "owners_actual_JDK3_added_after_producer": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/jdk-owners/ORACLE.json",
+    "sha256": "3a5cb8f3b2729ced40c76d0ad72bf23ff93459d55aabf16ed49e79d4c7e2c168",
+    "bytes": 341
+  },
+  "actual_original_Read": {
+    "java": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/source/campaign/reproducers/jdk-bytebuffer-readonly/read/src/main/java/probe/Main.java",
+      "sha256": "76878fdd7ef425edd236c71f10e55b5f0594158f21402c7ff10af415e7f4f45d",
+      "bytes": 1761
+    },
+    "stdout": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/source/campaign/reproducers/jdk-bytebuffer-readonly/read/expected.stdout",
+      "sha256": "4eca03fba05a3c60f1a00792cb184d57c3167d6fdfcf0470e3c4e1d7ea507895",
+      "bytes": 462
+    },
+    "stderr": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/source/campaign/reproducers/jdk-bytebuffer-readonly/read/expected.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "preproducer_RED": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/baseline-red/original-read-allpkg-race/stderr",
+      "sha256": "6a52871043c7c25b71c0f93faf3f3c9ee55c903dacbc75871c2fb8a3204234d1",
+      "bytes": 380
+    },
+    "final_native_parent": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/final-controls-followup/TestReadonlyReadConsumerWholeProgramJVM/result.json",
+      "sha256": "4290adc31c4a1e476963b27fdfabd4dfa9872d5ab02faba5eaa9d42fa506cd2c",
+      "bytes": 3486
+    },
+    "stage_orchestration": "Fresh strict/all generated packages -race/entry -race/Go3 in evidence/acceptance/original-read-*"
+  },
+  "runtime_all_race": {
+    "parents": 631,
+    "subtests": 1231,
+    "PASS": 1862,
+    "SKIP": 0,
+    "receipt": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/final-attribution/runtime-all-final/result.json",
+      "sha256": "be41223bacd015870515e87aa3f07520cf700c7262e03c3773a50af2b8615b6c",
+      "bytes": 3332
+    }
+  },
+  "focused": {
+    "22_parents_final_followup": [
+      {
+        "parent": "TestReadonlyReadConsumerWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestReadonlyHeapWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestReadonlyMutableErrorsWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestReadonlyOverflowOwnerWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestReadonlySourceAndBinderWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestReadonlyForeignWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestRAFStringContractsWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestRAFStringOpenErrorsWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestRAFStringOrderingWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestRAFStringOwnersWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestRAFStringReadMessageIdentityWholeProgramJVM",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestCampaignNIOHeapContracts",
+        "exit": 0,
+        "PASS": 4,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestCampaignNIOPrimitiveContracts",
+        "exit": 0,
+        "PASS": 4,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestCampaignRuntimeByteBuffer",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestThreadInterruptEmitterResultApplicability",
+        "exit": 0,
+        "PASS": 10,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestThreadInterruptInvalidSignatureStrictRefusal",
+        "exit": 0,
+        "PASS": 2,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestThreadInterruptSourceDeclarationOwnership",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestReadonlyIntrinsicInvalidSignatureStrictRefusal",
+        "exit": 0,
+        "PASS": 9,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestReadonlyIntrinsicSourceDeclarationOwnership",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestReadonlyEmitterResultApplicability",
+        "exit": 0,
+        "PASS": 13,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestRAFStringIntrinsicStrictRefusal",
+        "exit": 0,
+        "PASS": 9,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      {
+        "parent": "TestRAFStringSourceDeclarationOwnership",
+        "exit": 0,
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIP": 0
+      }
+    ],
+    "native_full": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/final-controls/TestThreadInterruptNativeWholeProgramJVM/result.json",
+      "sha256": "5f76b63f1eefe61b8f171b205f8950407613394b7f895d6ac01e4e84ae320b45",
+      "bytes": 3481
+    }
+  },
+  "direct_supervision": {
+    "runner": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/run.py",
+      "sha256": "3a05e43f285e5be0d825afb3bb654391e9a593ca386807ca1be0a4399f876ed7",
+      "bytes": 7391
+    },
+    "manifest": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/infra-receipts-manifest.json",
+      "sha256": "1559792c048cfd563db640a21c94e159108e671ad75c6fd58b119e2ff1eb090e",
+      "bytes": 38250
+    },
+    "all_group_absent_and_leader_reaped": true,
+    "CPU": 2,
+    "GOFLAGS": "-p=1 -mod=readonly",
+    "build_seconds": 300,
+    "javac_seconds": 55,
+    "exec_seconds": 60,
+    "native_seconds": 55,
+    "native_outer_seconds": 65
+  },
+  "held": {
+    "native_state_observer_admission": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/held-controls/TestThreadInterruptNativeStateWholeProgramJVM/result.json",
+      "sha256": "577d5bb114b76885ce7bcb5e4c32144679f25b3c9e5c77320027aa1ed28c8e93",
+      "bytes": 3495
+    },
+    "source_overrides_native_carrier_super_observers": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/held-controls/TestThreadInterruptSourceOverrideWholeProgramHeldJVM/result.json",
+      "sha256": "dc0a4bb2e453b09d9be868714b2fcc6e30e618fa31ca843221085e2af68fff26",
+      "bytes": 3515
+    },
+    "source_bound_generic_owner": {
+      "JDK3": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/jdk-owners/ORACLE.json",
+        "sha256": "3a5cb8f3b2729ced40c76d0ad72bf23ff93459d55aabf16ed49e79d4c7e2c168",
+        "bytes": 341
+      },
+      "preproducer_compiler_RED": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/final-attribution/owners-preproducer-allpkg-race/stderr",
+        "sha256": "c87d21cef949482dffcd99a99919fc21ffdb4624fa0f60c2b7671f6fa8de6dbf",
+        "bytes": 300
+      },
+      "postproducer_RED": {
+        "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/final-controls/TestThreadInterruptOwnersWholeProgramJVM/stdout",
+        "sha256": "dc0b3b7ccf7a4acca9f442325bb513c09b2f69b25b53f9f258c0e0f77f1c446f",
+        "bytes": 445
+      },
+      "exact_existing_frontier": "Binder.go46 ThreadJava2goLocal.InterruptJava2goExecution undefined; native route removed missing .interrupt error only"
+    },
+    "invalid_Java_array_frontend_diagnostic": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/held-controls/TestThreadInterruptInvalidArrayStrictFrontierHeld/result.json",
+      "sha256": "a36451ddafb161eb6f2a4dc4bb472dbca0f3ef1c72da6290c0c81f21bb055403",
+      "bytes": 3505
+    },
+    "old_full_File_constructor_string_harness": {
+      "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/thread-interrupt-stage1/evidence/held-controls/TestCampaignDigestIOJVMParity/result.json",
+      "sha256": "eb46adafc2263f96d36c3670810feb3b0bce24e00349eb8a721e4dfa2f4bc721",
+      "bytes": 3446
+    },
+    "future_source_wiring_identity_methodref_earlyconstructor": "Mandatory future controls prepared by Netty source challenge author; not executed or admitted in stage1",
+    "prior_FileChannel_positional_and_real_Netty1220": "Original frozen Java/oracles/frontiers unchanged; no write or backend/lifecycle admission",
+    "prior_readonly_classidentity_and_sourceFileChannel": "Original A/B fixtures/tests byteexact; earlier validJDK/GoRED preserved"
+  },
+  "all_payloads_terminal": true,
+  "limitations": "No universal Thread/source-subclass compatibility; no source callback installer, Run/Start/lifecycle/Execution/objectidentity/observer/methodref/globaltype/signature changes; active I/O cancellation remains excluded."
+}

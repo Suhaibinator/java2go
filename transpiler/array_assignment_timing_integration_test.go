@@ -188,12 +188,17 @@ public class ArrayAssignmentTimingProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "testing"
+    "slices"
+    "unicode/utf16"
+    stdjava "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestArrayAssignmentTimingRuntime(t *testing.T) {
     cases := []struct {
         name string
-        call func() string
+        call func() *stdjava.JavaString
         want string
     }{
         {"null", NullOrder, "airN"},
@@ -209,8 +214,11 @@ func TestArrayAssignmentTimingRuntime(t *testing.T) {
 		{"compound-bounds-before-rhs", CompoundBoundsChecksBeforeRhs, "aiB"},
     }
     for _, tc := range cases {
-        if got := tc.call(); got != tc.want {
-            t.Errorf("%s = %q, want %q", tc.name, got, tc.want)
+        got := tc.call()
+        if got == nil {
+            t.Errorf("%s = null, want %q", tc.name, tc.want)
+        } else if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(tc.want))) {
+            t.Errorf("%s UTF16 = %v, want %q", tc.name, units, tc.want)
         }
     }
 }

@@ -2,7 +2,6 @@ package stdjava
 
 // Private erased views allow collection equality across Go instantiations,
 // matching Java's erased List/Set/Map contracts without treating arrays as lists.
-type javaListValue interface{ javaListElements() []any }
 type javaSetValue interface {
 	javaSetElements() []any
 	Contains(any, ...*Execution) bool
@@ -15,42 +14,59 @@ type javaMapValue interface {
 type javaEntryValue interface{ javaEntry() (any, any) }
 
 func (l *List[T]) javaListElements() []any {
-	out := make([]any, len(l.elements))
-	for i, element := range l.elements {
-		out[i] = element
+	out := make([]any, int(l.Size()))
+	for i := range out {
+		out[i] = l.rawGet(int32(i))
 	}
 	return out
 }
 func (l *List[T]) Equals(other any) bool { return l.EqualsJava2goExecution(nil, other) }
 func (l *List[T]) EqualsJava2goExecution(execution *Execution, other any) bool {
 	ReferenceRequireNonNull(l)
+	if execution == nil {
+		execution = NewExecution()
+	}
+	if l.abstractState != nil || l.fixed || l.allocationKind == listAllocationLinked || l.viewRoot != nil {
+		return AbstractListEqualsExecution(execution, l, other)
+	}
 	if JavaReferenceEqual(l, other) {
 		return true
 	}
-	if javaReferenceIsNull(other) {
+	if !ObjectInstanceOf(other, "java.util.List") {
 		return false
 	}
-	right, ok := other.(javaListValue)
-	if !ok {
-		return false
-	}
-	elements := right.javaListElements()
-	if len(l.elements) != len(elements) {
-		return false
-	}
-	for i, element := range l.elements {
-		if !ObjectsEqual(element, elements[i], execution) {
-			return false
+	expected := l.storageRoot().modCount
+	equal := func() bool {
+		right := ObjectView[JavaIterable](other, CollectionTypeID)
+		it := IterableIteratorExecution(execution, right)
+		for _, value := range l.javaListElements() {
+			if !IteratorHasNextExecution(execution, it) || !ObjectsEqual(value, IteratorNextExecution(execution, it), execution) {
+				return false
+			}
 		}
+		return !IteratorHasNextExecution(execution, it)
+	}()
+	if l.storageRoot().modCount != expected {
+		panic(NewJavaConcurrentModificationExceptionMessage(nil))
 	}
-	return true
+	return equal
 }
 func (l *List[T]) HashCode() int32 { return l.HashCodeJava2goExecution(nil) }
 func (l *List[T]) HashCodeJava2goExecution(execution *Execution) int32 {
 	ReferenceRequireNonNull(l)
+	if execution == nil {
+		execution = NewExecution()
+	}
+	if l.abstractState != nil || l.fixed || l.allocationKind == listAllocationLinked || l.viewRoot != nil {
+		return AbstractListHashCodeExecution(execution, l)
+	}
+	expected := l.storageRoot().modCount
 	hash := int32(1)
-	for _, element := range l.elements {
-		hash = 31*hash + ObjectsHashCode(element, execution)
+	for _, value := range l.javaListElements() {
+		hash = hash*31 + ObjectsHashCode(value, execution)
+	}
+	if l.storageRoot().modCount != expected {
+		panic(NewJavaConcurrentModificationExceptionMessage(nil))
 	}
 	return hash
 }
@@ -96,13 +112,19 @@ func (s *Set[T]) HashCodeJava2goExecution(execution *Execution) int32 {
 
 func (m *Map[K, V]) javaMapLookup(key any, execution *Execution) (any, bool) {
 	if record, _, _ := m.find(key, execution); record != nil {
-		return record.entry.Value, true
+		return record.value, true
 	}
 	return nil, false
 }
-func (m *Map[K, V]) Equals(other any) bool { return m.EqualsJava2goExecution(nil, other) }
-func (m *Map[K, V]) EqualsJava2goExecution(execution *Execution, other any) (equal bool) {
-	defer collectionEqualityFailure(&equal)
+func (m *Map[K, V]) Equals(other any) bool {
+	// Legacy host calls acquire an execution only when dispatching to source
+	// callbacks. Explicit Java executions are always forwarded unchanged.
+	if _, native := other.(javaMapValue); !native && ObjectInstanceOf(other, MapTypeID) {
+		return m.EqualsJava2goExecution(NewExecution(), other)
+	}
+	return m.EqualsJava2goExecution(nil, other)
+}
+func (m *Map[K, V]) EqualsJava2goExecution(execution *Execution, other any) bool {
 	ReferenceRequireNonNull(m)
 	if JavaReferenceEqual(m, other) {
 		return true
@@ -111,23 +133,33 @@ func (m *Map[K, V]) EqualsJava2goExecution(execution *Execution, other any) (equ
 		return false
 	}
 	right, ok := other.(javaMapValue)
-	if !ok || m.Size() != right.Size() {
-		return false
-	}
-	for _, record := range m.entries {
-		value, present := right.javaMapLookup(record.entry.Key, execution)
-		if !present || !ObjectsEqual(record.entry.Value, value, execution) {
+	if !ok {
+		if !ObjectInstanceOf(other, MapTypeID) {
 			return false
 		}
+		return AbstractMapEqualsExecution(execution, m, other)
 	}
-	return true
+	// AbstractMap.equals does not catch failures from either size operation.
+	if m.Size() != right.Size() {
+		return false
+	}
+	return func() (equal bool) {
+		defer collectionEqualityFailure(&equal)
+		for _, record := range m.entries {
+			value, present := right.javaMapLookup(record.key, execution)
+			if !present || !ObjectsEqual(record.value, value, execution) {
+				return false
+			}
+		}
+		return true
+	}()
 }
 func (m *Map[K, V]) HashCode() int32 { return m.HashCodeJava2goExecution(nil) }
 func (m *Map[K, V]) HashCodeJava2goExecution(execution *Execution) int32 {
 	ReferenceRequireNonNull(m)
 	var hash int32
 	for _, record := range m.entries {
-		hash += record.entry.HashCodeJava2goExecution(execution)
+		hash += ObjectsHashCode(record.key, execution) ^ ObjectsHashCode(record.value, execution)
 	}
 	return hash
 }
@@ -162,28 +194,45 @@ func collectionEqualityFailure(equal *bool) {
 }
 
 func (c *ConcurrentHashMap[K, V]) javaMapLookup(key any, execution *Execution) (any, bool) {
-	value, present := c.GetOk(key, execution)
+	ReferenceRequireNonNull(c)
+	value, present := c.getObject(key, execution)
 	return value, present
 }
 func (c *ConcurrentHashMap[K, V]) Equals(other any) bool {
-	return c.EqualsJava2goExecution(nil, other)
+	return c.EqualsJava2goExecution(NewExecution(), other)
 }
-func (c *ConcurrentHashMap[K, V]) EqualsJava2goExecution(execution *Execution, other any) (equal bool) {
-	defer collectionEqualityFailure(&equal)
+func (c *ConcurrentHashMap[K, V]) EqualsJava2goExecution(execution *Execution, other any) bool {
 	ReferenceRequireNonNull(c)
 	if JavaReferenceEqual(c, other) {
 		return true
 	}
-	if javaReferenceIsNull(other) {
+	if !ObjectInstanceOf(other, MapTypeID) {
 		return false
 	}
-	right, ok := other.(javaMapValue)
-	if !ok || c.Size() != right.Size() {
-		return false
+	if execution == nil {
+		execution = NewExecution()
 	}
-	for _, entry := range c.EntrySet() {
-		value, present := right.javaMapLookup(entry.Key, execution)
-		if !present || !ObjectsEqual(entry.Value, value, execution) {
+	right := MapReferenceView(other)
+	for _, record := range c.recordSnapshot() {
+		prior := c.recordValue(record)
+		value := MapGetExecution(execution, right, record.key)
+		if javaReferenceIsNull(value) || !ObjectsEqual(value, prior, execution) {
+			return false
+		}
+	}
+	cursor := abstractMapIterator(execution, right)
+	for IteratorHasNextExecution(execution, cursor) {
+		entry := abstractMapNextEntry(execution, cursor)
+		key := MapEntryGetKeyExecution(execution, entry)
+		if javaReferenceIsNull(key) {
+			return false
+		}
+		value := MapEntryGetValueExecution(execution, entry)
+		if javaReferenceIsNull(value) {
+			return false
+		}
+		actual := c.GetObject(key, execution)
+		if javaReferenceIsNull(actual) || !ObjectsEqual(value, actual, execution) {
 			return false
 		}
 	}
@@ -192,9 +241,5 @@ func (c *ConcurrentHashMap[K, V]) EqualsJava2goExecution(execution *Execution, o
 func (c *ConcurrentHashMap[K, V]) HashCode() int32 { return c.HashCodeJava2goExecution(nil) }
 func (c *ConcurrentHashMap[K, V]) HashCodeJava2goExecution(execution *Execution) int32 {
 	ReferenceRequireNonNull(c)
-	var hash int32
-	for _, entry := range c.EntrySet() {
-		hash += entry.HashCodeJava2goExecution(execution)
-	}
-	return hash
+	return c.hashCode(execution)
 }

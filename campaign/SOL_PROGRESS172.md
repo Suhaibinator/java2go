@@ -1,0 +1,9 @@
+# Sol checkpoint 172: use canonical BitSet runtime identity
+
+BitSet reported the short name BitSet while generated Java casts required java.util.BitSet. This caused the untouched Commons application's URLCodec static initialization to fail with ClassCastException. Runtime registration and dynamic type identity now share canonical BitSetTypeID, retaining Object, Cloneable and Serializable ancestry without a short-name alias.
+
+The coordinator reconstructed and reversed the two-leaf repair on frozen checkpoint171 code. Five owned parents pass twenty race repetitions each, covering canonical casts, reflection, ancestry, typed null, source homonyms, arrays and clone independence. The existing BitSet JVM comparison passes three repetitions. A separate observer imports the original generated EventLoader initializer, leaves every generated input byte unchanged, builds against this runtime and produces INITIALIZER_OK. This observer does not establish whole-application parity.
+
+Preceding overload regressions pass sixty race repetitions. Thirty-nine Gson parents, both Reader workflows (six JVM and six Go executions), both original exception CI parents, full runtime806/symbol23/parser10 race registries and default/F1 race build, test compilation and lint pass. All27 independent process receipts have verified hashes, actual zero exits and cleanup. A preparation metadata filename erratum is retained without a payload retry.
+
+The owner's fresh unchanged full Commons run has eighteen stable JVM observations and passes strict transpilation and all generated builds. Its first Go execution now reaches the next genuine blocker: Supplier result conversion in groupingBy. The full application still fails. Evidence: root-bitset172/run/ROOT_RAW_AUDIT.json and bitset-canonical-identity170/DELIVERY.json. Full CI, full Netty, the accumulated round and performance gains remain unaccepted.

@@ -1,0 +1,260 @@
+{
+  "schema": "java2go-frozen-jvm-oracle-v1",
+  "status": "validated-jvm-only; no Go acceptance claimed",
+  "jdk_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "java_release": 21,
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "repetitions_per_seed": 3,
+  "input_hash_algorithm": "SHA-256 over lexically sorted input-relative POSIX path bytes, NUL, exact file bytes, NUL, for every original input file",
+  "input_scope": "original README.md, inputs/*, src/main/java/**/*.java; excludes oracle/, support/, CHECKIN.md, MANIFEST.json",
+  "input_sha256_before": "a64df8bc84345ba2c8f4f1f8340cdd33b535e737f1203fd2ef313a07b594a42e",
+  "input_sha256_after": "a64df8bc84345ba2c8f4f1f8340cdd33b535e737f1203fd2ef313a07b594a42e",
+  "compile": {
+    "command": [
+      "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/api/Outcome.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/api/ReflectiveFactory.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/app/Main.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/error/NoMatchingConstructor.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/error/ProbeException.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/jobs/FailureJob.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/jobs/SuccessJob.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/state/Context.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/state/Lease.java",
+      "/private/tmp/java2go-reflection-exception-thread-prereq/src/main/java/prereq/reflection/state/Schedule.java"
+    ],
+    "timeout_seconds": 300,
+    "exit": 0,
+    "timeout": false,
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "portable_compile": {
+    "cwd": ".",
+    "command": [
+      "<JDK21>/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "<scratch>/classes",
+      "<all ten src/main/java/**/*.java paths in lexical order>"
+    ]
+  },
+  "portable_run": {
+    "cwd": "<fresh empty scratch directory per run>",
+    "command": [
+      "<JDK21>/bin/java",
+      "-cp",
+      "<scratch>/classes",
+      "prereq.reflection.app.Main",
+      "<seed>"
+    ],
+    "timeout_seconds": 60
+  },
+  "runner_provenance": {
+    "original_path": "/private/tmp/java2go-reflection-exception-thread-runner/validate_jvm.py",
+    "original_command": [
+      "python3",
+      "/private/tmp/java2go-reflection-exception-thread-runner/validate_jvm.py"
+    ],
+    "runner_sha256": "f80e2cc44ceb3844f3eb5b3ecb31adf7b29b90a7e95ae17fe6e95201a0d3e03f",
+    "original_validation_report": "/private/tmp/java2go-reflection-exception-thread-validation/validation.json",
+    "packaged_copy": "support/validate_jvm.py",
+    "packaged_copy_status": "unrun; original absolute paths require explicit relocation"
+  },
+  "runs": [
+    {
+      "seed": 17,
+      "repetition": 1,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "0068f0e999e2839d7a9001faed1f1e91323c835ea2bbe5110fae79d1f39be640",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-17.stdout",
+      "expected_stderr": "oracle/expected.seed-17.stderr"
+    },
+    {
+      "seed": 17,
+      "repetition": 2,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "0068f0e999e2839d7a9001faed1f1e91323c835ea2bbe5110fae79d1f39be640",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-17.stdout",
+      "expected_stderr": "oracle/expected.seed-17.stderr"
+    },
+    {
+      "seed": 17,
+      "repetition": 3,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "17"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "0068f0e999e2839d7a9001faed1f1e91323c835ea2bbe5110fae79d1f39be640",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-17.stdout",
+      "expected_stderr": "oracle/expected.seed-17.stderr"
+    },
+    {
+      "seed": 41,
+      "repetition": 1,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "a40b414c7358ddfc635c605ff124f5083349166c9cc9621f9508be26e2967a89",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-41.stdout",
+      "expected_stderr": "oracle/expected.seed-41.stderr"
+    },
+    {
+      "seed": 41,
+      "repetition": 2,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "a40b414c7358ddfc635c605ff124f5083349166c9cc9621f9508be26e2967a89",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-41.stdout",
+      "expected_stderr": "oracle/expected.seed-41.stderr"
+    },
+    {
+      "seed": 41,
+      "repetition": 3,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "41"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "a40b414c7358ddfc635c605ff124f5083349166c9cc9621f9508be26e2967a89",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-41.stdout",
+      "expected_stderr": "oracle/expected.seed-41.stderr"
+    },
+    {
+      "seed": 97,
+      "repetition": 1,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "366ade7cd9770318c4f5ae6cdcd09098d46ee3a5365c1a27c7d265822750bbf7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-97.stdout",
+      "expected_stderr": "oracle/expected.seed-97.stderr"
+    },
+    {
+      "seed": 97,
+      "repetition": 2,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "366ade7cd9770318c4f5ae6cdcd09098d46ee3a5365c1a27c7d265822750bbf7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-97.stdout",
+      "expected_stderr": "oracle/expected.seed-97.stderr"
+    },
+    {
+      "seed": 97,
+      "repetition": 3,
+      "command": [
+        "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
+        "-cp",
+        "/private/tmp/java2go-reflection-exception-thread-validation/classes",
+        "prereq.reflection.app.Main",
+        "97"
+      ],
+      "exit": 0,
+      "timeout": false,
+      "stdout_sha256": "366ade7cd9770318c4f5ae6cdcd09098d46ee3a5365c1a27c7d265822750bbf7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 316,
+      "stderr_bytes": 0,
+      "unexpected_outputs": [],
+      "expected_stdout": "oracle/expected.seed-97.stdout",
+      "expected_stderr": "oracle/expected.seed-97.stderr"
+    }
+  ],
+  "deterministic": true
+}

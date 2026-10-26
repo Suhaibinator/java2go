@@ -74,11 +74,21 @@ public class StaticWildcardCaptureProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestStaticWildcardCaptureRuntime(t *testing.T) {
-    if got := Run(); got != "1234" {
-        t.Fatalf("Run() = %q, want 1234", got)
+    const want = "1234"
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    units := got.UTF16Copy()
+    if !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() = %q, want 1234", string(utf16.Decode(units)))
     }
 }
 `)

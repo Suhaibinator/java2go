@@ -60,12 +60,19 @@ public class App {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestSwitchExprRuntime(t *testing.T) {
 	got := Run()
-	if got != "weekday,weekend,invalid" {
-		t.Fatalf("Run() = %q, want %q", got, "weekday,weekend,invalid")
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("weekday,weekend,invalid"))) {
+		t.Fatalf("Run() = UTF16 %x, want UTF16 %x", got.UTF16Copy(), utf16.Encode([]rune("weekday,weekend,invalid")))
 	}
 }
 `)
@@ -129,7 +136,7 @@ public class App {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "if s, ok := stdjava.ObjectPattern[string](o, stdjava.StringTypeID); ok {") {
+	if !strings.Contains(flat, "if s, ok := stdjava.ObjectPattern[*stdjava.JavaString](o, stdjava.StringTypeID); ok {") {
 		t.Fatalf("expected instanceof pattern to lower to a type-assertion if-init, got:\n%s", out)
 	}
 }
@@ -165,12 +172,19 @@ public class App {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestInstanceofPatternRuntime(t *testing.T) {
 	got := Run()
-	if got != "string:hi:2|other" {
-		t.Fatalf("Run() = %q, want %q", got, "string:hi:2|other")
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("string:hi:2|other"))) {
+		t.Fatalf("Run() = UTF16 %x, want UTF16 %x", got.UTF16Copy(), utf16.Encode([]rune("string:hi:2|other")))
 	}
 }
 `)
@@ -197,13 +211,20 @@ func TestTextBlock_IncidentalWhitespaceStripping(t *testing.T) {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestTextBlockRuntime(t *testing.T) {
 	got := Run()
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
 	want := "Hello\n  World\nBye"
-	if got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() = UTF16 %x, want UTF16 %x", got.UTF16Copy(), utf16.Encode([]rune(want)))
 	}
 }
 `)
@@ -225,13 +246,20 @@ func TestTextBlock_TrailingNewlineWhenClosingOnOwnLine(t *testing.T) {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestTextBlockTrailingNewline(t *testing.T) {
 	got := Run()
+	if got == nil {
+		t.Fatal("Run returned null")
+	}
 	want := "line1\nline2\n"
-	if got != want {
-		t.Fatalf("Run() = %q, want %q", got, want)
+	if !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune(want))) {
+		t.Fatalf("Run() = UTF16 %x, want UTF16 %x", got.UTF16Copy(), utf16.Encode([]rune(want)))
 	}
 }
 `)
@@ -318,13 +346,13 @@ public class App {
 
 	// A user static method named init collides with Go's package-init function, so
 	// it must be renamed at the definition and call sites.
-	if strings.Contains(flat, "func init(name string") {
+	if strings.Contains(flat, "func init(name *stdjava.JavaString") {
 		t.Fatalf("expected user `init` method to be renamed away from Go's reserved init, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "func init0(name string, value int32) int32") {
+	if !strings.Contains(flat, "func init0(name *stdjava.JavaString, value int32) int32") {
 		t.Fatalf("expected init method renamed to init0, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "init0Java2goExecution(__java2goExecution, \"a\", 5)") {
+	if !strings.Contains(flat, "init0Java2goExecution(__java2goExecution, stdjava.JavaStringLiteralUTF16([]uint16{97}), 5)") {
 		t.Fatalf("expected call site to use the renamed init0, got:\n%s", out)
 	}
 }

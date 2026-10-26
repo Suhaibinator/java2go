@@ -51,7 +51,7 @@ JDK APIs remain outside this migration.
 ## Futures and thread lifecycle
 
 Fixed and single-thread executors support `submit(Callable<T>)`,
-`submit(Runnable)`, `submit(Runnable, result)`, `execute`, orderly `shutdown`,
+`submit(Runnable)`, `submit(Runnable, result)`, `execute`, `shutdownNow`, orderly `shutdown`,
 `isShutdown`, `isTerminated`, and timed `awaitTermination`. Accepted tasks drain
 an unbounded queue; submissions after shutdown throw `RejectedExecutionException`.
 `Future<T>` supports repeatable `get`, timed `get`, `cancel`, `isDone`, and
@@ -67,9 +67,33 @@ state and repeated `start` throws `IllegalThreadStateException`. Uncaught thread
 and `execute` task failures are reported to stderr; custom uncaught-exception
 handlers are not implemented.
 
-Cancellation publishes a terminal state immediately and skips queued work. A
-running Go goroutine cannot be forcibly interrupted: `cancel(true)` does not
-implement Java interruption, and executor termination still waits for the task
-body to return. Interruptible blocking, `shutdownNow`, scheduling, and Java's full
-Thread API remain outside this subset. `FutureTask` and `CompletableFuture` are
-not modeled.
+`Thread.currentThread()` and `getName()` use the explicit execution token.
+A started thread observes its own identity, direct `run()` retains the caller,
+and fixed-pool workers retain their identities across successful tasks.
+`CountDownLatch` supports countdown, count queries, blocking and timed waits.
+
+`shutdownNow` returns queued Runnable objects without running or cancelling them.
+Tasks queued by `execute` retain their original identity; `submit` returns its
+queued Future wrapper, which can still be run after removal. Running workers
+receive a cooperative interruption request. Execution-aware latch waits observe
+and clear interruption by throwing `InterruptedException`.
+
+Cancellation publishes a terminal state immediately and skips queued work.
+`cancel(true)` does not yet request Java interruption. Thread sleep, Future.get,
+and monitor waits do not yet observe interruption, and executor termination waits
+for running task bodies to return. Scheduling, the full Thread API, explicit
+FutureTask construction, and CompletableFuture remain outside this subset.
+
+## Charset and buffer subset
+
+The six StandardCharsets constants, Charset.name/forName, String.getBytes,
+String.toCharArray and String constructors from byte[]/Charset and char[] support
+ordinary scalar Unicode text. Nonstandard encodings are unavailable. Isolated
+surrogate char[] construction explicitly throws UnsupportedOperationException
+until the string representation can preserve such Java values; substring also
+retains the documented rune-indexing limitation. Malformed UTF-8 decoding is not
+yet fully matched to the JDK replacement rules.
+
+Array-backed ByteBuffer wrap/allocate, array identity, remaining, position and
+bulk get preserve shared storage and underflow behavior. Direct/read-only
+buffers, byte order, marks and primitive views are not implemented.

@@ -1,0 +1,12 @@
+workflow=partial;seed=41
+partialCount=3;seed=41
+partial;open=true;position=4;limit=8;capacity=8;readonly=true
+cursor=8;length=4096
+aliasPosition=1;hasArray=false
+bytes@4093=31,32,33;restoredCursor=8
+boundaryWrite
+exception=java.io.IOException;message=File too large;null=false;negativeIdentity=false;ISE=false;RTE=false;IO=true
+boundary;open=true;position=4;limit=8;capacity=8;readonly=true
+cursor=8;length=4096
+marks=1,1;backing=31
+cleanup=true;pending=false

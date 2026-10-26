@@ -1,0 +1,145 @@
+{
+  "commands": {
+    "compile": [
+      "$JAVA_HOME/bin/javac",
+      "--release",
+      "21",
+      "-encoding",
+      "UTF-8",
+      "-d",
+      "$OUT/classes",
+      "src/probe/state/Cleanup.java",
+      "src/probe/state/Trace.java",
+      "src/probe/cause/BaseCause.java",
+      "src/probe/cause/InheritedCause.java",
+      "src/probe/cause/NullTextCause.java",
+      "src/probe/cause/ThrowingCause.java",
+      "src/probe/app/Main.java"
+    ],
+    "compile_shell_command": "\"$JAVA_HOME/bin/javac\" --release 21 -encoding UTF-8 -d \"$OUT/classes\" src/probe/state/*.java src/probe/cause/*.java src/probe/app/Main.java",
+    "fresh_process_per_repeat": true,
+    "run_shell_template": "\"$JAVA_HOME/bin/java\" -cp \"$OUT/classes\" probe.app.Main {seed} > \"$OUT/seed-{seed}.repeat-{repeat}.stdout\" 2> \"$OUT/seed-{seed}.repeat-{repeat}.stderr\"",
+    "run_template": [
+      "$JAVA_HOME/bin/java",
+      "-cp",
+      "$OUT/classes",
+      "probe.app.Main",
+      "{seed}"
+    ],
+    "working_directory": "package root"
+  },
+  "compile": {
+    "exit": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "input_source_hashes_equal_before_after": true,
+  "input_source_manifest_sha256": "73d97e84e582ecaa0287cc700f46e8274fe4a529144c521d09d0f3a3489857c5",
+  "jdk": {
+    "arch": "aarch64",
+    "home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+    "runtime_version": "21.0.6+8-LTS-188",
+    "vendor": "Oracle Corporation",
+    "version": "21.0.6"
+  },
+  "kind": "supplemental-throwable-cause-workflow-jvm-oracle",
+  "package_files_sha256_excluding_oracle_json": {
+    "PACKAGE.md": "f48160b9e29402b0c302de1cd2a600dc7e2153d66e4863f707e408afb5353679",
+    "README.md": "379c5d796dc297c67512f8aa48dace5aeb5af5f490f4350e14aeb94e5440a2c7",
+    "expected/seed-17.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected/seed-17.stdout": "8b8593b8479cbf4ee660bb588928ab4d3470b7eb0ee1e13b0f4173d0852ae923",
+    "expected/seed-41.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected/seed-41.stdout": "1f2853ada7aa73e1384cad78337c70da4dc73e62e2cd1c8a0fbe68ef673744e4",
+    "expected/seed-97.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected/seed-97.stdout": "99a0e78ee88351695b0a36f72c18999e29f0d114686ac64fe88b27c08b1dc13c",
+    "src/probe/app/Main.java": "cb3890de01dec8fb2c450ae8c225a621fa7f35f4d9224386607673da6ed201e1",
+    "src/probe/cause/BaseCause.java": "f8b6c3eef06929bf4cbbf066425084b06ce7c1f08a7360e8875fef0a31b2d168",
+    "src/probe/cause/InheritedCause.java": "d1e06ece5900fdd3cf6d6c8c030d328f96c8423742ddf09247cb5e292edf3cd5",
+    "src/probe/cause/NullTextCause.java": "e4d2e997e182669f73540d1adcf3030bae8322ab12196c4c90f59feb3f76cfba",
+    "src/probe/cause/ThrowingCause.java": "fe625850fcb653e89f1a1dd0767e3594ad0947495d3a577c358a79562b2c453d",
+    "src/probe/state/Cleanup.java": "abf3b2ad29d3d05027d847c819a4107f1646be57a5e4e36af72611f6b4baf080",
+    "src/probe/state/Trace.java": "cb282590acbb46dbe1e43775f4cd433abe470ba528eea30674461b8885c037f1"
+  },
+  "proposed_checked_in_path": "campaign/reproducers/throwable-cause-workflow",
+  "seeds": {
+    "17": {
+      "expected_stderr": "expected/seed-17.stderr",
+      "expected_stdout": "expected/seed-17.stdout",
+      "runs": [
+        {
+          "exit": 0,
+          "repeat": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "8b8593b8479cbf4ee660bb588928ab4d3470b7eb0ee1e13b0f4173d0852ae923"
+        },
+        {
+          "exit": 0,
+          "repeat": 2,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "8b8593b8479cbf4ee660bb588928ab4d3470b7eb0ee1e13b0f4173d0852ae923"
+        },
+        {
+          "exit": 0,
+          "repeat": 3,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "8b8593b8479cbf4ee660bb588928ab4d3470b7eb0ee1e13b0f4173d0852ae923"
+        }
+      ],
+      "stderr_bytes": 0,
+      "stdout_bytes": 2481
+    },
+    "41": {
+      "expected_stderr": "expected/seed-41.stderr",
+      "expected_stdout": "expected/seed-41.stdout",
+      "runs": [
+        {
+          "exit": 0,
+          "repeat": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "1f2853ada7aa73e1384cad78337c70da4dc73e62e2cd1c8a0fbe68ef673744e4"
+        },
+        {
+          "exit": 0,
+          "repeat": 2,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "1f2853ada7aa73e1384cad78337c70da4dc73e62e2cd1c8a0fbe68ef673744e4"
+        },
+        {
+          "exit": 0,
+          "repeat": 3,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "1f2853ada7aa73e1384cad78337c70da4dc73e62e2cd1c8a0fbe68ef673744e4"
+        }
+      ],
+      "stderr_bytes": 0,
+      "stdout_bytes": 2481
+    },
+    "97": {
+      "expected_stderr": "expected/seed-97.stderr",
+      "expected_stdout": "expected/seed-97.stdout",
+      "runs": [
+        {
+          "exit": 0,
+          "repeat": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "99a0e78ee88351695b0a36f72c18999e29f0d114686ac64fe88b27c08b1dc13c"
+        },
+        {
+          "exit": 0,
+          "repeat": 2,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "99a0e78ee88351695b0a36f72c18999e29f0d114686ac64fe88b27c08b1dc13c"
+        },
+        {
+          "exit": 0,
+          "repeat": 3,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "99a0e78ee88351695b0a36f72c18999e29f0d114686ac64fe88b27c08b1dc13c"
+        }
+      ],
+      "stderr_bytes": 0,
+      "stdout_bytes": 1654
+    }
+  },
+  "translator_status": "full supplemental workflow red at String.join(Iterable); smaller named-cause fixture separately green"
+}

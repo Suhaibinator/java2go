@@ -41,10 +41,19 @@ public class BoxedOverloadReferences {
 `)
 	runGeneratedWithStdjava(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestOverloadedReferences(t *testing.T) {
-    if got := Run(); got != "long:object:number:boxed:number:number:constructor reference" {
-        t.Fatalf("Run() = %q", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = "long:object:number:boxed:number:number:constructor reference"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
     }
 }
 `)
@@ -86,10 +95,19 @@ public class GenericBoxedReferences {
 `)
 	runGeneratedWithStdjava(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestGenericReferences(t *testing.T) {
-    if got := Run(); got != "9:8:true:true:true:7:true:true" {
-        t.Fatalf("Run() = %q", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = "9:8:true:true:true:7:true:true"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
     }
 }
 `)
@@ -152,10 +170,19 @@ public class BoxedSourceReferences {
 `)
 	runGeneratedWithStdjava(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestAdaptedSourceReferences(t *testing.T) {
-    if got := Run(); got != "5:6:7:7:7:1:10:10:1:5:7:3:7:true" {
-        t.Fatalf("Run() = %q", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = "5:6:7:7:7:1:10:10:1:5:7:3:7:true"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
     }
 }
 `)
@@ -204,10 +231,19 @@ public class BoxedRuntimeReferences {
 `)
 	runGeneratedWithStdjava(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 func TestRuntimeReferences(t *testing.T) {
-    if got := Run(); got != "true:false:true:false:9:3:300:300:1:-1:1:true:true" {
-        t.Fatalf("Run() = %q", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    const want = "true:false:true:false:9:3:300:300:1:-1:1:true:true"
+    if units := got.UTF16Copy(); !slices.Equal(units, utf16.Encode([]rune(want))) {
+        t.Fatalf("Run() UTF16 = %v, want %q", units, want)
     }
 }
 `)

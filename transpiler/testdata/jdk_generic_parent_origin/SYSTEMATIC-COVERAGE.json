@@ -1,0 +1,1089 @@
+{
+  "class_signatures": 2062,
+  "classfile_records": 7482,
+  "emitted_closed_records": 3228,
+  "held": {
+    "java/io/ClassCache$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/lang/Class": [
+      "wildcard parent recipe"
+    ],
+    "java/lang/Class$2": [
+      "wildcard parent recipe"
+    ],
+    "java/lang/ClassValue$ClassValueMap": [
+      "wildcard parent recipe"
+    ],
+    "java/lang/StackStreamFactory$CallerClassFinder": [
+      "wildcard parent recipe"
+    ],
+    "java/lang/StackStreamFactory$CallerClassFinder$ClassBuffer": [
+      "wildcard parent recipe"
+    ],
+    "java/lang/ThreadLocal$ThreadLocalMap$Entry": [
+      "wildcard parent recipe"
+    ],
+    "java/lang/WeakPairMap$Pair$Weak$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K2: executable lexical binder unavailable"
+    ],
+    "java/lang/constant/MethodTypeDescImpl$1": [
+      "unsupported reference closure: java/lang/invoke/MethodType"
+    ],
+    "java/lang/constant/PrimitiveClassDescImpl": [
+      "wildcard parent recipe"
+    ],
+    "java/lang/invoke/BoundMethodHandle$Specializer": [
+      "unsupported reference closure: java/lang/invoke/BoundMethodHandle$SpeciesData"
+    ],
+    "java/lang/invoke/BoundMethodHandle$Specializer$Factory": [
+      "parameterized owner chain"
+    ],
+    "java/lang/invoke/BoundMethodHandle$SpeciesData": [
+      "parameterized owner chain"
+    ],
+    "java/lang/invoke/MethodType": [
+      "wildcard parent recipe"
+    ],
+    "java/net/NetworkInterface$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/net/URLClassLoader$1": [
+      "wildcard parent recipe"
+    ],
+    "java/time/LocalDateTime": [
+      "unsupported reference closure: java/time/chrono/ChronoLocalDateTime"
+    ],
+    "java/time/ZonedDateTime": [
+      "unsupported reference closure: java/time/chrono/ChronoZonedDateTime"
+    ],
+    "java/time/chrono/ChronoLocalDateTime": [
+      "wildcard parent recipe"
+    ],
+    "java/time/chrono/ChronoLocalDateTimeImpl": [
+      "unsupported reference closure: java/time/chrono/ChronoLocalDateTime"
+    ],
+    "java/time/chrono/ChronoZonedDateTime": [
+      "wildcard parent recipe"
+    ],
+    "java/time/chrono/ChronoZonedDateTimeImpl": [
+      "unsupported reference closure: java/time/chrono/ChronoZonedDateTime"
+    ],
+    "java/util/AbstractList$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/AbstractList$ListItr": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/AbstractList$SubList$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/AbstractMap$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable"
+    ],
+    "java/util/AbstractMap$1$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable"
+    ],
+    "java/util/AbstractMap$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/AbstractMap$2$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ArrayDeque$DeqIterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ArrayDeque$DeqSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ArrayDeque$DescendingIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/ArrayList$ArrayListSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ArrayList$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ArrayList$ListItr": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/ArrayList$SubList$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/ArrayList$SubList$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$3": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$CheckedCollection$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$CheckedList$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$CheckedMap$CheckedEntrySet$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$UnmodifiableCollection$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$UnmodifiableList$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/Collections$UnmodifiableMap$UnmodifiableEntrySet$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/EnumMap$EntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/EnumMap$EntryIterator$Entry": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/EnumMap$EntrySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/EnumMap$KeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/EnumMap$KeySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/EnumMap$ValueIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/EnumMap$Values": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/Enumeration$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/HashMap$EntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/HashMap$EntrySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/HashMap$KeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/HashMap$KeySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/HashMap$ValueIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/HashMap$Values": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/Hashtable$EntrySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/Hashtable$KeySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/Hashtable$ValueCollection": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/IdentityHashMap$EntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/IdentityHashMap$EntryIterator$Entry": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/IdentityHashMap$EntrySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/IdentityHashMap$KeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/IdentityHashMap$KeySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/IdentityHashMap$ValueIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/IdentityHashMap$Values": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ImmutableCollections$MapN$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ImmutableCollections$MapN$MapNIterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ImmutableCollections$Set12$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/ImmutableCollections$SetN$SetNIterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/LinkedHashMap$LinkedEntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/LinkedHashMap$LinkedEntrySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/LinkedHashMap$LinkedKeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/LinkedHashMap$LinkedKeySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/LinkedHashMap$LinkedValueIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/LinkedHashMap$LinkedValues": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/LinkedHashSet$1ReverseLinkedHashSetView": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/LinkedList$DescendingIterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/LinkedList$ListItr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/PriorityQueue$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/PriorityQueue$PriorityQueueSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ResourceBundle$3": [
+      "unsupported reference closure: java/lang/Class"
+    ],
+    "java/util/ReverseOrderListView$DescendingIterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ReverseOrderListView$DescendingListIterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ReverseOrderSortedMapView$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedMapView$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedMapView$3": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedMapView$4": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedMapView$5": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedMapView$6": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedMapView$Submap": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ReverseOrderSortedMapView$Submap$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedMapView$Submap$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedSetView$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/ReverseOrderSortedSetView$Subset": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/ReverseOrderSortedSetView$Subset$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/SequencedMap$1SeqEntrySet": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/SequencedMap$1SeqKeySet": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: K: executable lexical binder unavailable"
+    ],
+    "java/util/SequencedMap$1SeqValues": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "java/util/ServiceLoader$1": [
+      "wildcard parent recipe"
+    ],
+    "java/util/ServiceLoader$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: S: executable lexical binder unavailable"
+    ],
+    "java/util/ServiceLoader$3": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: S: executable lexical binder unavailable"
+    ],
+    "java/util/ServiceLoader$LazyClassPathLookupIterator$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/ServiceLoader$ProviderImpl$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: S: executable lexical binder unavailable"
+    ],
+    "java/util/SortedSet$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/Spliterators$1Adapter": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/Spliterators$EmptySpliterator$OfRef": [
+      "wildcard parent recipe"
+    ],
+    "java/util/TreeMap$AscendingSubMap$AscendingEntrySetView": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$DescendingKeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$DescendingSubMap$DescendingEntrySetView": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$EntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$EntrySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/TreeMap$KeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$NavigableSubMap$DescendingSubMapEntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$NavigableSubMap$DescendingSubMapKeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$NavigableSubMap$EntrySetView": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/TreeMap$NavigableSubMap$SubMapEntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$NavigableSubMap$SubMapKeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$SubMap": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/TreeMap$ValueIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/TreeMap$Values": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/Vector$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/Vector$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/Vector$ListItr": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/Vector$VectorSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/WeakHashMap$EntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/WeakHashMap$EntrySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/WeakHashMap$KeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/WeakHashMap$KeySet": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/WeakHashMap$ValueIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/WeakHashMap$Values": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/ArrayBlockingQueue$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/ArrayBlockingQueue$Itrs$Node": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/ConcurrentLinkedDeque$AbstractItr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/ConcurrentLinkedDeque$CLDSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/ConcurrentLinkedDeque$DescendingItr": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/ConcurrentLinkedDeque$Itr": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/ConcurrentLinkedQueue$CLQSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/ConcurrentLinkedQueue$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/ConcurrentSkipListMap$EntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/ConcurrentSkipListMap$KeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/ConcurrentSkipListMap$SubMap$SubMapEntryIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/ConcurrentSkipListMap$SubMap$SubMapKeyIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/ConcurrentSkipListMap$SubMap$SubMapValueIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/ConcurrentSkipListMap$ValueIterator": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/CopyOnWriteArrayList$COWSubList": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/CopyOnWriteArrayList$Reversed$DescendingIterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/CopyOnWriteArrayList$Reversed$DescendingListIterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/DelayQueue$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/Executors$PrivilegedCallable$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/concurrent/Executors$PrivilegedCallableUsingCurrentClassLoader$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/concurrent/LinkedBlockingDeque$AbstractItr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/LinkedBlockingDeque$DescendingItr": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/LinkedBlockingDeque$Itr": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "java/util/concurrent/LinkedBlockingDeque$LBDSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/LinkedBlockingQueue$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/LinkedBlockingQueue$LBQSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/LinkedTransferQueue$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/LinkedTransferQueue$LTQSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/PriorityBlockingQueue$Itr": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/concurrent/PriorityBlockingQueue$PBQSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/stream/Collectors$1OptionalBox": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/Collectors$Partition$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/DistinctOps$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/DistinctOps$1$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/DistinctOps$1$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/DoublePipeline$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "java/util/stream/DoublePipeline$1$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "java/util/stream/IntPipeline$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "java/util/stream/IntPipeline$1$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "java/util/stream/LongPipeline$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "java/util/stream/LongPipeline$1$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "java/util/stream/MatchOps$1MatchSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/Node$OfDouble": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Node$OfInt": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Node$OfLong": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$CollectorTask$OfDouble": [
+      "unsupported reference closure: java/util/stream/Node$OfDouble"
+    ],
+    "java/util/stream/Nodes$CollectorTask$OfInt": [
+      "unsupported reference closure: java/util/stream/Node$OfInt"
+    ],
+    "java/util/stream/Nodes$CollectorTask$OfLong": [
+      "unsupported reference closure: java/util/stream/Node$OfLong"
+    ],
+    "java/util/stream/Nodes$ConcNode$OfDouble": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$ConcNode$OfInt": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$ConcNode$OfLong": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$DoubleArrayNode": [
+      "unsupported reference closure: java/util/stream/Node$OfDouble"
+    ],
+    "java/util/stream/Nodes$DoubleFixedNodeBuilder": [
+      "unsupported reference closure: java/util/stream/Nodes$DoubleArrayNode"
+    ],
+    "java/util/stream/Nodes$DoubleSpinedNodeBuilder": [
+      "unsupported reference closure: java/util/stream/Node$OfDouble,java/util/stream/SpinedBuffer$OfDouble"
+    ],
+    "java/util/stream/Nodes$EmptyNode$OfDouble": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$EmptyNode$OfInt": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$EmptyNode$OfLong": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$EmptyNode$OfRef": [
+      "wildcard parent recipe"
+    ],
+    "java/util/stream/Nodes$IntArrayNode": [
+      "unsupported reference closure: java/util/stream/Node$OfInt"
+    ],
+    "java/util/stream/Nodes$IntFixedNodeBuilder": [
+      "unsupported reference closure: java/util/stream/Nodes$IntArrayNode"
+    ],
+    "java/util/stream/Nodes$IntSpinedNodeBuilder": [
+      "unsupported reference closure: java/util/stream/Node$OfInt,java/util/stream/SpinedBuffer$OfInt"
+    ],
+    "java/util/stream/Nodes$InternalNodeSpliterator$OfDouble": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$InternalNodeSpliterator$OfInt": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$InternalNodeSpliterator$OfLong": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$LongArrayNode": [
+      "unsupported reference closure: java/util/stream/Node$OfLong"
+    ],
+    "java/util/stream/Nodes$LongFixedNodeBuilder": [
+      "unsupported reference closure: java/util/stream/Nodes$LongArrayNode"
+    ],
+    "java/util/stream/Nodes$LongSpinedNodeBuilder": [
+      "unsupported reference closure: java/util/stream/Node$OfLong,java/util/stream/SpinedBuffer$OfLong"
+    ],
+    "java/util/stream/Nodes$ToArrayTask$OfDouble": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$ToArrayTask$OfInt": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/Nodes$ToArrayTask$OfLong": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/ReduceOps$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$10ReducingSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$12": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$13ReducingSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$16": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$1ReducingSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$2ReducingSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$3": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: I: executable lexical binder unavailable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$3ReducingSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: I: executable lexical binder unavailable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$4": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: R: executable lexical binder unavailable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$4ReducingSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: R: executable lexical binder unavailable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$5": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$7ReducingSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReduceOps$8": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$10": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$10$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$11": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$11$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$12": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$12$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$13": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$13$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$14": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$14$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$15": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$15$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$2$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$3": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$3$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$4": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$4$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$5": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$5$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$6": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$6$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$7": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$7$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable",
+      "unresolved variable: R: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$8": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$8$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$9": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/ReferencePipeline$9$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P_OUT: executable lexical binder unavailable"
+    ],
+    "java/util/stream/SliceOps$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/SliceOps$1$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/SpinedBuffer$1Splitr": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "java/util/stream/SpinedBuffer$OfDouble": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/SpinedBuffer$OfDouble$1Splitr": [
+      "parameterized owner chain",
+      "primitive array recipe component"
+    ],
+    "java/util/stream/SpinedBuffer$OfInt": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/SpinedBuffer$OfInt$1Splitr": [
+      "parameterized owner chain",
+      "primitive array recipe component"
+    ],
+    "java/util/stream/SpinedBuffer$OfLong": [
+      "primitive array recipe component"
+    ],
+    "java/util/stream/SpinedBuffer$OfLong$1Splitr": [
+      "parameterized owner chain",
+      "primitive array recipe component"
+    ],
+    "java/util/stream/SpinedBuffer$OfPrimitive$BaseSpliterator": [
+      "captured outer declaration parameter"
+    ],
+    "java/util/stream/Stream$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/Stream$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/StreamSpliterators$DoubleWrappingSpliterator": [
+      "unsupported reference closure: java/util/stream/SpinedBuffer$OfDouble"
+    ],
+    "java/util/stream/StreamSpliterators$IntWrappingSpliterator": [
+      "unsupported reference closure: java/util/stream/SpinedBuffer$OfInt"
+    ],
+    "java/util/stream/StreamSpliterators$LongWrappingSpliterator": [
+      "unsupported reference closure: java/util/stream/SpinedBuffer$OfLong"
+    ],
+    "java/util/stream/WhileOps$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/WhileOps$1$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/WhileOps$1Op": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "java/util/stream/WhileOps$1Op$1OpSink": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: T: executable lexical binder unavailable"
+    ],
+    "javax/security/auth/Subject$SecureSet$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "javax/security/auth/Subject$SecureSet$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "javax/security/auth/Subject$SecureSet$3": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "javax/security/auth/Subject$SecureSet$4": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "javax/security/auth/Subject$SecureSet$5": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "javax/security/auth/Subject$SecureSet$6": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "jdk/internal/classfile/ClassHierarchyResolver$3": [
+      "wildcard parent recipe"
+    ],
+    "jdk/internal/classfile/ClassHierarchyResolver$4": [
+      "wildcard parent recipe"
+    ],
+    "jdk/internal/classfile/CompoundElement$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "jdk/internal/classfile/impl/ClassHierarchyImpl$ClassLoadingClassHierarchyResolver$1": [
+      "wildcard parent recipe"
+    ],
+    "jdk/internal/classfile/impl/DirectCodeBuilder$6": [
+      "primitive array recipe component"
+    ],
+    "jdk/internal/classfile/impl/DirectCodeBuilder$7": [
+      "primitive array recipe component"
+    ],
+    "jdk/internal/classfile/impl/Options$1": [
+      "wildcard parent recipe"
+    ],
+    "jdk/internal/classfile/impl/Util$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: U: executable lexical binder unavailable"
+    ],
+    "jdk/internal/loader/AbstractClassLoaderValue$Sub": [
+      "captured outer declaration parameter",
+      "parameterized owner chain"
+    ],
+    "jdk/internal/loader/BuiltinClassLoader$4": [
+      "wildcard parent recipe"
+    ],
+    "jdk/internal/misc/TerminatingThreadLocal$1": [
+      "wildcard parent recipe"
+    ],
+    "jdk/internal/util/Preconditions$4": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: X: executable lexical binder unavailable"
+    ],
+    "sun/invoke/util/VerifyAccess$1": [
+      "wildcard parent recipe"
+    ],
+    "sun/nio/ch/Util$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: E: executable lexical binder unavailable"
+    ],
+    "sun/reflect/generics/scope/ClassScope": [
+      "wildcard parent recipe"
+    ],
+    "sun/reflect/generics/scope/ConstructorScope": [
+      "wildcard parent recipe"
+    ],
+    "sun/security/util/ByteArrayLexOrder": [
+      "primitive array recipe component"
+    ],
+    "sun/security/util/ByteArrayTagOrder": [
+      "primitive array recipe component"
+    ],
+    "sun/util/PreHashedMap$2": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "sun/util/PreHashedMap$2$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "sun/util/PreHashedMap$2$1$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: V: executable lexical binder unavailable"
+    ],
+    "sun/util/locale/provider/SPILocaleProviderAdapter$1": [
+      "unbound/unknown recipe kind: variable",
+      "unresolved variable: P: executable lexical binder unavailable"
+    ]
+  },
+  "old_eight_exact": 8,
+  "policy": "No source visibility/API admission; only whole representable reference/parent closures. Held edges are never erased or replaced.",
+  "profile": "jdk21-java.base-unnamed-no-preview",
+  "profile_records": 3452,
+  "profile_records_emitted": 3178,
+  "schema": "java2go.jdk21.generic-parent-coverage.v2"
+}

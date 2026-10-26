@@ -1,0 +1,127 @@
+{
+  "schema": "java2go-checkin-package-manifest-v1",
+  "package_path": "campaign/reproducers/reflection-exception-thread-prereq",
+  "entries_exclude": "MANIFEST.json itself",
+  "files": [
+    {
+      "path": "CHECKIN.md",
+      "bytes": 1235,
+      "sha256": "f62ab9c3ad0fd8e050897aed65215e34c2ddba678ba836dab278c641bc2f52cd"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1515,
+      "sha256": "a26810e210fee6691d4838d4bb5f53b1b7d7e95330f941d87441290e948f1652"
+    },
+    {
+      "path": "inputs/seed-17.txt",
+      "bytes": 3,
+      "sha256": "54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5"
+    },
+    {
+      "path": "inputs/seed-41.txt",
+      "bytes": 3,
+      "sha256": "040316eca5e77dbb2212c1efe8b81cb23bc67ce0ac8cb5c9d902d98bd45ddfa1"
+    },
+    {
+      "path": "inputs/seed-97.txt",
+      "bytes": 3,
+      "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+    },
+    {
+      "path": "oracle/expected.seed-17.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/expected.seed-17.stdout",
+      "bytes": 316,
+      "sha256": "0068f0e999e2839d7a9001faed1f1e91323c835ea2bbe5110fae79d1f39be640"
+    },
+    {
+      "path": "oracle/expected.seed-41.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/expected.seed-41.stdout",
+      "bytes": 316,
+      "sha256": "a40b414c7358ddfc635c605ff124f5083349166c9cc9621f9508be26e2967a89"
+    },
+    {
+      "path": "oracle/expected.seed-97.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "oracle/expected.seed-97.stdout",
+      "bytes": 316,
+      "sha256": "366ade7cd9770318c4f5ae6cdcd09098d46ee3a5365c1a27c7d265822750bbf7"
+    },
+    {
+      "path": "oracle/oracle.json",
+      "bytes": 10157,
+      "sha256": "ca768f644108418529731781259fd2b4b7a30a5db878ef602790981c32666d3c"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/api/Outcome.java",
+      "bytes": 799,
+      "sha256": "5628c362db7fb87867ddcb7c30afbae326a42d0fba96dafa8b35ea6ad0d18b67"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/api/ReflectiveFactory.java",
+      "bytes": 2195,
+      "sha256": "2451df71470a98a9299d7faf1f852391455ac83dca2979e7a59c950e1bca7d84"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/app/Main.java",
+      "bytes": 4943,
+      "sha256": "889662bd803854eb590e79e76f85f2d90f0e34fcaa90747c28a7bf5fc719f9e3"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/error/NoMatchingConstructor.java",
+      "bytes": 230,
+      "sha256": "9c54dded47db115990149663bcf17b3e9330592ae1b4850c04c44df79150972e"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/error/ProbeException.java",
+      "bytes": 180,
+      "sha256": "ac13d3de5a8a54bb56217fb431a99697741418ba2c94cee6a08834ef8cb0ea4e"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/jobs/FailureJob.java",
+      "bytes": 360,
+      "sha256": "7e34c6b094634838f8c1511287dadc58dc7123e92d9797f8fe41b269bfbaa9f2"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/jobs/SuccessJob.java",
+      "bytes": 339,
+      "sha256": "6804f5b8cdc90105569832aabf9de633e67567a6dcc2a6b72d219ced85c3cdf6"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/state/Context.java",
+      "bytes": 245,
+      "sha256": "01c5a11e44b727f2ed651fe3492ae8d46852ada9d96f4b8ab769b0cd6fd14be4"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/state/Lease.java",
+      "bytes": 599,
+      "sha256": "fc2d2fb848f386b1098a06e6808f08fb8500dcd6711b0600d248af84cc1c4691"
+    },
+    {
+      "path": "src/main/java/prereq/reflection/state/Schedule.java",
+      "bytes": 834,
+      "sha256": "c9b4857957539c5eb3063d78e07a6576c659b6dd443f472349e0e35f9c8a8101"
+    },
+    {
+      "path": "support/README.md",
+      "bytes": 394,
+      "sha256": "eca49eb4ec88b5b97afcc34853650f4134a9e2e29fc5e3d1c18f28a972d1d411"
+    },
+    {
+      "path": "support/validate_jvm.py",
+      "bytes": 6243,
+      "sha256": "f80e2cc44ceb3844f3eb5b3ecb31adf7b29b90a7e95ae17fe6e95201a0d3e03f"
+    }
+  ]
+}

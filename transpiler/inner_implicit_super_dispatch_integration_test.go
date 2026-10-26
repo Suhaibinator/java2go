@@ -38,11 +38,15 @@ public class InnerImplicitSuperDispatchProgram {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import ("slices"; "testing")
 
 func TestInnerImplicitSuperDispatchRuntime(t *testing.T) {
-    if got := Run(); got != "9" {
-        t.Fatalf("Run() = %q, want 9", got)
+    got := Run()
+    if got == nil {
+        t.Fatal("Run() returned null")
+    }
+    if !slices.Equal(got.UTF16Copy(), []uint16{'9'}) {
+        t.Fatalf("Run() UTF16 = %v, want 9", got.UTF16Copy())
     }
 }
 `)

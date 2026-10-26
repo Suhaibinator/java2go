@@ -1,0 +1,15 @@
+seed=41
+factory=true:true:true:true:true,calls=3
+ownership-guards=true:true:true,numeric=0:0:0:0:0:0
+raw-impostor=true:true:true,state=1:1:1:0,numeric=0:0:0:0:0:0
+cleanup.raw=1:true,state=2:2:1:0,numeric=0:0:0:0:0:0
+cast.object=true,state=2:2:1:1,cleanup=2,numeric=0:0:0:0:0:0
+cast.discarded=true,state=2:2:1:2,cleanup=3,numeric=0:0:0:0:0:0
+cast.typed=true,state=2:2:1:3,cleanup=4,numeric=0:0:0:0:0:0
+cast.single=true:1,state=2:2:1:4,cleanup=5,numeric=0:0:0:0:0:0
+retained=true:true,state=3:2:2:4,numeric=0:0:0:0:0:0
+valid-number=true:true,state=3:2:2:7,cleanup=6,numeric=0:0:0:0:0:0
+null-cast=true,state=3:2:2:8,numeric=0:0:0:0:0:0
+raw-valid=true,state=5:3:2:8
+read-consumer=true,state=6:3:2:8
+cleanup.valid=7:true:true,state=7:4:3:8,numeric=0:0:0:0:0:0

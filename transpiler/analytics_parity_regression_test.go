@@ -49,16 +49,27 @@ public class FieldBackedCalls {
 		"__java2goInvocationReceiver := fs.parser",
 		".ParseJava2goExecution(__java2goExecution)",
 		".worker.NameJava2goExecution(__java2goExecution)",
-		"stdjava.EvaluationValue(fs.values).Add(",
+		"stdjava.CollectionAddExecution(__java2goExecution, stdjava.EvaluationValue(fs.values),",
 		".values.Get(0)",
 		".values.Size()",
-		"stdjava.EvaluationValue(fs.byKey).Put(",
-		".byKey.Get(",
+		"stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey), stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}), fs.worker.NameJava2goExecution(__java2goExecution))",
+		"stdjava.ObjectView[*stdjava.JavaString](stdjava.MapGetExecution(__java2goExecution, fs.byKey, stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114})), stdjava.StringTypeID)",
 	}
 	for _, check := range checks {
 		if !strings.Contains(out, check) {
 			t.Errorf("generated field receiver is missing %q:\n%s", check, out)
 		}
+	}
+	add := strings.Index(out, "stdjava.CollectionAddExecution(__java2goExecution, stdjava.EvaluationValue(fs.values),")
+	put := strings.Index(out, "stdjava.MapPutExecution(__java2goExecution, stdjava.EvaluationValue(fs.byKey),")
+	getList := strings.Index(out, "fs.values.Get(0)")
+	getMap := strings.Index(out, "stdjava.MapGetExecution(__java2goExecution, fs.byKey, stdjava.JavaStringLiteralUTF16([]uint16{119, 111, 114, 107, 101, 114}))")
+	size := strings.Index(out, "fs.values.Size()")
+	if add < 0 || put <= add || getList <= put || getMap <= getList || size <= getMap {
+		t.Errorf("generated calls changed Java statement or return-expression evaluation order:\n%s", out)
+	}
+	if err := ci208FieldReceiverContract(out); err != nil {
+		t.Fatalf("canonical field receiver contract: %v", err)
 	}
 	for _, stale := range []string{".parser.parse(", ".worker.name(", ".values.add(", ".values.get(", ".values.size(", ".byKey.put(", ".byKey.get("} {
 		if strings.Contains(out, stale) {
@@ -138,10 +149,7 @@ public class StableRanker<T extends Ranked> {
 	if strings.Count(flat, ".PrimaryScoreJava2goExecution(__java2goExecution)") != 4 {
 		t.Fatalf("expected type-parameter receiver calls to use Ranked's generated method names:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.StringCompareTo(stdjava.StringRequireNonNull(func() string") ||
-		strings.Count(flat, ".StableKeyJava2goExecution(__java2goExecution)") != 2 {
-		t.Fatalf("expected String return from the bound method to drive compareTo intrinsic lowering:\n%s", out)
-	}
+	ci203AssertBoundStringContract(t, out)
 }
 
 func TestExplicitNullLocalsKeepCrossPackageAndGenericQualification(t *testing.T) {

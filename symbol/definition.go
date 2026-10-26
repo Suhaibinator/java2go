@@ -29,6 +29,9 @@ type Definition struct {
 	TypeParameters []TypeParam
 	// Whether this definition is static (applies to methods/fields)
 	IsStatic bool
+	// IsVariadic records a variable-arity platform signature without a source
+	// AST. Its final formal stores the element type, just as source declarations.
+	IsVariadic bool
 	// IsFinal preserves Java's final modifier for classes, methods, and fields.
 	// Optimizations may rely on it only together with the relevant Java dispatch
 	// and mutation rules; it is metadata, not permission to drop checks by itself.
@@ -45,6 +48,9 @@ type Definition struct {
 	// body must be inherited by implementing classes rather than represented as a
 	// nil embedded Go interface.
 	HasBody bool
+	// RuntimeDefault marks an inherited platform body with an execution-aware
+	// generated entry. It has no fabricated source DeclarationNode.
+	RuntimeDefault bool
 	// Indicates that this definition requires a helper to model method-level type parameters
 	RequiresHelper bool
 	// Name of the helper type to use (if RequiresHelper)

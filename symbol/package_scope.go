@@ -74,16 +74,13 @@ func (ps *PackageScope) FindClassScope(name string) *ClassScope {
 // FindClass searches for a class in the given package and returns a scope for it
 // the class may be the subclass of another class
 func (ps *PackageScope) FindClass(name string) *ClassScope {
-	for _, fileScope := range ps.Files {
-		if fileScope.BaseClass.Class.OriginalName == name {
-			return fileScope.BaseClass
-		}
-		for _, subclass := range fileScope.BaseClass.Subclasses {
-			class := subclass.FindClass(name)
-			if class != nil {
-				return fileScope.BaseClass
-			}
-		}
+	if ps == nil {
+		return nil
 	}
-	return nil
+	var roots []*ClassScope
+	for _, file := range ps.Files {
+		roots = append(roots, registeredSourceRoots(file)...)
+	}
+	scope, _ := registeredSourceClassMatch(roots, name, true)
+	return scope
 }

@@ -1,0 +1,27 @@
+--- a/stdjava/stringbuilder.go
++++ b/stdjava/stringbuilder.go
+@@ -3 +3 @@
+-import "fmt"
++import ("fmt"; "unicode/utf16")
+@@ -31 +31 @@
+-		b.buf = append(b.buf, StringChars(v)...)
++		b.appendText(v)
+@@ -61,3 +61,7 @@
+-	tail := append([]rune{}, b.buf[offset:]...)
+-	b.buf = append(b.buf[:offset], inserted...)
+-	b.buf = append(b.buf, tail...)
++	// Preserve standalone Go slice inputs too: they may alias builder storage
++	// inside this package. Java char[] wrappers cannot share this private buffer.
++	if units, ok := value.([]rune); ok { inserted = append([]rune(nil), units...) }
++	oldLength := len(b.buf)
++	b.buf = append(b.buf, make([]rune, len(inserted))...)
++	copy(b.buf[int(offset)+len(inserted):], b.buf[int(offset):oldLength])
++	copy(b.buf[offset:], inserted)
+@@ -135,0 +140,7 @@
++
++// Append UTF-16 units directly into the retained builder capacity.
++func (b *StringBuilder) appendText(s string) {
++ for _, unit := range s {
++  if unit > 0xffff { high, low := utf16.EncodeRune(unit); b.buf = append(b.buf, high, low) } else { b.buf = append(b.buf, unit) }
++ }
++}

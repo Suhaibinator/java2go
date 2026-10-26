@@ -1,0 +1,5 @@
+sources=source:foreign
+identities=true:true:true
+canonical=true:true
+binder=true:base
+local=7

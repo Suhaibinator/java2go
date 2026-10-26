@@ -1,0 +1,22 @@
+package stdjava
+
+// Keep the existing materialization algorithm: this experiment isolates typed
+// argument lowering from UTF-16 buffer/copy optimizations.
+func (b *StringBuilder) AppendString(value string) *StringBuilder {
+	if value == nullStringSentinel {
+		value = "null"
+	}
+	b.buf = append(b.buf, StringChars(value)...)
+	return b
+}
+func (b *StringBuilder) InsertString(offset int32, value string) *StringBuilder {
+	b.checkOffset(offset)
+	if value == nullStringSentinel {
+		value = "null"
+	}
+	inserted := StringChars(value)
+	tail := append([]rune{}, b.buf[offset:]...)
+	b.buf = append(b.buf[:offset], inserted...)
+	b.buf = append(b.buf, tail...)
+	return b
+}

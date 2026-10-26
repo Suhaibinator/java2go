@@ -1,0 +1,11 @@
+# Sol checkpoint 165: primitive intrinsic origins and canonical Throwable upcasts
+
+Commons Codec source calls to decodeHex could not select an overload after an intrinsic returned a primitive, and an EncoderException constructor could not accept a proved canonical Throwable subtype. The compiler now records the primitive component and array rank of the already selected intrinsic result, and admits proved canonical Throwable ancestry conversions. Unknown, source-shadowed, binder and array cases retain their existing rejection rules. No source-name special case, dependency replacement or generated-Go edit is used.
+
+The coordinator independently applied and reversed the minimal four-leaf patch against public164, preserving all lexical resolver changes, then rebuilt and verified the composed source. Four new native parents pass, including twenty race repetitions each; 23 existing origin/overload/constructor parents and three complete Throwable application parents pass. The full runtime (787) and symbol (21) registries pass under race detection. Default and F1 all-package race builds, test compilation and lint pass. All 30 receipts and raw output hashes were audited: 28 positive stages and two explicitly retained Go compilation failures.
+
+Both unchanged dependency-source Codec reducers now transpile strictly. Their earlier decodeHex and EncoderException compilation errors are gone; each complete generated-package build stops only on undefined ConstructFile for File(File,String). Neither application has reached Go execution or behavioral acceptance. The full JDK-calibrated File constructor matrix remains required, including path/reference identity, exceptions and evaluation order.
+
+A separately run original CI exception application now reaches generated runtime execution and fails with ClassCastException when a canonical JavaString message enters a legacy exception constructor helper. This is a required runtime repair, not a passing CI check. No Java source, expected output or generated Go was changed to bypass it.
+
+Minimal patch SHA256: 291a2bf2371fdc883e10562cd1fe1cda94d4943e1f31a49a2233327d4732b1ed. Local independent evidence: root-codec-origin165/run-v2 and root-codec-origin165-ci-parent/run. Full CI, full Netty, both Codec applications and accumulated round acceptance remain unaccepted.

@@ -1,0 +1,10 @@
+fresh=true:2:true:true
+isolated=true:true:true
+alias=true:true
+store=1:true
+string-store=ArrayStoreException
+component=true
+empty=0:true
+clone=true:true
+flow=AB:2:a
+qualifier=2:2

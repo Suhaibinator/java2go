@@ -1,0 +1,9 @@
+# Sol checkpoint 204: interface-bound String CI assertion
+
+The interface-bound String regression checked an obsolete host-string spelling. It now verifies actual Go AST bindings: the generic constraint, current Execution, single receiver/argument evaluation, argument evaluation before the receiver null check, and one typed JavaString comparison followed by `< 0`. Original Java declarations and existing negative assertions remain unchanged. Twelve detached mutations check that the guard rejects broken contracts. Compiler and runtime implementation bytes are unchanged.
+
+TDD retained the original assertion's actual failure. The public203 rebase passed all 18 qualification stages: six default/F1 build, test-compilation and lint profiles; 25 parent executions; 252 negative-control executions; and fresh JDK21/generated-Go comparisons for both native modes. Those comparisons cover evaluation order, null receiver behavior, short circuiting and UTF-16 ordering. Nested plain Go child processes receive no inferred race credit. The coordinator independently rechecked source, patches, raw outputs, exit codes, binary metadata, registries and process cleanup. Hosted CI acceptance remains open.
+
+The separate borrowed-import allocation fix remains unpublished. Its normal full1220 graph measurement and race semantic/allocation controls passed, but its race graph benchmark timed out at 65.035 seconds. No graph rows were emitted; the precise phase is still unknown. The failed gate is retained and has not been waived.
+
+Private source ArrayList tests now pass 2,040 focused executions and all 95 application stages, with 36 Go observations matching fresh JVM results. Public adoption and broader ABI coverage remain open. The Gson Enum probe exposed an early constructor cast in Go where Java throws later at the caller; that discrepancy remains active. Full Supplier28, Gson112 and Netty1220 parity is still unaccepted.

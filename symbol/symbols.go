@@ -53,23 +53,12 @@ func TypeOfLiteral(node *sitter.Node, source []byte) string {
 // Resolving a definition means that the type of the file is matched up with the type defined
 // in the local scope or otherwise
 func ResolveDefinition(definition *Definition, fileScope *FileScope) bool {
-	// Look in the class scope first
-	//if localClassDef := fileScope.FindClass().ByType(definition.Type); localClassDef != nil {
-	if localClassDef := fileScope.BaseClass.FindClass(definition.Type); localClassDef != nil {
-		// Every type in the local scope is a reference type, so prefix it with a pointer
-		definition.Type = "*" + localClassDef.Name
-		return true
-
-	} else if globalDef, in := fileScope.Imports[definition.Type]; in { // Look through the imports
-		// Find what package the type is in
-		if packageDef := GlobalScope.FindPackage(globalDef); packageDef != nil {
-			definition.Type = packageDef.FindClass(definition.Type).FindClass(definition.Type).Type
-		}
-		return true
+	selected := registeredSourceDefinitionClass(definition, fileScope)
+	if selected == nil || selected.Class == nil || selected.Class.Name == "" {
+		return false
 	}
-
-	// Unresolved
-	return false
+	definition.Type = "*" + selected.Class.Name
+	return true
 }
 
 // ResolveChildren recursively resolves a definition and all of its children

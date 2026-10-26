@@ -26,7 +26,10 @@ public class SortProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	// The element type comes from argument 0, since a static call has no receiver.
-	assertContains(t, out, "stdjava.SortWith(xs, func(a *stdjava.Integer, b *stdjava.Integer) int32")
+	// Preserve typed Java operands and int result through the caller execution adapter.
+	assertContains(t, out, "stdjava.SortWith(xs, stdjava.BiFunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer, int32](__java2goExecution, stdjava.NewBiFunctionFuncAdapter[*stdjava.Integer, *stdjava.Integer, int32](func(__java2goExecution *stdjava.Execution, a *stdjava.Integer, b *stdjava.Integer) int32 {")
+	assertContains(t, out, "return stdjava.UnboxInteger(a) - stdjava.UnboxInteger(b)")
+	assertContains(t, out, "})), __java2goExecution)")
 }
 
 func TestComparator_CollectionsSortNaturalOrderingIsUnchanged(t *testing.T) {
@@ -62,9 +65,16 @@ public class MaxMinProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.MaxOrdered(xs, __java2goExecution)")
-	assertContains(t, out, "stdjava.MaxWith(xs, func(a *stdjava.Integer, b *stdjava.Integer) int32")
+	assertContains(t, out, "stdjava.MaxWith(xs, stdjava.BiFunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer, int32](__java2goExecution, stdjava.NewBiFunctionFuncAdapter[*stdjava.Integer, *stdjava.Integer, int32](func(__java2goExecution *stdjava.Execution, a *stdjava.Integer, b *stdjava.Integer) int32 {")
 	assertContains(t, out, "stdjava.MinOrdered(xs, __java2goExecution)")
-	assertContains(t, out, "stdjava.MinWith(xs, func(a *stdjava.Integer, b *stdjava.Integer) int32")
+	assertContains(t, out, "stdjava.MinWith(xs, stdjava.BiFunctionCallbackExecution[*stdjava.Integer, *stdjava.Integer, int32](__java2goExecution, stdjava.NewBiFunctionFuncAdapter[*stdjava.Integer, *stdjava.Integer, int32](func(__java2goExecution *stdjava.Execution, a *stdjava.Integer, b *stdjava.Integer) int32 {")
+	// Both comparator bodies and both callbacks retain the same Java execution.
+	if strings.Count(out, "return stdjava.UnboxInteger(a) - stdjava.UnboxInteger(b)") != 2 {
+		t.Fatalf("expected both max/min comparator bodies to preserve Java unboxing:\n%s", out)
+	}
+	if strings.Count(out, "})), __java2goExecution)") != 2 {
+		t.Fatalf("expected both max/min comparators to pass caller execution:\n%s", out)
+	}
 }
 
 func TestComparator_ListSortTypesTheLambdaFromTheReceiver(t *testing.T) {
@@ -79,7 +89,12 @@ public class ListSortProgram {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	assertContains(t, out, "stdjava.SortWith(names, func(a string, b string) int32")
+	// Preserve typed Java operands and int result through the caller execution adapter.
+	assertContains(t, out, "stdjava.SortWith(names, stdjava.BiFunctionCallbackExecution[*stdjava.JavaString, *stdjava.JavaString, int32](__java2goExecution, stdjava.NewBiFunctionFuncAdapter[*stdjava.JavaString, *stdjava.JavaString, int32](func(__java2goExecution *stdjava.Execution, a *stdjava.JavaString, b *stdjava.JavaString) int32 {")
+	assertContains(t, out, "return stdjava.RequireJavaString(__java2goInvocationReceiver).CompareTo(__java2goInvocationArg0)")
+	assertContains(t, out, "__java2goInvocationReceiver := a")
+	assertContains(t, out, "__java2goInvocationArg0 := b")
+	assertContains(t, out, "})), __java2goExecution)")
 }
 
 func TestComparator_ArraysSortOverloads(t *testing.T) {
@@ -95,7 +110,10 @@ public class ArraySortProgram {
 `
 	out := renderGoFileFromJava(t, src)
 	assertContains(t, out, "stdjava.SortArray(words, __java2goExecution)")
-	assertContains(t, out, "stdjava.SortArrayWith(words, func(a string, b string) int32")
+	// Preserve typed Java operands and int result through the caller execution adapter.
+	assertContains(t, out, "stdjava.SortArrayWith(words, stdjava.BiFunctionCallbackExecution[*stdjava.JavaString, *stdjava.JavaString, int32](__java2goExecution, stdjava.NewBiFunctionFuncAdapter[*stdjava.JavaString, *stdjava.JavaString, int32](func(__java2goExecution *stdjava.Execution, a *stdjava.JavaString, b *stdjava.JavaString) int32 {")
+	assertContains(t, out, "return stdjava.RequireJavaString(a).Length() - stdjava.RequireJavaString(b).Length()")
+	assertContains(t, out, "})), __java2goExecution)")
 }
 
 // A Comparator local must carry the named runtime type, not the unnamed func

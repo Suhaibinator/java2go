@@ -1,0 +1,1 @@
+package base; import model.Item; public class Plain {public int key;public Plain(int key){this.key=key;}public int compareTo(Item value){app.Main.trace+="P"+key+";";return value==null?-41:key-value.key;}}

@@ -1,0 +1,1 @@
+public class ScalarNaNRawProbe {public static String run(){String[] texts={"NaN","+NaN","-NaN"," NaN\t"};String out="";for(String text:texts){out+=Double.doubleToRawLongBits(Double.parseDouble(text))+":"+Float.floatToRawIntBits(Float.parseFloat(text))+"\n";}return out;}public static void main(String[] args){System.out.print(run());}}

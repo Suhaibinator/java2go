@@ -1,0 +1,479 @@
+package transpiler
+
+import (
+	"go/ast"
+	"reflect"
+	"testing"
+
+	"github.com/NickyBoy89/java2go/parsing"
+	"github.com/NickyBoy89/java2go/symbol"
+)
+
+func anonymousFunctional214Source(family string) (string, string) {
+	header, method, initializer := "Function<T,T>", `public T apply(T value){return token;}`, `T initialized=apply(token);`
+	if family == "Supplier" {
+		header, method, initializer = "Supplier<T>", `public T get(){return token;}`, `T initialized=((java.util.function.Supplier<T>)(Object)this).get();`
+	}
+	return `import java.util.function.` + family + `;class Donor{}class Main{static<T,U>` + header + ` make(T token,U other){return new ` + header + `(){Object capturedOther=other;` + initializer + method + `};}}`, header
+}
+
+// Every mutant starts from a real completed canonical allocation; no fixture
+// fabricates a certificate, source registry, method descriptor or Go receiver.
+func TestCI214AnonymousFunctionalDirectConsumerGuards(t *testing.T) {
+	rows := []string{"registered named node", "nil declaration", "foreign equal-span node", "foreign method node", "copied info", "copied scope", "copied class", "copied certificate", "struct name", "initializer selector", "declared field", "capture AST", "capture definition", "own method table", "selected constructor", "selected helper flag", "selected helper name", "selected variadic", "selected default", "selected static", "selected private", "selected body", "selected name", "selected result", "selected formal arity", "selected formal type", "selected formal binder", "scope enclosing", "scope interfaces", "scope binder order", "scope binder declaration", "binder emitted name", "in-progress replay", "failed phase", "invalid emission stamp", "foreign hoist session", "foreign counter session", "foreign physical ABI", "same-pointer emitted method AST", "missing emitted method", "retained import table", "registered TYPE census", "source owner name", "source binder name", "current snapshot filename", "current snapshot bytes"}
+	for _, family := range []string{"Function", "Supplier"} {
+		for _, name := range rows {
+			t.Run(family+"/"+name, func(t *testing.T) {
+				source, header := anonymousFunctional214Source(family)
+				ctx, _, _, info := anonymousFunctional209Lower(t, source, header)
+				certificate := info.functional
+				if certificate == nil || certificate.phase != anonymousFunctionalComplete || !certificate.sealed {
+					t.Fatal("actual complete certificate missing")
+				}
+				contract := anonymousFunctionalContract(certificate)
+				query := ctx.Clone()
+				query.currentClass = info.scope
+				query.localScope = nil
+				query.className = info.structName
+				contracts := sourceNativeFunctionalContracts(info.scope, query)
+				if len(contracts) != 1 || !anonymousFunctionalContractEqual(certificate, contracts[0]) || sourceNativeFunctionalViewExpr(info.scope, contract, ast.NewIdent("receiver"), query) == nil {
+					t.Fatal("actual direct consumer positive premise failed")
+				}
+				if _, ok := supplierSourceDeclarationCtx(info.scope, query); !ok {
+					t.Fatal("actual declaration role premise failed")
+				}
+				if family == "Supplier" && !supplierSourceSelectedMethodOwned(info.scope, info.scope, certificate.selected, contract, query) {
+					t.Fatal("actual Supplier selected body premise failed")
+				}
+				allocation, typ, body := certificate.allocation, certificate.typ, certificate.body
+				key, _ := anonymousClassSourceKey(allocation)
+				foreign := parsing.SourceFile{Name: "Other.java", Source: []byte(source)}
+				if err := foreign.ParseAST(); err != nil {
+					t.Fatal(err)
+				}
+				foreignAllocation := findNode(foreign.Ast, "object_creation_expression")
+				if foreignAllocation == nil || foreignAllocation.Equal(allocation) || foreignAllocation.StartByte() != allocation.StartByte() || foreignAllocation.EndByte() != allocation.EndByte() {
+					t.Fatal("equal-span independent AST premise failed")
+				}
+				selected := certificate.selected
+				switch name {
+				case "registered named node":
+					info.scope.Class.DeclarationNode = ctx.currentFile.FindClassScope("Donor").Class.DeclarationNode
+				case "nil declaration":
+					info.scope.Class.DeclarationNode = nil
+				case "foreign equal-span node":
+					info.scope.Class.DeclarationNode = foreignAllocation
+				case "foreign method node":
+					selected.DeclarationNode = findNode(foreignAllocation, "method_declaration")
+				case "copied info":
+					copied := *info
+					ctx.anonymousClasses[key] = &copied
+				case "copied scope":
+					copied := *info.scope
+					info.scope = &copied
+				case "copied class":
+					copied := *info.scope.Class
+					info.scope.Class = &copied
+				case "copied certificate":
+					copied := *certificate
+					info.functional = &copied
+				case "map removal":
+					delete(ctx.anonymousClasses, key)
+				case "struct name":
+					info.structName += "Donated"
+				case "initializer selector":
+					info.fieldInitializerMethodName += "Donated"
+				case "declared field":
+					info.declaredFields[0].Name += "Donated"
+				case "capture AST":
+					info.captured[0].goType = ast.NewIdent("any")
+				case "capture definition":
+					info.captured[0].javaDef.OriginalType = "Object"
+				case "own method table":
+					copied := *selected
+					info.scope.Methods = append(info.scope.Methods, &copied)
+				case "selected constructor":
+					selected.Constructor = true
+				case "selected helper flag":
+					selected.RequiresHelper = true
+				case "selected helper name":
+					selected.HelperName = "Donated"
+				case "selected variadic":
+					selected.IsVariadic = true
+				case "selected default":
+					selected.RuntimeDefault = true
+				case "selected static":
+					selected.IsStatic = true
+				case "selected private":
+					selected.IsPrivate = true
+				case "selected body":
+					selected.HasBody = false
+				case "selected name":
+					selected.Name += "Donated"
+				case "selected result":
+					selected.OriginalType = "Object"
+				case "selected formal arity":
+					selected.Parameters = append(selected.Parameters, &symbol.Definition{OriginalName: "extra", OriginalType: "Object"})
+				case "selected formal type":
+					if len(selected.Parameters) == 0 {
+						selected.Parameters = []*symbol.Definition{{OriginalName: "extra", OriginalType: "Object"}}
+					} else {
+						selected.Parameters[0].OriginalType = "Object"
+					}
+				case "selected formal binder":
+					if len(selected.Parameters) == 0 {
+						selected.DirectTypeParameter = &symbol.TypeParamDeclaration{SourceName: "T", GoName: "T"}
+						selected.TypeParameterBindings = map[string]*symbol.TypeParamDeclaration{"T": selected.DirectTypeParameter}
+					} else {
+						selected.Parameters[0].TypeParameterBindings = map[string]*symbol.TypeParamDeclaration{"T": {SourceName: "T", GoName: "T"}}
+					}
+				case "scope enclosing":
+					info.scope.Enclosing = ctx.currentFile.FindClassScope("Donor")
+				case "scope interfaces":
+					info.scope.ImplementedInterfaces = []string{"java.util.function." + family + "<Object>"}
+				case "scope binder order":
+					if len(info.scope.TypeParameters) < 2 {
+						t.Fatal("two actual carried binders missing")
+					}
+					info.scope.TypeParameters[0], info.scope.TypeParameters[1] = info.scope.TypeParameters[1], info.scope.TypeParameters[0]
+				case "scope binder declaration":
+					info.scope.TypeParameters[0].Declaration = &symbol.TypeParamDeclaration{SourceName: info.scope.TypeParameters[0].Name, GoName: info.scope.TypeParameters[0].EmittedName()}
+				case "binder emitted name":
+					info.scope.TypeParameters[0].Declaration.GoName += "Donated"
+				case "in-progress replay":
+					certificate.phase = anonymousFunctionalBody
+				case "failed phase":
+					certificate.phase = anonymousFunctionalFailed
+				case "invalid emission stamp":
+					info.emissionStampValid = false
+				case "foreign hoist session":
+					copied := append([]ast.Decl(nil), (*ctx.hoistedDecls)...)
+					ctx.hoistedDecls = &copied
+					query.hoistedDecls = &copied
+				case "foreign counter session":
+					copied := *ctx.anonClassCounter
+					ctx.anonClassCounter = &copied
+					query.anonClassCounter = &copied
+				case "foreign physical ABI":
+					ctx.rawGenericParameterTypes = map[string]string{"T": "java.lang.Object"}
+					query.rawGenericParameterTypes = ctx.rawGenericParameterTypes
+				case "same-pointer emitted method AST":
+					changed := false
+					for _, d := range *ctx.hoistedDecls {
+						if f, ok := d.(*ast.FuncDecl); ok && f.Name.Name == executionImplementationName(selected, info.scope, query) {
+							f.Name.Name += "Donated"
+							changed = true
+							break
+						}
+					}
+					if !changed {
+						t.Fatal("actual emitted implementation missing")
+					}
+				case "missing emitted method":
+					*ctx.hoistedDecls = (*ctx.hoistedDecls)[:certificate.hoistStart]
+				case "retained import table":
+					ctx.currentFile.Imports[family] = "foreign"
+				case "registered TYPE census":
+					ctx.currentFile.TopLevelClasses = []*symbol.ClassScope{ctx.currentClass}
+				case "source owner name":
+					ctx.currentClass.Class.OriginalName = "Borrowed"
+				case "source binder name":
+					ctx.localScope.TypeParameters[0].Declaration.SourceName = "Borrowed"
+				case "current snapshot filename":
+					ctx.currentFile.SourceFilename = "Other.java"
+				case "current snapshot bytes":
+					ctx.currentFile.Source[0] = ' '
+				}
+				// Bind the actual potentially changed scope for direct calls. Its original
+				// provenance must remain anonymous even after losing/changing its node kind.
+				query.currentClass = info.scope
+				beforeHoists := anonymousFunctionalAST(&ast.File{Name: ast.NewIdent("snapshot"), Decls: *ctx.hoistedDecls})
+				beforeCount := *ctx.anonClassCounter
+				beforeMap := map[anonymousClassKey]*anonymousClassInfo{}
+				for k, v := range ctx.anonymousClasses {
+					beforeMap[k] = v
+				}
+				if got := sourceNativeFunctionalContracts(info.scope, query); len(got) != 0 {
+					t.Fatal("mutant acquired a native contract")
+				}
+				if got := sourceNativeFunctionalViewExpr(info.scope, contract, ast.NewIdent("receiver"), query); got != nil {
+					t.Fatal("mutant exported a native view")
+				}
+				if _, ok := supplierSourceDeclarationCtx(info.scope, query); ok {
+					t.Fatal("mutant acquired a declaration role")
+				}
+				if supplierSourceSelectedMethodOwned(info.scope, info.scope, selected, contract, query) {
+					t.Fatal("mutant acquired a Supplier selected method")
+				}
+				if got := anonymousClassConstructionExpr(allocation, typ, info, nil, ctx.currentFile.Source, ctx); got != nil {
+					t.Fatal("mutant constructed an anonymous object")
+				}
+				if got := lowerAnonymousClassToStruct(allocation, typ, body, ctx.currentFile.Source, ctx); got != nil {
+					t.Fatal("mutant replayed completed lowering")
+				}
+				if anonymousFunctionalAST(&ast.File{Name: ast.NewIdent("snapshot"), Decls: *ctx.hoistedDecls}) != beforeHoists || *ctx.anonClassCounter != beforeCount || !reflect.DeepEqual(ctx.anonymousClasses, beforeMap) {
+					t.Fatal("refusal mutated map hoists counter or emitted layout")
+				}
+			})
+		}
+	}
+}
+
+func TestCI214AnonymousFunctionalNamedConsumersUnchanged(t *testing.T) {
+	for _, family := range []string{"Function", "Supplier"} {
+		t.Run(family, func(t *testing.T) {
+			edge, method := "Function<String,String>", `public String apply(String value){return value;}`
+			if family == "Supplier" {
+				edge, method = "Supplier<String>", `public String get(){return "value";}`
+			}
+			h := setupParseHelper(t, `import java.util.function.`+family+`;class Named implements `+edge+`{`+method+`}`)
+			ctx := h.Ctx.Clone()
+			scope := ctx.currentFile.FindClassScope("Named")
+			ctx.currentClass = scope
+			if _, anonymous := anonymousFunctionalLookup(scope, ctx); anonymous {
+				t.Fatal("registered named declaration classified as anonymous")
+			}
+			contracts := sourceNativeFunctionalContracts(scope, ctx)
+			if len(contracts) != 1 || contracts[0].family != family || sourceNativeFunctionalViewExpr(scope, contracts[0], ast.NewIdent("receiver"), ctx) == nil {
+				t.Fatal("named native contract behavior changed")
+			}
+		})
+	}
+}
+
+// Exercise the actual private installer boundary before any body/hoist exists.
+// Its source-role lookup may describe the SAM; it cannot construct or export.
+func TestCI214AnonymousFunctionalInProgressBoundary(t *testing.T) {
+	for _, family := range []string{"Function", "Supplier"} {
+		for _, mode := range []string{"same session", "foreign hoist", "foreign counter", "foreign ABI"} {
+			t.Run(family+"/"+mode, func(t *testing.T) {
+				source, header := anonymousFunctional214Source(family)
+				h := setupParseHelper(t, source)
+				ctx := h.Ctx.Clone()
+				ctx.currentClass = ctx.currentFile.FindClassScope("Main")
+				ctx.localScope = ctx.currentClass.FindMethod().ByOriginalName("make")[0]
+				ctx.className = ctx.currentClass.Class.Name
+				var hoists []ast.Decl
+				counter := 0
+				ctx.hoistedDecls = &hoists
+				ctx.anonClassCounter = &counter
+				ctx.anonymousClasses = map[anonymousClassKey]*anonymousClassInfo{}
+				ctx.localClasses = map[string]*localClassInfo{}
+				ctx.executionContextName = "execution"
+				allocation := findNode(h.File.Ast, "object_creation_expression")
+				typ, body := allocation.ChildByFieldName("type"), objectCreationClassBody(allocation)
+				ctx.expectedType, ctx.expectedTypeRoot = header, allocation
+				certificate, attempted := anonymousFunctionalStart(allocation, typ, body, h.File.Source, ctx)
+				if !attempted || certificate == nil {
+					t.Fatal("actual initial source certificate missing")
+				}
+				fields, _ := anonymousClassDeclaredFields(body, h.File.Source, ctx)
+				captured := collectCapturedLocals(body, h.File.Source, ctx)
+				scope := synthAnonClassScope("ActualPartial", fields, captured, anonymousClassMethods(body), map[string]struct{}{}, h.File.Source, false)
+				scope.Class.DeclarationNode = allocation
+				scope.Enclosing = ctx.currentClass
+				scope.ImplementedInterfaces = []string{certificate.header}
+				scope.TypeParameters = anonymousClassTypeParameters(allocation, captured, false, h.File.Source, ctx)
+				info := &anonymousClassInfo{structName: "ActualPartial", scope: scope, declaredFields: fields, captured: captured}
+				key, _ := anonymousClassSourceKey(allocation)
+				ctx.anonymousClasses[key] = info
+				if !anonymousFunctionalAttach(certificate, info, ctx) {
+					t.Fatal("actual installer phase premise failed")
+				}
+				contract := anonymousFunctionalContract(certificate)
+				switch mode {
+				case "foreign hoist":
+					var foreign []ast.Decl
+					ctx.hoistedDecls = &foreign
+				case "foreign counter":
+					foreign := counter
+					ctx.anonClassCounter = &foreign
+				case "foreign ABI":
+					ctx.rawGenericParameterTypes = map[string]string{"T": "java.lang.Object"}
+				}
+				query := ctx.Clone()
+				query.currentClass = scope
+				query.localScope = nil
+				query.className = info.structName
+				if sourceNativeFunctionalViewExpr(scope, contract, ast.NewIdent("receiver"), query) != nil || supplierSourceSelectedMethodOwned(scope, scope, certificate.selected, contract, query) {
+					t.Fatal("in-progress source role exported completion")
+				}
+				if anonymousFunctionalFinish(certificate, ctx) {
+					t.Fatal("missing actual emitted body acquired completion")
+				}
+				if anonymousClassConstructionExpr(allocation, typ, info, nil, h.File.Source, ctx) != nil || lowerAnonymousClassToStruct(allocation, typ, body, h.File.Source, ctx) != nil {
+					t.Fatal("in-progress info constructed or replayed")
+				}
+				if len(*ctx.hoistedDecls) != 0 || *ctx.anonClassCounter != 0 || ctx.anonymousClasses[key] != info || certificate.phase != anonymousFunctionalBody {
+					t.Fatal("in-progress refusal mutated local phase or emission")
+				}
+			})
+		}
+	}
+}
+
+func TestCI214AnonymousFunctionalFailedSynthesisIsTerminal(t *testing.T) {
+	for _, family := range []string{"Function", "Supplier"} {
+		t.Run(family, func(t *testing.T) {
+			header, method := "Function<String,String>", `public Object apply(Object value){return value;}`
+			if family == "Supplier" {
+				header, method = "Supplier<String>", `public String get(int value){return "wrong";}`
+			}
+			h := setupParseHelper(t, `import java.util.function.`+family+`;class Main{static `+header+` make(){return new `+header+`(){`+method+`};}}`)
+			ctx := h.Ctx.Clone()
+			ctx.currentClass = ctx.currentFile.FindClassScope("Main")
+			ctx.localScope = ctx.currentClass.FindMethod().ByOriginalName("make")[0]
+			ctx.className = ctx.currentClass.Class.Name
+			var hoists []ast.Decl
+			counter := 0
+			ctx.hoistedDecls = &hoists
+			ctx.anonClassCounter = &counter
+			ctx.anonymousClasses = map[anonymousClassKey]*anonymousClassInfo{}
+			ctx.executionContextName = "execution"
+			allocation := findNode(h.File.Ast, "object_creation_expression")
+			typ, body := allocation.ChildByFieldName("type"), objectCreationClassBody(allocation)
+			ctx.expectedType, ctx.expectedTypeRoot = header, allocation
+			for attempt := 0; attempt < 2; attempt++ {
+				if lowerAnonymousClassToStruct(allocation, typ, body, h.File.Source, ctx) != nil || len(hoists) != 0 || counter != 0 || len(ctx.anonymousClasses) != 0 {
+					t.Fatal("failed actual selected-method synthesis acquired fallback construction or hoists")
+				}
+			}
+		})
+	}
+}
+
+func TestCI214AnonymousFunctionalNativeViewFactoryABI(t *testing.T) {
+	for _, family := range []string{"Function", "Supplier"} {
+		t.Run(family, func(t *testing.T) {
+			source, header := anonymousFunctional214Source(family)
+			ctx, _, _, info := anonymousFunctional209Lower(t, source, header)
+			query := ctx.Clone()
+			query.currentClass = info.scope
+			query.localScope = nil
+			query.className = info.structName
+			expression := sourceNativeFunctionalViewExpr(info.scope, anonymousFunctionalContract(info.functional), ast.NewIdent("actualReceiver"), query)
+			call, ok := expression.(*ast.CallExpr)
+			if !ok || len(call.Args) != 2 || call.Ellipsis.IsValid() {
+				t.Fatal("owned source factory call missing")
+			}
+			var owner ast.Expr
+			switch f := call.Fun.(type) {
+			case *ast.IndexExpr:
+				owner = f.X
+			case *ast.IndexListExpr:
+				owner = f.X
+			default:
+				t.Fatal("factory type arguments missing")
+			}
+			selector, ok := owner.(*ast.SelectorExpr)
+			if !ok || selector.Sel.Name != "New"+family+"SourceView" {
+				t.Fatal("actual source factory selector missing")
+			}
+			qualifier, ok := selector.X.(*ast.Ident)
+			if !ok || qualifier.Name != markStdjavaUsage(query) {
+				t.Fatal("source factory is not actual stdjava")
+			}
+			root, ok := call.Args[0].(*ast.SelectorExpr)
+			if !ok || root.Sel.Name != "ObjectInfo" {
+				t.Fatal("factory must consume existing ObjectInfo")
+			}
+			receiver, ok := root.X.(*ast.Ident)
+			if !ok || receiver.Name != "actualReceiver" {
+				t.Fatal("factory changed receiver root")
+			}
+			closure, ok := call.Args[1].(*ast.FuncLit)
+			if !ok || closure.Type.Params == nil || len(closure.Type.Params.List) < 1 || len(closure.Type.Params.List[0].Names) != 1 || closure.Type.Params.List[0].Names[0].Name != "execution" {
+				t.Fatal("invocation Execution parameter missing")
+			}
+			if anonymousFunctional209Calls(closure, "NewExecution") != 0 || anonymousFunctional209Calls(closure, "NewGeneratedObjectInfo") != 0 {
+				t.Fatal("view closure created construction execution or carrier")
+			}
+			if len(closure.Body.List) != 1 {
+				t.Fatal("view closure must defer exactly the selected invocation")
+			}
+			returned, ok := closure.Body.List[0].(*ast.ReturnStmt)
+			if !ok || len(returned.Results) != 1 {
+				t.Fatal("selected return missing")
+			}
+			invocation, ok := returned.Results[0].(*ast.CallExpr)
+			if !ok || len(invocation.Args) < 1 {
+				t.Fatal("selected implementation invocation missing")
+			}
+			target, ok := invocation.Fun.(*ast.SelectorExpr)
+			if !ok || target.Sel.Name != executionImplementationName(info.functional.selected, info.scope, query) {
+				t.Fatal("callback selected wrong source implementation")
+			}
+			execution, ok := invocation.Args[0].(*ast.Ident)
+			if !ok || execution.Name != "execution" {
+				t.Fatal("callback did not pass invocation Execution")
+			}
+			targetReceiver, ok := target.X.(*ast.Ident)
+			if !ok || targetReceiver.Name != "actualReceiver" {
+				t.Fatal("callback changed evaluated receiver")
+			}
+			arity := 0
+			if family == "Function" {
+				arity = 1
+			}
+			if len(invocation.Args) != arity+1 || len(closure.Type.Params.List) != arity+1 {
+				t.Fatal("selected callback arity changed")
+			}
+		})
+	}
+}
+
+// These refusal rows are parser-level namespace controls; only the qualified
+// positive rows also claim legal Java override signatures.
+func TestCI214AnonymousFunctionalLexicalOriginAuthority(t *testing.T) {
+	for _, family := range []string{"Function", "Supplier"} {
+		for _, mode := range []string{"body shadow", "qualified body", "local prefix"} {
+			t.Run(family+"/"+mode, func(t *testing.T) {
+				header, method := "Function<java.lang.String,java.lang.String>", `public String apply(String value){return value;}`
+				if family == "Supplier" {
+					header, method = "Supplier<java.lang.String>", `public String get(){return null;}`
+				}
+				if mode == "qualified body" {
+					if family == "Function" {
+						method = `public java.lang.String apply(java.lang.String value){return value;}`
+					} else {
+						method = `public java.lang.String get(){return "value";}`
+					}
+				}
+				local := ""
+				nested := `class String{}`
+				if mode == "local prefix" {
+					local = `class ` + family + `<T,R>{}`
+					nested = ""
+				}
+				source := `import java.util.function.` + family + `;class Main{static ` + header + ` make(){` + local + `return new ` + header + `(){` + nested + method + `};}}`
+				if mode == "qualified body" {
+					ctx, _, _, info := anonymousFunctional209Lower(t, source, header)
+					query := ctx.Clone()
+					query.currentClass = info.scope
+					query.localScope = nil
+					contracts := sourceNativeFunctionalContracts(info.scope, query)
+					if len(contracts) != 1 || sourceNativeFunctionalViewExpr(info.scope, contracts[0], ast.NewIdent("receiver"), query) == nil {
+						t.Fatal("qualified source origin was recaptured by body homonym")
+					}
+					return
+				}
+				h := setupParseHelper(t, source)
+				ctx := h.Ctx.Clone()
+				ctx.currentClass = ctx.currentFile.FindClassScope("Main")
+				ctx.localScope = ctx.currentClass.FindMethod().ByOriginalName("make")[0]
+				ctx.className = ctx.currentClass.Class.Name
+				var hoists []ast.Decl
+				counter := 0
+				ctx.hoistedDecls = &hoists
+				ctx.anonClassCounter = &counter
+				ctx.anonymousClasses = map[anonymousClassKey]*anonymousClassInfo{}
+				ctx.executionContextName = "execution"
+				allocation := findNode(h.File.Ast, "object_creation_expression")
+				ctx.expectedType, ctx.expectedTypeRoot = header, allocation
+				if lowerAnonymousClassToStruct(allocation, allocation.ChildByFieldName("type"), objectCreationClassBody(allocation), h.File.Source, ctx) != nil || len(hoists) != 0 || counter != 0 || len(ctx.anonymousClasses) != 0 {
+					t.Fatal("unproved lexical prefix or body origin acquired construction")
+				}
+			})
+		}
+	}
+}

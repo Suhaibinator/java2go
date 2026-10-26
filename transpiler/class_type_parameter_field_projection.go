@@ -12,6 +12,16 @@ import (
 // intValue on a polluted Box<Integer> must fail even though Number's runtime
 // accessor would also accept the Long stored through a raw alias.
 func projectDirectOwnerErasedIntrinsicReceiver(receiver ast.Expr, node *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	return projectDirectOwnerErasedReceiver(receiver, node, ctx, source, false)
+}
+
+// Native method selection consumes a proved reference view, unlike scalar or
+// binary operations. Reuse the declaration-owned view and nominal checkcast.
+func projectDirectOwnerErasedMethodReceiver(receiver ast.Expr, node *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+	return projectDirectOwnerErasedReceiver(receiver, node, ctx, source, true)
+}
+
+func projectDirectOwnerErasedReceiver(receiver ast.Expr, node *sitter.Node, ctx Ctx, source []byte, methodReceiver bool) ast.Expr {
 	if receiver == nil || node == nil {
 		return receiver
 	}
@@ -31,7 +41,7 @@ func projectDirectOwnerErasedIntrinsicReceiver(receiver ast.Expr, node *sitter.N
 		return receiver
 	}
 	_, wrapper := builtinJavaWrapperPrimitive(sourceView, ctx)
-	if !wrapper && (stripJavaQualifier(sourceView) != "String" || resolveClassScopeByQualifiedName(ctx, sourceView) != nil) {
+	if !methodReceiver && !wrapper && (stripJavaQualifier(sourceView) != "String" || resolveClassScopeByQualifiedName(ctx, sourceView) != nil) {
 		return receiver
 	}
 	return projectDirectOwnerErasedView(receiver, sourceView, erasure, ctx)
@@ -80,11 +90,18 @@ func narrowDirectOwnerFieldSelectionReceiver(
 	ctx Ctx,
 	source []byte,
 ) ast.Expr {
-	if receiver == nil || receiverNode == nil || receiverNode.Type() != "field_access" ||
+	if receiver == nil || receiverNode == nil ||
 		outerResolution == nil || outerResolution.def == nil || outerResolution.def.IsStatic {
 		return receiver
 	}
-	sourceView, erasure, ok := directOwnerFieldAccessView(receiverNode, ctx, source)
+	var sourceView, erasure string
+	var ok bool
+	switch receiverNode.Type() {
+	case "field_access":
+		sourceView, erasure, ok = directOwnerFieldAccessView(receiverNode, ctx, source)
+	case "method_invocation":
+		sourceView, erasure, ok = directOwnerMethodResultView(receiverNode, ctx, source)
+	}
 	if !ok {
 		return receiver
 	}
@@ -121,18 +138,30 @@ func projectDirectOwnerErasedExpressionForExpected(
 		return expr
 	}
 
-	var erasure string
+	var sourceView, erasure string
 	var ok bool
 	switch node.Type() {
-	case "field_access":
-		_, erasure, ok = directOwnerFieldAccessView(node, ctx, source)
+	case "identifier", "field_access":
+		sourceView, erasure, ok = directOwnerFieldAccessView(node, ctx, source)
 	case "method_invocation":
-		_, erasure, ok = directOwnerMethodResultView(node, ctx, source)
+		sourceView, erasure, ok = directOwnerMethodResultView(node, ctx, source)
 	}
-	if !ok || javaInferenceTypeAssignable(erasure, ctx.expectedType, ctx) {
+	target := ctx.expectedType
+	if _, primitive := javaPrimitiveType(target); primitive {
+		// Unboxing first checks the expression's reference view, then extracts
+		// and widens the primitive. ObjectView must never target a primitive ID.
+		if _, boxed := javaUnboxingPrimitive(sourceView, ctx); !boxed {
+			return expr
+		}
+		target = sourceView
+	}
+	if !ok || javaInferenceTypeAssignable(erasure, target, ctx) {
 		return expr
 	}
-	return projectDirectOwnerErasedView(expr, ctx.expectedType, erasure, ctx)
+	if projected, ok := projectDirectOwnerErasedExpectedArray(expr, target, ctx); ok {
+		return projected
+	}
+	return projectDirectOwnerErasedView(expr, target, erasure, ctx)
 }
 
 func currentErasedCallableOwnerTypeParameter(javaType string, ctx Ctx) bool {
@@ -141,13 +170,24 @@ func currentErasedCallableOwnerTypeParameter(javaType string, ctx Ctx) bool {
 }
 
 func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (string, bool) {
+	if ctx.sourceNativeVirtualBody.scalar(javaType, ctx) {
+		return "java.lang.Object", true
+	}
+	physical := genericFamilyPhysicalJavaType(javaType, ctx)
+	if physical != javaType {
+		return physical, true
+	}
 	if ctx.currentClass == nil || ctx.localScope == nil ||
 		!directOwnerCallableMethodEligible(ctx.currentClass, ctx.localScope, ctx) {
 		return "", false
 	}
 	declaration := visibleTypeParameterDeclarationForJavaType(javaType, ctx)
-	if declaration == nil || !methodDirectlyUsesTypeParameterDeclaration(ctx.localScope, declaration) ||
-		!ownerTypeParameterCallableShapeSupported(declaration, ctx) {
+	// Callable eligibility above already proves the complete physical body plan,
+	// including specialized override bridges. Repeating the uniform-family shape
+	// audit here would reject those bridges and narrow this body's own erased
+	// locals before their subsequent effects. Keep the lexical declaration and
+	// direct-method-use checks so shadowed binders retain their own representation.
+	if declaration == nil || !methodDirectlyUsesTypeParameterDeclaration(ctx.localScope, declaration) {
 		return "", false
 	}
 	for _, parameter := range ctx.currentClass.TypeParameters {
@@ -156,7 +196,7 @@ func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (s
 				rawTypeParameterErasure(parameter, ctx.currentClass.TypeParameters),
 				ctx.currentClass,
 			)
-			if !javaTypeHasInterfaceRepresentation(erasure, ctx) {
+			if !javaTypeHasInterfaceRepresentation(erasure, ctx) && !leafObjectErasure(ctx.currentClass, erasure, ctx) {
 				return "", false
 			}
 			return erasure, true
@@ -168,6 +208,7 @@ func currentErasedCallableOwnerTypeParameterErasure(javaType string, ctx Ctx) (s
 func projectDirectOwnerErasedMethodReferenceResult(
 	expr ast.Expr,
 	resolution *methodResolution,
+	target *invocationTargetInfo,
 	ctx Ctx,
 ) ast.Expr {
 	if expr == nil || resolution == nil || resolution.owner == nil || resolution.def == nil {
@@ -177,12 +218,18 @@ func projectDirectOwnerErasedMethodReferenceResult(
 	if !ok {
 		return expr
 	}
-	samMethod, bindings := resolveFunctionalInterfaceMethod(ctx, ctx.expectedType)
-	if samMethod == nil || strings.TrimSpace(samMethod.OriginalType) == "" ||
-		strings.TrimSpace(samMethod.OriginalType) == "void" {
+	// The shared SAM signature also carries runtime functional interfaces such
+	// as Supplier, which have no source declaration in the symbol graph.
+	_, targetView := methodReferenceJavaSignature(ctx)
+	if targetView == "" || targetView == "void" {
 		return expr
 	}
-	targetView := substituteJavaTypeParams(samMethod.OriginalType, bindings)
+	if _, primitive := javaPrimitiveType(targetView); primitive {
+		// Restore the referenced method's reference result before the regular
+		// unboxing/widening adapter. An Integer result consumed as long still
+		// needs an Integer checkcast, not a Long checkcast.
+		targetView = methodReferenceDeclaredResultType(resolution, target, ctx)
+	}
 	if javaInferenceTypeAssignable(erasure, targetView, ctx) {
 		return expr
 	}
@@ -194,19 +241,39 @@ func directOwnerFieldAccessView(
 	ctx Ctx,
 	source []byte,
 ) (string, string, bool) {
-	if node == nil || node.Type() != "field_access" {
+	if node == nil {
 		return "", "", false
 	}
-	objectNode := node.ChildByFieldName("object")
-	fieldNode := node.ChildByFieldName("field")
-	if objectNode == nil || fieldNode == nil {
+	var target *invocationTargetInfo
+	var fieldName string
+	switch node.Type() {
+	case "identifier":
+		// Java's implicit receiver selects the same inherited field as `this`.
+		// Match expression lookup's local/parameter precedence before planning
+		// its physical field ABI; a same-named variable is not erased storage.
+		fieldName = node.Content(source)
+		if ctx.currentClass == nil || (ctx.localScope != nil && ctx.localScope.FindVariable(fieldName) != nil) {
+			return "", "", false
+		}
+		target = &invocationTargetInfo{
+			classScope:        ctx.currentClass,
+			classJavaTypeArgs: ctx.currentClass.GoTypeParameterNames(),
+		}
+	case "field_access":
+		objectNode := node.ChildByFieldName("object")
+		fieldNode := node.ChildByFieldName("field")
+		if objectNode == nil || fieldNode == nil {
+			return "", "", false
+		}
+		target = resolveInvocationTarget(objectNode, ctx, source)
+		fieldName = fieldNode.Content(source)
+	default:
 		return "", "", false
 	}
-	target := resolveInvocationTarget(objectNode, ctx, source)
 	if target == nil || target.classScope == nil {
 		return "", "", false
 	}
-	resolution := findFieldResolutionInHierarchy(target.classScope, fieldNode.Content(source), ctx)
+	resolution := findFieldResolutionInHierarchy(target.classScope, fieldName, ctx)
 	if resolution == nil || resolution.owner == nil || resolution.def == nil || resolution.def.IsStatic {
 		return "", "", false
 	}
@@ -237,6 +304,9 @@ func directOwnerMethodResultView(
 	target, resolution := resolvedInstanceInvocation(node, ctx, source)
 	if target == nil || resolution == nil || resolution.owner == nil || resolution.def == nil {
 		return "", "", false
+	}
+	if view, erasure, scalar := sourceArrayListScalarResultView(target, resolution, ctx); scalar {
+		return view, erasure, true
 	}
 	erasure, ok := directOwnerOrdinaryMethodInterfaceErasure(resolution.owner, resolution.def, ctx)
 	if !ok {

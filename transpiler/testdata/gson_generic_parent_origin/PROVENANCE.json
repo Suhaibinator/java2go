@@ -1,0 +1,724 @@
+{
+  "application_source_count": 4,
+  "application_sources": {
+    "src/main/java/snapshot/app/Main.java": {
+      "provenance": "repository campaign-authored original snapshot fixture; no separate source license header present",
+      "sha256": "ab154b9099dd0640feb00d8e8984da9f532d08f144f308b252bc539bac2af26d"
+    },
+    "src/main/java/snapshot/codec/EntryAdapter.java": {
+      "provenance": "repository campaign-authored original snapshot fixture; no separate source license header present",
+      "sha256": "461279a880ca729a174082ad1d9ee1a01c31fd4744110f156b41e39bcc5c8dc9"
+    },
+    "src/main/java/snapshot/model/Entry.java": {
+      "provenance": "repository campaign-authored original snapshot fixture; no separate source license header present",
+      "sha256": "a220f81f81880b6372007e580ccfb06a036bb0e0f00932e982fcd7ef161b55fc"
+    },
+    "src/main/java/snapshot/service/SnapshotReplay.java": {
+      "provenance": "repository campaign-authored original snapshot fixture; no separate source license header present",
+      "sha256": "3f03d2885c6e4c186f80a15237a23383e232576a69a7694613cc0ffb8b1c49ed"
+    }
+  },
+  "author_declaration_trace_sha256": "f78a4010bf12d524c6ce15cac53e8ab6ee66ee2dc3184cf708aae9a849153a4a",
+  "author_expected_observations_sha256": "b07b2db868da1c0283122ecad2c799df0ba02305f512c48d9d25db78aa436142",
+  "author_handoff_sha256": "d3867ca85e523e8066921d12ae5a0833e6ecfe26f1c2a45616ab9bd28865c3d9",
+  "boundary": "parser/declaration-only fixture; not replacement for original full application/JDK and Go acceptance; no binary jars/classes copied",
+  "dependency_source_counts": {
+    "error_prone_annotations-2.48.0": 29,
+    "gson-2.14.0": 81
+  },
+  "licenses": {
+    "Apache-2.0.txt": {
+      "byte_source_archive_sha256": "96444ee2fa5a41dc4d3b7b95f46b67495795d458e2050fc08bb88ab7f87ac021",
+      "byte_source_entry": "META-INF/LICENSE.txt",
+      "meaning": "standard Apache2 license text; no CommonsCodec source or project notice included",
+      "sha256": "b1d2870f1a00e4d7f56576e5f0870cba109e041f8af66866cf5b499478e654e7"
+    },
+    "Error Prone annotations": "Apache-2.0; original copyright/license source headers retained byte-for-byte",
+    "Google Gson": "Apache-2.0; original copyright/license source headers retained byte-for-byte",
+    "application": "repository-authored test fixture; no new license grant or upstream attribution invented"
+  },
+  "original_dependency_lock_sha256": "517ce8ab1876f11f825c0999d54bfa3c5f13ca407e95e9579236319b4cb38acd",
+  "schema": "java2go.original-gson-closure.v1",
+  "source_artifacts": {
+    "error_prone_annotations-2.48.0-sources.jar": {
+      "role": "upstream source archive used by exact original closure; not used as runtime jar",
+      "sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f"
+    },
+    "error_prone_annotations-2.48.0.pom": {
+      "role": "original published Apache-2.0 licensing and dependency metadata",
+      "sha256": "189e09ad0489c325e90daaa9d5c8f406330602fa366609bca07cbcdad03ab9da"
+    },
+    "gson-2.14.0-sources.jar": {
+      "role": "upstream source archive used by exact original closure; not used as runtime jar",
+      "sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f"
+    },
+    "gson-2.14.0.pom": {
+      "role": "original published Apache-2.0 licensing and dependency metadata",
+      "sha256": "1fa0122c0e3733192642861c36be4c6f799a795327a23bdd2922691b6e9ba480"
+    }
+  },
+  "source_count": 114,
+  "source_manifest_sha256": "b7d03936a9ef1363efef9444bbcb4a9fe99d29b5b2f6a55b9ff05729fce51b86",
+  "sources": {
+    "dependencies/src/com/google/errorprone/annotations/CanIgnoreReturnValue.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1469,
+      "dependency": "error_prone_annotations",
+      "sha256": "66c06b3c92923fb451d38ba059e1a734d61de17dcfd2a11c143b293feae3894d"
+    },
+    "dependencies/src/com/google/errorprone/annotations/CheckReturnValue.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1727,
+      "dependency": "error_prone_annotations",
+      "sha256": "6bb3481be928f21d7ace3fc127fd5cd1122c5763fc8f19976fba6e0d717dbac8"
+    },
+    "dependencies/src/com/google/errorprone/annotations/CompatibleWith.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 2003,
+      "dependency": "error_prone_annotations",
+      "sha256": "625734d315ca4ca92910d30d306b945bbbfc4a4abcf20eee7f75146f59c8f4df"
+    },
+    "dependencies/src/com/google/errorprone/annotations/CompileTimeConstant.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 4997,
+      "dependency": "error_prone_annotations",
+      "sha256": "cb4b18172ddc33d1d084da9b7a400861fab1a8b93a12496f6a7f99f90f16515b"
+    },
+    "dependencies/src/com/google/errorprone/annotations/DoNotCall.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 3040,
+      "dependency": "error_prone_annotations",
+      "sha256": "91e1b24c8fd6b34cae7f147d7379cf8740534a21ab5fcb39037dc08fe7cd3009"
+    },
+    "dependencies/src/com/google/errorprone/annotations/DoNotMock.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1612,
+      "dependency": "error_prone_annotations",
+      "sha256": "f9fafefa9032f677a1afff12cf50dcc2101acb2944ba0455a9a9144219df4a5c"
+    },
+    "dependencies/src/com/google/errorprone/annotations/ForOverride.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1864,
+      "dependency": "error_prone_annotations",
+      "sha256": "537d2c22144408e70e467339cf9be7be5b77c8d7ff9a08fe84a0bb708d3be9e5"
+    },
+    "dependencies/src/com/google/errorprone/annotations/FormatMethod.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 3851,
+      "dependency": "error_prone_annotations",
+      "sha256": "f8d0960170f892da0b476dfef8267f7f8f05a9064652c76a4dbdae4914dcd89a"
+    },
+    "dependencies/src/com/google/errorprone/annotations/FormatString.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1774,
+      "dependency": "error_prone_annotations",
+      "sha256": "09370c8693dced3cddde9f25ffc4d4101e87e28cad7c2be81ee2acdad00f6c70"
+    },
+    "dependencies/src/com/google/errorprone/annotations/Immutable.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 3547,
+      "dependency": "error_prone_annotations",
+      "sha256": "a6eb49931e65dcc633d641bca1c2e54925cb44bfddbd217f2bffe52aeb5fef04"
+    },
+    "dependencies/src/com/google/errorprone/annotations/ImmutableTypeParameter.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1225,
+      "dependency": "error_prone_annotations",
+      "sha256": "d611c790240ad01819b2be10f674ab62c562085a6beab36547d4c218236a0931"
+    },
+    "dependencies/src/com/google/errorprone/annotations/IncompatibleModifiers.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1773,
+      "dependency": "error_prone_annotations",
+      "sha256": "580cda3621f9fba885dc65366c4a9485bf430b52756f10d05a9cf47d3ed5cf0e"
+    },
+    "dependencies/src/com/google/errorprone/annotations/InlineMe.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1701,
+      "dependency": "error_prone_annotations",
+      "sha256": "daa26553d2c08d21de97540402003ea0c8989e8f3e5d3797ceeb4c77b2bc2db3"
+    },
+    "dependencies/src/com/google/errorprone/annotations/InlineMeValidationDisabled.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1319,
+      "dependency": "error_prone_annotations",
+      "sha256": "387a714177a98abba728b226392ae041ee5fb2dccd84c7e78af1b64e56e4d772"
+    },
+    "dependencies/src/com/google/errorprone/annotations/Keep.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1678,
+      "dependency": "error_prone_annotations",
+      "sha256": "8eb12c29b1cbe2c2f1f630aa3a1f0fb15db023bdb73c112f77da1b3488713fcc"
+    },
+    "dependencies/src/com/google/errorprone/annotations/Modifier.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1218,
+      "dependency": "error_prone_annotations",
+      "sha256": "28e9d88cf4bf0cbd9f805161edb82053198e6d311998edd72b52d44f59bfe1a9"
+    },
+    "dependencies/src/com/google/errorprone/annotations/MustBeClosed.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1566,
+      "dependency": "error_prone_annotations",
+      "sha256": "55734cbb3c33e5dbbb65cf571b89ac091c5bea9c672df27c38204a08f4aba375"
+    },
+    "dependencies/src/com/google/errorprone/annotations/NoAllocation.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1366,
+      "dependency": "error_prone_annotations",
+      "sha256": "d883a08f7bd2318371936d8cdf267ee9f28526ded73d0ded073815329517e0ef"
+    },
+    "dependencies/src/com/google/errorprone/annotations/OverridingMethodsMustInvokeSuper.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1932,
+      "dependency": "error_prone_annotations",
+      "sha256": "69b739a13c51e689301792dc422786b307bfc7f10fb9dd935465243c459dd8c8"
+    },
+    "dependencies/src/com/google/errorprone/annotations/RequiredModifiers.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1764,
+      "dependency": "error_prone_annotations",
+      "sha256": "01d5359e7070f6840617a2aaa69460b42bdc0ccadb80ae02325373a4b4a25b54"
+    },
+    "dependencies/src/com/google/errorprone/annotations/RestrictedApi.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 4655,
+      "dependency": "error_prone_annotations",
+      "sha256": "6100da102932e84e4b189a883ad880fd895f53b5deca4c1e4b27ba78462e195a"
+    },
+    "dependencies/src/com/google/errorprone/annotations/SuppressPackageLocation.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1171,
+      "dependency": "error_prone_annotations",
+      "sha256": "14f45ff5901310638e28cc7e5fabcfa715126178e45fcf9be409bf4da876e0b6"
+    },
+    "dependencies/src/com/google/errorprone/annotations/ThreadSafe.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 7413,
+      "dependency": "error_prone_annotations",
+      "sha256": "45bec077770e86fc267a9b3c82083bc2a4da5423fe08b7a8838efe9862332dca"
+    },
+    "dependencies/src/com/google/errorprone/annotations/ThreadSafeTypeParameter.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 2832,
+      "dependency": "error_prone_annotations",
+      "sha256": "207ac13cca461ee2881e2933b547efa6e1f4392f5da8b478ef9785c33b622e3a"
+    },
+    "dependencies/src/com/google/errorprone/annotations/Var.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1933,
+      "dependency": "error_prone_annotations",
+      "sha256": "761bb12299c6728350aad5763c202a82ea3709b3742abf67c4e95a9dccf7c6f6"
+    },
+    "dependencies/src/com/google/errorprone/annotations/concurrent/GuardedBy.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 1306,
+      "dependency": "error_prone_annotations",
+      "sha256": "6b5926e264bf8bd4c52a83098e4ddc027cc125475c32694b1551988989755552"
+    },
+    "dependencies/src/com/google/errorprone/annotations/concurrent/LazyInit.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 2925,
+      "dependency": "error_prone_annotations",
+      "sha256": "b59124e59f5c819d0346160d27d003cfc8f175437edefcede7cbb3e45c63a1dd"
+    },
+    "dependencies/src/com/google/errorprone/annotations/concurrent/LockMethod.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 2067,
+      "dependency": "error_prone_annotations",
+      "sha256": "882aa8fa436dd94f52b38a1fc78e3f39a9a312aa05dcc1d814d600611cd2145b"
+    },
+    "dependencies/src/com/google/errorprone/annotations/concurrent/UnlockMethod.java": {
+      "archive_sha256": "5c1c7b797aa1effa050a06d2d98534a28750f5fa8bcca56d8f49a866ca8bd03f",
+      "bytes": 2103,
+      "dependency": "error_prone_annotations",
+      "sha256": "90dc91dcf3bfe77e9d1686678f7fbde74a28dbf7ec50c4a08d6abc3fa6f0971c"
+    },
+    "dependencies/src/com/google/gson/ExclusionStrategy.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 4042,
+      "dependency": "gson",
+      "sha256": "849d986c98528991445bc979ce472f83892d0eebc5e115c9112ed9af7daaa1bb"
+    },
+    "dependencies/src/com/google/gson/FieldAttributes.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 4048,
+      "dependency": "gson",
+      "sha256": "a2d037e46dff7691a067b068a376fb63321a184b543c477af70f6fa1c8cb89a6"
+    },
+    "dependencies/src/com/google/gson/FieldNamingPolicy.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 7125,
+      "dependency": "gson",
+      "sha256": "9f070ba47fde3e4d2ced3ce92f80e83924424d8e049763f80ef64103f4767657"
+    },
+    "dependencies/src/com/google/gson/FieldNamingStrategy.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1730,
+      "dependency": "gson",
+      "sha256": "fda95d90a09c9bd63e3f8e1bb9cd6af1e516e58cbddfe052adf42f2e0a6021e1"
+    },
+    "dependencies/src/com/google/gson/FormattingStyle.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 5105,
+      "dependency": "gson",
+      "sha256": "4b9523019664aa402e340e5f8fa5686fc631943c4eb6c1880c0417b7de0bc1a0"
+    },
+    "dependencies/src/com/google/gson/Gson.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 58251,
+      "dependency": "gson",
+      "sha256": "dccb06a118de122605bead739f8c7b309242fabc210802c698649d298954a59f"
+    },
+    "dependencies/src/com/google/gson/GsonBuilder.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 48210,
+      "dependency": "gson",
+      "sha256": "560e2ff54276d4bbc43607e559d2edae4c639f4dbf3b978180a44716ed4b9a49"
+    },
+    "dependencies/src/com/google/gson/InstanceCreator.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3726,
+      "dependency": "gson",
+      "sha256": "9b0dc1d31cd1c329cb5a4bae23b390b96492746a46ec7cb21661317544fdf31e"
+    },
+    "dependencies/src/com/google/gson/JsonArray.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 14918,
+      "dependency": "gson",
+      "sha256": "2c30c65164fd2ddd2e38bb3e1efb1a91ca286c911741cb525eef2551bef938ab"
+    },
+    "dependencies/src/com/google/gson/JsonDeserializationContext.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1709,
+      "dependency": "gson",
+      "sha256": "39288d425fc4500e5dd4adb773d7cde931f6b1b915f4044d54374e256cfa1e22"
+    },
+    "dependencies/src/com/google/gson/JsonDeserializer.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3846,
+      "dependency": "gson",
+      "sha256": "e3afe05708eabfd0ad79e4fecd224fdafed48ca7727b121c29d9f5c736231f01"
+    },
+    "dependencies/src/com/google/gson/JsonElement.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 16146,
+      "dependency": "gson",
+      "sha256": "3215d81cdf2b213c7250cbb7703c793595819b9bac4ffd246034d4eb9fdf5e19"
+    },
+    "dependencies/src/com/google/gson/JsonIOException.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1419,
+      "dependency": "gson",
+      "sha256": "c64b29889ebe91707f40f2c343fa87561eefe8ae0652836dfd12c7e83c4ec956"
+    },
+    "dependencies/src/com/google/gson/JsonNull.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1640,
+      "dependency": "gson",
+      "sha256": "ac3db4e5688062384391f1af7fc6231960734d32534cbf7c42e4599fa57b4b1d"
+    },
+    "dependencies/src/com/google/gson/JsonObject.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 8903,
+      "dependency": "gson",
+      "sha256": "749ce5c5d7a5241e07b0a76011184d2ddcc23d5df453b197fe3e4cac3ec9c58d"
+    },
+    "dependencies/src/com/google/gson/JsonParseException.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2384,
+      "dependency": "gson",
+      "sha256": "007892c8b471bb4cf05a9b99543b31bdc44aa40998702caca302e0e0d80e5abd"
+    },
+    "dependencies/src/com/google/gson/JsonParser.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 6572,
+      "dependency": "gson",
+      "sha256": "6b14eff5bc9d09b401864bfac976274f2fe11d462ac90693ec2881f5510c6dbb"
+    },
+    "dependencies/src/com/google/gson/JsonPrimitive.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 10367,
+      "dependency": "gson",
+      "sha256": "c6adf7a7837f6173c09fd5ff1c94434d07617794c7c1c3193431f3a8bc95da87"
+    },
+    "dependencies/src/com/google/gson/JsonSerializationContext.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1860,
+      "dependency": "gson",
+      "sha256": "7236ac6689009cbbac2e764d6fa4104cf59a8f290b9b15146b4078d35edf9f8b"
+    },
+    "dependencies/src/com/google/gson/JsonSerializer.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3508,
+      "dependency": "gson",
+      "sha256": "99257eb66a0281666b43906cd2bc7ac86a08abbbf2091e9e0c81f0565a89142e"
+    },
+    "dependencies/src/com/google/gson/JsonStreamParser.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3878,
+      "dependency": "gson",
+      "sha256": "1dad227fa5b034724a68ef82ac03c7f959f85ed0c978ada91949553a64b3fae2"
+    },
+    "dependencies/src/com/google/gson/JsonSyntaxException.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1379,
+      "dependency": "gson",
+      "sha256": "b1a2d223a591ff5bc17d22f83f8156317bc7af748c73e5569129f6e4b92b59cb"
+    },
+    "dependencies/src/com/google/gson/LongSerializationPolicy.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2457,
+      "dependency": "gson",
+      "sha256": "c4f4859e0cdf5760dd0509ea8090255b720a94ce8de7f21ef5f3a224f73f43ba"
+    },
+    "dependencies/src/com/google/gson/ReflectionAccessFilter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 9587,
+      "dependency": "gson",
+      "sha256": "bf82c2586bbe1d46fda4e91b573962d598f10c245abc5c110e6908af7072da99"
+    },
+    "dependencies/src/com/google/gson/Strictness.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1031,
+      "dependency": "gson",
+      "sha256": "d0151a6b4d3a8d04e54d7c136ce5300408f7dfaf8d1fd278a0d847cbbdd93ce8"
+    },
+    "dependencies/src/com/google/gson/ToNumberPolicy.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3984,
+      "dependency": "gson",
+      "sha256": "b1797bd0dfb7e1609996b36629089f251aa4e2c91e9d5f6acc19e6d11892bcdf"
+    },
+    "dependencies/src/com/google/gson/ToNumberStrategy.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3080,
+      "dependency": "gson",
+      "sha256": "c3086db8b9bc7c85c9a5d4f7136aaef9a632a88020b06126414c56b03baffe76"
+    },
+    "dependencies/src/com/google/gson/TypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 11920,
+      "dependency": "gson",
+      "sha256": "f511d3df6d60ffe20871f8a04e98aba8f8bdb862f0f1733334c32b67fbaef30e"
+    },
+    "dependencies/src/com/google/gson/TypeAdapterFactory.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 6426,
+      "dependency": "gson",
+      "sha256": "04dd76988063d76ec46e30fab63c44d05639799293addebcbd9e8550b7ee9376"
+    },
+    "dependencies/src/com/google/gson/annotations/Expose.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3504,
+      "dependency": "gson",
+      "sha256": "cb5a05183ce8bc3734791ab0934d313377a2e285259cef2b28dbbd251646f656"
+    },
+    "dependencies/src/com/google/gson/annotations/JsonAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 5157,
+      "dependency": "gson",
+      "sha256": "9ea0c29d448c4984d3e7fbb892ca8a24eb14718d2979a23378725ee76a01245d"
+    },
+    "dependencies/src/com/google/gson/annotations/SerializedName.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3314,
+      "dependency": "gson",
+      "sha256": "8e574df8df479286591050674f315e2c6fef831dd23c8b219bee5a332abb99be"
+    },
+    "dependencies/src/com/google/gson/annotations/Since.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2442,
+      "dependency": "gson",
+      "sha256": "c2e8c1e6e32735b62cd0bad8e3205a6fb5d7de7028fecf9219bb4694ba03357d"
+    },
+    "dependencies/src/com/google/gson/annotations/Until.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2771,
+      "dependency": "gson",
+      "sha256": "5c4964196c0a431c500f6baa06f6b4f8c38cb1421fc801325bdebd80b5ef1f33"
+    },
+    "dependencies/src/com/google/gson/internal/ConstructorConstructor.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 18147,
+      "dependency": "gson",
+      "sha256": "58d96646fa504d4116efe68fccb786f13f09bfdc4e4120c54542b9b426ab28b6"
+    },
+    "dependencies/src/com/google/gson/internal/Excluder.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 8380,
+      "dependency": "gson",
+      "sha256": "119179c5a363957b1f5c4377bdf6cd83089e34a6320cac2059563bce924e5e90"
+    },
+    "dependencies/src/com/google/gson/internal/GsonBuildConfig.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1127,
+      "dependency": "gson",
+      "sha256": "d8c211ea4e00f9912cf06ed65bc05d25d0f26207478e3e42a5186f422ffb990a"
+    },
+    "dependencies/src/com/google/gson/internal/GsonTypes.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 23647,
+      "dependency": "gson",
+      "sha256": "b4e1a45a5c97954824fca69fa695af4e10e0e64ea85d0a58f63c65d485810a6d"
+    },
+    "dependencies/src/com/google/gson/internal/JavaVersion.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2956,
+      "dependency": "gson",
+      "sha256": "36a16173a8e753163cb31c7184c59f15514f8139bbfee70e1979a7907ecf99c7"
+    },
+    "dependencies/src/com/google/gson/internal/JsonReaderInternalAccess.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1314,
+      "dependency": "gson",
+      "sha256": "2ac4f290f339d7c64d8598012598a8a62e603a3afaec9ed282309e065734aed5"
+    },
+    "dependencies/src/com/google/gson/internal/LazilyParsedNumber.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2874,
+      "dependency": "gson",
+      "sha256": "8455930d62651a53a857b5e1fc82934632f24576cf5b3e52677cdf8d4505e206"
+    },
+    "dependencies/src/com/google/gson/internal/LinkedTreeMap.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 19755,
+      "dependency": "gson",
+      "sha256": "51c05e1d7ef673c146f67a97ede92be9cbc0f47b7c81b371080353812d6556eb"
+    },
+    "dependencies/src/com/google/gson/internal/NonNullElementWrapperList.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3259,
+      "dependency": "gson",
+      "sha256": "b379992da26baf53ab73bd8561d06efbaca4bd1dda8214abda8755b83ae850da"
+    },
+    "dependencies/src/com/google/gson/internal/NumberLimits.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1129,
+      "dependency": "gson",
+      "sha256": "e4594ffa5d48acb404d62eeeb5ab646c95e58c4b7aa70c912e12cf79502179fe"
+    },
+    "dependencies/src/com/google/gson/internal/ObjectConstructor.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1004,
+      "dependency": "gson",
+      "sha256": "fc286ea45292ca5ae5769799e58939f1d23d59ec585b8f6ada034f7c266cfc87"
+    },
+    "dependencies/src/com/google/gson/internal/PreJava9DateFormatProvider.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2160,
+      "dependency": "gson",
+      "sha256": "527f0c081a8cbd2ea2edfbe3110b15663c351fc337808a25b7f96d8d659a614e"
+    },
+    "dependencies/src/com/google/gson/internal/Primitives.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3516,
+      "dependency": "gson",
+      "sha256": "dbee9175d2fb298f3a13589584590e99c638379e8be6f26d2c893259ca9756d7"
+    },
+    "dependencies/src/com/google/gson/internal/ReflectionAccessFilterHelper.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 4335,
+      "dependency": "gson",
+      "sha256": "d7bc30cda40271e4fde7c157b298f7ed2f48267590262b3e554784e5dcc31b4c"
+    },
+    "dependencies/src/com/google/gson/internal/Streams.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 5299,
+      "dependency": "gson",
+      "sha256": "44721c03446078fe229390349a08265bd8c95f7eec211e2462329c6410bb2a3c"
+    },
+    "dependencies/src/com/google/gson/internal/TroubleshootingGuide.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 315,
+      "dependency": "gson",
+      "sha256": "fad7f43a9273d35247f5b3cc2994642c3327ee8e4d506038a93efd5de11e0b45"
+    },
+    "dependencies/src/com/google/gson/internal/UnsafeAllocator.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 4520,
+      "dependency": "gson",
+      "sha256": "35dee219db8ced601f91f09662aca65344516321a651b98472c734e9fe0431f8"
+    },
+    "dependencies/src/com/google/gson/internal/bind/ArrayTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3650,
+      "dependency": "gson",
+      "sha256": "52622d3dee3ec2fa3361ccaf5e61e9b60e0d5ad1f226bebc8add9b4c6527b522"
+    },
+    "dependencies/src/com/google/gson/internal/bind/CollectionTypeAdapterFactory.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3693,
+      "dependency": "gson",
+      "sha256": "bf1cb5c1268e4ed721ccc06a2b29e0eabc8b2ce4803d134b74dc1b4691cc1cee"
+    },
+    "dependencies/src/com/google/gson/internal/bind/DefaultDateTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 7334,
+      "dependency": "gson",
+      "sha256": "999ef090f627687fee8257073900859e97d077ade3fb614c8da6e89914d6b6a9"
+    },
+    "dependencies/src/com/google/gson/internal/bind/EnumTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 4832,
+      "dependency": "gson",
+      "sha256": "5f5ff13e8f5897ef6e357f70aac3bc3120fd26c343cfd165201c659b8d96dc22"
+    },
+    "dependencies/src/com/google/gson/internal/bind/IgnoreJRERequirement.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 399,
+      "dependency": "gson",
+      "sha256": "deb00e3f5167f80b3b96e5f6db7a1285edddf4eb77789a2221e14ca5bb131da1"
+    },
+    "dependencies/src/com/google/gson/internal/bind/JavaTimeTypeAdapters.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 16409,
+      "dependency": "gson",
+      "sha256": "b2b1e7eb4511b3dd8c721d1c3f72b38eb594d8e317b68fcb1d4f0432e8bf98f8"
+    },
+    "dependencies/src/com/google/gson/internal/bind/JsonAdapterAnnotationTypeAdapterFactory.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 8427,
+      "dependency": "gson",
+      "sha256": "63bf35c2af13c75eafa0655d2f71c40109edc081f1ee62bd9b914fe743654029"
+    },
+    "dependencies/src/com/google/gson/internal/bind/JsonElementTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 5069,
+      "dependency": "gson",
+      "sha256": "bad32c0b183bd79da45bfc31de5d9b885b9609ac2f96348f4d326bdda926aa30"
+    },
+    "dependencies/src/com/google/gson/internal/bind/JsonTreeReader.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 11825,
+      "dependency": "gson",
+      "sha256": "72c33ca3690ad118026f10ef34d699f1ecefe72543bd8b09e7dbe7f07e364b7d"
+    },
+    "dependencies/src/com/google/gson/internal/bind/JsonTreeWriter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 6966,
+      "dependency": "gson",
+      "sha256": "bf752e76fcc0fe1ecb213f673e62eebf3dc258740c437ea4e0a7b1adc0f4f1fd"
+    },
+    "dependencies/src/com/google/gson/internal/bind/MapTypeAdapterFactory.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 9657,
+      "dependency": "gson",
+      "sha256": "b1dec42b26c28a0d667b6ea55dd5e68d81dee44fddd7fd0773ea74ef73ffeaac"
+    },
+    "dependencies/src/com/google/gson/internal/bind/NumberTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2768,
+      "dependency": "gson",
+      "sha256": "adf8843b560cc384c0832a39dbd7da4b66a93202645cb3bef3dc87e1273a6edc"
+    },
+    "dependencies/src/com/google/gson/internal/bind/ObjectTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 5418,
+      "dependency": "gson",
+      "sha256": "ae8b1c0076b7d03586613fcdc5de2531d1cb287cefab9b1bf15d51dd826b4a6b"
+    },
+    "dependencies/src/com/google/gson/internal/bind/ReflectiveTypeAdapterFactory.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 25992,
+      "dependency": "gson",
+      "sha256": "9d8a50c1ddc10351da097ea5ae090aa2f573cd4c56c75cd845a077854ead5f4f"
+    },
+    "dependencies/src/com/google/gson/internal/bind/SerializationDelegatingTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1090,
+      "dependency": "gson",
+      "sha256": "f1b18f21fe092e59e318024bc643d6638fbbf37c8cc698bc6886ff0c3234bcde"
+    },
+    "dependencies/src/com/google/gson/internal/bind/TreeTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 7485,
+      "dependency": "gson",
+      "sha256": "36048e717854a909743a3377c409fa0f4c68c0bc6f7c661d5fb136766fc10a65"
+    },
+    "dependencies/src/com/google/gson/internal/bind/TypeAdapterRuntimeTypeWrapper.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3913,
+      "dependency": "gson",
+      "sha256": "a98d2d5312b68859637f13a8df96bc9c84f93903cd16fa4c78884c2f2ec86bf5"
+    },
+    "dependencies/src/com/google/gson/internal/bind/TypeAdapters.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 36083,
+      "dependency": "gson",
+      "sha256": "55f578aa2a9589b746e35980deb7c4d4f1134a84e74c8846f68c3d0861eee343"
+    },
+    "dependencies/src/com/google/gson/internal/bind/util/ISO8601Utils.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 13827,
+      "dependency": "gson",
+      "sha256": "ae515fc0a17f15c919a152a3004d874a81d1466d39bdf163bd45d468a3faeba5"
+    },
+    "dependencies/src/com/google/gson/internal/reflect/ReflectionHelper.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 12479,
+      "dependency": "gson",
+      "sha256": "9b5ae14216107eaefe74b839e504719e8a432a693a6b36a7caaaac9ef159f262"
+    },
+    "dependencies/src/com/google/gson/internal/sql/SqlDateTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3053,
+      "dependency": "gson",
+      "sha256": "6c01ffc0b602184f10fa71e34d3e1171e86260291b75a2cfddcaab48c73d6cfc"
+    },
+    "dependencies/src/com/google/gson/internal/sql/SqlTimeTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3007,
+      "dependency": "gson",
+      "sha256": "357227a1dbc336baf93680b0592be279a933bd953960f65c6ee1ff19c61ea0a3"
+    },
+    "dependencies/src/com/google/gson/internal/sql/SqlTimestampTypeAdapter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2091,
+      "dependency": "gson",
+      "sha256": "bba865f9da23f4d8671635bafe153717d557e24d0ba380547416aa49d4eebe84"
+    },
+    "dependencies/src/com/google/gson/internal/sql/SqlTypesSupport.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 3428,
+      "dependency": "gson",
+      "sha256": "e3a93a9e57c8b489454979677fafbf1a81f475bbe406d7a9ae61188ecc82a13d"
+    },
+    "dependencies/src/com/google/gson/reflect/TypeToken.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 16691,
+      "dependency": "gson",
+      "sha256": "f182b1fe6d242196dd846617bf594ce45741103d17bbc3f148219bfeb23db8bd"
+    },
+    "dependencies/src/com/google/gson/stream/JsonReader.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 61736,
+      "dependency": "gson",
+      "sha256": "a032c8e8e8acda2e5758ef9b9db3f4c1a8fe5d9b009209f511783f2a4eabb1df"
+    },
+    "dependencies/src/com/google/gson/stream/JsonScope.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1719,
+      "dependency": "gson",
+      "sha256": "70a321df3791fdd2a195e3500bed590ed05b533b10c0ef4791c85e4cc4ba7181"
+    },
+    "dependencies/src/com/google/gson/stream/JsonToken.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 2033,
+      "dependency": "gson",
+      "sha256": "a4b0cce35f143c052f821cee687aa58512a10fcd56382542cdb8257cfc8c0822"
+    },
+    "dependencies/src/com/google/gson/stream/JsonWriter.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 27050,
+      "dependency": "gson",
+      "sha256": "6b739b0ba2cc5a8e6809f1bdd31244c12e4f9a7145f6e93cd8f39ea193bf0e5b"
+    },
+    "dependencies/src/com/google/gson/stream/MalformedJsonException.java": {
+      "archive_sha256": "a4873f0ef88981cab520c3d7449cd89a68e605f15e9fe46e1aa2c77d5f87eb6f",
+      "bytes": 1245,
+      "dependency": "gson",
+      "sha256": "6ef87295358ae95dd0e8157576db82609bfafa947d25804864db8aaf8c71e9d9"
+    }
+  }
+}

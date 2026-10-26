@@ -1,0 +1,11 @@
+# System properties checkpoint 243
+
+Translated applications can use canonical System.getProperty, setProperty and clearProperty through a process-wide synchronized Go property store. The exercised contracts preserve UTF16 keys, returned object identity, defaults, validation order, exception messages/causes and concurrent access. URL configuration keys remain ordinary properties; unsupported URL behavior is checked at the URL boundary.
+
+A compiler profile reads and hashes the explicitly selected JDK21 JAVA_HOME/release file. Generated Go installs immutable supplied facts without running the JVM for program behavior. Unprovided standard properties remain explicit unsupported boundaries; the implementation does not invent VM or platform facts.
+
+Qualification combines source-scoped evidence without relabeling it:73 stages on the public240 component (957 runtime parents/3048 subtests,15 parser parents/84 subtests per normal/race mode, focused39/241, original17 atomic/race4059 parents, lint and original JVM/Go streams), then41 joint stages against public241 (48 compiler parents/205 subtests per mode, exact2701→2710 named inventory, original three whole JVM/ordinary-Go programs and zero-issue lint). Native test oracles run in both modes; no application race credit is claimed for ordinary Go stream executions. The initial administrative stderr-audit failure remains preserved; its successor checks the exact accepted baseline diagnostics.
+
+The published242 normalization changes only its isolated unselected fixture body and campaign state/note. All System21 postimages, selected test files, original inputs, module files and runtime bytes match the qualified predecessors. Independent recorded-actual and compositional reviews found no interaction requiring another41-stage run. This is not a blanket fresh execution claim for normalized242.
+
+All public242 guards and List/record/work-budget repairs remain intact. A seven-letter compiler diagnostic capitalization cleanup changes no JDK exception text or semantic assertion. No generated implementation, expected observation, strict-mode behavior or execution budget was weakened. Hosted CI on this head remains required. Full Gson112, broader JDK properties/platform behavior and Netty acceptance remain open.

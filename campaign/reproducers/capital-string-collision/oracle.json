@@ -1,0 +1,155 @@
+{
+  "expected": {
+    "expected.seed-17.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "expected.seed-17.stdout": {
+      "bytes": 486,
+      "sha256": "7091ec239ab19eae345a2c403cd98934e35456e3a774f877df0bf3c1ceacf0e4"
+    },
+    "expected.seed-41.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "expected.seed-41.stdout": {
+      "bytes": 486,
+      "sha256": "6cc0d8cec6b4a71d36bbc873c6b3be91d46ba5f5cb6782e99bbaf61b4c8c87a8"
+    },
+    "expected.seed-97.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "expected.seed-97.stdout": {
+      "bytes": 486,
+      "sha256": "68b2cdf95c2a0ba559231bd633cfc0ce0924a743ba17b47a6a047efd5fd12e3c"
+    }
+  },
+  "javac": [
+    "--release",
+    "21",
+    "-encoding",
+    "UTF-8"
+  ],
+  "jdk_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "kind": "supplemental_dependency_free_reproducer",
+  "limitations": [
+    "The published implementation generated Go but failed to build (undefined: Integer), so historical runtime parity is unclassified.",
+    "The final26 generated program fails the first capital-String assertion in all nine runs; later control checks were not reached."
+  ],
+  "name": "capital-string-collision",
+  "oracle_runs": [
+    {
+      "exit_code": 0,
+      "repeat": 1,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "7091ec239ab19eae345a2c403cd98934e35456e3a774f877df0bf3c1ceacf0e4",
+      "timeout_seconds": 60
+    },
+    {
+      "exit_code": 0,
+      "repeat": 2,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "7091ec239ab19eae345a2c403cd98934e35456e3a774f877df0bf3c1ceacf0e4",
+      "timeout_seconds": 60
+    },
+    {
+      "exit_code": 0,
+      "repeat": 3,
+      "seed": 17,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "7091ec239ab19eae345a2c403cd98934e35456e3a774f877df0bf3c1ceacf0e4",
+      "timeout_seconds": 60
+    },
+    {
+      "exit_code": 0,
+      "repeat": 1,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "6cc0d8cec6b4a71d36bbc873c6b3be91d46ba5f5cb6782e99bbaf61b4c8c87a8",
+      "timeout_seconds": 60
+    },
+    {
+      "exit_code": 0,
+      "repeat": 2,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "6cc0d8cec6b4a71d36bbc873c6b3be91d46ba5f5cb6782e99bbaf61b4c8c87a8",
+      "timeout_seconds": 60
+    },
+    {
+      "exit_code": 0,
+      "repeat": 3,
+      "seed": 41,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "6cc0d8cec6b4a71d36bbc873c6b3be91d46ba5f5cb6782e99bbaf61b4c8c87a8",
+      "timeout_seconds": 60
+    },
+    {
+      "exit_code": 0,
+      "repeat": 1,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "68b2cdf95c2a0ba559231bd633cfc0ce0924a743ba17b47a6a047efd5fd12e3c",
+      "timeout_seconds": 60
+    },
+    {
+      "exit_code": 0,
+      "repeat": 2,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "68b2cdf95c2a0ba559231bd633cfc0ce0924a743ba17b47a6a047efd5fd12e3c",
+      "timeout_seconds": 60
+    },
+    {
+      "exit_code": 0,
+      "repeat": 3,
+      "seed": 97,
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 486,
+      "stdout_sha256": "68b2cdf95c2a0ba559231bd633cfc0ce0924a743ba17b47a6a047efd5fd12e3c",
+      "timeout_seconds": 60
+    }
+  ],
+  "provenance": {
+    "coordinator_audit_sha256": "e4c41b8ca6ee62da843aa61a11bdd226b4db1001f05cf3aaff3c5c234a0c0474",
+    "final26_source_manifest_sha256": "b4d3841699a62587b39c09c2669b26e15b8911ebc7e0a9799b05b14617703798",
+    "full_evidence_archive_sha256": "36eb7a51a2563bafd15f1650cfbb397921cd318bcb7c5d7864017d245110fc0b",
+    "full_evidence_manifest_sha256": "9b28d58ab1b41ef9b04cc2ae16f01b155775ee478a07be50545882193bf0de0b",
+    "original_raw_report_sha256": "ad95c78c82c16402a49d7ac7e3a5824061c84e1878ec3b9adb6e8e067d72ea7f",
+    "original_runner_sha256": "fa106aba2ed1d1660699292ae450935783308071c5da528d5d4b8f3eebff3f58",
+    "published_git_revision": "bdbefca9bbf98ed65321650b5ab84fc90278650b"
+  },
+  "repeats": 3,
+  "seeds": [
+    17,
+    41,
+    97
+  ],
+  "source_and_pom_sha256": {
+    "pom.xml": "47f8d7b555d9c27104a0c9286dce370d3fc1dee411bf1a0b24763f64a59c546d",
+    "src/main/java/probe/app/Main.java": "a95bf48e809272527a8490f11ddfc2986434687072843877919604b8f5c2b9d4",
+    "src/main/java/probe/model/CapitalText.java": "483bef24dd6f0c82f8c105b34240d241e7d4d59f049fc42853af0c4eb18dfc8a",
+    "src/main/java/probe/model/RealText.java": "251b280ff7921ab27d9450f5e253e1e202fa60de1c4489337a68d2f271b6a907"
+  },
+  "status": "JVM_valid_and_deterministic; final26_runtime_red; published_Go_build_blocked"
+}

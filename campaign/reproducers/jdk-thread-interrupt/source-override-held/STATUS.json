@@ -1,0 +1,9 @@
+{
+  "scope": "Mandatory source override/caller/super/abrupt controls; source wiring and state observer admission held",
+  "oracle": "Actual installed JDK21 three byte-identical runs frozen; no runtime JVM delegation",
+  "source_java_sha256": {
+    "src/main/java/probe/Main.java": "f69596e21b16c4dcf13f4b957b7f6181a3078492b1195022346aa061c754cd22"
+  },
+  "expected_stdout_sha256": "bed6c30008d9384a7bf8eab268428f6bf555f81909abbffd4fa323a8207be620",
+  "classification": "Mandatory selected actual GoRED held, valid JDK; not native-stage acceptance"
+}

@@ -1,0 +1,16 @@
+type=com.google.gson.annotations.SerializedName
+aliases=wire:old:older
+flags=false:true
+defaults=0:true:true
+base=wire
+count=3
+fresh=true
+wrapper=3:wire
+versions=3.5:1.25:true
+metadata=java.lang.String:false
+method=accessor-only:true:1
+record=java.lang.Record:18:stored:stored
+constructor=2.5
+null-method=true
+null-field=true
+null-class=true

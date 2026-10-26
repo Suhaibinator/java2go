@@ -84,11 +84,17 @@ func directOwnerInterfaceErasure(
 	ctx Ctx,
 ) (string, bool) {
 	use, ok := directOwnerTypeParameterForDefinition(owner, definition)
-	if !ok || len(use.parameter.Bounds) != 1 {
+	if !ok {
 		return "", false
 	}
+	if representation, certified := genericFamilySourceBoundDefinition(owner, definition, ctx); certified {
+		return representation.erasure, true
+	}
 	erasure := qualifyJavaTypeInDeclaringContext(use.erasure, owner)
-	if !javaTypeHasInterfaceRepresentation(erasure, ctx) {
+	if leafObjectErasure(owner, erasure, ctx) || genericFamilyIsObjectErasure(owner, erasure, ctx) {
+		return erasure, true
+	}
+	if len(use.parameter.Bounds) != 1 || !javaTypeHasInterfaceRepresentation(erasure, ctx) {
 		return "", false
 	}
 	return erasure, true
@@ -122,6 +128,12 @@ func directOwnerOrdinaryFieldInterfaceErasure(
 	definition *symbol.Definition,
 	ctx Ctx,
 ) (string, bool) {
+	if erased, known := sourceAbstractListScalarFieldErasure(owner, definition, ctx); known {
+		return erased, true
+	}
+	if canonicalGenericFamily(owner, ctx) != nil {
+		return directOwnerInterfaceErasure(owner, definition, ctx)
+	}
 	if owner == nil || owner.Class == nil || definition == nil || definition.DeclarationNode == nil {
 		return "", false
 	}
@@ -150,6 +162,15 @@ func directOwnerOrdinaryMethodInterfaceErasure(
 	definition *symbol.Definition,
 	ctx Ctx,
 ) (string, bool) {
+	if erased, ok := sourceArrayListScalarGetErasure(owner, definition, ctx); ok {
+		return erased, true
+	}
+	if erased, ok := sourceNativeVirtualResultErasure(owner, definition, ctx); ok {
+		return erased, true
+	}
+	if canonicalGenericFamily(owner, ctx) != nil {
+		return directOwnerInterfaceErasure(owner, definition, ctx)
+	}
 	if owner == nil || owner.Class == nil || definition == nil || definition.DeclarationNode == nil {
 		return "", false
 	}
@@ -196,6 +217,9 @@ func directOwnerMethodParameterInterfaceErasure(
 	index int,
 	ctx Ctx,
 ) (string, bool) {
+	if erased, ok := sourceNativeVirtualParameterErasure(owner, method, index, ctx); ok {
+		return erased, true
+	}
 	if method == nil || index < 0 || index >= len(method.Parameters) ||
 		executionParameterIsVariadic(method, index) || !directOwnerCallableMethodEligible(owner, method, ctx) {
 		return "", false
@@ -204,6 +228,9 @@ func directOwnerMethodParameterInterfaceErasure(
 }
 
 func directOwnerMethodHasErasedParameterABI(owner *symbol.ClassScope, method *symbol.Definition, ctx Ctx) bool {
+	if sourceNativeVirtualHasParameterABI(owner, method, ctx) {
+		return true
+	}
 	if !directOwnerCallableMethodEligible(owner, method, ctx) {
 		return false
 	}
@@ -219,6 +246,12 @@ func directOwnerMethodHasErasedParameterABI(owner *symbol.ClassScope, method *sy
 }
 
 func directOwnerMethodHasErasedCallableABI(owner *symbol.ClassScope, method *symbol.Definition, ctx Ctx) bool {
+	if _, ok := sourceNativeVirtualResultErasure(owner, method, ctx); ok {
+		return true
+	}
+	if sourceNativeVirtualHasParameterABI(owner, method, ctx) {
+		return true
+	}
 	if !directOwnerCallableMethodEligible(owner, method, ctx) {
 		return false
 	}
@@ -236,6 +269,9 @@ func directOwnerMethodHasErasedCallableABI(owner *symbol.ClassScope, method *sym
 // cast-before-body Numbered -> First bridge. Unsupported mixed families remain
 // on their established invariant Go ABI.
 func directOwnerCallableMethodEligible(owner *symbol.ClassScope, method *symbol.Definition, ctx Ctx) bool {
+	if method != nil && !method.Constructor && !method.IsStatic && canonicalGenericFamily(owner, ctx) != nil {
+		return true
+	}
 	if directOwnerCallableMethodFamilyEligible(owner, method, ctx) {
 		for _, declaration := range methodDirectOwnerTypeParameterDeclarations(owner, method) {
 			if !ownerTypeParameterCallableShapeSupported(declaration, ctx) {
@@ -323,36 +359,99 @@ func directOwnerCallableMethodFamilyEligible(owner *symbol.ClassScope, method *s
 	return eligible
 }
 
+// This inventory belongs to one resolved conversion batch. It stores source
+// syntax and selector names; target resolution, ancestry and admission remain
+// fresh for every file and query. Standalone renders own a one-file batch.
+type callableSubclassSourceInventory struct {
+	graph           *symbol.GlobalSymbols
+	ownership       *resolutionFileIndex
+	staticImports   map[*symbol.FileScope]staticMethodImportSourceFacts
+	ready           bool
+	events          []callableSubclassSourceEvent
+	syntheticReady  bool
+	syntheticEvents []callableSubclassSourceEvent
+	nodes           map[*sitter.Node]resolvedSourceNodeFacts
+	selectorsReady  bool
+	selectors       map[string]struct{}
+}
+
+type callableSubclassSourceEvent struct {
+	owner     *symbol.ClassScope
+	file      *symbol.FileScope
+	supertype *sitter.Node
+}
+
 func classHasUnmodeledCallableSubclass(target *symbol.ClassScope, ctx Ctx) bool {
 	if target == nil {
 		return false
+	}
+	matches := func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
+		ownerCtx := classScopeCtx(owner, ctx)
+		base, _ := parseJavaTypeString(supertype.Content(file.Source))
+		resolved := resolveClassScopeByQualifiedName(ownerCtx, base)
+		return resolved == target || classScopeDescendsFrom(resolved, target, ownerCtx)
+	}
+	inventory := resolvedSourceInventory(ctx)
+	if inventory == nil {
+		// Standalone callers retain the original early exit and do not retain
+		// source data beyond this query.
+		return visitCallableSubclassSources(matches, ctx)
+	}
+	if !inventory.ready {
+		var events []callableSubclassSourceEvent
+		if visitCallableSubclassSources(func(owner *symbol.ClassScope, file *symbol.FileScope, supertype *sitter.Node) bool {
+			events = append(events, callableSubclassSourceEvent{owner: owner, file: file, supertype: supertype})
+			return matches(owner, file, supertype)
+		}, ctx) {
+			// An early rejection has not inventoried later syntax. Do not publish
+			// a partial event list or cache the target's semantic decision.
+			return true
+		}
+		inventory.events = events
+		inventory.ready = true
+		return false
+	}
+	for _, event := range inventory.events {
+		if matches(event.owner, event.file, event.supertype) {
+			return true
+		}
+	}
+	return false
+}
+
+// Visit anonymous and local superclass syntax in the same source order as an
+// uncached query. Returning true preserves its early exit without caching a
+// target's eligibility or a descendant relation.
+func visitCallableSubclassSources(visit func(*symbol.ClassScope, *symbol.FileScope, *sitter.Node) bool, contexts ...Ctx) bool {
+	var ctx Ctx
+	if len(contexts) > 0 {
+		ctx = contexts[0]
 	}
 	for _, owner := range allSourceClassScopes() {
 		if owner == nil || owner.Class == nil || owner.Class.DeclarationNode == nil {
 			continue
 		}
-		file := findFileScopeForClassScope(owner)
+		file := findFileScopeForClassScope(owner, ctx)
 		if file == nil {
 			continue
 		}
-		ownerCtx := classScopeCtx(owner, ctx)
 		var walk func(node *sitter.Node) bool
 		walk = func(node *sitter.Node) bool {
 			if node == nil {
 				return false
 			}
 			var supertype *sitter.Node
-			switch node.Type() {
+			switch resolvedSourceNodeType(node, ctx) {
 			case "object_creation_expression":
-				for _, child := range nodeutil.NamedChildrenOf(node) {
-					if child.Type() == "class_body" {
+				for _, child := range resolvedSourceNamedChildren(node, ctx) {
+					if resolvedSourceNodeType(child, ctx) == "class_body" {
 						supertype = node.ChildByFieldName("type")
 						break
 					}
 				}
 			case "class_declaration":
 				parent := node.Parent()
-				if parent != nil && parent.Type() != "program" && parent.Type() != "class_body" {
+				if parent != nil && resolvedSourceNodeType(parent, ctx) != "program" && resolvedSourceNodeType(parent, ctx) != "class_body" {
 					if superclass := node.ChildByFieldName("superclass"); superclass != nil {
 						types := collectTypeNodes(superclass)
 						if len(types) > 0 {
@@ -361,14 +460,10 @@ func classHasUnmodeledCallableSubclass(target *symbol.ClassScope, ctx Ctx) bool 
 					}
 				}
 			}
-			if supertype != nil {
-				base, _ := parseJavaTypeString(supertype.Content(file.Source))
-				resolved := resolveClassScopeByQualifiedName(ownerCtx, base)
-				if resolved == target || classScopeDescendsFrom(resolved, target, ownerCtx) {
-					return true
-				}
+			if supertype != nil && visit(owner, file, supertype) {
+				return true
 			}
-			for _, child := range nodeutil.NamedChildrenOf(node) {
+			for _, child := range resolvedSourceNamedChildren(node, ctx) {
 				if walk(child) {
 					return true
 				}
@@ -597,7 +692,9 @@ func methodBodyTypeSyntaxSupportsCallableErasure(
 				}
 			}
 		case "cast_expression":
-			if allowPhysicalBareUses && node.NamedChildCount() > 0 {
+			if callableBodyCanonicalClassCast(owner, method, node, declaration, methodCtx) {
+				skip = node.ChildByFieldName("type")
+			} else if allowPhysicalBareUses && node.NamedChildCount() > 0 {
 				typeNode := node.NamedChild(0)
 				if visibleTypeParameterDeclarationForJavaType(typeNode.Content(source), methodCtx) == declaration {
 					// ParseExpr lowers this exact cast target to the JVM erasure.
@@ -1211,10 +1308,17 @@ func callablePhysicalTypeKey(javaType string, ctx Ctx) string {
 
 func classScopeCtx(scope *symbol.ClassScope, ctx Ctx) Ctx {
 	result := ctx.Clone()
+	result.emittedReceiverOwner = nil
+	result.emittedReceiverName = ""
 	result.currentClass = scope
+	result.memberTypeHeaderOwner = nil
 	result.localScope = nil
-	if file := findFileScopeForClassScope(scope); file != nil {
-		result.currentFile = file
+	result.localBindingBody = nil
+	for current := scope; current != nil; current = current.Enclosing {
+		if file := findFileScopeForClassScope(current, ctx); file != nil {
+			result.currentFile = file
+			break
+		}
 	}
 	return result
 }
@@ -1344,11 +1448,10 @@ func directOwnerTypeParameterFieldStorageType(
 	if !ok {
 		return declared
 	}
-	// This first physical-storage slice is limited to generated interface
-	// erasures. A Go interface can retain every implementing object's identity,
-	// including heap pollution through a raw alias. Concrete-class erasures need
-	// the broader canonical reference/subobject migration, while unbounded Object
-	// fields retain the established generic Go API until that migration lands.
+	// Interface erasures (including Object for a fully eligible leaf plan)
+	// retain object identity and heap pollution through raw aliases. Concrete
+	// class erasures and cross-instantiation object views still require the
+	// canonical reference/subobject migration.
 	storage := javaTypeStringToGoTypeExpr(erasure, inScopeTypeParameters(ctx), ctx)
 	return abstractClassToInterface(storage, erasure, ctx)
 }

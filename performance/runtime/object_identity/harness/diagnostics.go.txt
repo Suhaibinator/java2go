@@ -1,0 +1,11 @@
+package stdjava
+
+// Diagnostic-only counters injected into a temporary runtime copy. No object
+// values escape and the counters do not alter registration/lookup behavior.
+func ObjectIdentityDiagnosticCounts() (types, classes, descriptors, monitorRecords int) {
+ javaTypeRegistry.RLock();types=len(javaTypeRegistry.types);javaTypeRegistry.RUnlock()
+ classLiterals.Range(func(_, _ any)bool{classes++;return true})
+ reflectionRegistry.Range(func(_, _ any)bool{descriptors++;return true})
+ monitorsMu.Lock();monitorRecords=len(monitors);monitorsMu.Unlock()
+ return
+}

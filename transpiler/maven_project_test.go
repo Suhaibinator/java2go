@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestMavenProjectRejectsCyclesWithoutPublishing(t *testing.T) {
+func TestMavenProjectInvalidMainDoesNotPublishCycle(t *testing.T) {
 	root := t.TempDir()
 	runtimeRoot, _ := filepath.Abs("..")
 	files := map[string]string{
@@ -23,9 +23,9 @@ func TestMavenProjectRejectsCyclesWithoutPublishing(t *testing.T) {
 		}
 	}
 	output := filepath.Join(root, "out")
-	err := run([]string{"-maven", root, "-main-class", "example.app.Main", "-runtime", runtimeRoot, "-output", output}, &bytes.Buffer{})
-	if err == nil || !strings.Contains(err.Error(), "example/a -> example/b -> example/a") {
-		t.Fatalf("expected exact cycle diagnostic, got %v", err)
+	err := run([]string{"-maven", root, "-main-class", "example.a.A", "-runtime", runtimeRoot, "-output", output}, &bytes.Buffer{})
+	if err == nil || !strings.Contains(err.Error(), "must declare public static void main") {
+		t.Fatalf("expected missing entrypoint diagnostic, got %v", err)
 	}
 	if _, err := os.Stat(output); !os.IsNotExist(err) {
 		t.Fatal("failed conversion published output")

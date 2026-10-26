@@ -1,0 +1,2253 @@
+{
+  "metadata": {
+    "revision": "8cb6cd5",
+    "source_sha256": "cc2bd6d4ccb3cf647aa8f227dc794d1c348bd111ba8c8e74b8b736cc6fa33dff",
+    "oracle_source_sha256": "95cc2665c5ac43389d939bd401f2fe9eed30c87fc32fc47a08b5585b964e3a72",
+    "snapshot_manifest_sha256": "5dea21ef7c20eb978eabb8309cb488cafecd1569d5866b7eaaba80c891738405",
+    "generated_sha256": {
+      "baseline-BuilderWorkload": {
+        "cmd/app/main.go": "639598d6fb31e2272f603704bca4da9fb605e5fa3816947ab11285f2a7451acb",
+        "j_builderprobe/ArgumentOracle.go": "2da3f6783f0104460f284941495d59d5de9b808aea8117c12df295b96592fcdc",
+        "j_builderprobe/BuilderWorkload.go": "482c3c9f5930d8162801c0fd99c5285061ca2a88805fb81b1f0239c0b889c2b9"
+      },
+      "baseline-ArgumentOracle": {
+        "cmd/app/main.go": "30541ae4d91cea6a0f2adae5d6e6394c5e7896789cffc534b5c7082938f544f5",
+        "j_builderprobe/ArgumentOracle.go": "2da3f6783f0104460f284941495d59d5de9b808aea8117c12df295b96592fcdc",
+        "j_builderprobe/BuilderWorkload.go": "482c3c9f5930d8162801c0fd99c5285061ca2a88805fb81b1f0239c0b889c2b9"
+      },
+      "typed-BuilderWorkload": {
+        "cmd/app/main.go": "639598d6fb31e2272f603704bca4da9fb605e5fa3816947ab11285f2a7451acb",
+        "j_builderprobe/ArgumentOracle.go": "8937a9d404a83c08af0741a49fe4f1c2eb85487eed0ef0d42028b5d2c663d054",
+        "j_builderprobe/BuilderWorkload.go": "39e4f2144910e0ad5743114fb51c616d27285fff9c0263558cbf996224f624d6"
+      },
+      "typed-ArgumentOracle": {
+        "cmd/app/main.go": "30541ae4d91cea6a0f2adae5d6e6394c5e7896789cffc534b5c7082938f544f5",
+        "j_builderprobe/ArgumentOracle.go": "8937a9d404a83c08af0741a49fe4f1c2eb85487eed0ef0d42028b5d2c663d054",
+        "j_builderprobe/BuilderWorkload.go": "39e4f2144910e0ad5743114fb51c616d27285fff9c0263558cbf996224f624d6"
+      }
+    },
+    "java_observations": {
+      "BuilderWorkload": "1:0:-2180350118852021019\n1:1:7388829749727548788\n1:2:-6956882113888805712\n17:0:6167205350608340252\n17:1:8368700867316657874\n17:2:6481672662472234028\n9031:0:-3509881684871189077\n9031:1:349138730732188567\n9031:2:8772753079497634687\n-104729:0:8065063145265972821\n-104729:1:-2560355909461615911\n-104729:2:-2338582504343201899\n",
+      "ArgumentOracle": "\ud83e\uddeanullA\ud83d\ude00Bnullnullnull\u96ea\n123:\ud83e\uddeanullA\ud83d\ude00Bnullnullnull\u96ea\n123:StringIndexOutOfBoundsException\nqualifiederasednull123!qualified\nx\ud83d\ude00:prefixx\ud83d\ude00suffix\n"
+    },
+    "go_version": "go version go1.27.1 darwin/arm64"
+  },
+  "validation": {
+    "runtime_suites": "both pass",
+    "semantic_test_pattern": "^(TestRuntime_StringBuilder|TestRuntime_StringBuilderOverloadText|TestCampaignRuntimeStringBuilderUTF16|TestCampaignRuntimeStringBuilderChain|TestNullableStringReferencesPreserveJavaSemantics)$",
+    "semantic_tests": "both pass",
+    "generated_application_files": "hashes unchanged after compiler generation",
+    "known_rendering_test_failure": {
+      "test": "TestIntrinsics_StringBuilder",
+      "cause": "expects old sb.Append literal shape; candidate emits sb.AppendString",
+      "log_sha256": "76fbcc2ffe35e5f449d4796cc50ced637cdaaff54993abcd48151f1f9ec5ec1b"
+    }
+  },
+  "measurement": {
+    "fresh_forks": 3,
+    "same_process_warmups_per_case": 12,
+    "measured_repetitions_per_case": 4,
+    "go_gomaxprocs": 2,
+    "go_gomemlimit": "512MiB",
+    "go_gogc": 100,
+    "measured_runs_checked": 288,
+    "timing_collected": false,
+    "java_allocations_remeasured": false
+  },
+  "variants": {
+    "baseline": {
+      "modes": [
+        {
+          "mode": 0,
+          "median_bytes": 895232.0,
+          "median_mallocs": 4256.0,
+          "fork_median_bytes": [
+            895224.0,
+            895232.0,
+            895224.0
+          ],
+          "fork_median_mallocs": [
+            4255.5,
+            4256.0,
+            4255.5
+          ]
+        },
+        {
+          "mode": 1,
+          "median_bytes": 1127320.0,
+          "median_mallocs": 4382.5,
+          "fork_median_bytes": [
+            1127312.0,
+            1127320.0,
+            1127312.0
+          ],
+          "fork_median_mallocs": [
+            4382.0,
+            4381.5,
+            4382.5
+          ]
+        },
+        {
+          "mode": 2,
+          "median_bytes": 6532228.0,
+          "median_mallocs": 17815.5,
+          "fork_median_bytes": [
+            6532228.0,
+            6532248.0,
+            6532124.0
+          ],
+          "fork_median_mallocs": [
+            17815.0,
+            17814.5,
+            17815.5
+          ]
+        }
+      ],
+      "cases": [
+        {
+          "seed": 1,
+          "mode": 0,
+          "result": -2180350118852021019,
+          "bytes_by_fork": [
+            [
+              875856,
+              875856,
+              876152,
+              875856
+            ],
+            [
+              875856,
+              875856,
+              876152,
+              875856
+            ],
+            [
+              875856,
+              875856,
+              876136,
+              875856
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              4236,
+              4236,
+              4238,
+              4236
+            ],
+            [
+              4236,
+              4236,
+              4239,
+              4236
+            ],
+            [
+              4236,
+              4236,
+              4238,
+              4236
+            ]
+          ]
+        },
+        {
+          "seed": 1,
+          "mode": 1,
+          "result": 7388829749727548788,
+          "bytes_by_fork": [
+            [
+              1088176,
+              1088472,
+              1088176,
+              1088176
+            ],
+            [
+              1088176,
+              1088440,
+              1088176,
+              1088176
+            ],
+            [
+              1088176,
+              1088632,
+              1088176,
+              1088176
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              4362,
+              4365,
+              4362,
+              4362
+            ],
+            [
+              4362,
+              4364,
+              4362,
+              4362
+            ],
+            [
+              4362,
+              4366,
+              4362,
+              4362
+            ]
+          ]
+        },
+        {
+          "seed": 1,
+          "mode": 2,
+          "result": -6956882113888805712,
+          "bytes_by_fork": [
+            [
+              6537912,
+              6537856,
+              6543232,
+              6538120
+            ],
+            [
+              6538328,
+              6538152,
+              6538120,
+              6538344
+            ],
+            [
+              6537872,
+              6538504,
+              6537944,
+              6538120
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              17790,
+              17791,
+              17796,
+              17792
+            ],
+            [
+              17796,
+              17793,
+              17792,
+              17796
+            ],
+            [
+              17791,
+              17798,
+              17791,
+              17793
+            ]
+          ]
+        },
+        {
+          "seed": 17,
+          "mode": 0,
+          "result": 6167205350608340252,
+          "bytes_by_fork": [
+            [
+              905112,
+              905112,
+              905112,
+              905376
+            ],
+            [
+              905112,
+              905392,
+              905112,
+              905112
+            ],
+            [
+              905112,
+              905568,
+              905112,
+              905112
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              4279,
+              4279,
+              4279,
+              4281
+            ],
+            [
+              4279,
+              4281,
+              4279,
+              4279
+            ],
+            [
+              4279,
+              4283,
+              4279,
+              4279
+            ]
+          ]
+        },
+        {
+          "seed": 17,
+          "mode": 1,
+          "result": 8368700867316657874,
+          "bytes_by_fork": [
+            [
+              1133560,
+              1133824,
+              1133560,
+              1133560
+            ],
+            [
+              1133560,
+              1133560,
+              1133824,
+              1133560
+            ],
+            [
+              1133824,
+              1133560,
+              1133560,
+              1134016
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              4403,
+              4405,
+              4403,
+              4403
+            ],
+            [
+              4403,
+              4403,
+              4405,
+              4403
+            ],
+            [
+              4405,
+              4403,
+              4403,
+              4408
+            ]
+          ]
+        },
+        {
+          "seed": 17,
+          "mode": 2,
+          "result": 6481672662472234028,
+          "bytes_by_fork": [
+            [
+              6583992,
+              6583976,
+              6584184,
+              6583816
+            ],
+            [
+              6583992,
+              6583816,
+              6583976,
+              6584008
+            ],
+            [
+              6584008,
+              6583976,
+              6583992,
+              6583784
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              17835,
+              17835,
+              17838,
+              17834
+            ],
+            [
+              17836,
+              17833,
+              17835,
+              17835
+            ],
+            [
+              17836,
+              17835,
+              17835,
+              17833
+            ]
+          ]
+        },
+        {
+          "seed": 9031,
+          "mode": 0,
+          "result": -3509881684871189077,
+          "bytes_by_fork": [
+            [
+              900984,
+              901456,
+              900984,
+              900984
+            ],
+            [
+              901248,
+              900984,
+              900984,
+              900984
+            ],
+            [
+              900984,
+              900984,
+              901248,
+              900984
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              4204,
+              4208,
+              4204,
+              4204
+            ],
+            [
+              4206,
+              4204,
+              4204,
+              4204
+            ],
+            [
+              4204,
+              4204,
+              4206,
+              4204
+            ]
+          ]
+        },
+        {
+          "seed": 9031,
+          "mode": 1,
+          "result": 349138730732188567,
+          "bytes_by_fork": [
+            [
+              1140816,
+              1140816,
+              1141096,
+              1140816
+            ],
+            [
+              1140816,
+              1140816,
+              1141480,
+              1140816
+            ],
+            [
+              1141112,
+              1140816,
+              1140816,
+              1141080
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              4333,
+              4333,
+              4336,
+              4333
+            ],
+            [
+              4333,
+              4333,
+              4339,
+              4333
+            ],
+            [
+              4335,
+              4333,
+              4333,
+              4335
+            ]
+          ]
+        },
+        {
+          "seed": 9031,
+          "mode": 2,
+          "result": 8772753079497634687,
+          "bytes_by_fork": [
+            [
+              6447856,
+              6448272,
+              6448048,
+              6448176
+            ],
+            [
+              6448032,
+              6448080,
+              6447784,
+              6448048
+            ],
+            [
+              6448032,
+              6448064,
+              6447856,
+              6447872
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              17766,
+              17771,
+              17768,
+              17769
+            ],
+            [
+              17767,
+              17769,
+              17766,
+              17768
+            ],
+            [
+              17767,
+              17768,
+              17765,
+              17765
+            ]
+          ]
+        },
+        {
+          "seed": -104729,
+          "mode": 0,
+          "result": 8065063145265972821,
+          "bytes_by_fork": [
+            [
+              889200,
+              889464,
+              889200,
+              889200
+            ],
+            [
+              889200,
+              889200,
+              889200,
+              889480
+            ],
+            [
+              889200,
+              889200,
+              889200,
+              889464
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              4273,
+              4275,
+              4273,
+              4273
+            ],
+            [
+              4273,
+              4273,
+              4273,
+              4275
+            ],
+            [
+              4273,
+              4273,
+              4273,
+              4275
+            ]
+          ]
+        },
+        {
+          "seed": -104729,
+          "mode": 1,
+          "result": -2560355909461615911,
+          "bytes_by_fork": [
+            [
+              1120872,
+              1120592,
+              1120592,
+              1121064
+            ],
+            [
+              1120592,
+              1121080,
+              1120592,
+              1120592
+            ],
+            [
+              1120592,
+              1121064,
+              1120592,
+              1120592
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              4401,
+              4399,
+              4399,
+              4403
+            ],
+            [
+              4399,
+              4404,
+              4399,
+              4399
+            ],
+            [
+              4399,
+              4403,
+              4399,
+              4399
+            ]
+          ]
+        },
+        {
+          "seed": -104729,
+          "mode": 2,
+          "result": -2338582504343201899,
+          "bytes_by_fork": [
+            [
+              6526600,
+              6526360,
+              6526168,
+              6526344
+            ],
+            [
+              6526376,
+              6525888,
+              6526344,
+              6526184
+            ],
+            [
+              6526376,
+              6526184,
+              6526376,
+              6526344
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              17842,
+              17839,
+              17836,
+              17838
+            ],
+            [
+              17839,
+              17834,
+              17838,
+              17836
+            ],
+            [
+              17839,
+              17836,
+              17839,
+              17838
+            ]
+          ]
+        }
+      ]
+    },
+    "typed": {
+      "modes": [
+        {
+          "mode": 0,
+          "median_bytes": 875592.0,
+          "median_mallocs": 2680.0,
+          "fork_median_bytes": [
+            875536.0,
+            875544.0,
+            875592.0
+          ],
+          "fork_median_mallocs": [
+            2679.5,
+            2679.5,
+            2680.0
+          ]
+        },
+        {
+          "mode": 1,
+          "median_bytes": 1105648.0,
+          "median_mallocs": 2804.5,
+          "fork_median_bytes": [
+            1105640.0,
+            1105648.0,
+            1105640.0
+          ],
+          "fork_median_mallocs": [
+            2804.5,
+            2804.5,
+            2804.5
+          ]
+        },
+        {
+          "mode": 2,
+          "median_bytes": 6510588.0,
+          "median_mallocs": 16238.0,
+          "fork_median_bytes": [
+            6510676.0,
+            6510484.0,
+            6510816.0
+          ],
+          "fork_median_mallocs": [
+            16238.0,
+            16238.0,
+            16239.0
+          ]
+        }
+      ],
+      "cases": [
+        {
+          "seed": 1,
+          "mode": 0,
+          "result": -2180350118852021019,
+          "bytes_by_fork": [
+            [
+              855872,
+              855872,
+              855872,
+              856136
+            ],
+            [
+              855872,
+              855872,
+              856152,
+              855872
+            ],
+            [
+              855872,
+              855872,
+              855872,
+              856168
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              2643,
+              2643,
+              2643,
+              2645
+            ],
+            [
+              2643,
+              2643,
+              2646,
+              2643
+            ],
+            [
+              2643,
+              2643,
+              2643,
+              2646
+            ]
+          ]
+        },
+        {
+          "seed": 1,
+          "mode": 1,
+          "result": 7388829749727548788,
+          "bytes_by_fork": [
+            [
+              1066752,
+              1066752,
+              1067224,
+              1066752
+            ],
+            [
+              1066752,
+              1067016,
+              1066752,
+              1066752
+            ],
+            [
+              1066752,
+              1066752,
+              1066768,
+              1066752
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              2769,
+              2769,
+              2773,
+              2769
+            ],
+            [
+              2769,
+              2771,
+              2769,
+              2769
+            ],
+            [
+              2769,
+              2769,
+              2769,
+              2769
+            ]
+          ]
+        },
+        {
+          "seed": 1,
+          "mode": 2,
+          "result": -6956882113888805712,
+          "bytes_by_fork": [
+            [
+              6516872,
+              6516872,
+              6516432,
+              6516696
+            ],
+            [
+              6516680,
+              6516240,
+              6516712,
+              6516696
+            ],
+            [
+              6516696,
+              6516696,
+              6516696,
+              6516872
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              16201,
+              16201,
+              16197,
+              16199
+            ],
+            [
+              16199,
+              16195,
+              16199,
+              16199
+            ],
+            [
+              16199,
+              16199,
+              16199,
+              16201
+            ]
+          ]
+        },
+        {
+          "seed": 17,
+          "mode": 0,
+          "result": 6167205350608340252,
+          "bytes_by_fork": [
+            [
+              884984,
+              884984,
+              885280,
+              884984
+            ],
+            [
+              885264,
+              884984,
+              884984,
+              884984
+            ],
+            [
+              884984,
+              885264,
+              884984,
+              884984
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              2686,
+              2686,
+              2688,
+              2686
+            ],
+            [
+              2688,
+              2686,
+              2686,
+              2686
+            ],
+            [
+              2686,
+              2688,
+              2686,
+              2686
+            ]
+          ]
+        },
+        {
+          "seed": 17,
+          "mode": 1,
+          "result": 8368700867316657874,
+          "bytes_by_fork": [
+            [
+              1112056,
+              1112512,
+              1112056,
+              1112056
+            ],
+            [
+              1112056,
+              1112336,
+              1112056,
+              1112056
+            ],
+            [
+              1112528,
+              1112056,
+              1112056,
+              1112336
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              2810,
+              2814,
+              2810,
+              2810
+            ],
+            [
+              2810,
+              2812,
+              2810,
+              2810
+            ],
+            [
+              2814,
+              2810,
+              2810,
+              2812
+            ]
+          ]
+        },
+        {
+          "seed": 17,
+          "mode": 2,
+          "result": 6481672662472234028,
+          "bytes_by_fork": [
+            [
+              6562648,
+              6562648,
+              6562840,
+              6562032
+            ],
+            [
+              6562472,
+              6562472,
+              6562280,
+              6562648
+            ],
+            [
+              6562384,
+              6562456,
+              6562280,
+              6562472
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              16244,
+              16244,
+              16246,
+              16238
+            ],
+            [
+              16242,
+              16242,
+              16240,
+              16244
+            ],
+            [
+              16242,
+              16242,
+              16240,
+              16242
+            ]
+          ]
+        },
+        {
+          "seed": 9031,
+          "mode": 0,
+          "result": -3509881684871189077,
+          "bytes_by_fork": [
+            [
+              881864,
+              881864,
+              882336,
+              881864
+            ],
+            [
+              881864,
+              881864,
+              882144,
+              881864
+            ],
+            [
+              881864,
+              882320,
+              881864,
+              881864
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              2692,
+              2692,
+              2696,
+              2692
+            ],
+            [
+              2692,
+              2692,
+              2694,
+              2692
+            ],
+            [
+              2692,
+              2696,
+              2692,
+              2692
+            ]
+          ]
+        },
+        {
+          "seed": 9031,
+          "mode": 1,
+          "result": 349138730732188567,
+          "bytes_by_fork": [
+            [
+              1120400,
+              1120856,
+              1120400,
+              1120400
+            ],
+            [
+              1120400,
+              1120856,
+              1120400,
+              1120400
+            ],
+            [
+              1120400,
+              1120400,
+              1120680,
+              1120400
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              2821,
+              2825,
+              2821,
+              2821
+            ],
+            [
+              2821,
+              2825,
+              2821,
+              2821
+            ],
+            [
+              2821,
+              2821,
+              2823,
+              2821
+            ]
+          ]
+        },
+        {
+          "seed": 9031,
+          "mode": 2,
+          "result": 8772753079497634687,
+          "bytes_by_fork": [
+            [
+              6427792,
+              6427824,
+              6427424,
+              6427352
+            ],
+            [
+              6427616,
+              6427648,
+              6427160,
+              6427440
+            ],
+            [
+              6427808,
+              6427352,
+              6427632,
+              6427632
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              16257,
+              16257,
+              16253,
+              16253
+            ],
+            [
+              16255,
+              16255,
+              16251,
+              16253
+            ],
+            [
+              16257,
+              16253,
+              16255,
+              16255
+            ]
+          ]
+        },
+        {
+          "seed": -104729,
+          "mode": 0,
+          "result": 8065063145265972821,
+          "bytes_by_fork": [
+            [
+              868944,
+              868944,
+              868944,
+              869208
+            ],
+            [
+              869224,
+              868944,
+              868944,
+              868944
+            ],
+            [
+              869320,
+              868944,
+              868944,
+              868944
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              2671,
+              2671,
+              2671,
+              2673
+            ],
+            [
+              2673,
+              2671,
+              2671,
+              2671
+            ],
+            [
+              2674,
+              2671,
+              2671,
+              2671
+            ]
+          ]
+        },
+        {
+          "seed": -104729,
+          "mode": 1,
+          "result": -2560355909461615911,
+          "bytes_by_fork": [
+            [
+              1098960,
+              1098960,
+              1099224,
+              1098960
+            ],
+            [
+              1098960,
+              1098960,
+              1099240,
+              1098960
+            ],
+            [
+              1098960,
+              1098960,
+              1099224,
+              1098960
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              2797,
+              2797,
+              2799,
+              2797
+            ],
+            [
+              2797,
+              2797,
+              2799,
+              2797
+            ],
+            [
+              2797,
+              2797,
+              2799,
+              2797
+            ]
+          ]
+        },
+        {
+          "seed": -104729,
+          "mode": 2,
+          "result": -2338582504343201899,
+          "bytes_by_fork": [
+            [
+              6504728,
+              6504744,
+              6504920,
+              6504520
+            ],
+            [
+              6504696,
+              6504272,
+              6504728,
+              6504728
+            ],
+            [
+              6504272,
+              6504712,
+              6504536,
+              6504936
+            ]
+          ],
+          "mallocs_by_fork": [
+            [
+              16236,
+              16236,
+              16238,
+              16234
+            ],
+            [
+              16236,
+              16232,
+              16236,
+              16236
+            ],
+            [
+              16232,
+              16236,
+              16234,
+              16238
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "profiles": {
+    "baseline": [
+      {
+        "seed": 1,
+        "mode": 0,
+        "total_attributed_bytes": 876312,
+        "sites": [
+          {
+            "Bytes": 242432,
+            "Objects": 285,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 191552,
+            "Objects": 228,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 148448,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 148448,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 36784,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.rawstring\nruntime.rawstringtmp\nruntime.slicerunetostring\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 25296,
+            "Objects": 34,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 22992,
+            "Objects": 1437,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 14160,
+            "Objects": 23,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8400,
+            "Objects": 14,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8112,
+            "Objects": 11,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6912,
+            "Objects": 144,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6600,
+            "Objects": 275,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6408,
+            "Objects": 267,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 3504,
+            "Objects": 219,
+            "Stack": "runtime.mallocgc\nruntime.slicebytetostring\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2304,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2304,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 176,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.newobject\nfmt.init.func1\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 64,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nfmt.(*buffer).writeString\nfmt.(*fmt).padString\nfmt.(*fmt).fmtS\nfmt.(*pp).fmtString\nfmt.(*pp).printArg\nfmt.(*pp).doPrint\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 1,
+            "Stack": "perf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          }
+        ]
+      },
+      {
+        "seed": 1,
+        "mode": 1,
+        "total_attributed_bytes": 1088648,
+        "sites": [
+          {
+            "Bytes": 256080,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 254800,
+            "Objects": 273,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 212248,
+            "Objects": 228,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 161840,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 63328,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.rawstring\nruntime.rawstringtmp\nruntime.slicerunetostring\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 22992,
+            "Objects": 1437,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 21504,
+            "Objects": 28,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 20304,
+            "Objects": 25,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 19728,
+            "Objects": 23,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 18816,
+            "Objects": 22,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6912,
+            "Objects": 144,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6600,
+            "Objects": 275,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6408,
+            "Objects": 267,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 4944,
+            "Objects": 309,
+            "Stack": "runtime.mallocgc\nruntime.slicebytetostring\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2976,
+            "Objects": 62,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2880,
+            "Objects": 60,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2304,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2304,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 176,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.newobject\nfmt.init.func1\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 64,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 32,
+            "Objects": 2,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nfmt.(*buffer).writeString\nfmt.(*fmt).padString\nfmt.(*fmt).fmtS\nfmt.(*pp).fmtString\nfmt.(*pp).printArg\nfmt.(*pp).doPrint\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 24,
+            "Objects": 1,
+            "Stack": "perf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          }
+        ]
+      },
+      {
+        "seed": 1,
+        "mode": 2,
+        "total_attributed_bytes": 6538608,
+        "sites": [
+          {
+            "Bytes": 3051984,
+            "Objects": 2064,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 1937600,
+            "Objects": 2048,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 756552,
+            "Objects": 2062,
+            "Stack": "runtime.mallocgc\nruntime.rawstring\nruntime.rawstringtmp\nruntime.slicerunetostring\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 254800,
+            "Objects": 273,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 212248,
+            "Objects": 228,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 98304,
+            "Objects": 2048,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 53280,
+            "Objects": 3330,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 32768,
+            "Objects": 2048,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 32768,
+            "Objects": 2048,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 21504,
+            "Objects": 28,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 20304,
+            "Objects": 25,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 19728,
+            "Objects": 23,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 18816,
+            "Objects": 22,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6600,
+            "Objects": 275,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6408,
+            "Objects": 267,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 4896,
+            "Objects": 306,
+            "Stack": "runtime.mallocgc\nruntime.slicebytetostring\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2928,
+            "Objects": 61,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2784,
+            "Objects": 58,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 768,
+            "Objects": 16,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC5\ngithub.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 768,
+            "Objects": 3,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 432,
+            "Objects": 27,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC2\nruntime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 352,
+            "Objects": 2,
+            "Stack": "runtime.mallocgc\nruntime.newobject\nfmt.init.func1\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 16,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC2\nruntime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 16,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC2\nruntime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 96,
+            "Objects": 2,
+            "Stack": "runtime.mallocgcSmallNoScanSC5\nruntime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 64,
+            "Objects": 4,
+            "Stack": "runtime.mallocgcTinySC2\nruntime.mallocgc\nruntime.slicebytetostring\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 64,
+            "Objects": 4,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nfmt.(*buffer).writeString\nfmt.(*fmt).padString\nfmt.(*fmt).fmtS\nfmt.(*pp).fmtString\nfmt.(*pp).printArg\nfmt.(*pp).doPrint\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 64,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "runtime.mallocgcSmallNoScanSC5\nruntime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 24,
+            "Objects": 1,
+            "Stack": "perf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 2,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC1\nruntime.mallocgc\nruntime.growslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          }
+        ]
+      }
+    ],
+    "typed": [
+      {
+        "seed": 1,
+        "mode": 0,
+        "total_attributed_bytes": 856328,
+        "sites": [
+          {
+            "Bytes": 242432,
+            "Objects": 285,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 191552,
+            "Objects": 228,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 148448,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 148448,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 36784,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.rawstring\nruntime.rawstringtmp\nruntime.slicerunetostring\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 15408,
+            "Objects": 24,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 14160,
+            "Objects": 23,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 9888,
+            "Objects": 10,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8400,
+            "Objects": 14,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8112,
+            "Objects": 11,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6912,
+            "Objects": 144,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6600,
+            "Objects": 275,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6408,
+            "Objects": 267,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6000,
+            "Objects": 375,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2304,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2304,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 512,
+            "Objects": 32,
+            "Stack": "runtime.mallocgc\nruntime.slicebytetostring\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 176,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.newobject\nfmt.init.func1\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 64,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nfmt.(*buffer).write\nfmt.(*fmt).pad\nfmt.(*fmt).fmtInteger\nfmt.(*pp).fmtInteger\nfmt.(*pp).printArg\nfmt.(*pp).doPrint\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 1,
+            "Stack": "perf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          }
+        ]
+      },
+      {
+        "seed": 1,
+        "mode": 1,
+        "total_attributed_bytes": 1067208,
+        "sites": [
+          {
+            "Bytes": 256080,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 254800,
+            "Objects": 273,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 212248,
+            "Objects": 228,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 161840,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 63328,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.rawstring\nruntime.rawstringtmp\nruntime.slicerunetostring\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 20304,
+            "Objects": 25,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 19728,
+            "Objects": 23,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 18816,
+            "Objects": 22,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 14112,
+            "Objects": 22,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 7392,
+            "Objects": 6,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6912,
+            "Objects": 144,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6600,
+            "Objects": 275,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6408,
+            "Objects": 267,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6000,
+            "Objects": 375,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2976,
+            "Objects": 62,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2880,
+            "Objects": 60,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2304,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2304,
+            "Objects": 144,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 512,
+            "Objects": 32,
+            "Stack": "runtime.mallocgc\nruntime.slicebytetostring\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 384,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 16,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 176,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.newobject\nfmt.init.func1\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 64,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 24,
+            "Objects": 1,
+            "Stack": "perf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nfmt.(*buffer).write\nfmt.(*fmt).pad\nfmt.(*fmt).fmtInteger\nfmt.(*pp).fmtInteger\nfmt.(*pp).printArg\nfmt.(*pp).doPrint\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          }
+        ]
+      },
+      {
+        "seed": 1,
+        "mode": 2,
+        "total_attributed_bytes": 6516928,
+        "sites": [
+          {
+            "Bytes": 3051984,
+            "Objects": 2064,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 1937600,
+            "Objects": 2048,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 756504,
+            "Objects": 2059,
+            "Stack": "runtime.mallocgc\nruntime.rawstring\nruntime.rawstringtmp\nruntime.slicerunetostring\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 254800,
+            "Objects": 273,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 212248,
+            "Objects": 228,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 98400,
+            "Objects": 2050,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 36464,
+            "Objects": 2279,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 32816,
+            "Objects": 2051,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 32816,
+            "Objects": 2051,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 20304,
+            "Objects": 25,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 19728,
+            "Objects": 23,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Insert\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 18816,
+            "Objects": 22,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChar\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 14112,
+            "Objects": 22,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 7392,
+            "Objects": 6,
+            "Stack": "runtime.mallocgc\nruntime.growslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).Append\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6552,
+            "Objects": 273,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 6408,
+            "Objects": 267,
+            "Stack": "runtime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2976,
+            "Objects": 62,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).AppendString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 2784,
+            "Objects": 58,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 768,
+            "Objects": 3,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 672,
+            "Objects": 14,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC5\ngithub.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 528,
+            "Objects": 33,
+            "Stack": "runtime.mallocgc\nruntime.slicebytetostring\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 360,
+            "Objects": 15,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 360,
+            "Objects": 15,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 256,
+            "Objects": 16,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC2\nruntime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 240,
+            "Objects": 15,
+            "Stack": "runtime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 208,
+            "Objects": 13,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC2\nruntime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.StringToCharArray\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 208,
+            "Objects": 13,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC2\nruntime.mallocgc\nruntime.convTstring\nperf.generated/builder/j_builderprobe.foldJava2goExecution\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 176,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.newobject\nfmt.init.func1\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 96,
+            "Objects": 2,
+            "Stack": "runtime.mallocgcSmallNoScanSC5\nruntime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 64,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.PrimitiveArrayLiteral[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 1,
+            "Stack": "github.com/NickyBoy89/java2go/stdjava.NewReferenceArray[...]\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteral\ngithub.com/NickyBoy89/java2go/stdjava.ReferenceArrayLiteralOf[...]\nperf.generated/builder/j_builderprobe.RunJava2goExecution.func1\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 48,
+            "Objects": 2,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC3\nruntime.mallocgc\nruntime.convTslice\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).InsertChars\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 24,
+            "Objects": 1,
+            "Stack": "runtime.mallocgcSmallNoScanSC3\nruntime.mallocgc\nruntime.makeslice\ngithub.com/NickyBoy89/java2go/stdjava.StringChars\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 24,
+            "Objects": 1,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC3\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 24,
+            "Objects": 1,
+            "Stack": "perf.generated/builder/j_builderprobe.RunJava2goExecution.func2\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 1,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC2\nruntime.mallocgc\nruntime.convTstring\ngithub.com/NickyBoy89/java2go/stdjava.NewStringBuilderString\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 2,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 1,
+            "Stack": "runtime.mallocgc\nruntime.growslice\nfmt.(*buffer).write\nfmt.(*fmt).pad\nfmt.(*fmt).fmtInteger\nfmt.(*pp).fmtInteger\nfmt.(*pp).printArg\nfmt.(*pp).doPrint\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 16,
+            "Objects": 1,
+            "Stack": "runtime.mallocgcTinySC2\nruntime.mallocgc\nruntime.rawstring\nruntime.rawstringtmp\nruntime.slicerunetostring\ngithub.com/NickyBoy89/java2go/stdjava.StringFromChars\ngithub.com/NickyBoy89/java2go/stdjava.(*StringBuilder).String\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          },
+          {
+            "Bytes": 8,
+            "Objects": 1,
+            "Stack": "runtime.mallocgcSmallScanNoHeaderSC1\nruntime.mallocgc\nruntime.growslice\nsync.(*Pool).pinSlow\nsync.(*Pool).pin\nsync.(*Pool).Get\nfmt.newPrinter\nfmt.Sprint\ngithub.com/NickyBoy89/java2go/stdjava.StringValueOf\nperf.generated/builder/j_builderprobe.RunJava2goExecution\nperf.generated/builder/j_builderprobe.Run\nmain.main\nruntime.main\nruntime.goexit"
+          }
+        ]
+      }
+    ]
+  },
+  "candidate_source_sha256": {
+    "transpiler/intrinsics_stdlib.go": "1c9e14cf865eb1033cfe1ee38cd103c62a914ef0ec9568b4e469aec4b122465e",
+    "stdjava/stringbuilder_typed.go": "9c028ae3b9bcae9db300220fcb8b7109bb1a1e3344d8b235dd1ca5868290184e"
+  }
+}

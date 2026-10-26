@@ -11,14 +11,23 @@ func assertGeneratedLocalConstructorResult(t *testing.T, source, want string) {
 	runGeneratedWithStdjava(t, out, fmt.Sprintf(`
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestLocalConstructorResult(t *testing.T) {
-	if got := Run(); got != %q {
-		t.Fatalf("Run() = %%q, want %%q", got, %q)
+	got := Run()
+	want := utf16.Encode([]rune(%q))
+	if got == nil {
+		t.Fatal("Run() returned null, want nonnull expected UTF16 content")
+	}
+	if units := got.UTF16Copy(); !slices.Equal(units, want) {
+		t.Fatalf("Run() UTF16 = %%v, want %%v", units, want)
 	}
 }
-`, want, want))
+`, want))
 }
 
 func TestLocalClassConstructor_ExplicitArgumentsAndBodySideEffectOrder(t *testing.T) {

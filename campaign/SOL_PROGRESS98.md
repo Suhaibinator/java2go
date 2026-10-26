@@ -1,0 +1,11 @@
+# Sol progress98: runtime allocation improvements
+
+Object dispatch now caches immutable, unbound Go method metadata. Every call still binds its current receiver, arguments and logical execution. String.split specializes the literal UTF16 delimiter cases used by Java21 while retaining the regex fallback. Default literal interning looks up existing representatives before allocating a wrapper or copying its payload; custom hash callbacks retain fresh isolated candidates and their original timing.
+
+Fresh matching verification passed24 baseline stages and49 candidate stages, including811 native checks. The original Analytics application retained its printing and matched JVM output for all5003 invocations. Literal interning reduced allocated bytes from296,788,288 to221,628,984 (25.32%) and allocations from7,965,064 to5,025,068 (36.91%) against a matching baseline already containing the metadata and split improvements. This measures Go allocations, not a speed advantage over Java.
+
+The exact candidate also passed1724 stdjava/symbol/campaign native checks with race and coverage instrumentation, preserving1479 existing named checks, and reported zero issues with pinned, uncapped default-test golangci-lint2.14. The ownership gate passed160 actions covering130 distinct tests, including11 JVM oracles and10 metadata tests repeated across four shards. Interning passed regular and race checks plus20 additional stress runs. These scopes overlap and are not added into a full-suite count.
+
+Root verified all88 canonical receipts, outputs, cleanup, exact source changes and public preimages. Five descriptive readiness hashes were stale after configuration rebinding; the authoritative launch pins matched the executed files. The frozen readiness remains unchanged, and the discrepancy is explicitly recorded in the ledger and sealed execution certificate. The earlier unrun preparation and failed output-directory attempt are excluded.
+
+This scoped milestone leaves the original Commons27, genuine Gson118, full Netty translation, authentic Maven dependency lifecycle and accumulated application/compiler gates open. Checkpoint18 remains the latest accepted full round. Generated equality acceptance remains open. No Java speed advantage or universal compatibility is claimed.

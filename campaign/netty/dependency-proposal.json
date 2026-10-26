@@ -1,0 +1,502 @@
+{
+  "schema_version": 1,
+  "status": "PINNED_ARTIFACT_PROPOSAL_NOT_ACTIVE_STAGE",
+  "version": "4.1.138.Final",
+  "tag": "netty-4.1.138.Final",
+  "annotated_tag_sha": "69517c5cc2ce0d343e128dd5e8f9fa15a8658ebb",
+  "commit": "26e68a2c3935e459b374891c87760f6d6c5e2550",
+  "mandatory_runtime_modules": [
+    "io.netty:netty-buffer:4.1.138.Final",
+    "io.netty:netty-codec:4.1.138.Final",
+    "io.netty:netty-codec-http:4.1.138.Final",
+    "io.netty:netty-common:4.1.138.Final",
+    "io.netty:netty-handler:4.1.138.Final",
+    "io.netty:netty-resolver:4.1.138.Final",
+    "io.netty:netty-transport:4.1.138.Final",
+    "io.netty:netty-transport-native-unix-common:4.1.138.Final"
+  ],
+  "shaded_source_coordinate": "org.jctools:jctools-core:4.0.5",
+  "source_archive": {
+    "bytes": 3389260,
+    "sha256": "3282962f1d29d6599a39ddc1e6d0ded775ea16e19f1c36d98b8859ea6b2bd7c4"
+  },
+  "source_archive_url": "https://github.com/netty/netty/archive/26e68a2c3935e459b374891c87760f6d6c5e2550.tar.gz",
+  "artifacts": [
+    {
+      "bytes": 37168,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-all/4.1.138.Final/netty-all-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "7059bdebde364c4f0d042d81149b62a04411aae1",
+          "verified": true
+        },
+        "sha256": {
+          "published": "ebe8420dc95651593588c33dd5b989b95f880609cb7b2b6029acb6e50cfaf170",
+          "verified": true
+        }
+      },
+      "sha256": "ebe8420dc95651593588c33dd5b989b95f880609cb7b2b6029acb6e50cfaf170"
+    },
+    {
+      "bytes": 14744,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-bom/4.1.138.Final/netty-bom-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "1dc5c14a13f3c9d900921e6dbab6cf8bc563aec1",
+          "verified": true
+        },
+        "sha256": {
+          "published": "f415dd0e34e8896dd3b57894f3d53b0437a3a4ea74d8b70fd8b8f39e310d197b",
+          "verified": true
+        }
+      },
+      "sha256": "f415dd0e34e8896dd3b57894f3d53b0437a3a4ea74d8b70fd8b8f39e310d197b"
+    },
+    {
+      "bytes": 228284,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-buffer/4.1.138.Final/netty-buffer-4.1.138.Final-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "d9e8b5e922115b02b7895804205c19cfb2986918",
+          "verified": true
+        },
+        "sha256": {
+          "published": "57ec5e8742518e5fb9b3814316713eaf605132d4b3aff16a9d952ae208952013",
+          "verified": true
+        }
+      },
+      "sha256": "57ec5e8742518e5fb9b3814316713eaf605132d4b3aff16a9d952ae208952013"
+    },
+    {
+      "bytes": 365379,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-buffer/4.1.138.Final/netty-buffer-4.1.138.Final.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "5da430a9c7dc04cd61cc4b42531ae3b96683c021",
+          "verified": true
+        },
+        "sha256": {
+          "published": "5bef3ea2b9e80c5e8d03151ca1609bd75fd1e264863bf3e2f8d538392c0f2c38",
+          "verified": true
+        }
+      },
+      "sha256": "5bef3ea2b9e80c5e8d03151ca1609bd75fd1e264863bf3e2f8d538392c0f2c38"
+    },
+    {
+      "bytes": 2188,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-buffer/4.1.138.Final/netty-buffer-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "41fc63d77f43edaa785be43b37229956ceceeb47",
+          "verified": true
+        },
+        "sha256": {
+          "published": "3d9c064e5f9c1038269344751a0902221d104bfd80e07701b3e20634c9cab18d",
+          "verified": true
+        }
+      },
+      "sha256": "3d9c064e5f9c1038269344751a0902221d104bfd80e07701b3e20634c9cab18d"
+    },
+    {
+      "bytes": 297601,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-codec/4.1.138.Final/netty-codec-4.1.138.Final-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "1994cab8a5ef91f73cafba63c341cc4462976fbd",
+          "verified": true
+        },
+        "sha256": {
+          "published": "1759fb0c141dffb9f91b42bd596aeca155ed0698427d8ccf5a270b262f7f8512",
+          "verified": true
+        }
+      },
+      "sha256": "1759fb0c141dffb9f91b42bd596aeca155ed0698427d8ccf5a270b262f7f8512"
+    },
+    {
+      "bytes": 360280,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-codec/4.1.138.Final/netty-codec-4.1.138.Final.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "f1ea02ed2e6f6eeb3f691986a572a9d14d39e91c",
+          "verified": true
+        },
+        "sha256": {
+          "published": "21b9b7717da9ed7034c7a9ef4fcea4a08825e8f52d775da4d898364edf99327f",
+          "verified": true
+        }
+      },
+      "sha256": "21b9b7717da9ed7034c7a9ef4fcea4a08825e8f52d775da4d898364edf99327f"
+    },
+    {
+      "bytes": 6081,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-codec/4.1.138.Final/netty-codec-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "8dcc99c66d06e4d4312d3453a97134f4942243b8",
+          "verified": true
+        },
+        "sha256": {
+          "published": "b60e503237740ea2965453471af832b553cd9ede8cf6e128e1b4ae67c88e1dfc",
+          "verified": true
+        }
+      },
+      "sha256": "b60e503237740ea2965453471af832b553cd9ede8cf6e128e1b4ae67c88e1dfc"
+    },
+    {
+      "bytes": 527800,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-codec-http/4.1.138.Final/netty-codec-http-4.1.138.Final-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "1c2b74c5a31d38bd75ec98aff1d22b3ed0f935e7",
+          "verified": true
+        },
+        "sha256": {
+          "published": "c45d54984f75afb02688a2e38437fe1bae6f23558c6d9cf8394bef1af8678032",
+          "verified": true
+        }
+      },
+      "sha256": "c45d54984f75afb02688a2e38437fe1bae6f23558c6d9cf8394bef1af8678032"
+    },
+    {
+      "bytes": 694763,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-codec-http/4.1.138.Final/netty-codec-http-4.1.138.Final.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "62081cf2045895266bdf53d491cb4994bdef9ca8",
+          "verified": true
+        },
+        "sha256": {
+          "published": "7d9000e53c8e37504be42b8dd7b646a7d1c73ad2cf801527fe3c6301880fe06f",
+          "verified": true
+        }
+      },
+      "sha256": "7d9000e53c8e37504be42b8dd7b646a7d1c73ad2cf801527fe3c6301880fe06f"
+    },
+    {
+      "bytes": 4972,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-codec-http/4.1.138.Final/netty-codec-http-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "40ed55ebfa8bcd9ddc2e5525743563935b786a04",
+          "verified": true
+        },
+        "sha256": {
+          "published": "d54f278f907cb795db4e0bb29ee1cfb444299f447a1b0a388a7c7ccfde012182",
+          "verified": true
+        }
+      },
+      "sha256": "d54f278f907cb795db4e0bb29ee1cfb444299f447a1b0a388a7c7ccfde012182"
+    },
+    {
+      "bytes": 695177,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-common/4.1.138.Final/netty-common-4.1.138.Final-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "a4aba48ea26d212e1e94bff61c4e2db715f9d20e",
+          "verified": true
+        },
+        "sha256": {
+          "published": "6e7750b9a3b293ece909b9cc0fecae9e88bfd376fb1311d25c943d654764a10c",
+          "verified": true
+        }
+      },
+      "sha256": "6e7750b9a3b293ece909b9cc0fecae9e88bfd376fb1311d25c943d654764a10c"
+    },
+    {
+      "bytes": 740310,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-common/4.1.138.Final/netty-common-4.1.138.Final.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "60aa94685ff3065444697ebbccb5a0b5f116d4f6",
+          "verified": true
+        },
+        "sha256": {
+          "published": "b4ebb8fa44cd5790731928a83fd0f25a530e41c407c093bef4a0196db30b693f",
+          "verified": true
+        }
+      },
+      "sha256": "b4ebb8fa44cd5790731928a83fd0f25a530e41c407c093bef4a0196db30b693f"
+    },
+    {
+      "bytes": 10340,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-common/4.1.138.Final/netty-common-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "dd45d9513b730180ffa0d1eddee3b428850f926e",
+          "verified": true
+        },
+        "sha256": {
+          "published": "9b4ac43369a6ed87b0ca243e3032c25ef55278304cc113aa8389048d3840d24e",
+          "verified": true
+        }
+      },
+      "sha256": "9b4ac43369a6ed87b0ca243e3032c25ef55278304cc113aa8389048d3840d24e"
+    },
+    {
+      "bytes": 392491,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-handler/4.1.138.Final/netty-handler-4.1.138.Final-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "fc58223b131aa1c37448600f3ab672a80864ef9e",
+          "verified": true
+        },
+        "sha256": {
+          "published": "5406e537e4a5b6b3e6f34c1911a2333fe9d3812675ef264544115af55c79db84",
+          "verified": true
+        }
+      },
+      "sha256": "5406e537e4a5b6b3e6f34c1911a2333fe9d3812675ef264544115af55c79db84"
+    },
+    {
+      "bytes": 588803,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-handler/4.1.138.Final/netty-handler-4.1.138.Final.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "ade0b85f21a12ec0e7afa1a5c92f5afcb2e3c4a2",
+          "verified": true
+        },
+        "sha256": {
+          "published": "a79fb814e029db17da82baea25a0340172af2c59f107fd20b394c1fa28680f21",
+          "verified": true
+        }
+      },
+      "sha256": "a79fb814e029db17da82baea25a0340172af2c59f107fd20b394c1fa28680f21"
+    },
+    {
+      "bytes": 5400,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-handler/4.1.138.Final/netty-handler-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "2d8d2bb76bdb3bb6b4412b1457209a7275a2dd97",
+          "verified": true
+        },
+        "sha256": {
+          "published": "ce6874b25ea1c0e779a6292c797cd631c3038b84f09aee795f0621c080c584fa",
+          "verified": true
+        }
+      },
+      "sha256": "ce6874b25ea1c0e779a6292c797cd631c3038b84f09aee795f0621c080c584fa"
+    },
+    {
+      "bytes": 108038,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-parent/4.1.138.Final/netty-parent-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "2f187787e77b38190c23de38b1aee40e792cb72e",
+          "verified": true
+        },
+        "sha256": {
+          "published": "74ee1ff52e50c3fd25a9b6aad2f132c8f3fce4e9fad6b15044905d911a44d553",
+          "verified": true
+        }
+      },
+      "sha256": "74ee1ff52e50c3fd25a9b6aad2f132c8f3fce4e9fad6b15044905d911a44d553"
+    },
+    {
+      "bytes": 27080,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-resolver/4.1.138.Final/netty-resolver-4.1.138.Final-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "ed2ac6c07dfc1fa2a8f72eaf69799cf3683a74e7",
+          "verified": true
+        },
+        "sha256": {
+          "published": "47eed6c059569dc3c71e4492b1b6607e5cb907570cc2e2e35073005bc9b27f4f",
+          "verified": true
+        }
+      },
+      "sha256": "47eed6c059569dc3c71e4492b1b6607e5cb907570cc2e2e35073005bc9b27f4f"
+    },
+    {
+      "bytes": 37904,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-resolver/4.1.138.Final/netty-resolver-4.1.138.Final.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "c0290b76e2adfc697ab1c6cc5c8549c0bf843435",
+          "verified": true
+        },
+        "sha256": {
+          "published": "50c338a0e5c9997513e738f0fcb47d579a9e8852d317ba367f5d141e210187c0",
+          "verified": true
+        }
+      },
+      "sha256": "50c338a0e5c9997513e738f0fcb47d579a9e8852d317ba367f5d141e210187c0"
+    },
+    {
+      "bytes": 2195,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-resolver/4.1.138.Final/netty-resolver-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "f475e43c8554abc7d4adf694c7fc0c27880811aa",
+          "verified": true
+        },
+        "sha256": {
+          "published": "6ec7f42d6f73e7a0fe28686a28bfadb8e2aa5d729ed0593fe7902e74fd230ca6",
+          "verified": true
+        }
+      },
+      "sha256": "6ec7f42d6f73e7a0fe28686a28bfadb8e2aa5d729ed0593fe7902e74fd230ca6"
+    },
+    {
+      "bytes": 343232,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-transport/4.1.138.Final/netty-transport-4.1.138.Final-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "460dfc74febbcfb0f15ff56f46ad4162d64f58ae",
+          "verified": true
+        },
+        "sha256": {
+          "published": "d7d8ce9d9cf1703c42a98c81929f04c80a603c00f805a672dba9b5a7ed555ba1",
+          "verified": true
+        }
+      },
+      "sha256": "d7d8ce9d9cf1703c42a98c81929f04c80a603c00f805a672dba9b5a7ed555ba1"
+    },
+    {
+      "bytes": 522089,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-transport/4.1.138.Final/netty-transport-4.1.138.Final.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "a261d8635d3294ad6fc9a7b09387ee5e3d123643",
+          "verified": true
+        },
+        "sha256": {
+          "published": "6c064c1cae4d410b920abfc07959a49db1b4778a9547614373e97d31cab0cad6",
+          "verified": true
+        }
+      },
+      "sha256": "6c064c1cae4d410b920abfc07959a49db1b4778a9547614373e97d31cab0cad6"
+    },
+    {
+      "bytes": 2919,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-transport/4.1.138.Final/netty-transport-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "8048029017488dee4fbb6c64ac08335e475e6e3f",
+          "verified": true
+        },
+        "sha256": {
+          "published": "39be347c16d858d2a87505a4a7b51d4c34fe7909e9f87a4a8f10c88e6640a1e3",
+          "verified": true
+        }
+      },
+      "sha256": "39be347c16d858d2a87505a4a7b51d4c34fe7909e9f87a4a8f10c88e6640a1e3"
+    },
+    {
+      "bytes": 70671,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-transport-native-unix-common/4.1.138.Final/netty-transport-native-unix-common-4.1.138.Final-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "ea56c3303c4c00260ea627bb715fbf7052830f86",
+          "verified": true
+        },
+        "sha256": {
+          "published": "bffbd9732aeb3819b1db23f0bd819b17489141bd78cfcea7e5eecba83056f567",
+          "verified": true
+        }
+      },
+      "sha256": "bffbd9732aeb3819b1db23f0bd819b17489141bd78cfcea7e5eecba83056f567"
+    },
+    {
+      "bytes": 44328,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-transport-native-unix-common/4.1.138.Final/netty-transport-native-unix-common-4.1.138.Final.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "4cda02a0fcf23f7938485f3d41d72ae60ebf25a1",
+          "verified": true
+        },
+        "sha256": {
+          "published": "8d1ada8f185d6f6da4cd79f9daeef39f1db49908cfec8bc2a1fb602458aa2341",
+          "verified": true
+        }
+      },
+      "sha256": "8d1ada8f185d6f6da4cd79f9daeef39f1db49908cfec8bc2a1fb602458aa2341"
+    },
+    {
+      "bytes": 33706,
+      "central_url": "https://repo.maven.apache.org/maven2/io/netty/netty-transport-native-unix-common/4.1.138.Final/netty-transport-native-unix-common-4.1.138.Final.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "0c077ee721019f7f5ce8e70497df4f93537552d9",
+          "verified": true
+        },
+        "sha256": {
+          "published": "4fea21319fcf2cbb81e36e3e66b977181191e89ca0930538d0fdce90d216438d",
+          "verified": true
+        }
+      },
+      "sha256": "4fea21319fcf2cbb81e36e3e66b977181191e89ca0930538d0fdce90d216438d"
+    },
+    {
+      "bytes": 301404,
+      "central_url": "https://repo.maven.apache.org/maven2/org/jctools/jctools-core/4.0.5/jctools-core-4.0.5-sources.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "a763a353072914f43e214fee538a25acabb1209f",
+          "verified": true
+        },
+        "sha256": {
+          "published_sidecar": "actual HTTP404",
+          "verified": false
+        }
+      },
+      "sha256": "c88250f3406aecb27b6e948c3856c622324ce1c4d32ed57a4c06ae132f6771ab"
+    },
+    {
+      "bytes": 493530,
+      "central_url": "https://repo.maven.apache.org/maven2/org/jctools/jctools-core/4.0.5/jctools-core-4.0.5.jar",
+      "published_checksums": {
+        "sha1": {
+          "published": "9ab38ca19877236986db4894ef1400a7ca23db80",
+          "verified": true
+        },
+        "sha256": {
+          "published_sidecar": "actual HTTP404",
+          "verified": false
+        }
+      },
+      "sha256": "d65e5f38bcd0984e26f87187687f1f70dd52740c4d5e046f8d104e01ab5db95f"
+    },
+    {
+      "bytes": 9539,
+      "central_url": "https://repo.maven.apache.org/maven2/org/jctools/jctools-core/4.0.5/jctools-core-4.0.5.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "eaa05d6ad937464312a2681a3236c0e06602bbb7",
+          "verified": true
+        },
+        "sha256": {
+          "published_sidecar": "actual HTTP404",
+          "verified": false
+        }
+      },
+      "sha256": "a69897b8ff0c2198b4b8cd7d4f93fde6d42b8e9dbfc95553585e27587b24e211"
+    },
+    {
+      "bytes": 6569,
+      "central_url": "https://repo.maven.apache.org/maven2/org/sonatype/oss/oss-parent/9/oss-parent-9.pom",
+      "published_checksums": {
+        "sha1": {
+          "published": "e5cdc4d23b86d79c436f16fed20853284e868f65",
+          "verified": true
+        },
+        "sha256": {
+          "published_sidecar": "actual HTTP404",
+          "verified": false
+        }
+      },
+      "sha256": "fb40265f982548212ff82e362e59732b2187ec6f0d80182885c14ef1f982827a"
+    }
+  ],
+  "implementation_source_count": 1212,
+  "original_proposal_sha256": "fb96f9d526212c489d3d87106e6c62513e79f7b1b14dd1005b3401b3bfa53c95",
+  "independent_audit_sha256": "d5e28e0ece286fd2780e18d0181c2a0058edad3cb7c2497268d51e35aea48a9a",
+  "ignored_evidence_directory": ".campaign/netty/4.1.138.Final",
+  "open_gates": [
+    "Optional/provided provider compile closure under the effective JDK21 Maven profile.",
+    "Original Maven package-info compilation/shading and all module resources.",
+    "Native dependency contracts; no Go library substitutes.",
+    "Current Commons/Gson/Codec and accumulated CI acceptance before stage advancement.",
+    "No Netty source-only JVM parity or generated Go acceptance yet."
+  ]
+}

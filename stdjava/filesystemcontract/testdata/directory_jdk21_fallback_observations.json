@@ -1,0 +1,24 @@
+[
+  {
+    "name": "missing-intermediate-dotdot",
+    "exception": "",
+    "before": ".:D",
+    "returnDirectory": false,
+    "after": ".:D|leaf:D"
+  },
+  {
+    "name": "fallback-relative-parent",
+    "exception": "",
+    "before": ".:D|inside:D",
+    "returnDirectory": false,
+    "after": ".:D|inside:D|leaf:D"
+  },
+  {
+    "name": "fallback-normalized-file",
+    "exception": "FileAlreadyExistsException",
+    "before": ".:D|block:F=5a",
+    "messageUTF16": "003c0052004f004f0054003e002f00660061006c006c006200610063006b002d006e006f0072006d0061006c0069007a00650064002d00660069006c0065002f0062006c006f0063006b",
+    "causeNull": true,
+    "after": ".:D|block:F=5a"
+  }
+]

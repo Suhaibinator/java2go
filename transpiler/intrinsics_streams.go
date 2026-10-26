@@ -27,7 +27,7 @@ func registerStreamIntrinsics() {
 	// Collection.stream() / parallelStream() -> stdjava.StreamOfSlice(coll.Slice()).
 	// Parallel streams run sequentially here, which keeps every ordering
 	// guarantee Java makes and only forgoes the concurrency.
-	for _, t := range append(append([]string{}, listTypeNames...), setTypeNames...) {
+	for _, t := range append(append([]string{"Collection"}, listTypeNames...), setTypeNames...) {
 		for _, method := range []string{"stream", "parallelStream"} {
 			registerInstanceIntrinsic(t, method, func(recv ast.Expr, args []ast.Expr, ctx Ctx) ast.Expr {
 				if !expectArgs(args, 0) {
@@ -36,6 +36,18 @@ func registerStreamIntrinsics() {
 				return stdjavaCall(ctx, "StreamOfSlice", methodCall(recv, "Slice"))
 			})
 		}
+	}
+
+	for _, method := range []string{"stream", "parallelStream"} {
+		registerInstanceNodeIntrinsic("Collection", method, func(recv ast.Expr, invocation *sitter.Node, ctx Ctx, source []byte) ast.Expr {
+			elements := receiverElementJavaTypes(invocation.ChildByFieldName("object"), ctx, source)
+			element := "Object"
+			if len(elements) == 1 {
+				element = readableWildcardProjection(elements[0])
+			}
+			values := stdjavaGenericCall(ctx, "ErasedCollectionSlice", []ast.Expr{javaTypeStringToGoTypeExpr(element, inScopeTypeParameters(ctx), ctx)}, []ast.Expr{intrinsicExecutionExpr(ctx), recv})
+			return stdjavaCall(ctx, "StreamOfSlice", values)
+		})
 	}
 
 	// Stream.of(...) uses Java's inferred reference type explicitly. Go cannot
@@ -50,7 +62,7 @@ func registerStreamIntrinsics() {
 		return []ast.Expr{javaTypeStringToGoTypeExpr(intrinsicFactoryElementJavaType(invocation, ctx, source), inScopeTypeParameters(ctx), ctx)}
 	})
 	registerStaticIntrinsicDerivedResultType("Stream", "of", func(invocation *sitter.Node, ctx Ctx, source []byte) (string, bool) {
-		return "Stream<" + intrinsicFactoryElementJavaType(invocation, ctx, source) + ">", true
+		return declaredIntrinsicResultShell("Stream", intrinsicFactoryElementJavaType(invocation, ctx, source)), true
 	})
 
 	for _, t := range streamTypeNames {
@@ -76,9 +88,13 @@ func registerStreamIntrinsics() {
 		registerInstanceIntrinsic(t, "filter", streamMethod("Filter", 1))
 		registerInstanceIntrinsic(t, "forEach", streamMethod("ForEach", 1))
 		registerInstanceIntrinsic(t, "count", streamMethod("Count", 0))
+		registerInstanceIntrinsicResultType(t, "count", "long")
 		registerInstanceIntrinsic(t, "anyMatch", streamMethod("AnyMatch", 1))
+		registerInstanceIntrinsicResultType(t, "anyMatch", "boolean")
 		registerInstanceIntrinsic(t, "allMatch", streamMethod("AllMatch", 1))
+		registerInstanceIntrinsicResultType(t, "allMatch", "boolean")
 		registerInstanceIntrinsic(t, "noneMatch", streamMethod("NoneMatch", 1))
+		registerInstanceIntrinsicResultType(t, "noneMatch", "boolean")
 		registerInstanceIntrinsic(t, "limit", streamMethod("Limit", 1))
 
 		// map changes element type, so it is the free function StreamMap.

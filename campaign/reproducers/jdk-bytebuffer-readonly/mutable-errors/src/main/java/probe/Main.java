@@ -1,0 +1,6 @@
+package probe;import java.nio.*;public class Main {
+ static String run(int op){byte[] a={0,1,2,3};ByteBuffer b=ByteBuffer.wrap(a).position(1).mark();ByteBuffer s=ByteBuffer.wrap(new byte[]{8,9}).position(1).mark();String result="ok";
+ try{switch(op){case 0:b.put(3,new byte[]{6,7});break;case 1:b.put(-1,(byte[])null,0,1);break;case 2:b.put(0,(byte[])null,0,1);break;case 3:b.put(0,new byte[]{6},-1,1);break;case 4:b.put(-1,(ByteBuffer)null,0,1);break;case 5:b.put(0,(ByteBuffer)null,0,1);break;case 6:b.put(0,s,2,1);break;case 7:b.put(4,s,2,0);break;case 8:b.put(0,s,0,2);break;case 9:b.put(0,b,0,3);break;case 10:b.put((byte[])null,-1,-1);break;case 11:b.put(b);break;case 12:b.put((ByteBuffer)null);break;case 13:b.limit(1).put((byte)9);break;case 14:b.put(4,(byte)9);break;case 15:b.put(new byte[]{5,6},0,2);break;case 16:b.put(new byte[]{5});break;case 17:b.put(s.asReadOnlyBuffer());break;}}
+ catch(Exception e){result=e.getClass().getName();}int p=b.position(),sp=s.position();b.reset();s.reset();return op+":"+result+":"+p+":"+b.position()+":"+sp+":"+s.position()+":"+a[0]+":"+a[1]+":"+a[2]+":"+a[3];}
+ public static void main(String[] args){for(int i=0;i<18;i++)System.out.println(run(i));}
+}

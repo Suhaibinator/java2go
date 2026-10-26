@@ -1,0 +1,6 @@
+{
+  "Protocol": {
+    "stderr": "",
+    "stdout": "cold-cast\n8\n27\n-17\narray-cast\n6\ntrue\ntrue\ntrue\nnull-receiver\n13\n90\n901\n32\n902\n51\n-33\n40\n59\n5\nV10:live;V30:live;V10:live;R;A;V10:live;X;R;Y;V99:live;A;P20;O;H;P40;S;D;D;G50;G70;\n"
+  }
+}

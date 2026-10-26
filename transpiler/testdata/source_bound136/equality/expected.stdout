@@ -1,0 +1,11 @@
+true:RS
+false:RGS
+false:RS
+true:RGS
+cast:RG
+abrupt:RGX
+true:PG
+true:RGS
+null:RG
+receiver-null:R
+null-cast:RG

@@ -1,0 +1,1 @@
+package app; public class Main {public static void main(String[] args){Derived d=new Derived(7); Implicit i=new Implicit(); System.out.println(d.observed+":"+d.inherited+":"+d.base()+":"+i.observed+":"+i.inherited+":"+i.base());}}

@@ -1,0 +1,28 @@
+{
+  "Bridge": {
+    "bytes": 76,
+    "classes": {
+      "cachecontrol/Bridge$Base.class": "351bd9dd1e21050660e0a7e33afb3c9dc6b5a671d8cc0b041dc236f91b761d7b",
+      "cachecontrol/Bridge$Child.class": "a945176a021ac6037620a5da9c1ba6a617beb828caee0e187de6abe5e9dd2f24",
+      "cachecontrol/Bridge$Inherited.class": "a82dc53dd33c7411733e934c293b1962f2599732dadaf22bcd134f3ff017da4e",
+      "cachecontrol/Bridge$Item.class": "e5ee07dab8282714e48c531bf14251e5bbd54a02e0080363c33fc98cb8a5ed2d",
+      "cachecontrol/Bridge$Other.class": "18c59f3910a52d936d63c78cc22562a5a40c4f6d92a02da54348000a9cbbe7c4",
+      "cachecontrol/Bridge.class": "ab7013f54bc174b213494c0b8f1461e08d121e0a8f0be54c61e5cb1e0acc2423"
+    },
+    "stdout": "7\n8\n37\n28\n88\nClassCast\n12\n17\n48\nC10:3;C10:2;C40:3;C30:2;OB14:2;B20:3;B50:2;\n",
+    "stdout_sha256": "05cdd2b27931b09a6b5f34422e7f539303f19b7836d88644f7e67ec16d3e3dad"
+  },
+  "Execution": {
+    "bytes": 108,
+    "classes": {
+      "cachecontrol/Execution$Value.class": "6b41061ee1a5276da32a9f078e72274bcf73a8ab5b8593ef4ed05f7f6d51d8ad",
+      "cachecontrol/Execution.class": "8483e884e72f8c20b587db72158e0bd639ff282b28f20166060f7d8d7d39ac10"
+    },
+    "stdout": "7\n16\n35\n40\ntrue\n35\nR;A;one:true:9:2;two:true:21:5;two:true:40:5;two:true:40:-1;two:true:40:5;two:true:40:5;\n",
+    "stdout_sha256": "b7b8304aaecc9166fce9f4b3674ec7688879c81b36d55240dc7a1a4ef604ebd4"
+  },
+  "Nominal": {
+    "stdout": "true:true\ntrue:true\ntrue:true:true:true\nfalse:true\ntrue:true\nfalse\n",
+    "stderr": ""
+  }
+}

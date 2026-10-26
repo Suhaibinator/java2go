@@ -1,0 +1,6 @@
+component=true:G:true:GN
+parameter=raw:OR
+wild=true:LU
+null-array=false:ORA
+variable=false::true:true:true
+identity=true:

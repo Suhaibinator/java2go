@@ -1,0 +1,47 @@
+{
+  "kind": "pending-source-subclass-atomic-array-JDK21-oracle",
+  "main_class": "probe.Main",
+  "java_release": 21,
+  "source_sha256": "7704cfee3b88a5656b7f9c6aed15ea58da778d140796966e5b44d35ada8604cc",
+  "input_hashes_match_before_after": true,
+  "compile_exit_code": 0,
+  "compile_limit_seconds": 55,
+  "execution_limit_seconds": 60,
+  "jdk_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "observations": [
+    {
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout_sha256": "6d58026f65a39ce96f0e79f148ecde6b495f231426c39ae1bfa65f73ff091e1f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "seconds": 0.0385490420012502
+    },
+    {
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout_sha256": "6d58026f65a39ce96f0e79f148ecde6b495f231426c39ae1bfa65f73ff091e1f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "seconds": 0.03513954200025182
+    },
+    {
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout_sha256": "6d58026f65a39ce96f0e79f148ecde6b495f231426c39ae1bfa65f73ff091e1f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "seconds": 0.034532457997556776
+    }
+  ],
+  "expected_stdout": "expected.stdout",
+  "expected_stderr": "expected.stderr",
+  "go_status": "RED-go-build",
+  "full_failure": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/evidence/source-subclass-frontier.log",
+    "sha256": "aec98fe8c557c0a35eda5e128f575b999c16bc5f242bf1e757b61762df8b7264",
+    "bytes": 2590
+  },
+  "generated_build_stderr": {
+    "path": "/Users/suhaib/code/java2go/.campaign/resume-20261002/sol_gson_type_frontiers/evidence/source-subclass-build.stderr",
+    "sha256": "2f083d59882097a1a09f9147905372426c3b866a40dd0ca285c068d1f24e7404",
+    "bytes": 517
+  }
+}

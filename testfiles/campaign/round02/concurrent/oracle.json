@@ -1,0 +1,95 @@
+{
+  "java_home": "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home",
+  "runs": [
+    {
+      "seed": 17,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=17 jobs=5 bytes=85 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
+      }
+    },
+    {
+      "seed": 17,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=17 jobs=5 bytes=85 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
+      }
+    },
+    {
+      "seed": 17,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=17 jobs=5 bytes=85 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "1ca0b6f438a7b86e9ee1c7336adacc92286bfed0e7e156abdfb962d697bdcd29"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=41 jobs=5 bytes=85 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=41 jobs=5 bytes=85 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
+      }
+    },
+    {
+      "seed": 41,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=41 jobs=5 bytes=85 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "440cb68451c1cf75388fe6147ccf9c86310e3dc80b790a3137ae7edb4c937f3d"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 1,
+      "exit_code": 0,
+      "stdout": "seed=97 jobs=5 bytes=90 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 2,
+      "exit_code": 0,
+      "stdout": "seed=97 jobs=5 bytes=90 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
+      }
+    },
+    {
+      "seed": 97,
+      "repeat": 3,
+      "exit_code": 0,
+      "stdout": "seed=97 jobs=5 bytes=90 file=results.txt\n",
+      "stderr": "",
+      "files": {
+        "results.txt": "5c5a710a7ff8ee66c0fd8a2cfed6ce576d3e53b1193611ca9a23e729b4b3a003"
+      }
+    }
+  ]
+}

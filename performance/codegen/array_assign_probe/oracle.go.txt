@@ -1,0 +1,23 @@
+package main
+import (
+    "fmt"
+    sj "github.com/NickyBoy89/java2go/stdjava"
+)
+var trace string
+var current *sj.PrimitiveArray[int32]
+var mode int
+func receiver() *sj.PrimitiveArray[int32] { trace+="R"; if mode==4 {panic(sj.NewIllegalStateException(""))};return current }
+func index(v int32) int32 { trace+="I"; if mode==5 {panic(sj.NewIllegalStateException(""))};return v }
+func rhs() int32 { trace+="V"; if mode==3 {panic(sj.NewIllegalStateException(""))};if mode==6 {current=sj.PrimitiveArrayLiteral(sj.PrimitiveIntTypeID,int32(99))};return 7 }
+func value(a *sj.PrimitiveArray[int32]) string {if a==nil{return "null"};return fmt.Sprint(a.Elements[0])}
+func run(name string, nilArray bool, idx int32, m int) {
+    trace="";mode=m;if nilArray {current=nil}else{current=sj.NewPrimitiveArray[int32](1,sj.PrimitiveIntTypeID)};original:=current
+    outcome:=""
+    func(){defer func(){if r:=recover();r!=nil {if e,ok:=r.(interface{ThrowableTypeName()string});ok{outcome=e.ThrowableTypeName()}else{panic(r)}}}();outcome=fmt.Sprint("value=",sj.PrimitiveArrayAssign(receiver(),index(idx),rhs()))}()
+    fmt.Printf("%s:%s:%s:%s:%s\n",name,trace,outcome,value(original),value(current))
+}
+func main(){
+ run("valid",false,0,0);run("null",true,0,0);run("null-negative",true,-1,0)
+ run("negative",false,-1,0);run("end",false,1,0);run("min",false,-2147483648,0);run("max",false,2147483647,0)
+ run("rhs-null",true,0,3);run("rhs-bounds",false,1,3);run("receiver-throws",false,0,4);run("index-throws",true,0,5);run("saved-target",false,0,6)
+}

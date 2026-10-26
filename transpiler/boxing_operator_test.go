@@ -36,12 +36,17 @@ public class BoxedOperatorProgram {
 }`)
 	runGoTestInTempModule(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestBoxedOperators(t *testing.T) {
     const want = "false:true:false:false:true:132:128:-128:127:0:8:true:1:-4:9223372036854775804:false:true:true:true:true"
-    if got := Run(); got != want { t.Fatalf("Run() = %q, want %q", got, want) }
+    if got := Run(); !boxingJavaStringEquals(got, want) { t.Fatalf("Run() = %v, want %q", got, want) }
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }
 
 func TestBoxingOperatorsNullTimingAndCheckedCasts(t *testing.T) {
@@ -73,6 +78,8 @@ public class BoxedOperatorNullProgram {
 	runGoTestInTempModule(t, out, `
 package main
 import (
+    "slices"
+    "unicode/utf16"
     "math"
     "testing"
     "github.com/NickyBoy89/java2go/stdjava"
@@ -99,10 +106,10 @@ func TestBoxedNullBehavior(t *testing.T) {
     if !math.Signbit(stdjava.UnboxDouble(NegativeDoubleZero())) || !math.Signbit(float64(stdjava.UnboxFloat(NegativeFloatZero()))) { t.Fatal("floating unary minus lost signed zero") }
     if !math.IsInf(Infinity(), 1) || Remainder() != 1.5 || RemainderExpression() != 1.5 { t.Fatal("floating division/remainder") }
     value := stdjava.NewInteger(999)
-    if got := Conditional(stdjava.BoxBoolean(true), value, nil); got != "true:999" { t.Fatal(got) }
-    if got := Conditional(stdjava.BoxBoolean(false), value, nil); got != "false:null" { t.Fatal(got) }
+    if got := Conditional(stdjava.BoxBoolean(true), value, nil); !boxingJavaStringEquals(got, "true:999") { t.Fatal(got) }
+    if got := Conditional(stdjava.BoxBoolean(false), value, nil); !boxingJavaStringEquals(got, "false:null") { t.Fatal(got) }
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }
 
 func TestBoxingOperatorsUnboxFinalWrapperTypeParameterBounds(t *testing.T) {
@@ -130,12 +137,14 @@ public class BoundedBoxedOperatorProgram {
 	runGoTestInTempModule(t, out, `
 package main
 import (
+    "slices"
+    "unicode/utf16"
     "testing"
     "github.com/NickyBoy89/java2go/stdjava"
 )
 func TestBoundedBoxedOperators(t *testing.T) {
-    if got := Integer(stdjava.BoxInteger(5)); got != "6:-5:true:false:7:5:5" { t.Fatal(got) }
-    if got := Shift(stdjava.BoxLong(-8), stdjava.BoxInteger(65)); got != "-4:9223372036854775804:-16" { t.Fatal(got) }
+    if got := Integer(stdjava.BoxInteger(5)); !boxingJavaStringEquals(got, "6:-5:true:false:7:5:5") { t.Fatal(got) }
+    if got := Shift(stdjava.BoxLong(-8), stdjava.BoxInteger(65)); !boxingJavaStringEquals(got, "-4:9223372036854775804:-16") { t.Fatal(got) }
     if !Bool(stdjava.BoxBoolean(true)) || !Bool(stdjava.BoxBoolean(false)) { t.Fatal("bounded boolean") }
     if got := Floating(stdjava.BoxDouble(5.5)); got != -1.5 { t.Fatal(got) }
     value := stdjava.NewInteger(5)
@@ -144,7 +153,7 @@ func TestBoundedBoxedOperators(t *testing.T) {
     defer func() { if _, ok := recover().(stdjava.NullPointerException); !ok { t.Error("bounded null must unbox with Java null failure") } }()
     Integer[*stdjava.Integer](nil)
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }
 
 func TestBoxingOperatorsSequenceEarlierPrimitiveReads(t *testing.T) {
@@ -175,12 +184,17 @@ public class BinaryReadOrderingProgram {
 }`)
 	runGoTestInTempModule(t, out, `
 package main
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+    "github.com/NickyBoy89/java2go/stdjava"
+)
 func TestBinaryReads(t *testing.T) {
-    if Addition() != 20 || !Equality() || Shift() != 4 || Unsigned() != 2147483644 || !Bool() || Text() != "firstsecond" || !Constant() {
-        t.Fatalf("binary values: %d %v %d %d %v %s", Addition(), Equality(), Shift(), Unsigned(), Bool(), Text())
+    if Addition() != 20 || !Equality() || Shift() != 4 || Unsigned() != 2147483644 || !Bool() || !boxingJavaStringEquals(Text(), "firstsecond") || !Constant() {
+        t.Fatalf("binary values: %d %v %d %d %v %v", Addition(), Equality(), Shift(), Unsigned(), Bool(), Text())
     }
     if CastFailureOrder() != 1 || ArrayFailureOrder() != 1 { t.Fatal("right failure happened before left null field read") }
 }
-`)
+`+boxingCanonicalJavaStringHarness)
 }

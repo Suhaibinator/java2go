@@ -96,25 +96,38 @@ public class StringRuntime {
 	runGoTestWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+	stdjava "github.com/NickyBoy89/java2go/stdjava"
+)
+
+func javaString(text string) *stdjava.JavaString {
+	return stdjava.NewJavaStringUTF16(utf16.Encode([]rune(text)))
+}
 
 func TestStringIntrinsicsBehavior(t *testing.T) {
-	if got := Upper("héllo"); got != "HÉLLO" {
-		t.Fatalf("Upper = %q", got)
+	upper := Upper(javaString("héllo"))
+	if upper == nil { t.Fatal("Upper returned null") }
+	if got := upper.UTF16Copy(); !slices.Equal(got, utf16.Encode([]rune("HÉLLO"))) {
+		t.Fatalf("Upper = %q", string(utf16.Decode(got)))
 	}
-	if got := FirstIndex("abcXdef", "X"); got != 3 {
+	if got := FirstIndex(javaString("abcXdef"), javaString("X")); got != 3 {
 		t.Fatalf("FirstIndex = %d, want 3", got)
 	}
-	if got := Sub("abcdef"); got != "bcd" {
-		t.Fatalf("Sub = %q, want bcd", got)
+	sub := Sub(javaString("abcdef"))
+	if sub == nil { t.Fatal("Sub returned null") }
+	if got := sub.UTF16Copy(); !slices.Equal(got, utf16.Encode([]rune("bcd"))) {
+		t.Fatalf("Sub = %q, want bcd", string(utf16.Decode(got)))
 	}
-	if got := Blank("   "); !got {
+	if got := Blank(javaString("   ")); !got {
 		t.Fatalf("Blank(spaces) = false, want true")
 	}
-	if got := At("héllo", 1); got != 'é' {
+	if got := At(javaString("héllo"), 1); got != 'é' {
 		t.Fatalf("At = %q, want é", got)
 	}
-	if got := Len("héllo"); got != 5 {
+	if got := Len(javaString("héllo")); got != 5 {
 		t.Fatalf("Len = %d, want 5", got)
 	}
 }
@@ -138,12 +151,18 @@ public class SBRuntime {
 	runGoTestWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestStringBuilderBehavior(t *testing.T) {
 	// "ab" + "1" = "ab1", insert "Z" at 0 -> "Zab1", reverse -> "1baZ"
-	if got := Build(); got != "1baZ" {
-		t.Fatalf("Build = %q, want 1baZ", got)
+	result := Build()
+	if result == nil { t.Fatal("Build returned null") }
+	if got := result.UTF16Copy(); !slices.Equal(got, utf16.Encode([]rune("1baZ"))) {
+		t.Fatalf("Build = %q, want 1baZ", string(utf16.Decode(got)))
 	}
 }
 `)
@@ -182,12 +201,18 @@ public class BuilderOverloadText {
 	runGoTestWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestBuilderOverloads(t *testing.T) {
     const want = "0a7bnullnull1.5;nullb7a0"
-    if got := Build(); got != want {
-        t.Fatalf("Build = %q, want %q", got, want)
+    result := Build()
+    if result == nil { t.Fatal("Build returned null") }
+    if got := result.UTF16Copy(); !slices.Equal(got, utf16.Encode([]rune(want))) {
+        t.Fatalf("Build = %q, want %q", string(utf16.Decode(got)), want)
     }
 }
 `)
@@ -217,7 +242,11 @@ public class MathRuntime {
 	runGoTestWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"testing"
+	"unicode/utf16"
+	stdjava "github.com/NickyBoy89/java2go/stdjava"
+)
 
 func TestMathAndBoxedBehavior(t *testing.T) {
 	if got := AbsVal(-7); got != 7 {
@@ -229,7 +258,7 @@ func TestMathAndBoxedBehavior(t *testing.T) {
 	if got := RoundVal(2.5); got != 3 {
 		t.Fatalf("RoundVal = %d, want 3", got)
 	}
-	if got := Parse("42"); got != 42 {
+	if got := Parse(stdjava.NewJavaStringUTF16(utf16.Encode([]rune("42")))); got != 42 {
 		t.Fatalf("Parse = %d, want 42", got)
 	}
 	if got := Digit('5'); !got {
@@ -269,11 +298,17 @@ public class CollRuntime {
 	runGoTestWithStdjava(t, out, `
 package main
 
-import "testing"
+import (
+	"slices"
+	"testing"
+	"unicode/utf16"
+)
 
 func TestCollectionsBehavior(t *testing.T) {
-	if got := ListJoin(); got != "abc:3:b" {
-		t.Fatalf("ListJoin = %q, want abc:3:b", got)
+	result := ListJoin()
+	if result == nil { t.Fatal("ListJoin returned null") }
+	if got := result.UTF16Copy(); !slices.Equal(got, utf16.Encode([]rune("abc:3:b"))) {
+		t.Fatalf("ListJoin = %q, want abc:3:b", string(utf16.Decode(got)))
 	}
 	if got := MapLookup(); got != 5 {
 		t.Fatalf("MapLookup = %d, want 5", got)
@@ -404,15 +439,20 @@ package main
 
 import (
 	"path/filepath"
+	"slices"
+	"unicode/utf16"
+	stdjava "github.com/NickyBoy89/java2go/stdjava"
 	"testing"
 )
 
 func TestFileIOBehavior(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "rt.txt")
-	got := Roundtrip(p)
+	result := Roundtrip(stdjava.NewJavaStringUTF16(utf16.Encode([]rune(p))))
+	if result == nil { t.Fatal("Roundtrip returned null") }
+	got := result.UTF16Copy()
 	want := "exists=true name=rt.txt l1=alpha l2=beta"
-	if got != want {
-		t.Fatalf("Roundtrip = %q, want %q", got, want)
+	if !slices.Equal(got, utf16.Encode([]rune(want))) {
+		t.Fatalf("Roundtrip = %q, want %q", string(utf16.Decode(got)), want)
 	}
 }
 `)

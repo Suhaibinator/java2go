@@ -1,0 +1,13 @@
+{
+  "scope": "native entry stage1; source subclasses, method references and identity held",
+  "oracle": "Actual installed JDK21 three byte-identical runs frozen; no runtime JVM delegation",
+  "deadlines": {
+    "javac": 55,
+    "exec": 60
+  },
+  "source_java_sha256": {
+    "src/main/java/probe/Main.java": "3a41c51b20f5cce7b50a5ac13ccc4c3ad2ac0f8b696e663087817d3ec17a3f5e"
+  },
+  "expected_stdout_sha256": "253f3d4366d88d6d4bb95c0c01d1b23169e0ff15698e933b02adfcef36a0e4d9",
+  "classification": "Native scoped full parity GREEN"
+}

@@ -1,0 +1,68 @@
+package stdjava
+
+import (
+	"errors"
+	"io"
+	"os"
+)
+
+// NewRandomAccessFileFileExecution implements the native File overload. Source
+// File subclasses/getPath overrides require a separate dispatch protocol and
+// cannot enter this service through the compiler's allocation certificate.
+func NewRandomAccessFileFileExecution(execution *Execution, file *JavaFile, mode *JavaString) *RandomAccessFile {
+	requireExecution(execution)
+	return randomAccessFileNativeReferenceInitialize(file, mode)
+}
+
+func randomAccessFileNativeReferenceInitialize(file *JavaFile, mode *JavaString) *RandomAccessFile {
+	var name *JavaString
+	if file != nil {
+		name = file.GetPathReference()
+	}
+	flags := randomAccessFileReferenceMode(mode)
+	return randomAccessFileNativeReferenceOpen(file, name, flags)
+}
+
+func randomAccessFileNativeReferenceOpen(file *JavaFile, name *JavaString, flags int) *RandomAccessFile {
+	if name == nil {
+		panic(NewJavaNullPointerExceptionMessage(nil))
+	}
+	// UnixFileSystem.isInvalid invokes virtual getPath again in the JDK. Only
+	// exact native File objects are admitted here: their immutable getter is pure
+	// and stable, so testing the captured Java pathname is equivalent. This is
+	// neither source getter dispatch nor a model of File's cached path status.
+	for _, unit := range name.units {
+		if unit == 0 {
+			panic(newJavaThrowableBase("FileNotFoundException", JavaStringLiteralUTF16([]uint16{'I', 'n', 'v', 'a', 'l', 'i', 'd', ' ', 'f', 'i', 'l', 'e', ' ', 'p', 'a', 't', 'h'})))
+		}
+	}
+	opened, err := os.OpenFile(file.path, flags, 0666)
+	if err != nil {
+		randomAccessFileReferenceFailure(name, err)
+	}
+	result := randomAccessFileReferenceFinishOpen(file, opened)
+	result.state.writable = randomAccessFileWritableFromOpenFlags(flags)
+	return result
+}
+
+// JavaInputStreamReadByte adapts the existing Java byte-read protocol for RAF.
+// The raw io.Reader view retains its host errors and shared descriptor cursor.
+func (r *RandomAccessFile) JavaInputStreamReadByte(execution *Execution) int32 {
+	requireExecution(execution)
+	ReferenceRequireNonNull(r)
+	var one [1]byte
+	count, err := r.Read(one[:])
+	if count > 0 {
+		return int32(one[0])
+	}
+	if err == io.EOF {
+		return -1
+	}
+	if err != nil {
+		if errors.Is(err, os.ErrClosed) {
+			panic(NewJavaIOExceptionMessage(JavaStringFromHostUTF8("Stream Closed")))
+		}
+		throwIOException(err)
+	}
+	return 0
+}

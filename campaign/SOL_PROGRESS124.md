@@ -1,0 +1,11 @@
+# Sol milestone 124
+
+Added native JDK atomic integer/long array services and repaired declaration-owned generic argument identities. Generated clone, subobject, reflection and volatile helpers now use their allocated Go binder identities without passing them back through Java source-name resolution. Canonical String scaffold migrations retain original Java and semantic assertions. Strict boxed refusal tests and the strict producer now isolate diagnostics correctly.
+
+Coordinator rebuilt the final 3,296-member tracked/owned source snapshot and verified 155 selected compiler parents (154 distinct) across 14 bounded race gates, with no failures or skips. The runtime inputs are byte-identical to the independently tested snapshot: all 597 runtime parents and 60 atomic stress executions pass. Final repository lint reports zero issues. Source audit and run receipts, with immutable hashes, are recorded in campaign-state.json; verbose artifacts stay outside tracked source.
+
+The unchanged original Gson application has nine stable JVM observations (three seeds, three repeats). All 123 frozen Java source members strictly transpile. Its generated Go build still fails at ConcurrentMap, generic TypeAdapterFactory, URL/URI type roles, InetAddress, Currency, Comparator, AbstractList and RandomAccess. This is an explicit failed application gate. The non-race compiler replay is a different configuration from milestone123 and is not a performance comparison.
+
+Preserved full physical descriptor, Child clone, canonical family and atomic subclass reproducers remain active. A newly exercised original floating-formatting fixture reveals a real Double.toString reference-adapter failure and stays active for repair. Netty and the full campaign/CI gates are unaccepted; latest accepted full round remains18. No library replacement, generated-Go edit, weakened oracle or skipped assertion is counted as parity.
+
+Resume with the Sol-only team: complete generic method consumer projection and physical descriptor gates, integrate Class component metadata and guarded import syntax caching, finish concurrent-map anonymous inheritance and JDK currency service, repair the new boxed toString failure, then independently replay the unchanged dependency applications and CI.

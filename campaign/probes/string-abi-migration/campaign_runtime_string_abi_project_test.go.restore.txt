@@ -1,0 +1,145 @@
+package transpiler
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"testing"
+	"time"
+)
+
+// All five Java files and all nine observations remain the independent Sol
+// fixture. There is no source restriction or output normalization in this gate.
+func TestCampaignRuntimeStringABIProject(t *testing.T) {
+	root, err := filepath.Abs("../campaign/reproducers/string-abi-prereq")
+	if err != nil {
+		t.Fatal(err)
+	}
+	evidence := root + "-oracle"
+	repo, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var inputHashes map[string]string
+	readJSON := func(path string, value any) {
+		t.Helper()
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := json.Unmarshal(data, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	readJSON(filepath.Join(evidence, "input-files.json"), &inputHashes)
+	verifyInputs := func() {
+		t.Helper()
+		for name, want := range inputHashes {
+			data, err := os.ReadFile(filepath.Join(root, name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != want {
+				t.Fatalf("frozen input changed: %s %s != %s", name, got, want)
+			}
+		}
+	}
+	verifyInputs()
+	defer verifyInputs()
+	var oracle struct {
+		Before  string `json:"source_sha256_before"`
+		After   string `json:"source_sha256_after"`
+		Results []struct {
+			Seed, Repeat, Exit int
+			Timeout            bool
+			Command            []string
+			StdoutPath         string `json:"stdout_path"`
+			StderrPath         string `json:"stderr_path"`
+			StdoutHash         string `json:"stdout_sha256"`
+			StderrHash         string `json:"stderr_sha256"`
+		} `json:"results"`
+	}
+	readJSON(filepath.Join(evidence, "oracle.json"), &oracle)
+	const wholeSHA = "df50eca2adc740ba442831b82e842daecf165c136e53dd05181e6ccf608eac7c"
+	if oracle.Before != wholeSHA || oracle.After != wholeSHA || len(oracle.Results) != 9 {
+		t.Fatal("unexpected frozen oracle identity/count")
+	}
+	java, err := campaignCompilerJavaTool("java")
+	if err != nil {
+		t.Fatal(err)
+	}
+	javac, err := campaignCompilerJavaTool("javac")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sources []string
+	if err := filepath.WalkDir(filepath.Join(root, "src/main/java"), func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if !entry.IsDir() && filepath.Ext(path) == ".java" {
+			sources = append(sources, path)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	sort.Strings(sources)
+	if len(sources) != 5 {
+		t.Fatalf("expected five unchanged Java files, got%d", len(sources))
+	}
+	temporary := t.TempDir()
+	classes := filepath.Join(temporary, "classes")
+	compileArgs := append([]string{"--release", "21", "-encoding", "UTF-8", "-d", classes}, sources...)
+	campaignStringRequireSuccess(t, "javac", campaignStringBoundedRun(t, "javac", root, javac, 300*time.Second, compileArgs...))
+	observations := make([]campaignStringObservation, len(oracle.Results))
+	arguments := make([][]string, len(oracle.Results))
+	for i, frozen := range oracle.Results {
+		if frozen.Timeout {
+			t.Fatal("frozen JVM timed out")
+		}
+		for j, arg := range frozen.Command {
+			if arg == "prereq.string.app.Main" {
+				arguments[i] = append([]string{}, frozen.Command[j+1:]...)
+				break
+			}
+		}
+		if len(arguments[i]) != 1 || arguments[i][0] != strconv.Itoa(frozen.Seed) {
+			t.Fatalf("unexpected frozen argument vector %v", frozen.Command)
+		}
+		readStream := func(path, hash string) []byte {
+			t.Helper()
+			data, err := os.ReadFile(filepath.Join(evidence, filepath.Base(path)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if fmt.Sprintf("%x", sha256.Sum256(data)) != hash {
+				t.Fatalf("frozen observation hash changed: %s", path)
+			}
+			return data
+		}
+		want := campaignStringObservation{readStream(frozen.StdoutPath, frozen.StdoutHash), readStream(frozen.StderrPath, frozen.StderrHash), frozen.Exit}
+		got := campaignStringBoundedRun(t, fmt.Sprintf("JVM seed%d repeat%d", frozen.Seed, frozen.Repeat), root, java, 60*time.Second, append([]string{"-cp", classes, "prereq.string.app.Main"}, arguments[i]...)...)
+		if got.exit != want.exit || !bytes.Equal(got.stdout, want.stdout) || !bytes.Equal(got.stderr, want.stderr) {
+			t.Fatalf("JVM frozen observation %d changed: exit%d/%d stdout%q/%q stderr%q/%q", i, got.exit, want.exit, got.stdout, want.stdout, got.stderr, want.stderr)
+		}
+		observations[i] = want
+	}
+	t.Log("all9 independent JVM observations validated; beginning strict Go gate")
+	generated := filepath.Join(temporary, "generated")
+	campaignStringRequireSuccess(t, "strict transpilation", campaignStringBoundedRun(t, "strict transpilation", repo, "go", 300*time.Second, "run", "./cmd/java2go", "-strict", "-maven", root, "-main-class", "prereq.string.app.Main", "-runtime", repo, "-output", generated))
+	campaignStringRequireSuccess(t, "all packages", campaignStringBoundedRun(t, "all packages", generated, "go", 300*time.Second, "build", "-race", "-mod=mod", "./..."))
+	executable := filepath.Join(temporary, "probe")
+	campaignStringRequireSuccess(t, "executable", campaignStringBoundedRun(t, "executable", generated, "go", 300*time.Second, "build", "-race", "-mod=mod", "-o", executable, "./cmd/app"))
+	for i, want := range observations {
+		got := campaignStringBoundedRun(t, fmt.Sprintf("Go observation%d", i), root, executable, 60*time.Second, arguments[i]...)
+		if got.exit != want.exit || !bytes.Equal(got.stdout, want.stdout) || !bytes.Equal(got.stderr, want.stderr) {
+			t.Fatalf("observation%d: JVM exit%d stdout%q stderr%q; Go exit%d stdout%q stderr%q", i, want.exit, want.stdout, want.stderr, got.exit, got.stdout, got.stderr)
+		}
+	}
+}

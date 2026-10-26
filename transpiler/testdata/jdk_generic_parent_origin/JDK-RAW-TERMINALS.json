@@ -1,0 +1,41 @@
+[
+  {
+    "class_sha256": "10cc90d16479279e1d6ee258fdaea4c5640ac6125acb5a7100a7b0a20237a9f2",
+    "class_signature": "",
+    "owner": "java.lang.Object",
+    "parameters": [],
+    "parents": [],
+    "source_header": "nongeneric terminal classfile proof",
+    "source_sha256": ""
+  },
+  {
+    "class_sha256": "9f242a7babbb522eb766735fb611a38cfb940a49ae29939eefdcbfd357bb8f01",
+    "class_signature": "",
+    "owner": "java.lang.Cloneable",
+    "parameters": [],
+    "parents": [
+      {
+        "arguments": [],
+        "kind": "nominal",
+        "owner": "java.lang.Object"
+      }
+    ],
+    "source_header": "nongeneric terminal classfile proof",
+    "source_sha256": ""
+  },
+  {
+    "class_sha256": "fde91e69e406145f4d405b1060d87efbc870b480dd1fbc4b8e0064a80cffdf11",
+    "class_signature": "",
+    "owner": "java.io.Serializable",
+    "parameters": [],
+    "parents": [
+      {
+        "arguments": [],
+        "kind": "nominal",
+        "owner": "java.lang.Object"
+      }
+    ],
+    "source_header": "nongeneric terminal classfile proof",
+    "source_sha256": ""
+  }
+]

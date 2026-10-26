@@ -1,0 +1,49 @@
+{
+  "scope": "Read-only source/profile audit; no new build/test/benchmark/heap processes or implementation edits.",
+  "frozen_revision": "8cb6cd5",
+  "sources": {
+    "passing_hierarchy_go": {
+      "path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/performance/object-identity-20260927T235324/generated/ObjectIdentityProbe.go",
+      "sha256": "61b9f5202122db823186c22d53c9dcaa030680fa1a3e8a07c0d0a4f92e3c81fb"
+    },
+    "existing_escape_log": {
+      "path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/performance/object-identity-20260927T235324/escape-analysis.stderr",
+      "sha256": "4e0d51eab93ff67d04cd37fa0c9b12778ca4e746cbad10124925e754c138d108"
+    },
+    "existing_identity_evidence": {
+      "path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/performance/runtime/object_identity/evidence.json",
+      "sha256": "50959365ce50df9d4c42ad4f5c15ef73c7628800babe919d16dc23cdf1234757"
+    },
+    "existing_queue_evidence": {
+      "path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/performance/runtime/object_identity_candidate/evidence.json",
+      "sha256": "29ff463b37586306780b866addd774b81589115052d62d2aaaf407dfc48f87ce"
+    },
+    "passing_URLCodec_go": {
+      "path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/runs/20260928T050238Z-2636650079/generated/j_org/j_apache/j_commons/j_codec/j_net/URLCodec.go",
+      "sha256": "271ca4b4415483c956f4942f2a4a4880edb80dfade99f4767a0ca1f97216e205"
+    },
+    "passing_Hex_go": {
+      "path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/.campaign/runs/20260928T050238Z-2636650079/generated/j_org/j_apache/j_commons/j_codec/j_binary/Hex.go",
+      "sha256": "f0036689bd1e70b7a51cc421e7d766bcc68b0d78e0770c97d8c57f83c72a11e8"
+    },
+    "previous_data_profile": {
+      "path": "/Users/suhaib/.codex/worktrees/adversarial-java/java2go/performance/codegen/round01_data/allocation_evidence.json",
+      "sha256": "418a612ab53527a3068cf1e894aaf27cb04fc243e45086c9b6f0336c84ef0562"
+    },
+    "frozen_declaration_go": {
+      "path": "/tmp/java2go-stringbuilder-verified/snapshot/transpiler/declaration.go",
+      "sha256": "48d4676efbd9d7a28d771a20d866411c6cc8fa205f03083ab0ce82708dc80ddd"
+    },
+    "frozen_reference_arrays_go": {
+      "path": "/tmp/java2go-stringbuilder-verified/snapshot/stdjava/reference_arrays.go",
+      "sha256": "88f01dba105053ddae561a4141d695e85b3c7324ea3ca0952d96c779fddbf3a9"
+    }
+  },
+  "existing_allocations": {
+    "graph_with_8_byte_payload": 7,
+    "bare_object_info": 1,
+    "generated_object_info": 2,
+    "queue_candidate_graph": 7
+  },
+  "new_candidates_measured": false
+}

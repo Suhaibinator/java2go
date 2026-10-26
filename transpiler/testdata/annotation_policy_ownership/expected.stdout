@@ -1,0 +1,6 @@
+retention=true:false
+inherited=true:false
+type-use=true:true
+mixed=true
+type-declaration=true
+target-owner=true

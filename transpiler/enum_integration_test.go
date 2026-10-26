@@ -17,10 +17,10 @@ public enum State {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "func StateValueOf(name string) *State") {
+	if !strings.Contains(flat, "func StateValueOf(name *stdjava.JavaString) *State") {
 		t.Fatalf("expected generated valueOf helper, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "State) Name() string") {
+	if !strings.Contains(flat, "State) Name() *stdjava.JavaString") {
 		t.Fatalf("expected name() accessor to be generated, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "State) String() string") {
@@ -50,17 +50,7 @@ public class EnumText {
 }
 `
 	out := renderGoFileFromJava(t, src)
-	flat := normalizeSpaces(out)
-
-	if !strings.Contains(flat, "func (dy *Day) String() string") {
-		t.Fatalf("expected Day to implement fmt.Stringer, got:\n%s", out)
-	}
-	if !strings.Contains(flat, "return dy.enumName") {
-		t.Fatalf("expected enum String method to return its Java name, got:\n%s", out)
-	}
-	if !strings.Contains(flat, "stdjava.StringValueOf(selected.StringJava2goExecution(__java2goExecution))") {
-		t.Fatalf("expected String.valueOf(enum) to use Java conversion semantics, got:\n%s", out)
-	}
+	enumNameOriginal191AssertSemantics(t, out)
 }
 
 func TestEnumIntegration_StringConversionHonorsToStringOverride(t *testing.T) {
@@ -86,11 +76,15 @@ public class CustomEnumText {
 	runGoTestInTempModule(t, out, `
 package main
 
-import "testing"
+import (
+    "slices"
+    "testing"
+    "unicode/utf16"
+)
 
 func TestCustomEnumTextRuntime(t *testing.T) {
-    if got := Run(); got != "custom-ALPHA|custom-ALPHA|custom-ALPHA" {
-        t.Fatalf("Run() = %q", got)
+    if got := Run(); got == nil || !slices.Equal(got.UTF16Copy(), utf16.Encode([]rune("custom-ALPHA|custom-ALPHA|custom-ALPHA"))) {
+        t.Fatalf("Run() = %v", got)
     }
 }
 `)
@@ -111,13 +105,13 @@ public class FloatingText {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if strings.Count(flat, "stdjava.StringValueOf(d)") < 3 {
+	if strings.Count(flat, "stdjava.JavaStringValueOfDouble(d)") < 3 {
 		t.Fatalf("expected println, concatenation, and String.valueOf to use Java double formatting, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.StringValueOf(f)") {
+	if !strings.Contains(flat, "stdjava.JavaStringValueOfFloat(f)") {
 		t.Fatalf("expected println(float) to use Java float formatting, got:\n%s", out)
 	}
-	if !strings.Contains(flat, "stdjava.DoubleToString(d)") {
+	if strings.Count(flat, "stdjava.JavaStringValueOfDouble(d)") < 4 || !strings.Contains(flat, "stdjava.JavaStringTextOperandExecution(__java2goExecution, stdjava.JavaStringValueOfDouble(d))") {
 		t.Fatalf("expected Double.toString to use Java double formatting, got:\n%s", out)
 	}
 }
@@ -133,7 +127,7 @@ public enum State { ON, OFF }
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "return StateValueOf(in)") {
+	if !strings.Contains(flat, "return StateValueOfJava2goExecution(__java2goExecution, in)") {
 		t.Fatalf("expected valueOf invocation to call generated helper, got:\n%s", out)
 	}
 }
@@ -152,7 +146,7 @@ public enum Switch implements Flag {
 	out := renderGoFileFromJava(t, src)
 	flat := normalizeSpaces(out)
 
-	if !strings.Contains(flat, "type Switch struct { enumName string enumOrdinal int32 Flag }") {
+	if !strings.Contains(flat, "type Switch struct { enumName string enumOrdinal int32 __java2goEnumMetadata stdjava.EnumMetadata Flag }") {
 		t.Fatalf("expected enum to embed implemented interfaces, got:\n%s", out)
 	}
 	if !strings.Contains(flat, "Switch) IsOn() bool") {

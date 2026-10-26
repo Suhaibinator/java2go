@@ -1,0 +1,11 @@
+# Sol campaign checkpoint 127
+
+Publication parent: `1ab3afaa2bb6284bfb5b018726e0c56710a6f576`. The Sol-only campaign remains active. Full CI and full-round acceptance remain false; latest accepted full round is 18.
+
+This test-only checkpoint repairs nine legacy generated-Go drivers for the canonical Java String ABI. Each evaluates the existing Run function once, rejects null, and compares the complete UTF16 contents to its unchanged expectation. Random, shuffle, BitSet, StringBuilder, string-search, locale, CharSequence and Character Java sources, deterministic inputs, order and oracle bytes remain unchanged. Two existing compiler-shape assertions now follow the allocated identifier names while retaining their execution, length, binder and bound checks.
+
+Fresh RED/GREEN evidence for the four isolated components is preserved. Independent source review verified all eleven exact public preimages/postimages, original Java/oracles and owner receipts. Coordinator replay from a fresh public-126 copy passed all 31 selected compiler parents in eight bounded groups, all 605 runtime parents with race checking, and lint with zero issues. No skips occurred. All 456 compiler/runtime/build inputs are byte-identical to checkpoint 126; production behavior did not change.
+
+The six compiler shards and adversarial dependency job were still failing at public126. These are scoped fixes, not a claim that full CI is green. Original Commons, Gson and Netty failures remain active. Gson's last exact implementation replay passed strict transpilation but failed generated all-package race compilation. Captured Map's full tracked acceptance test still fails because Collections.emptySet is unsupported. The original exception metadata parent needs additional constructors and the GeneralSecurityException hierarchy. Generic private-class receiver/constructor names and class-bound Owner remain separate implementation prerequisites.
+
+Evidence is pinned in campaign-state.json and retained under `.campaign/resume-20261002/root/127-*`. Continue constructor hygiene, exception hierarchy, immutable emptySet, enum integration and independently measured runtime optimization. Preserve original full applications and all failure evidence.
