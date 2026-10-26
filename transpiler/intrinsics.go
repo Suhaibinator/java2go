@@ -1072,6 +1072,7 @@ func intrinsicArgs(objectNode *sitter.Node, methodName string, source []byte, ct
 // runtime classes. Resolve it before the usual source-method exclusion, keeping
 // the exact receiver (and therefore its canonical raw Java class) intact.
 func intrinsicMethodReceiverTypeName(objectNode *sitter.Node, methodName string, ctx Ctx, source []byte) (string, bool) {
+ if intPredicateSourceDefaultReceiver(objectNode,methodName,ctx,source){return "IntPredicate",true}
 	if receiver, ok := reflectObjectInvocationReceiver(objectNode, methodName, ctx, source); receiver != "" {
 		return receiver, ok
 	}

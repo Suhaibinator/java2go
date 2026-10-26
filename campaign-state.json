@@ -30093,5 +30093,90 @@
     },
     "full_Gson112_or_Netty_accepted": false,
     "accepted_round": false
+  },
+  "sol_progress248": {
+    "status": "VERIFIED_INT_PREDICATE_AND_MODIFIER_385_STAGES",
+    "publication_parent": "06587aefb662557a970a931fc370aa9378450a80",
+    "source_manifest_sha256": "821afbdac863cd8040c229611f77df38ae3cf913ee9f49e5fceed203ea1e1aa3",
+    "paths": [
+      "stdjava/functional_native_views.go",
+      "stdjava/int_predicate.go",
+      "stdjava/int_predicate_test.go",
+      "stdjava/modifier_flags.go",
+      "transpiler/builtin_interface_inheritance.go",
+      "transpiler/expression.go",
+      "transpiler/functional_default_lowering.go",
+      "transpiler/functional_source_views.go",
+      "transpiler/int_predicate_jdk_test.go",
+      "transpiler/int_predicate_lowering.go",
+      "transpiler/int_predicate_lowering_test.go",
+      "transpiler/intrinsic_reference_signatures.go",
+      "transpiler/intrinsics.go",
+      "transpiler/intrinsics_modifier_flags.go",
+      "transpiler/method_reference_boxing.go",
+      "transpiler/modifier_flags_jdk_test.go",
+      "transpiler/testdata/int_predicate246/defaults/Main.java",
+      "transpiler/testdata/int_predicate246/defaults/expected.stdout",
+      "transpiler/testdata/int_predicate246/direct/Main.java",
+      "transpiler/testdata/int_predicate246/direct/expected.stdout",
+      "transpiler/testdata/int_predicate246/execution/Main.java",
+      "transpiler/testdata/int_predicate246/execution/expected.stdout",
+      "transpiler/testdata/int_predicate246/lambda/Main.java",
+      "transpiler/testdata/int_predicate246/lambda/expected.stdout",
+      "transpiler/testdata/int_predicate246/overrides/Main.java",
+      "transpiler/testdata/int_predicate246/overrides/expected.stdout",
+      "transpiler/testdata/int_predicate246/staticviews/Main.java",
+      "transpiler/testdata/int_predicate246/staticviews/expected.stdout",
+      "transpiler/testdata/int_predicate246/views/Main.java",
+      "transpiler/testdata/int_predicate246/views/expected.stdout",
+      "transpiler/testdata/modifier_flags/functional/expected.stdout",
+      "transpiler/testdata/modifier_flags/functional/project/pom.xml",
+      "transpiler/testdata/modifier_flags/functional/project/src/main/java/flags/FunctionalProbe.java",
+      "transpiler/testdata/modifier_flags/matrix/expected.stdout",
+      "transpiler/testdata/modifier_flags/matrix/project/pom.xml",
+      "transpiler/testdata/modifier_flags/matrix/project/src/main/java/flags/ModifierFlagsProbe.java",
+      "transpiler/testdata/modifier_flags/shadow/expected.stdout",
+      "transpiler/testdata/modifier_flags/shadow/project/pom.xml",
+      "transpiler/testdata/modifier_flags/shadow/project/src/main/java/shadow/ShadowProbe.java"
+    ],
+    "verification": {
+      "utc": "2026-10-26T00:13:40.154755+00:00",
+      "status": "CURRENT247_INT_PREDICATE_MODIFIER_ALL_385_ACTUAL_CLEAR",
+      "source_manifest_sha256": "821afbdac863cd8040c229611f77df38ae3cf913ee9f49e5fceed203ea1e1aa3",
+      "fresh_top_stages": 211,
+      "fresh_wrapped_stages": 174,
+      "all_stages_closed": true,
+      "original_caps_preserved": true,
+      "semantic_failures": 0,
+      "unexpected_skips": 0,
+      "timeouts": 0,
+      "default_and_F1_build_testcompile_lint_clear": true,
+      "all_public247_compiler_names_retained": true,
+      "new_full_application_acceptance": false,
+      "F1_native_executed": false,
+      "Java_relative_performance_claim": false,
+      "compiler_execution": {
+        "normal": {
+          "parents": 365,
+          "nodes": 1309
+        },
+        "race": {
+          "parents": 374,
+          "nodes": 1318
+        }
+      },
+      "full_ordinary_runtime_eachmode": {
+        "parents": 970,
+        "nodes": 4028
+      },
+      "compiled_compiler_registry_eachmode": 2787,
+      "old_normal_Modifier_matrix_scope": "Immediately preceding code-identical candidate4954/809de0f3; documentation normalization only to4955; separate from currentraceMatrix execution",
+      "all2787_executed": false,
+      "all_F1_semantics_executed": false,
+      "host": "Darwin arm64; subsequent LinuxCI remains separate",
+      "note_sha256": "2836b191d67b236908bba9bc7a9c638b91abb22090b572cc6bf9cf651a44bdd4"
+    },
+    "full_Gson112_or_Netty_accepted": false,
+    "accepted_round": false
   }
 }

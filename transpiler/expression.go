@@ -6169,7 +6169,7 @@ func resolveFunctionalInterfaceMethod(ctx Ctx, expectedType string) (*symbol.Def
 			return nil, nil
 		}
 		switch stripJavaQualifier(baseType) {
-		case "BiFunction", "Consumer", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator":
+		case "BiFunction", "Consumer", "IntPredicate", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator":
 			if nativeFunctionalFamily(expectedType, ctx) == "" {
 				return nil, nil
 			}

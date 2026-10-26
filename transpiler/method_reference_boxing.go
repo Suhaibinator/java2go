@@ -230,6 +230,11 @@ func lowerBuiltinMethodReference(node *sitter.Node, source []byte, ctx Ctx) (ast
 	}
 
 	expected := append([]string(nil), argumentTypes...)
+	if static && !constructor {
+		if declared, known := staticPrimitiveReferenceParameters(class, method, len(argumentTypes)); known {
+			expected = declared
+		}
+	}
 	actualResult := ""
 	if constructor || static {
 		actualResult = staticIntrinsicResultTypes[intrinsicKey{class, method}]

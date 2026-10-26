@@ -20,7 +20,7 @@ func nativeFunctionalFamily(javaType string, ctx Ctx) string {
 	if !ok {
 		return ""
 	}
-	for _, name := range []string{"Supplier", "Function", "BiFunction", "Consumer", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator"} {
+	for _, name := range []string{"Supplier", "Function", "BiFunction", "Consumer", "IntPredicate", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator"} {
 		if owner == "java.util.function."+name {
 			return name
 		}
@@ -66,6 +66,10 @@ func nativeFunctionalContract(family string, args []string) (sourceNativeFunctio
 	case "BinaryOperator":
 		c.parameters = []string{c.arguments[0], c.arguments[0]}
 		c.result = c.arguments[0]
+	case "IntPredicate":
+		c.parameters = []string{"int"}
+		c.result = "boolean"
+		c.method = "test"
 	case "IntUnaryOperator":
 		c.parameters = []string{"int"}
 		c.result = "int"
@@ -202,6 +206,9 @@ func sourceNativeFunctionalViewExpr(scope *symbol.ClassScope, c sourceNativeFunc
 		return anonymousFunctionalView(certificate, receiver, ctx)
 	}
 	method, owner, result := resolveSourceNativeSAM(scope, c, ctx)
+	if c.family == "IntPredicate" && !intPredicateSourceMethodOwned(method, scope, c, ctx) {
+		return nil
+	}
 	if method == nil || c.family == "Supplier" && !supplierSourceSelectedMethodOwned(scope, owner, method, c, ctx) {
 		return nil
 	}
@@ -249,6 +256,16 @@ func sourceNativeFunctionalViewExpr(scope *symbol.ClassScope, c sourceNativeFunc
 	}
 	closure := &ast.FuncLit{Type: ft, Body: &ast.BlockStmt{List: body}}
 	nativeArgs := []ast.Expr{&ast.SelectorExpr{X: receiver, Sel: ast.NewIdent("ObjectInfo")}, closure}
+	if c.family == "IntPredicate" {
+		defaults, valid := intPredicateSourceDefaults(scope, receiver, ctx)
+		if !valid {
+			if file := findFileScopeForClassScope(scope, ctx); file != nil {
+				reportUnsupported("unsupported IntPredicate source default override", scope.Class.DeclarationNode, file.Source, ctx)
+			}
+			return nil
+		}
+		return stdjavaCall(ctx, "NewIntPredicateSourceViewWithDefaults", append(nativeArgs, defaults)...)
+	}
 	if len(c.arguments) == 0 {
 		return stdjavaCall(ctx, "New"+c.family+"SourceView", nativeArgs...)
 	}
@@ -271,7 +288,7 @@ func nativeFunctionalObjectProjection(value ast.Expr, expected string, ctx Ctx) 
 }
 func additionalNativeFunctionalRuntimeType(javaType string, args, params []string, ctx Ctx) (ast.Expr, bool) {
 	family := nativeFunctionalFamily(javaType, ctx)
-	if family != "BiFunction" && family != "Consumer" {
+	if family != "BiFunction" && family != "Consumer" && family != "IntPredicate" {
 		return nil, false
 	}
 	c, ok := nativeFunctionalContract(family, args)
@@ -286,7 +303,7 @@ func additionalNativeFunctionalRuntimeType(javaType string, args, params []strin
 }
 func additionalNativeFunctionalAdapter(value ast.Expr, javaType string, executionAware bool, ctx Ctx) ast.Expr {
 	f := nativeFunctionalFamily(javaType, ctx)
-	if f != "BiFunction" && f != "Consumer" {
+	if f != "BiFunction" && f != "Consumer" && f != "IntPredicate" {
 		return nil
 	}
 	_, args := parseJavaTypeString(javaType)
@@ -305,6 +322,7 @@ func additionalNativeFunctionalAdapter(value ast.Expr, javaType string, executio
 	return stdjavaGenericCall(ctx, constructor, types, []ast.Expr{value})
 }
 func registerAdditionalNativeFunctionalViews() {
+	registerIntPredicateIntrinsics()
 	for _, family := range []string{"BiFunction", "Consumer"} {
 		family := family
 		registerIntrinsicOwner("java.util.function."+family, true)

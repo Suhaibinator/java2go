@@ -14,7 +14,7 @@ func builtinInterfaceParentMethod(javaType string, ctx Ctx) *symbol.Definition {
 	}
 	name := stripJavaQualifier(base)
 	switch name {
-	case "Function", "BiFunction", "Consumer", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator":
+	case "Function", "BiFunction", "Consumer", "IntPredicate", "IntUnaryOperator", "IntBinaryOperator", "LongUnaryOperator", "LongBinaryOperator", "UnaryOperator", "BinaryOperator":
 		if nativeFunctionalFamily(javaType, ctx) == "" {
 			return nil
 		}

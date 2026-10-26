@@ -90,6 +90,9 @@ func functionalTypeSuffix(args []string) string {
 	return s + ">"
 }
 func functionalDefaultExpected(invocation *sitter.Node, ctx Ctx, source []byte) []string {
+	if expected := intPredicateExpectedArguments(invocation, ctx, source); expected != nil {
+		return expected
+	}
 	family, args, _, ok := functionalDefaultTypes(invocation, ctx, source)
 	if !ok {
 		return nil
